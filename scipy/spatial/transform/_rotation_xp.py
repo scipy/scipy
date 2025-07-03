@@ -18,8 +18,9 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
+    xp_promote,
 )
-from scipy._lib.array_api_compat import device
+from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
 
 
@@ -43,27 +44,27 @@ def from_quat(
 
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    _device = device(matrix)
+    device = xp_device(matrix)
     dtype = xp_result_type(matrix, force_floating=True, xp=xp)
-    matrix = xp.asarray(matrix, dtype=dtype, device=_device, copy=True)
+    matrix = xp.asarray(matrix, dtype=dtype, device=device, copy=True)
     # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
-    if not is_lazy_array(mask) and xp.any(mask):
+    lazy = is_lazy_array(mask)
+    if not lazy and xp.any(mask):
         ind = int(xp.nonzero(xpx.atleast_nd(mask, ndim=1, xp=xp))[0][0])
         raise ValueError(
-            "Non-positive determinant (left-handed or null "
-            f"coordinate frame) in rotation matrix {ind}: "
-            f"{matrix[ind, ...]}."
+            "Non-positive determinant (left-handed or null coordinate frame) in "
+            f"rotation matrix {ind}: {matrix[ind, ...]}."
         )
-    mask = xp.broadcast_to(mask[..., None, None], mask.shape + (3, 3))
-    matrix = xp.where(mask, xp.nan, matrix)
+    elif lazy:
+        matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
     gramians = matrix @ xp.matrix_transpose(matrix)
     # TODO: We need to orthogonalize only the non-orthogonal matrices, but lazy backends
     # do not support non-concrete boolean indexing or any form of computation without
     # statically known shapes. We either have to branch depending on lazy/non-lazy
     # frameworks or pay the performance penalty for the SVD.
-    eye = xp.eye(3, dtype=matrix.dtype, device=_device)
+    eye = xp.eye(3, dtype=matrix.dtype, device=device)
     is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
     U, _, Vt = xp.linalg.svd(matrix)
     orthogonal_matrix = U @ Vt
@@ -75,7 +76,7 @@ def from_matrix(matrix: Array) -> Array:
         axis=-1,
     )
     choice = xp.argmax(decision, axis=-1, keepdims=True)
-    quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype, device=_device)
+    quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device)
     # While the Array API now does support advanced indexing, we still need to know the
     # shape of all arrays statically. This is not possible if we index based on the
     # argmax, so we compute each case and assemble the final result with `xp.where`.
@@ -90,7 +91,7 @@ def from_matrix(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where((choice == 0), quat_0, quat)
+    quat = xp.where(choice == 0, quat_0, quat)
 
     # Case 1
     quat_1 = xp.stack(
@@ -102,7 +103,7 @@ def from_matrix(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where((choice == 1), quat_1, quat)
+    quat = xp.where(choice == 1, quat_1, quat)
 
     # Case 2
     quat_2 = xp.stack(
@@ -114,7 +115,7 @@ def from_matrix(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where((choice == 2), quat_2, quat)
+    quat = xp.where(choice == 2, quat_2, quat)
 
     # Case 3
     quat_3 = xp.stack(
@@ -126,21 +127,20 @@ def from_matrix(matrix: Array) -> Array:
         ],
         axis=-1,
     )
-    quat = xp.where((choice == 3), quat_3, quat)
+    quat = xp.where(choice == 3, quat_3, quat)
 
     return _normalize_quaternion(quat)
 
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     xp = array_namespace(rotvec)
-    dtype = xp_result_type(rotvec, force_floating=True, xp=xp)
-    rotvec = xp.asarray(rotvec, dtype=dtype, copy=True)
+    rotvec = xp_promote(rotvec, force_floating=True, xp=xp)
     # TODO: Relax the shape check once we support proper broadcasting
     if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
         raise ValueError(
             f"Expected `rot_vec` to have shape (3,) or (N, 3), got {rotvec.shape}"
         )
-    degrees = xp.asarray(degrees, device=device(rotvec))
+    degrees = xp.asarray(degrees, device=xp_device(rotvec))
     rotvec = xp.where(degrees, _deg2rad(rotvec), rotvec)
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
@@ -160,8 +160,7 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
 
 def from_mrp(mrp: Array) -> Array:
     xp = array_namespace(mrp)
-    dtype = xp_result_type(mrp, force_floating=True, xp=xp)
-    mrp = xp.asarray(mrp, dtype=dtype, copy=True)
+    mrp = xp_promote(mrp, force_floating=True, xp=xp)
     if mrp.ndim not in [1, 2] or mrp.shape[len(mrp.shape) - 1] != 3:
         raise ValueError(
             f"Expected `mrp` to have shape (3,) or (N, 3), got {mrp.shape}"
@@ -192,8 +191,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
-    dtype = xp_result_type(angles, force_floating=True, xp=xp)
-    angles = xp.asarray(angles, dtype=dtype, copy=True)
+    angles = xp_promote(angles, force_floating=True, xp=xp)
     angles, is_single = _format_angles(angles, degrees, num_axes)
     axes = [_elementary_basis_index(x) for x in seq.lower()]
     q = _elementary_quat_compose(angles, axes, intrinsic)
@@ -204,8 +202,8 @@ def from_davenport(
     axes: Array, order: str, angles: Array | float, degrees: bool = False
 ) -> Array:
     xp = array_namespace(axes)
-    _device = device(axes)
-    dtype = xp_result_type(axes, force_floating=True, xp=xp)
+    device = xp_device(axes)
+    axes = xp_promote(axes, force_floating=True, xp=xp)
     if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
         extrinsic = True
     elif order in ["i", "intrinsic"]:
@@ -215,10 +213,7 @@ def from_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/"
             f"'intrinsic' for intrinsic sequences, got {order}"
         )
-    axes = xp.asarray(axes, dtype=dtype, copy=True)
-    # Angles could be a scalar, so we first need to convert it to an array before
-    # promoting
-    angles = xp.asarray(angles, dtype=dtype, copy=True)
+    angles = xp.asarray(angles, dtype=axes.dtype)  # could be a scalar
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     if axes.shape[-1] != 3:
@@ -231,7 +226,7 @@ def from_davenport(
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
 
     # Check if axes are orthogonal. Shape checks also work for lazy backends.
-    axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool, device=_device)
+    axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool, device=device)
     if num_axes > 1:
         # Cannot be True yet, so we do not need to use xp.logical_or
         axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
@@ -251,7 +246,7 @@ def from_davenport(
     angles, single = _format_angles(angles, degrees, num_axes)
 
     dim_q = (4) if single else (angles.shape[0], 4)
-    q = xp.zeros(dim_q, dtype=angles.dtype, device=device(angles))
+    q = xp.zeros(dim_q, dtype=angles.dtype, device=xp_device(angles))
     q = xpx.at(q)[..., 3].set(1)
 
     if not single:
@@ -266,11 +261,10 @@ def as_quat(
     quat: Array, canonical: bool = False, *, scalar_first: bool = False
 ) -> Array:
     xp = array_namespace(quat)
-    _device = device(quat)
-    scalar_first = xp.asarray(scalar_first, device=_device)
-    canonical = xp.asarray(canonical, device=_device)
-    quat = xp.where(canonical, _quat_canonical(quat), quat)
-    quat = xp.where(scalar_first, xp.roll(quat, 1, axis=-1), quat)
+    if canonical:
+        quat = _quat_canonical(quat)
+    if scalar_first:
+        quat = xp.roll(quat, 1, axis=-1)
     return quat
 
 
@@ -323,15 +317,15 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     div_sin = xp.sin(angle / 2.0) + xp.asarray(small_angle, dtype=angle.dtype)
     large_scale = angle / div_sin
     scale = xp.where(small_angle, small_scale, large_scale)
-    degrees = xp.asarray(degrees, device=device(quat))
-    scale = xp.where(degrees, _rad2deg(scale), scale)
+    if degrees:
+        scale = _rad2deg(scale)
     rotvec = scale * quat[..., :3]
     return rotvec
 
 
 def as_mrp(quat: Array) -> Array:
     xp = array_namespace(quat)
-    one = xp.asarray(1.0, device=device(quat), dtype=quat.dtype)
+    one = xp.asarray(1.0, device=xp_device(quat), dtype=quat.dtype)
     sign = xp.where(quat[..., 3, None] < 0, -one, one)
     denominator = 1.0 + sign * quat[..., 3, None]
     return sign * quat[..., :3] / denominator
@@ -353,17 +347,15 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     if any(seq[i] == seq[i + 1] for i in range(2)):
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
-    _device = device(quat)
+    device = xp_device(quat)
     axes = [_elementary_basis_index(x) for x in seq.lower()]
     axes = axes if extrinsic else axes[::-1]
     i, j, k = axes
     symmetric = i == k
     k = 3 - i - j if symmetric else k
 
-    symmetric = xp.asarray(symmetric, device=_device)
-    sign = xp.asarray(
-        (i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=_device
-    )
+    symmetric = xp.asarray(symmetric, device=device)
+    sign = xp.asarray((i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=device)
     # Permute quaternion elements
     a = xp.where(symmetric, quat[..., 3], quat[..., 3] - quat[..., j])
     b = xp.where(symmetric, quat[..., i], quat[..., i] + quat[..., k] * sign)
@@ -371,17 +363,14 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     d = xp.where(symmetric, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
     angles = _get_angles(extrinsic, symmetric, sign, np.pi / 2, a, b, c, d)
-    degrees = xp.asarray(degrees, device=_device)
-    angles = xp.where(degrees, _rad2deg(angles), angles)
-    return angles
+    return _rad2deg(angles) if degrees else angles
 
 
 def as_davenport(
     quat: Array, axes: ArrayLike, order: str, degrees: bool = False
 ) -> Array:
     xp = array_namespace(quat)
-    dtype = xp_result_type(axes, force_floating=True, xp=xp)
-    axes = xp.asarray(axes, dtype=dtype, copy=True)
+    axes = xp_promote(axes, force_floating=True, xp=xp)
 
     # Check argument validity
     if order in ["e", "extrinsic"]:
@@ -402,14 +391,11 @@ def as_davenport(
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
     vdot_ax0_ax1 = xp.vecdot(axes[0, ...], axes[1, ...])
     vdot_ax1_ax2 = xp.vecdot(axes[1, ...], axes[2, ...])
-    if is_lazy_array(axes):
-        axes = xp.where(vdot_ax0_ax1 < 1e-7, axes, xp.nan)
-        axes = xp.where(vdot_ax1_ax2 < 1e-7, axes, xp.nan)
-    else:
-        if vdot_ax0_ax1 >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
-        if vdot_ax1_ax2 >= 1e-7:
-            raise ValueError("Consecutive axes must be orthogonal.")
+    is_invalid = (vdot_ax0_ax1 >= 1e-7) | (vdot_ax1_ax2 >= 1e-7)
+    if is_lazy_array(is_invalid):
+        axes = xp.where(is_invalid, xp.nan, axes)
+    elif is_invalid:
+        raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = _compute_davenport_from_quat(
         quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
@@ -420,9 +406,7 @@ def as_davenport(
 
 
 def inv(quat: Array) -> Array:
-    xp = array_namespace(quat)
-    quat = xpx.at(quat)[..., :3].multiply(-1, copy=True, xp=xp)
-    return quat
+    return xpx.at(quat)[..., :3].multiply(-1, copy=True)
 
 
 def magnitude(quat: Array) -> Array:
@@ -436,7 +420,6 @@ def magnitude(quat: Array) -> Array:
 def approx_equal(
     quat: Array, other: Array, atol: float | None = None, degrees: bool = False
 ) -> Array:
-    xp = array_namespace(quat)
     if atol is None:
         if degrees:
             warnings.warn(
@@ -446,7 +429,6 @@ def approx_equal(
         atol = 1e-8
     elif degrees:
         atol = _deg2rad(atol)
-    atol = xp.asarray(atol, device=device(quat))
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
@@ -461,20 +443,21 @@ def approx_equal(
     return angles < atol
 
 
-def mean(quat: Array, weights: Array | None = None) -> Array:
+def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
     xp = array_namespace(quat)
-    _device = device(quat)
+    device = xp_device(quat)
     dtype = xp_result_type(quat, force_floating=True, xp=xp)
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
 
+    lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
-        weights = xp.ones(quat.shape[:-1], dtype=dtype, device=_device)
+        weights = xp.ones(quat.shape[:-1], dtype=dtype, device=device)
         weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
     else:
-        weights = xp.asarray(weights, dtype=dtype, copy=True, device=_device)
-    if not is_lazy_array(weights) and xp.any(weights < 0):
+        weights = xp.asarray(weights, dtype=dtype, copy=True, device=device)
+    if not lazy and xp.any(weights < 0):
         raise ValueError("`weights` must be non-negative.")
 
     # TODO: Missing full broadcasting support.
@@ -488,9 +471,13 @@ def mean(quat: Array, weights: Array | None = None) -> Array:
             "Expected `weights` to have number of values equal to number of rotations, "
             f"got {weights.shape[0]} values and {n_rot} rotations."
         )
-    # DECISION: We cannot check for negative weights because jit code needs to be
-    # non-branching. We return NaN instead
-    weights = xp.where(weights < 0, xp.nan, weights)
+    neg_weights = weights < 0
+    if not lazy and xp.any(neg_weights):
+        raise ValueError("`weights` must be non-negative.")
+    elif lazy:
+        # We cannot check for negative weights because jit code needs to be
+        # non-branching. We return NaN instead
+        weights = xp.where(neg_weights, xp.nan, weights)
 
     # Make sure we can transpose quat
     quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
@@ -504,6 +491,8 @@ def reduce(
     left: Array | None = None,
     right: Array | None = None,
 ) -> tuple[Array, Array | None, Array | None]:
+    if left is None and right is None:
+        return quat, None, None
     # DECISION: We cannot have variable number of return arguments for jit compiled
     # functions. We therefore always return the indices, and filter out later.
     # TOOD: Properly support broadcasting.
@@ -513,14 +502,6 @@ def reduce(
         left = xp.ones_like(quat)
     if right is None:
         right = xp.ones_like(quat)
-
-    if left is None and right is None:
-        reduced = quat
-        return reduced, None, None
-    elif right is None:
-        right = xp.asarray([[0.0, 0.0, 0.0, 1.0]])
-    elif left is None:
-        left = xp.asarray([[0.0, 0.0, 0.0, 1.0]])
 
     # We want to calculate the real components of q = l * p * r. It can
     # be shown that:
@@ -583,7 +564,7 @@ def reduce(
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
     mat = as_matrix(quat)
-    inverse = xp.asarray(inverse, device=device(quat))
+    inverse = xp.asarray(inverse, device=xp_device(quat))
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
     # TODO: We currently evaluate both branches of the where statement. For eager
@@ -604,8 +585,7 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
 def setitem(
     quat: Array, value: Array, indexer: int | slice | EllipsisType | None
 ) -> Array:
-    quat = xpx.at(quat)[indexer, ...].set(value)
-    return quat
+    return xpx.at(quat)[indexer, ...].set(value)
 
 
 def align_vectors(
@@ -636,9 +616,9 @@ def align_vectors(
 
     # Check weights
     if weights is None:
-        weights = xp.ones(N, device=device(a), dtype=a.dtype)
+        weights = xp.ones(N, device=xp_device(a), dtype=a.dtype)
     else:
-        weights = xp.asarray(weights, device=device(a), dtype=a.dtype)
+        weights = xp.asarray(weights, device=xp_device(a), dtype=a.dtype)
         if weights.ndim != 1:
             raise ValueError(
                 f"Expected `weights` to be 1 dimensional, got shape {weights.shape}."
@@ -702,7 +682,7 @@ def align_vectors(
 
 def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
-    _device = device(a)
+    device = xp_device(a)
     B = (weights[:, None] * a).mT @ b
     u, s, vh = xp.linalg.svd(B)
 
@@ -719,7 +699,7 @@ def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Ar
     ssd = xp.sum(weights * xp.sum(b**2 + a**2, axis=-1), axis=-1) - 2 * xp.sum(
         s, axis=-1
     )
-    rssd = xp.sqrt(xp.maximum(ssd, xp.zeros(1, device=_device)))[..., 0]
+    rssd = xp.sqrt(xp.maximum(ssd, xp.zeros(1, device=device)))[..., 0]
 
     # TODO: We currently need to always compute the sensitivity matrix because lazy code
     # needs to be non-branching. We should check if compilers can optimize the where
@@ -728,7 +708,7 @@ def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Ar
     # See xpx.apply_where, issue: https://github.com/data-apis/array-api-extra/pull/141
     zeta = (s[..., 0] + s[..., 1]) * (s[..., 1] + s[..., 2]) * (s[..., 2] + s[..., 0])
     kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
-    eye = xp.eye(3, dtype=a.dtype, device=_device)
+    eye = xp.eye(3, dtype=a.dtype, device=device)
     sensitivity = xp.mean(weights) / zeta * (kappa * eye + B @ B.mT)
     q_opt = from_matrix(C)
     return q_opt, rssd, sensitivity
@@ -738,9 +718,9 @@ def _align_vectors_fixed(
     a: Array, b: Array, weights: Array
 ) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
-    _device = device(a)
+    device = xp_device(a)
     N = a.shape[0]
-    weight_is_inf = xp.asarray([True], device=_device) if N == 1 else weights == xp.inf
+    weight_is_inf = xp.asarray([True], device=device) if N == 1 else weights == xp.inf
     # We cannot use boolean masks for indexing because of jax. For the same reason, we
     # also cannot use dynamic slices. As a workaround, we roll the array so that the
     # infinitely weighted vector is at index 0. We then use static slices to get the
@@ -788,7 +768,7 @@ def _align_vectors_fixed(
     cross_norm = xp_vector_norm(cross, axis=-1, xp=xp)
     theta = xp.atan2(cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1))
     tolerance = 1e-3  # tolerance for small angle approximation (rad)
-    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0], device=_device)
+    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0], device=device)
 
     # Near pi radians, the Taylor series approximation of x/sin(x) diverges, so for
     # numerical stability we flip pi and then rotate back by the small angle pi - theta
@@ -866,7 +846,7 @@ def _align_vectors_fixed(
     # exactly.
     weights_inf_zero = xp.asarray(weights, copy=True)
 
-    multiple_vectors = xp.asarray(N > 1, device=_device)
+    multiple_vectors = xp.asarray(N > 1, device=device)
     mask = xp.logical_or(multiple_vectors, weights[0] == xp.inf)
     mask = xp.logical_and(mask, weight_is_inf)
     # Skip non-infinite weight single vectors pairs, we used the
@@ -877,22 +857,22 @@ def _align_vectors_fixed(
 
     mask = xp.any(xp.isnan(weights), axis=-1)
     q_opt = xp.where(mask, xp.nan, q_opt)
-    return q_opt, rssd, xp.asarray(xp.nan, device=_device)
+    return q_opt, rssd, xp.asarray(xp.nan, device=device)
 
 
 def pow(quat: Array, n: float) -> Array:
     xp = array_namespace(quat)
-    _device = device(quat)
+    device = xp_device(quat)
     # general scaling of rotation angle
     result = from_rotvec(n * as_rotvec(quat))
     # Special cases 0 -> identity, -1 -> inv, 1 -> copy
-    identity = xp.zeros((*quat.shape[:-1], 4), dtype=result.dtype, device=_device)
+    identity = xp.zeros((*quat.shape[:-1], 4), dtype=result.dtype, device=device)
     identity = xpx.at(identity)[..., 3].set(1)
-    mask = xp.asarray(n == 0, device=_device)
+    mask = xp.asarray(n == 0, device=device)
     result = xp.where(mask, identity, result)
-    mask = xp.asarray(n == -1, device=_device)
+    mask = xp.asarray(n == -1, device=device)
     result = xp.where(mask, inv(quat), result)
-    mask = xp.asarray(n == 1, device=_device)
+    mask = xp.asarray(n == 1, device=device)
     result = xp.where(mask, quat, result)
     return result
 
@@ -986,8 +966,8 @@ def _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
-    _device = device(quat)
-    mask = xp.asarray(extrinsic, device=_device)
+    device = xp_device(quat)
+    mask = xp.asarray(extrinsic, device=device)
     _n1 = xp.where(mask, n1, n3)
     _n3 = xp.where(mask, n3, n1)
     n1, n3 = _n1, _n3
@@ -996,7 +976,7 @@ def _compute_davenport_from_quat(
     lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
 
     # alternative set of angles compatible with as_euler implementation
-    mask = xp.asarray(lamb < 0, device=_device)
+    mask = xp.asarray(lamb < 0, device=device)
     n2 = xp.where(mask, -n2, n2)
     lamb = xp.where(mask, -lamb, lamb)
     n_cross = xp.where(mask, -n_cross, n_cross)
@@ -1022,11 +1002,11 @@ def _compute_davenport_from_quat(
 
 def _elementary_quat_compose(angles: Array, axes: list[int], intrinsic: bool) -> Array:
     xp = array_namespace(angles)
-    _device = device(angles)
-    intrinsic = xp.asarray(intrinsic, device=_device)
-    quat = _make_elementary_quat(axes[0], angles[..., 0], device=_device)
+    device = xp_device(angles)
+    intrinsic = xp.asarray(intrinsic, device=device)
+    quat = _make_elementary_quat(axes[0], angles[..., 0], device=device)
     for i in range(1, len(axes)):
-        ax_quat = _make_elementary_quat(axes[i], angles[..., i], device=_device)
+        ax_quat = _make_elementary_quat(axes[i], angles[..., i], device=device)
         quat = xp.where(
             intrinsic, compose_quat(quat, ax_quat), compose_quat(ax_quat, quat)
         )
@@ -1053,11 +1033,11 @@ def _get_angles(
     d: Array,
 ) -> Array:
     xp = array_namespace(a)
-    _device = device(a)
+    device = xp_device(a)
     eps = 1e-7
     half_sum = xp.atan2(b, a)
     half_diff = xp.atan2(d, c)
-    angles = xp.zeros((*a.shape, 3), dtype=a.dtype, device=_device)
+    angles = xp.zeros((*a.shape, 3), dtype=a.dtype, device=device)
 
     angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
 
@@ -1065,8 +1045,8 @@ def _get_angles(
     angle_third = 2 if extrinsic else 0
 
     # Convert extrinsic and symmetric to arrays for use in xp.where
-    extrinsic = xp.asarray(extrinsic, dtype=xp.bool, device=_device)
-    symmetric = xp.asarray(symmetric, dtype=xp.bool, device=_device)
+    extrinsic = xp.asarray(extrinsic, dtype=xp.bool, device=device)
+    symmetric = xp.asarray(symmetric, dtype=xp.bool, device=device)
 
     # Check if the second angle is close to 0 or pi, causing a singularity.
     # - Case 0: Second angle is neither close to 0 nor pi.
@@ -1083,7 +1063,7 @@ def _get_angles(
             stacklevel=3,
         )
 
-    one = xp.asarray(1, dtype=angles.dtype, device=_device)
+    one = xp.asarray(1, dtype=angles.dtype, device=device)
     a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * xp.where(extrinsic, -one, one))
     angles = xpx.at(angles)[..., 0].set(a0)
 

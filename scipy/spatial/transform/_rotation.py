@@ -2570,11 +2570,11 @@ class Slerp:
 
         # We cannot check for values for lazy backends, so we cannot raise an error on
         # timedelta < 0 for lazy backends. Instead, we set timedelta to nans
-        if is_lazy_array(self.timedelta):
-            mask = xp.any(self.timedelta <= 0)
-            self.timedelta = xp.where(mask, xp.asarray(xp.nan), self.timedelta)
-            self.times = xp.where(mask, xp.asarray(xp.nan), self.times)
-        elif xp.any(self.timedelta <= 0):
+        neg_mask = xp.any(self.timedelta <= 0)
+        if is_lazy_array(neg_mask):
+            self.timedelta = xp.where(neg_mask, xp.asarray(xp.nan), self.timedelta)
+            self.times = xp.where(neg_mask, xp.asarray(xp.nan), self.times)
+        elif xp.any(neg_mask):
             raise ValueError("Times must be in strictly increasing order.")
 
         self.rotations = rotations[:-1]
@@ -2611,22 +2611,21 @@ class Slerp:
         # side = 'left' (default) excludes t_min.
         ind = xp.searchsorted(self.times, compute_times) - 1
         # Include t_min. Without this step, index for t_min equals -1
-        ind = xp.where(compute_times == self.times[0], xp.asarray(0), ind)
+        ind = xpx.at(ind, compute_times == self.times[0]).set(0)
         # We cannot error out on invalid indices for jit compiled code. To not produce
         # an index error, we set the index to 0 in case it is out of bounds, and later
         # set the result to nan.
         invalid_ind = xp.logical_or(ind < 0, ind > len(self.rotations) - 1)
         if is_lazy_array(invalid_ind):
             ind = xp.where(invalid_ind, xp.asarray(0), ind)
-        else:
-            if xp.any(invalid_ind):
-                raise ValueError(
-                    "Interpolation times must be within the range "
-                    f"[{self.times[0]}, {self.times[-1]}], both inclusive."
-                )
+        elif xp.any(invalid_ind):
+            raise ValueError(
+                f"Interpolation times must be within the range [{self.times[0]}, "
+                f"{self.times[-1]}], both inclusive."
+            )
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
-        alpha = xp.where(invalid_ind, xp.asarray(xp.nan), alpha)
+        alpha = xpx.at(alpha, invalid_ind).set(xp.nan)
 
         # TODO: Change indexing once integer arrays + ellipsis are supported by the
         # Array API
