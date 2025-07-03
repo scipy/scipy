@@ -157,6 +157,19 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
+    /* Check for empty matrix */
+    if ((self->L.nrow == 0 && self->L.ncol == 0) ||
+        (self->U.nrow == 0 && self->U.ncol == 0)) {
+        /* Empty matrix, return 0.0 */
+        if (self->type == NPY_FLOAT || self->type == NPY_CFLOAT) {
+            float normf = 0.0f;
+            return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+        } else {
+            double normd = 0.0;
+            return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+        }
+    }
+
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         goto fail;
