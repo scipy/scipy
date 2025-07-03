@@ -1632,33 +1632,31 @@ class TestResample:
         cpu_only=True, exceptions=["cupy"], reason="filtfilt is CPU-only"
     )
     @pytest.mark.parametrize('down_factor', [2, 11, 79])
-    def test_poly_vs_filtfilt(self, down_factor, xp):
+    @pytest.mark.parametrize("dtype", [int, np.float32, np.complex64, float, complex])
+    def test_poly_vs_filtfilt(self, down_factor, dtype, xp):
         # Check that up=1.0 gives same answer as filtfilt + slicing
         random_state = np.random.RandomState(17)
-        try_types = (int, np.float32, np.complex64, float, complex)
         size = 10000
 
-        for dtype in try_types:
-            x = random_state.randn(size).astype(dtype)
-            if dtype in (np.complex64, np.complex128):
-                x += 1j * random_state.randn(size)
-            x = xp.asarray(x)
+        x = random_state.randn(size).astype(dtype)
+        if dtype in (np.complex64, np.complex128):
+            x += 1j * random_state.randn(size)
+        x = xp.asarray(x)
 
-            # resample_poly assumes zeros outside of signl, whereas filtfilt
-            # can only constant-pad. Make them equivalent:
-            x[0] = 0
-            x[-1] = 0
+        # resample_poly assumes zeros outside of signl, whereas filtfilt
+        # can only constant-pad. Make them equivalent:
+        x[0] = 0
+        x[-1] = 0
 
-            h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
-            h = xp.asarray(h)   # XXX: convert firwin
-            yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
+        h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
+        yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
 
-            # Need to pass convolved version of filter to resample_poly,
-            # since filtfilt does forward and backward, but resample_poly
-            # only goes forward
-            hc = convolve(h, xp.flip(h))
-            y = signal.resample_poly(x, 1, down_factor, window=hc)
-            xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
+        # Need to pass convolved version of filter to resample_poly,
+        # since filtfilt does forward and backward, but resample_poly
+        # only goes forward
+        hc = convolve(h, xp.flip(h))
+        y = signal.resample_poly(x, 1, down_factor, window=hc)
+        xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
 
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="correlate1d is CPU-only"
