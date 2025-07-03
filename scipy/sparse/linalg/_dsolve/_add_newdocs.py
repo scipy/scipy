@@ -152,8 +152,8 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('normest_inv',
     Parameters
     ----------
     ord : {1, inf}, optional
-        Order of the norm. If None, defaults to the 1-norm. inf means numpy's
-        `inf` object.
+        Order of the norm. If ``None``, defaults to the 1-norm. inf means
+        numpy's ``inf`` object.
 
     Returns
     -------
@@ -162,14 +162,14 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('normest_inv',
 
     See Also
     --------
-    scipy.sparse.linalg.norm : Compute the norm of a sparse matrix.
+    norm : Compute the norm of a sparse matrix.
     numpy.linalg.norm : Compute the norm of a dense matrix.
-    scipy.sparse.linalg.cond1est : Compute an estimate for the reciprocal of
+    cond1est : Compute an estimate for the reciprocal of
         the condition number of a sparse matrix.
 
     Notes
     -----
-    This method runs the appropriate SuperLU ``gscon``[0]_ procedure for the
+    This method runs the appropriate SuperLU ``gscon`` [0]_ procedure for the
     data type.
 
     .. versionadded:: 1.17.0
@@ -189,7 +189,7 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('normest_inv',
            [ 5.,  8.,  2.],
            [ 0., -1.,  0.]])
     >>> splu(A).normest_inv(ord=1)
-    5.0
+    np.float64(5.0)
     >>> np.linalg.norm(np.linalg.inv(A.toarray()), ord=1)
     np.float64(5.0)
     """))
