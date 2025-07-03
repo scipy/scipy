@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose
 from scipy import sparse
 from scipy.sparse.linalg import splu, cond1est
 
-# TODO update rtol based on dtype?
 
 rng = np.random.default_rng(565656)
 
