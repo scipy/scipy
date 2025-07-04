@@ -357,6 +357,9 @@ class TestRegularGridInterpolator:
         # Fill value, as a 0D array of correct dtype.
         fill = np.asarray(1/42, dtype=dtype)
 
+        # method "linear" promotes results to np.float64
+        promoted_dtype = np.float64 if method == "linear" else dtype
+
         # Create interpolator instances, with and without 'bounds_error' check.
         interp_fill = RegularGridInterpolator(
             points, values, method=method, bounds_error=False, fill_value=fill
@@ -367,38 +370,33 @@ class TestRegularGridInterpolator:
 
         # Check interpolator returns correct value for valid sample.
         sample = np.asarray([x0])
-        wanted = np.asarray([val])
-        result = interp_fill(sample)
-        np.testing.assert_array_equal(result, wanted)
-
-        result = interp_err(sample)
-        np.testing.assert_array_equal(result, wanted)
+        wanted = np.asarray([val], dtype=promoted_dtype)
+        for result in [interp_fill(sample), interp_err(sample)]:
+            xp_assert_equal(result, wanted)
 
         # Check out of bound point along first direction.
         x0[0] += 1
         sample = np.asarray([x0])
-        wanted = np.asarray([fill])
+        wanted = np.asarray([fill], dtype=promoted_dtype)
         result = interp_fill(sample)
-        np.testing.assert_array_equal(result, wanted)
-
+        xp_assert_equal(result, wanted)
         with pytest.raises(
             ValueError,
             match="^One of the requested xi is out of bounds in dimension 0$",
         ):
-            interp_err(sample), wanted
+            interp_err(sample)
 
         # check point with NaN in first direction
         x0[0] = np.nan
         sample = np.asarray([x0])
-        wanted = np.asarray([np.nan])
+        wanted = np.asarray([np.nan], dtype=promoted_dtype)
         result = interp_fill(sample)
-        np.testing.assert_array_equal(result, wanted)
-
+        xp_assert_equal(result, wanted)
         with pytest.raises(
             ValueError,
             match="^One of the requested xi is out of bounds in dimension 0$",
         ):
-            interp_err(sample), wanted
+            interp_err(sample)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
