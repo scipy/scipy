@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 import numpy as np
@@ -92,8 +94,8 @@ class BaseMixin:
 
     def test_np_matrix(self):
         # gh-10711
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(PendingDeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
             A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
         k = np.array([20, 15])
         lsq_linear(A, k)

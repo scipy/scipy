@@ -505,6 +505,9 @@ def _sum_finite(x):
 # Frozen RV class
 class rv_frozen:
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds

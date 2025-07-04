@@ -1,5 +1,6 @@
 import sys
 import math
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import product
@@ -7,7 +8,6 @@ from math import gcd
 
 import pytest
 from pytest import raises as assert_raises
-from numpy.testing import suppress_warnings
 import numpy as np
 from numpy.exceptions import ComplexWarning
 
@@ -330,8 +330,8 @@ class TestConvolve2d:
 
     def test_fillvalue_errors(self, xp):
         msg = "could not cast `fillvalue` directly to the output "
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(ComplexWarning, "Casting complex values")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Casting complex values", ComplexWarning)
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
@@ -3110,13 +3110,15 @@ class TestDecimate:
         assert d1.shape == (30, 15)
 
     def test_phaseshift_FIR(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Badly conditioned filter", BadCoefficients)
             self._test_phaseshift(method='fir', zero_phase=False)
 
     def test_zero_phase_FIR(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Badly conditioned filter", BadCoefficients)
             self._test_phaseshift(method='fir', zero_phase=True)
 
     def test_phaseshift_IIR(self, xp):

@@ -1,4 +1,6 @@
 import contextlib
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
@@ -79,10 +81,11 @@ class TestGetSet1D:
     def test_setelement(self, spcreator):
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             A[0] = dtype(0)
             A[1] = dtype(3)
@@ -115,10 +118,11 @@ class TestSlicingAndFancy1D:
     def test_set_array_index(self, spcreator):
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             A[np.array(6)] = dtype(4.0)  # scalar index
             A[np.array(6)] = dtype(2.0)  # overwrite with scalar index
@@ -208,10 +212,11 @@ class TestSlicingAndFancy1D:
     def test_slice_scalar_assign(self, spcreator):
         A = spcreator((5,))
         B = np.zeros((5,))
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             for C in [A, B]:
                 C[0:1] = 1
@@ -226,10 +231,11 @@ class TestSlicingAndFancy1D:
 
         for idx in [slice(3), slice(None, 10, 4), slice(5, -2)]:
             A = spcreator(shape)
-            with np.testing.suppress_warnings() as sup:
-                sup.filter(
-                    SparseEfficiencyWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
                     "Changing the sparsity structure of .* is expensive",
+                    SparseEfficiencyWarning,
                 )
                 A[idx] = 1
             B = np.zeros(shape)
@@ -240,10 +246,11 @@ class TestSlicingAndFancy1D:
     def test_self_self_assignment(self, spcreator):
         # Tests whether a row of one lil_matrix can be assigned to another.
         B = spcreator((5,))
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             B[0] = 2
             B[1] = 0
@@ -267,10 +274,11 @@ class TestSlicingAndFancy1D:
         expected = np.array([10, 0, 14, 0])
         block = [2, 1]
 
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             B[0] = 5
             B[2] = 7
@@ -289,10 +297,11 @@ class TestSlicingAndFancy1D:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   np.array(-1), np.int8(-3)]
 
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             for j, a in enumerate(slices):
                 A[a] = j
@@ -542,10 +551,11 @@ class TestSlicingAndFancy1D:
                      slice(5, -2), slice(2, 5)]:
             A = spcreator(M)
             B = np.zeros(M)
-            with np.testing.suppress_warnings() as sup:
-                sup.filter(
-                    SparseEfficiencyWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
                     "Changing the sparsity structure of .* is expensive",
+                    SparseEfficiencyWarning,
                 )
                 B[j] = 1
                 with check_remains_sorted(A):
@@ -560,10 +570,11 @@ class TestSlicingAndFancy1D:
         i1 = (0, 1, 2)
         i2 = np.array(i0)
 
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "Changing the sparsity structure of .* is expensive",
+                SparseEfficiencyWarning,
             )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
