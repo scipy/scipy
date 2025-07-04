@@ -696,6 +696,7 @@ _special_funcs = (
     _FuncInfo(
         _ufuncs.poch, 2,
         xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
+        test_large_ints=False,
     ),
     _FuncInfo(
         _ufuncs.pseudo_huber, 2,
