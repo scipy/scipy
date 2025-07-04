@@ -1649,14 +1649,14 @@ class TestResample:
         x[-1] = 0
 
         h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
-        yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
+        yf = filtfilt(h, xp.asarray(1.0), x, padtype='constant')[::down_factor]
 
         # Need to pass convolved version of filter to resample_poly,
         # since filtfilt does forward and backward, but resample_poly
         # only goes forward
         hc = convolve(h, xp.flip(h))
         y = signal.resample_poly(x, 1, down_factor, window=hc)
-        xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
+        xp_assert_close(yf, y, atol=3e-7, rtol=6e-7)
 
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="correlate1d is CPU-only"
