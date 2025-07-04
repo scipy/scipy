@@ -3,7 +3,6 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_array_equal, assert_warns
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
@@ -370,17 +369,17 @@ class TestRegularGridInterpolator:
         sample = np.asarray([x0])
         wanted = np.asarray([val])
         result = interp_fill(sample)
-        assert_array_equal(result, wanted)
+        np.testing.assert_array_equal(result, wanted)
 
         result = interp_err(sample)
-        assert_array_equal(result, wanted)
+        np.testing.assert_array_equal(result, wanted)
 
         # Check out of bound point along first direction.
         x0[0] += 1
         sample = np.asarray([x0])
         wanted = np.asarray([fill])
         result = interp_fill(sample)
-        assert_array_equal(result, wanted)
+        np.testing.assert_array_equal(result, wanted)
 
         with pytest.raises(
             ValueError,
@@ -393,7 +392,7 @@ class TestRegularGridInterpolator:
         sample = np.asarray([x0])
         wanted = np.asarray([np.nan])
         result = interp_fill(sample)
-        assert_array_equal(result, wanted)
+        np.testing.assert_array_equal(result, wanted)
 
         with pytest.raises(
             ValueError,
@@ -1055,7 +1054,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(ComplexWarning):
+        with pytest.warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(

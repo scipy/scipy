@@ -10,11 +10,13 @@ import itertools
 import inspect
 import platform
 import threading
+import warnings
+
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
-                           assert_no_warnings, assert_warns,
-                           assert_array_less, suppress_warnings)
+                           assert_no_warnings,
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 
@@ -788,7 +790,7 @@ def test_bounded_powell_outsidebounds():
     x0 = [-4, .5, -.8]
 
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
     assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
     assert_equal(res.success, True)
@@ -800,7 +802,7 @@ def test_bounded_powell_outsidebounds():
     # parameter cannot be updated!
     direc = [[0, 0, 0], [0, 1, 0], [0, 0, 1]]
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0,
                                 bounds=bounds, method="Powell",
                                 options={'direc': direc})
@@ -879,7 +881,7 @@ def test_bounded_powell_vs_powell():
     x0 = [45.46254415, -26.52351498, 31.74830248]
     bounds = [(-2, 5)] * 3
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res_bounded_powell = optimize.minimize(func, x0,
                                                bounds=bounds,
                                                method="Powell")
@@ -1126,7 +1128,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
-        opts = {'disp': False, 'maxiter': self.maxiter}
+        opts = {'maxiter': self.maxiter}
         r = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
                               options=opts)
@@ -1156,7 +1158,7 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
         v0 = None
         for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
-            opts = {'disp': False, 'maxiter': self.maxiter, 'ftol': tol}
+            opts = {'maxiter': self.maxiter, 'ftol': tol}
             sol = optimize.minimize(self.func, self.startparams,
                                     method='L-BFGS-B', jac=self.grad,
                                     options=opts)
@@ -1173,7 +1175,7 @@ class TestOptimizeSimple(CheckOptimize):
         # check that the maxls is passed down to the Fortran routine
         sol = optimize.minimize(optimize.rosen, np.array([-1.2, 1.0]),
                                 method='L-BFGS-B', jac=optimize.rosen_der,
-                                options={'disp': False, 'maxls': 1})
+                                options={'maxls': 1})
         assert not sol.success
 
     def test_minimize_l_bfgs_b_maxfun_interruption(self):
@@ -1596,10 +1598,12 @@ class TestOptimizeSimple(CheckOptimize):
         hesss = [hess] if needs_hess else [hess, None]
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
@@ -1622,9 +1626,9 @@ class TestOptimizeSimple(CheckOptimize):
                       'dogleg'):
             hess = self.hess
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
             # for trust-constr
-            sup.filter(UserWarning, "delta_grad == 0.*")
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
             optimize.minimize(self.func, self.startparams,
                               method=method, jac=jac, hess=hess)
 
@@ -2048,10 +2052,12 @@ class TestOptimizeScalar:
         bracket = (-1, 0, 1)
         bounds = (-1, 1)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             count = [0]
 
@@ -2568,10 +2574,10 @@ class TestOptimizeResultAttributes:
                       'message']
         skip = {'cobyla': ['nit']}
         for method in MINIMIZE_METHODS:
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
                            ("Method .+ does not use (gradient|Hessian.*)"
-                            " information"))
+                            " information"), RuntimeWarning)
                 res = optimize.minimize(self.func, self.x0, method=method,
                                         jac=self.jac, hess=self.hess,
                                         hessp=self.hessp)

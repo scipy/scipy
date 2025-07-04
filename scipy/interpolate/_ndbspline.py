@@ -4,6 +4,7 @@ import operator
 import numpy as np
 
 from math import prod
+from types import GenericAlias
 
 from . import _dierckx  # type: ignore[attr-defined]
 
@@ -74,6 +75,10 @@ class NdBSpline:
     NdPPoly : an N-dimensional piecewise tensor product polynomial
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, t, c, k, *, extrapolate=None):
         self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
 
@@ -350,7 +355,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
         The points defining the regular grid in N dimensions. The points in
         each dimension (i.e. every element of the `points` tuple) must be
-        strictly ascending or descending.      
+        strictly ascending or descending.
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
     k : int, optional
@@ -412,4 +417,3 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     coef = solver(matr, vals, **solver_args)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
     return NdBSpline(t, coef, k)
-

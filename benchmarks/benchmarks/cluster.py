@@ -1,5 +1,6 @@
+import warnings
+
 import numpy as np
-from numpy.testing import suppress_warnings
 
 from .common import Benchmark, safe_import
 
@@ -42,10 +43,12 @@ class KMeans2(Benchmark):
         self.obs = rnd.rand(1000, 5)
 
     def time_kmeans2(self, k, init):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmeans with a "
-                       "different initialization")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                ("One of the clusters is empty. Re-run kmeans with a "
+                 "different initialization"),
+                UserWarning)
             kmeans2(self.obs, k, minit=init, iter=10)
 
 
