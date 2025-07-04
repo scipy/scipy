@@ -133,12 +133,12 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
 @pytest.mark.parametrize(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
-    paramtypes = nfo.paramtypes
-    if paramtypes is None:
-        paramtypes = ('real', ) * nfo.n_args
+    argtypes = nfo.argtypes
+    if argtypes is None:
+        argtypes = ('real', ) * nfo.n_args
         dtypes = (base_dtype, ) * nfo.n_args
     else:
-        dtypes = tuple('int64' if type_ == "int" else base_dtype for type_ in paramtypes)
+        dtypes = tuple('int64' if type_ == "int" else base_dtype for type_ in argtypes)
 
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes)
@@ -173,7 +173,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     shapes = [shape if not cond else None for shape, cond in zip(shapes, no_shape)]
 
-    for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, paramtypes, shapes):
+    for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, argtypes, shapes):
         if 'int' in dtype and test_large_ints:
             iinfo = np.iinfo(dtype_np)
             rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
@@ -322,23 +322,23 @@ def test_doc(func):
 
 
 @pytest.mark.parametrize(
-    'func,n_args,paramtypes,is_ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.paramtypes, nfo.is_ufunc)
+    'func,n_args,argtypes,is_ufunc',
+    [(nfo.wrapper, nfo.n_args, nfo.argtypes, nfo.is_ufunc)
      for nfo in _special_funcs]
 )
-def test_ufunc_kwargs(func, n_args, paramtypes, is_ufunc):
+def test_ufunc_kwargs(func, n_args, argtypes, is_ufunc):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
     if not is_ufunc:
         pytest.skip(f"{func.__name__} is not a ufunc.")
-    if paramtypes is None:
-        paramtypes = ("real", ) * n_args
+    if argtypes is None:
+        argtypes = ("real", ) * n_args
     # out=
     args = [
         np.asarray([.1, .2]) if type_ == "real"
         else np.asarray([1, 2])
-        for type_ in paramtypes
+        for type_ in argtypes
     ]
     out = np.empty(2)
     y = func(*args, out=out)
