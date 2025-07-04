@@ -369,30 +369,37 @@ class TestRegularGridInterpolator:
         # Check interpolator returns correct value for valid sample.
         sample = np.asarray([x0])
         wanted = np.asarray([val])
-        assert_array_equal(interp_fill(sample), wanted)
-        assert_array_equal(interp_err(sample), wanted)
+        result = interp_fill(sample)
+        assert_array_equal(result, wanted)
+
+        result = interp_err(sample)
+        assert_array_equal(result, wanted)
 
         # Check out of bound point along first direction.
         x0[0] += 1
         sample = np.asarray([x0])
         wanted = np.asarray([fill])
-        assert_array_equal(interp_fill(sample), wanted)
+        result = interp_fill(sample)
+        assert_array_equal(result, wanted)
+
         with pytest.raises(
             ValueError,
             match="^One of the requested xi is out of bounds in dimension 0$",
         ):
-            assert_array_equal(interp_err(sample), wanted)
+            interp_err(sample), wanted
 
         # check point with NaN in first direction
         x0[0] = np.nan
         sample = np.asarray([x0])
         wanted = np.asarray([np.nan])
-        assert_array_equal(interp_fill(sample), wanted)
+        result = interp_fill(sample)
+        assert_array_equal(result, wanted)
+
         with pytest.raises(
             ValueError,
             match="^One of the requested xi is out of bounds in dimension 0$",
         ):
-            assert_array_equal(interp_err(sample), wanted)
+            interp_err(sample), wanted
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
