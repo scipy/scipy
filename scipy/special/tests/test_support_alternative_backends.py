@@ -230,7 +230,10 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
 
     rng = np.random.default_rng(984254252920492019)
     iinfo = np.iinfo(np.int64)
-    randint = partial(rng.integers, iinfo.min, iinfo.max + 1)
+    if nfo.test_large_ints:
+        randint = partial(rng.integers, iinfo.min, iinfo.max + 1)
+    else:
+        randint = partial(rng.integers, -20, 21)
     args_np = [
         randint(size=1, dtype=np.int64),
         rng.standard_normal(size=1, dtype=np.float32),
