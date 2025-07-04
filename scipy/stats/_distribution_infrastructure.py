@@ -1,6 +1,7 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+from types import GenericAlias
 import inspect
 import math
 
@@ -217,6 +218,9 @@ class _Domain(ABC):
 
     """
     symbols = {np.inf: r"\infty", -np.inf: r"-\infty", np.pi: r"\pi", -np.pi: r"-\pi"}
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     @abstractmethod
     def contains(self, x):
@@ -590,6 +594,10 @@ class _Parameter(ABC):
         of the parameter.
 
    """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, name, *, domain, symbol=None, typical=None):
         self.name = name
         self.symbol = symbol or name
@@ -4140,6 +4148,8 @@ def _make_distribution_rv_generic(dist):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
                               else [])
         _variable = _x_param
+
+        __class_getitem__ = None
 
         def __repr__(self):
             s = super().__repr__()

@@ -1,3 +1,5 @@
+import warnings
+
 import numpy.testing as npt
 from numpy.testing import assert_allclose
 
@@ -99,9 +101,9 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         if distname in ['zipf', 'betanbinom']:
-            sup.filter(RuntimeWarning)
+            warnings.simplefilter("ignore", RuntimeWarning)
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments

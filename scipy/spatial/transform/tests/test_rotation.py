@@ -882,14 +882,8 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
-    # TODO: Why are we using _as_euler_from_matrix here? As a sanity check? It is not
-    # part of the public API and should not be used anywhere else
-    angles_mat = rotation._as_euler_from_matrix(seq)
     xp_assert_close(angles, angles_quat, atol=0, rtol=1e-12)
-    xp_assert_close(angles, angles_mat, atol=0, rtol=1e-12)
     test_stats(angles_quat - angles, 1e-15, 1e-14)
-    test_stats(angles_mat - angles, 1e-15, 1e-14)
-
 
 
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
@@ -917,12 +911,8 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
-    # TODO: Same as before: Remove _as_euler_from_matrix?
-    angles_mat = rotation._as_euler_from_matrix(seq)
     xp_assert_close(angles, angles_quat, atol=0, rtol=1e-13)
-    xp_assert_close(angles, angles_mat, atol=0, rtol=1e-9)
     test_stats(angles_quat - angles, 1e-16, 1e-14)
-    test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
 @pytest.mark.thread_unsafe
@@ -983,73 +973,6 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
-
-
-@pytest.mark.thread_unsafe
-@pytest.mark.parametrize("seq_tuple", permutations("xyz"))
-@pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
-    # this test makes sure that both algorithms are doing the same choices
-    # in degenerate cases
-
-    # asymmetric axes
-    angles = xp.asarray([
-        [45, 90, 35],
-        [35, -90, 20],
-        [35, 90, 25],
-        [25, -90, 15]])
-
-    seq = "".join(seq_tuple)
-    if intrinsic:
-        # Extrinsic rotation (wrt to global world at lower case
-        # Intrinsic (WRT the object itself) upper case.
-        seq = seq.upper()
-
-    rot = Rotation.from_euler(seq, angles, degrees=True)
-    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-        estimates_quat = rot.as_euler(seq, degrees=True)
-    xp_assert_close(
-        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
-    )
-    xp_assert_close(estimates_matrix[:, 1], estimates_quat[:, 1], atol=0, rtol=1e-7)
-
-    # symmetric axes
-    # Absolute error tolerance must be looser to directly compare the results
-    # from both algorithms, because of numerical loss of precision for the
-    # method _as_euler_from_matrix near a zero angle value
-
-    angles = xp.asarray([
-        [15, 0, 60],
-        [35, 0, 75],
-        [60, 180, 35],
-        [15, -180, 25]])
-
-    idx = angles[:, 1] == 0  # find problematic angles indices
-
-    # Rotation of the form A/B/A are rotation around symmetric axes
-    seq = "".join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-    if intrinsic:
-        # Extrinsic rotation (wrt to global world) at lower case
-        # Intrinsic (WRT the object itself) upper case.
-        seq = seq.upper()
-
-    rot = Rotation.from_euler(seq, angles, degrees=True)
-    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-        estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-        estimates_quat = rot.as_euler(seq, degrees=True)
-    xp_assert_close(
-        estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
-    )
-
-    xp_assert_close(
-        estimates_matrix[~idx, 1], estimates_quat[~idx, 1], atol=0, rtol=1e-7
-    )
-
-    xp_assert_close(
-        estimates_matrix[idx, 1], estimates_quat[idx, 1], atol=1e-6
-    )  # problematic, angles[1] = 0
 
 
 def test_inv(xp):
@@ -2020,6 +1943,20 @@ def test_slerp_call_scalar_time(xp):
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert xp.allclose(delta.magnitude(), 0, atol=1e-16)
+
+
+def test_multiplication(xp):
+    r1 = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
+    r2 = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
+    r3 = r1 * r2
+    assert xp.allclose(r3.as_quat(), xp.asarray([0, 0, 0, 1]))
+    
+    # Check that multiplication with other types fails
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        r1 * 2
+    # Check that __mul__ returns NotImplemented so that other types can implement
+    # __rmul__. See https://github.com/scipy/scipy/issues/21541
+    assert r1.__mul__(1) is NotImplemented
 
 
 def test_multiplication_stability(xp):

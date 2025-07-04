@@ -132,6 +132,7 @@ Available functions
 - :py:func:`~scipy.special.btdtria`::
 
         double btdtria(double, double, double)
+        float btdtria(float, float, float)
 
 - :py:func:`~scipy.special.btdtrib`::
 
@@ -956,11 +957,6 @@ Available functions
         double complex spence(double complex)
         double spence(double)
 
-- :py:func:`~scipy.special.sph_harm`::
-
-        double complex sph_harm(double, double, double, double)
-        double complex sph_harm(long, long, double, double)
-
 - :py:func:`~scipy.special.stdtr`::
 
         double stdtr(double, double)
@@ -1251,9 +1247,6 @@ cdef extern from r"xsf_wrappers.h":
     npy_long special_sph_bessel_k_jac(npy_long, npy_double) nogil
     npy_cdouble special_csph_bessel_k_jac(npy_long, npy_cdouble) nogil
 
-    npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
-    npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
-
     npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
@@ -1404,10 +1397,6 @@ cdef _proto_boxcox_t *_proto_boxcox_t_var = &_func_boxcox
 from ._boxcox cimport boxcox1p as _func_boxcox1p
 ctypedef double _proto_boxcox1p_t(double, double) noexcept nogil
 cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
-
-from ._cdflib_wrappers cimport btdtria as _func_btdtria
-ctypedef double _proto_btdtria_t(double, double, double) noexcept nogil
-cdef _proto_btdtria_t *_proto_btdtria_t_var = &_func_btdtria
 
 from ._cdflib_wrappers cimport btdtrib as _func_btdtrib
 ctypedef double _proto_btdtrib_t(double, double, double) noexcept nogil
@@ -1963,6 +1952,18 @@ cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noe
         else:
             return NAN
 
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.btdtria"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_double)(x0, x1, x2)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
+
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainccinv"""
     if df_number_t is float:
@@ -1990,10 +1991,6 @@ cpdef double boxcox(double x0, double x1) noexcept nogil:
 cpdef double boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox1p"""
     return _func_boxcox1p(x0, x1)
-
-cpdef double btdtria(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtria"""
-    return _func_btdtria(x0, x1, x2)
 
 cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtrib"""
@@ -3534,17 +3531,6 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
             return NAN
         else:
             return NAN
-
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.sph_harm"""
-    if dlp_number_t is double:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm_unsafe(x0, x1, x2, x3))
-    elif dlp_number_t is long:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    elif dlp_number_t is Py_ssize_t:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    else:
-        return NAN
 
 cpdef double stdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""

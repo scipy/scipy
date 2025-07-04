@@ -3,7 +3,6 @@ python_sources = [
   'test__gcutils.py',
   'test__pep440.py',
   'test__testutils.py',
-  'test__threadsafety.py',
   'test__util.py',
   'test_bunch.py',
   'test_ccallback.py',

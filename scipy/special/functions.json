@@ -125,8 +125,9 @@
         }
     },
     "btdtria": {
-        "_cdflib_wrappers.pxd": {
-            "btdtria": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_inva_float": "fff->f",
+            "ibeta_inva_double": "ddd->d"
         }
     },
     "btdtrib": {

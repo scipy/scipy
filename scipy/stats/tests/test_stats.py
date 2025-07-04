@@ -18,8 +18,7 @@ import contextlib
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_allclose, suppress_warnings,
-                           assert_array_less)
+                           assert_allclose, assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 from numpy import array, arange, float32, power
@@ -196,8 +195,8 @@ class TestTrimmedStats:
 
         x = np.arange(10.)
         x[9] = np.nan
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "invalid value*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             msg = "The input contains nan values"
             with assert_raises(ValueError, match=msg):
@@ -224,8 +223,9 @@ class TestTrimmedStats:
 
         # check that if a full slice is masked, the output returns a
         # nan instead of a garbage value.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "All-NaN slice encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "All-NaN slice encountered", RuntimeWarning)
             x = xp.reshape(xp.arange(16), (4, 4))
             res = stats.tmax(x, upperlimit=11, axis=1)
             xp_assert_equal(res, xp.asarray([3, 7, 11, np.nan]))
@@ -237,8 +237,8 @@ class TestTrimmedStats:
 
         x = np.arange(10.)
         x[6] = np.nan
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "invalid value*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
             assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
             msg = "The input contains nan values"
             with assert_raises(ValueError, match=msg):
@@ -2822,9 +2822,9 @@ class TestSEM:
                 y = stats.sem(scalar_testcase)
         else:
             # Other array types can emit a variety of warnings.
-            with np.testing.suppress_warnings() as sup:
-                sup.filter(UserWarning)
-                sup.filter(RuntimeWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                warnings.simplefilter("ignore", RuntimeWarning)
                 y = stats.sem(scalar_testcase)
         assert xp.isnan(y)
 
@@ -3549,9 +3549,10 @@ class TestMoments:
             with pytest.warns(SmallSampleWarning, match="See documentation for..."):
                 test_cases()
         else:
-            with np.testing.suppress_warnings() as sup:  # needed by array_api_strict
-                sup.filter(RuntimeWarning, "Mean of empty slice.")
-                sup.filter(RuntimeWarning, "invalid value")
+            with warnings.catch_warnings():  # needed by array_api_strict
+                warnings.filterwarnings(
+                    "ignore", "Mean of empty slice.", RuntimeWarning)
+                warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
                 test_cases()
 
     def test_nan_policy(self):
@@ -3639,10 +3640,11 @@ class SkewKurtosisTest:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = self.stat_fun(x)
         else:
-            with np.testing.suppress_warnings() as sup:
+            with warnings.catch_warnings():
                 # array_api_strict produces these
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                sup.filter(RuntimeWarning, "invalid value encountered")
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+                warnings.filterwarnings(
+                    "ignore", "invalid value encountered", RuntimeWarning)
                 res = self.stat_fun(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
@@ -3899,9 +3901,10 @@ class TestStudentTest:
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_onesample(self, xp):
-        with suppress_warnings() as sup, \
+        with warnings.catch_warnings(), \
                 np.errstate(invalid="ignore", divide="ignore"):
-            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+            warnings.filterwarnings(
+                "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
             a = xp.asarray(4.) if not is_numpy(xp) else 4.
             t, p = stats.ttest_1samp(a, 3.)
         xp_assert_equal(t, xp.asarray(xp.nan))
@@ -4214,8 +4217,8 @@ class TestPowerDivergence:
                       else (f_obs,))
             num_obs = arrays[0].shape[axis]
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "Mean of empty slice")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
             stat, p = stats.power_divergence(
                                 f_obs, f_exp=f_exp, ddof=ddof,
                                 axis=axis, lambda_=lambda_)
@@ -4741,9 +4744,9 @@ class TestKSTwoSamples:
                       mode='asymp')
         self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021,
                       mode='asymp')
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             message = "ks_2samp: Exact calculation unsuccessful."
-            sup.filter(RuntimeWarning, message)
+            warnings.filterwarnings("ignore", message, RuntimeWarning)
             self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929,
                           mode='exact')
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021,
@@ -4770,9 +4773,9 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984,
                       mode='asymp')
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             message = "ks_2samp: Exact calculation unsuccessful."
-            sup.filter(RuntimeWarning, message)
+            warnings.filterwarnings("ignore", message, RuntimeWarning)
             self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622,
                           mode='exact')
             self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984,
@@ -4847,9 +4850,9 @@ class TestKSTwoSamples:
                       mode='auto')
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             message = "ks_2samp: Exact calculation unsuccessful."
-            sup.filter(RuntimeWarning, message)
+            warnings.filterwarnings("ignore", message, RuntimeWarning)
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673,
                           mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724,
@@ -4948,9 +4951,10 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    with suppress_warnings() as sup, \
+    with warnings.catch_warnings(), \
             np.errstate(invalid="ignore", divide="ignore"):
-        sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+        warnings.filterwarnings(
+            "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
@@ -5085,9 +5089,9 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # The results should be arrays containing nan with shape
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         # first case should warn, second shouldn't?
-        sup.filter(SmallSampleWarning, too_small_nd_not_omit)
+        warnings.filterwarnings("ignore", too_small_nd_not_omit, SmallSampleWarning)
         result = stats.ttest_rel(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
@@ -5301,8 +5305,9 @@ def test_ttest_ind_nan_policy():
 
 def test_ttest_ind_scalar():
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
-        sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+    with warnings.catch_warnings(), np.errstate(invalid="ignore"):
+        warnings.filterwarnings(
+            "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
         t, p = stats.ttest_ind(4., 3.)
     assert np.isnan(t)
     assert np.isnan(p)
@@ -5419,14 +5424,11 @@ class Test_ttest_ind_permutations:
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
 
-@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
-    # for tests that are performed on variations of the t-test such as
-    # permutations and trimming
+    # for tests that are performed on variations of the t-test (e.g. trimmed)
     @pytest.mark.xslow()
-    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
-                                      {'trim': .2}, {}],
-                             ids=["permutations", "trim", "basic"])
+    @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
+                             ids=["trim", "basic"])
     @pytest.mark.parametrize('equal_var', [True, False],
                              ids=['equal_var', 'unequal_var'])
     def test_ttest_many_dims(self, kwds, equal_var):
@@ -5482,10 +5484,10 @@ class Test_ttest_ind_common:
         expected = np.isnan(np.sum(a + b, axis=axis))
         # multidimensional inputs to `t.sf(np.abs(t), df)` with NaNs on some
         # indices throws an warning. See issue gh-13844
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in less_equal")
-            sup.filter(RuntimeWarning, "Precision loss occurred")
+        with warnings.catch_warnings(), np.errstate(invalid="ignore"):
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in less_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", "Precision loss occurred", RuntimeWarning)
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
         p_nans = np.isnan(res.pvalue)
         assert_array_equal(p_nans, expected)
@@ -5876,9 +5878,9 @@ class TestTTestInd:
         # given by the broadcast nonaxis dimensions.
         a = xp.empty((3, 1, 0))
         b = xp.asarray(b, dtype=a.dtype)
-        with np.testing.suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # first case should warn, second shouldn't?
-            sup.filter(SmallSampleWarning, too_small_nd_not_omit)
+            warnings.filterwarnings("ignore", too_small_nd_not_omit, SmallSampleWarning)
             res = stats.ttest_ind(a, b, axis=-1)
         assert isinstance(res, stats._stats_py.TtestResult)
         expected_value = xp.full(expected_shape, fill_value=xp.nan)
@@ -6097,9 +6099,10 @@ class TestDescribe:
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_describe_scalar(self, xp):
-        with suppress_warnings() as sup, \
+        with warnings.catch_warnings(), \
               np.errstate(invalid="ignore", divide="ignore"):
-            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+            warnings.filterwarnings(
+                "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
             n, mm, m, v, sk, kurt = stats.describe(xp.asarray(4.)[()])
         assert n == 1
         xp_assert_equal(mm[0], xp.asarray(4.0))
@@ -8321,8 +8324,7 @@ class TestWassersteinDistance:
         assert_equal(
             stats.wasserstein_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "invalid value*")
+        with pytest.warns(RuntimeWarning, match="invalid value"):
             assert_equal(
                 stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
@@ -8388,8 +8390,7 @@ class TestEnergyDistance:
         assert_equal(
             stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "invalid value*")
+        with pytest.warns(RuntimeWarning, match="invalid value"):
             assert_equal(
                 stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
@@ -9321,8 +9322,9 @@ class TestXP_Var:
         res = _xp_var(x_xp, axis=axis, keepdims=keepdims, correction=correction,
                       nan_policy=nan_policy)
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
             ref = var_ref(x, axis=axis, keepdims=keepdims, ddof=correction)
 
         xp_assert_close(res, xp.asarray(ref))

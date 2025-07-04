@@ -1,4 +1,5 @@
 import itertools
+import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -6,7 +7,7 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal, suppress_warnings)
+                           assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
 
@@ -1698,11 +1699,11 @@ class TestLstsq:
                                       err_msg=f"driver: {lapack_driver}")
 
     def test_check_finite(self):
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # On (some) OSX this tests triggers a warning (gh-7538)
-            sup.filter(RuntimeWarning,
-                       "internal gelsd driver lwork query error,.*"
-                       "Falling back to 'gelss' driver.")
+            warnings.filterwarnings("ignore",
+                                    "internal gelsd driver lwork query error,.*"
+                                    "Falling back to 'gelss' driver.", RuntimeWarning)
 
         at = np.array(((1, 20), (-30, 4)))
         for dtype, bt, lapack_driver, overwrite, check_finite in \
