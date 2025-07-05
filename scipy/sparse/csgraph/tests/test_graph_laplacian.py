@@ -77,7 +77,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True, variant='repelling'
     assert_allclose(laplacian, sp_laplacian.toarray())
 
     for tested in [laplacian, sp_laplacian.toarray()]:
-        if not normed:
+        if not normed and variant != 'opposing':
             assert_allclose(tested.sum(axis=0), np.zeros(n_nodes))
         assert_allclose(tested.T, tested)
         assert_allclose(tested, explicit_laplacian)
