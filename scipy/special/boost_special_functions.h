@@ -309,6 +309,49 @@ ibeta_inva_double(double p, double b, double x)
 
 template<typename Real>
 static inline
+Real ibeta_invb_wrap(Real a, Real p, Real x)
+{
+    Real y;
+
+    if (std::isnan(p) || std::isnan(a) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((a <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_invb(a, x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("btdtrib", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_invb_float(float a, float p, float x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
+
+double
+ibeta_invb_double(double a, double p, double x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
+
+template<typename Real>
+static inline
 Real ibetac_inv_wrap(Real a, Real b, Real p)
 {
     Real y;
