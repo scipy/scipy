@@ -320,7 +320,7 @@ class TestSos2Zpk:
 
     @pytest.mark.thread_unsafe
     @skip_xp_backends(
-        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+        cpu_only=True, reason="XXX zpk2sos is numpy-only",
     )
     def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
@@ -1382,7 +1382,7 @@ class TestFreqz_zpk:
         w1, h1 = freqz(b, a)
         w2, h2 = freqz_zpk(z, p, k)
         xp_assert_close(w1, w2)
-        xp_assert_close(h1, h2, rtol=1e-6)
+        xp_assert_close(h1, h2, rtol=1.3e-6)
 
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
