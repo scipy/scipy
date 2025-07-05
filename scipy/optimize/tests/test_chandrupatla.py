@@ -6,7 +6,8 @@ from copy import deepcopy
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import array_namespace, is_cupy, is_numpy, xp_ravel, xp_size
+from scipy._lib._array_api import (array_namespace, is_cupy, is_numpy, xp_ravel,
+                                   xp_size, make_xp_test_case)
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
@@ -185,11 +186,7 @@ cases = [
 ]
 
 
-@pytest.mark.skip_xp_backends('dask.array', reason='no take_along_axis')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
+@make_xp_test_case(find_minimum)
 class TestChandrupatlaMinimize:
 
     def f(self, x, loc):
@@ -545,11 +542,7 @@ class TestChandrupatlaMinimize:
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
 
-@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
+@make_xp_test_case(find_root)
 class TestFindRoot:
 
     def f(self, q, p):
