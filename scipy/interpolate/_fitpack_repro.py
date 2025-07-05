@@ -859,7 +859,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
 
     Parameters
     ----------
-    x : array_like, shape (m, ndim)
+    x : array_like, shape (ndim, m)
         Sampled data points representing the curve in ``ndim`` dimensions.
         The typical use is a list of 1D arrays, each of length ``m``.
     w : array_like, shape(m,), optional
