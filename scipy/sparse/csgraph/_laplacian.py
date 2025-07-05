@@ -560,7 +560,10 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
 
     if variant == "unsigned":
         # Discard the sign of edge weights.
-        m = np.abs(m)
+        if copy:
+            m = np.abs(m)
+        else:
+            np.abs(m.data, out=m.data)
 
     if variant == "repelling" or variant == "unsigned":
         if symmetrized:
