@@ -3,7 +3,6 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_warns
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
@@ -989,7 +988,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(ComplexWarning):
+        with pytest.warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(

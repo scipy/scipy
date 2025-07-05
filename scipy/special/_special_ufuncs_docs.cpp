@@ -338,7 +338,7 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
+    .. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
@@ -1035,7 +1035,7 @@ const char *ellipkm1_doc = R"(
 
     This function is defined as
 
-    .. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(p) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     where `m = 1 - p`.
 
@@ -1065,14 +1065,14 @@ const char *ellipkm1_doc = R"(
 
     For ``p <= 1``, computation uses the approximation,
 
-    .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
+    .. math:: K(p) \approx P(p) - \log(p) Q(p)
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  The
     argument `p` is used internally rather than `m` so that the logarithmic
     singularity at ``m = 1`` will be shifted to the origin; this preserves
     maximum accuracy.  For ``p > 1``, the identity
 
-    .. math:: K(p) = K(1/p)/\\sqrt(p)
+    .. math:: K(p) = K(1/p)/\sqrt{p}
 
     is used.
 
@@ -1231,7 +1231,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
+        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.

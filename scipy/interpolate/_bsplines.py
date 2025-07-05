@@ -146,7 +146,6 @@ class BSpline:
 
     Examples
     --------
-
     Translating the recursive definition of B-splines into Python code, we have:
 
     >>> def B(x, k, i, t):
@@ -304,7 +303,6 @@ class BSpline:
 
         Examples
         --------
-
         Construct a cubic B-spline:
 
         >>> import numpy as np
@@ -1400,7 +1398,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
-           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
+          equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
           equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
         * ``"not-a-knot"`` (default): The first and second segments are the
@@ -1431,7 +1429,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Examples
     --------
-
     Use cubic interpolation on Chebyshev nodes:
 
     >>> import numpy as np
