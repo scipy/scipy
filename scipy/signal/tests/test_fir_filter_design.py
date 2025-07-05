@@ -437,9 +437,8 @@ class TestFirwin2:
         dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2], flip(-taps[ntaps // 2:]), **dec)
 
-        freqs, response = freqz(np.asarray(taps), worN=2048)    # XXX convert freqz
-        assert_array_almost_equal(abs(xp.asarray(response)),
-                                  xp.asarray(freqs / np.pi), decimal=4)
+        freqs, response = freqz(taps, worN=2048)
+        assert_array_almost_equal(xp.abs(response), freqs / xp.pi, decimal=4)
 
     @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test06(self, xp):
@@ -457,12 +456,11 @@ class TestFirwin2:
                                   flip(-taps[ntaps // 2 + 1:]), **dec
         )
 
-        freqs, response1 = freqz(np.asarray(taps), worN=2048)  # XXX convert freqz
-        response1 = xp.asarray(response1)
+        freqs, response1 = freqz(taps, worN=2048)
         response2 = xp.asarray(
             np.interp(np.asarray(freqs) / np.pi, np.asarray(freq), np.asarray(gain))
         )
-        assert_array_almost_equal(abs(response1), response2, decimal=3)
+        assert_array_almost_equal(xp.abs(response1), response2, decimal=3)
 
     def test_fs_nyq(self, xp):
         taps1 = firwin2(80, xp.asarray([0.0, 0.5, 1.0]), xp.asarray([1.0, 1.0, 0.0]))
@@ -587,7 +585,7 @@ class TestFirls:
         assert_array_almost_equal(h[:midx],  flip(h[midx+1:])) # h[:-midx-1:-1])
 
         # make sure the center tap is 0.5
-        assert math.isclose(h[midx], 0.5, abs_tol=1e-8) 
+        assert math.isclose(h[midx], 0.5, abs_tol=1e-8)
 
         # For halfband symmetric, odd coefficients (except the center)
         # should be zero (really small)
@@ -649,8 +647,7 @@ class TestFirls:
     def test_rank_deficient(self, xp):
         # solve() runs but warns (only sometimes, so here we don't use match)
         x = firls(21, xp.asarray([0, 0.1, 0.9, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(np.asarray(x), fs=2.)
-        w, h = map(xp.asarray, (w, h))   # XXX convert freqz
+        w, h = freqz(x, fs=2.)
         absh2 = xp.abs(h[:2])
         xp_assert_close(absh2, xp.ones_like(absh2), atol=1e-5)
         absh2 = xp.abs(h[-2:])
@@ -659,8 +656,7 @@ class TestFirls:
         # filters, but using shorter ones is faster computationally and
         # the idea is the same)
         x = firls(101, xp.asarray([0, 0.01, 0.99, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(np.asarray(x), fs=2.)
-        w, h = map(xp.asarray, (w, h))   # XXX convert freqz
+        w, h = freqz(x, fs=2.)
         mask = xp.asarray(w < 0.01)
         h = xp.asarray(h)
         assert xp.sum(xp.astype(mask, xp.int64)) > 3
@@ -812,8 +808,8 @@ class Testfirwin_2d:
         center = hsize[0] // 2
         for i in range(hsize[0]):
             for j in range(hsize[1]):
-                xp_assert_close(taps[i, j], 
-                                taps[center - (i - center), center - (j - center)], 
+                xp_assert_close(taps[i, j],
+                                taps[center - (i - center), center - (j - center)],
                                 rtol=1e-5)
 
     def test_edge_case_circular(self):

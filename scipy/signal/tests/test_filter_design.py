@@ -321,15 +321,13 @@ class TestSos2Zpk:
     @pytest.mark.thread_unsafe
     def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
-        sos = butter(3, 0.1, output='sos')
-        sos = xp.asarray(sos)   # XXX convert butter
+        sos = butter(3, xp.asarray(0.1), output='sos')
         z, p, k = sos2zpk(sos)
         assert z.shape[0] == 4
         assert p.shape[0] == 4
 
-        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
-                    output='sos')
-        xp = xp.asarray(sos)
+        sos = butter(12, xp.asarray([5., 30.]), 'bandpass', fs=1200., analog=False,
+                     output='sos')
         with pytest.warns(BadCoefficients, match='Badly conditioned'):
             z, p, k = sos2zpk(sos)
         assert z.shape[0] == 24
@@ -705,11 +703,8 @@ class TestFreqs_zpk:
 
     @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
     def test_vs_freqs(self, xp):
-        b, a = cheby1(4, 5, 100, analog=True, output='ba')
-        z, p, k = cheby1(4, 5, 100, analog=True, output='zpk')
-
-        b, a = map(xp.asarray, (b, a))    # XXX convert cheby1
-        z, p = map(xp.asarray, (z, p))
+        b, a = cheby1(4, 5, xp.asarray(100.), analog=True, output='ba')
+        z, p, k = cheby1(4, 5, xp.asarray(100.), analog=True, output='zpk')
 
         w1, h1 = freqs(b, a)
         w2, h2 = freqs_zpk(z, p, k)
@@ -1370,12 +1365,10 @@ class TestFreqz_zpk:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(8.0) / 8)
         assert_array_almost_equal(h, xp.ones(8))
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_vs_freqz(self, xp):
-        b, a = cheby1(4, 5, 0.5, analog=False, output='ba')
-        z, p, k = cheby1(4, 5, 0.5, analog=False, output='zpk')
-
-        b, a = map(xp.asarray, (b, a))  # XXX convert cheby1
-        z, p = map(xp.asarray, (z, p))
+        b, a = cheby1(4, 5, xp.asarray(0.5), analog=False, output='ba')
+        z, p, k = cheby1(4, 5, xp.asarray(0.5), analog=False, output='zpk')
 
         w1, h1 = freqz(b, a)
         w2, h2 = freqz_zpk(z, p, k)
