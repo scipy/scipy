@@ -2879,7 +2879,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
-            wo =xp.sqrt(warped[0] * warped[1])
+            wo = xp.sqrt(warped[0] * warped[1])
         except IndexError as e:
             raise ValueError('Wn must specify start and stop frequencies for '
                              'bandpass or bandstop filter') from e

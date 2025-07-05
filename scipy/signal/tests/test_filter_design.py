@@ -319,6 +319,9 @@ class TestSos2Zpk:
         assert k2 == k
 
     @pytest.mark.thread_unsafe
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+    )
     def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
         sos = butter(3, xp.asarray(0.1), output='sos')
@@ -702,6 +705,9 @@ class TestFreqs_zpk:
         assert_array_almost_equal(w, expected_w)
 
     @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
+    )
     def test_vs_freqs(self, xp):
         b, a = cheby1(4, 5, xp.asarray(100.), analog=True, output='ba')
         z, p, k = cheby1(4, 5, xp.asarray(100.), analog=True, output='zpk')
@@ -1366,6 +1372,9 @@ class TestFreqz_zpk:
         assert_array_almost_equal(h, xp.ones(8))
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
+    )
     def test_vs_freqz(self, xp):
         b, a = cheby1(4, 5, xp.asarray(0.5), analog=False, output='ba')
         z, p, k = cheby1(4, 5, xp.asarray(0.5), analog=False, output='zpk')
