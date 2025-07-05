@@ -89,8 +89,11 @@ def test_symmetric_graph_laplacian():
         'np.ones((7, 7))',
         'np.eye(19)',
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4))',
+        'sparse.diags([-2, 2, 2, -2], [-2, -1, 1, 2], shape=(3, 3))',
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray()',
+        'sparse.diags([-2, 2, 2, -2], [-2, -1, 1, 2], shape=(3, 3)).todense()',
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).todense()',
+        'sparse.diags([-2, 2, 2, -2], [-2, -1, 1, 2], shape=(3, 3)).todense()',
         'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
     )
     for mat in symmetric_mats:
