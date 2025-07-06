@@ -63,7 +63,7 @@ _dask_reason = 'boolean indexing assignment'
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
-                                ('dask.array', _dask_reason)])
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
@@ -717,7 +717,7 @@ def _derivative_weights(work, n, xp):
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
-                                ('dask.array', _dask_reason)])
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
              step_factor=2.0, step_direction=0):
     r"""Evaluate the Jacobian of a function numerically.
@@ -947,7 +947,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
 
 
 @xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
-                                ('dask.array', _dask_reason)])
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def hessian(f, x, *, tolerances=None, maxiter=10,
             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Hessian of a function numerically.
