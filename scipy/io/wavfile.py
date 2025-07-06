@@ -25,6 +25,12 @@ __all__ = [
 
 
 class WavFileWarning(UserWarning):
+    """
+    Warning issued when a problem is encountered while reading or writing WAV files.
+
+    This warning typically indicates unusual file formatting, such as an unexpected
+    chunk size, unsupported sample width, or nonstandard file headers.
+    """
     pass
 
 
