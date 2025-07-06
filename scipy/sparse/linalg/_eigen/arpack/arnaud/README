@@ -23,13 +23,13 @@ the program with its in/out arguments to signal in what stage the algorithm
 is and what it needs. Then user modifies the arguments and calls again with
 the necessary information. Thus the state of the whole program is sent back
 and forth through in-place modified arguments. On top of this, ARPACK also
-uses lots of variables through the Fortran's dreadful use of SAVE attribute
-(similar to that of C language STATIC keyword inside a function body) that
-persists the variable values across consecutive calls. Instead we move all
-those variables into the reverse communication layer by a C-struct bridge and
-for array arguments pointers that are provided by the user to make modifications
+uses lots of variables through Fortran's dreadful use of the SAVE attribute
+(similar to that of the C language STATIC keyword inside a function body) that
+persists the variable values across consecutive calls. Instead, we move all of
+those variables into the reverse communication layer by a C-struct bridge and,
+for array arguments, pointers that are provided by the user to make modifications
 in-place without any alloc/free. This struct bridge also allows for reentrancy
-and avoids the issues that come with thread safety.
+and avoids issues that prevent thread safety.
 
 Compared to the original Fortran code, random number generation is now delegated
 to the user side to allow for seed control, custom generators and replicable runs.
@@ -41,7 +41,7 @@ Usage
 -----
 
 Similar to ARPACK F77 routines, Arnaud uses a reverse-communication scheme.
-After creating an instance of an Arnaud struct (single or double precision). The
+After creating an instance of an Arnaud struct (single or double precision), the
 relevant functions can be called within a loop until success or an error. An example
 pseudo-code of a double precision non-symmetric Arnoldi step is as follows;
 
