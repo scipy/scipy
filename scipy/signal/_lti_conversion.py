@@ -8,10 +8,10 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
-from ._filter_design import tf2zpk, zpk2tf, normalize
+from ._filter_design import tf2zpk, zpk2tf, zpk2sos, normalize
 
 
-__all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
+__all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'sos2ss', 'zpk2ss', 'ss2zpk',
            'cont2discrete']
 
 
@@ -282,6 +282,115 @@ def ss2tf(A, B, C, D, input=0):
     return num, den
 
 
+def _sscascade(sslist):
+
+    # The cascaded state-space representation can be constructed as block
+    # matrices of the following form (example for 4 sub-systems):
+    # A = [                A1 ,              ,         ,    ]
+    #     [           B2 @ C1 ,           A2 ,         ,    ]
+    #     [      B3 @ D2 @ C1 ,      B3 @ C2 ,      A3 ,    ]
+    #     [ B4 @ D3 @ D2 @ C1 , B4 @ D3 @ C2 , B4 @ C3 , A4 ]
+    # B = [                B1 ]
+    #     [           B2 @ D1 ]
+    #     [      B3 @ D2 @ D1 ]
+    #     [ B4 @ D3 @ D2 @ D1 ]
+    # C = [ D4 @ D3 @ D2 @ C1 , D4 @ D3 @ C2 , D4 @ C3 , C4 ]
+    # D = [ D4 @ D3 @ D2 @ D1 ]
+
+    # normalize state-space representation list
+    sslist = [abcd_normalize(*ss) for ss in sslist]
+
+    # check consistency of number of inputs/outputs between stages
+    for i in range(len(sslist) - 1):
+        n1 = sslist[i][3].shape[0]
+        n2 = sslist[i + 1][3].shape[1]
+        assert n1 == n2, f'Input/output mismatch: Stage {i} has {n1} outputs, stage {i + 1} has {n2} inputs'
+
+    # get number of inputs and number of outputs
+    ni = sslist[0][3].shape[1]
+    no = sslist[-1][3].shape[0]
+
+    # get number of states per stage, and calculate cumulative sum
+    ns = np.array([ss[0].shape[0] for ss in sslist])
+    nsc = np.r_[0, np.cumsum(ns)]
+
+    # construct A
+    A = np.zeros((nsc[-1], nsc[-1]))
+    for i in range(len(sslist)):
+        sl1 = np.s_[nsc[i] : nsc[i + 1]]
+        A[sl1, sl1] = sslist[i][0]
+        temp = np.eye(sslist[i][3].shape[0])
+        for j in range(i + 1, len(sslist)):
+            sl2 = np.s_[nsc[j] : nsc[j + 1]]
+            A[sl2, sl1] = sslist[j][1] @ temp @ sslist[i][2]
+            if j != len(sslist) - 1:
+                temp = sslist[j][3] @ temp
+
+    # construct B
+    B = np.zeros((nsc[-1], ni))
+    temp = np.eye(ni)
+    for i in range(len(sslist)):
+        sl = np.s_[nsc[i] : nsc[i + 1]]
+        B[sl, :] = sslist[i][1] @ temp
+        if i != len(sslist) - 1:
+            temp = sslist[i][3] @ temp
+
+    # construct C and D
+    C = np.zeros((no, nsc[-1]))
+    temp = np.eye(no)
+    for i in reversed(range(len(sslist))):
+        sl = np.s_[nsc[i] : nsc[i + 1]]
+        C[:, sl] = temp @ sslist[i][2]
+        temp = temp @ sslist[i][3]
+    D = temp
+
+    return (A, B, C, D)
+
+
+def sos2ss(sos):
+    r"""Second-order sections to state-space representation.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        specification.
+
+    Returns
+    -------
+    A, B, C, D : ndarray
+        State space representation of the system.
+
+    """
+    sos = np.asarray(sos, dtype=float)
+    if sos.size == 0:
+        return (np.zeros((0, 0)), np.zeros((0, 1)),
+                np.zeros((1, 0)), np.ones((1, 1)))
+    if sos.ndim != 2 or sos.shape[1] != 6:
+        raise ValueError('Invalid SOS format')
+    sslist = []
+    for row in sos[:: -1]:
+        if row[3] == 0:
+            # first order section
+            if row[0] != 0 or row[4] != 1:
+                raise ValueError('Invalid SOS format')
+            A = np.array([[-row[5]]])
+            B = np.array([[1]])
+            C = np.array([[row[2] - row[5] * row[1]]])
+            D = np.array([[row[1]]])
+        else:
+            # second order section
+            if row[3] != 1:
+                raise ValueError('Invalid SOS format')
+            A = np.array([[-row[4], -row[5]], [1, 0]])
+            B = np.array([[1], [0]])
+            C = np.array([[row[1] - row[4] * row[0], row[2] - row[5] * row[0]]])
+            D = np.array([[row[0]]])
+        sslist.append((A, B, C, D))
+    return _sscascade(sslist)
+
+
 def zpk2ss(z, p, k):
     """Zero-pole-gain representation to state-space representation
 
@@ -295,11 +404,15 @@ def zpk2ss(z, p, k):
     Returns
     -------
     A, B, C, D : ndarray
-        State space representation of the system, in controller canonical
-        form.
+        State space representation of the system.
 
     """
-    return tf2ss(*zpk2tf(z, p, k))
+    # Try to guess whether the system is analog or digital. If all poles are in
+    # the left half plane, we assume it is an analog system. If this results in
+    # some digital systems being treated as analog, it just results in slightly
+    # suboptimal pairing of poles and zeros.
+    analog = np.all(p.real <= 0.0)
+    return sos2ss(zpk2sos(z, p, k, pairing='minimal', analog=analog))
 
 
 def ss2zpk(A, B, C, D, input=0):
