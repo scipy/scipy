@@ -767,6 +767,12 @@ class TestFreqz:
         xp_assert_equal(w, xp.asarray([0. , 0.1]))
         xp_assert_equal(h, xp.asarray([1.+0.j, 1.+0.j]))
 
+    def test_gh_23277(self):
+        # backwards compatibility: `w` array must be real, not complex
+        filt = [0.5 + 0.0j, 0.5 + 0.0j]
+        w, _ = freqz(filt, worN=8)
+        assert w.dtype == np.float64
+
     def test_basic(self, xp):
         w, h = freqz(xp.asarray([1.0]), worN=8)
         assert_array_almost_equal(w, xp.pi * xp.arange(8, dtype=w.dtype) / 8.)
