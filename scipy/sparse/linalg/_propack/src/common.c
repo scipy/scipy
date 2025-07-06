@@ -1,8 +1,8 @@
-#include "_common.h"
+#include "common.h"
+#include <float.h>
 
-
-// ============================================================================
-// Random 64 bit integer generator for floating point number purposes based on
+// ==================================================================================
+// Random 64bit integer generator for random floating point number purposes; based on
 // https://prng.di.unimi.it/xoshiro256plus.c
 
 static uint64_t rol64(uint64_t x, int k) {
@@ -49,7 +49,7 @@ float random_float(uint64_t* state) {
     return x.f - 1.0f;
 }
 
-// ============================================================================
+// ==================================================================================
 
 
 void scompute_mu(float* restrict mu, const int j, const float delta, const float eta, int* restrict indices)
@@ -279,7 +279,7 @@ void drefinebounds(const int n, const int k, double* restrict theta, double* res
         {
             if ((pm1 == 1) && (i == k-1))
             {
-                if (fabs(theta[i] - theta[i-pm1) < eps34*(theta[i]))
+                if (fabs(theta[i] - theta[i-pm1]) < eps34*(theta[i]))
                 {
                     if ((bound[i + pm1] > tol) && (bound[i + pm1] > tol))
                     {
@@ -287,7 +287,7 @@ void drefinebounds(const int n, const int k, double* restrict theta, double* res
                         bound[i] = 0.0;
                     }
                 }
-            } 
+            }
         }
     }
     for (int i = 0; i < k; i++)
@@ -295,10 +295,10 @@ void drefinebounds(const int n, const int k, double* restrict theta, double* res
         if ((i < k-1) || (k == n))
         {
             // We cannot compute a reliable value for the gap of the last
-            // Ritz value unless we know it is an approximation to the 
-            // smallest singular value (k.eq.n). In this case we can take the 
-            // distance to the next bigger one as the gap, which can really 
-            // save us from getting stuck on matrices with a single isolated tiny 
+            // Ritz value unless we know it is an approximation to the
+            // smallest singular value (k.eq.n). In this case we can take the
+            // distance to the next bigger one as the gap, which can really
+            // save us from getting stuck on matrices with a single isolated tiny
             // singular value.
             if (i == 0)
             {
