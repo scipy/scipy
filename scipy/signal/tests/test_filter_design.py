@@ -271,6 +271,16 @@ class TestZpk2Tf:
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
+    
+    def test_zpk2tf_with_multi_dimensional_array(self, xp):
+        z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
+        p = xp.asarray([1, 2])
+        k = 1
+        b, a = zpk2tf(z, p, k)
+        b_ref = xp.asarray([[1, -3, 2], [1, -7, 12]])
+        a_ref = xp.asarray([1, -3, 2])
+        xp_assert_equal(b, b_ref)
+        xp_assert_equal(a, a_ref)
 
 
 @skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
