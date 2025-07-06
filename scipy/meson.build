@@ -273,7 +273,37 @@ endif
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
-  blas = dependency(['openblas', 'OpenBLAS'])
+  # Use `required: false` only to improve the error message
+  blas = dependency(['openblas', 'OpenBLAS'], required: false)
+  if not blas.found()
+    _msg_blasnotfound = '''OpenBLAS not found.
+
+SciPy needs a BLAS library. By default it looks for OpenBLAS, you can
+customize this, see http://scipy.github.io/devdocs/building/ for how.
+Please ensure you have a BLAS library installed (use your system package
+manager for this) and try again.
+'''
+
+    # This is what is tested in CI now, so let's start here.
+    if host_machine.cpu_family() in ['x86_64', 'arm64'] and host_machine.system() in ['linux', 'darwin']
+      _msg_blasnotfound += '''
+Alternatively, you can ask to build OpenBLAS itself as part of the SciPy
+build, so you don't have to install an external one, with:
+
+    # `uv` or other installers will work too, the `-Csetup-args=...` part
+    # is what matters here:
+    pip install scipy -Csetup-args=-Dblas=openblas-src
+'''
+    endif
+    error(_msg_blasnotfound)
+  endif
+elif blas_name == 'openblas-src'
+  openblas_subproj = subproject('openblas',
+      default_options: {
+        'build_without_lapack': true,
+        'netlib_lapack_name': 'scipy_lapack',
+      })
+  blas = openblas_subproj.get_variable('openblas_dep')
 elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
@@ -292,10 +322,12 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name in ['scipy-openblas', 'openblas-src']
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
+elif blas_name == 'openblas-src'
+  lapack = openblas_subproj.get_variable('netlib_lapack_dep')
 elif lapack_name == 'openblas'
   lapack = dependency(['openblas', 'OpenBLAS'])
 else
