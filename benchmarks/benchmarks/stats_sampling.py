@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from .common import Benchmark, safe_import
 
@@ -142,8 +144,8 @@ class TransformedDensityRejection(Benchmark):
 
     def setup(self, dist, c):
         self.urng = np.random.default_rng(0xfaad7df1c89e050200dbe258636b3265)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             try:
                 self.rng = sampling.TransformedDensityRejection(
                     dist, c=c, random_state=self.urng
@@ -153,8 +155,8 @@ class TransformedDensityRejection(Benchmark):
                 raise NotImplementedError(f"{dist} not T-concave for c={c}")
 
     def time_tdr_setup(self, dist, c):
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             sampling.TransformedDensityRejection(
                 dist, c=c, random_state=self.urng
             )
@@ -207,8 +209,8 @@ class NumericalInversePolynomial(Benchmark):
 
     def setup(self, dist):
         self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             try:
                 self.rng = sampling.NumericalInversePolynomial(
                     dist, random_state=self.urng
@@ -217,8 +219,8 @@ class NumericalInversePolynomial(Benchmark):
                 raise NotImplementedError(f"setup failed for {dist}")
 
     def time_pinv_setup(self, dist):
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             sampling.NumericalInversePolynomial(
                 dist, random_state=self.urng
             )
@@ -234,8 +236,8 @@ class NumericalInverseHermite(Benchmark):
 
     def setup(self, dist, order):
         self.urng = np.random.default_rng(0xb235b58c1f616c59c18d8568f77d44d1)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             try:
                 self.rng = sampling.NumericalInverseHermite(
                     dist, order=order, random_state=self.urng
@@ -244,8 +246,8 @@ class NumericalInverseHermite(Benchmark):
                 raise NotImplementedError(f"setup failed for {dist}")
 
     def time_hinv_setup(self, dist, order):
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             sampling.NumericalInverseHermite(
                 dist, order=order, random_state=self.urng
             )

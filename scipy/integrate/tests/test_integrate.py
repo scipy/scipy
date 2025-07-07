@@ -8,7 +8,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 
 from numpy.testing import (
     assert_, assert_array_almost_equal,
-    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+    assert_allclose, assert_array_equal, assert_equal)
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
@@ -642,7 +642,8 @@ class ODECheckParameterUse:
         solver.set_integrator(self.solver_name, nsteps=1)
         ic = [1.0, 0.0]
         solver.set_initial_value(ic, 0.0)
-        assert_warns(UserWarning, solver.integrate, pi)
+        with pytest.warns(UserWarning):
+            solver.integrate(pi)
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):

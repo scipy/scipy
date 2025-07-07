@@ -1,6 +1,7 @@
 import itertools
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -378,9 +379,10 @@ class TestEig:
         # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
         # the ordering of eigenvalues also comes out different on different
         # systems depending on who knows what.
-        with np.testing.suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # isclose chokes on inf/nan values
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 

@@ -17,6 +17,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 from inspect import signature
 from difflib import get_close_matches
+from types import GenericAlias
 
 
 __all__ = [
@@ -417,6 +418,9 @@ class Jacobian:
 
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
                  "matmat", "todense", "shape", "dtype"]
@@ -463,7 +467,7 @@ class InverseJacobian:
     ----------
     jacobian : Jacobian
         The Jacobian to invert.
-    
+
     Attributes
     ----------
     shape
@@ -472,6 +476,10 @@ class InverseJacobian:
         Data type of the matrix.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, jacobian):
         self.jacobian = jacobian
         self.matvec = jacobian.solve
@@ -587,6 +595,9 @@ def asjacobian(J):
 #------------------------------------------------------------------------------
 
 class GenericBroyden(Jacobian):
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def setup(self, x0, f0, func):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
@@ -622,6 +633,9 @@ class LowRankMatrix:
     full matrix representation will be used thereon.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, alpha, n, dtype):
         self.alpha = alpha

@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-                           assert_, suppress_warnings)
+                           assert_)
 import pytest
 
 from scipy.io import readsav
@@ -281,8 +281,9 @@ class TestStructures:
     @pytest.mark.thread_unsafe
     def test_arrays_corrupt_idl80(self):
         # test byte arrays with missing nbyte information from IDL 8.0 .sav file
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Not able to verify number of bytes from header")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Not able to verify number of bytes from header", UserWarning)
             s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'),
                         verbose=False)
 

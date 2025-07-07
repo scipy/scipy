@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.

@@ -1,7 +1,10 @@
 # cython: cpow=True
 
 import numpy as np
-from ._rotation import Rotation, compose_quat
+from ._rotation_cy import from_matrix as from_rot_matrix
+from ._rotation_cy import inv as rot_inv
+from ._rotation_cy import from_quat, from_rotvec
+from ._rotation_cy import as_matrix, as_quat, as_rotvec, compose_quat
 
 cimport numpy as np
 cimport cython
@@ -41,7 +44,7 @@ def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
     # allows for skipping singular value decomposition for near-orthogonal
     # matrices, which is a computationally expensive operation.
     if normalize:
-        mat[:, :3, :3] = Rotation.from_matrix(mat[:, :3, :3]).as_matrix()
+        mat[:, :3, :3] = as_matrix(from_rot_matrix(mat[:, :3, :3]))
 
     return mat
 
@@ -56,7 +59,7 @@ def from_rotation(quat):
     # We don't need to normalize the quaternion here. The backend is only supposed to
     # be called from quaternions resulting from Rotation.as_quat(), which are already
     # guaranteed to be normalized.
-    rotmat = Rotation(quat, normalize=False, copy=False).as_matrix()
+    rotmat = as_matrix(from_quat(quat, normalize=False, copy=False))
     num_transforms = len(rotmat)
     matrix = np.zeros((num_transforms, 4, 4), dtype=float)
     matrix[:, :3, :3] = rotmat
@@ -101,7 +104,7 @@ def from_exp_coords(exp_coords):
     exp_coords = np.atleast_2d(exp_coords)
 
     rot_vec = exp_coords[:, :3]
-    rot_matrix = Rotation.from_rotvec(rot_vec).as_matrix()
+    rot_matrix = as_matrix(from_rotvec(rot_vec))
     translations = np.einsum('ijk,ik->ij',
                                 _compute_se3_exp_translation_transform(rot_vec),
                                 exp_coords[:, 3:])
@@ -132,15 +135,11 @@ def from_dual_quat(dual_quat, *, bint scalar_first=False):
 
     real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
 
-    # We own the real_part buffer and don't use it after this point, so we don't have
-    # to copy it. _normalize_dual_quaternion() also guarantees that the quaternion is
-    # already normalized, so we don't need to normalize it again.
-    rot = Rotation(real_part, normalize=False, copy=False)
-
+    # _normalize_dual_quaternion() guarantees that the quaternion is already
+    # normalized, so we don't need to normalize it again.
     translation = 2.0 * np.asarray(
-        compose_quat(dual_part, rot.inv().as_quat()))[:, :3]
-    matrix = _create_transformation_matrix(translation, rot.as_matrix(),
-                                            single)
+        compose_quat(dual_part, rot_inv(real_part)))[:, :3]
+    matrix = _create_transformation_matrix(translation, as_matrix(real_part), single)
 
     return matrix
 
@@ -150,11 +149,11 @@ def from_dual_quat(dual_quat, *, bint scalar_first=False):
 @cython.wraparound(False)
 def as_exp_coords(double[:, :, :] matrix):
     exp_coords = np.empty((matrix.shape[0], 6), dtype=float)
-    rot_vec = Rotation.from_matrix(matrix[:, :3, :3]).as_rotvec()
+    rot_vec = as_rotvec(from_rot_matrix(matrix[:, :3, :3]))
     exp_coords[:, :3] = rot_vec
     exp_coords[:, 3:] = np.einsum('ijk,ik->ij',
-                                    _compute_se3_log_translation_transform(rot_vec),
-                                    matrix[:, :3, 3])
+                                  _compute_se3_log_translation_transform(rot_vec),
+                                  matrix[:, :3, 3])
     return exp_coords
 
 
@@ -162,7 +161,7 @@ def as_exp_coords(double[:, :, :] matrix):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def as_dual_quat(double[:, :, :] matrix, *, bint scalar_first=False):
-    real_parts = Rotation.from_matrix(matrix[:, :3, :3]).as_quat()
+    real_parts = as_quat(from_rot_matrix(matrix[:, :3, :3]))
 
     pure_translation_quats = np.empty((len(matrix), 4), dtype=float)
     pure_translation_quats[:, :3] = matrix[:, :3, 3]

@@ -1,8 +1,8 @@
 import math
+import warnings
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
@@ -137,9 +137,9 @@ class TestVariation:
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # torch
-            sup.filter(UserWarning, "std*")
+            warnings.filterwarnings("ignore", "std*", UserWarning)
             if axis != 0:
                 if is_numpy(xp):
                     with pytest.warns(SmallSampleWarning, match="See documentation..."):
