@@ -5,7 +5,7 @@ import pytest
 
 from numpy.testing import assert_allclose
 from scipy import sparse
-from scipy.sparse.linalg import splu, cond1est
+from scipy.sparse.linalg import cond1est
 
 
 rng = np.random.default_rng(565656)
@@ -203,79 +203,6 @@ def random_nonsingular_matrix(request, dtype, N_max=100, d_scale=1):
     N = rng.integers(1, N_max, endpoint=True)
     d = d_scale * rng.random()  # densities
     return generate_matrix(N, dtype=dtype, density=d)
-
-
-@pytest.mark.parametrize("dtype", DTYPE_PARAMS, indirect=True, ids=DTYPE_IDS)
-@pytest.mark.parametrize("norm_ord", ORD_PARAMS, indirect=True, ids=ORD_IDS)
-class TestNormEstInv:
-    def test_error_unsupported_norm(self, dtype, norm_ord):
-        if norm_ord != 1:
-            pytest.skip(reason="No need to test for every ord value.")
-
-        A = generate_matrix(N, dtype)
-        with pytest.raises(ValueError, match="ord must be 1 or np.inf"):
-            splu(A).normest_inv(ord=2)
-
-    def test_empty_matrix(self, empty_matrix, norm_ord):
-        """Test that an empty matrix returns 0."""
-        assert_allclose(splu(empty_matrix).normest_inv(ord=norm_ord), 0)
-
-    def test_zero_matrix(self, zero_matrix, norm_ord):
-        with pytest.raises(RuntimeError, match="Factor is exactly singular"):
-            splu(zero_matrix).normest_inv(ord=norm_ord)
-
-    def test_singleton_matrix(self, singleton_matrix, dtype, norm_ord, return_dtype):
-        assert_allclose(
-            splu(singleton_matrix).normest_inv(ord=norm_ord),
-            np.array(0.5, dtype=return_dtype),
-            strict=True
-        )
-
-    def test_identity_matrix(self, identity_matrix, dtype, norm_ord, return_dtype):
-        assert_allclose(
-            splu(identity_matrix).normest_inv(ord=norm_ord),
-            np.array(1.0, dtype=return_dtype),
-            strict=True
-        )
-
-    def test_exactly_singular_matrix(self, dtype, norm_ord):
-        A = generate_matrix(N, dtype, singular='exactly')
-        with pytest.raises(RuntimeError, match="Factor is exactly singular"):
-            splu(A).normest_inv(ord=norm_ord)
-
-    def test_nearly_singular_matrix(self, dtype, norm_ord):
-        A = generate_matrix(N, dtype, singular='nearly')
-        norm_A_inv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
-        normest_A_inv = splu(A).normest_inv(ord=norm_ord)
-        assert_allclose(normest_A_inv, norm_A_inv, strict=True, rtol=1e-6)
-
-    def test_1D_array(self, array_1D, norm_ord):
-        with pytest.raises(
-            ValueError,
-            match="Cannot convert. CSC format must be 2D. Got 1D"
-        ):
-            splu(array_1D).normest_inv(ord=norm_ord)
-
-    def test_ND_array(self, array_ND, norm_ord):
-        with pytest.raises(
-            ValueError,
-            match="Cannot convert. CSC format must be 2D. Got 3D"
-        ):
-            splu(array_ND).normest_inv(ord=norm_ord)
-
-    def test_rectangular_array(self, array_rect, norm_ord):
-        with pytest.raises(ValueError, match="can only factor square matrices"):
-            splu(array_rect).normest_inv(ord=norm_ord)
-
-    def test_random_nonsingular_matrix(
-        self,
-        random_nonsingular_matrix,
-        norm_ord
-    ):
-        A = random_nonsingular_matrix
-        norm_Ainv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
-        normest_Ainv = splu(A).normest_inv(ord=norm_ord)
-        assert_allclose(normest_Ainv, norm_Ainv, strict=True, rtol=1e-6)
 
 
 class TestCond1Est:
