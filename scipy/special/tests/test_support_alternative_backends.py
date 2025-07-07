@@ -286,6 +286,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     xp_assert_close(res, xp.asarray(ref), atol=atol)
 
 
+@pytest.mark.filterwarnings("ignore:numpy.core is deprecated:DeprecationWarning")
 @pytest.mark.parametrize("func", [nfo.wrapper for nfo in _special_funcs])
 def test_pickle(func):
     roundtrip = pickle.loads(pickle.dumps(func))
