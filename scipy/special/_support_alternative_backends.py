@@ -289,8 +289,8 @@ def _stdtrit(xp, spx):
 # Inventory of automatically dispatched functions
 # IMPORTANT: these must all be **elementwise** functions!
 
-# PyTorch doesn"t implement `betainc`.
-# On torch CPU we can fall back to NumPy, but on GPU it won"t work.
+# PyTorch doesn't implement `betainc`.
+# On torch CPU we can fall back to NumPy, but on GPU it won't work.
 _needs_betainc = xp_capabilities(cpu_only=True, exceptions=["jax.numpy", "cupy"])
 
 _special_funcs = (
