@@ -50,12 +50,13 @@ class _FuncInfo:
     # Some special functions are not ufuncs and ufunc-specific tests
     # should not be applied to these.
     is_ufunc: bool = True
-    # Some non-ufunc special functions take only scalars for some arguments.
-    # If so, scalar_only should be a tuple of the same length as the number
-    # of arguments,with value True if the corresponding argument is scalar-only.
+    # Some non-ufunc special functions take only Python ints for some arguments.
+    # If so, python_int_only should be a tuple of the same length as the number
+    # of arguments,with value True if the corresponding argument needs to be a
+    # Python int.
     # Can also take a dict mapping backends to such tuples if an argument being
-    # scalar only is backend specific.
-    scalar_only: dict[str, tuple[bool]] | tuple[bool] | None = None
+    # Python int only is backend specific.
+    python_int_only: dict[str, tuple[bool]] | tuple[bool] | None = None
     # Some functions which seem to be scalar also accept 0d arrays.
     scalar_or_0d_only: dict[str, tuple[bool]] | tuple[bool] | None = None
     # Some functions may not work well with very large integer valued arguments.
@@ -633,7 +634,7 @@ _special_funcs = (
     _FuncInfo(
         _spfun_stats.multigammaln, 2,
         is_ufunc=False,
-        scalar_only={
+        python_int_only={
             "cupy": [False, True],
             "jax.numpy": [False, True],
             "torch": [False, True],

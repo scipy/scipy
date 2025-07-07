@@ -119,9 +119,9 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     args_np = []
 
     # Handle cases where there's an argument which only takes scalar values.
-    scalar_only = nfo.scalar_only
-    if isinstance(scalar_only, dict):
-        scalar_only = scalar_only.get(get_native_namespace_name(xp))
+    python_int_only = nfo.python_int_only
+    if isinstance(python_int_only, dict):
+        python_int_only = python_int_only.get(get_native_namespace_name(xp))
     scalar_or_0d_only = nfo.scalar_or_0d_only
     if isinstance(scalar_or_0d_only, dict):
         scalar_or_0d_only = scalar_or_0d_only.get(get_native_namespace_name(xp))
@@ -130,19 +130,19 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     if isinstance(nfo.test_large_ints, dict):
         test_large_ints = test_large_ints.get(get_native_namespace_name(xp), False)
 
-    if scalar_only is None:
-        scalar_only = [False] * nfo.n_args
+    if python_int_only is None:
+        python_int_only = [False] * nfo.n_args
     if scalar_or_0d_only is None:
         scalar_or_0d_only = [False] * nfo.n_args
 
     no_shape = [
-        cond1 or cond2 for cond1, cond2 in zip(scalar_only, scalar_or_0d_only)
+        cond1 or cond2 for cond1, cond2 in zip(python_int_only, scalar_or_0d_only)
     ]
 
     shapes = [shape if not cond else None for shape, cond in zip(shapes, no_shape)]
 
-    for dtype, dtype_np, type_, shape, needs_scalar in zip(
-            dtypes, dtypes_np, argtypes, shapes, scalar_only
+    for dtype, dtype_np, type_, shape, needs_python_int in zip(
+            dtypes, dtypes_np, argtypes, shapes, python_int_only
     ):
         if 'int' in dtype and test_large_ints:
             iinfo = np.iinfo(dtype_np)
@@ -152,12 +152,10 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         else:
             rand = rng.standard_normal
         val = rand(size=shape, dtype=dtype_np)
-        if needs_scalar:
-            # Currently the only special functions which require a Python scalar
-            # for an argument require an integer, so just unconditionally convert
-            # to int here. The logic above for determining shapes guarantees that
-            # shape will be None in the above line when a scalar is required, so
-            # this can safely be converted to an int.
+        if needs_python_int:
+            # The logic above for determining shapes guarantees that
+            # shape will be None in the above line when a Python int is required,
+            # so this can safely be converted to an int.
             val = int(val)
         args_np.append(val)
 
@@ -166,17 +164,17 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     ]
 
     args_xp = [
-        xp.asarray(arg, dtype=dtype_xp) if not needs_scalar
+        xp.asarray(arg, dtype=dtype_xp) if not needs_python_int
         else arg
-        for arg, dtype_xp, needs_scalar
-        in zip(args_np, dtypes_xp, scalar_only)
+        for arg, dtype_xp, needs_python_int
+        in zip(args_np, dtypes_xp, python_int_only)
     ]
 
     args_np = [
-        np.asarray(arg, dtype=dtype_np_ref) if not needs_scalar
+        np.asarray(arg, dtype=dtype_np_ref) if not needs_python_int
         else arg
-        for arg, dtype_np_ref, needs_scalar
-        in zip(args_np, dtypes_np_ref, scalar_only)
+        for arg, dtype_np_ref, needs_python_int
+        in zip(args_np, dtypes_np_ref, python_int_only)
     ]
 
     if is_dask(xp):
