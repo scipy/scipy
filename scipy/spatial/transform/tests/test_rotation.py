@@ -13,7 +13,6 @@ from scipy._lib._array_api import (
     xp_assert_equal,
     is_numpy,
     is_jax,
-    is_array_api_strict,
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
