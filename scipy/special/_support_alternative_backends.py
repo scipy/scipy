@@ -7,7 +7,7 @@ from types import ModuleType
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
-    xp_promote, xp_capabilities, SCIPY_ARRAY_API
+    xp_promote, xp_capabilities, SCIPY_ARRAY_API, get_native_namespace_name
 )
 import scipy._lib.array_api_extra as xpx
 from . import _basic
@@ -165,7 +165,7 @@ class _FuncInfo:
 def _get_native_func(xp, spx, f_name, *, alt_names_map=None):
     if alt_names_map is None:
         alt_names_map = {}
-    f_name = alt_names_map.get(xp.__name__, f_name)
+    f_name = alt_names_map.get(get_native_namespace_name(xp), f_name)
     f = getattr(spx.special, f_name, None) if spx else None
     if f is None and hasattr(xp, 'special'):
         # Currently dead branch, in anticipation of 'special' Array API extension
@@ -329,6 +329,7 @@ _special_funcs = (
     ),
     _FuncInfo(
         _ufuncs.betaln, 2,
+        xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
         # For betaln, nan mismatches can occur at negative integer a or b of
         # sufficiently large magnitude.
         positive_only={"jax.numpy": True}
@@ -447,7 +448,10 @@ _special_funcs = (
             skip_backends=[("jax.numpy", "unavailable")],
         ),
     ),
-    _FuncInfo(_ufuncs.expi, 1),
+    _FuncInfo(
+        _ufuncs.expi, 1,
+        xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
+    ),
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(
         _ufuncs.expn, 2,

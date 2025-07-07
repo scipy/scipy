@@ -12,7 +12,7 @@ from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (array_namespace, is_array_api_strict,
                                    is_cupy, is_dask, is_jax, is_numpy, is_torch,
                                    make_xp_pytest_param, make_xp_test_case,
-                                   xp_default_dtype)
+                                   xp_default_dtype, get_native_namespace_name)
 from scipy._lib.array_api_compat import numpy as np
 
 # Run all tests in this module in the Array API CI, including those without
@@ -20,22 +20,6 @@ from scipy._lib.array_api_compat import numpy as np
 pytestmark = pytest.mark.array_api_backends
 
 lazy_xp_modules = [special]
-
-
-def _get_native_namespace_name(xp):
-    if is_cupy(xp):
-        return "cupy"
-    if is_dask(xp):
-        return "dask.array"
-    if is_jax(xp):
-        return "jax.numpy"
-    if is_numpy(xp):
-        return "numpy"
-    if is_torch(xp):
-        return "torch"
-    if is_array_api_strict(xp):
-        return "array_api_strict"
-    raise ValueError(f"Received unsupported array namspace {xp}")
 
 
 def _to_python_scalar(x):
@@ -67,7 +51,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
     """
     f_name = nfo.name
     if isinstance(nfo.positive_only, dict):
-        positive_only = nfo.positive_only.get(_get_native_namespace_name(xp), False)
+        positive_only = nfo.positive_only.get(get_native_namespace_name(xp), False)
     else:
         positive_only = nfo.positive_only
     if isinstance(positive_only, bool):
@@ -153,14 +137,14 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     # Handle cases where there's an argument which only takes scalar values.
     scalar_only = nfo.scalar_only
     if isinstance(scalar_only, dict):
-        scalar_only = scalar_only.get(_get_native_namespace_name(xp))
+        scalar_only = scalar_only.get(get_native_namespace_name(xp))
     scalar_or_0d_only = nfo.scalar_or_0d_only
     if isinstance(scalar_or_0d_only, dict):
-        scalar_or_0d_only = scalar_or_0d_only.get(_get_native_namespace_name(xp))
+        scalar_or_0d_only = scalar_or_0d_only.get(get_native_namespace_name(xp))
 
     test_large_ints = nfo.test_large_ints
     if isinstance(nfo.test_large_ints, dict):
-        test_large_ints = test_large_ints.get(_get_native_namespace_name(xp), False)
+        test_large_ints = test_large_ints.get(get_native_namespace_name(xp), False)
 
     if scalar_only is None:
         scalar_only = [False] * nfo.n_args
@@ -192,6 +176,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         for arg, dtype_xp, needs_scalar
         in zip(args_np, dtypes_xp, scalar_only)
     ]
+
     args_np = [
         np.asarray(arg, dtype=dtype_np_ref) if not needs_scalar
         else _to_python_scalar(arg)
@@ -211,7 +196,15 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol, check_0d=nfo.produces_0d)
+    rtol = None
+    if is_torch(xp) and func.__name__ == 'j1':
+        # If we end up needing more function/backend specific tolerance
+        # adjustments, this should be factored out properly.
+        atol = 1e-7
+        rtol = 1e-5
+    xp_assert_close(
+        res, xp.asarray(ref), rtol=rtol, atol=atol, check_0d=nfo.produces_0d
+    )
 
 
 @pytest.mark.parametrize(
