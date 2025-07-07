@@ -3062,7 +3062,7 @@ def test_gh_23075(samples, mode, size, expected):
     sample_array = np.asarray(samples, dtype=np.single)
     expected = np.asarray(expected, dtype=np.single)
     filtered_samples = ndimage.median_filter(sample_array, size=size, mode=mode)
-    assert_allclose(filtered_samples, expected, strict=True)
+    xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
 
 
 @pytest.mark.parametrize('samples, size, cval, expected', [
@@ -3080,4 +3080,4 @@ def test_gh_23075_constant(samples, size, cval, expected):
                                              size=size,
                                              mode="constant",
                                              cval=cval)
-    assert_allclose(filtered_samples, expected, strict=True)
+    xp_assert_close(filtered_samples, expected, check_shape=True, check_dtype=True)
