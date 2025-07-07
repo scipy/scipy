@@ -779,7 +779,6 @@ def test_neldermead_adaptive():
     assert_equal(res.success, True)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
     # should still be within the bounds (provided that the user doesn't make a
@@ -811,7 +810,6 @@ def test_bounded_powell_outsidebounds():
     assert_equal(res.status, 4)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
     # will return a different result than the standard Powell
@@ -1432,7 +1430,6 @@ class TestOptimizeSimple(CheckOptimize):
         elif method == 'cobyqa':
             assert sol.status == 6  # Iteration limit reached
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
     def test_runtime_warning(self, method):
@@ -1740,7 +1737,6 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
     def test_minimize_warnings_gh1953(self, method):
         # test that minimize methods produce warnings rather than just using
@@ -2116,7 +2112,6 @@ class TestOptimizeScalar:
         res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])
     def test_minimize_scalar_warnings_gh1953(self, method):
         # test that minimize_scalar methods produce warnings rather than just
@@ -2670,7 +2665,6 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-    @pytest.mark.thread_unsafe
     def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
@@ -2690,7 +2684,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.thread_unsafe
+
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 

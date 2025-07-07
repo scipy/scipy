@@ -392,7 +392,6 @@ class TestKMeans:
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
-    @pytest.mark.thread_unsafe
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         rng = np.random.default_rng(23587923456834568)

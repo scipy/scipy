@@ -843,7 +843,6 @@ class TestDifferentialEvolutionSolver:
             assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
             assert cv.shape == (2, 3)
 
-    @pytest.mark.thread_unsafe
     def test_constraint_solve(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -861,7 +860,6 @@ class TestDifferentialEvolutionSolver:
         assert res.success
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     def test_impossible_constraint(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -1538,7 +1536,6 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(10)
     def test_vectorized(self):
         def quadratic(x):

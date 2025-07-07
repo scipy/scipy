@@ -365,7 +365,6 @@ class TestAnderson:
         with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
-    @pytest.mark.thread_unsafe
     def test_weibull_warning_error(self):
         # Check for warning message when there are too few observations
         # This is also an example in which an error occurs during fitting
@@ -503,7 +502,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
 
-    @pytest.mark.thread_unsafe
     def test_R_kSamples(self):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
@@ -1424,7 +1422,6 @@ class TestProbplot:
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         fig = plt.figure()
@@ -2031,7 +2028,6 @@ class TestBoxcox_llf:
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
-    @pytest.mark.thread_unsafe
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
         context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)

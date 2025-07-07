@@ -2775,7 +2775,7 @@ class TestMultivariateT:
         _, p = normaltest(samples)
         assert ((p > P_VAL_MIN).all())
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="uses mocking")
     @patch('scipy.stats.multivariate_normal._logpdf')
     def test_mvt_with_inf_df_calls_normal(self, mock):
         dist = multivariate_t(0, 1, df=np.inf, seed=7)
@@ -3725,8 +3725,8 @@ def check_pickling(distfn, args):
     distfn.random_state = rndm
 
 
-@pytest.mark.thread_unsafe
-def test_random_state_property(num_parallel_threads):
+@pytest.mark.thread_unsafe(reason="fails in parallel")
+def test_random_state_property():
     scale = np.eye(3)
     scale[0, 1] = 0.5
     scale[1, 0] = 0.5

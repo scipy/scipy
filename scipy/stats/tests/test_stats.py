@@ -1514,7 +1514,7 @@ class TestCorrSpearmanr2:
 
 # I need to figure out how to do this one.
 
-
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 def test_kendalltau():
     # For the cases without ties, both variants should give the same
     # result.
@@ -1758,7 +1758,7 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 def test_kendalltau_gh18139_overflow():
     # gh-18139 reported an overflow in `kendalltau` that appeared after
     # SciPy 0.15.1. Check that this particular overflow does not occur.

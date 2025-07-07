@@ -429,7 +429,6 @@ class TestPeakProminences:
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
 
-    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.
@@ -526,7 +525,6 @@ class TestPeakWidths:
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
 
-    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.

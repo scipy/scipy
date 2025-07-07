@@ -377,7 +377,7 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
         w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
@@ -505,7 +505,7 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="deadlocks in parallel")
     def test_basic(self, dist, mv_ex):
         with warnings.catch_warnings():
             # filter the warnings thrown by UNU.RAN

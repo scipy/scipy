@@ -144,7 +144,6 @@ class TestUtils:
         with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
             qmc.discrepancy(sample, method="toto")
 
-    @pytest.mark.thread_unsafe
     def test_discrepancy_parallel(self, monkeypatch):
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
@@ -602,7 +601,6 @@ class QMCEngineTests:
             None,
         ),
     )
-    @pytest.mark.thread_unsafe
     def test_reset(self, scramble, rng):
         engine = self.engine(d=2, scramble=scramble, rng=rng)
         ref_sample = engine.random(n=8)
