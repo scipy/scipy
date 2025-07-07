@@ -2,10 +2,11 @@ import os
 import sys
 from io import BytesIO
 import threading
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises, warns
 
@@ -58,9 +59,12 @@ def test_read_3():
 def test_read_4():
     # Contains unsupported 'PEAK' chunk
     for mmap in [False, True]:
-        with suppress_warnings() as sup:
-            sup.filter(wavfile.WavFileWarning,
-                       "Chunk .non-data. not understood, skipping it")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Chunk .non-data. not understood, skipping it",
+                wavfile.WavFileWarning
+            )
             filename = 'test-48000Hz-2ch-64bit-float-le-wavex.wav'
             rate, data = wavfile.read(datafile(filename), mmap=mmap)
 

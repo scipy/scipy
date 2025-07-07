@@ -13,8 +13,7 @@ import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
-                           assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+                           assert_, assert_allclose, assert_equal)
 import pytest
 from pytest import raises as assert_raises
 
@@ -541,27 +540,27 @@ class TestAndersonKSamp:
         x1 = np.linspace(1, 100, 100)
         # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
         assert_almost_equal(s, 41.105, 3)
         assert_equal(p, 0.001)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5])
         assert_almost_equal(s, 41.235, 3)
         assert_equal(p, 0.001)
 
         # test case: similar distributions --> p-value capped at 0.25
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value capped')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + .5], midrank=False)
         assert_almost_equal(s, -1.2824, 4)
         assert_equal(p, 0.25)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value capped')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + .5])
         assert_almost_equal(s, -1.2944, 4)
         assert_equal(p, 0.25)
@@ -612,8 +611,9 @@ class TestAnsari:
     def test_small(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             W, pval = stats.ansari(x, y)
         assert_almost_equal(W, 23.5, 11)
         assert_almost_equal(pval, 0.13499256881897437, 11)
@@ -625,8 +625,9 @@ class TestAnsari:
                            100, 96, 108, 103, 104, 114, 114, 113, 108,
                            106, 99))
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             W, pval = stats.ansari(ramsay, parekh)
 
         assert_almost_equal(W, 185.5, 11)
@@ -647,8 +648,9 @@ class TestAnsari:
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
@@ -770,11 +772,14 @@ class TestBartlett:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.bartlett(*args)
         else:
-            with np.testing.suppress_warnings() as sup:
+            with warnings.catch_warnings():
                 # torch/array_api_strict
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
-                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+                warnings.filterwarnings(
+                    "ignore", "invalid value encountered", RuntimeWarning)
+                warnings.filterwarnings(
+                    "ignore", r"var\(\): degrees of freedom is <= 0.", UserWarning)
+                warnings.filterwarnings(
+                    "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
                 res = stats.bartlett(*args)
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
@@ -2755,10 +2760,11 @@ class TestCircFuncs:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = test_func(x)
         else:
-            with np.testing.suppress_warnings() as sup:
+            with warnings.catch_warnings():
                 # for array_api_strict
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                sup.filter(RuntimeWarning, "invalid value encountered")
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
+                warnings.filterwarnings(
+                    "ignore", "invalid value encountered", RuntimeWarning)
                 res = test_func(x)
         xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
