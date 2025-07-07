@@ -7,7 +7,6 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import operator
-import contextlib
 import dataclasses
 import functools
 import textwrap
@@ -157,15 +156,19 @@ def default_xp(xp: ModuleType) -> Generator[None, None, None]:
         _default_xp_ctxvar.reset(token)
 
 
-def eager_warns(x, warning_type, match=None):
-    """pytest.warns context manager, but only if x is not a lazy array."""
+def eager_warns(warning_type, *, match=None, xp):
+    """pytest.warns context manager if arrays of specified namespace are always eager.
+
+    Otherwise, context manager that *ignores* specified warning.
+    """
     import pytest
+    from scipy._lib._util import ignore_warns
     # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
     # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
     __thread_safe__ = False  # noqa: F841
-    if is_lazy_array(x):
-        return contextlib.nullcontext()
-    return pytest.warns(warning_type, match=match)
+    if is_numpy(xp) or is_array_api_strict(xp) or is_cupy(xp):
+        return pytest.warns(warning_type, match=match)
+    return ignore_warns(warning_type, match='' if match is None else match)
 
 
 def _strict_check(actual, desired, xp, *,

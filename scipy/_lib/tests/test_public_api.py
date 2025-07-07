@@ -11,7 +11,6 @@ from importlib import import_module
 
 import pytest
 
-import numpy as np
 import scipy
 
 from scipy._lib._public_api import PUBLIC_MODULES
@@ -196,8 +195,8 @@ def test_all_modules_are_expected():
 
     modnames = []
 
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(DeprecationWarning,"scipy.misc")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "scipy.misc", DeprecationWarning)
         for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
                                                    prefix=scipy.__name__ + '.',
                                                    onerror=ignore_errors):
@@ -247,8 +246,8 @@ def test_all_modules_are_expected_2():
                         members.append(fullobjname)
 
         return members
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "scipy.misc")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",  "scipy.misc", DeprecationWarning)
         unexpected_members = find_unexpected_members("scipy")
 
     for modname in PUBLIC_MODULES:
@@ -284,8 +283,8 @@ def test_api_importable():
                              f"imported: {module_names}")
 
     with warnings.catch_warnings(record=True):
-        warnings.filterwarnings('always', category=DeprecationWarning)
-        warnings.filterwarnings('always', category=ImportWarning)
+        warnings.simplefilter('always', category=DeprecationWarning)
+        warnings.simplefilter('always', category=ImportWarning)
         for module_name in PRIVATE_BUT_PRESENT_MODULES:
             if not check_importable(module_name):
                 module_names.append(module_name)

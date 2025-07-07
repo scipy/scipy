@@ -19,6 +19,7 @@ Notes
 """
 import math
 from itertools import product
+from types import GenericAlias
 from typing import cast, get_args, Literal
 
 import numpy as np
@@ -1096,3 +1097,7 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     X = SFT.stft(x)
     xp = SFT.istft(X, k1=N_x)
     assert xp.shape == x.shape
+
+
+def test_subscriptable_generic_type():
+    assert isinstance(ShortTimeFFT[np.float64], GenericAlias)

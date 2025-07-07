@@ -36,11 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.11']
-        maintenance-branch:
-          - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
-        exclude:
-          - maintenance-branch: true
+        python-version: ['3.12']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -68,7 +64,8 @@ jobs:
 
     - name: Install JAX
       run: |
-        python -m pip install "jax[cpu]"
+        # Skip 0.6.2: https://github.com/jax-ml/jax/issues/29537
+        python -m pip install "jax[cpu]!=0.6.2"
 
     - name: Install Dask
       run: |

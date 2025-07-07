@@ -338,7 +338,7 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
+    .. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
@@ -1035,7 +1035,7 @@ const char *ellipkm1_doc = R"(
 
     This function is defined as
 
-    .. math:: K(p) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(p) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     where `m = 1 - p`.
 
@@ -1065,14 +1065,14 @@ const char *ellipkm1_doc = R"(
 
     For ``p <= 1``, computation uses the approximation,
 
-    .. math:: K(p) \\approx P(p) - \\log(p) Q(p),
+    .. math:: K(p) \approx P(p) - \log(p) Q(p)
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  The
     argument `p` is used internally rather than `m` so that the logarithmic
     singularity at ``m = 1`` will be shifted to the origin; this preserves
     maximum accuracy.  For ``p > 1``, the identity
 
-    .. math:: K(p) = K(1/p)/\\sqrt(p)
+    .. math:: K(p) = K(1/p)/\sqrt{p}
 
     is used.
 
@@ -1231,7 +1231,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
+        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
@@ -6465,75 +6465,6 @@ const char *spherical_kn_doc = R"(
 
 const char *spherical_kn_d_doc = R"(
     Internal function, use `spherical_kn` instead.
-    )";
-
-const char *sph_harm_doc = R"(
-    sph_harm(m, n, theta, phi, out=None)
-
-    Compute spherical harmonics.
-
-    The spherical harmonics are defined as
-
-    .. math::
-
-        Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi} \frac{(n-m)!}{(n+m)!}}
-          e^{i m \theta} P^m_n(\cos(\phi))
-
-    where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.sph_harm_y` instead.
-
-    Parameters
-    ----------
-    m : array_like
-        Order of the harmonic (int); must have ``|m| <= n``.
-    n : array_like
-       Degree of the harmonic (int); must have ``n >= 0``. This is
-       often denoted by ``l`` (lower case L) in descriptions of
-       spherical harmonics.
-    theta : array_like
-       Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
-    phi : array_like
-       Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    y_mn : complex scalar or ndarray
-       The harmonic :math:`Y^m_n` sampled at ``theta`` and ``phi``.
-
-    Notes
-    -----
-    There are different conventions for the meanings of the input
-    arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
-    azimuthal angle and ``phi`` is the polar angle. It is common to
-    see the opposite convention, that is, ``theta`` as the polar angle
-    and ``phi`` as the azimuthal angle.
-
-    Note that SciPy's spherical harmonics include the Condon-Shortley
-    phase [2]_ because it is part of `lpmv`.
-
-    With SciPy's conventions, the first several spherical harmonics
-    are
-
-    .. math::
-
-        Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
-        Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                    e^{-i\theta} \sin(\phi) \\
-        Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
-                                 \cos(\phi) \\
-        Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
-                                 e^{i\theta} \sin(\phi).
-
-    References
-    ----------
-    .. [1] Digital Library of Mathematical Functions, 14.30.
-           https://dlmf.nist.gov/14.30
-    .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     )";
 
 const char *tandg_doc = R"(

@@ -578,7 +578,6 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),
@@ -593,12 +592,6 @@ def test_batch(f, args):
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
-
-    if f in {toeplitz}:
-        message = "Beginning in SciPy 1.17, multidimensional input will be..."
-        with pytest.warns(FutureWarning, match=message):
-            f(A, *args)
-        return
 
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])

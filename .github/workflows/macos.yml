@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
