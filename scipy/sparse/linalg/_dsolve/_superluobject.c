@@ -113,7 +113,7 @@ static bool is_empty_matrix(const SuperMatrix * A)
 }
 
 
-static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
+static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
     static char *kwlist[] = { "ord", NULL };
@@ -170,11 +170,11 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     if (is_empty_matrix(&self->L) && is_empty_matrix(&self->U)) {
         /* Empty matrix, return 0.0 */
         if (return_float) {
-            float normf = 0.0f;
-            return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+            float condf = 0.0f;
+            return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
         } else {
-            double normd = 0.0;
-            return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+            double condd = 0.0;
+            return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
         }
     }
 
@@ -197,30 +197,30 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     }
 
     /* Outputs from gscon */
-    volatile float rnormf;
-    volatile double rnormd;
+    volatile float rcondf;
+    volatile double rcondd;
     volatile int info;
 
     switch (self->type) {
         case NPY_FLOAT:
             sgscon(
-                (char *)&norm_c, &self->L, &self->U, 1.0f,
-                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
+                (char *)&norm_c, &self->L, &self->U, self->anorm.f,
+                (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_DOUBLE:
             dgscon(
-                (char *)&norm_c, &self->L, &self->U, 1.0,
-                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
+                (char *)&norm_c, &self->L, &self->U, self->anorm.d,
+                (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_CFLOAT:
             cgscon(
-                (char *)&norm_c, &self->L, &self->U, 1.0f,
-                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
+                (char *)&norm_c, &self->L, &self->U, self->anorm.f,
+                (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_CDOUBLE:
             zgscon(
-                (char *)&norm_c, &self->L, &self->U, 1.0,
-                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
+                (char *)&norm_c, &self->L, &self->U, self->anorm.d,
+                (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         default: 
             PyErr_SetString(PyExc_ValueError, "unsupported data type");
@@ -241,11 +241,11 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
      * of the matrix. Return a numpy scalar with the appropriate type.
      */
     if (return_float) {
-        float normf = 1.0 / rnormf;
-        return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+        float condf = 1.0 / rcondf;
+        return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
     } else {
-        double normd = 1.0 / rnormd;
-        return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+        double condd = 1.0 / rcondd;
+        return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
     }
 
   fail:
@@ -258,7 +258,7 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"normest_inv", (PyCFunction) SuperLU_normest_inv, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cond1est", (PyCFunction) SuperLU_cond1est, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
@@ -876,6 +876,26 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
     self->type = intype;
+
+    /* Call the appropriate function to compute the 1-norm of the matrix */
+    char norm_c = '1';  /* default to 1-norm */
+    switch (self->type) {
+        case NPY_FLOAT:
+            self->anorm.f = slangs(&norm_c, A);
+            break;
+        case NPY_DOUBLE:
+            self->anorm.d = dlangs(&norm_c, A);
+            break;
+        case NPY_CFLOAT:
+            self->anorm.f = clangs(&norm_c, A);
+            break;
+        case NPY_CDOUBLE:
+            self->anorm.d = zlangs(&norm_c, A);
+            break;
+        default: 
+            PyErr_SetString(PyExc_ValueError, "unsupported data type");
+            return NULL;
+    }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {

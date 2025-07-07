@@ -146,50 +146,11 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_r',
     See the `SuperLU` docstring for details.
     """))
 
-add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('normest_inv',
-    """Compute an estimate of the norm of the inverse of a sparse matrix.
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('cond1est',
+    """
+    Estimate the condition number of a sparse matrix in the 1-norm.
 
-    Parameters
-    ----------
-    ord : {1, inf}, optional
-        Order of the norm. If ``None``, defaults to the 1-norm. inf means
-        numpy's ``inf`` object.
-
-    Returns
-    -------
-    est : float
-        An estimate of the norm of the matrix inverse.
-
-    See Also
-    --------
-    norm : Compute the norm of a sparse matrix.
-    numpy.linalg.norm : Compute the norm of a dense matrix.
-    cond1est : Compute an estimate for the reciprocal of
-        the condition number of a sparse matrix.
-
-    Notes
-    -----
-    This method runs the appropriate SuperLU ``gscon`` [0]_ procedure for the
-    data type.
+    See `sparse.linalg.cond1est` for details.
 
     .. versionadded:: 1.17.0
-
-    References
-    ----------
-    .. [0] https://portal.nersc.gov/project/sparse/superlu/superlu_code_html/dgscon_8c.html
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import csc_array
-    >>> from scipy.sparse.linalg import splu
-    >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
-    >>> A.toarray()
-    array([[ 1.,  0.,  0.],
-           [ 5.,  8.,  2.],
-           [ 0., -1.,  0.]])
-    >>> splu(A).normest_inv(ord=1)
-    np.float64(5.0)
-    >>> np.linalg.norm(np.linalg.inv(A.toarray()), ord=1)
-    np.float64(5.0)
     """))
