@@ -1,13 +1,17 @@
 import numpy as np
 
 from scipy.sparse import issparse
-from scipy.sparse.linalg import norm, splu
+from scipy.sparse.linalg import splu
 
 __all__ = ['cond1est']
 
 
 def cond1est(A):
     r"""Estimate the condition number of a sparse matrix in the 1-norm.
+
+    This function computes an LU decomposition of ``A`` and calls
+    ``SuperLU.cond1est``. If you already have an LU factorization computed, use
+    ``SuperLU.cond1est`` directly.
 
     Parameters
     ----------
@@ -22,8 +26,9 @@ def cond1est(A):
 
     See Also
     --------
-    SuperLU.normest_inv : Compute an estimate for the norm of the matrix inverse.
     numpy.linalg.cond : Compute the condition number of a dense matrix.
+    SuperLU.cond1est : Compute an estimate of the condition number of a sparse
+                       matrix.
 
     Notes
     -----
@@ -31,17 +36,17 @@ def cond1est(A):
 
     .. math:: \kappa(A) = \left\| A \right\|_1 \left\| A^{-1} \right\|_1.
 
-    This function computes the 1-norm of the matrix and a lower bound estimate
-    for the 1-norm of the inverse using ``SuperLU.normest_inv``. It is similar
-    to ``np.linalg.cond(A, p=1)`` for dense matrices, but given that this
-    function uses an estimate, results will not be identical, especially for
-    ill-conditioned matrices.
+    This function computes the 1-norm of the matrix exactly, and a lower bound
+    estimate for the 1-norm of the inverse using SuperLU internals. It is
+    similar to ``np.linalg.cond(A, p=1)`` for dense matrices, but given that
+    this function uses an estimate, results will not be identical, especially
+    for ill-conditioned matrices.
 
     .. versionadded:: 1.17.0
 
     References
     ----------
-    .. [0] "Condition Number", Wikipedia, 
+    .. [0] "Condition Number", Wikipedia,
            https://en.wikipedia.org/wiki/Condition_number
 
     Examples
@@ -74,15 +79,10 @@ def cond1est(A):
     if M == 0:
         raise ValueError("Condition number of an empty matrix is undefined.")
 
-    # Compute the 1-norm of A exactly
-    norm_A = norm(A, 1)
-
     try:
-        norm_A_inv = splu(A).normest_inv(ord=1)
+        return splu(A).cond1est()
     except RuntimeError as e:
         if "Factor is exactly singular" in str(e):
             return np.inf
         else:
             raise e
-
-    return norm_A * norm_A_inv
