@@ -3036,3 +3036,48 @@ class TestVectorizedFilter:
 def test_gh_22586_crash_property(x, size, mode):
     # property-based test for median_filter resilience to hard crashing
     ndimage.median_filter(x, size=size, mode=mode)
+
+
+@pytest.mark.parametrize('samples, mode, size, expected', [
+    ([1, 2], "reflect", 5, [2, 1]),
+    ([2], "reflect", 5, [2]), # original failure from gh-23075
+    ([2], "nearest", 5, [2]),
+    ([2], "wrap", 5, [2]),
+    ([2], "mirror", 5, [2]),
+    ([2], "constant", 5, [0]),
+    ([2], "reflect", 1, [2]),
+    ([2], "nearest", 1, [2]),
+    ([2], "wrap", 1, [2]),
+    ([2], "mirror", 1, [2]),
+    ([2], "constant", 1, [2]),
+    ([2], "reflect", 100, [2]),
+    ([2], "nearest", 100, [2]),
+    ([2], "wrap", 100, [2]),
+    ([2], "mirror", 100, [2]),
+    ([2], "constant", 100, [0]),
+])
+def test_gh_23075(samples, mode, size, expected):
+    # results verified against SciPy 1.14.1, before the median_filter
+    # overhaul
+    sample_array = np.asarray(samples, dtype=np.single)
+    expected = np.asarray(expected, dtype=np.single)
+    filtered_samples = ndimage.median_filter(sample_array, size=size, mode=mode)
+    assert_allclose(filtered_samples, expected, strict=True)
+
+
+@pytest.mark.parametrize('samples, size, cval, expected', [
+    ([2], 5, 17.7, [17.7]),
+    ([2], 1, 0, [2]),
+    ([2], 100, 1.4, [1.4]),
+    ([9], 137, -7807.7, [-7807.7]),
+])
+def test_gh_23075_constant(samples, size, cval, expected):
+    # results verified against SciPy 1.14.1, before the median_filter
+    # overhaul
+    sample_array = np.asarray(samples, dtype=np.single)
+    expected = np.asarray(expected, dtype=np.single)
+    filtered_samples = ndimage.median_filter(sample_array,
+                                             size=size,
+                                             mode="constant",
+                                             cval=cval)
+    assert_allclose(filtered_samples, expected, strict=True)
