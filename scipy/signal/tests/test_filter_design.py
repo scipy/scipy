@@ -274,6 +274,9 @@ class TestZpk2Tf:
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
     
+    @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+    @skip_xp_backends("array_api_strict", 
+                      reason="Not supported yet, see pl-23265 for potential fix")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
         z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
         p = xp.asarray([1, 2])
