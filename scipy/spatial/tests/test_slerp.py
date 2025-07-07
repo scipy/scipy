@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -390,8 +392,8 @@ class TestGeometricSlerp:
         # the test should only be enforced for cases where
         # geometric_slerp determines that the input is actually
         # on the unit sphere
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
             result = geometric_slerp(P, Q, ts, 1e-18)
             norms = np.linalg.norm(result, axis=1)
             error = np.max(np.abs(norms - 1))

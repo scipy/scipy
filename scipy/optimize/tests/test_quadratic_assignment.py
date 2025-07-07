@@ -3,7 +3,7 @@ import numpy as np
 from numpy.random import default_rng
 from scipy.optimize import quadratic_assignment, OptimizeWarning
 from scipy.optimize._qap import _calc_score as _score
-from numpy.testing import assert_equal, assert_, assert_warns
+from numpy.testing import assert_equal, assert_
 
 
 ################
@@ -167,10 +167,9 @@ class QAPCommonTests:
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
-        def f():
+        with pytest.warns(OptimizeWarning):
             quadratic_assignment(A, B, method=self.method,
                                  options={"ekki-ekki": True})
-        assert_warns(OptimizeWarning, f)
 
     @pytest.mark.thread_unsafe
     def test_deprecation_future_warnings(self):
