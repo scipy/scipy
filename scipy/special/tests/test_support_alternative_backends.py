@@ -22,21 +22,6 @@ pytestmark = pytest.mark.array_api_backends
 lazy_xp_modules = [special]
 
 
-def _to_python_scalar(x):
-    xp = array_namespace(x)
-    if x.ndim != 0:
-        x = x.take(0)
-    dtype = x.dtype
-    if xp.isdtype(dtype, "integral"):
-        return int(x)
-    if xp.isdtype(dtype, "real floating"):
-        return float(x)
-    if xp.isdtype(dtype, "complex floating"):
-        return complex(x)
-    if xp.isdtype(dtype, "bool"):
-        return bool(x)
-
-
 def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
     """Skip tests for specific intersections of scipy.special functions 
     vs. backends vs. dtypes vs. devices.
@@ -157,7 +142,9 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     shapes = [shape if not cond else None for shape, cond in zip(shapes, no_shape)]
 
-    for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, argtypes, shapes):
+    for dtype, dtype_np, type_, shape, needs_scalar in zip(
+            dtypes, dtypes_np, argtypes, shapes, scalar_only
+    ):
         if 'int' in dtype and test_large_ints:
             iinfo = np.iinfo(dtype_np)
             rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
@@ -165,21 +152,30 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
             rand = partial(rng.integers, -20, 21)
         else:
             rand = rng.standard_normal
-        args_np.append(rand(size=shape, dtype=dtype_np))
+        val = rand(size=shape, dtype=dtype_np)
+        if needs_scalar:
+            # Currently the only special functions which require a Python scalar
+            # for an argument require an integer, so just unconditionally convert
+            # to int here. The logic above for determining shapes guarantees that
+            # shape will be None in the above line when a scalar is required, so
+            # this can safely be converted to an int.
+            val = int(val)
+        args_np.append(val)
+
     args_np = [
         np.abs(arg) if cond else arg for arg, cond in zip(args_np, positive_only)
     ]
 
     args_xp = [
         xp.asarray(arg, dtype=dtype_xp) if not needs_scalar
-        else _to_python_scalar(arg)
+        else arg
         for arg, dtype_xp, needs_scalar
         in zip(args_np, dtypes_xp, scalar_only)
     ]
 
     args_np = [
         np.asarray(arg, dtype=dtype_np_ref) if not needs_scalar
-        else _to_python_scalar(arg)
+        else arg
         for arg, dtype_np_ref, needs_scalar
         in zip(args_np, dtypes_np_ref, scalar_only)
     ]
