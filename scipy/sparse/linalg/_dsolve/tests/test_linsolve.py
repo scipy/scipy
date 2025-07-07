@@ -1,4 +1,5 @@
 import sys
+import sysconfig
 import threading
 import warnings
 
@@ -302,6 +303,10 @@ class TestLinsolve:
 
             assert_array_almost_equal(X, sX.toarray())
 
+    @pytest.mark.skipif(
+        sysconfig.get_config_var('Py_GIL_DISABLED'),
+        reason=("scikits.umfpack doesn't support free-threaded Python. "
+                "See https://github.com/scikit-umfpack/scikit-umfpack/issues/113"))
     def test_shape_compatibility(self):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)

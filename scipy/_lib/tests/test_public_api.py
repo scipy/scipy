@@ -222,7 +222,9 @@ SKIP_LIST = [
 # while attempting to import each discovered package.
 # For now, `ignore_errors` only ignores what is necessary, but this could be expanded -
 # for example, to all errors from private modules or git subpackages - if desired.
-@pytest.mark.thread_unsafe("pkgutil.walk_packages is thread-unsafe?")
+@pytest.mark.thread_unsafe(
+    reason=("crashes in pkgutil.walk_packages, see "
+            "https://github.com/data-apis/array-api-compat/issues/343"))
 def test_all_modules_are_expected():
     """
     Test that we don't add anything that looks like a new public module by
