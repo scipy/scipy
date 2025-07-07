@@ -9,8 +9,7 @@ from packaging import version
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import (array_namespace, is_array_api_strict,
-                                   is_cupy, is_dask, is_jax, is_numpy, is_torch,
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    make_xp_pytest_param, make_xp_test_case,
                                    xp_default_dtype, get_native_namespace_name)
 from scipy._lib.array_api_compat import numpy as np
