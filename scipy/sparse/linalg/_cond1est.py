@@ -15,7 +15,7 @@ def cond1est(A):
 
     Parameters
     ----------
-    A : ndarray or other linear operator
+    A : (N, N) sparray
         A square, sparse matrix. Any matrix not in CSC format will be converted
         internally, and raise a ``SparseEfficiencyWarning``.
 
