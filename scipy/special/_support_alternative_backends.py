@@ -360,7 +360,7 @@ _special_funcs = (
         _ufuncs.cbrt, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unav")]
+            skip_backends=[("jax.numpy", "unavailable")]
         ),
     ),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
