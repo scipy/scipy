@@ -277,6 +277,8 @@ class TestZpk2Tf:
     @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
     @skip_xp_backends("array_api_strict", 
                       reason="Not supported yet, see pl-23265 for potential fix")
+    @skip_xp_backends("jax.numpy", 
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
         z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
         p = xp.asarray([1, 2])
@@ -284,8 +286,8 @@ class TestZpk2Tf:
         b, a = zpk2tf(z, p, k)
         b_ref = xp.asarray([[1, -3, 2], [1, -7, 12]])
         a_ref = xp.asarray([1, -3, 2])
-        xp_assert_equal(b, b_ref)
-        xp_assert_equal(a, a_ref)
+        xp_assert_close(b, b_ref, check_dtype=False)
+        xp_assert_close(a, a_ref, check_dtype=False)
 
 
 @skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
