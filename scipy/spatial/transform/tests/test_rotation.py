@@ -18,7 +18,7 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
-    xp_default_dtype,
+    xp_default_dtype
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1473,7 +1473,7 @@ def test_align_vectors_no_noise(xp):
     atol = 1e-7 if dtype == xp.float64 else 2e-3
     rng = np.random.default_rng(14697284569885399755764481408308808739)
     c = rotation_to_xp(Rotation.random(rng=rng), xp)
-    b = xp.asarray(rng.normal(size=(5, 3)))
+    b = xp.asarray(rng.normal(size=(5, 3)), dtype=dtype)
     a = c.apply(b)
 
     est, rssd = Rotation.align_vectors(a, b)
@@ -1531,7 +1531,7 @@ def test_align_vectors_noise(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     n_vectors = 100
     rot = rotation_to_xp(Rotation.random(rng=rng), xp)
-    vectors = xp.asarray(rng.normal(size=(n_vectors, 3)))
+    vectors = xp.asarray(rng.normal(size=(n_vectors, 3)), dtype=dtype)
     result = rot.apply(vectors)
 
     # The paper adds noise as independently distributed angular errors
@@ -1685,6 +1685,7 @@ def test_align_vectors_near_inf(xp):
     # infinite weights. rssd will be different with floating point error on the
     # exactly aligned vector being multiplied by a large non-infinite weight
     n = 100
+    dtype = xpx.default_dtype(xp)
     mats = []
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
@@ -1699,8 +1700,8 @@ def test_align_vectors_near_inf(xp):
 
     for i in range(n):
         # Get random pairs of 3-element vectors
-        a = xp.asarray(np.array([1 * mats[0][i][0], 2 * mats[1][i][0]]))
-        b = xp.asarray(np.array([3 * mats[2][i][0], 4 * mats[3][i][0]]))
+        a = xp.asarray(np.array([1 * mats[0][i][0], 2 * mats[1][i][0]]), dtype=dtype)
+        b = xp.asarray(np.array([3 * mats[2][i][0], 4 * mats[3][i][0]]), dtype=dtype)
 
         R, _ = align_vectors(a, b, weights=[1e10, 1])
         R2, _ = align_vectors(a, b, weights=[xp.inf, 1])
@@ -1708,8 +1709,10 @@ def test_align_vectors_near_inf(xp):
 
     for i in range(n):
         # Get random triplets of 3-element vectors
-        a = xp.asarray(np.array([1*mats[0][i][0], 2*mats[1][i][0], 3*mats[2][i][0]]))
-        b = xp.asarray(np.array([4*mats[3][i][0], 5*mats[4][i][0], 6*mats[5][i][0]]))
+        a = xp.asarray(np.array([1*mats[0][i][0], 2*mats[1][i][0], 3*mats[2][i][0]]),
+                       dtype=dtype)
+        b = xp.asarray(np.array([4*mats[3][i][0], 5*mats[4][i][0], 6*mats[5][i][0]]),
+                       dtype=dtype)
 
         R, _ = align_vectors(a, b, weights=[1e10, 2, 1])
         R2, _ = align_vectors(a, b, weights=[xp.inf, 2, 1])
@@ -1772,7 +1775,7 @@ def test_align_vectors_antiparallel(xp):
     for dR in dRs:
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
 
-    # GPU computation in torch is less accurate
+    # GPU computations are less accurate
     if os.environ.get("SCIPY_DEVICE") == "cuda":
         atol = 1e-7
 
@@ -2114,24 +2117,18 @@ def test_rotation_within_numpy_array():
     assert_equal(array.shape, (3, 2))
 
 
+@pytest.mark.skip_xp_backends("array_api_strict",
+                              reason="Array API does not support pickling")
 def test_pickling(xp):
-    # Note: Array API makes no provision for arrays to be pickleable, so it's OK to skip
-    # this test for the backends that don't support it
-    if is_array_api_strict(xp):
-        pytest.skip("Array API does not support pickling")
-
     r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     pkl = pickle.dumps(r)
     unpickled = pickle.loads(pkl)
     xp_assert_close(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
+@pytest.mark.skip_xp_backends("array_api_strict",
+                              reason="Array API does not support deepcopy")
 def test_deepcopy(xp):
-    # Note: Array API makes no provision for arrays to support the `__copy__` protocol,
-    # so it's OK to skip this test for the backends that don't support it
-    if is_array_api_strict(xp):
-        pytest.skip("Array API does not support deepcopy")
-
     r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     r1 = copy.deepcopy(r)
     xp_assert_close(r.as_matrix(), r1.as_matrix(), atol=1e-15)

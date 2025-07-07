@@ -45,8 +45,7 @@ def from_quat(
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    dtype = xp_result_type(matrix, force_floating=True, xp=xp)
-    matrix = xp.asarray(matrix, dtype=dtype, device=device, copy=True)
+    matrix = xp_promote(matrix, force_floating=True, xp=xp)
     # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
     lazy = is_lazy_array(mask)
@@ -593,9 +592,9 @@ def align_vectors(
 ) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
     # Check input vectors
-    dtype = xp_result_type(a, force_floating=True, xp=xp)
-    a_original = xp.asarray(a, dtype=dtype, copy=True)
-    b_original = xp.asarray(b, dtype=dtype, copy=True)
+    dtype = xp_result_type(a, b, force_floating=True, xp=xp)
+    a_original = xp.asarray(a, dtype=dtype)
+    b_original = xp.asarray(b, dtype=dtype)
     # TODO: This function does not support broadcasting yet.
     a = xpx.atleast_nd(a_original, ndim=2, xp=xp)
     b = xpx.atleast_nd(b_original, ndim=2, xp=xp)
@@ -669,9 +668,9 @@ def align_vectors(
     if is_lazy_array(inf_branch):
         q_opt, rssd, sensitivity = _align_vectors(a, b, weights)
         q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_fixed(a, b, weights)
-        q_opt = xp.where(~inf_branch, q_opt, q_opt_inf)
-        rssd = xp.where(~inf_branch, rssd, rssd_inf)
-        sensitivity = xp.where(~inf_branch, sensitivity, sensitivity_inf)
+        q_opt = xp.where(inf_branch, q_opt_inf, q_opt)
+        rssd = xp.where(inf_branch, rssd_inf, rssd)
+        sensitivity = xp.where(inf_branch, sensitivity_inf, sensitivity)
     else:
         if xp.any(inf_branch):
             q_opt, rssd, sensitivity = _align_vectors_fixed(a, b, weights)
@@ -756,8 +755,8 @@ def _align_vectors_fixed(
 
     # We cannot error out on zero length vectors. We set the norm to NaN to avoid
     # division by zero and mark the result as invalid.
-    a_pri_norm = xp.where(a_pri_norm == 0, xp.nan, a_pri_norm)
-    b_pri_norm = xp.where(b_pri_norm == 0, xp.nan, b_pri_norm)
+    a_pri_norm = xpx.at(a_pri_norm)[a_pri_norm == 0].set(xp.nan)
+    b_pri_norm = xpx.at(b_pri_norm)[b_pri_norm == 0].set(xp.nan)
 
     a_pri = a_pri / a_pri_norm
     b_pri = b_pri / b_pri_norm
@@ -768,11 +767,11 @@ def _align_vectors_fixed(
     cross_norm = xp_vector_norm(cross, axis=-1, xp=xp)
     theta = xp.atan2(cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1))
     tolerance = 1e-3  # tolerance for small angle approximation (rad)
-    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0], device=device)
+    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0], dtype=a_pri.dtype, device=device)
 
     # Near pi radians, the Taylor series approximation of x/sin(x) diverges, so for
     # numerical stability we flip pi and then rotate back by the small angle pi - theta
-    flip = xp.asarray(np.pi - theta < tolerance)
+    flip = np.pi - theta < tolerance
     # For antiparallel vectors, cross = [0, 0, 0] so we need to manually set an
     # arbitrary orthogonal axis of rotation
     i = xp.argmin(xp.abs(a_pri[..., 0, :]))
@@ -839,19 +838,15 @@ def _align_vectors_fixed(
     q_sec = from_rotvec(phi * a_pri[0, ...])
 
     # Compose these to get the optimal rotation
-    q_opt = xp.where(xp.asarray(N == 1), q_pri, compose_quat(q_sec, q_pri))
+    q_opt = q_pri if N == 1 else compose_quat(q_sec, q_pri)
 
-    # Calculated the root sum squared distance. We force the error to
+    # Calculate the root sum squared distance. We force the error to
     # be zero for the infinite weight vectors since they will align
     # exactly.
-    weights_inf_zero = xp.asarray(weights, copy=True)
-
-    multiple_vectors = xp.asarray(N > 1, device=device)
-    mask = xp.logical_or(multiple_vectors, weights[0] == xp.inf)
-    mask = xp.logical_and(mask, weight_is_inf)
+    mask = ((N > 1) | (weights[0] == xp.inf)) & weight_is_inf
     # Skip non-infinite weight single vectors pairs, we used the
     # infinite weight code path but don't want to zero that weight
-    weights_inf_zero = xpx.at(weights_inf_zero)[mask].set(0)
+    weights_inf_zero = xpx.at(weights, mask).set(0, copy=True, xp=xp)
     a_est = apply(q_opt, b)
     rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
 
@@ -913,7 +908,8 @@ def _elementary_basis_index(axis: str) -> int:
 
 def _format_angles(angles: Array, degrees: bool, num_axes: int) -> tuple[Array, bool]:
     xp = array_namespace(angles)
-    angles = xp.where(xp.asarray(degrees), _deg2rad(angles), angles)
+    if degrees:
+        angles = _deg2rad(angles)
 
     is_single = False
     # Prepare angles to have shape (num_rot, num_axes)
@@ -967,10 +963,7 @@ def _compute_davenport_from_quat(
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
     device = xp_device(quat)
-    mask = xp.asarray(extrinsic, device=device)
-    _n1 = xp.where(mask, n1, n3)
-    _n3 = xp.where(mask, n3, n1)
-    n1, n3 = _n1, _n3
+    n1, n3 = (n1, n3) if extrinsic else (n3, n1)
 
     n_cross = xp.linalg.cross(n1, n2)
     lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
@@ -1003,20 +996,15 @@ def _compute_davenport_from_quat(
 def _elementary_quat_compose(angles: Array, axes: list[int], intrinsic: bool) -> Array:
     xp = array_namespace(angles)
     device = xp_device(angles)
-    intrinsic = xp.asarray(intrinsic, device=device)
-    quat = _make_elementary_quat(axes[0], angles[..., 0], device=device)
+    quat = _make_elementary_quat(axes[0], angles[..., 0], device=device, xp=xp)
     for i in range(1, len(axes)):
-        ax_quat = _make_elementary_quat(axes[i], angles[..., i], device=device)
-        quat = xp.where(
-            intrinsic, compose_quat(quat, ax_quat), compose_quat(ax_quat, quat)
-        )
+        ax_quat = _make_elementary_quat(axes[i], angles[..., i], device=device, xp=xp)
+        quat = compose_quat(quat, ax_quat) if intrinsic else compose_quat(ax_quat, quat)
     return quat
 
 
-def _make_elementary_quat(axis: int, angle: Array, device) -> Array:
-    xp = array_namespace(angle)
-    dtype = xp_result_type(angle, force_floating=True, xp=xp)
-    quat = xp.zeros((*angle.shape, 4), dtype=dtype, device=device)
+def _make_elementary_quat(axis: int, angle: Array, device, xp) -> Array:
+    quat = xp.zeros((*angle.shape, 4), dtype=angle.dtype, device=device)
     quat = xpx.at(quat)[..., 3].set(xp.cos(angle / 2.0))
     quat = xpx.at(quat)[..., axis].set(xp.sin(angle / 2.0))
     return quat
@@ -1044,10 +1032,6 @@ def _get_angles(
     angle_first = 0 if extrinsic else 2
     angle_third = 2 if extrinsic else 0
 
-    # Convert extrinsic and symmetric to arrays for use in xp.where
-    extrinsic = xp.asarray(extrinsic, dtype=xp.bool, device=device)
-    symmetric = xp.asarray(symmetric, dtype=xp.bool, device=device)
-
     # Check if the second angle is close to 0 or pi, causing a singularity.
     # - Case 0: Second angle is neither close to 0 nor pi.
     # - Case 1: Second angle is close to 0.
@@ -1063,18 +1047,18 @@ def _get_angles(
             stacklevel=3,
         )
 
-    one = xp.asarray(1, dtype=angles.dtype, device=device)
-    a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * xp.where(extrinsic, -one, one))
+    a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * (-1 if extrinsic else 1))
     angles = xpx.at(angles)[..., 0].set(a0)
 
     a1 = xp.where(case0, half_sum - half_diff, angles[..., angle_first])
     angles = xpx.at(angles)[..., angle_first].set(a1)
 
     a3 = xp.where(case0, half_sum + half_diff, angles[..., angle_third])
-    a3 = xp.where(symmetric, a3, a3 * sign)
+    if not symmetric:
+        a3 = a3 * sign
     angles = xpx.at(angles)[..., angle_third].set(a3)
 
-    a1 = xp.where(symmetric, angles[..., 1], angles[..., 1] - lamb)
+    a1 = angles[..., 1] if symmetric else angles[..., 1] - lamb
     angles = xpx.at(angles)[..., 1].set(a1)
 
     angles = (angles + np.pi) % (2 * np.pi) - np.pi
@@ -1111,8 +1095,8 @@ def _split_rotation(q, xp):
 
 
 def _deg2rad(angles: Array) -> Array:
-    return angles * np.pi / 180.0
+    return angles * (np.pi / 180.0)
 
 
 def _rad2deg(angles: Array) -> Array:
-    return angles * 180.0 / np.pi
+    return angles * (180.0 / np.pi)
