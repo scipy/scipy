@@ -735,6 +735,14 @@ _special_funcs = (
         ),
     ),
     _FuncInfo(
+        _basic.sinc, 1,
+        xp_capabilities(
+            cpu_only=True, exceptions=["cupy", "torch"],
+            skip_backends=[("jax.numpy", "unavailable")],
+        ),
+        is_ufunc=False,
+    ),
+    _FuncInfo(
         _ufuncs.sindg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
