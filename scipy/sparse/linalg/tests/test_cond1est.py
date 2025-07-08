@@ -10,8 +10,8 @@ from scipy.sparse.linalg import cond1est
 
 rng = np.random.default_rng(565656)
 
-DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
-DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
+DTYPE_PARAMS = [np.single, np.double, np.csingle, np.cdouble]
+DTYPE_IDS = ['single', 'double', 'csingle', 'cdouble']
 
 ORD_PARAMS = [1, np.inf]
 ORD_IDS = ['ord_1', 'ord_inf']
@@ -56,7 +56,7 @@ def norm_ord(request):
 @pytest.fixture
 def return_dtype(dtype):
     """Fixture to return the appropriate data type for output."""
-    return (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
+    return (np.single if (dtype in {np.single, np.csingle}) else np.double)
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def generate_matrix(N, dtype, singular=None, density=0.5):
         Size of the matrix (N x N).
     dtype : data-type, optional
         Data type of the matrix elements (default is None, which uses
-        float64).
+        double).
     singular : None or str in {'exactly', 'nearly'}, optional
         If 'exactly', the matrix will be exactly singular (infinite
         condition number). If 'nearly', the matrix will be invertible, but
@@ -246,7 +246,8 @@ class TestCond1Est:
         cond_A = np.linalg.cond(np.linalg.inv(A.toarray()), p=1)
         # NOTE there is a bug in np.linalg.cond that returns np.complex when
         # the matrix input is complex, so take the real part for comparison.
-        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=1e-6)
+        rtol = 1e-6 if dtype in {np.single, np.csingle} else 1e-12
+        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=rtol)
 
     def test_1D_array(self, array_1D):
         with pytest.raises(
@@ -271,4 +272,5 @@ class TestCond1Est:
         cond_A = np.linalg.cond(A.toarray(), p=1)
         # NOTE there is a bug in np.linalg.cond that returns np.complex when
         # the matrix input is complex, so take the real part for comparison.
-        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=1e-6)
+        rtol = 1e-6 if A.dtype.type in {np.single, np.csingle} else 1e-12
+        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=rtol)
