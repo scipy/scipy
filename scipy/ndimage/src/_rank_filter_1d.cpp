@@ -174,9 +174,6 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
                   return;
           }
       }
-      else {
-          return;
-      }
   }
   int offset;
   Mediator *m = MediatorNew(win_len, rank);

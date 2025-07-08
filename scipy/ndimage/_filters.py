@@ -1989,7 +1989,8 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
         mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
-        if input.ndim == 1:
+        lim2 = input.size - ((footprint.size - 1) / 2 - origin)
+        if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
             if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
