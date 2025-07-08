@@ -1815,6 +1815,17 @@ def test_align_vectors_array_like():
     xp_assert_close(rssd, rssd_expected)
 
 
+@skip_cupy_13
+def test_align_vectors_dtype_mismatch(xp):
+    rng = np.random.default_rng(123)
+    c = rotation_to_xp(Rotation.random(rng=rng), xp)
+    b = xp.asarray(rng.normal(size=(5, 3)))
+    a = xp.asarray(c.apply(b), dtype=xp.float32)
+    # Check that the dtype of the output is the result type of a and b
+    est, _ = Rotation.align_vectors(a, b)
+    xp_assert_close(est.as_quat(), c.as_quat())
+
+
 def test_repr_single_rotation(xp):
     q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
