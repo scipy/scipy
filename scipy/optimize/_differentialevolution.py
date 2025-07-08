@@ -28,7 +28,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
-                           integrality=None, vectorized=False):
+                           integrality=None, vectorized=False, minimizer_kwargs=None):
     r"""Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
@@ -279,6 +279,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         .. versionadded:: 1.9.0
 
+
+    minimizer_kwargs : dict, optional
+        Can be used to pass additional parameters to `minimize` during polishing (e.g.
+        a jacobian).
+
+        .. versionadded:: 1.16.0
+
     Returns
     -------
     res : OptimizeResult
@@ -498,7 +505,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      constraints=constraints,
                                      x0=x0,
                                      integrality=integrality,
-                                     vectorized=vectorized) as solver:
+                                     vectorized=vectorized,
+                                     minimizer_kwargs=minimizer_kwargs) as solver:
         ret = solver.solve()
 
     return ret
@@ -741,6 +749,9 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
+    minimizer_kwargs : dict, optional
+        Can be used to pass additional parameters to `minimize` during polishing (e.g.
+        a jacobian).
     """ # noqa: E501
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -767,7 +778,7 @@ class DifferentialEvolutionSolver:
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
-                 vectorized=False):
+                 vectorized=False, minimizer_kwargs=None):
 
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway
@@ -788,6 +799,7 @@ class DifferentialEvolutionSolver:
             self._updating = updating
 
         self.vectorized = vectorized
+        self.minimizer_kwargs = minimizer_kwargs or {}
 
         # want to use parallelisation, but updating is immediate
         if workers != 1 and updating == 'immediate':
@@ -1231,11 +1243,23 @@ class DifferentialEvolutionSolver:
                 limits[0, integrality] = DE_result.x[integrality]
                 limits[1, integrality] = DE_result.x[integrality]
 
-            polish_method = 'L-BFGS-B'
+            if 'method' not in self.minimizer_kwargs:
+                if self._wrapped_constraints:
+                    self.minimizer_kwargs['method'] = 'trust-constr'
+                else:
+                    self.minimizer_kwargs['method'] = 'L-BFGS-B'
+            if 'bounds' not in self.minimizer_kwargs:
+                self.minimizer_kwargs['bounds'] = self.limits.T
+            if 'constraints' not in self.minimizer_kwargs:
+                self.minimizer_kwargs['constraints'] = self.constraints
+            if 'fun' in self.minimizer_kwargs or 'x0' in self.minimizer_kwargs:
+                warnings.warn("user-provided arguments fun or x0 in minimizer_kwargs"
+                              " will be overridden", UserWarning, stacklevel=2)
+            self.minimizer_kwargs['fun'] =\
+                lambda x: list(self._mapwrapper(self.func,np.atleast_2d(x)))[0]
+            self.minimizer_kwargs['x0'] = np.copy(DE_result.x)
 
             if self._wrapped_constraints:
-                polish_method = 'trust-constr'
-
                 constr_violation = self._constraint_violation_fn(DE_result.x)
                 if np.any(constr_violation > 0.):
                     warnings.warn("differential evolution didn't find a "
@@ -1244,16 +1268,15 @@ class DifferentialEvolutionSolver:
                                   "infeasible solution",
                                   UserWarning, stacklevel=2)
             if self.disp:
-                print(f"Polishing solution with '{polish_method}'")
-            result = minimize(lambda x:
-                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
-                              np.copy(DE_result.x),
-                              method=polish_method,
-                              bounds=self.limits.T,
-                              constraints=self.constraints)
+                print(f"Polishing solution with '{self.minimizer_kwargs['method']}'")
+            result = minimize(**self.minimizer_kwargs)
 
             self._nfev += result.nfev
             DE_result.nfev = self._nfev
+            if 'njev' in result:
+                DE_result['njev'] = DE_result.get('njev', 0) + result.njev
+            if 'nhev' in result:
+                DE_result['nhev'] = DE_result.get('nhev', 0) + result.nhev
 
             # Polishing solution is only accepted if there is an improvement in
             # cost function, the polishing was successful and the solution lies
@@ -1264,7 +1287,8 @@ class DifferentialEvolutionSolver:
                     np.all(self.limits[0] <= result.x)):
                 DE_result.fun = result.fun
                 DE_result.x = result.x
-                DE_result.jac = result.jac
+                if 'jac' in result:
+                    DE_result.jac = result.jac
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
