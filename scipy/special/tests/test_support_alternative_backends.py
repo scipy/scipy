@@ -87,8 +87,11 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
         # to float32, and sometimes to float64.
         # When they are promoted to float32, explicitly convert the reference
         # numpy arrays to float32 to prevent them from being automatically promoted
-        # to float64 instead.
-        dtypes_np_ref = ['float32' if 'int' in dtype else dtype for dtype in dtypes]
+        # to float64 instead. Do not convert integer only args to float32 though.
+        dtypes_np_ref = [
+            'float32' if 'int' in dtype and type_family != 'int' else dtype
+            for dtype, type_family in zip(dtypes, nfo.argtypes)
+        ]
 
     return positive_only, dtypes_np_ref
 
