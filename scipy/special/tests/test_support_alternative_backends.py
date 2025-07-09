@@ -218,7 +218,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     dtypes = ['int64', 'float32', 'float64', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes, False
+        xp, nfo, dtypes, (False,)*nfo.n_args
     )
 
     rng = np.random.default_rng(984254252920492019)
@@ -266,7 +266,8 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype], False)
+        xp, nfo, [dtype], (False,)*nfo.n_args
+    )
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
