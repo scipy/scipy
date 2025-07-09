@@ -22,6 +22,7 @@
 void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);
 void scopy_(int* n, float* x, int* incx, float* y, int* incy);
 float sdot_(int* n, float* x, int* incx, float* y, int* incy);
+void sgemm_(char* transa, char* transb, int* m, int* n, int* k, float* alpha, float* a, int* lda, float* b, int* ldb, float* beta, float* c, int* ldc);
 void sgemv_(char* trans, int* m, int* n, float* alpha, float* a, int* lda, float* x, int* incx, float* beta, float* y, int* incy);
 void sger_(int* m, int* n, float* alpha, float* x, int* incx, float* y, int* incy, float* a, int* lda);
 float snrm2_(int* n, float* x, int* incx);
@@ -33,6 +34,7 @@ void strmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, fl
 void daxpy_(int* n, double* alpha, double* x, int* incx, double* y, int* incy);
 void dcopy_(int* n, double* x, int* incx, double* y, int* incy);
 double ddot_(int* n, double* x, int* incx, double* y, int* incy);
+void dgemm_(char* transa, char* transb, int* m, int* n, int* k, double* alpha, double* a, int* lda, double* b, int* ldb, double* beta, double* c, int* ldc);
 void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
 void dger_(int* m, int* n, double* alpha, double* x, int* incx, double* y, int* incy, double* a, int* lda);
 double dnrm2_(int* n, double* x, int* incx);
@@ -47,6 +49,7 @@ void cgeru_(int* m, int* n, PROPACK_CPLXF_TYPE* alpha, PROPACK_CPLXF_TYPE* x, in
 float scnrm2_(int* n, PROPACK_CPLXF_TYPE* x, int* incx);
 void cscal_(int* n, PROPACK_CPLXF_TYPE* alpha, PROPACK_CPLXF_TYPE* x, int* incx);
 void csscal_(int* n, float* da, PROPACK_CPLXF_TYPE* zx, int* incx);
+void cgemm_(char* transa, char* transb, int* m, int* n, int* k, PROPACK_CPLXF_TYPE* alpha, PROPACK_CPLXF_TYPE* a, int* lda, PROPACK_CPLXF_TYPE* b, int* ldb, PROPACK_CPLXF_TYPE* beta, PROPACK_CPLXF_TYPE* c, int* ldc);
 void cgemv_(char* trans, int* m, int* n, PROPACK_CPLXF_TYPE* alpha, PROPACK_CPLXF_TYPE* a, int* lda, PROPACK_CPLXF_TYPE* x, int* incx, PROPACK_CPLXF_TYPE* beta, PROPACK_CPLXF_TYPE* y, int* incy);
 void crot_(int* n, PROPACK_CPLXF_TYPE* cx, int* incx, PROPACK_CPLXF_TYPE* cy, int* incy, float* c, PROPACK_CPLXF_TYPE* s);
 void ctrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, PROPACK_CPLXF_TYPE* alpha, PROPACK_CPLXF_TYPE* a, int* lda, PROPACK_CPLXF_TYPE* b, int* ldb);
@@ -57,12 +60,14 @@ void zgeru_(int* m, int* n, PROPACK_CPLX_TYPE* alpha, PROPACK_CPLX_TYPE* x, int*
 double dznrm2_(int* n, PROPACK_CPLX_TYPE* x, int* incx);
 void zscal_(int* n, PROPACK_CPLX_TYPE* alpha, PROPACK_CPLX_TYPE* x, int* incx);
 void zdscal_(int* n, double* da, PROPACK_CPLX_TYPE* zx, int* incx);
+void zgemm_(char* transa, char* transb, int* m, int* n, int* k, PROPACK_CPLX_TYPE* alpha, PROPACK_CPLX_TYPE* a, int* lda, PROPACK_CPLX_TYPE* b, int* ldb, PROPACK_CPLX_TYPE* beta, PROPACK_CPLX_TYPE* c, int* ldc);
 void zgemv_(char* trans, int* m, int* n, PROPACK_CPLX_TYPE* alpha, PROPACK_CPLX_TYPE* a, int* lda, PROPACK_CPLX_TYPE* x, int* incx, PROPACK_CPLX_TYPE* beta, PROPACK_CPLX_TYPE* y, int* incy);
 void zrot_(int* n, PROPACK_CPLX_TYPE* cx, int* incx, PROPACK_CPLX_TYPE* cy, int* incy, double* c, PROPACK_CPLX_TYPE* s);
 void ztrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, PROPACK_CPLX_TYPE* alpha, PROPACK_CPLX_TYPE* a, int* lda, PROPACK_CPLX_TYPE* b, int* ldb);
 
 // LAPACK
 
+void sbdsdc_(char* uplo, char* compq, int* n, float* d, float* e, float* u, int* ldu, float* vt, int* ldvt, float* q, int* iq, float* work, int* iwork, int* info);
 void sgeqr2_(int* m, int* n, float* a, int* lda, float* tau, float* work, int* info);
 void slacpy_(char* uplo, int* m, int* n, float* a, int* lda, float* b, int* ldb);
 void slaev2_(float* a, float* b, float* c, float* rt1, float* rt2, float* cs1, float* sn1);
@@ -81,6 +86,7 @@ void ssteqr_(char* compz, int* n, float* d, float* e, float* z, int* ldz, float*
 void strevc_(char* side, char* howmny, int* select, int* n, float* t, int* ldt, float* vl, int* ldvl, float* vr, int* ldvr, int* mm, int* m, float* work, int* info);
 void strsen_(char* job, char* compq, int* select, int* n, float* t, int* ldt, float* q, int* ldq, float* wr, float* wi, int* m, float* s, float* sep, float* work, int* lwork, int* iwork, int* liwork, int* info);
 
+void dbdsdc_(char* uplo, char* compq, int* n, double* d, double* e, double* u, int* ldu, double* vt, int* ldvt, double* q, int* iq, double* work, int* iwork, int* info);
 void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
 void dlacpy_(char* uplo, int* m, int* n, double* a, int* lda, double* b, int* ldb);
 void dlaev2_(double* a, double* b, double* c, double* rt1, double* rt2, double* cs1, double* sn1);
@@ -201,4 +207,5 @@ zdotc_(const int* n, const PROPACK_CPLX_TYPE* restrict x, const int* incx, const
 
     return result;
 }
+
 #endif

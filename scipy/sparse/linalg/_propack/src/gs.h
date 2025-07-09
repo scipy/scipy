@@ -3,16 +3,13 @@
 
 #include "blaslapack_declarations.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Modified Gram-Schmidt orthogonalization - Single precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V, following
  * the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -27,10 +24,10 @@ void smgs(int n, int k, float* V, int ldv, float* vnew, const int* indices);
 
 /**
  * Modified Gram-Schmidt orthogonalization - Double precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V, following
  * the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -45,10 +42,10 @@ void dmgs(int n, int k, double* V, int ldv, double* vnew, const int* indices);
 
 /**
  * Modified Gram-Schmidt orthogonalization - Single precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using conjugate
  * inner product, following the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -63,10 +60,10 @@ void cmgs(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* vnew
 
 /**
  * Modified Gram-Schmidt orthogonalization - Double precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using conjugate
  * inner product, following the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -81,11 +78,11 @@ void zmgs(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, 
 
 /**
  * Classical Gram-Schmidt orthogonalization - Single precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * block matrix-vector operations, following the PROPACK partial
  * reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -101,11 +98,11 @@ void scgs(int n, int k, float* V, int ldv, float* vnew, const int* indices, floa
 
 /**
  * Classical Gram-Schmidt orthogonalization - Double precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * block matrix-vector operations, following the PROPACK partial
  * reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -121,11 +118,11 @@ void dcgs(int n, int k, double* V, int ldv, double* vnew, const int* indices, do
 
 /**
  * Classical Gram-Schmidt orthogonalization - Single precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * block matrix-vector operations with conjugate transpose, following
  * the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -141,11 +138,11 @@ void ccgs(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* vnew
 
 /**
  * Classical Gram-Schmidt orthogonalization - Double precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * block matrix-vector operations with conjugate transpose, following
  * the PROPACK partial reorthogonalization pattern.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -161,11 +158,11 @@ void zcgs(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, 
 
 /**
  * Iterated orthogonalization with convergence check - Single precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * iterated classical or modified Gram-Schmidt until convergence criterion
  * is met or maximum iterations reached.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -184,11 +181,11 @@ void sreorth(int n, int k, float* V, int ldv, float* vnew, float* normvnew, cons
 
 /**
  * Iterated orthogonalization with convergence check - Double precision
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * iterated classical or modified Gram-Schmidt until convergence criterion
  * is met or maximum iterations reached.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -207,11 +204,11 @@ void dreorth(int n, int k, double* V, int ldv, double* vnew, double* normvnew, c
 
 /**
  * Iterated orthogonalization with convergence check - Single precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * iterated classical or modified Gram-Schmidt until convergence criterion
  * is met or maximum iterations reached.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -230,11 +227,11 @@ void creorth(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* v
 
 /**
  * Iterated orthogonalization with convergence check - Double precision complex
- * 
+ *
  * Orthogonalizes vnew against specified blocks of vectors in V using
  * iterated classical or modified Gram-Schmidt until convergence criterion
  * is met or maximum iterations reached.
- * 
+ *
  * @param n        Length of vectors
  * @param k        Number of vectors in V (maximum column index)
  * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
@@ -251,8 +248,5 @@ void creorth(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* v
  */
 void zreorth(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, double* normvnew, const int* indices, double alpha, PROPACK_CPLX_TYPE* work, int iflag);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GS_H */

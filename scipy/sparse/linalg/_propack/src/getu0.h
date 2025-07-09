@@ -18,11 +18,6 @@
 #endif
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Function pointer typedefs for aprod callbacks
 typedef void (*PROPACK_aprod_s)(int transa, int m, int n, const float* x, float* y, float* dparm, int* iparm);
 typedef void (*PROPACK_aprod_d)(int transa, int m, int n, const double* x, double* y, double* dparm, int* iparm);
@@ -31,13 +26,13 @@ typedef void (*PROPACK_aprod_z)(int transa, int m, int n, const PROPACK_CPLX_TYP
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Single precision
- * 
- * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to 
+ *
+ * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to
  * span(U(:,0:j-1)), where Op(A) = A if transa=0 and Op(A) = A^T if transa=1.
- * 
+ *
  * @param transa     0 for A*x, 1 for A^T*x
  * @param m          Number of rows in A
- * @param n          Number of columns in A  
+ * @param n          Number of columns in A
  * @param j          Number of existing vectors in U to orthogonalize against
  * @param ntry       Maximum number of attempts
  * @param u0         Output vector (modified in-place)
@@ -53,18 +48,18 @@ typedef void (*PROPACK_aprod_z)(int transa, int m, int n, const PROPACK_CPLX_TYP
  * @param work       Work array of size max(m,n)
  * @param rng_state  User-supplied random number generator state (uint64_t[4])
  */
-void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm, float* U, int ldu, 
+void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm, float* U, int ldu,
            PROPACK_aprod_s aprod, float* dparm, int* iparm, int* ierr, int icgs, float* anormest, float* work, uint64_t* rng_state);
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Double precision
- * 
- * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to 
+ *
+ * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to
  * span(U(:,0:j-1)), where Op(A) = A if transa=0 and Op(A) = A^T if transa=1.
- * 
+ *
  * @param transa     0 for A*x, 1 for A^T*x
  * @param m          Number of rows in A
- * @param n          Number of columns in A  
+ * @param n          Number of columns in A
  * @param j          Number of existing vectors in U to orthogonalize against
  * @param ntry       Maximum number of attempts
  * @param u0         Output vector (modified in-place)
@@ -85,13 +80,13 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Single precision complex
- * 
- * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to 
+ *
+ * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to
  * span(U(:,0:j-1)), where Op(A) = A if transa=0 and Op(A) = A^H if transa=1.
- * 
+ *
  * @param transa     0 for A*x, 1 for A^H*x
  * @param m          Number of rows in A
- * @param n          Number of columns in A  
+ * @param n          Number of columns in A
  * @param j          Number of existing vectors in U to orthogonalize against
  * @param ntry       Maximum number of attempts
  * @param u0         Output vector (modified in-place)
@@ -112,13 +107,13 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Double precision complex
- * 
- * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to 
+ *
+ * Attempts to generate a pseudo-random vector in SPAN(Op(A)) orthogonal to
  * span(U(:,0:j-1)), where Op(A) = A if transa=0 and Op(A) = A^H if transa=1.
- * 
+ *
  * @param transa     0 for A*x, 1 for A^H*x
  * @param m          Number of rows in A
- * @param n          Number of columns in A  
+ * @param n          Number of columns in A
  * @param j          Number of existing vectors in U to orthogonalize against
  * @param ntry       Maximum number of attempts
  * @param u0         Output vector (modified in-place)
@@ -137,8 +132,5 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
 void zgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLX_TYPE* u0, double* u0norm, PROPACK_CPLX_TYPE* U, int ldu,
            PROPACK_aprod_z aprod, double* dparm, int* iparm, int* ierr, int icgs, double* anormest, PROPACK_CPLX_TYPE* work, uint64_t* rng_state);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
