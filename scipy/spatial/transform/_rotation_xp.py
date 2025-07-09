@@ -76,9 +76,12 @@ def from_matrix(matrix: Array) -> Array:
     )
     choice = xp.argmax(decision, axis=-1, keepdims=True)
     quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device)
-    # While the Array API now does support advanced indexing, we still need to know the
-    # shape of all arrays statically. This is not possible if we index based on the
-    # argmax, so we compute each case and assemble the final result with `xp.where`.
+
+    # The Array API does not support mixing integer indexing with ellipsis, so we cannot
+    # follow the same pattern as the cython backend. Instead, we compute each case
+    # explicitly and assemble the final result with `xp.where`.
+    # TODO: Revisit this implementation if the array API supports mixed integer and
+    # ellipsis indexing.
 
     # Case 0
     quat_0 = xp.stack(
@@ -139,8 +142,7 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
         raise ValueError(
             f"Expected `rot_vec` to have shape (3,) or (N, 3), got {rotvec.shape}"
         )
-    degrees = xp.asarray(degrees, device=xp_device(rotvec))
-    rotvec = xp.where(degrees, _deg2rad(rotvec), rotvec)
+    rotvec = _deg2rad(rotvec) if degrees else rotvec
 
     angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
     small_angle = angle <= 1e-3
@@ -193,7 +195,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     angles = xp_promote(angles, force_floating=True, xp=xp)
     angles, is_single = _format_angles(angles, degrees, num_axes)
     axes = [_elementary_basis_index(x) for x in seq.lower()]
-    q = _elementary_quat_compose(angles, axes, intrinsic)
+    q = _elementary_quat_compose(axes, angles, intrinsic)
     return q[0, ...] if is_single else q
 
 
@@ -325,7 +327,7 @@ def as_rotvec(quat: Array, degrees: bool = False) -> Array:
 def as_mrp(quat: Array) -> Array:
     xp = array_namespace(quat)
     one = xp.asarray(1.0, device=xp_device(quat), dtype=quat.dtype)
-    sign = xp.where(quat[..., 3, None] < 0, -one, one)
+    sign = xp.where(quat[..., 3, None] < 0, -1, one)
     denominator = 1.0 + sign * quat[..., 3, None]
     return sign * quat[..., :3] / denominator
 
@@ -858,17 +860,13 @@ def _align_vectors_fixed(
 def pow(quat: Array, n: float) -> Array:
     xp = array_namespace(quat)
     device = xp_device(quat)
-    # general scaling of rotation angle
-    result = from_rotvec(n * as_rotvec(quat))
+    result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
     # Special cases 0 -> identity, -1 -> inv, 1 -> copy
-    identity = xp.zeros((*quat.shape[:-1], 4), dtype=result.dtype, device=device)
+    identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
     identity = xpx.at(identity)[..., 3].set(1)
-    mask = xp.asarray(n == 0, device=device)
-    result = xp.where(mask, identity, result)
-    mask = xp.asarray(n == -1, device=device)
-    result = xp.where(mask, inv(quat), result)
-    mask = xp.asarray(n == 1, device=device)
-    result = xp.where(mask, quat, result)
+    result = xp.where(xp.asarray(n == 0, device=device), identity, result)
+    result = xp.where(xp.asarray(n == -1, device=device), inv(quat), result)
+    result = xp.where(xp.asarray(n == 1, device=device), quat, result)
     return result
 
 
@@ -888,11 +886,11 @@ def _quat_canonical(quat: Array) -> Array:
     xp = array_namespace(quat)
     mask = quat[..., 3] < 0
     zero_w = quat[..., 3] == 0
-    mask = xp.logical_or(mask, zero_w & (quat[..., 0] < 0))
-    zero_wx = xp.logical_or(zero_w, quat[..., 0] == 0)
-    mask = xp.logical_or(mask, zero_wx & (quat[..., 1] < 0))
-    zero_wxy = xp.logical_or(zero_wx, quat[..., 1] == 0)
-    mask = xp.logical_or(mask, zero_wxy & (quat[..., 2] < 0))
+    mask = mask | (zero_w & (quat[..., 0] < 0))
+    zero_wx = zero_w & (quat[..., 0] == 0)
+    mask = mask | (zero_wx & (quat[..., 1] < 0))
+    zero_wxy = zero_wx & (quat[..., 1] == 0)
+    mask = mask | (zero_wxy & (quat[..., 2] < 0))
     return xp.where(mask[..., None], -quat, quat)
 
 
@@ -993,7 +991,7 @@ def _compute_davenport_from_quat(
     return angles
 
 
-def _elementary_quat_compose(angles: Array, axes: list[int], intrinsic: bool) -> Array:
+def _elementary_quat_compose(axes: list[int], angles: Array, intrinsic: bool) -> Array:
     xp = array_namespace(angles)
     device = xp_device(angles)
     quat = _make_elementary_quat(axes[0], angles[..., 0], device=device, xp=xp)
@@ -1056,13 +1054,10 @@ def _get_angles(
     a3 = xp.where(case0, half_sum + half_diff, angles[..., angle_third])
     if not symmetric:
         a3 = a3 * sign
+        angles = xpx.at(angles)[..., 1].set(angles[..., 1] - lamb)
     angles = xpx.at(angles)[..., angle_third].set(a3)
 
-    a1 = angles[..., 1] if symmetric else angles[..., 1] - lamb
-    angles = xpx.at(angles)[..., 1].set(a1)
-
     angles = (angles + np.pi) % (2 * np.pi) - np.pi
-
     return angles
 
 
