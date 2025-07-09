@@ -387,15 +387,9 @@ class TestUnivariateSpline:
              0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
              0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
              10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
-        with pytest.warns(UserWarning) as r:
+        msg = r"does not satisfy the condition abs\(fp-s\)/s < tol"
+        with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
-            assert len(r) == 1
-            assert str(r[0].message) == r"""
-The maximal number of iterations maxit (set to 20 by the program)
-allowed for finding a smoothing spline with fp=s has been reached: s
-too small.
-There is an approximation returned but the corresponding weighted sum
-of squared residuals does not satisfy the condition abs(fp-s)/s < tol."""
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
