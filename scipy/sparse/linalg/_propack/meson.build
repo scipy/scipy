@@ -1,16 +1,16 @@
 propack_sources = [
-    '_propack/src/common.c',
-    '_propack/src/gemm_overwrite.c',
-    '_propack/src/getu0.c',
-    '_propack/src/gs.c',
-    '_propack/src/lanbpro.c',
-    '_propack/src/lansvd_irl.c',
-    '_propack/src/lansvd.c',
-    '_propack/src/ritzvec.c'
+    'PROPACK/src/common.c',
+    'PROPACK/src/gemm_overwrite.c',
+    'PROPACK/src/getu0.c',
+    'PROPACK/src/gs.c',
+    'PROPACK/src/lanbpro.c',
+    'PROPACK/src/lansvd_irl.c',
+    'PROPACK/src/lansvd.c',
+    'PROPACK/src/ritzvec.c'
 ]
 
-propack_incdir_pub = include_directories('_propack/include')
-propack_incdir_priv = include_directories('_propack/src/include')
+propack_incdir_pub = include_directories('PROPACK/include')
+propack_incdir_priv = include_directories('PROPACK/src/include')
 
 propack_lib = static_library('propack',
   propack_sources,
