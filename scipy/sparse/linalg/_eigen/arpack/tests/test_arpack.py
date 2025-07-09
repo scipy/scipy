@@ -550,7 +550,8 @@ def test_linearoperator_deallocation():
 
 def test_parallel_threads():
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
         x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
