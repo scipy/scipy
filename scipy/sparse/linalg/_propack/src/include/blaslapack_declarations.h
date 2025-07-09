@@ -1,22 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include <complex.h>
-
-#if defined(_MSC_VER)
-    // MSVC definition
-    typedef _Fcomplex PROPACK_CPLXF_TYPE;
-    typedef _Dcomplex PROPACK_CPLX_TYPE;
-    #define PROPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
-    #define PROPACK_cplx(real, imag) ((_Dcomplex){real, imag})
-#else
-    // C99 compliant compilers
-    typedef float complex PROPACK_CPLXF_TYPE;
-    typedef double complex PROPACK_CPLX_TYPE;
-    #define PROPACK_cplxf(real, imag) ((real) + (imag)*I)
-    #define PROPACK_cplx(real, imag) ((real) + (imag)*I)
-#endif
-
+#include "types.h"
 
 // BLAS
 void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);

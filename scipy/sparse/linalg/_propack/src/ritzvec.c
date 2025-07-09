@@ -1,6 +1,4 @@
-#include "common.h"
-#include "gemm_overwrite.h"
-
+#include "ritzvec.h"
 
 void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
               float* restrict D, float* restrict E, float* restrict S, float* restrict U, const int ldu,
@@ -91,9 +89,9 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
 
 
 void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict S, complex float* restrict U, const int ldu,
+              float* restrict D, float* restrict E, float* restrict S, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
               float* restrict V, const int ldv, float* restrict work, const int in_lwrk,
-              complex float* restrict cwork, const int lcwrk, int* restrict iwork)
+              PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork)
 {
     const float one = 1.0f, zero = 0.0f;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
@@ -137,9 +135,9 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
 
 
 void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict S, complex double* restrict U, const int ldu,
+              double* restrict D, double* restrict E, double* restrict S, PROPACK_CPLX_TYPE* restrict U, const int ldu,
               double* restrict V, const int ldv, double* restrict work, const int in_lwrk,
-              complex double* restrict zwork, const int lzwrk, int* restrict iwork)
+              PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork)
 {
     const double one = 1.0, zero = 0.0;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;

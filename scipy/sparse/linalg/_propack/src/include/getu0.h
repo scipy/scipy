@@ -3,26 +3,10 @@
 
 #include <math.h>
 #include <complex.h>
+#include "types.h"
 #include "blaslapack_declarations.h"
 #include "gs.h"
 #include "common.h"
-
-#if defined(_MSC_VER)
-    // MSVC definition
-    #define PROPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
-    #define PROPACK_cplx(real, imag) ((_Dcomplex){real, imag})
-#else
-    // C99 compliant compilers
-    #define PROPACK_cplxf(real, imag) ((real) + (imag)*I)
-    #define PROPACK_cplx(real, imag) ((real) + (imag)*I)
-#endif
-
-
-// Function pointer typedefs for aprod callbacks
-typedef void (*PROPACK_aprod_s)(int transa, int m, int n, const float* x, float* y, float* dparm, int* iparm);
-typedef void (*PROPACK_aprod_d)(int transa, int m, int n, const double* x, double* y, double* dparm, int* iparm);
-typedef void (*PROPACK_aprod_c)(int transa, int m, int n, const PROPACK_CPLXF_TYPE* x, PROPACK_CPLXF_TYPE* y, float* dparm, int* iparm);
-typedef void (*PROPACK_aprod_z)(int transa, int m, int n, const PROPACK_CPLX_TYPE* x, PROPACK_CPLX_TYPE* y, double* dparm, int* iparm);
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Single precision

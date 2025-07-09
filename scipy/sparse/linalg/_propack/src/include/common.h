@@ -6,7 +6,7 @@
  * Generate a random single-precision floating point number in [0, 1).
  *
  * @param state Pointer to 4-element uint64_t array containing xoshiro256+ PRNG state
- * @return Random float in the range [0.0f, 1.0f)
+ * @return Random float in the range [-1.0f, 1.0f)
  */
 float random_float(uint64_t* state);
 
@@ -14,7 +14,7 @@ float random_float(uint64_t* state);
  * Generate a random double-precision floating point number in [0, 1).
  *
  * @param state Pointer to 4-element uint64_t array containing xoshiro256+ PRNG state
- * @return Random double in the range [0.0, 1.0)
+ * @return Random double in the range [-1.0, 1.0)
  */
 double random_double(uint64_t* state);
 

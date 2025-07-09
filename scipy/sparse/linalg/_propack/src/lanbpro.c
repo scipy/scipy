@@ -1,10 +1,6 @@
-#include "lanbpro.h"
-#include "blaslapack_declarations.h"
-#include "common.h"
-#include "getu0.h"
-#include "gs.h"
 #include <math.h>
 #include <float.h>
+#include "lanbpro.h"
 
 
 static void ssafescal(int n, float alpha, float* x) {

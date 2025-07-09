@@ -1,6 +1,7 @@
 #ifndef PROPACK_LANBPRO_H
 #define PROPACK_LANBPRO_H
 
+#include "types.h"
 #include "common.h"
 #include "getu0.h"
 #include "gs.h"

@@ -1,6 +1,7 @@
 #ifndef PROPACK_GS_H
 #define PROPACK_GS_H
 
+#include "types.h"
 #include "blaslapack_declarations.h"
 
 
