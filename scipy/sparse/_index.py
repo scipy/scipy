@@ -231,7 +231,7 @@ class IndexMixin:
             elif isinstance(idx, slice) or isintlike(idx):
                 index_1st.append(idx)
                 prelim_ndim += 1
-            elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+            elif (ix := _get_compatible_boolean_index(idx, self.ndim)) is not None:
                 index_1st.append(ix)
                 prelim_ndim += ix.ndim
             elif issparse(idx):
@@ -420,8 +420,8 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _compatible_boolean_index(idx, desired_ndim):
-    """Check for boolean array or array-like. peek before asarray for array-like"""
+def _get_compatible_boolean_index(idx, desired_ndim):
+    """Check for compatible boolean array-like value, converting to one if necessary."""
     # use attribute ndim to indicate a compatible array and check dtype
     # if not, look at 1st element as quick rejection of bool, else slower asanyarray
     if not hasattr(idx, 'ndim'):
@@ -439,6 +439,7 @@ def _compatible_boolean_index(idx, desired_ndim):
         # since first is boolean, construct array and check all elements
         idx = np.asanyarray(idx)
 
-    if idx.dtype.kind == 'b':
-        return idx
+    if hasattr(idx, 'dtype'):
+        if hasattr(idx.dtype, 'kind') and idx.dtype.kind == 'b':
+            return idx
     return None
