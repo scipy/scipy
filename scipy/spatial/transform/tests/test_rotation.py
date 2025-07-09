@@ -43,6 +43,10 @@ def test_init_non_array():
     Rotation([0, 0, 0, 1])
 
 
+def test_numpy_float32_inputs():
+    Rotation.from_quat(np.array([1, 0, 0, 0], dtype=np.float32))
+
+
 def test_generic_quat_matrix(xp):
     x = xp.asarray([[3.0, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
