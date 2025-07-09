@@ -812,6 +812,7 @@ class TestNumericalInversePolynomial:
     mv3 = [-0.45/np.pi, 0.2 * 250/3 * 0.5 - 0.45**2/np.pi**2]
     mvs = [mv0, mv1, mv2, mv3]
 
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
     def test_basic(self, dist, mv_ex):

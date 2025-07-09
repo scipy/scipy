@@ -447,6 +447,7 @@ class TestFFTThreadSafe:
 
 
 @skip_xp_backends(np_only=True)
+@pytest.mark.thread_unsafe(reason="segfault + deadlock #23301")
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func, xp):
     # Test that fft still works after fork (gh-10422)

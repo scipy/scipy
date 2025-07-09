@@ -597,8 +597,9 @@ class QMCEngineTests:
         "rng",
         (
             170382760648021597650530316304495310428,
-            np.random.default_rng(170382760648021597650530316304495310428),
-            None,
+            pytest.param(np.random.default_rng(170382760648021597650530316304495310428),
+                         marks=pytest.mark.thread_unsafe),
+            pytest.param(None, marks=pytest.mark.thread_unsafe),
         ),
     )
     def test_reset(self, scramble, rng):

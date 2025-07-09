@@ -508,6 +508,7 @@ jobs:
         # Excluded modules:
         # - scipy.spatial has multiple issues  in kdtree/qhull, and gh-20655 is pending.
         TEST_SUBMODULES: >-
+          scipy._lib
           scipy.cluster
           scipy.constants
           scipy.datasets
@@ -517,7 +518,6 @@ jobs:
           scipy.integrate
           scipy.interpolate
           scipy.io
-          scipy._lib
           scipy.linalg
           scipy.misc
           scipy.ndimage

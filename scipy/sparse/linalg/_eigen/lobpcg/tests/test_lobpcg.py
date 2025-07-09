@@ -335,7 +335,6 @@ def test_failure_to_run_iterations():
     assert np.max(eigenvalues) > 0
 
 
-
 def test_failure_to_run_iterations_nonsymmetric():
     """Check that the code exists gracefully without breaking
     if the matrix in not symmetric.
