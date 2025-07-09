@@ -78,7 +78,7 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
  * @param U          Matrix of existing vectors (column-major, ldu x j)
  * @param ldu        Leading dimension of U
  * @param aprod      Matrix-vector operation callback function
- * @param dparm      Float parameters for aprod
+ * @param cparm      Float complex parameters for aprod
  * @param iparm      Integer parameters for aprod
  * @param ierr       Error flag (0=success, -1=failure)
  * @param icgs       Orthogonalization method (0=MGS, 1=CGS)
@@ -87,7 +87,8 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
  * @param rng_state  User-supplied random number generator state (uint64_t[4])
  */
 void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, float* u0norm, PROPACK_CPLXF_TYPE* U, int ldu,
-           PROPACK_aprod_c aprod, float* dparm, int* iparm, int* ierr, int icgs, float* anormest, PROPACK_CPLXF_TYPE* work, uint64_t* rng_state);
+           PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* cparm, int* iparm, int* ierr, int icgs, float* anormest, PROPACK_CPLXF_TYPE* work,
+           uint64_t* rng_state);
 
 /**
  * Generate random vector in span(Op(A)) orthogonal to span(U) - Double precision complex
@@ -105,7 +106,7 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
  * @param U          Matrix of existing vectors (column-major, ldu x j)
  * @param ldu        Leading dimension of U
  * @param aprod      Matrix-vector operation callback function
- * @param dparm      Double parameters for aprod
+ * @param zparm      Double complex parameters for aprod
  * @param iparm      Integer parameters for aprod
  * @param ierr       Error flag (0=success, -1=failure)
  * @param icgs       Orthogonalization method (0=MGS, 1=CGS)
@@ -114,7 +115,8 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
  * @param rng_state  User-supplied random number generator state (uint64_t[4])
  */
 void zgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLX_TYPE* u0, double* u0norm, PROPACK_CPLX_TYPE* U, int ldu,
-           PROPACK_aprod_z aprod, double* dparm, int* iparm, int* ierr, int icgs, double* anormest, PROPACK_CPLX_TYPE* work, uint64_t* rng_state);
+           PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* zparm, int* iparm, int* ierr, int icgs, double* anormest, PROPACK_CPLX_TYPE* work,
+           uint64_t* rng_state);
 
 
 #endif

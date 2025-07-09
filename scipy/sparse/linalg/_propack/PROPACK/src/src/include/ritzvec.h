@@ -79,7 +79,7 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param S         singular values (real, output)
  * @param U         left singular vectors (complex, m x k), modified in-place
  * @param ldu       leading dimension of U
- * @param V         right singular vectors (real, n x k), modified in-place
+ * @param V         right singular vectors (complex, n x k), modified in-place
  * @param ldv       leading dimension of V
  * @param work      real workspace array
  * @param in_lwrk   size of work array
@@ -89,7 +89,7 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
  */
 void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
               float* restrict D, float* restrict E, float* restrict S, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
-              float* restrict V, const int ldv, float* restrict work, const int in_lwrk,
+              PROPACK_CPLXF_TYPE* restrict V, const int ldv, float* restrict work, const int in_lwrk,
               PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork);
 
 /**
@@ -121,5 +121,5 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
  */
 void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
               double* restrict D, double* restrict E, double* restrict S, PROPACK_CPLX_TYPE* restrict U, const int ldu,
-              double* restrict V, const int ldv, double* restrict work, const int in_lwrk,
+              PROPACK_CPLX_TYPE* restrict V, const int ldv, double* restrict work, const int in_lwrk,
               PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork);
