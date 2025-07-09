@@ -21,7 +21,7 @@ pytestmark = pytest.mark.array_api_backends
 lazy_xp_modules = [special]
 
 
-def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
+def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
     """Skip tests for specific intersections of scipy.special functions 
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
@@ -89,8 +89,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
         # numpy arrays to float32 to prevent them from being automatically promoted
         # to float64 instead. Do not convert integer only args to float32 though.
         dtypes_np_ref = [
-            'float32' if 'int' in dtype and type_family != 'int' else dtype
-            for dtype, type_family in zip(dtypes, nfo.argtypes)
+            'float32' if 'int' in dtype and not needs_int else dtype
+            for dtype, needs_int in zip(dtypes, int_only)
         ]
 
     return positive_only, dtypes_np_ref
@@ -104,15 +104,18 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
 @pytest.mark.parametrize(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
-    argtypes = nfo.argtypes
-    if argtypes is None:
-        argtypes = ('real', ) * nfo.n_args
+    int_only = nfo.int_only
+    if int_only is None:
+        int_only = (False, ) * nfo.n_args
         dtypes = (base_dtype, ) * nfo.n_args
     else:
-        dtypes = tuple('int64' if type_ == "int" else base_dtype for type_ in argtypes)
+        dtypes = tuple(
+            'int64' if needs_int else base_dtype for needs_int in int_only
+        )
 
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes)
+        xp, nfo, dtypes, int_only
+    )
 
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
     dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
@@ -144,8 +147,8 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     shapes = [shape if not cond else None for shape, cond in zip(shapes, no_shape)]
 
-    for dtype, dtype_np, type_, shape, needs_python_int in zip(
-            dtypes, dtypes_np, argtypes, shapes, python_int_only
+    for dtype, dtype_np, shape, needs_python_int in zip(
+            dtypes, dtypes_np, shapes, python_int_only
     ):
         if 'int' in dtype and test_large_ints:
             iinfo = np.iinfo(dtype_np)
@@ -215,7 +218,8 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     dtypes = ['int64', 'float32', 'float64', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, nfo, dtypes)
+        xp, nfo, dtypes, False
+    )
 
     rng = np.random.default_rng(984254252920492019)
     iinfo = np.iinfo(np.int64)
@@ -262,7 +266,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, nfo, [dtype])
+        xp, nfo, [dtype], False)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
@@ -315,23 +319,23 @@ def test_doc(func):
 
 
 @pytest.mark.parametrize(
-    'func,n_args,argtypes,is_ufunc',
-    [(nfo.wrapper, nfo.n_args, nfo.argtypes, nfo.is_ufunc)
+    'func,n_args,int_only,is_ufunc',
+    [(nfo.wrapper, nfo.n_args, nfo.int_only, nfo.is_ufunc)
      for nfo in _special_funcs]
 )
-def test_ufunc_kwargs(func, n_args, argtypes, is_ufunc):
+def test_ufunc_kwargs(func, n_args, int_only, is_ufunc):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
     if not is_ufunc:
         pytest.skip(f"{func.__name__} is not a ufunc.")
-    if argtypes is None:
-        argtypes = ("real", ) * n_args
+    if int_only is None:
+        int_only = (False, ) * n_args
     # out=
     args = [
-        np.asarray([.1, .2]) if type_ == "real"
+        np.asarray([.1, .2]) if not needs_int
         else np.asarray([1, 2])
-        for type_ in argtypes
+        for needs_int in int_only
     ]
     out = np.empty(2)
     y = func(*args, out=out)

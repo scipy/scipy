@@ -36,9 +36,8 @@ class _FuncInfo:
     # Handle case where a backend uses an alternative name for a function.
     # Should map backend names to alternative function names.
     alt_names_map: dict[str, str] | None = None
-    # General families of input types used for testing purposes.
-    # Currently only "int" and "real" are supported.
-    argtypes: tuple[str] | None = None
+    # Some functions only take integer arrays for some arguments.
+    int_only: tuple[bool] | None = None
     # For testing purposes, whether tests should only use positive values
     # for some arguments. If bool and equal to True, restrict to positive
     # values for all arguments. To restrict only some arguments to positive
@@ -300,7 +299,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")]
         ),
-        argtypes=("real", "int", "real")
+        int_only=(False, True, False),
     ),
     _FuncInfo(
         _ufuncs.bdtrc, 3,
@@ -308,7 +307,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")]
         ),
-        argtypes=("real", "int", "real")
+        int_only=(False, True, False),
     ),
     _FuncInfo(
         _ufuncs.bdtri, 3,
@@ -316,7 +315,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")]
         ),
-        argtypes=("real", "int", "real")
+        int_only=(False, True, False),
     ),
     _FuncInfo(_ufuncs.betainc, 3, _needs_betainc),
     _FuncInfo(_ufuncs.betaincc, 3, _needs_betainc, generic_impl=_betaincc),
@@ -326,7 +325,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")]
         ),
-        test_large_ints=False, positive_only=True
+        test_large_ints=False, positive_only=True,
     ),
     _FuncInfo(
         _ufuncs.betaln, 2,
@@ -460,7 +459,7 @@ _special_funcs = (
         # Inconsistent behavior for negative n. expn is not defined here without
         # taking analytic continuation.
         positive_only=True,
-        argtypes=("int", "real"), test_large_ints=False
+        int_only=(True, False), test_large_ints=False
     ),
     _FuncInfo(
         _ufuncs.fdtr, 3,
@@ -647,7 +646,7 @@ _special_funcs = (
             "dask.array": [False, True],
             "marray": [False, True],
         },
-        argtypes=("real", "int"), test_large_ints=False,
+        int_only=(False, True), test_large_ints=False,
         positive_only=True,
     ),
     _FuncInfo(
@@ -656,7 +655,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")]
         ),
-        argtypes=("int", "int", "real"), positive_only=True,
+        int_only=(True, True, False), positive_only=True,
     ),
     _FuncInfo(
         _ufuncs.nbdtrc, 3,
@@ -664,7 +663,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")],
         ),
-        argtypes=("int", "int", "real"), positive_only=True,
+        int_only=(True, True, False), positive_only=True,
     ),
     _FuncInfo(
         _ufuncs.nbdtri, 3,
@@ -672,7 +671,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")],
         ),
-        argtypes=("int", "int", "real"), positive_only=True,
+        int_only=(True, True, False), positive_only=True,
     ),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
@@ -698,7 +697,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")],
         ),
-        argtypes=("int", "real"), positive_only=True,
+        int_only=(True, False), positive_only=True,
     ),
     _FuncInfo(
         _ufuncs.poch, 2,
@@ -713,7 +712,7 @@ _special_funcs = (
         ),
     ),
     _FuncInfo(
-        _basic.polygamma, 2, argtypes=("int", "real"), is_ufunc=False,
+        _basic.polygamma, 2, int_only=(True, False), is_ufunc=False,
               scalar_or_0d_only={"torch": (True, False)}, produces_0d=True,
               positive_only={"torch": (True, False), "jax.numpy": True},
               test_large_ints=False,
@@ -800,7 +799,7 @@ _special_funcs = (
             cpu_only=True, exceptions=["cupy"],
             skip_backends=[("jax.numpy", "unavailable")],
         ),
-        positive_only={"cupy": (True, False)}, argtypes=("int", "real"),
+        positive_only={"cupy": (True, False)}, int_only=(True, False),
         test_large_ints=False
     ),
     _FuncInfo(
