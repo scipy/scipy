@@ -6598,6 +6598,60 @@ add_newdoc("ncfdtrinc",
 
     """)
 
+add_newdoc("_ncfdtrinc_new",
+    """
+    ncfdtrinc(dfn, dfd, p, f, out=None)
+
+    Calculate non-centrality parameter for non-central F distribution.
+
+    This is the inverse with respect to `nc` of `ncfdtr`.
+    See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares. Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares. Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function. Must be in the
+        range [0, 1].
+    f : array_like
+        Quantiles, i.e., the upper limit of integration.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    nc : scalar or ndarray
+        Noncentrality parameter.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.0]
+    >>> p = ncfdtr(2, 3, nc, 15)
+    >>> p
+    array([ 0.96309246,  0.94327955,  0.93304098])
+
+    Compute the inverse. We recover the values of `nc`, as expected:
+
+    >>> ncfdtrinc(2, 3, p, 15)
+    array([ 0.5,  1.5,  2. ])
+
+    """)
+
+
 add_newdoc("nctdtr",
     """
     nctdtr(df, nc, t, out=None)

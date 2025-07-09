@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include "sf_error.h"
 
-
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
@@ -14,6 +13,8 @@
 
 #include "boost/math/distributions.hpp"
 #include <boost/math/distributions/inverse_gaussian.hpp>
+#include <boost/math/tools/roots.hpp>
+#include <boost/math/tools/precision.hpp>
 
 typedef boost::math::policies::policy<
     boost::math::policies::promote_float<false >,
@@ -1869,4 +1870,62 @@ landau_isf_double(double p, double loc, double scale)
     return landau_isf_wrap(p, loc, scale);
 }
 
+
+template <class T>
+struct ncfdtrinc_target
+{
+    ncfdtrinc_target(T const& x, T const& dfn, T const& dfd, T const& p)
+        : x_(x), dfn_(dfn), dfd_(dfd), p_(p) {}
+
+    T operator()(T nc) const
+    {
+        T q_ = 1.0 - p_;
+        T objective;
+        if (p_ <= q_) {
+            objective = boost::math::cdf(
+                boost::math::non_central_f_distribution<T, SpecialPolicy>(dfn_, dfd_, nc), x_) - p_;
+    }
+        else {
+            objective = q_ - boost::math::cdf(boost::math::complement(
+                boost::math::non_central_f_distribution<T, SpecialPolicy>(dfn_, dfd_, nc), x_));
+        }
+        return objective;
+    }
+private:
+    T x_, dfn_, dfd_, p_;
+};
+
+template <class T>
+T _ncfdtrinc(T dfn, T dfd, T p, T x)
+{
+    T guess = 1;  // As good a guess as any, we can start with 1.
+    T factor = 8;                                 // How big steps to take when searching.
+
+    const std::uintmax_t maxit = 500;            // Limit to maximum iterations.
+    std::uintmax_t it = maxit;                  // Initially our chosen max iterations, but updated with actual.
+    bool is_rising = false;                        // So if result if guess^3 is too low, then try increasing guess.
+    int digits = std::numeric_limits<T>::digits;  // Maximum possible binary digits accuracy for type T.
+    // Some fraction of digits is used to control how accurate to try to make the result.
+    int get_digits = digits - 3;                  // We have to have a non-zero interval at each step, so
+                                                // maximum accuracy is digits - 1.  But we also have to
+                                                // allow for inaccuracy in f(x), otherwise the last few
+                                                // iterations just thrash around.
+    boost::math::tools::eps_tolerance<T> tol(get_digits);             // Set the tolerance.
+    std::pair<T, T> r = boost::math::tools::bracket_and_solve_root(
+                        ncfdtrinc_target<T>(x, dfn, dfd, p), guess, factor, is_rising, tol, it);
+    return (it == maxit) ? NAN : r.first + (r.second - r.first)/2;      // Midway between brackets is our result, if necessary we could
+}
+
+
+float
+ncfdtrinc_new_float(float dfn, float dfd, float p, float x)
+{
+    return _ncfdtrinc(dfn, dfd, p, x);
+}
+
+double
+ncfdtrinc_new_double(double dfn, double dfd, double p, double x)
+{
+    return _ncfdtrinc(dfn, dfd, p, x);
+}
 #endif

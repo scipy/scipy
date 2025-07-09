@@ -540,6 +540,12 @@
         "_cdflib_wrappers.pxd": {
             "ncfdtrinc": "dddd->d"        }
     },
+    "_ncfdtrinc_new": {
+        "boost_special_functions.h++": {
+            "ncfdtrinc_new_float": "ffff->f",
+            "ncfdtrinc_new_double": "dddd->d"
+        }
+    },
     "nctdtr": {
         "boost_special_functions.h++": {
             "nct_cdf_float": "fff->f",

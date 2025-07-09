@@ -772,6 +772,10 @@ Available functions
 
         double ncfdtrinc(double, double, double, double)
 
+- :py:func:`~scipy.special.ncfdtrinc`::
+
+        double ncfdtrinc(double, double, double, double)
+
 - :py:func:`~scipy.special.nctdtr`::
 
         double nctdtr(double, double, double)
@@ -3130,6 +3134,18 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
         else:
             return NAN
 
+cpdef df_number_t _ncfdtrinc_new(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
+    """See the documentation for scipy.special.ncfdtr"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncfdtrinc_new_float)(x0, x1, x2, x3)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncfdtrinc_new_double)(x0, x1, x2, x3)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
+        
 cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtri"""
     if df_number_t is float:
