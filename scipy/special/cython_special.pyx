@@ -772,10 +772,6 @@ Available functions
 
         double ncfdtrinc(double, double, double, double)
 
-- :py:func:`~scipy.special.ncfdtrinc`::
-
-        double ncfdtrinc(double, double, double, double)
-
 - :py:func:`~scipy.special.nctdtr`::
 
         double nctdtr(double, double, double)
