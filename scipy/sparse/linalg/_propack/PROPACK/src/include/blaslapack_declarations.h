@@ -1,7 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include "types.h"
+#include "propack/types.h"
 
 // BLAS
 void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);
@@ -53,6 +53,7 @@ void ztrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, PR
 // LAPACK
 
 void sbdsdc_(char* uplo, char* compq, int* n, float* d, float* e, float* u, int* ldu, float* vt, int* ldvt, float* q, int* iq, float* work, int* iwork, int* info);
+void sbdsqr_(char* uplo, int* n, int* ncvt, int* nru, int* ncc, float* d, float* e, float* vt, int* ldvt, float* u, int* ldu, float* c, int* ldc, float* work, int* info);
 void sgeqr2_(int* m, int* n, float* a, int* lda, float* tau, float* work, int* info);
 void slacpy_(char* uplo, int* m, int* n, float* a, int* lda, float* b, int* ldb);
 void slaev2_(float* a, float* b, float* c, float* rt1, float* rt2, float* cs1, float* sn1);
@@ -72,6 +73,7 @@ void strevc_(char* side, char* howmny, int* select, int* n, float* t, int* ldt, 
 void strsen_(char* job, char* compq, int* select, int* n, float* t, int* ldt, float* q, int* ldq, float* wr, float* wi, int* m, float* s, float* sep, float* work, int* lwork, int* iwork, int* liwork, int* info);
 
 void dbdsdc_(char* uplo, char* compq, int* n, double* d, double* e, double* u, int* ldu, double* vt, int* ldvt, double* q, int* iq, double* work, int* iwork, int* info);
+void dbdsqr_(char* uplo, int* n, int* ncvt, int* nru, int* ncc, double* d, double* e, double* vt, int* ldvt, double* u, int* ldu, double* c, int* ldc, double* work, int* info);
 void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
 void dlacpy_(char* uplo, int* m, int* n, double* a, int* lda, double* b, int* ldb);
 void dlaev2_(double* a, double* b, double* c, double* rt1, double* rt2, double* cs1, double* sn1);
