@@ -1,7 +1,9 @@
+
 import pickle
 import tempfile
 import shutil
 import os
+import re
 
 import numpy as np
 from numpy import pi
@@ -13,7 +15,8 @@ from pytest import raises as assert_raises
 
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
                        multilinear, exponential, unilinear, quadratic,
-                       polynomial)
+                       polynomial, Output)
+from scipy.odr._odrpack import (_report_error, OdrError)
 
 
 class TestODR:
@@ -75,6 +78,12 @@ class TestODR:
         explicit_odr.set_job(deriv=2)
         explicit_odr.set_iprint(init=0, iter=0, final=0)
 
+        with pytest.raises(
+            OdrError,
+            match=re.escape("cannot restart: run() has not been called before")
+        ):
+            _ = explicit_odr.restart()
+
         out = explicit_odr.run()
         assert_array_almost_equal(
             out.beta,
@@ -94,6 +103,13 @@ class TestODR:
                [-8.0978217468468912e-04, -1.9453521827942002e-03,
                   1.6827336938454476e-05]]),
         )
+        assert_equal(explicit_mod.meta['name'], 'Sample Explicit Model')
+
+        out_restart = explicit_odr.restart()
+        assert_array_almost_equal(out.beta, out_restart.beta, decimal=4)
+        assert_array_almost_equal(out.sd_beta, out_restart.sd_beta, decimal=5)
+        assert_array_almost_equal(
+            out.cov_beta, out_restart.cov_beta, decimal=5)
 
     # Implicit Example
 
@@ -605,3 +621,167 @@ class TestODR:
         obj_pickle = pickle.dumps(output)
         del output
         pickle.loads(obj_pickle)
+
+    def test_report_error(self):
+        problems = _report_error(0)
+        assert_equal(problems, ['Blank'])
+
+        problems = _report_error(5)
+        assert_equal(problems, ['Blank'])
+
+        # I0=0; I3=1
+        problems = _report_error(10)
+        assert_equal(
+            problems, ['Problem is not full rank at solution', 'Blank'])
+
+        # I0=0; I2=1
+        problems = _report_error(100)
+        assert_equal(problems, ['Error occurred in callback', 'Blank'])
+
+        # I0=0; I2=1 + I1=1
+        problems = _report_error(110)
+        assert_equal(problems, [
+            'Error occurred in callback',
+            'Problem is not full rank at solution',
+            'Blank'])
+
+        # I0=0; I1=1
+        problems = _report_error(1000)
+        assert_equal(problems, ['Derivatives possibly not correct', 'Blank'])
+
+        # I0=1; I1=1
+        problems = _report_error(11000)
+        assert_equal(problems, ['N < 1'])
+
+        # I0=1; I2=1
+        problems = _report_error(10100)
+        assert_equal(problems, ['M < 1'])
+
+        # I0=1; I3=1
+        problems = _report_error(10010)
+        assert_equal(problems, ['NP < 1 or NP > N'])
+
+        # I0=1; I4=1
+        problems = _report_error(10001)
+        assert_equal(problems, ['NQ < 1'])
+
+        # I0=2; I1=1
+        problems = _report_error(21000)
+        assert_equal(problems, ['LDY and/or LDX incorrect'])
+
+        # I0=2; I2=1
+        problems = _report_error(20100)
+        assert_equal(problems, ['LDWE, LD2WE, LDWD, and/or LD2WD incorrect'])
+
+        # I0=2; I3=1
+        problems = _report_error(20010)
+        assert_equal(problems, ['LDIFX, LDSTPD, and/or LDSCLD incorrect'])
+
+        # I0=2; I4=1
+        problems = _report_error(20001)
+        assert_equal(problems, ['LWORK and/or LIWORK too small'])
+
+        # I0=3; I1=1
+        problems = _report_error(31000)
+        assert_equal(problems, ['STPB and/or STPD incorrect'])
+
+        # I0=3; I2=1
+        problems = _report_error(30100)
+        assert_equal(problems, ['SCLB and/or SCLD incorrect'])
+
+        # I0=3; I3=1
+        problems = _report_error(30010)
+        assert_equal(problems, ['WE incorrect'])
+
+        # I0=3; I4=1
+        problems = _report_error(30001)
+        assert_equal(problems, ['WD incorrect'])
+
+        # I0=4; I1=1 (I1 does not matter here)
+        problems = _report_error(41000)
+        assert_equal(problems, ['Error in derivatives'])
+
+        # I0=5; I1=1 (I1 does not matter here)
+        problems = _report_error(51000)
+        assert_equal(problems, ['Error occurred in callback'])
+
+        # I0=6; I1=1 (I1 does not matter here)
+        problems = _report_error(61000)
+        assert_equal(problems, ['Numerical error detected'])
+
+    def test_data_meta(self):
+        p = Data([0., 0., 5., 7., 7.5, 10.])
+        p.set_meta(name='Sample Data Meta', ref='ODRPACK')
+        assert_equal(p.meta['name'], 'Sample Data Meta')
+        with pytest.raises(AssertionError, match="hurzname"):
+            assert_equal(p.meta,
+                         {'hurzname': 'Sample Data Meta', 'ref': 'ODRPACK'})
+
+
+    def test_realdata(self):
+        with pytest.raises(ValueError, match="cannot set both sx and covx"):
+            p_dat = RealData(1., 2., covx=1., sx=0.5, sy=0.4)
+        with pytest.raises(ValueError, match="cannot set both sy and covy"):
+            p_dat = RealData(1., 2., covy=1., sx=0.5, sy=0.4)
+
+        p_dat = RealData([0., 0., 5., 7., 7.5, 10.],
+                         meta={'name': 'Sample RealData Meta'})
+        assert_equal(p_dat.meta['name'], 'Sample RealData Meta')
+
+    def test_output(self):
+        beta3 = ["parameter1", "parameter2", "parameter3"]
+        output3 = Output(beta3)
+
+        output3.pprint()
+
+    def use_for_test_fcn(self, B, x):
+        return B[0]
+
+    def test_ODR(self):
+        def linear(c, x):
+            return c[0]*x+c[1]
+
+        c = [2.0, 3.0]
+        x = np.linspace(0, 10)
+        y = linear(c, x)
+        data = Data(x, y, wd=1.0, we=1.0)
+
+        model_only_linear = Model(linear)
+        # should not give any exception
+        _ = ODR(data, model_only_linear,
+                beta0=[0.02, 0.0], overwrite=True)
+        _ = ODR(data, model_only_linear,
+                beta0=[0.02, 0.0], overwrite=True, rptfile="gagahurzi")
+        _ = ODR(data, model_only_linear,
+                beta0=[0.02, 0.0], overwrite=True, errfile="gagahurzi")
+
+        model = Model(linear, estimate=None)
+        with pytest.raises(
+            ValueError,
+            match="must specify beta0 or provide an estimator with the model"
+        ):
+            _ = ODR(data, model)
+
+        model = Model(linear, implicit=True)
+        with pytest.raises(OdrError,
+                           match="an implicit model cannot use response data"):
+            _ = ODR(data, model, beta0=[0.02, 0.0])
+
+        model = Model(linear, fjacb=self.use_for_test_fcn)
+        with pytest.raises(
+            OdrError,
+            match=re.escape("fjacb does not output (1, 2, 50)-shaped array")
+        ):
+            _ = ODR(data, model, beta0=[0.02, 0.0])
+
+        model = Model(linear, fjacd=self.use_for_test_fcn)
+        with pytest.raises(
+            OdrError,
+            match=re.escape("fjacd does not output (1, 1, 50)-shaped array")
+        ):
+            _ = ODR(data, model, beta0=[0.02, 0.0])
+
+        model = Model(linear)
+        with pytest.raises(OdrError,
+                           match=re.escape("delta0 is not a (50,)-shaped array")):
+            _ = ODR(data, model, beta0=[0.02, 0.0], delta0=1)
