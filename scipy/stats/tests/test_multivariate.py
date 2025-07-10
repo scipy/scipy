@@ -3725,7 +3725,7 @@ def check_pickling(distfn, args):
     distfn.random_state = rndm
 
 
-@pytest.mark.thread_unsafe(reason="fails in parallel")
+@pytest.mark.thread_unsafe(reason="uses numpy global random state and monkey-patching")
 def test_random_state_property():
     scale = np.eye(3)
     scale[0, 1] = 0.5
