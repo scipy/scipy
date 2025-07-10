@@ -1113,6 +1113,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parallel_threads(4)  # Very slow
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
