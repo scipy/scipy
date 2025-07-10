@@ -2,6 +2,7 @@
 import json
 import multiprocessing
 import os
+import sys
 import warnings
 import tempfile
 from contextlib import contextmanager
@@ -87,8 +88,11 @@ def pytest_configure(config):
         )
     else:
         if int(config.getoption('--parallel-threads', '0')) > 0:
-            # forking from multiple threads leads to deadlocks
-            multiprocessing.set_start_method('spawn', force=True)
+            if os.name == 'posix' and sys.version_info < (3, 14):
+                # On POSIX, Python 3.13 and older uses the 'fork' context by
+                # default. Calling fork() from multiple threads leads to
+                # deadlocks. This has been changed in 3.14 to 'forkserver'.
+                multiprocessing.set_start_method('forkserver', force=True)
 
 
 def pytest_runtest_setup(item):
