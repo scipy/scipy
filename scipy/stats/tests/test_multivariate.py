@@ -529,7 +529,7 @@ class TestMultivariateNormal:
         assert_raises(ValueError, multivariate_normal.cdf, (0, 1, 2), mu, cov)
 
     def test_scalar_values(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         # When evaluated on scalar data, the pdf should return a scalar
         x, mean, cov = 1.5, 1.7, 2.5
@@ -537,9 +537,9 @@ class TestMultivariateNormal:
         assert_equal(pdf.ndim, 0)
 
         # When evaluated on a single vector, the pdf should return a scalar
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))  # Diagonal values for cov. matrix
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
+        cov = np.abs(rng.standard_normal(5))  # Diagonal values for cov. matrix
         pdf = multivariate_normal.pdf(x, mean, cov)
         assert_equal(pdf.ndim, 0)
 
@@ -549,18 +549,18 @@ class TestMultivariateNormal:
         assert_equal(cdf.ndim, 0)
 
         # When evaluated on a single vector, the cdf should return a scalar
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))  # Diagonal values for cov. matrix
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
+        cov = np.abs(rng.standard_normal(5))  # Diagonal values for cov. matrix
         cdf = multivariate_normal.cdf(x, mean, cov)
         assert_equal(cdf.ndim, 0)
 
     def test_logpdf(self):
         # Check that the log of the pdf is in fact the logpdf
-        np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
+        cov = np.abs(rng.standard_normal(5))
         d1 = multivariate_normal.logpdf(x, mean, cov)
         d2 = multivariate_normal.pdf(x, mean, cov)
         assert_allclose(d1, np.log(d2))
@@ -568,8 +568,8 @@ class TestMultivariateNormal:
     def test_logpdf_default_values(self):
         # Check that the log of the pdf is in fact the logpdf
         # with default parameters Mean=None and cov = 1
-        np.random.seed(1234)
-        x = np.random.randn(5)
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
         d1 = multivariate_normal.logpdf(x)
         d2 = multivariate_normal.pdf(x)
         # check whether default values are being used
@@ -580,10 +580,10 @@ class TestMultivariateNormal:
 
     def test_logcdf(self):
         # Check that the log of the cdf is in fact the logcdf
-        np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
+        cov = np.abs(rng.standard_normal(5))
         d1 = multivariate_normal.logcdf(x, mean, cov)
         d2 = multivariate_normal.cdf(x, mean, cov)
         assert_allclose(d1, np.log(d2))
@@ -591,8 +591,8 @@ class TestMultivariateNormal:
     def test_logcdf_default_values(self):
         # Check that the log of the cdf is in fact the logcdf
         # with default parameters Mean=None and cov = 1
-        np.random.seed(1234)
-        x = np.random.randn(5)
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
         d1 = multivariate_normal.logcdf(x)
         d2 = multivariate_normal.cdf(x)
         # check whether default values are being used
@@ -603,22 +603,22 @@ class TestMultivariateNormal:
 
     def test_rank(self):
         # Check that the rank is detected correctly.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 4
-        mean = np.random.randn(n)
+        mean = rng.standard_normal(n)
         for expected_rank in range(1, n + 1):
-            s = np.random.randn(n, expected_rank)
+            s = rng.standard_normal((n, expected_rank))
             cov = np.dot(s, s.T)
             distn = multivariate_normal(mean, cov, allow_singular=True)
             assert_equal(distn.cov_object.rank, expected_rank)
 
     def test_degenerate_distributions(self):
-
+        rng = np.random.default_rng(1234)
         for n in range(1, 5):
-            z = np.random.randn(n)
+            z = rng.standard_normal(n)
             for k in range(1, n):
                 # Sample a small covariance matrix.
-                s = np.random.randn(k, k)
+                s = rng.standard_normal((k, k))
                 cov_kk = np.dot(s, s.T)
 
                 # Embed the small covariance matrix into a larger singular one.
@@ -775,10 +775,10 @@ class TestMultivariateNormal:
 
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
-        np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
+        cov = np.abs(rng.standard_normal(5))
         norm_frozen = multivariate_normal(mean, cov)
         assert_allclose(norm_frozen.pdf(x), multivariate_normal.pdf(x, mean, cov))
         assert_allclose(norm_frozen.logpdf(x),
@@ -805,9 +805,9 @@ class TestMultivariateNormal:
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
 
         # Assemble random covariance matrix with large and small eigenvalues
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 7
-        x = np.random.randn(n, n)
+        x = rng.standard_normal((n, n))
         cov = np.dot(x, x.T)
         s, u = scipy.linalg.eigh(cov)
         s = np.full(n, 0.5)
@@ -842,9 +842,9 @@ class TestMultivariateNormal:
         assert_raises(ValueError, _PSD, cov)
 
     def test_exception_singular_cov(self):
-        np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
+        rng = np.random.default_rng(1234)
+        x = rng.standard_normal(5)
+        mean = rng.standard_normal(5)
         cov = np.ones((5, 5))
         e = np.linalg.LinAlgError
         assert_raises(e, multivariate_normal, mean, cov)
@@ -1962,10 +1962,10 @@ class TestMatrixT:
 class TestDirichlet:
 
     def test_frozen_dirichlet(self):
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
 
-        n = np.random.randint(1, 32)
-        alpha = np.random.uniform(10e-10, 100, n)
+        n = rng.integers(1, 32)
+        alpha = rng.uniform(10e-10, 100, n)
 
         d = dirichlet(alpha)
 
@@ -1974,15 +1974,15 @@ class TestDirichlet:
         assert_equal(d.entropy(), dirichlet.entropy(alpha))
         num_tests = 10
         for i in range(num_tests):
-            x = np.random.uniform(10e-10, 100, n)
+            x = rng.uniform(10e-10, 100, n)
             x /= np.sum(x)
             assert_equal(d.pdf(x[:-1]), dirichlet.pdf(x[:-1], alpha))
             assert_equal(d.logpdf(x[:-1]), dirichlet.logpdf(x[:-1], alpha))
 
     def test_numpy_rvs_shape_compatibility(self):
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
         alpha = np.array([1.0, 2.0, 3.0])
-        x = np.random.dirichlet(alpha, size=7)
+        x = rng.dirichlet(alpha, size=7)
         assert_equal(x.shape, (7, 3))
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
@@ -1992,18 +1992,18 @@ class TestDirichlet:
         dirichlet.logpdf(x.T[:-1], alpha)
 
     def test_alpha_with_zeros(self):
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
         alpha = [1.0, 0.0, 3.0]
         # don't pass invalid alpha to np.random.dirichlet
-        x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
+        x = rng.dirichlet(np.maximum(1e-9, alpha), size=7).T
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_with_negative_entries(self):
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
         alpha = [1.0, -2.0, 3.0]
         # don't pass invalid alpha to np.random.dirichlet
-        x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
+        x = rng.dirichlet(np.maximum(1e-9, alpha), size=7).T
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
@@ -2101,25 +2101,24 @@ class TestDirichlet:
 
     def test_K_and_K_minus_1_calls_equal(self):
         # Test that calls with K and K-1 entries yield the same results.
+        rng = np.random.default_rng(2846)
 
-        np.random.seed(2846)
-
-        n = np.random.randint(1, 32)
-        alpha = np.random.uniform(10e-10, 100, n)
+        n = rng.integers(1, 32)
+        alpha = rng.uniform(10e-10, 100, n)
 
         d = dirichlet(alpha)
         num_tests = 10
         for i in range(num_tests):
-            x = np.random.uniform(10e-10, 100, n)
+            x = rng.uniform(10e-10, 100, n)
             x /= np.sum(x)
             assert_almost_equal(d.pdf(x[:-1]), d.pdf(x))
 
     def test_multiple_entry_calls(self):
         # Test that calls with multiple x vectors as matrix work
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
 
-        n = np.random.randint(1, 32)
-        alpha = np.random.uniform(10e-10, 100, n)
+        n = rng.integers(1, 32)
+        alpha = rng.uniform(10e-10, 100, n)
         d = dirichlet(alpha)
 
         num_tests = 10
@@ -2127,7 +2126,7 @@ class TestDirichlet:
         xm = None
         for i in range(num_tests):
             for m in range(num_multiple):
-                x = np.random.uniform(10e-10, 100, n)
+                x = rng.uniform(10e-10, 100, n)
                 x /= np.sum(x)
                 if xm is not None:
                     xm = np.vstack((xm, x))
@@ -2144,15 +2143,15 @@ class TestDirichlet:
             assert_array_almost_equal(rm, rs)
 
     def test_2D_dirichlet_is_beta(self):
-        np.random.seed(2846)
+        rng = np.random.default_rng(2846)
 
-        alpha = np.random.uniform(10e-10, 100, 2)
+        alpha = rng.uniform(10e-10, 100, 2)
         d = dirichlet(alpha)
         b = beta(alpha[0], alpha[1])
 
         num_tests = 10
         for i in range(num_tests):
-            x = np.random.uniform(10e-10, 100, 2)
+            x = rng.uniform(10e-10, 100, 2)
             x /= np.sum(x)
             assert_almost_equal(b.pdf(x), d.pdf([x]))
 
@@ -2569,7 +2568,6 @@ class TestMultinomial:
 
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
-        np.random.seed(1234)
         n = 12
         pvals = (.1, .2, .3, .4)
         x = [[0,0,0,12],[0,0,1,11],[0,1,1,10],[1,1,1,9],[1,1,2,8]]
@@ -3913,7 +3911,6 @@ class TestMultivariateHypergeom:
 
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
-        np.random.seed(1234)
         n = 12
         m = [7, 9, 11, 13]
         x = [[0, 0, 0, 12], [0, 0, 1, 11], [0, 1, 1, 10],

@@ -15,6 +15,7 @@ import operator
 import platform
 import itertools
 import sys
+import warnings
 
 import pytest
 from pytest import raises as assert_raises
@@ -27,7 +28,7 @@ from numpy import (arange, zeros, array, dot, asarray,
 import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
-        assert_allclose, suppress_warnings)
+        assert_allclose)
 from numpy.exceptions import ComplexWarning
 
 from types import GenericAlias
@@ -60,6 +61,8 @@ def assert_array_equal_dtype(x, y, **kwargs):
 
 NON_ARRAY_BACKED_FORMATS = frozenset(['dok'])
 
+WMSG = "Changing the sparsity structure"
+
 def sparse_may_share_memory(A, B):
     # Checks if A and B have any numpy array sharing memory.
 
@@ -78,10 +81,6 @@ def sparse_may_share_memory(A, B):
             if np.may_share_memory(a, b):
                 return True
     return False
-
-
-sup_complex = suppress_warnings()
-sup_complex.filter(ComplexWarning)
 
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
@@ -365,36 +364,35 @@ class _TestCommon:
         assert_array_equal(dat, datsp.toarray())
 
     def test_eq(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
 
-        @sup
-        @sup_complex
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datbsr = self.bsr_container(dat)
-            datcsr = self.csr_container(dat)
-            datcsc = self.csc_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datbsr = self.bsr_container(dat)
+                datcsr = self.csr_container(dat)
+                datcsc = self.csc_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat == dat2, (datsp == datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype(dat == dat2, (datbsr == datsp2).toarray())
-            assert_array_equal_dtype(dat == dat2, (datcsr == datsp2).toarray())
-            assert_array_equal_dtype(dat == dat2, (datcsc == datsp2).toarray())
-            assert_array_equal_dtype(dat == dat2, (datlil == datsp2).toarray())
-            # sparse/dense
-            assert_array_equal_dtype(dat == datsp2, datsp2 == dat)
-            # sparse/scalar
-            assert_array_equal_dtype(dat == 0, (datsp == 0).toarray())
-            assert_array_equal_dtype(dat == 1, (datsp == 1).toarray())
-            assert_array_equal_dtype(dat == np.nan,
-                                     (datsp == np.nan).toarray())
+                # sparse/sparse
+                assert_array_equal_dtype(dat == dat2, (datsp == datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype(dat == dat2, (datbsr == datsp2).toarray())
+                assert_array_equal_dtype(dat == dat2, (datcsr == datsp2).toarray())
+                assert_array_equal_dtype(dat == dat2, (datcsc == datsp2).toarray())
+                assert_array_equal_dtype(dat == dat2, (datlil == datsp2).toarray())
+                # sparse/dense
+                assert_array_equal_dtype(dat == datsp2, datsp2 == dat)
+                # sparse/scalar
+                assert_array_equal_dtype(dat == 0, (datsp == 0).toarray())
+                assert_array_equal_dtype(dat == 1, (datsp == 1).toarray())
+                assert_array_equal_dtype(dat == np.nan,
+                                         (datsp == np.nan).toarray())
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -402,38 +400,36 @@ class _TestCommon:
             check(dtype)
 
     def test_ne(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
-        @sup_complex
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datbsr = self.bsr_container(dat)
-            datcsc = self.csc_container(dat)
-            datcsr = self.csr_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datbsr = self.bsr_container(dat)
+                datcsc = self.csc_container(dat)
+                datcsr = self.csr_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat != dat2, (datsp != datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype(dat != dat2, (datbsr != datsp2).toarray())
-            assert_array_equal_dtype(dat != dat2, (datcsc != datsp2).toarray())
-            assert_array_equal_dtype(dat != dat2, (datcsr != datsp2).toarray())
-            assert_array_equal_dtype(dat != dat2, (datlil != datsp2).toarray())
-            # sparse/dense
-            assert_array_equal_dtype(dat != datsp2, datsp2 != dat)
-            # sparse/scalar
-            assert_array_equal_dtype(dat != 0, (datsp != 0).toarray())
-            assert_array_equal_dtype(dat != 1, (datsp != 1).toarray())
-            assert_array_equal_dtype(0 != dat, (0 != datsp).toarray())
-            assert_array_equal_dtype(1 != dat, (1 != datsp).toarray())
-            assert_array_equal_dtype(dat != np.nan,
-                                     (datsp != np.nan).toarray())
+                # sparse/sparse
+                assert_array_equal_dtype(dat != dat2, (datsp != datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype(dat != dat2, (datbsr != datsp2).toarray())
+                assert_array_equal_dtype(dat != dat2, (datcsc != datsp2).toarray())
+                assert_array_equal_dtype(dat != dat2, (datcsr != datsp2).toarray())
+                assert_array_equal_dtype(dat != dat2, (datlil != datsp2).toarray())
+                # sparse/dense
+                assert_array_equal_dtype(dat != datsp2, datsp2 != dat)
+                # sparse/scalar
+                assert_array_equal_dtype(dat != 0, (datsp != 0).toarray())
+                assert_array_equal_dtype(dat != 1, (datsp != 1).toarray())
+                assert_array_equal_dtype(0 != dat, (0 != datsp).toarray())
+                assert_array_equal_dtype(1 != dat, (1 != datsp).toarray())
+                assert_array_equal_dtype(dat != np.nan,
+                                         (datsp != np.nan).toarray())
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -448,62 +444,60 @@ class _TestCommon:
         assert (self.datsp != self.datsp.T) is True
 
     def test_lt(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
-        @sup_complex
         def check(dtype):
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datcomplex = dat.astype(complex)
-            datcomplex[:,0] = 1 + 1j
-            datspcomplex = self.spcreator(datcomplex)
-            datbsr = self.bsr_container(dat)
-            datcsc = self.csc_container(dat)
-            datcsr = self.csr_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datcomplex = dat.astype(complex)
+                datcomplex[:,0] = 1 + 1j
+                datspcomplex = self.spcreator(datcomplex)
+                datbsr = self.bsr_container(dat)
+                datcsc = self.csc_container(dat)
+                datcsr = self.csr_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat < dat2, (datsp < datsp2).toarray())
-            assert_array_equal_dtype(datcomplex < dat2,
-                                     (datspcomplex < datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype(dat < dat2, (datbsr < datsp2).toarray())
-            assert_array_equal_dtype(dat < dat2, (datcsc < datsp2).toarray())
-            assert_array_equal_dtype(dat < dat2, (datcsr < datsp2).toarray())
-            assert_array_equal_dtype(dat < dat2, (datlil < datsp2).toarray())
+                # sparse/sparse
+                assert_array_equal_dtype(dat < dat2, (datsp < datsp2).toarray())
+                assert_array_equal_dtype(datcomplex < dat2,
+                                         (datspcomplex < datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype(dat < dat2, (datbsr < datsp2).toarray())
+                assert_array_equal_dtype(dat < dat2, (datcsc < datsp2).toarray())
+                assert_array_equal_dtype(dat < dat2, (datcsr < datsp2).toarray())
+                assert_array_equal_dtype(dat < dat2, (datlil < datsp2).toarray())
 
-            assert_array_equal_dtype(dat2 < dat, (datsp2 < datbsr).toarray())
-            assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsc).toarray())
-            assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsr).toarray())
-            assert_array_equal_dtype(dat2 < dat, (datsp2 < datlil).toarray())
-            # sparse/dense
-            assert_array_equal_dtype(dat < dat2, datsp < dat2)
-            assert_array_equal_dtype(datcomplex < dat2, datspcomplex < dat2)
-            # sparse/scalar
-            for val in [2, 1, 0, -1, -2]:
-                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
-                assert_array_equal_dtype((datsp < val).toarray(), dat < val)
-                assert_array_equal_dtype((val < datsp).toarray(), val < dat)
+                assert_array_equal_dtype(dat2 < dat, (datsp2 < datbsr).toarray())
+                assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsc).toarray())
+                assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsr).toarray())
+                assert_array_equal_dtype(dat2 < dat, (datsp2 < datlil).toarray())
+                # sparse/dense
+                assert_array_equal_dtype(dat < dat2, datsp < dat2)
+                assert_array_equal_dtype(datcomplex < dat2, datspcomplex < dat2)
+                # sparse/scalar
+                for val in [2, 1, 0, -1, -2]:
+                    val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                    assert_array_equal_dtype((datsp < val).toarray(), dat < val)
+                    assert_array_equal_dtype((val < datsp).toarray(), val < dat)
 
-            with np.errstate(invalid='ignore'):
-                assert_array_equal_dtype((datsp < np.nan).toarray(),
-                                         dat < np.nan)
+                with np.errstate(invalid='ignore'):
+                    assert_array_equal_dtype((datsp < np.nan).toarray(),
+                                             dat < np.nan)
 
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
 
-            # dense rhs
-            assert_array_equal_dtype(dat < datsp2, datsp < dat2)
+                # dense rhs
+                assert_array_equal_dtype(dat < datsp2, datsp < dat2)
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -511,61 +505,59 @@ class _TestCommon:
             check(dtype)
 
     def test_gt(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
-        @sup_complex
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datcomplex = dat.astype(complex)
-            datcomplex[:,0] = 1 + 1j
-            datspcomplex = self.spcreator(datcomplex)
-            datbsr = self.bsr_container(dat)
-            datcsc = self.csc_container(dat)
-            datcsr = self.csr_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datcomplex = dat.astype(complex)
+                datcomplex[:,0] = 1 + 1j
+                datspcomplex = self.spcreator(datcomplex)
+                datbsr = self.bsr_container(dat)
+                datcsc = self.csc_container(dat)
+                datcsr = self.csr_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat > dat2, (datsp > datsp2).toarray())
-            assert_array_equal_dtype(datcomplex > dat2,
-                                     (datspcomplex > datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype(dat > dat2, (datbsr > datsp2).toarray())
-            assert_array_equal_dtype(dat > dat2, (datcsc > datsp2).toarray())
-            assert_array_equal_dtype(dat > dat2, (datcsr > datsp2).toarray())
-            assert_array_equal_dtype(dat > dat2, (datlil > datsp2).toarray())
+                # sparse/sparse
+                assert_array_equal_dtype(dat > dat2, (datsp > datsp2).toarray())
+                assert_array_equal_dtype(datcomplex > dat2,
+                                         (datspcomplex > datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype(dat > dat2, (datbsr > datsp2).toarray())
+                assert_array_equal_dtype(dat > dat2, (datcsc > datsp2).toarray())
+                assert_array_equal_dtype(dat > dat2, (datcsr > datsp2).toarray())
+                assert_array_equal_dtype(dat > dat2, (datlil > datsp2).toarray())
 
-            assert_array_equal_dtype(dat2 > dat, (datsp2 > datbsr).toarray())
-            assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsc).toarray())
-            assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsr).toarray())
-            assert_array_equal_dtype(dat2 > dat, (datsp2 > datlil).toarray())
-            # sparse/dense
-            assert_array_equal_dtype(dat > dat2, datsp > dat2)
-            assert_array_equal_dtype(datcomplex > dat2, datspcomplex > dat2)
-            # sparse/scalar
-            for val in [2, 1, 0, -1, -2]:
-                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
-                assert_array_equal_dtype((datsp > val).toarray(), dat > val)
-                assert_array_equal_dtype((val > datsp).toarray(), val > dat)
+                assert_array_equal_dtype(dat2 > dat, (datsp2 > datbsr).toarray())
+                assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsc).toarray())
+                assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsr).toarray())
+                assert_array_equal_dtype(dat2 > dat, (datsp2 > datlil).toarray())
+                # sparse/dense
+                assert_array_equal_dtype(dat > dat2, datsp > dat2)
+                assert_array_equal_dtype(datcomplex > dat2, datspcomplex > dat2)
+                # sparse/scalar
+                for val in [2, 1, 0, -1, -2]:
+                    val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                    assert_array_equal_dtype((datsp > val).toarray(), dat > val)
+                    assert_array_equal_dtype((val > datsp).toarray(), val > dat)
 
-            with np.errstate(invalid='ignore'):
-                assert_array_equal_dtype((datsp > np.nan).toarray(),
-                                         dat > np.nan)
+                with np.errstate(invalid='ignore'):
+                    assert_array_equal_dtype((datsp > np.nan).toarray(),
+                                             dat > np.nan)
 
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
 
-            # dense rhs
-            assert_array_equal_dtype(dat > datsp2, datsp > dat2)
+                # dense rhs
+                assert_array_equal_dtype(dat > datsp2, datsp > dat2)
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -573,57 +565,55 @@ class _TestCommon:
             check(dtype)
 
     def test_le(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
-        @sup_complex
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datcomplex = dat.astype(complex)
-            datcomplex[:,0] = 1 + 1j
-            datspcomplex = self.spcreator(datcomplex)
-            datbsr = self.bsr_container(dat)
-            datcsc = self.csc_container(dat)
-            datcsr = self.csr_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datcomplex = dat.astype(complex)
+                datcomplex[:,0] = 1 + 1j
+                datspcomplex = self.spcreator(datcomplex)
+                datbsr = self.bsr_container(dat)
+                datcsc = self.csc_container(dat)
+                datcsr = self.csr_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat <= dat2, (datsp <= datsp2).toarray())
-            assert_array_equal_dtype(datcomplex <= dat2,
-                                     (datspcomplex <= datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype((datbsr <= datsp2).toarray(), dat <= dat2)
-            assert_array_equal_dtype((datcsc <= datsp2).toarray(), dat <= dat2)
-            assert_array_equal_dtype((datcsr <= datsp2).toarray(), dat <= dat2)
-            assert_array_equal_dtype((datlil <= datsp2).toarray(), dat <= dat2)
+                # sparse/sparse
+                assert_array_equal_dtype(dat <= dat2, (datsp <= datsp2).toarray())
+                assert_array_equal_dtype(datcomplex <= dat2,
+                                         (datspcomplex <= datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype((datbsr <= datsp2).toarray(), dat <= dat2)
+                assert_array_equal_dtype((datcsc <= datsp2).toarray(), dat <= dat2)
+                assert_array_equal_dtype((datcsr <= datsp2).toarray(), dat <= dat2)
+                assert_array_equal_dtype((datlil <= datsp2).toarray(), dat <= dat2)
 
-            assert_array_equal_dtype((datsp2 <= datbsr).toarray(), dat2 <= dat)
-            assert_array_equal_dtype((datsp2 <= datcsc).toarray(), dat2 <= dat)
-            assert_array_equal_dtype((datsp2 <= datcsr).toarray(), dat2 <= dat)
-            assert_array_equal_dtype((datsp2 <= datlil).toarray(), dat2 <= dat)
-            # sparse/dense
-            assert_array_equal_dtype(datsp <= dat2, dat <= dat2)
-            assert_array_equal_dtype(datspcomplex <= dat2, datcomplex <= dat2)
-            # sparse/scalar
-            for val in [2, 1, -1, -2]:
-                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
-                assert_array_equal_dtype((datsp <= val).toarray(), dat <= val)
-                assert_array_equal_dtype((val <= datsp).toarray(), val <= dat)
+                assert_array_equal_dtype((datsp2 <= datbsr).toarray(), dat2 <= dat)
+                assert_array_equal_dtype((datsp2 <= datcsc).toarray(), dat2 <= dat)
+                assert_array_equal_dtype((datsp2 <= datcsr).toarray(), dat2 <= dat)
+                assert_array_equal_dtype((datsp2 <= datlil).toarray(), dat2 <= dat)
+                # sparse/dense
+                assert_array_equal_dtype(datsp <= dat2, dat <= dat2)
+                assert_array_equal_dtype(datspcomplex <= dat2, datcomplex <= dat2)
+                # sparse/scalar
+                for val in [2, 1, -1, -2]:
+                    val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                    assert_array_equal_dtype((datsp <= val).toarray(), dat <= val)
+                    assert_array_equal_dtype((val <= datsp).toarray(), val <= dat)
 
-            # data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
+                # data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
 
-            # dense rhs
-            assert_array_equal_dtype(dat <= datsp2, datsp <= dat2)
+                # dense rhs
+                assert_array_equal_dtype(dat <= datsp2, datsp <= dat2)
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -631,57 +621,55 @@ class _TestCommon:
             check(dtype)
 
     def test_ge(self):
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
-        @sup_complex
         def check(dtype):
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
-            datcomplex = dat.astype(complex)
-            datcomplex[:,0] = 1 + 1j
-            datspcomplex = self.spcreator(datcomplex)
-            datbsr = self.bsr_container(dat)
-            datcsc = self.csc_container(dat)
-            datcsr = self.csr_container(dat)
-            datlil = self.lil_container(dat)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                warnings.simplefilter("ignore", ComplexWarning)
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
+                datcomplex = dat.astype(complex)
+                datcomplex[:,0] = 1 + 1j
+                datspcomplex = self.spcreator(datcomplex)
+                datbsr = self.bsr_container(dat)
+                datcsc = self.csc_container(dat)
+                datcsr = self.csr_container(dat)
+                datlil = self.lil_container(dat)
 
-            # sparse/sparse
-            assert_array_equal_dtype(dat >= dat2, (datsp >= datsp2).toarray())
-            assert_array_equal_dtype(datcomplex >= dat2,
-                                     (datspcomplex >= datsp2).toarray())
-            # mix sparse types
-            assert_array_equal_dtype((datbsr >= datsp2).toarray(), dat >= dat2)
-            assert_array_equal_dtype((datcsc >= datsp2).toarray(), dat >= dat2)
-            assert_array_equal_dtype((datcsr >= datsp2).toarray(), dat >= dat2)
-            assert_array_equal_dtype((datlil >= datsp2).toarray(), dat >= dat2)
+                # sparse/sparse
+                assert_array_equal_dtype(dat >= dat2, (datsp >= datsp2).toarray())
+                assert_array_equal_dtype(datcomplex >= dat2,
+                                         (datspcomplex >= datsp2).toarray())
+                # mix sparse types
+                assert_array_equal_dtype((datbsr >= datsp2).toarray(), dat >= dat2)
+                assert_array_equal_dtype((datcsc >= datsp2).toarray(), dat >= dat2)
+                assert_array_equal_dtype((datcsr >= datsp2).toarray(), dat >= dat2)
+                assert_array_equal_dtype((datlil >= datsp2).toarray(), dat >= dat2)
 
-            assert_array_equal_dtype((datsp2 >= datbsr).toarray(), dat2 >= dat)
-            assert_array_equal_dtype((datsp2 >= datcsc).toarray(), dat2 >= dat)
-            assert_array_equal_dtype((datsp2 >= datcsr).toarray(), dat2 >= dat)
-            assert_array_equal_dtype((datsp2 >= datlil).toarray(), dat2 >= dat)
-            # sparse/dense
-            assert_array_equal_dtype(datsp >= dat2, dat >= dat2)
-            assert_array_equal_dtype(datspcomplex >= dat2, datcomplex >= dat2)
-            # sparse/scalar
-            for val in [2, 1, -1, -2]:
-                val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
-                assert_array_equal_dtype((datsp >= val).toarray(), dat >= val)
-                assert_array_equal_dtype((val >= datsp).toarray(), val >= dat)
+                assert_array_equal_dtype((datsp2 >= datbsr).toarray(), dat2 >= dat)
+                assert_array_equal_dtype((datsp2 >= datcsc).toarray(), dat2 >= dat)
+                assert_array_equal_dtype((datsp2 >= datcsr).toarray(), dat2 >= dat)
+                assert_array_equal_dtype((datsp2 >= datlil).toarray(), dat2 >= dat)
+                # sparse/dense
+                assert_array_equal_dtype(datsp >= dat2, dat >= dat2)
+                assert_array_equal_dtype(datspcomplex >= dat2, datcomplex >= dat2)
+                # sparse/scalar
+                for val in [2, 1, -1, -2]:
+                    val = np.int64(val)  # avoid Python scalar (due to NEP 50 changes)
+                    assert_array_equal_dtype((datsp >= val).toarray(), dat >= val)
+                    assert_array_equal_dtype((val >= datsp).toarray(), val >= dat)
 
-            # dense data
-            dat = self.dat_dtypes[dtype]
-            datsp = self.datsp_dtypes[dtype]
-            dat2 = dat.copy()
-            dat2[:,0] = 0
-            datsp2 = self.spcreator(dat2)
+                # dense data
+                dat = self.dat_dtypes[dtype]
+                datsp = self.datsp_dtypes[dtype]
+                dat2 = dat.copy()
+                dat2[:,0] = 0
+                datsp2 = self.spcreator(dat2)
 
-            # dense rhs
-            assert_array_equal_dtype(dat >= datsp2, datsp >= dat2)
+                # dense rhs
+                assert_array_equal_dtype(dat >= datsp2, datsp >= dat2)
 
         if self.datsp.format not in ['bsr', 'csc', 'csr']:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -940,8 +928,8 @@ class _TestCommon:
                     v = np.random.randint(1, 20, size=r)
 
                 dense_setdiag(a, v, k)
-                with suppress_warnings() as sup:
-                    sup.filter(SparseEfficiencyWarning, "Changing the sparsity structu")
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                     b.setdiag(v, k)
 
                 # check that dense_setdiag worked
@@ -975,8 +963,8 @@ class _TestCommon:
         m = self.spcreator(np.eye(3))
         m2 = self.spcreator((4, 4))
         values = [3, 2, 1]
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             assert_raises(ValueError, m.setdiag, values, k=4)
             m.setdiag(values)
             assert_array_equal(m.diagonal(), values)
@@ -1264,18 +1252,21 @@ class _TestCommon:
         sN = self.spcreator(N, shape=(3,3), dtype=float)
         Nexp = scipy.linalg.expm(N)
 
-        with suppress_warnings() as sup:
-            sup.filter(
-                SparseEfficiencyWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
                 "splu converted its input to CSC format",
-            )
-            sup.filter(
                 SparseEfficiencyWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
                 "spsolve is more efficient when sparse b is in the CSC matrix format",
-            )
-            sup.filter(
                 SparseEfficiencyWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
                 "spsolve requires A be CSC or CSR matrix format",
+                SparseEfficiencyWarning,
             )
             sMexp = expm(sM).toarray()
             sNexp = expm(sN).toarray()
@@ -1286,14 +1277,23 @@ class _TestCommon:
     def test_inv(self):
         def check(dtype):
             M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "spsolve requires A be CSC or CSR matrix format",)
-                sup.filter(SparseEfficiencyWarning,
-                           "spsolve is more efficient when sparse b "
-                           "is in the CSC matrix format",)
-                sup.filter(SparseEfficiencyWarning,
-                           "splu converted its input to CSC format",)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "spsolve requires A be CSC or CSR matrix format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    "spsolve is more efficient when sparse b "
+                    "is in the CSC matrix format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    "splu converted its input to CSC format",
+                    SparseEfficiencyWarning,
+                )
                 sM = self.spcreator(M, shape=(3,3), dtype=dtype)
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).toarray(), np.eye(3))
@@ -1301,62 +1301,68 @@ class _TestCommon:
         for dtype in [float]:
             check(dtype)
 
-    @sup_complex
     def test_from_array(self):
-        A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        assert_array_equal(self.spcreator(A).toarray(), A)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            A = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+            assert_array_equal(self.spcreator(A).toarray(), A)
 
-        A = array([[1.0 + 3j, 0, 0],
-                   [0, 2.0 + 5, 0],
-                   [0, 0, 0]])
-        assert_array_equal(self.spcreator(A).toarray(), A)
-        assert_array_equal(self.spcreator(A, dtype='int16').toarray(),A.astype('int16'))
+            A = array([[1.0 + 3j, 0, 0],
+                       [0, 2.0 + 5, 0],
+                       [0, 0, 0]])
+            assert_array_equal(self.spcreator(A).toarray(), A)
+            assert_array_equal(
+                self.spcreator(A, dtype='int16').toarray(),A.astype('int16'))
 
-    @sup_complex
+
     def test_from_matrix(self):
-        A = self.asdense([[1, 0, 0], [2, 3, 4], [0, 5, 0], [0, 0, 0]])
-        assert_array_equal(self.spcreator(A).todense(), A)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            A = self.asdense([[1, 0, 0], [2, 3, 4], [0, 5, 0], [0, 0, 0]])
+            assert_array_equal(self.spcreator(A).todense(), A)
 
-        A = self.asdense([[1.0 + 3j, 0, 0],
-                          [0, 2.0 + 5, 0],
-                          [0, 0, 0]])
-        assert_array_equal(self.spcreator(A).todense(), A)
-        assert_array_equal(
-            self.spcreator(A, dtype='int16').todense(), A.astype('int16')
-        )
+            A = self.asdense([[1.0 + 3j, 0, 0],
+                              [0, 2.0 + 5, 0],
+                              [0, 0, 0]])
+            assert_array_equal(self.spcreator(A).todense(), A)
+            assert_array_equal(
+                self.spcreator(A, dtype='int16').todense(), A.astype('int16')
+            )
 
-    @sup_complex
     def test_from_list(self):
-        A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
-        assert_array_equal(self.spcreator(A).toarray(), A)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            A = [[1,0,0],[2,3,4],[0,5,0],[0,0,0]]
+            assert_array_equal(self.spcreator(A).toarray(), A)
 
-        A = [[1.0 + 3j, 0, 0],
-             [0, 2.0 + 5, 0],
-             [0, 0, 0]]
-        assert_array_equal(self.spcreator(A).toarray(), array(A))
-        assert_array_equal(
-            self.spcreator(A, dtype='int16').toarray(), array(A).astype('int16')
-        )
+            A = [[1.0 + 3j, 0, 0],
+                 [0, 2.0 + 5, 0],
+                 [0, 0, 0]]
+            assert_array_equal(self.spcreator(A).toarray(), array(A))
+            assert_array_equal(
+                self.spcreator(A, dtype='int16').toarray(), array(A).astype('int16')
+            )
 
-    @sup_complex
     def test_from_sparse(self):
-        D = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
-        S = self.csr_container(D)
-        assert_array_equal(self.spcreator(S).toarray(), D)
-        S = self.spcreator(D)
-        assert_array_equal(self.spcreator(S).toarray(), D)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            D = array([[1,0,0],[2,3,4],[0,5,0],[0,0,0]])
+            S = self.csr_container(D)
+            assert_array_equal(self.spcreator(S).toarray(), D)
+            S = self.spcreator(D)
+            assert_array_equal(self.spcreator(S).toarray(), D)
 
-        D = array([[1.0 + 3j, 0, 0],
-                   [0, 2.0 + 5, 0],
-                   [0, 0, 0]])
-        S = self.csr_container(D)
-        assert_array_equal(self.spcreator(S).toarray(), D)
-        assert_array_equal(self.spcreator(S, dtype='int16').toarray(),
-                           D.astype('int16'))
-        S = self.spcreator(D)
-        assert_array_equal(self.spcreator(S).toarray(), D)
-        assert_array_equal(self.spcreator(S, dtype='int16').toarray(),
-                           D.astype('int16'))
+            D = array([[1.0 + 3j, 0, 0],
+                       [0, 2.0 + 5, 0],
+                       [0, 0, 0]])
+            S = self.csr_container(D)
+            assert_array_equal(self.spcreator(S).toarray(), D)
+            assert_array_equal(self.spcreator(S, dtype='int16').toarray(),
+                               D.astype('int16'))
+            S = self.spcreator(D)
+            assert_array_equal(self.spcreator(S).toarray(), D)
+            assert_array_equal(self.spcreator(S, dtype='int16').toarray(),
+                               D.astype('int16'))
 
     # def test_array(self):
     #    """test array(A) where A is in sparse format"""
@@ -1440,62 +1446,64 @@ class _TestCommon:
         arrbool = dat.astype(bool)
         assert_array_equal(spbool.toarray(), arrbool)
 
-    @sup_complex
     def test_astype(self):
-        D = array([[2.0 + 3j, 0, 0],
-                   [0, 4.0 + 5j, 0],
-                   [0, 0, 0]])
-        S = self.spcreator(D)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            D = array([[2.0 + 3j, 0, 0],
+                       [0, 4.0 + 5j, 0],
+                       [0, 0, 0]])
+            S = self.spcreator(D)
 
-        for x in supported_dtypes:
-            # Check correctly casted
-            D_casted = D.astype(x)
-            for copy in (True, False):
-                S_casted = S.astype(x, copy=copy)
-                assert_equal(S_casted.dtype, D_casted.dtype)  # correct type
-                assert_equal(S_casted.toarray(), D_casted)    # correct values
-                assert_equal(S_casted.format, S.format)       # format preserved
-            # Check correctly copied
-            assert_(S_casted.astype(x, copy=False) is S_casted)
-            S_copied = S_casted.astype(x, copy=True)
-            assert_(S_copied is not S_casted)
+            for x in supported_dtypes:
+                # Check correctly casted
+                D_casted = D.astype(x)
+                for copy in (True, False):
+                    S_casted = S.astype(x, copy=copy)
+                    assert_equal(S_casted.dtype, D_casted.dtype)  # correct type
+                    assert_equal(S_casted.toarray(), D_casted)    # correct values
+                    assert_equal(S_casted.format, S.format)       # format preserved
+                # Check correctly copied
+                assert_(S_casted.astype(x, copy=False) is S_casted)
+                S_copied = S_casted.astype(x, copy=True)
+                assert_(S_copied is not S_casted)
 
-            def check_equal_but_not_same_array_attribute(attribute):
-                a = getattr(S_casted, attribute)
-                b = getattr(S_copied, attribute)
-                assert_array_equal(a, b)
-                assert_(a is not b)
-                i = (0,) * b.ndim
-                b_i = b[i]
-                b[i] = not b[i]
-                assert_(a[i] != b[i])
-                b[i] = b_i
+                def check_equal_but_not_same_array_attribute(attribute):
+                    a = getattr(S_casted, attribute)
+                    b = getattr(S_copied, attribute)
+                    assert_array_equal(a, b)
+                    assert_(a is not b)
+                    i = (0,) * b.ndim
+                    b_i = b[i]
+                    b[i] = not b[i]
+                    assert_(a[i] != b[i])
+                    b[i] = b_i
 
-            if S_casted.format in ('csr', 'csc', 'bsr'):
-                for attribute in ('indices', 'indptr', 'data'):
-                    check_equal_but_not_same_array_attribute(attribute)
-            elif S_casted.format == 'coo':
-                for attribute in ('row', 'col', 'data'):
-                    check_equal_but_not_same_array_attribute(attribute)
-            elif S_casted.format == 'dia':
-                for attribute in ('offsets', 'data'):
-                    check_equal_but_not_same_array_attribute(attribute)
+                if S_casted.format in ('csr', 'csc', 'bsr'):
+                    for attribute in ('indices', 'indptr', 'data'):
+                        check_equal_but_not_same_array_attribute(attribute)
+                elif S_casted.format == 'coo':
+                    for attribute in ('row', 'col', 'data'):
+                        check_equal_but_not_same_array_attribute(attribute)
+                elif S_casted.format == 'dia':
+                    for attribute in ('offsets', 'data'):
+                        check_equal_but_not_same_array_attribute(attribute)
 
-    @sup_complex
     def test_astype_immutable(self):
-        D = array([[2.0 + 3j, 0, 0],
-                   [0, 4.0 + 5j, 0],
-                   [0, 0, 0]])
-        S = self.spcreator(D)
-        if hasattr(S, 'data'):
-            S.data.flags.writeable = False
-        if S.format in ('csr', 'csc', 'bsr'):
-            S.indptr.flags.writeable = False
-            S.indices.flags.writeable = False
-        for x in supported_dtypes:
-            D_casted = D.astype(x)
-            S_casted = S.astype(x)
-            assert_equal(S_casted.dtype, D_casted.dtype)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            D = array([[2.0 + 3j, 0, 0],
+                       [0, 4.0 + 5j, 0],
+                       [0, 0, 0]])
+            S = self.spcreator(D)
+            if hasattr(S, 'data'):
+                S.data.flags.writeable = False
+            if S.format in ('csr', 'csc', 'bsr'):
+                S.indptr.flags.writeable = False
+                S.indices.flags.writeable = False
+            for x in supported_dtypes:
+                D_casted = D.astype(x)
+                S_casted = S.astype(x)
+                assert_equal(S_casted.dtype, D_casted.dtype)
 
     def test_mul_scalar(self):
         def check(dtype):
@@ -2113,10 +2121,13 @@ class _TestCommon:
             else:
                 raise ValueError()
 
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "Taking (maximum|minimum) with a (positive|negative) number "
-                           "results in a dense matrix")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "Taking (maximum|minimum) with a (positive|negative) number "
+                    "results in a dense matrix",
+                    SparseEfficiencyWarning,
+                )
 
                 max_s = A.maximum(B)
                 min_s = A.minimum(B)
@@ -2249,30 +2260,28 @@ class _TestCommon:
 
     def test_pickle(self):
         import pickle
-        sup = suppress_warnings()
-        sup.filter(SparseEfficiencyWarning)
-
-        @sup
         def check():
-            datsp = self.datsp.copy()
-            for protocol in range(pickle.HIGHEST_PROTOCOL):
-                sploaded = pickle.loads(pickle.dumps(datsp, protocol=protocol))
-                assert_equal(datsp.shape, sploaded.shape)
-                assert_array_equal(datsp.toarray(), sploaded.toarray())
-                assert_equal(datsp.format, sploaded.format)
-                # Hacky check for class member equality. This assumes that
-                # all instance variables are one of:
-                #  1. Plain numpy ndarrays
-                #  2. Tuples of ndarrays
-                #  3. Types that support equality comparison with ==
-                for key, val in datsp.__dict__.items():
-                    if isinstance(val, np.ndarray):
-                        assert_array_equal(val, sploaded.__dict__[key])
-                    elif (isinstance(val, tuple) and val
-                          and isinstance(val[0], np.ndarray)):
-                        assert_array_equal(val, sploaded.__dict__[key])
-                    else:
-                        assert_(val == sploaded.__dict__[key])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", SparseEfficiencyWarning)
+                datsp = self.datsp.copy()
+                for protocol in range(pickle.HIGHEST_PROTOCOL):
+                    sploaded = pickle.loads(pickle.dumps(datsp, protocol=protocol))
+                    assert_equal(datsp.shape, sploaded.shape)
+                    assert_array_equal(datsp.toarray(), sploaded.toarray())
+                    assert_equal(datsp.format, sploaded.format)
+                    # Hacky check for class member equality. This assumes that
+                    # all instance variables are one of:
+                    #  1. Plain numpy ndarrays
+                    #  2. Tuples of ndarrays
+                    #  3. Types that support equality comparison with ==
+                    for key, val in datsp.__dict__.items():
+                        if isinstance(val, np.ndarray):
+                            assert_array_equal(val, sploaded.__dict__[key])
+                        elif (isinstance(val, tuple) and val
+                              and isinstance(val[0], np.ndarray)):
+                            assert_array_equal(val, sploaded.__dict__[key])
+                        else:
+                            assert_(val == sploaded.__dict__[key])
         check()
 
     def test_unary_ufunc_overrides(self):
@@ -2524,8 +2533,8 @@ class _TestGetSet:
     def test_setelement(self):
         def check(dtype):
             A = self.spcreator((3,4), dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[0, 0] = dtype.type(0)  # bug 870
                 A[1, 2] = dtype.type(4.0)
                 A[0, 1] = dtype.type(3)
@@ -2563,8 +2572,8 @@ class _TestGetSet:
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[0, -4] = 1
             assert_equal(A[0, -4], 1)
 
@@ -2577,8 +2586,8 @@ class _TestGetSet:
         def _test_set(i, j, nitems):
             msg = f"{i!r} ; {j!r} ; {nitems!r}"
             A = self.spcreator((n, m))
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[i, j] = 1
             assert_almost_equal(A.sum(), nitems, err_msg=msg)
             assert_almost_equal(A[i, j], 1, err_msg=msg)
@@ -2591,8 +2600,8 @@ class _TestGetSet:
     def test_index_scalar_assign(self):
         A = self.spcreator((5, 5))
         B = np.zeros((5, 5))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for C in [A, B]:
                 C[0,1] = 1
                 C[3,0] = 4
@@ -2617,9 +2626,10 @@ class _TestSolve:
             A[i,i+1] = y[i]
             A[i+1,i] = conjugate(y[i])
         A = self.spcreator(A)
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning,
-                       "splu converted its input to CSC format")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "splu converted its input to CSC format",
+                SparseEfficiencyWarning)
             x = splu(A).solve(r)
         assert_almost_equal(A @ x,r)
 
@@ -2951,8 +2961,8 @@ class _TestSlicingAssign:
     def test_slice_scalar_assign(self):
         A = self.spcreator((5, 5))
         B = np.zeros((5, 5))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for C in [A, B]:
                 C[0:1,1] = 1
                 C[3:0,0] = 4
@@ -2967,8 +2977,8 @@ class _TestSlicingAssign:
         def _test_set(i, j):
             msg = f"i={i!r}; j={j!r}"
             A = self.spcreator((n, m))
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[i, j] = 1
             B = np.zeros((n, m))
             B[i, j] = 1
@@ -2981,8 +2991,8 @@ class _TestSlicingAssign:
     def test_self_self_assignment(self):
         # Tests whether a row of one sparse array can be assigned to another.
         B = self.spcreator((4,3))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             B[0,0] = 2
             B[1,2] = 7
             B[2,1] = 3
@@ -3008,8 +3018,8 @@ class _TestSlicingAssign:
                           [0,0,0]])
         block = [[1,0],[0,4]]
 
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             B[0,0] = 5
             B[1,2] = 3
             B[2,1] = 7
@@ -3021,8 +3031,8 @@ class _TestSlicingAssign:
 
     def test_sparsity_modifying_assignment(self):
         B = self.spcreator((4,3))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             B[0,0] = 5
             B[1,2] = 3
             B[2,1] = 7
@@ -3041,8 +3051,8 @@ class _TestSlicingAssign:
                   0, 1, s_[:], s_[1:5], -1, -2, -5,
                   array(-1), np.int8(-3)]
 
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             for j, a in enumerate(slices):
                 A[a] = j
                 B[a] = j
@@ -3353,8 +3363,8 @@ class _TestFancyIndexing:
     def test_fancy_indexing_2d_assign(self):
         # regression test for gh-10695
         mat = self.spcreator(array([[1, 0], [2, 3]]))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             mat[[0, 1], [1, 1]] = mat[[1, 0], [0, 0]]
         assert_equal(toarray(mat), array([[1, 2], [2, 1]]))
 
@@ -3402,8 +3412,8 @@ class _TestFancyIndexingAssign:
         def _test_set_slice(i, j):
             A = self.spcreator((n, m))
             B = self.asdense(np.zeros((n, m)))
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 B[i, j] = 1
                 with check_remains_sorted(A):
                     A[i, j] = 1
@@ -3419,8 +3429,8 @@ class _TestFancyIndexingAssign:
     def test_fancy_assignment_dtypes(self):
         def check(dtype):
             A = self.spcreator((5, 5), dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[[0,1],[0,1]] = dtype.type(1)
                 assert_equal(A.sum(), dtype.type(1)*2)
                 A[0:2,0:2] = dtype.type(1.0)
@@ -3439,8 +3449,8 @@ class _TestFancyIndexingAssign:
         i1 = (0,1,2)
         i2 = array(i0)
 
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             with check_remains_sorted(A):
                 A[0,i0] = B[i0,0].T
                 A[1,i1] = B[i1,1].T
@@ -3574,8 +3584,8 @@ class _TestFancyMultidimAssign:
 
         def _test_set_slice(i, j):
             A = self.spcreator((n, m))
-            with check_remains_sorted(A), suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with check_remains_sorted(A), warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 A[i, j] = 1
             B = self.asdense(np.zeros((n, m)))
             B[i, j] = 1
@@ -4171,8 +4181,8 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 class TestCSR(sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             return csr_array(*args, **kwargs)
     math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
@@ -4405,8 +4415,8 @@ class TestCSR(sparse_test_class()):
         # check assignments maintain canonical format
         M = self.csr_container((np.array([2]), np.array([2]), np.array([0, 1, 1, 1])))
         assert_equal(M.shape, (3, 3))
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             M[0, 1] = 2
             M[1, :] *= 5
             M[0, 2] = 3
@@ -4475,8 +4485,8 @@ TestCSR.init_class()
 class TestCSRMatrix(_MatrixMixin, TestCSR):
     @classmethod
     def spcreator(cls, *args, **kwargs):
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             return csr_matrix(*args, **kwargs)
 
 def test_spmatrix_subscriptable():
@@ -4492,8 +4502,8 @@ TestCSRMatrix.init_class()
 class TestCSC(sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             return csc_array(*args, **kwargs)
     math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
@@ -4649,8 +4659,8 @@ TestCSC.init_class()
 class TestCSCMatrix(_MatrixMixin, TestCSC):
     @classmethod
     def spcreator(cls, *args, **kwargs):
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             return csc_matrix(*args, **kwargs)
 
 
@@ -5118,46 +5128,71 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
     def ill_cases(self):
         # Ill-formed inputs and reference 2 x 2 outputs for testing _getnnz()
-        # and tocsr(): list of tuples (data, offsets, nnz, dense array)
+        # and tocsr(): list of tuples
+        # (data, offsets, nnz, dense array, case description)
 
         d1 = [[1]]        # diagonal shorter than width
         d3 = [[1, 2, 3]]  # diagonal longer than width
 
-        return [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
-                (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
-                (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
-                (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
-                (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d3, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                # empty
-                (None, None, 0, [[0, 0], [0, 0]]),
-                # explicit zeros
-                ([[0, 0]], [0], 2, [[0, 0], [0, 0]]),
-                # overfilled shorter-diagonal, out of order
+        return [(d1, [-1], 1, [[0, 0], [1, 0]],
+                 'shorter diagonal within'),
+                (d1, [1],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal above (but within if full)'),
+                (d1, [3],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements above'),
+                (d1, [-3], 0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements below'),
+                (d3, [-1], 1, [[0, 0], [1, 0]],
+                 'longer diagonal within (only head)'),
+                (d3, [1],  1, [[0, 2], [0, 0]],
+                 'longer diagonal within (only tail)'),
+                (d3, [3],  0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements above'),
+                (d3, [-3], 0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements below'),
+                (None, None, 0, [[0, 0], [0, 0]],
+                 'empty input'),
+                ([[0, 0]], [0], 2, [[0, 0], [0, 0]],
+                 'explicit zeros'),
                 (np.arange(1, 1 + 7).reshape((7, 1)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 2, [[1, 0], [5, 0]]),
-                # overfilled longer-diagonal, out of order
+                 2, [[1, 0], [5, 0]],
+                 'overfilled shorter-diagonal, out of order'),
                 (np.arange(1, 1 + 7 * 3).reshape((7, 3)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 4, [[1, 5], [13, 2]])]
+                 4, [[1, 5], [13, 2]],
+                 'overfilled longer-diagonal, out of order')]
 
     def test_getnnz(self):
-        for data, ofsets, nnz, ref in self.ill_cases():
+        for data, ofsets, nnz, ref, case in self.ill_cases():
             for shape in [(2, 2), (0, 2), (2, 0)]:
                 if data is None:
-                    A = dia_array(shape)
+                    A = self.dia_container(shape)
                 else:
-                    A = dia_array((data, ofsets), shape=shape)
+                    A = self.dia_container((data, ofsets), shape=shape)
                 if 0 in shape:
                     nnz = 0
-                assert A._getnnz() == nnz
+                assert A._getnnz() == nnz, 'case: ' + case
 
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
         pass
+
+    def test_tocsr(self):
+        # test bound checks (other pathological cases are tested by
+        # TestConstructUtils::test_spdiags, and normal operation is ensured by
+        # many other tests here using .toarray())
+        for data, ofsets, _, r, case in self.ill_cases():
+            for shape in [(2, 2), (0, 2), (2, 0)]:
+                if data is None:
+                    A = self.dia_container(shape)
+                else:
+                    A = self.dia_container((data, ofsets), shape=shape)
+                B = A.tocsr()
+                ref = np.array(r)[:shape[0], :shape[1]]
+                nnz = np.count_nonzero(ref)
+                assert B.nnz == nnz
+                assert_array_equal(B.toarray(), ref, err_msg='case: ' + case)
 
     def test_convert_gh14555(self):
         # regression test for gh-14555
@@ -5190,30 +5225,30 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         # test format and cases not covered by common add tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp + Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A + B)
 
         Csp = Bsp + Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B + A)
 
     def test_sub_sparse(self):
         # test format and cases not covered by common sub tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp - Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A - B)
 
         Csp = Bsp - Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B - A)
 
         Bsp = Bsp.asformat('csr')
@@ -5240,8 +5275,8 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         B = array([[11, 12],
                    [13, 14],
                    [15, 16]])
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
         Asp.data[Asp.data == 0] = -1  # poison outside elements
         Bsp.data[Bsp.data == 0] = -1
         assert_array_equal(Asp.toarray(), A)
@@ -5249,21 +5284,21 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
         C = A @ B
         Csp = Asp @ Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-1, 0, 1])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         C = B @ A
         Csp = Bsp @ Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         # short data and that order of input offsets doesn't matter
-        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
-        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+        Asp = self.dia_container(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = self.dia_container(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
 
         Csp = Asp @ Bsp
         assert_array_equal(Csp.offsets, array([-3, 0]))
@@ -5630,8 +5665,8 @@ class _NonCanonicalMixin:
         has_zeros = (zero_pos[0].size > 0)
         if has_zeros:
             k = zero_pos[0].size//2
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
                 M = self._insert_explicit_zero(M, zero_pos[0][k], zero_pos[1][k])
 
         arg1 = self._arg1_for_noncanonical(M, sorted_indices)
@@ -5714,14 +5749,14 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
         B = self.spcreator([[1,2,3]])
 
         D[1,:] = B.toarray()
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             A[1,:] = B
         assert_array_equal(A.toarray(), D)
 
         D[:,2] = B.toarray().ravel()
-        with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
             A[:,2] = B.T
         assert_array_equal(A.toarray(), D)
 

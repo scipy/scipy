@@ -6,7 +6,6 @@ import threading
 import copy
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 from pytest import raises as assert_raises
 import pytest
@@ -3295,10 +3294,9 @@ index 1afb1900f1..d817e51ad8 100644
         # XXX splrep warns that "s too small": ier=2
         knots = list(generate_knots(x, y, k=3, s=1e-50))
 
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning)
+        with pytest.warns(RuntimeWarning) as r:
             tck = splrep(x, y, k=3, s=1e-50)
-            assert len(r) == 1
+        assert len(r) == 1
         xp_assert_equal(knots[-1], tck[0])
 
 
@@ -3524,14 +3522,13 @@ class TestMakeSplrep:
         x = np.arange(n)
         y = x**3
 
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning)
+        with pytest.warns(RuntimeWarning) as r:
             tck = splrep(x, y, k=3, s=1e-50)
             spl = make_splrep(x, y, k=3, s=1e-50)
-            assert len(r) == 2
             xp_assert_equal(spl.t, tck[0])
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
+        assert len(r) == 2
 
     def test_issue_22704(self):
         # Reference - https://github.com/scipy/scipy/issues/22704

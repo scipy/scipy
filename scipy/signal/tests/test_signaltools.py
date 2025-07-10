@@ -1,16 +1,13 @@
 import sys
 import math
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from decimal import Decimal
 from itertools import product
 from math import gcd
 
 import pytest
 from pytest import raises as assert_raises
-from numpy.testing import (
-    assert_allclose,    # until object arrays are gone
-    suppress_warnings)
 import numpy as np
 from numpy.exceptions import ComplexWarning
 
@@ -26,8 +23,7 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
-                                      _group_poles)
+from scipy.signal._signaltools import _filtfilt_gust, _compute_factors, _group_poles
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 
@@ -237,7 +233,7 @@ class TestConvolve:
             assert results['fft'].dtype == results['direct'].dtype
 
             if 'bool' in t1 and 'bool' in t2:
-                assert choose_conv_method(x1, x2) == 'direct' 
+                assert choose_conv_method(x1, x2) == 'direct'
                 continue
 
             # Found by experiment. Found approx smallest value for (rtol, atol)
@@ -280,15 +276,6 @@ class TestConvolve:
         assert_raises(ValueError, convolve, 1, [2], method='fft')
         assert_raises(ValueError, convolve, [1], [[2]])
         assert_raises(ValueError, convolve, [3], 2)
-
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            convolve(a, b)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -343,8 +330,8 @@ class TestConvolve2d:
 
     def test_fillvalue_errors(self, xp):
         msg = "could not cast `fillvalue` directly to the output "
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(ComplexWarning, "Casting complex values")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Casting complex values", ComplexWarning)
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
@@ -847,9 +834,9 @@ class TestFFTConvolve:
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_random_data(self, axes, xp):
-        np.random.seed(1234)
-        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        rng = np.random.default_rng(1234)
+        a_np = np.random.rand(1233) + 1j * rng.random(1233)
+        b_np = np.random.rand(1321) + 1j * rng.random(1321)
         expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
         a = xp.asarray(a_np)
         b = xp.asarray(b_np)
@@ -864,9 +851,9 @@ class TestFFTConvolve:
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes, xp):
-        np.random.seed(1234)
-        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        rng = np.random.default_rng(1234)
+        a_np = np.random.rand(1233) + 1j * rng.random(1233)
+        b_np = np.random.rand(1321) + 1j * rng.random(1321)
         expected = np.convolve(a_np, b_np, 'full')
         a_np = np.tile(a_np, [2, 1])
         b_np = np.tile(b_np, [2, 1])
@@ -892,9 +879,9 @@ class TestFFTConvolve:
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes, xp):
         a_shape, b_shape = (123, 22), (132, 11)
-        np.random.seed(1234)
-        a = xp.asarray(np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape))
-        b = xp.asarray(np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape))
+        rng = np.random.default_rng(1234)
+        a = xp.asarray(np.random.rand(*a_shape) + 1j * rng.random(a_shape))
+        b = xp.asarray(np.random.rand(*b_shape) + 1j * rng.random(b_shape))
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
@@ -1645,33 +1632,31 @@ class TestResample:
         cpu_only=True, exceptions=["cupy"], reason="filtfilt is CPU-only"
     )
     @pytest.mark.parametrize('down_factor', [2, 11, 79])
-    def test_poly_vs_filtfilt(self, down_factor, xp):
+    @pytest.mark.parametrize("dtype", [int, np.float32, np.complex64, float, complex])
+    def test_poly_vs_filtfilt(self, down_factor, dtype, xp):
         # Check that up=1.0 gives same answer as filtfilt + slicing
         random_state = np.random.RandomState(17)
-        try_types = (int, np.float32, np.complex64, float, complex)
         size = 10000
 
-        for dtype in try_types:
-            x = random_state.randn(size).astype(dtype)
-            if dtype in (np.complex64, np.complex128):
-                x += 1j * random_state.randn(size)
-            x = xp.asarray(x)
+        x = random_state.randn(size).astype(dtype)
+        if dtype in (np.complex64, np.complex128):
+            x += 1j * random_state.randn(size)
+        x = xp.asarray(x)
 
-            # resample_poly assumes zeros outside of signl, whereas filtfilt
-            # can only constant-pad. Make them equivalent:
-            x[0] = 0
-            x[-1] = 0
+        # resample_poly assumes zeros outside of signl, whereas filtfilt
+        # can only constant-pad. Make them equivalent:
+        x[0] = 0
+        x[-1] = 0
 
-            h = signal.firwin(31, 1. / down_factor, window='hamming')
-            h = xp.asarray(h)   # XXX: convert firwin
-            yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
+        h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
+        yf = filtfilt(h, xp.asarray(1.0), x, padtype='constant')[::down_factor]
 
-            # Need to pass convolved version of filter to resample_poly,
-            # since filtfilt does forward and backward, but resample_poly
-            # only goes forward
-            hc = convolve(h, xp.flip(h))
-            y = signal.resample_poly(x, 1, down_factor, window=hc)
-            xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
+        # Need to pass convolved version of filter to resample_poly,
+        # since filtfilt does forward and backward, but resample_poly
+        # only goes forward
+        hc = convolve(h, xp.flip(h))
+        y = signal.resample_poly(x, 1, down_factor, window=hc)
+        xp_assert_close(yf, y, atol=3e-7, rtol=6e-7)
 
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="correlate1d is CPU-only"
@@ -1832,17 +1817,6 @@ class TestOrderFilt:
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class _TestLinearFilter:
-
-    def setup_method(self):
-        if self.dtype == object:
-            self.assert_close = np.testing.assert_allclose
-            self.assert_equal = np.testing.assert_equal
-            self.assert_array_almost_equal = np.testing.assert_array_almost_equal
-        else:
-            self.assert_close = xp_assert_close
-            self.assert_equal = xp_assert_equal
-            self.assert_array_almost_equal = assert_array_almost_equal
-
     def generate(self, shape, xp):
         prodshape = shape if isinstance(shape, int) else math.prod(shape)
         x = xp.linspace(0, prodshape - 1, prodshape)
@@ -1870,14 +1844,14 @@ class _TestLinearFilter:
         b = self.convert_dtype([1, -1], xp)
         a = self.convert_dtype([0.5, -0.5], xp)
         y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.], xp)
-        self.assert_array_almost_equal(lfilter(b, a, x), y_r)
+        assert_array_almost_equal(lfilter(b, a, x), y_r)
 
     def test_rank_1_FIR(self, xp):
         x = self.generate((6,), xp)
         b = self.convert_dtype([1, 1], xp)
         a = self.convert_dtype([1], xp)
         y_r = self.convert_dtype([0, 1, 3, 5, 7, 9.], xp)
-        self.assert_array_almost_equal(lfilter(b, a, x), y_r)
+        assert_array_almost_equal(lfilter(b, a, x), y_r)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_rank_1_IIR_init_cond(self, xp):
@@ -1888,8 +1862,8 @@ class _TestLinearFilter:
         y_r = self.convert_dtype([1, 5, 9, 13, 17, 21], xp)
         zf_r = self.convert_dtype([13, -10], xp)
         y, zf = lfilter(b, a, x, zi=zi)
-        self.assert_array_almost_equal(y, y_r)
-        self.assert_array_almost_equal(zf, zf_r)
+        assert_array_almost_equal(y, y_r)
+        assert_array_almost_equal(zf, zf_r)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_rank_1_FIR_init_cond(self, xp):
@@ -1900,8 +1874,8 @@ class _TestLinearFilter:
         y_r = self.convert_dtype([1, 2, 3, 6, 9, 12.], xp)
         zf_r = self.convert_dtype([9, 5], xp)
         y, zf = lfilter(b, a, x, zi=zi)
-        self.assert_array_almost_equal(y, y_r)
-        self.assert_array_almost_equal(zf, zf_r)
+        assert_array_almost_equal(y, y_r)
+        assert_array_almost_equal(zf, zf_r)
 
     def test_rank_2_IIR_axis_0(self, xp):
         x = self.generate((4, 3), xp)
@@ -1910,7 +1884,7 @@ class _TestLinearFilter:
         y_r2_a0 = self.convert_dtype([[0, 2, 4], [6, 4, 2], [0, 2, 4],
                                       [6, 4, 2]], xp)
         y = lfilter(b, a, x, axis=0)
-        self.assert_array_almost_equal(y_r2_a0, y)
+        assert_array_almost_equal(y_r2_a0, y)
 
     def test_rank_2_IIR_axis_1(self, xp):
         x = self.generate((4, 3), xp)
@@ -1919,7 +1893,7 @@ class _TestLinearFilter:
         y_r2_a1 = self.convert_dtype([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], xp)
         y = lfilter(b, a, x, axis=1)
-        self.assert_array_almost_equal(y_r2_a1, y)
+        assert_array_almost_equal(y_r2_a1, y)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_rank_2_IIR_axis_0_init_cond(self, xp):
@@ -1932,8 +1906,8 @@ class _TestLinearFilter:
                               [19, -17, 19]], xp)
         zf_r = self.convert_dtype([-5, -17, -29, -41], xp)[:, np.newaxis]
         y, zf = lfilter(b, a, x, axis=1, zi=zi)
-        self.assert_array_almost_equal(y_r2_a0_1, y)
-        self.assert_array_almost_equal(zf, zf_r)
+        assert_array_almost_equal(y_r2_a0_1, y)
+        assert_array_almost_equal(zf, zf_r)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_rank_2_IIR_axis_1_init_cond(self, xp):
@@ -1946,8 +1920,8 @@ class _TestLinearFilter:
                                         [1, 3, 5], [5, 3, 1]], xp)
         zf_r = self.convert_dtype([[-23, -23, -23]], xp)
         y, zf = lfilter(b, a, x, axis=0, zi=zi)
-        self.assert_array_almost_equal(y_r2_a0_0, y)
-        self.assert_array_almost_equal(zf, zf_r)
+        assert_array_almost_equal(y_r2_a0_0, y)
+        assert_array_almost_equal(zf, zf_r)
 
     @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_IIR(self, xp):
@@ -1959,7 +1933,7 @@ class _TestLinearFilter:
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
-            self.assert_array_almost_equal(y, xp.asarray(y_r))
+            assert_array_almost_equal(y, xp.asarray(y_r))
 
     @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_IIR_init_cond(self, xp):
@@ -1979,8 +1953,8 @@ class _TestLinearFilter:
                 return np.asarray(lfilter(b, a, w, zi=zi1)[1])
             y_r = np.apply_along_axis(lf0, axis, np.asarray(x))
             zf_r = np.apply_along_axis(lf1, axis, np.asarray(x))
-            self.assert_array_almost_equal(y, xp.asarray(y_r))
-            self.assert_array_almost_equal(zf, xp.asarray(zf_r))
+            assert_array_almost_equal(y, xp.asarray(y_r))
+            assert_array_almost_equal(zf, xp.asarray(zf_r))
 
     @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_FIR(self, xp):
@@ -1992,7 +1966,7 @@ class _TestLinearFilter:
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
-            self.assert_array_almost_equal(y, xp.asarray(y_r))
+            assert_array_almost_equal(y, xp.asarray(y_r))
 
     @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_FIR_init_cond(self, xp):
@@ -2013,8 +1987,8 @@ class _TestLinearFilter:
                 return np.asarray(lfilter(b, a, w, zi=zi1)[1])
             y_r = np.apply_along_axis(lf0, axis, x_np)
             zf_r = np.apply_along_axis(lf1, axis, x_np)
-            self.assert_array_almost_equal(y, xp.asarray(y_r))
-            self.assert_array_almost_equal(zf, xp.asarray(zf_r))
+            assert_array_almost_equal(y, xp.asarray(y_r))
+            assert_array_almost_equal(zf, xp.asarray(zf_r))
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_zi_pseudobroadcast(self, xp):
@@ -2032,8 +2006,8 @@ class _TestLinearFilter:
         y_full, zf_full = lfilter(b, a, x, zi=zi_full)
         y_sing, zf_sing = lfilter(b, a, x, zi=zi_sing)
 
-        self.assert_array_almost_equal(y_sing, y_full)
-        self.assert_array_almost_equal(zf_full, zf_sing)
+        assert_array_almost_equal(y_sing, y_full)
+        assert_array_almost_equal(zf_full, zf_sing)
 
         # lfilter does not prepend ones
         assert_raises(ValueError, lfilter, b, a, x, -1, xp.ones(zi_size))
@@ -2047,7 +2021,7 @@ class _TestLinearFilter:
         y_r = self.convert_dtype([0, 1, 2, 2, 2, 2], xp)
 
         y = lfilter(b, a[0], x)
-        self.assert_array_almost_equal(y, y_r)
+        assert_array_almost_equal(y, y_r)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_zi_some_singleton_dims(self, xp):
@@ -2071,13 +2045,13 @@ class _TestLinearFilter:
 
         # IIR
         y_iir, zf_iir = lfilter(b, a, x, -1, zi)
-        self.assert_array_almost_equal(y_iir, y_expected)
-        self.assert_array_almost_equal(zf_iir, zf_expected)
+        assert_array_almost_equal(y_iir, y_expected)
+        assert_array_almost_equal(zf_iir, zf_expected)
 
         # FIR
         y_fir, zf_fir = lfilter(b, a[0], x, -1, zi)
-        self.assert_array_almost_equal(y_fir, y_expected)
-        self.assert_array_almost_equal(zf_fir, zf_expected)
+        assert_array_almost_equal(y_fir, y_expected)
+        assert_array_almost_equal(zf_fir, zf_expected)
 
     def base_bad_size_zi(self, b, a, x, axis, zi, xp):
         b = self.convert_dtype(b, xp)
@@ -2199,7 +2173,7 @@ class _TestLinearFilter:
         b = self.convert_dtype([1], xp)
         zi = self.convert_dtype([], xp)
         y, zf = lfilter(b, a, x, zi=zi)
-        self.assert_array_almost_equal(y, x)
+        assert_array_almost_equal(y, x)
         assert zf.dtype == (getattr(xp, self.dtype)
                             if isinstance(self.dtype, str)
                             else self.dtype)
@@ -2224,7 +2198,7 @@ class _TestLinearFilter:
         # copute initial conditions from lfiltic
         zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
-        self.assert_array_almost_equal(zi_1, zi_2)
+        assert_array_almost_equal(zi_1, zi_2)
 
     def test_lfiltic_bad_coeffs(xp):
         # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
@@ -2245,10 +2219,10 @@ class _TestLinearFilter:
         zi = lfiltic(b, a, xp.asarray([1., 0]))
         zi_1 = lfiltic(b, a, xp.asarray([1.0, 0]))
         zi_2 = lfiltic(b, a, xp.asarray([True, False]))
-        self.assert_equal(zi, zi_1)
+        xp_assert_equal(zi, zi_1)
 
         check_dtype_arg = {} if self.dtype == object else {'check_dtype': False}
-        self.assert_equal(zi, zi_2, **check_dtype_arg)
+        xp_assert_equal(zi, zi_2, **check_dtype_arg)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_short_x_FIR(self, xp):
@@ -2261,8 +2235,8 @@ class _TestLinearFilter:
         ye = self.convert_dtype([74], xp)
         zfe = self.convert_dtype([7, -72], xp)
         y, zf = lfilter(b, a, x, zi=zi)
-        self.assert_array_almost_equal(y, ye)
-        self.assert_array_almost_equal(zf, zfe)
+        assert_array_almost_equal(y, ye)
+        assert_array_almost_equal(zf, zfe)
 
     @skip_xp_backends('cupy', reason='XXX https://github.com/cupy/cupy/pull/8677')
     def test_short_x_IIR(self, xp):
@@ -2275,8 +2249,8 @@ class _TestLinearFilter:
         ye = self.convert_dtype([74], xp)
         zfe = self.convert_dtype([-67, -72], xp)
         y, zf = lfilter(b, a, x, zi=zi)
-        self.assert_array_almost_equal(y, ye)
-        self.assert_array_almost_equal(zf, zfe)
+        assert_array_almost_equal(y, ye)
+        assert_array_almost_equal(zf, zfe)
 
     def test_do_not_modify_a_b_IIR(self, xp):
         x = self.generate((6,), xp)
@@ -2286,9 +2260,9 @@ class _TestLinearFilter:
         a0 = xp_copy(a, xp=xp)
         y_r = self.convert_dtype([0, 2, 4, 6, 8, 10.], xp)
         y_f = lfilter(b, a, x)
-        self.assert_array_almost_equal(y_f, y_r)
-        self.assert_equal(b, b0)
-        self.assert_equal(a, a0)
+        assert_array_almost_equal(y_f, y_r)
+        xp_assert_equal(b, b0)
+        xp_assert_equal(a, a0)
 
     def test_do_not_modify_a_b_FIR(self, xp):
         x = self.generate((6,), xp)
@@ -2298,9 +2272,9 @@ class _TestLinearFilter:
         a0 = xp_copy(a, xp=xp)
         y_r = self.convert_dtype([0, 0.5, 1, 2, 3, 4.], xp)
         y_f = lfilter(b, a, x)
-        self.assert_array_almost_equal(y_f, y_r)
-        self.assert_equal(b, b0)
-        self.assert_equal(a, a0)
+        assert_array_almost_equal(y_f, y_r)
+        xp_assert_equal(b, b0)
+        xp_assert_equal(a, a0)
 
     @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("a", [1.0, [1.0], np.array(1.0)])
@@ -2308,19 +2282,11 @@ class _TestLinearFilter:
     def test_scalar_input(self, a, b, xp):
         data = np.random.randn(10)
         data = xp.asarray(data)
-        self.assert_close(
+        xp_assert_close(
             lfilter(xp.asarray([1.0]), xp.asarray([1.0]), data),
             lfilter(b, a, data)
         )
 
-    @skip_xp_backends(np_only=True)
-    @pytest.mark.thread_unsafe
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            lfilter(a, b, [1, 2, 3, 4])
 
 
 class TestLinearFilterFloat32(_TestLinearFilter):
@@ -2331,7 +2297,6 @@ class TestLinearFilterFloat64(_TestLinearFilter):
     dtype = 'float64'
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dtype = np.dtype('g')
@@ -2345,29 +2310,11 @@ class TestLinearFilterComplex128(_TestLinearFilter):
     dtype = 'complex128'
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-class TestLinearFilterDecimal(_TestLinearFilter):
-    dtype = np.dtype('O')
-
-    def type(self, x):
-        return Decimal(str(x))
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-class TestLinearFilterObject(_TestLinearFilter):
-    dtype = np.dtype('O')
-    type = float
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 def test_lfilter_bad_object(xp):
     # lfilter: object arrays with non-numeric objects raise TypeError.
@@ -2385,15 +2332,14 @@ def test_lfilter_notimplemented_input(xp):
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-class _TestCorrelateReal:
-
-    def _get_assertion(self, dt):
-        """Use np.testing while object arrays are a thing."""
-        if dt == Decimal:
-            return np.testing.assert_array_almost_equal
-        else:
-            return assert_array_almost_equal
-
+@pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
+                                "uint32", "int32",
+                                "uint64", "int64",
+                                "float32", "float64",
+                               ])
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
+@skip_xp_backends("jax.numpy", reason="fails all around")
+class TestCorrelateReal:
     def _setup_rank1(self, dt, xp):
         a = xp.linspace(0, 3, 4, dtype=dt)
         b = xp.linspace(1, 2, 2, dtype=dt)
@@ -2422,42 +2368,32 @@ class _TestCorrelateReal:
 
     @skip_xp_backends(np_only=True, reason="order='F'")
     def test_method(self, dt, xp):
-        if dt == Decimal:
-            method = choose_conv_method([Decimal(4)], [Decimal(3)])
-            assert method == 'direct'
-        else:
-            dt = getattr(xp, dt)
+        dt = getattr(xp, dt)
 
-            a, b, y_r = self._setup_rank3(dt, xp)
-            y_fft = correlate(a, b, method='fft')
-            y_direct = correlate(a, b, method='direct')
+        a, b, y_r = self._setup_rank3(dt, xp)
+        y_fft = correlate(a, b, method='fft')
+        y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r,
-                                      y_fft,
-                                      decimal=self.equal_tolerance_fft(y_fft.dtype),)
-            assert_array_almost_equal(y_r,
-                                      y_direct,
-                                      decimal=self.equal_tolerance(y_direct.dtype),)
-            assert y_fft.dtype == dt
-            assert y_direct.dtype == dt
+        assert_array_almost_equal(y_r, y_fft,
+                                  decimal=self.equal_tolerance_fft(y_fft.dtype),)
+        assert_array_almost_equal(y_r, y_direct,
+                                  decimal=self.equal_tolerance(y_direct.dtype),)
+        assert y_fft.dtype == dt
+        assert y_direct.dtype == dt
 
     def test_rank1_valid(self, dt, xp):
         if is_torch(xp) and dt in ["uint16", "uint32", "uint64"]:
            pytest.skip("torch does not support unsigned ints")
 
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
-        _assert_almost_equal = self._get_assertion(dt)
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'valid')
-        _assert_almost_equal(y, y_r[1:4])
+        assert_array_almost_equal(y, y_r[1:4])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        if  y_r.dtype != object:
-            _assert_almost_equal(y, xp.flip(y_r[1:4]))
-        else:
-            _assert_almost_equal(y, y_r[1:4][::-1])
+        assert_array_almost_equal(y, xp.flip(y_r[1:4]))
         assert y.dtype == dt
 
     def test_rank1_same(self, dt, xp):
@@ -2468,8 +2404,7 @@ class _TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'same')
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[:-1])
+        assert_array_almost_equal(y, y_r[:-1])
         assert y.dtype == dt
 
     def test_rank1_full(self, dt, xp):
@@ -2480,8 +2415,7 @@ class _TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'full')
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r)
+        assert_array_almost_equal(y, y_r)
         assert y.dtype == dt
 
     def _setup_rank3(self, dt, xp):
@@ -2519,14 +2453,12 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b, "valid")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[1:2, 2:4, 3:5])
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, "valid")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
         assert y.dtype == dt
 
     @skip_xp_backends(np_only=True, reason="order='F'")
@@ -2534,8 +2466,7 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b, "same")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[0:-1, 1:-1, 1:-2])
+        xp_assert_close(y, y_r[0:-1, 1:-1, 1:-2])
         assert y.dtype == dt
 
     @skip_xp_backends(np_only=True, reason="order='F'")
@@ -2543,27 +2474,8 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b)
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r)
+        xp_assert_close(y, y_r)
         assert y.dtype == dt
-
-
-@pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
-                                "uint32", "int32",
-                                "uint64", "int64",
-                                "float32", "float64",
-                               ])
-@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
-@skip_xp_backends("jax.numpy", reason="fails all around")
-class TestCorrelateReal(_TestCorrelateReal):
-    pass
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-@pytest.mark.parametrize('dt', [Decimal])
-class TestCorrelateRealDecimal(_TestCorrelateReal):
-    pass
 
 
 class TestCorrelate:
@@ -2615,14 +2527,6 @@ class TestCorrelate:
         xp_assert_close(correlate(a, b, mode='full'), xp.asarray([6, 17, 32, 23, 12]))
         xp_assert_close(correlate(a, b, mode='valid'), xp.asarray([32]))
 
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            correlate(a, b)
 
 
 @skip_xp_backends(np_only=True, reason="accepts ints, return numpy array")
@@ -2682,11 +2586,11 @@ class TestCorrelateComplex:
         return int(2 * prec / 3)
 
     def _setup_rank1(self, dt, mode, xp):
-        np.random.seed(9)
+        rng = np.random.default_rng(9)
         a = np.random.randn(10).astype(dt)
-        a += 1j * np.random.randn(10).astype(dt)
+        a += 1j * rng.standard_normal(10).astype(dt)
         b = np.random.randn(8).astype(dt)
-        b += 1j * np.random.randn(8).astype(dt)
+        b += 1j * rng.standard_normal(8).astype(dt)
 
         y_r = (correlate(a.real, b.real, mode=mode) +
                correlate(a.imag, b.imag, mode=mode)).astype(dt)
@@ -2897,9 +2801,9 @@ class TestFiltFilt:
         if is_jax(xp) and self.filtfilt_kind == 'sos':
             pytest.skip(reason='sosfilt works in-place')
 
-        zpk = tf2zpk([1, 2, 3], [1, 2, 3])
+        zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1., 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
-        atol= 3e-9 if is_cupy(xp) else 5.28e-11
+        atol= 4e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
 
     @skip_xp_backends('torch', reason='negative strides')
@@ -2914,7 +2818,7 @@ class TestFiltFilt:
         xhigh = xp.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
-        zpk = butter(8, 0.125, output='zpk')
+        zpk = butter(8, xp.asarray(0.125), output='zpk')
         # r is the magnitude of the largest pole.
         r = np.abs(zpk[1]).max()
         eps = 1e-5
@@ -2948,7 +2852,7 @@ class TestFiltFilt:
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
-        zpk = butter(3, 0.125, output='zpk')
+        zpk = butter(3, xp.asarray(0.125), output='zpk')
         y0 = self.filtfilt(zpk, x, padlen=0, axis=0, xp=xp)
         y1 = self.filtfilt(
             zpk, xp.asarray(np.swapaxes(x, 0, 1)), padlen=0, axis=1, xp=xp
@@ -3077,8 +2981,8 @@ def filtfilt_gust_opt(b, a, x):
 
 def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     # Generate x, the data to be filtered.
-    np.random.seed(123)
-    x = np.random.randn(*shape)
+    rng = np.random.default_rng(123)
+    x = rng.standard_normal(shape)
 
     # Apply filtfilt to x. This is the main calculation to be checked.
     y = filtfilt(b, a, x, axis=axis, method="gust", irlen=irlen)
@@ -3107,7 +3011,6 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     xp_assert_close(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
 def test_choose_conv_method(xp):
@@ -3137,24 +3040,9 @@ def test_choose_conv_method(xp):
         assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@pytest.mark.thread_unsafe
 @skip_xp_backends(np_only=True)
-def test_choose_conv_dtype_deprecation(xp):
-    # gh-21211
-    a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-    b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-    with pytest.deprecated_call(match="dtype=object is not supported"):
-        choose_conv_method(a, b)
-
-
-@skip_xp_backends(np_only=True)
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_choose_conv_method_2(xp):
     for mode in ['valid', 'same', 'full']:
-        x = [Decimal(3), Decimal(2)]
-        h = [Decimal(1), Decimal(4)]
-        assert choose_conv_method(x, h, mode=mode) == 'direct'
-
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
             if hasattr(np, not_fft_conv_supp):
@@ -3173,8 +3061,6 @@ def test_filtfilt_gust(xp):
     eps = 1e-10
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-
-    np.random.seed(123)
 
     b, a = zpk2tf(z, p, k)
     for irlen in [None, approx_impulse_len]:
@@ -3222,13 +3108,15 @@ class TestDecimate:
         assert d1.shape == (30, 15)
 
     def test_phaseshift_FIR(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Badly conditioned filter", BadCoefficients)
             self._test_phaseshift(method='fir', zero_phase=False)
 
     def test_zero_phase_FIR(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients, "Badly conditioned filter")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Badly conditioned filter", BadCoefficients)
             self._test_phaseshift(method='fir', zero_phase=True)
 
     def test_phaseshift_IIR(self, xp):
@@ -4283,32 +4171,6 @@ class TestVectorstrength:
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True)
-@pytest.mark.parametrize('func', (sosfilt, lfilter))
-def test_nonnumeric_dtypes(func, xp):
-    x = [Decimal(1), Decimal(2), Decimal(3)]
-    b = [Decimal(1), Decimal(2), Decimal(3)]
-    a = [Decimal(1), Decimal(2), Decimal(3)]
-    x = np.array(x)
-    assert x.dtype.kind == 'O'
-    desired = lfilter(np.array(b, float), np.array(a, float), x.astype(float))
-    if func is sosfilt:
-        actual = sosfilt([b + a], x)
-    else:
-        actual = lfilter(b, a, x)
-    assert all(isinstance(x, Decimal) for x in actual)
-    assert_allclose(actual.astype(float), desired.astype(float))
-    # Degenerate cases
-    if func is lfilter:
-        args = [1., 1.]
-    else:
-        args = [tf2sos(1., 1.)]
-
-    with pytest.raises(ValueError, match='must be at least 1-D'):
-        func(*args, x=1.)
-
-
 # XXX: restore testing on CuPy, where possible. Multiple issues in this test:
 #  1. _zi functions deliberately incompatible in cupy
 #     (https://github.com/scipy/scipy/pull/21713#issuecomment-2417494443)
@@ -4553,15 +4415,6 @@ class TestSOSFilt:
 
         _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
         xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
-
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, dt, xp):
-        # gh-21211
-        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
-        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            sosfilt(sos, x)
 
 
 @skip_xp_backends(cpu_only=True, reason='lfilter is CPU-only compiled code')

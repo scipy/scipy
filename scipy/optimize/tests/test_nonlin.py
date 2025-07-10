@@ -335,14 +335,14 @@ class TestLinear:
     some methods find the exact solution in a finite number of steps"""
 
     def _check(self, jac, N, maxiter, complex=False, **kw):
-        np.random.seed(123)
+        rng = np.random.default_rng(123)
 
-        A = np.random.randn(N, N)
+        A = rng.standard_normal((N, N))
         if complex:
-            A = A + 1j*np.random.randn(N, N)
-        b = np.random.randn(N)
+            A = A + 1j*rng.standard_normal((N, N))
+        b = rng.standard_normal(N)
         if complex:
-            b = b + 1j*np.random.randn(N)
+            b = b + 1j*rng.standard_normal(N)
 
         def func(x):
             return dot(A, x) - b
