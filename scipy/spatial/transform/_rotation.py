@@ -15,6 +15,7 @@ from scipy._lib._array_api import (
     ArrayLike,
     xp_result_type,
     is_lazy_array,
+    xp_capabilities,
 )
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
@@ -2186,9 +2187,8 @@ class Rotation:
         sample = cython_backend.random(num, rng)
         return cls(sample, normalize=True, copy=False)
 
-    @classmethod
+    @xp_capabilities()
     def align_vectors(
-        cls,
         a: ArrayLike,
         b: ArrayLike,
         weights: ArrayLike | None = None,
@@ -2394,8 +2394,8 @@ class Rotation:
         backend = backend_registry.get(array_namespace(a), xp_backend)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
-            return cls(q, normalize=False, copy=False), rssd, sensitivity
-        return cls(q, normalize=False, copy=False), rssd
+            return Rotation(q, normalize=False, copy=False), rssd, sensitivity
+        return Rotation(q, normalize=False, copy=False), rssd
 
     def __getstate__(self) -> tuple[Array, bool]:
         return (self._quat, self._single)
@@ -2637,30 +2637,3 @@ class Slerp:
             result = result[0]
 
         return result
-
-
-# TODO: This should be done in JAX, not in scipy
-def register_rotation_as_pytree_node():
-    """Register Rotation as a pytree node for JAX.
-
-    This is necessary to make Rotation compatible as input argument and return type for
-    jit-compiled functions.
-    """
-    from jax.tree_util import register_pytree_node
-
-    def rot_unflatten(_, c):
-        # Optimization: We do not want to call __init__ here because it would perform
-        # normalizations twice. More importantly, it would call the non-jitted Array API
-        # backend and therefore incur a significant performance hit
-        r = Rotation.__new__(Rotation)
-        # Someone could have registered a different backend for jax, so we attempt to
-        # fetch the updated backend here. If not, we fall back to the Array API backend.
-        r._backend = backend_registry.get(array_namespace(c[0]), xp_backend)
-        r._quat = c[0]
-        # We set _single to False for jax because the Array API backend supports
-        # broadcasting by default and hence returns the correct shape without the
-        # _single workaround
-        r._single = False
-        return r
-
-    register_pytree_node(Rotation, lambda v: ((v._quat,), None), rot_unflatten)

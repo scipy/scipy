@@ -6,18 +6,17 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal
 from scipy.spatial.transform import Rotation, Slerp
-from scipy.spatial.transform._rotation import register_rotation_as_pytree_node
 from scipy.stats import special_ortho_group
 from itertools import permutations, product
 from scipy._lib._array_api import (
     xp_assert_equal,
     is_numpy,
-    is_jax,
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
-    xp_default_dtype
+    xp_default_dtype,
+    make_xp_test_case
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -25,13 +24,7 @@ import pickle
 import copy
 
 
-# Registering Rotation as a pytree node for JAX is required for jit-compilation of
-# functions that use Rotation as an input argument or return type.
-try:
-    register_rotation_as_pytree_node()
-except ImportError:  # JAX is not installed on the testing machine
-    pass
-
+lazy_xp_modules = [Rotation]
 
 pytestmark = pytest.mark.skip_xp_backends("dask.array",
                                           reason="No full linalg extension support")
@@ -1703,6 +1696,7 @@ def test_align_vectors_align_constrain(xp):
 
 
 @skip_cupy_13
+@make_xp_test_case(Rotation.align_vectors)
 def test_align_vectors_near_inf(xp):
     # align_vectors should return near the same result for high weights as for
     # infinite weights. rssd will be different with floating point error on the
@@ -1713,21 +1707,13 @@ def test_align_vectors_near_inf(xp):
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
 
-    align_vectors = Rotation.align_vectors
-    # jax without jit is taking prohibitively long to run, so we jit the function to
-    # reduce test times to a reasonable level
-    if is_jax(xp):
-        import jax
-
-        align_vectors = jax.jit(align_vectors)
-
     for i in range(n):
         # Get random pairs of 3-element vectors
         a = xp.asarray(np.array([1 * mats[0][i][0], 2 * mats[1][i][0]]), dtype=dtype)
         b = xp.asarray(np.array([3 * mats[2][i][0], 4 * mats[3][i][0]]), dtype=dtype)
 
-        R, _ = align_vectors(a, b, weights=[1e10, 1])
-        R2, _ = align_vectors(a, b, weights=[xp.inf, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
     for i in range(n):
@@ -1737,8 +1723,8 @@ def test_align_vectors_near_inf(xp):
         b = xp.asarray(np.array([4*mats[3][i][0], 5*mats[4][i][0], 6*mats[5][i][0]]),
                        dtype=dtype)
 
-        R, _ = align_vectors(a, b, weights=[1e10, 2, 1])
-        R2, _ = align_vectors(a, b, weights=[xp.inf, 2, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 2, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 2, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
 
@@ -1768,15 +1754,11 @@ def test_align_vectors_parallel(xp):
 
 
 @skip_cupy_13
+@make_xp_test_case(Rotation.align_vectors)
 def test_align_vectors_antiparallel(xp):
     dtype = xpx.default_dtype(xp)
     # Test exact 180 deg rotation
     atol = 1e-12 if dtype == xp.float64 else 1e-7
-
-    align_vectors = Rotation.align_vectors
-    if is_jax(xp):
-        import jax
-        align_vectors = jax.jit(align_vectors)
 
     as_to_test = np.array([[[1.0, 0, 0], [0, 1, 0]],
                            [[0, 1, 0], [1, 0, 0]],
@@ -1785,7 +1767,7 @@ def test_align_vectors_antiparallel(xp):
     bs_to_test = np.array([[-a[0], a[1]] for a in as_to_test])
     for a, b in zip(as_to_test, bs_to_test):
         a, b = xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype)
-        R, _ = align_vectors(a, b, weights=[xp.inf, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
         xp_assert_close(R.magnitude(), xp.asarray(xp.pi)[()], atol=atol)
         xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
@@ -1804,8 +1786,8 @@ def test_align_vectors_antiparallel(xp):
 
     for a in as_to_test:
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = align_vectors(a, b, weights=[xp.inf, 1])
-        R2, _ = align_vectors(a, b, weights=[1e10, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
@@ -2582,6 +2564,8 @@ def test_zero_rotation_approx_equal(xp):
         r3.approx_equal(r)
 
 
+@pytest.mark.skip_xp_backends("jax.numpy",
+                              reason="JAX out-of-bounds indexing deviates from numpy")
 def test_zero_rotation_get_set(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
@@ -2591,14 +2575,8 @@ def test_zero_rotation_get_set(xp):
     r_slice = r[:0]
     assert len(r_slice) == 0
 
-    # TODO: Should we manually check and raise for jax here? Jax does not raise an
-    # IndexError, but a TypeError.
-    if is_jax(xp):
-        with pytest.raises(TypeError, match="Slice size at index 0 in gather op"):
-            r[xp.asarray([0])]
-    else:
-        with pytest.raises(IndexError):
-            r[xp.asarray([0])]
+    with pytest.raises(IndexError):
+        r[xp.asarray([0])]
 
     with pytest.raises(IndexError):
         r[xp.asarray([True])]
