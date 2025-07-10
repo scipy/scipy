@@ -1731,7 +1731,7 @@ class TestMatrixT:
         U = np.array([[1, 0.5], [0.5, 1]])
         V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
 
-        atol = 1e-10
+        rtol = 1e-10
 
         samples_j = np.array(
             [
@@ -1795,7 +1795,7 @@ class TestMatrixT:
 
         pdfs_py = matrix_t.pdf(samples_j, mean=M, row_spread=U, col_spread=V, df=df)
 
-        assert_allclose(pdfs_j, pdfs_py, atol=atol)
+        assert_allclose(pdfs_j, pdfs_py, rtol=rtol)
 
     def test_pdf_against_mathematica(self):
         """
@@ -1818,7 +1818,7 @@ class TestMatrixT:
         U = np.array([[1, 0.5], [0.5, 1]])
         V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
 
-        atol = 1e-10
+        rtol = 1e-10
 
         samples_m = np.array(
             [
@@ -1882,7 +1882,7 @@ class TestMatrixT:
 
         pdfs_py = matrix_t.pdf(samples_m, mean=M, row_spread=U, col_spread=V, df=df)
 
-        assert_allclose(pdfs_m, pdfs_py, atol=atol)
+        assert_allclose(pdfs_m, pdfs_py, rtol=rtol)
 
     def test_samples(self):
         df = 5
@@ -1892,7 +1892,7 @@ class TestMatrixT:
         U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 10**4
-        atol = 1e-1
+        rtol = 1e-1
 
         # `rvs` performs Cholesky-inverse-Wishart sampling on the smaller
         # dimension of `mean`
@@ -1912,10 +1912,10 @@ class TestMatrixT:
         # a matrix variate t-distribution with mean M.T and row_spread V and
         # col_spread U and df degrees of freedom.
 
-        assert_allclose(M, m, atol=atol)
-        assert_allclose(M.T, mT, atol=atol)
-        assert_allclose(m, mT.T, atol=atol)
-        assert_allclose(m.T, mT, atol=atol)
+        assert_allclose(M, m, rtol=rtol)
+        assert_allclose(M.T, mT, rtol=rtol)
+        assert_allclose(m, mT.T, rtol=rtol)
+        assert_allclose(m.T, mT, rtol=rtol)
 
     @pytest.mark.parametrize("shape_case", ["row", "col"])
     def test_against_multivariate_t(self, shape_case):
@@ -1930,7 +1930,7 @@ class TestMatrixT:
         for a matrix t with a single column
         to the formula (4.1.2) for the PDF of the multivariate t.
         """
-        atol = 1e-6
+        rtol = 1e-6
         df = 5
 
         if shape_case == "row":
@@ -1956,7 +1956,7 @@ class TestMatrixT:
         X = t_mat.rvs(size=3, random_state=42)
         t_mat_logpdf = t_mat.logpdf(X)
         t_mvt_logpdf = t_mvt.logpdf(X.squeeze())
-        assert_allclose(t_mvt_logpdf, t_mat_logpdf, atol=atol)
+        assert_allclose(t_mvt_logpdf, t_mat_logpdf, rtol=rtol)
 
 
 class TestDirichlet:
