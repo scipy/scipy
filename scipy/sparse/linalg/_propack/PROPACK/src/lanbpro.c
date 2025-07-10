@@ -62,7 +62,7 @@ void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x) {
 
     if (fabs(alpha) >= sfmin) {
         double inv_alpha = 1.0 / alpha;
-        zscal_(&n, &inv_alpha, x, &ione);
+        zdscal_(&n, &inv_alpha, x, &ione);
     } else {
         // Use LAPACK's safe scaling for very small alpha values
         double one = 1.0;
@@ -86,7 +86,6 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
     const float eps34 = powf(eps, 0.75f);
     const float epsn = fmaxf(m, n) * eps;
     const float epsn2 = sqrtf(fmaxf(m, n)) * eps;
-    const float sfmin = FLT_MIN;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -453,7 +452,6 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     const double eps34 = pow(eps, 0.75);
     const double epsn = fmax(m, n) * eps;
     const double epsn2 = sqrt(fmax(m, n)) * eps;
-    const double sfmin = DBL_MIN;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -806,7 +804,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
 
 
 void clanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_s aprod, PROPACK_CPLXF_TYPE* U, int ldu,
+    int m, int n, int k0, int* k, PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu,
     PROPACK_CPLXF_TYPE* V, int ldv, float* B, int ldb, float* rnorm, float* soption,
     int* ioption, float* swork, PROPACK_CPLXF_TYPE* cwork, int* iwork, PROPACK_CPLXF_TYPE* cparm,
     int* iparm, int* ierr, uint64_t* rng_state)
@@ -821,7 +819,6 @@ void clanbpro(
     const float eps34 = powf(eps, 0.75f);
     const float epsn = fmaxf(m, n) * eps;
     const float epsn2 = sqrtf(fmaxf(m, n)) * eps;
-    const float sfmin = FLT_MIN;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -922,7 +919,7 @@ void clanbpro(
         iwork[iidx + 1] = k0 - 1;
         iwork[iidx + 2] = k0;
 
-        cscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        csscal_(&m, rnorm, &U[k0 * ldu], &ione);
         creorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &cwork[is], cgs);
         csafescal(m, *rnorm, &U[k0 * ldu]);
         sset_mu(k0, &swork[imu], &iwork[iidx], epsn2);
@@ -965,7 +962,7 @@ void clanbpro(
             alpha = scnrm2_(&n, &V[j * ldv], &ione);
             anorm = fmaxf(anorm, FUDGE * alpha);
         } else {
-            float neg_beta = -beta;
+            PROPACK_CPLXF_TYPE neg_beta = PROPACK_cplxf(-beta, 0.0);
             caxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
             alpha = scnrm2_(&n, &V[j * ldv], &ione);
 
@@ -975,7 +972,7 @@ void clanbpro(
                 for (i = 0; i < elr; i++)
                 {
                     s = cdotc_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    float neg_s = -s;
+                    PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-creal(s), -cimag(s));
                     caxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     nrm = scnrm2_(&n, &V[j * ldv], &ione);
                     if (nrm >= kappa * alpha) { break; }
@@ -1064,7 +1061,7 @@ void clanbpro(
         // beta_{j+1} * u_{j+1} = A * v_j - alpha_j * u_j
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], cparm, iparm);
 
-        float neg_alpha = -alpha;
+        PROPACK_CPLXF_TYPE neg_alpha = PROPACK_cplxf(-alpha, 0.0);
         caxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
         beta = scnrm2_(&m, &U[(j + 1) * ldu], &ione);
 
@@ -1072,7 +1069,7 @@ void clanbpro(
         if ((elr > 0) && (beta < kappa * alpha)) {
             for (i = 0; i < elr; i++) {
                 s = cdotc_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-                float neg_s = -s;
+                PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-creal(s), -cimag(s));
                 caxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 nrm = scnrm2_(&m, &U[(j + 1) * ldu], &ione);
                 if (nrm >= kappa * beta) { break; }
@@ -1167,7 +1164,7 @@ void clanbpro(
 
 
 void zlanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_s aprod, PROPACK_CPLX_TYPE* U, int ldu,
+    int m, int n, int k0, int* k, PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu,
     PROPACK_CPLX_TYPE* V, int ldv, double* B, int ldb, double* rnorm, double* doption,
     int* ioption, double* dwork, PROPACK_CPLX_TYPE* zwork, int* iwork, PROPACK_CPLX_TYPE* zparm,
     int* iparm, int* ierr, uint64_t* rng_state)
@@ -1182,7 +1179,6 @@ void zlanbpro(
     const double eps34 = pow(eps, 0.75);
     const double epsn = fmax(m, n) * eps;
     const double epsn2 = sqrt(fmax(m, n)) * eps;
-    const double sfmin = FLT_MIN;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -1266,7 +1262,7 @@ void zlanbpro(
         anorm = fmax(anorm, FUDGE * anormest);
         j0 = 0;
 
-        if (beta != 0.0) { csafescal(m, beta, &U[0]); }
+        if (beta != 0.0) { zsafescal(m, beta, &U[0]); }
         dwork[imu] = 1.0;
         dwork[inu] = 1.0;
     } else {
@@ -1283,7 +1279,7 @@ void zlanbpro(
         iwork[iidx + 1] = k0 - 1;
         iwork[iidx + 2] = k0;
 
-        zscal_(&m, rnorm, &U[k0 * ldu], &ione);
+        zdscal_(&m, rnorm, &U[k0 * ldu], &ione);
         zreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &zwork[is], cgs);
         zsafescal(m, *rnorm, &U[k0 * ldu]);
         dset_mu(k0, &dwork[imu], &iwork[iidx], epsn2);
@@ -1326,7 +1322,7 @@ void zlanbpro(
             alpha = dznrm2_(&n, &V[j * ldv], &ione);
             anorm = fmax(anorm, FUDGE * alpha);
         } else {
-            double neg_beta = -beta;
+            PROPACK_CPLX_TYPE neg_beta = PROPACK_cplx(-beta, 0.0);
             zaxpy_(&n, &neg_beta, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
             alpha = dznrm2_(&n, &V[j * ldv], &ione);
 
@@ -1336,7 +1332,7 @@ void zlanbpro(
                 for (i = 0; i < elr; i++)
                 {
                     s = zdotc_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    double neg_s = -s;
+                    PROPACK_CPLX_TYPE neg_s = PROPACK_cplx(-creal(s), -cimag(s));
                     zaxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     nrm = dznrm2_(&n, &V[j * ldv], &ione);
                     if (nrm >= kappa * alpha) { break; }
@@ -1425,7 +1421,7 @@ void zlanbpro(
         // beta_{j+1} * u_{j+1} = A * v_j - alpha_j * u_j
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], zparm, iparm);
 
-        double neg_alpha = -alpha;
+        PROPACK_CPLX_TYPE neg_alpha = PROPACK_cplx(-alpha, 0.0);
         zaxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
         beta = dznrm2_(&m, &U[(j + 1) * ldu], &ione);
 
@@ -1433,7 +1429,7 @@ void zlanbpro(
         if ((elr > 0) && (beta < kappa * alpha)) {
             for (i = 0; i < elr; i++) {
                 s = zdotc_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-                double neg_s = -s;
+                PROPACK_CPLX_TYPE neg_s = PROPACK_cplx(-creal(s), -cimag(s));
                 zaxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 nrm = dznrm2_(&m, &U[(j + 1) * ldu], &ione);
                 if (nrm >= kappa * beta) { break; }

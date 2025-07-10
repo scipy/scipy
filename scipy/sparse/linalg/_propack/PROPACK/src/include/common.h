@@ -1,6 +1,7 @@
 #ifndef PROPACK__COMMON_H
 #define PROPACK__COMMON_H
 #include <stdint.h>
+#include "blaslapack_declarations.h"
 
 /**
  * Generate a random single-precision floating point number in [0, 1).

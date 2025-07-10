@@ -1,10 +1,9 @@
 #include "ritzvec.h"
 
 void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict S, float* restrict U, const int ldu,
+              float* restrict D, float* restrict E, float* restrict U, const int ldu,
               float* restrict V, const int ldv, float* restrict work, const int in_lwrk, int* restrict iwork)
 {
-    const float one = 1.0f, zero = 0.0f;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     float c1, c2, dd[1];
 
@@ -45,10 +44,9 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
 
 
 void dritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict S, double* restrict U, const int ldu,
+              double* restrict D, double* restrict E, double* restrict U, const int ldu,
               double* restrict V, const int ldv, double* restrict work, const int in_lwrk, int* restrict iwork)
 {
-    const double one = 1.0, zero = 0.0;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     double c1, c2, dd[1];
 
@@ -89,11 +87,10 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
 
 
 void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict S, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
+              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
               PROPACK_CPLXF_TYPE* restrict V, const int ldv, float* restrict work, const int in_lwrk,
               PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork)
 {
-    const float one = 1.0f, zero = 0.0f;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     float c1, c2, dd[1];
 
@@ -135,11 +132,10 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
 
 
 void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict S, PROPACK_CPLX_TYPE* restrict U, const int ldu,
+              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const int ldu,
               PROPACK_CPLX_TYPE* restrict V, const int ldv, double* restrict work, const int in_lwrk,
               PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork)
 {
-    const double one = 1.0, zero = 0.0;
     int lwrk, mstart, ip, iqt, imt, iwrk, id[1], info;
     double c1, c2, dd[1];
 
