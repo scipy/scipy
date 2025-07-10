@@ -20,7 +20,7 @@
  * @param work      workspace array of size at least m * blocksize
  * @param blocksize number of columns to process at once
  */
-void sgemm_ovwr(const int transa, int m, int n, int k, float alpha, const float* restrict A, int lda, float beta, float* restrict B, int ldb, float* restrict work, int blocksize);
+void sgemm_ovwr(const int transa, int m, int n, int k, float alpha, float* restrict A, int lda, float beta, float* restrict B, int ldb, float* restrict work, int blocksize);
 
 
 /**
@@ -38,7 +38,7 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha, const float*
  * @param work      workspace array of size at least blocksize * n
  * @param blocksize number of rows to process at once
  */
-void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha, float* restrict A, int lda, const float* restrict B, int ldb, float* restrict work, int blocksize);
+void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha, float* restrict A, int lda, float* restrict B, int ldb, float* restrict work, int blocksize);
 
 
 /**
@@ -57,7 +57,7 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha, float* 
  * @param work      workspace array of size at least m * blocksize
  * @param blocksize number of columns to process at once
  */
-void dgemm_ovwr(const int transa, int m, int n, int k, double alpha, const double* restrict A, int lda, double beta, double* restrict B, int ldb, double* restrict work, int blocksize);
+void dgemm_ovwr(const int transa, int m, int n, int k, double alpha, double* restrict A, int lda, double beta, double* restrict B, int ldb, double* restrict work, int blocksize);
 
 
 /**
@@ -75,7 +75,7 @@ void dgemm_ovwr(const int transa, int m, int n, int k, double alpha, const doubl
  * @param work      workspace array of size at least blocksize * n
  * @param blocksize number of rows to process at once
  */
-void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha, double* restrict A, int lda, const double* restrict B, int ldb, double* restrict work, int blocksize);
+void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha, double* restrict A, int lda, double* restrict B, int ldb, double* restrict work, int blocksize);
 
 
 /**

@@ -1,4 +1,4 @@
-#include "types.h"
+#include "propack/types.h"
 #include "common.h"
 #include "gemm_overwrite.h"
 
@@ -18,7 +18,6 @@
  * @param dim       dimension of Krylov subspace
  * @param D         diagonal elements of bidiagonal matrix
  * @param E         super-diagonal elements of bidiagonal matrix
- * @param S         singular values (output)
  * @param U         left singular vectors (m x k), modified in-place
  * @param ldu       leading dimension of U
  * @param V         right singular vectors (n x k), modified in-place
@@ -28,8 +27,9 @@
  * @param iwork     integer workspace array
  */
 void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict S, float* restrict U, const int ldu,
+              float* restrict D, float* restrict E, float* restrict U, const int ldu,
               float* restrict V, const int ldv, float* restrict work, const int in_lwrk, int* restrict iwork);
+
 
 /**
  * Compute Ritz vectors from bidiagonal singular value decomposition (double precision)
@@ -47,7 +47,6 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param dim       dimension of Krylov subspace
  * @param D         diagonal elements of bidiagonal matrix
  * @param E         super-diagonal elements of bidiagonal matrix
- * @param S         singular values (output)
  * @param U         left singular vectors (m x k), modified in-place
  * @param ldu       leading dimension of U
  * @param V         right singular vectors (n x k), modified in-place
@@ -57,8 +56,9 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param iwork     integer workspace array
  */
 void dritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict S, double* restrict U, const int ldu,
+              double* restrict D, double* restrict E, double* restrict U, const int ldu,
               double* restrict V, const int ldv, double* restrict work, const int in_lwrk, int* restrict iwork);
+
 
 /**
  * Compute Ritz vectors from bidiagonal SVD (single precision complex)
@@ -76,7 +76,6 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param dim       dimension of Krylov subspace
  * @param D         diagonal elements of bidiagonal matrix (real)
  * @param E         super-diagonal elements of bidiagonal matrix (real)
- * @param S         singular values (real, output)
  * @param U         left singular vectors (complex, m x k), modified in-place
  * @param ldu       leading dimension of U
  * @param V         right singular vectors (complex, n x k), modified in-place
@@ -88,9 +87,10 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param iwork     integer workspace array
  */
 void critzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              float* restrict D, float* restrict E, float* restrict S, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
+              float* restrict D, float* restrict E, PROPACK_CPLXF_TYPE* restrict U, const int ldu,
               PROPACK_CPLXF_TYPE* restrict V, const int ldv, float* restrict work, const int in_lwrk,
               PROPACK_CPLXF_TYPE* restrict cwork, const int lcwrk, int* restrict iwork);
+
 
 /**
  * Compute Ritz vectors from bidiagonal SVD (double precision complex)
@@ -108,7 +108,6 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param dim       dimension of Krylov subspace
  * @param D         diagonal elements of bidiagonal matrix (real)
  * @param E         super-diagonal elements of bidiagonal matrix (real)
- * @param S         singular values (real, output)
  * @param U         left singular vectors (complex, m x k), modified in-place
  * @param ldu       leading dimension of U
  * @param V         right singular vectors (complex, n x k), modified in-place
@@ -120,6 +119,6 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
  * @param iwork     integer workspace array
  */
 void zritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
-              double* restrict D, double* restrict E, double* restrict S, PROPACK_CPLX_TYPE* restrict U, const int ldu,
+              double* restrict D, double* restrict E, PROPACK_CPLX_TYPE* restrict U, const int ldu,
               PROPACK_CPLX_TYPE* restrict V, const int ldv, double* restrict work, const int in_lwrk,
               PROPACK_CPLX_TYPE* restrict zwork, const int lzwrk, int* restrict iwork);

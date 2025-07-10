@@ -9,12 +9,13 @@ propack_sources = [
     'PROPACK/src/ritzvec.c'
 ]
 
-propack_incdir_pub = include_directories('PROPACK/include')
-propack_incdir_priv = include_directories('PROPACK/src/include')
+propack_incdir_public = include_directories('PROPACK/include')
+propack_incdir_private = include_directories('PROPACK/src/include')
 
 propack_lib = static_library('propack',
   propack_sources,
-  include_directories: [propack_incdir_pub, propack_incdir_priv],
+  c_args: ['-Wall', '-Wextra', '-Wpedantic'],
+  include_directories: [propack_incdir_public, propack_incdir_private],
   dependencies: [m_dep, lapack_dep, blas_dep],
 )
 
@@ -29,9 +30,6 @@ py3.extension_module('_propacklib',
 
 py3.install_sources([
     '__init__.py',
-    '_propack.py',
   ],
   subdir: 'scipy/sparse/linalg/_eigen/_propack'
 )
-
-subdir('tests')

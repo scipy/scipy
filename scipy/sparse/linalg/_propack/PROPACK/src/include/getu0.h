@@ -3,7 +3,6 @@
 
 #include <math.h>
 #include <complex.h>
-#include "types.h"
 #include "blaslapack_declarations.h"
 #include "gs.h"
 #include "common.h"

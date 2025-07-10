@@ -12,13 +12,12 @@
 
 void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s aprod,
              float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
-             float tolin, float* work, int lwork, int* iwork, int liwork,
+             float tolin, float* work, int lwork, int* iwork,
              float* doption, int* ioption, int* info, float* dparm, int* iparm,
              uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const float FUDGE = 1.01f;
 
     // Local variables
     int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
@@ -33,6 +32,8 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
 
     // Guard against absurd arguments
     lanmax = fminf(fminf(n + 1, m + 1), kmax);
+    tol = fminf(1.0f, fmaxf(16.0f * eps, tolin));
+    anorm = 0.0f;
 
     // Set pointers into work array
     ibnd = 0;
@@ -145,7 +146,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     // Calculate singular vectors if requested
     if ((neig >= k || *info > 0) && (jobu || jobv)) {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        sritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], &work[ib1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        sritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     k = neig;
@@ -155,13 +156,12 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
 
 void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d aprod,
              double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-             double tolin, double* work, int lwork, int* iwork, int liwork,
+             double tolin, double* work, int lwork, int* iwork,
              double* doption, int* ioption, int* info, double* dparm, int* iparm,
              uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const double FUDGE = 1.01;
 
     // Local variables
     int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
@@ -292,7 +292,7 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
     if ((neig >= k || *info > 0) && (jobu || jobv))
     {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        dritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], &work[ib1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        dritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     k = neig;
@@ -303,12 +303,11 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
 void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c aprod,
              PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd, PROPACK_CPLXF_TYPE* V, int ldv,
              float tolin, float* work, int lwork, PROPACK_CPLXF_TYPE* cwork, int lcwork,
-             int* iwork, int liwork, float* soption, int* ioption, int* info,
+             int* iwork, float* soption, int* ioption, int* info,
              PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const float FUDGE = 1.01f;
 
     // Local variables
     int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
@@ -342,7 +341,7 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
     for (i = 0; i < lcwork; i++) { cwork[i] = PROPACK_cplxf(0.0f, 0.0f); }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = scnrm2_(m, &U[0], &int1);
+    rnorm = scnrm2_(&m, &U[0], &int1);
     if (rnorm == 0.0f)
     {
         cgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, cparm, iparm, &ierr, ioption[0], &anorm, cwork, rng_state);
@@ -445,8 +444,7 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
     if ((neig >= k || *info > 0) && (jobu || jobv))
     {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        critzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], &work[ib1], U, ldu, V, ldv,
-                 &work[ip], lwrk, cwork, lcwork, iwork);
+        critzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, cwork, lcwork, iwork);
     }
 
     k = neig;
@@ -457,12 +455,11 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
 void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z aprod,
              PROPACK_CPLX_TYPE* U, int ldu, double* sigma, double* bnd, PROPACK_CPLX_TYPE* V, int ldv,
              double tolin, double* work, int lwork, PROPACK_CPLX_TYPE* zwork, int lzwork,
-             int* iwork, int liwork, double* doption, int* ioption, int* info,
+             int* iwork, double* doption, int* ioption, int* info,
              PROPACK_CPLX_TYPE* zparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const double FUDGE = 1.01;
 
     // Local variables
     int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
@@ -496,7 +493,7 @@ void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z 
     for (i = 0; i < lzwork; i++) { zwork[i] = PROPACK_cplx(0.0, 0.0); }
 
     // Set up random starting vector if none is provided by the user
-    rnorm = dznrm2_(m, &U[0], &int1);  // Complex norm function
+    rnorm = dznrm2_(&m, &U[0], &int1);  // Complex norm function
     if (rnorm == 0.0)
     {
         zgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, zparm, iparm, &ierr, ioption[0], &anorm, zwork, rng_state);
@@ -602,8 +599,7 @@ void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z 
     if ((neig >= k || *info > 0) && (jobu || jobv))
     {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        zritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], &work[ib1],
-                 U, ldu, V, ldv, &work[ip], lwrk, zwork, lzwork, iwork);
+        zritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, zwork, lzwork, iwork);
     }
 
     k = neig;

@@ -1,7 +1,6 @@
 #ifndef PROPACK_LANBPRO_H
 #define PROPACK_LANBPRO_H
 
-#include "types.h"
 #include "common.h"
 #include "getu0.h"
 #include "gs.h"
@@ -54,6 +53,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
               float* U, int ldu, float* V, int ldv, float* B, int ldb,
               float* rnorm, float* doption, int* ioption, float* work, int* iwork,
               float* dparm, int* iparm, int* ierr, uint64_t* rng_state);
+
 
 /**
  * Lanczos Bidiagonalization with Partial Reorthogonalization - Double precision
@@ -126,10 +126,11 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
  * @param rng_state  Random number generator state (uint64_t[4])
  */
 void clanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_s aprod, PROPACK_CPLXF_TYPE* U, int ldu,
+    int m, int n, int k0, int* k, PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu,
     PROPACK_CPLXF_TYPE* V, int ldv, float* B, int ldb, float* rnorm, float* soption,
     int* ioption, float* swork, PROPACK_CPLXF_TYPE* cwork, int* iwork, PROPACK_CPLXF_TYPE* cparm,
     int* iparm, int* ierr, uint64_t* rng_state);
+
 
 /**
  * Lanczos Bidiagonalization with Partial Reorthogonalization - Double precision complex
@@ -170,7 +171,7 @@ void clanbpro(
  * @param rng_state  Random number generator state (uint64_t[4])
  */
 void zlanbpro(
-    int m, int n, int k0, int* k, PROPACK_aprod_s aprod, PROPACK_CPLX_TYPE* U, int ldu,
+    int m, int n, int k0, int* k, PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu,
     PROPACK_CPLX_TYPE* V, int ldv, double* B, int ldb, double* rnorm, double* doption,
     int* ioption, double* dwork, PROPACK_CPLX_TYPE* zwork, int* iwork, PROPACK_CPLX_TYPE* zparm,
     int* iparm, int* ierr, uint64_t* rng_state);

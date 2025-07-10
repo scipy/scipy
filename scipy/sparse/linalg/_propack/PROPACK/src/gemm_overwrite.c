@@ -1,15 +1,23 @@
 #include "gemm_overwrite.h"
 
 
+static void csgemm_kernel(
+    const int transb, int m, int n, int k, const complex float* restrict A, int lda,
+    const float* restrict B, int ldb, complex float* restrict C, int ldc);
+
+static void zdgemm_kernel(
+    const int transb, int m, int n, int k, const complex double* restrict A, int lda,
+    const double* restrict B, int ldb, complex double* restrict C, int ldc);
+
+
 void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
-                const float* restrict A, int lda, float beta,
+                float* restrict A, int lda, float beta,
                 float* restrict B, int ldb,
                 float* restrict work, int blocksize)
 {
     int i, j, l;
-    const char transb = 'N';
-    const char transchara = (transa ? 'T' : 'N');
-    const float zero = 0.0f;
+    char transchara = (transa ? 'T' : 'N');
+    float zero = 0.0f;
 
     // Early return for degenerate cases
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
@@ -24,7 +32,7 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
         int block_start = i * blocksize;
 
         // Compute work = alpha * op(A) * B(:, block_start:block_start+blocksize-1)
-        sgemm_(&transchara, &transb, &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        sgemm_(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy result back to B
         float* B_col = &B[block_start * ldb];
@@ -52,7 +60,7 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
     if (remainder_cols > 0) {
         int block_start = num_full_blocks * blocksize;
 
-        sgemm_(&transchara, &transb, &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        sgemm_(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy remainder results back
         float* B_col = &B[block_start * ldb];
@@ -79,13 +87,12 @@ void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
 
 
 void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
-                     float* restrict A, int lda, const float* restrict B, int ldb,
+                     float* restrict A, int lda, float* restrict B, int ldb,
                      float* restrict work, int blocksize)
 {
     int i, j, l;
-    const char transa = 'N';
-    const char transcharb = (transb ? 'T' : 'N');
-    const float zero = 0.0f;
+    char transcharb = (transb ? 'T' : 'N');
+    float zero = 0.0f;
 
     if (m <= 0 || n <= 0 || k <= 0) { return; }
 
@@ -98,7 +105,7 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
         int block_start = i * blocksize;
 
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
-        sgemm_(&transa, &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
+        sgemm_("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
 
         // Copy result back to A
         float* work_ptr = work;
@@ -115,7 +122,7 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
     if (remainder_rows > 0) {
         int block_start = num_full_blocks * blocksize;
 
-        sgemm_(&transa, &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
+        sgemm_("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
 
         // Copy remainder results back
         float* work_ptr = work;
@@ -131,13 +138,12 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
 
 
 void dgemm_ovwr(
-    const int transa, int m, int n, int k, double alpha, const double* restrict A, int lda, double beta,
+    const int transa, int m, int n, int k, double alpha, double* restrict A, int lda, double beta,
     double* restrict B, int ldb, double* restrict work, int blocksize)
 {
     int i, j, l;
-    const char transb = 'N';
-    const char transchara = (transa ? 'T' : 'N');
-    const double zero = 0.0;
+    char transchara = (transa ? 'T' : 'N');
+    double zero = 0.0;
 
     // Early return for degenerate cases
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
@@ -152,7 +158,7 @@ void dgemm_ovwr(
         int block_start = i * blocksize;
 
         // Compute work = alpha * op(A) * B(:, block_start:block_start+blocksize-1)
-        dgemm_(&transchara, &transb, &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        dgemm_(&transchara, "N", &m, &blocksize, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy result back to B
         double* B_col = &B[block_start * ldb];
@@ -180,7 +186,7 @@ void dgemm_ovwr(
     if (remainder_cols > 0) {
         int block_start = num_full_blocks * blocksize;
 
-        dgemm_(&transchara, &transb, &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
+        dgemm_(&transchara, "N", &m, &remainder_cols, &k, &alpha, A, &lda, &B[block_start * ldb], &ldb, &zero, work, &m);
 
         // Copy remainder results back
         double* B_col = &B[block_start * ldb];
@@ -207,13 +213,12 @@ void dgemm_ovwr(
 
 
 void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
-                     double* restrict A, int lda, const double* restrict B, int ldb,
+                     double* restrict A, int lda, double* restrict B, int ldb,
                      double* restrict work, int blocksize)
 {
     int i, j, l;
-    const char transa = 'N';
-    const char transcharb = (transb ? 'T' : 'N');
-    const double zero = 0.0;
+    char transcharb = (transb ? 'T' : 'N');
+    double zero = 0.0;
 
     // Early return for degenerate cases
     if (m <= 0 || n <= 0 || k <= 0) return;
@@ -227,7 +232,7 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
         int block_start = i * blocksize;
 
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
-        dgemm_(&transa, &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
+        dgemm_("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
 
         // Copy result back to A - optimized pointer arithmetic
         double* work_ptr = work;
@@ -246,7 +251,7 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
     if (remainder_rows > 0) {
         int block_start = num_full_blocks * blocksize;
 
-        dgemm_(&transa, &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
+        dgemm_("N", &transcharb, &remainder_rows, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &remainder_rows);
 
         // Copy remainder results back
         double* work_ptr = work;

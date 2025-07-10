@@ -10,12 +10,11 @@
 
 void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
                  PROPACK_aprod_s aprod, float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
-                 float tolin, float* work, int lwork, int* iwork, int liwork, float* doption, int* ioption,
+                 float tolin, float* work, int lwork, int* iwork, float* doption, int* ioption,
                  int* info, float* dparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const float FUDGE = 1.01f;
 
     // Local variables
     int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
@@ -238,8 +237,7 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
         scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
-        sritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], &work[ialpha1],
-                 U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        sritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     *neig = nconv;
@@ -248,12 +246,11 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 
 void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
                  PROPACK_aprod_d aprod, double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-                 double tolin, double* work, int lwork, int* iwork, int liwork, double* doption, int* ioption,
+                 double tolin, double* work, int lwork, int* iwork, double* doption, int* ioption,
                  int* info, double* dparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const double FUDGE = 1.01;
 
     // Local variables
     int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
@@ -476,8 +473,7 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
         dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
-        dritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], &work[ialpha1],
-                 U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        dritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     *neig = nconv;
@@ -487,12 +483,11 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
                  PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd,
                  PROPACK_CPLXF_TYPE* V, int ldv, float tolin, float* work, int lwork,
-                 PROPACK_CPLXF_TYPE* cwork, int lcwork, int* iwork, int liwork, float* soption,
+                 PROPACK_CPLXF_TYPE* cwork, int lcwork, int* iwork, float* soption,
                  int* ioption, int* info, PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const float FUDGE = 1.01f;
 
     // Local variables
     int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
@@ -715,8 +710,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         scopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
         scopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
-        critzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], &work[ialpha1],
-                 U, ldu, V, ldv, &work[ip], lwrk, cwork, lcwork, iwork);
+        critzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, cwork, lcwork, iwork);
     }
 
     *neig = nconv;
@@ -726,12 +720,11 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
 void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, int *neig, int maxiter,
                  PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu, double* sigma, double* bnd,
                  PROPACK_CPLX_TYPE* V, int ldv, double tolin, double* work, int lwork,
-                 PROPACK_CPLX_TYPE* zwork, int lzwork, int* iwork, int liwork, double* doption,
+                 PROPACK_CPLX_TYPE* zwork, int lzwork, int* iwork, double* doption,
                  int* ioption, int* info, PROPACK_CPLX_TYPE* zparm, int* iparm, uint64_t* rng_state)
 {
     // Parameters
     int int1 = 1, int0 = 0;
-    const double FUDGE = 1.01;
 
     // Local variables
     int k, i, ibnd, iwrk, ierr, ip, iq, nconv, lwrk, kold;
@@ -954,8 +947,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         dcopy_(&dim, &work[ialpha], &int1, &work[ialpha1], &int1);
         dcopy_(&dim, &work[ibeta], &int1, &work[ibeta1], &int1);
         lwrk = lwrk + dim * dim + (dim + 1) * (dim + 1);
-        zritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], &work[ialpha1],
-                 U, ldu, V, ldv, &work[ip], lwrk, zwork, lzwork, iwork);
+        zritzvec(which, jobu, jobv, m, n, nconv, dim, &work[ialpha1], &work[ibeta1], U, ldu, V, ldv, &work[ip], lwrk, zwork, lzwork, iwork);
     }
 
     *neig = nconv;
