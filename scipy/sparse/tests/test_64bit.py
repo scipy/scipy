@@ -84,7 +84,7 @@ def cases_64bit(sp_api):
                 yield pytest.param(cls, method_name, marks=marks)
 
 
-@pytest.mark.thread_unsafe(reason="scipy.sparse is not thread-safe")
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 class RunAll64Bit:
     def _check_resiliency(self, cls, method_name, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
