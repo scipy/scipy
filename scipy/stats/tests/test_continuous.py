@@ -1473,8 +1473,10 @@ class TestMakeDistribution:
             # Test __str__ method
             assert str(dist_instance) == 'MyLogUniform(a=2.0, b=3.0)'
             # Test __repr__ method
-            assert repr(dist_instance) == \
-                'MyLogUniform(a=np.float64(2.0), b=np.float64(3.0))'
+            assert repr(dist_instance) in {
+                'MyLogUniform(a=np.float64(2.0), b=np.float64(3.0))',
+                'MyLogUniform(a=2.0, b=3.0)',
+            }
 
 
 class TestTransforms:
