@@ -490,6 +490,7 @@ class Test_Metropolis:
         assert not res.success
 
 
+@pytest.mark.thread_unsafe(reason="shared state")
 class Test_AdaptiveStepsize:
     def setup_method(self):
         self.stepsize = 1.

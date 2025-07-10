@@ -717,6 +717,7 @@ class TestDifferentialEvolutionSolver:
                 solver.solve()
         assert s._updating == 'deferred'
 
+    @pytest.mark.thread_unsafe(reason="ThreadPool deadlocks")
     @pytest.mark.fail_slow(10)
     def test_parallel(self):
         # smoke test for parallelization with deferred updating

@@ -268,6 +268,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
+    @pytest.mark.thread_unsafe(reason="multiprocessing.Pool deadlocks")
     def test_scalar_vector(self):
         x0 = 0.5
         with MapWrapper(2) as mapper:
@@ -282,6 +283,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
     @pytest.mark.fail_slow(5.0)
+    @pytest.mark.thread_unsafe(reason="multiprocessing.Pool deadlocks")
     def test_workers_evaluations_and_nfev(self):
         # check that nfev consumed by approx_derivative is tracked properly
         # and that parallel evaluation is same as series
@@ -342,7 +344,7 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_diff_3, jac_true, rtol=3e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
 
-    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
+    @pytest.mark.thread_unsafe(reason="multiprocessing.Pool deadlocks")
     def test_vector_vector(self):
         x0 = np.array([-100.0, 0.2])
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
