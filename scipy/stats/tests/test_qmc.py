@@ -597,12 +597,14 @@ class QMCEngineTests:
         "rng",
         (
             170382760648021597650530316304495310428,
-            pytest.param(np.random.default_rng(170382760648021597650530316304495310428),
-                         marks=pytest.mark.thread_unsafe),
+            lambda: np.random.default_rng(170382760648021597650530316304495310428),
             pytest.param(None, marks=pytest.mark.thread_unsafe),
         ),
     )
     def test_reset(self, scramble, rng):
+        if callable(rng):
+            # Initialize local RNG here to make it thread-local in pytest-run-parallel
+            rng = rng()
         engine = self.engine(d=2, scramble=scramble, rng=rng)
         ref_sample = engine.random(n=8)
 
