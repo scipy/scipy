@@ -1,5 +1,6 @@
 # Pytest customization
 import json
+import multiprocessing
 import os
 import warnings
 import tempfile
@@ -84,6 +85,10 @@ def pytest_configure(config):
             "markers",
             "iterations(n): run the given test function `n` times in each thread",
         )
+    else:
+        if int(config.getoption('--parallel-threads', '0')) > 0:
+            # forking from multiple threads leads to deadlocks
+            multiprocessing.set_start_method('spawn', force=True)
 
 
 def pytest_runtest_setup(item):
