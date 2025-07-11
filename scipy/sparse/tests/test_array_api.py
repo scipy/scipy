@@ -155,7 +155,6 @@ def test_sparse_divide(A):
     assert isinstance(A / A, np.ndarray)
 
 @parametrize_sparrays
-@pytest.mark.thread_unsafe
 def test_sparse_dense_divide(A):
     with pytest.warns(RuntimeWarning):
         assert isinstance((A / A.todense()), scipy.sparse.sparray)

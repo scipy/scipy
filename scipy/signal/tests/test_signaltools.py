@@ -919,7 +919,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         xp_assert_close(out, expected, atol=1e-10)
 
-    @pytest.mark.thread_unsafe
     @skip_xp_backends(np_only=True)
     def test_fft_nan(self, xp):
         n = 1000
@@ -2288,7 +2287,6 @@ class _TestLinearFilter:
         )
 
 
-
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = 'float32'
 
@@ -2526,7 +2524,6 @@ class TestCorrelate:
         xp_assert_close(correlate(a, b, mode='same'), xp.asarray([17, 32, 23]))
         xp_assert_close(correlate(a, b, mode='full'), xp.asarray([6, 17, 32, 23, 12]))
         xp_assert_close(correlate(a, b, mode='valid'), xp.asarray([32]))
-
 
 
 @skip_xp_backends(np_only=True, reason="accepts ints, return numpy array")

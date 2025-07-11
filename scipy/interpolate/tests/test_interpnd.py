@@ -174,7 +174,6 @@ class TestLinearNDInterpolation:
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
     @pytest.mark.slow
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
     def test_threading(self):
         # This test was taken from issue 8856

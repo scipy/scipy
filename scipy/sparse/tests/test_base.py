@@ -2609,7 +2609,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils

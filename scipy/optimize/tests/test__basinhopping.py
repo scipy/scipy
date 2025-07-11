@@ -344,7 +344,7 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="unknown thread safety issue")
 class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
@@ -490,6 +490,7 @@ class Test_Metropolis:
         assert not res.success
 
 
+@pytest.mark.thread_unsafe(reason="shared state")
 class Test_AdaptiveStepsize:
     def setup_method(self):
         self.stepsize = 1.

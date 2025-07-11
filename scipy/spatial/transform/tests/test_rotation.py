@@ -919,7 +919,6 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     test_stats(angles_quat - angles, 1e-16, 1e-14)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
@@ -949,7 +948,6 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
@@ -1106,7 +1104,6 @@ def test_approx_equal(xp):
     xp_assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
-@pytest.mark.thread_unsafe
 def test_approx_equal_single_rotation(xp):
     # also tests passing single argument to approx_equal
     p = Rotation.from_rotvec(xp.asarray([0, 0, 1e-9]))  # less than default atol of 1e-8
@@ -2233,7 +2230,6 @@ def test_as_davenport(xp):
             xp_assert_close(angles_dav, xp.asarray(angles))
 
 
-@pytest.mark.thread_unsafe
 def test_as_davenport_degenerate(xp):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality

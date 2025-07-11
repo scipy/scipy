@@ -232,7 +232,7 @@ class TestOnenormest:
 
 class TestAlgorithm_2_2:
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="Fails in parallel for unknown reasons")
     def test_randn_inv(self):
         rng = np.random.RandomState(1234)
         n = 20

@@ -678,7 +678,6 @@ class TestFirls:
 
 class TestMinimumPhase:
 
-    @pytest.mark.thread_unsafe
     def test_bad_args(self):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])

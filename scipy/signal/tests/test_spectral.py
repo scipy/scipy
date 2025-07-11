@@ -1511,7 +1511,6 @@ class TestLombscargle:
 
 
 class TestSTFT:
-    @pytest.mark.thread_unsafe
     def test_input_validation(self):
 
         def chk_VE(match):
@@ -1712,7 +1711,6 @@ class TestSTFT:
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
-    @pytest.mark.thread_unsafe
     def test_roundtrip_not_nola(self):
         rng = np.random.RandomState(1234)
 
@@ -1791,7 +1789,6 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_complex(self, scaling):
         rng = np.random.RandomState(1234)

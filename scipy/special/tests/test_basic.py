@@ -1556,7 +1556,6 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
-    @pytest.mark.thread_unsafe
     def test_comb_exact_non_int_error(self):
         msg = "`exact=True`"
         with pytest.raises(ValueError, match=msg):
@@ -1577,7 +1576,6 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    @pytest.mark.thread_unsafe
     def test_perm_iv(self):
         # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
@@ -4582,7 +4580,6 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-@pytest.mark.thread_unsafe
 def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):

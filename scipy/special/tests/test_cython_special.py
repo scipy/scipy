@@ -318,7 +318,6 @@ def test_cython_api_completeness():
                 raise RuntimeError(f"{name} missing from tests!")
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):

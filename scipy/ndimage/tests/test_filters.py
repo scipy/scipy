@@ -653,7 +653,6 @@ class TestNdimageFilters:
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
-    @pytest.mark.thread_unsafe
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -790,7 +789,6 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="unhashable type: 'ndarray'")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
-    @pytest.mark.thread_unsafe
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp,
                                                   num_parallel_threads):
         dtype = getattr(xp, dtype)

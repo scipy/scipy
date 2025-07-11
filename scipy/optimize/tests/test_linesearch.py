@@ -256,7 +256,6 @@ class TestLineSearch:
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
 
-    @pytest.mark.thread_unsafe
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
 

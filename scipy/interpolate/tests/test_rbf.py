@@ -3,7 +3,6 @@
 
 import numpy as np
 
-import pytest
 
 from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
 
@@ -231,7 +230,6 @@ def test_rbf_epsilon_none_collinear():
     assert rbf.epsilon > 0
 
 
-@pytest.mark.thread_unsafe
 def test_rbf_concurrency():
     x = linspace(0, 10, 100)
     y0 = sin(x)

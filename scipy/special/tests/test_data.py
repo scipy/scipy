@@ -621,7 +621,6 @@ BOOST_TESTS = [
 ]
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
      _test_factory(test)

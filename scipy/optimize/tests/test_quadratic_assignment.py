@@ -163,7 +163,6 @@ class QAPCommonTests:
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
-    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
@@ -171,7 +170,6 @@ class QAPCommonTests:
             quadratic_assignment(A, B, method=self.method,
                                  options={"ekki-ekki": True})
 
-    @pytest.mark.thread_unsafe
     def test_deprecation_future_warnings(self):
         # May be removed after SPEC-7 transition is complete in SciPy 1.17
         A = np.arange(16).reshape((4, 4))

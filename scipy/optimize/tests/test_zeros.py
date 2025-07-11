@@ -367,7 +367,6 @@ class TestNewton(TestScalarRootFinders):
         x = zeros.newton(lambda y, z: z - y ** 2, [4] * 2, args=([15, 17],))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
 
-    @pytest.mark.thread_unsafe
     def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
         with pytest.warns(RuntimeWarning):
@@ -437,7 +436,6 @@ class TestNewton(TestScalarRootFinders):
                 with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_deriv_zero_warning(self):
         def func(x):
             return x ** 2 - 2.0
@@ -622,7 +620,6 @@ def test_complex_halley():
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
 
 
-@pytest.mark.thread_unsafe
 def test_zero_der_nz_dp(capsys):
     """Test secant method with a non-zero dp, but an infinite newton step"""
     # pick a symmetrical functions and choose a point on the side that with dx
@@ -655,7 +652,6 @@ def test_zero_der_nz_dp(capsys):
         x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=True)
 
 
-@pytest.mark.thread_unsafe
 def test_array_newton_failures():
     """Test that array newton fails as expected"""
     # p = 0.68  # [MPa]
@@ -819,7 +815,6 @@ def test_gh9254_flag_if_maxiter_exceeded(maximum_iterations, flag_expected):
         assert result[1].iterations < maximum_iterations
 
 
-@pytest.mark.thread_unsafe
 def test_gh9551_raise_error_if_disp_true():
     """Test that if disp is true then zero derivative raises RuntimeError"""
 
@@ -893,7 +888,6 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
-@pytest.mark.thread_unsafe
 def test_gh_14486_converged_false():
     """Test that zero slope with secant method results in a converged=False"""
     def lhs(x):

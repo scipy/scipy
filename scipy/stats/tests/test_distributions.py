@@ -5774,7 +5774,6 @@ class TestLevyStable:
             ),
         ]
     )
-    @pytest.mark.thread_unsafe
     def test_pdf_nolan_samples(
             self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -5988,7 +5987,6 @@ class TestLevyStable:
             ),
         ]
     )
-    @pytest.mark.thread_unsafe
     def test_cdf_nolan_samples(
             self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -7032,7 +7030,6 @@ class TestExpect:
         assert_allclose(res,
                         sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
         with pytest.warns(RuntimeWarning):
