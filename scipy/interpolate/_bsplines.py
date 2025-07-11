@@ -280,6 +280,8 @@ class BSpline:
         """
         return self.t, self.c, self.k
 
+    # Under the hood, self._c and self._t are always saved as numpy array
+    # because they are used in a C extension expecting numpy arrays.
     @property
     def t(self):
         return self._asarray(self._t)

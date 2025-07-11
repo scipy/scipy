@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal, TypeAlias
+from collections.abc import Iterable
 
 import numpy as np
 import numpy.typing as npt
@@ -554,11 +555,11 @@ def xp_result_device(*args):
 
 
 # np.r_ replacement
-def concat_1d(xp, *arys):
-    """A replacement for np.r_: `xp.concat` does not accept python scalars or 0D arrays.
+def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
+    """A replacement for `np.r_` as `xp.concat` does not accept python scalars
+       or 0-D arrays.
     """
-    arys = [xp.asarray(a) for a in arys]
-    arys = [xpx.atleast_nd(a, ndim=1, xp=xp) for a in arys]
+    arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
     return xp.concat(arys)
 
 
