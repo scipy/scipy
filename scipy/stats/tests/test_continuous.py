@@ -22,7 +22,7 @@ from scipy.stats._distribution_infrastructure import (
     _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats._new_distributions import DiscreteDistribution
-from scipy.stats import Normal, Uniform, Binomial
+from scipy.stats import Normal, Logistic, Uniform, Binomial
 
 
 class Test_RealInterval:
@@ -189,6 +189,7 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
 continuous_families = [
     StandardNormal,
     Normal,
+    Logistic,
     Uniform,
     _LogUniform
 ]
