@@ -465,7 +465,7 @@ class JacobianHessianTest:
             jh_func(func, x, maxiter=-1)
 
 
-@make_xp_test_case(hessian)
+@make_xp_test_case(jacobian)
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 

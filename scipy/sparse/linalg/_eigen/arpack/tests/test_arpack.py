@@ -548,9 +548,10 @@ def test_linearoperator_deallocation():
         pass
 
 
-def test_parallel_threads():
+def test_parallel_threads(num_parallel_threads):
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
         x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
@@ -560,7 +561,8 @@ def test_parallel_threads():
         w, v = eigsh(x, k=3, v0=v0)
         results.append(w)
 
-    threads = [threading.Thread(target=worker) for k in range(10)]
+    nthreads = 9 // num_parallel_threads + 1
+    threads = [threading.Thread(target=worker) for _ in range(nthreads)]
     for t in threads:
         t.start()
     for t in threads:

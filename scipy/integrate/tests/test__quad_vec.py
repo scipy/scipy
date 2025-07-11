@@ -126,7 +126,8 @@ def _func_with_args(x, a):
 
 @pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('extra_args', [2, (2,)])
-@pytest.mark.parametrize('workers', [1, 10])
+@pytest.mark.parametrize('workers',
+                         [1, pytest.param(10, marks=pytest.mark.parallel_threads(4))])
 def test_quad_vec_pool_args(extra_args, workers):
     f = _func_with_args
     exact = np.array([0, 4/3, 8/3])

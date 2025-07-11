@@ -364,7 +364,8 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC, multiply with reciprocal
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
             workl[ihbds + k] = _Cmulcc(_Cmulcc(workl[ihbds + k], temp), temp);
 #else
             temp = workl[iheig + k];
@@ -386,7 +387,8 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
             d[k] = ARNAUD_cplx(creal(temp) + creal(sigma), cimag(temp) + cimag(sigma));
 #else
             d[k] = 1.0 / workl[iheig + k] + sigma;
@@ -415,7 +417,8 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
             {
 #if defined(_MSC_VER)
                 // Complex division is not supported in MSVC
-                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / cabs(workl[iheig + j]));
+                double mag_sq = pow(cabs(workl[iheig + j]), 2.0);
+                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / mag_sq);
                 workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv], temp);
 #else
                 workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
@@ -1312,10 +1315,6 @@ znapps(int n, int* kev, int np, ARNAUD_CPLX_TYPE* shift, ARNAUD_CPLX_TYPE* v,
     double tmp_dbl;
     ARNAUD_CPLX_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
 
-#if defined(_MSC_VER)
-    ARNAUD_CPLX_TYPE tmp_cplx2;
-#endif
-
     ARNAUD_CPLX_TYPE cdbl1 = ARNAUD_cplx(1.0, 0.0);
     ARNAUD_CPLX_TYPE cdbl0 = ARNAUD_cplx(0.0, 0.0);
 
@@ -1513,7 +1512,8 @@ zneigh(double* rnorm, int n, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* rit
     int select[1] = { 0 };
     int int1 = 1, j;
     double temp;
-    ARNAUD_CPLX_TYPE vl[1] = { 0.0 };
+    ARNAUD_CPLX_TYPE vl[1];
+    vl[0] = ARNAUD_cplx(0.0, 0.0);
     ARNAUD_CPLX_TYPE c1 = ARNAUD_cplx(1.0, 0.0), c0 = ARNAUD_cplx(0.0, 0.0);
 
     //  1. Compute the eigenvalues, the last components of the
