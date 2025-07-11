@@ -513,8 +513,5 @@ def test_seek_emulating_reader_invalid_seek():
         reader.seek(-1, 0)  # Negative position with SEEK_SET
     
     # Test SEEK_END with valid parameters (should not raise)
-    try:
-        pos = reader.seek(0, os.SEEK_END)  # Valid usage
-        assert pos == 2  # Check the position after seeking (corrected)
-    except Exception as e:
-        pytest.fail(f'Seek to SEEK_END raised an exception: {e}')
+    pos = reader.seek(0, os.SEEK_END)  # Valid usage
+    assert pos == 2, f"Failed to seek to end, got position {pos}"
