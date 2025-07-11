@@ -735,6 +735,7 @@ def as_mrp(double[:, :] quat) -> double[:, :]:
     cdef int sign
     cdef double denominator
 
+    # TODO: Check if broadcasting is possible similar to the xp backend
     for ind in range(num_rotations):
 
         # Ensure we are calculating the set of MRPs that correspond
@@ -1097,7 +1098,7 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
     # other secondary vectors
     if n_inf > 1:
         raise ValueError("Only one infinite weight is allowed")
-    elif n_inf == 1:
+    elif n_inf == 1:  # TODO: Refactor into _align_vectors_fixed as in the xp backend
         if return_sensitivity:
             raise ValueError("Cannot return sensitivity matrix with an "
                                 "infinite weight or one vector pair")
