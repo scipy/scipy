@@ -17,6 +17,7 @@
 #endif
 
 #include "SuperLU/SRC/slu_zdefs.h"
+#include "numpy/npy_math.h"
 #include "numpy/ndarrayobject.h"
 #include "SuperLU/SRC/slu_util.h"
 #include "SuperLU/SRC/slu_dcomplex.h"
@@ -24,6 +25,20 @@
 
 
 #define _CHECK_INTEGER(x) (PyArray_ISINTEGER((PyArrayObject*)x) && PyArray_ITEMSIZE((PyArrayObject*)x) == sizeof(int))
+
+
+/* 
+ * The norm of the matrix is determined by the type of the SuperLUObject.
+ * It is either a float or a double, depending on the type of the matrix.
+ * This union allows us to use the same variable for both types.
+ */
+typedef union _SuperLUAnorm_t {
+    float f;
+    double d;
+} __SuperLUAnorm_t;
+
+typedef union _SuperLUAnorm_t SuperLUAnorm_t;
+
 
 /*
  * SuperLUObject definition
@@ -39,6 +54,7 @@ typedef struct {
     PyObject *cached_L;
     PyObject *py_csc_construct_func;
     int type;
+    SuperLUAnorm_t anorm;
 } SuperLUObject;
 
 typedef struct {
@@ -144,6 +160,27 @@ jmp_buf *superlu_python_jmpbuf(void);
     SuperMatrix *e, SuperMatrix *f, SuperMatrix *g,             \
     SuperLUStat_t *h, int *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
+
+
+/* Explicitly declare the SuperLU functions for each data type.
+ *
+ * These functions are defined in 'SuperLU/SRC/slu_[sdcz]defs.h', but we get
+ * "conflicting type" errors if we include those headers here.
+ */
+float  slangs(char *norm, SuperMatrix *A);
+double dlangs(char *norm, SuperMatrix *A);
+float  clangs(char *norm, SuperMatrix *A);
+double zlangs(char *norm, SuperMatrix *A);
+
+void sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            float anorm, float *rcond, SuperLUStat_t *stat, int *info);
+void dgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            double anorm, double *rcond, SuperLUStat_t *stat, int *info);
+void cgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            float anorm, float *rcond, SuperLUStat_t *stat, int *info);
+void zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            double anorm, double *rcond, SuperLUStat_t *stat, int *info);
+
 
 #define Create_Dense_Matrix_ARGS                               \
     SuperMatrix *a, int b, int c, void *d, int e,              \
