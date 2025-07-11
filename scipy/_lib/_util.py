@@ -623,7 +623,7 @@ class MapWrapper:
 
             method = get_start_method(allow_none=True)
 
-            if method is None and os.name=='posix' and sys.version_info() < (3, 14):
+            if method is None and os.name=='posix' and sys.version_info < (3, 14):
                 # Python 3.13 and older used "fork" on posix, which can lead to
                 # deadlocks. This backports that fix to older Python versions.
                 method = 'forkserver'
