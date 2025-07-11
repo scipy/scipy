@@ -7,6 +7,8 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+import os
+import sys
 from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
@@ -617,18 +619,26 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import Pool
+            from multiprocessing import get_context, get_start_method
+
+            method = get_start_method(allow_none=True)
+
+            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+                # Python 3.13 and older used "fork" on posix, which can lead to
+                # deadlocks. This backports that fix to older Python versions.
+                method = 'forkserver'
+
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
-                self.pool = Pool()
+                self.pool = get_context(method=method).Pool()
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             elif int(pool) == 1:
                 pass
             elif int(pool) > 1:
                 # use the number of processors requested
-                self.pool = Pool(processes=int(pool))
+                self.pool = get_context(method=method).Pool(processes=int(pool))
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             else:
