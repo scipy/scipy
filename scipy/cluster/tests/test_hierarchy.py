@@ -31,6 +31,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from array_api_extra._lib._testing import xp_assert_equal, xp_assert_close
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal, assert_
 import pytest
@@ -46,8 +47,7 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
-from scipy._lib._array_api import (eager_warns, make_xp_test_case,
-                                   xp_assert_close, xp_assert_equal)
+from scipy._lib._array_api import eager_warns, make_xp_test_case
 import scipy._lib.array_api_extra as xpx
 
 from threading import Lock
@@ -443,7 +443,7 @@ class TestIsValidLinkage:
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         Z = Z[:nrow, :ncol]
-        xp_assert_equal(is_valid_linkage(Z), valid, check_namespace=False)
+        assert is_valid_linkage(Z) == valid
         if not valid:
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -451,13 +451,13 @@ class TestIsValidLinkage:
         # Tests is_valid_linkage(Z) with integer type.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+        assert not is_valid_linkage(Z)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self, xp):
         # Tests is_valid_linkage(Z) with empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
-        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+        assert not is_valid_linkage(Z)
         assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_4_and_up(self, xp):
@@ -467,7 +467,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             Z = xp.asarray(linkage(y))
             y = xp.asarray(y)
-            xp_assert_equal(is_valid_linkage(Z), True, check_namespace=False)
+            assert is_valid_linkage(Z)
 
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
@@ -477,7 +477,7 @@ class TestIsValidLinkage:
             Z = xp.asarray(linkage(y))
             y = xp.asarray(y)
             Z = xpx.at(Z)[i//2, 0].set(-2)
-            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            assert not is_valid_linkage(Z)
             with pytest.raises(ValueError):
                 eager.is_valid_linkage(Z, throw=True)
 
@@ -489,7 +489,7 @@ class TestIsValidLinkage:
             Z = xp.asarray(linkage(y))
             y = xp.asarray(y)
             Z = xpx.at(Z)[i//2, 1].set(-2)
-            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            assert not is_valid_linkage(Z)
             with pytest.raises(ValueError):
                 eager.is_valid_linkage(Z, throw=True)
 
@@ -501,7 +501,7 @@ class TestIsValidLinkage:
             Z = xp.asarray(linkage(y))
             y = xp.asarray(y)
             Z = xpx.at(Z)[i//2, 2].set(-0.5)
-            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            assert not is_valid_linkage(Z)
             with pytest.raises(ValueError):
                 eager.is_valid_linkage(Z, throw=True)
 
@@ -513,7 +513,7 @@ class TestIsValidLinkage:
             Z = xp.asarray(linkage(y))
             y = xp.asarray(y)
             Z = xpx.at(Z)[i//2, 3].set(-2)
-            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            assert not is_valid_linkage(Z)
             with pytest.raises(ValueError):
                 eager.is_valid_linkage(Z, throw=True)
 
@@ -525,7 +525,7 @@ class TestIsValidInconsistent:
         # Tests is_valid_im(R) with integer type.
         R = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+        assert not is_valid_im(R)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
     @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
@@ -535,14 +535,14 @@ class TestIsValidInconsistent:
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         R = R[:nrow, :ncol]
-        xp_assert_equal(is_valid_im(R), valid, check_namespace=False)
+        assert is_valid_im(R) == valid
         if not valid:
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_empty(self, xp):
         # Tests is_valid_im(R) with empty inconsistency matrix.
         R = xp.zeros((0, 4), dtype=xp.float64)
-        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+        assert not is_valid_im(R)
         assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_4_and_up(self, xp):
@@ -553,7 +553,7 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R = xp.asarray(R)
-            xp_assert_equal(is_valid_im(R), True, check_namespace=False)
+            assert is_valid_im(R)
 
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
@@ -564,7 +564,7 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 0].set(-2.0)
             R = xp.asarray(R)
-            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            assert not is_valid_im(R)
             with pytest.raises(ValueError):
                 eager.is_valid_im(R, throw=True)
 
@@ -577,7 +577,7 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 1].set(-2.0)
             R = xp.asarray(R)
-            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            assert not is_valid_im(R)
             with pytest.raises(ValueError):
                 eager.is_valid_im(R, throw=True)
 
@@ -590,7 +590,7 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2, 2].set(-0.5)
             R = xp.asarray(R)
-            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            assert not is_valid_im(R)
             with pytest.raises(ValueError):
                 eager.is_valid_im(R, throw=True)
 

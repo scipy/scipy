@@ -31,6 +31,7 @@ pooch = "*"
 mpmath = "*"
 gmpy2 = "*"
 ccache = ">=4.10.1,<5"
+array_api_extra = "*"
 
 [feature.build.tasks]
 build = { cmd = "spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }

@@ -32,6 +32,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+from array_api_extra._lib._testing import xp_assert_close
 import numpy as np
 from itertools import product
 
@@ -39,9 +40,7 @@ from pytest import raises as assert_raises
 import pytest
 
 from scipy._lib import array_api_extra as xpx
-from scipy._lib._array_api import (
-    xp_assert_close, array_namespace
-)
+from scipy._lib._array_api import array_namespace
 from scipy.signal import upfirdn, firwin
 from scipy.signal._upfirdn import _output_len, _upfirdn_modes
 from scipy.signal._upfirdn_apply import _pad_test

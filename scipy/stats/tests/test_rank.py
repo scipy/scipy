@@ -1,3 +1,4 @@
+from array_api_extra._lib._testing import xp_assert_equal
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import xp_assert_equal, make_xp_test_case
+from scipy._lib._array_api import make_xp_test_case
 
 class TestTieCorrect:
 

@@ -1,6 +1,7 @@
 import sys
 import warnings
 
+from array_api_extra._lib._testing import xp_assert_close
 import numpy as np
 from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
@@ -9,7 +10,6 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
