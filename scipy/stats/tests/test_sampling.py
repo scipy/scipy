@@ -1091,12 +1091,12 @@ class TestNumericalInverseHermite:
             # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
             pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
 
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
 
         dist = getattr(stats, distname)(*shapes)
         fni = NumericalInverseHermite(dist)
 
-        x = np.random.rand(10)
+        x = rng.random(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
         u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
@@ -1113,6 +1113,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parallel_threads(4)  # Very slow
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 

@@ -131,8 +131,9 @@
         }
     },
     "btdtrib": {
-        "_cdflib_wrappers.pxd": {
-            "btdtrib": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_invb_float": "fff->f",
+            "ibeta_invb_double": "ddd->d"
         }
     },
     "chdtr": {
