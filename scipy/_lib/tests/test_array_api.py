@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype, xp_result_type, is_torch
 )
 from scipy._lib import array_api_extra as xpx
@@ -16,7 +16,7 @@ lazy_xp_function(_asarray)
 lazy_xp_function(xp_copy)
 
 
-@pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
+@pytest.mark.skipif(not SCIPY_ARRAY_API,
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
@@ -24,11 +24,6 @@ class TestArrayAPI:
         x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
         xp = array_namespace(x, y)
         assert 'array_api_compat.numpy' in xp.__name__
-
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
-        xp = array_namespace(x, y)
-        assert 'array_api_compat.numpy' in xp.__name__
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
     def test_asarray(self, xp):
         x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)

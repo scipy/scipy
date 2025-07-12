@@ -42,6 +42,11 @@ static SuperLUGlobalObject *get_tls_global(void)
 
     PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
 
+    /*
+        Py_DECREF is added because get_tls_global returns
+        borrowed reference. This avoids memory leak of obj.
+    */
+    Py_DECREF(obj);
     return obj;
 }
 

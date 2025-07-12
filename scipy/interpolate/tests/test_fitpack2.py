@@ -1,8 +1,9 @@
 # Created by Pearu Peterson, June 2003
 import itertools
 import sys
+import warnings
+
 import numpy as np
-from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
@@ -387,17 +388,15 @@ class TestUnivariateSpline:
              0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
              0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
              10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
-        with suppress_warnings() as sup:
-            r = sup.record(
-                UserWarning,
-                r"""
-The maximal number of iterations maxit \(set to 20 by the program\)
+        with pytest.warns(UserWarning) as r:
+            UnivariateSpline(x, y, k=1)
+            assert len(r) == 1
+            assert str(r[0].message) == r"""
+The maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached: s
 too small.
 There is an approximation returned but the corresponding weighted sum
-of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
-            UnivariateSpline(x, y, k=1)
-            assert len(r) == 1
+of squared residuals does not satisfy the condition abs(fp-s)/s < tol."""
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
@@ -424,8 +423,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
             assert len(r) == 1
 
@@ -438,9 +436,8 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline"):
             # This seems to fail (ier=1, see ticket 1642).
-            sup.filter(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
 
         tx, ty = lut.get_knots()
@@ -465,8 +462,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
             assert len(r) == 1
         tx, ty = lut.get_knots()
@@ -486,8 +482,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
             assert len(r) == 1
 
@@ -548,8 +543,7 @@ class TestLSQBivariateSpline:
         w = np.linspace(1.0, 10.0)
         bbox = np.array([1.0, 10.0, 1.0, 10.0])
 
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             # np.array input
             spl1 = LSQBivariateSpline(x, y, z, tx, ty, w=w, bbox=bbox)
             # list input
@@ -570,8 +564,7 @@ class TestLSQBivariateSpline:
         z = 3.0 * np.ones_like(x)
         tx = np.linspace(0.1, 98.0, 29)
         ty = np.linspace(0.1, 98.0, 33)
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x,y,z,tx,ty)
             assert len(r) == 1
 
@@ -608,9 +601,10 @@ class TestSmoothBivariateSpline:
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # This seems to fail (ier=1, see ticket 1642).
-            sup.filter(UserWarning, "\nThe required storage space")
+            warnings.filterwarnings(
+                "ignore", "\nThe required storage space", UserWarning)
             lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
 
         tx = [1,2,4]
@@ -1386,8 +1380,7 @@ class Test_DerivedBivariateSpline:
         x = np.concatenate(list(zip(range(10), range(10))))
         y = np.concatenate(list(zip(range(10), range(1, 11))))
         z = np.concatenate((np.linspace(3, 1, 10), np.linspace(1, 3, 10)))
-        with suppress_warnings() as sup:
-            sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline"):
             self.lut_lsq = LSQBivariateSpline(x, y, z,
                                               linspace(0.5, 19.5, 4),
                                               linspace(1.5, 20.5, 4),

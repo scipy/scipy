@@ -6,7 +6,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from .._lib._util import copy_if_needed
+from .._lib._util import _prune_array, copy_if_needed
 from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
@@ -14,7 +14,7 @@ from ._sputils import (
     isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
     validateaxis, check_shape
 )
-from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs
+from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs, dia_tocsr
 
 
 class _dia_base(_data_matrix):
@@ -131,14 +131,11 @@ class _dia_base(_data_matrix):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DIA format")
-        M,N = self.shape
-        nnz = 0
-        for k in self.offsets:
-            if k > 0:
-                nnz += min(M,N-k)
-            else:
-                nnz += min(M+k,N)
-        return int(nnz)
+        M, N = self.shape
+        L = min(self.data.shape[1], N)
+        return int(np.maximum(np.minimum(M + self.offsets, L) -
+                              np.maximum(self.offsets, 0),
+                              0).sum())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
@@ -407,57 +404,36 @@ class _dia_base(_data_matrix):
 
     diagonal.__doc__ = _spbase.diagonal.__doc__
 
-    def tocsc(self, copy=False):
-        if self.nnz == 0:
-            return self._csc_container(self.shape, dtype=self.dtype)
+    def tocsr(self, copy=False):
+        if 0 in self.shape or len(self.offsets) == 0:
+            return self._csr_container(self.shape, dtype=self.dtype)
 
-        num_rows, num_cols = self.shape
-        num_offsets, offset_len = self.data.shape
-        offset_inds = np.arange(offset_len)
+        n_rows, n_cols = self.shape
+        max_nnz = self.nnz
+        # np.argsort always returns dtype=int, which can cause automatic dtype
+        # expansion for everything else even if not needed (see gh19245), but
+        # CSR wants common dtype for indices, indptr and shape, so care should
+        # be taken to use appropriate indexing dtype throughout.
+        idx_dtype = self._get_index_dtype(maxval=max(max_nnz, n_rows, n_cols))
+        order = np.argsort(self.offsets).astype(idx_dtype, copy=False)
+        csr_data = np.empty(max_nnz, dtype=self.dtype)
+        indices = np.empty(max_nnz, dtype=idx_dtype)
+        indptr = np.empty(1 + n_rows, dtype=idx_dtype)
+        # Conversion eliminates explicit zeros and returns actual nnz.
+        nnz = dia_tocsr(n_rows, n_cols, *self.data.shape,
+                        self.offsets.astype(idx_dtype, copy=False), self.data,
+                        order, csr_data, indices, indptr)
+        # Shrink indexing dtype, if needed, and prune arrays.
+        idx_dtype = self._get_index_dtype(maxval=max(nnz, n_rows, n_cols))
+        csr_data = _prune_array(csr_data[:nnz])
+        indices = _prune_array(indices[:nnz].astype(idx_dtype, copy=False))
+        indptr = indptr.astype(idx_dtype, copy=False)
+        out = self._csr_container((csr_data, indices, indptr),
+                                  shape=self.shape, dtype=self.dtype)
+        out.has_canonical_format = True
+        return out
 
-        row = offset_inds - self.offsets[:,None]
-        mask = (row >= 0)
-        mask &= (row < num_rows)
-        mask &= (offset_inds < num_cols)
-        mask &= (self.data != 0)
-
-        idx_dtype = self._get_index_dtype(maxval=max(self.shape))
-        indptr = np.zeros(num_cols + 1, dtype=idx_dtype)
-        indptr[1:offset_len+1] = np.cumsum(mask.sum(axis=0)[:num_cols])
-        if offset_len < num_cols:
-            indptr[offset_len+1:] = indptr[offset_len]
-        indices = row.T[mask.T].astype(idx_dtype, copy=False)
-        data = self.data.T[mask.T]
-        return self._csc_container((data, indices, indptr), shape=self.shape,
-                                   dtype=self.dtype)
-
-    tocsc.__doc__ = _spbase.tocsc.__doc__
-
-    def tocoo(self, copy=False):
-        num_rows, num_cols = self.shape
-        num_offsets, offset_len = self.data.shape
-        offset_inds = np.arange(offset_len)
-
-        row = offset_inds - self.offsets[:,None]
-        mask = (row >= 0)
-        mask &= (row < num_rows)
-        mask &= (offset_inds < num_cols)
-        mask &= (self.data != 0)
-        row = row[mask]
-        col = np.tile(offset_inds, num_offsets)[mask.ravel()]
-        idx_dtype = self._get_index_dtype(
-            arrays=(self.offsets,), maxval=max(self.shape)
-        )
-        row = row.astype(idx_dtype, copy=False)
-        col = col.astype(idx_dtype, copy=False)
-        data = self.data[mask]
-        # Note: this cannot set has_canonical_format=True, because despite the
-        # lack of duplicates, we do not generate sorted indices.
-        return self._coo_container(
-            (data, (row, col)), shape=self.shape, dtype=self.dtype, copy=False
-        )
-
-    tocoo.__doc__ = _spbase.tocoo.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     # needed by _data_matrix
     def _with_data(self, data, copy=True):

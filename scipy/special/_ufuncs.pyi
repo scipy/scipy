@@ -219,7 +219,6 @@ __all__ = [
     'smirnov',
     'smirnovi',
     'spence',
-    'sph_harm',
     'stdtr',
     'stdtridf',
     'stdtrit',
@@ -500,7 +499,6 @@ sindg: np.ufunc
 smirnov: np.ufunc
 smirnovi: np.ufunc
 spence: np.ufunc
-sph_harm: np.ufunc
 stdtr: np.ufunc
 stdtridf: np.ufunc
 stdtrit: np.ufunc
