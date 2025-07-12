@@ -532,7 +532,7 @@ class TestNdimageMorphology:
         assert_array_almost_equal(bf, out)
 
         # np-specific check
-        np_ft = np.asarray(ft)
+        np_ft = xp_asarray(ft, xp=np)
         dt = np_ft - np.indices(np_ft.shape[1:], dtype=np_ft.dtype)
         dt = dt.astype(np.float64)
         np.multiply(dt, dt, dt)

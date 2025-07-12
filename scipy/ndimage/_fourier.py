@@ -30,6 +30,7 @@
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import xp_asarray
 from . import _ni_support
 from . import _nd_image
 
@@ -114,7 +115,7 @@ def fourier_gaussian(input, sigma, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _get_output_fourier(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
@@ -172,7 +173,7 @@ def fourier_uniform(input, size, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _get_output_fourier(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
@@ -233,7 +234,7 @@ def fourier_ellipsoid(input, size, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if input.ndim > 3:
         raise NotImplementedError("Only 1d, 2d and 3d inputs are supported")
     output = _get_output_fourier(output, input)
@@ -295,7 +296,7 @@ def fourier_shift(input, shift, n=-1, axis=-1, output=None):
     >>> ax2.imshow(result.real)  # the imaginary part is an artifact
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _get_output_fourier_complex(output, input)
     axis = normalize_axis_index(axis, input.ndim)
     shifts = _ni_support._normalize_sequence(shift, input.ndim)
