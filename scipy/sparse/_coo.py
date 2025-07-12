@@ -20,12 +20,12 @@ from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs, isscalarlike,
                        isintlike, isdense)
-from ._index import IndexMixin
+from ._index import _validate_indices
 
 import operator
 
 
-class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
+class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
     _allow_nd = range(1, 65)
 
@@ -71,7 +71,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                     self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
-                    coo = arg1.tocoo()
+                    coo = arg1.tocoo(copy=copy)
                     self.coords = tuple(coo.coords)
                     self.data = coo.data.astype(getdtype(dtype, coo), copy=False)
                     self._shape = check_shape(coo.shape, allow_nd=self._allow_nd)
@@ -527,8 +527,9 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
         return self.__class__((data, coords), shape=self.shape, dtype=data.dtype)
 
     def __getitem__(self, key):
-        index, new_shape, arr_int_pos, none_pos = self._validate_indices(key)
-
+        index, new_shape, arr_int_pos, none_pos = _validate_indices(
+            key, self.shape, self.format
+        )
         # handle int, slice and int-array indices
         index_mask = np.ones(len(self.data), dtype=np.bool_)
         slice_coords = []
@@ -611,7 +612,9 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
 
     def __setitem__(self, key, x):
         # enact self[key] = x
-        index, new_shape, arr_int_pos, none_pos = self._validate_indices(key)
+        index, new_shape, arr_int_pos, none_pos = _validate_indices(
+            key, self.shape, self.format
+        )
         print(f"{key=} {index=} {new_shape=}")
 
         # remove None's at beginning of index. Should not impact indexing coords
