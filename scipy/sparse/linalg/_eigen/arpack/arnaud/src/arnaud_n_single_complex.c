@@ -419,9 +419,9 @@ ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
                 // Complex division is not supported in MSVC
                 float mag_sq = powf(cabsf(workl[iheig + j]), 2.0);
                 temp = _FCmulcr(conjf(workl[iheig + j]), 1.0 / mag_sq);
-                workev[j] = _FCmulcc(workl[invsub + j*ldq + V->ncv], temp);
+                workev[j] = _FCmulcc(workl[invsub + j*ldq + V->ncv - 1], temp);
 #else
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheig+j];
 #endif
             }
         }
@@ -540,7 +540,7 @@ ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid,
 }
 
 
-void
+static void
 cnaup2(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid,
        ARNAUD_CPLXF_TYPE* v, int ldv, ARNAUD_CPLXF_TYPE* h, int ldh,
        ARNAUD_CPLXF_TYPE* ritz, ARNAUD_CPLXF_TYPE* bounds,
@@ -1560,7 +1560,7 @@ cneigh(float* rnorm, int n, ARNAUD_CPLXF_TYPE* h, int ldh, ARNAUD_CPLXF_TYPE* ri
 }
 
 
-void
+static void
 cngets(struct ARNAUD_state_s *V, int* kev, int* np,
        ARNAUD_CPLXF_TYPE* ritz, ARNAUD_CPLXF_TYPE* bounds)
 {
@@ -1751,10 +1751,10 @@ LINE40:
 }
 
 
-void
-csortc(const enum ARNAUD_which w, const int apply, const int n,  ARNAUD_CPLXF_TYPE *x,  ARNAUD_CPLXF_TYPE *y)
+static void
+csortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLXF_TYPE *x, ARNAUD_CPLXF_TYPE *y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     ARNAUD_CPLXF_TYPE temp;
     ARNAUD_compare_cfunc *f;
 
@@ -1783,31 +1783,29 @@ csortc(const enum ARNAUD_which w, const int apply, const int n,  ARNAUD_CPLXF_TY
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
@@ -1831,6 +1829,8 @@ cdotc_(const int* n, const ARNAUD_CPLXF_TYPE* restrict x, const int* incx, const
     ARNAUD_CPLXF_TYPE temp = ARNAUD_cplxf(0.0, 0.0);
 #endif
     if (*n <= 0) { return result; }
+
+    int ix, iy;
     if ((*incx == 1) && (*incy == 1))
     {
         for (int i = 0; i < *n; i++)
@@ -1844,15 +1844,20 @@ cdotc_(const int* n, const ARNAUD_CPLXF_TYPE* restrict x, const int* incx, const
         }
 
     } else {
+        // Handle negative increments correctly
+        ix = (*incx >= 0) ? 0 : (-(*n-1) * (*incx));
+        iy = (*incy >= 0) ? 0 : (-(*n-1) * (*incy));
 
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _FCmulcc(x[i * (*incx)], conjf(y[i * (*incy)]));
+            temp = _FCmulcc(x[ix], conjf(y[iy]));
             result = ARNAUD_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
 #else
-            result = result + (x[i * (*incx)] * conjf(y[i * (*incy)]));
+            result = result + (x[ix] * conjf(y[iy]));
 #endif
+            ix += *incx;
+            iy += *incy;
         }
     }
 
