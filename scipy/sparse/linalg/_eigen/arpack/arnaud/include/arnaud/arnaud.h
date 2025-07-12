@@ -1,52 +1,49 @@
 #ifndef ARNAUD_H
 #define ARNAUD_H
 
-#include <math.h>
-#include <complex.h>
-
-#if defined(_MSC_VER)
-    // MSVC definitions
-    typedef _Dcomplex ARNAUD_CPLX_TYPE;
-    typedef _Fcomplex ARNAUD_CPLXF_TYPE;
-
-#else
-    // C99 compliant compilers
-    typedef double complex ARNAUD_CPLX_TYPE;
-    typedef float complex ARNAUD_CPLXF_TYPE;
-
-#endif
-
+#include "types.h"
 
 enum ARNAUD_which {
-    which_LM = 0,    // want the NEV eigenvalues of largest magnitude.
-    which_SM = 1,    // want the NEV eigenvalues of smallest magnitude.
-    which_LR = 2,    // want the NEV eigenvalues of largest real part.
-    which_SR = 3,    // want the NEV eigenvalues of smallest real part.
-    which_LI = 4,    // want the NEV eigenvalues of largest imaginary part.
-    which_SI = 5,    // want the NEV eigenvalues of smallest imaginary part.
-    which_LA = 6,    // compute the NEV largest (algebraic) eigenvalues. (sym)
-    which_SA = 7,    // compute the NEV smallest (algebraic) eigenvalues. (sym)
-    which_BE = 8     // compute NEV eigenvalues, half from each end of the spectrum. (sym)
-};
-
-enum ARNAUD_ido {
-    ido_FIRST      = 0,  // First call
-    ido_OPX        = 1,  // OP*x needed
-    ido_BX         = 2,  // B*x needed
-    ido_USER_SHIFT = 3,  // User shifts are needed
-    ido_RANDOM     = 4,  // A random vector is needed to be written in resid
-    ido_RANDOM_OPX = 5,  // Force random vector to be in the range of OP
-    ido_DONE       = 99  // Done
+    which_LM = 0,    /**> want the NEV eigenvalues of largest magnitude. */
+    which_SM = 1,    /**> want the NEV eigenvalues of smallest magnitude. */
+    which_LR = 2,    /**> want the NEV eigenvalues of largest real part. */
+    which_SR = 3,    /**> want the NEV eigenvalues of smallest real part. */
+    which_LI = 4,    /**> want the NEV eigenvalues of largest imaginary part. */
+    which_SI = 5,    /**> want the NEV eigenvalues of smallest imaginary part. */
+    which_LA = 6,    /**> compute the NEV largest (algebraic) eigenvalues. (sym) */
+    which_SA = 7,    /**> compute the NEV smallest (algebraic) eigenvalues. (sym) */
+    which_BE = 8     /**> compute NEV eigenvalues, half from each end of the spectrum. (sym) */
 };
 
 /**
- * With the following structs, we collect all "SAVE"d Fortran variables to track
- * the problem and avoid reentry issues. It is not the cleanest and is laborious
- * but otherwise reentrancy is compromised. There are additional variables in the
- * original Fortran code that are also "SAVE"d however upon inspection, they
- * are assigned and then used in the same call and thus used without saving.
-**/
+ * @enum ARNAUD_ido
+ * @brief Iteration control for reverse communication interface.
+ *
+ * Used to indicate the action required by the calling program.
+ */
+enum ARNAUD_ido {
+    ido_FIRST      = 0,  /**< First call */
+    ido_OPX        = 1,  /**< OP*x needed */
+    ido_BX         = 2,  /**< B*x needed */
+    ido_USER_SHIFT = 3,  /**< User shifts are needed */
+    ido_RANDOM     = 4,  /**< A random vector is needed to be written in resid */
+    ido_RANDOM_OPX = 5,  /**< Force random vector to be in the range of OP */
+    ido_DONE       = 99  /**< Done */
+};
 
+
+/**
+ * @struct ARNAUD_state_s
+ * @brief State structure for single precision ARPACK-like solvers.
+ *
+ * This structure holds all persistent state and workspace variables
+ * required for the single precision (float) nonsymmetric and symmetric
+ * eigenvalue routines. It is designed to mimic the "SAVE" variables
+ * in the original Fortran ARPACK code, ensuring reentrancy and
+ * thread-safety.
+ *
+ * Members are grouped by their usage in different algorithmic phases.
+ */
 struct ARNAUD_state_s {
     float tol;               // problem parameter                input parameter
     float getv0_rnorm0;      // getv0 internal compute           internal
@@ -91,7 +88,18 @@ struct ARNAUD_state_s {
     int aup2_ushift;         // naupd2 flow control              internal
 };
 
-
+/**
+ * @struct ARNAUD_state_d
+ * @brief State structure for double precision ARPACK-like solvers.
+ *
+ * This structure holds all persistent state and workspace variables
+ * required for the double precision (double) nonsymmetric and symmetric
+ * eigenvalue routines. It is designed to mimic the "SAVE" variables
+ * in the original Fortran ARPACK code, ensuring reentrancy and
+ * thread-safety.
+ *
+ * Members are grouped by their usage in different algorithmic phases.
+ */
 struct ARNAUD_state_d {
     double tol;              // problem parameter                input parameter
     double getv0_rnorm0;     // getv0 internal compute           internal
@@ -137,7 +145,10 @@ struct ARNAUD_state_d {
 };
 
 
+
 void ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+
+
 void ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
 void ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork);
 void ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork);
