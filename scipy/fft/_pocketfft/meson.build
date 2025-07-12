@@ -5,7 +5,7 @@ if is_windows
     # mingw-w64 does not implement pthread_pfork, needed by pocket_fft
     # Disable threading completely, because of freezes using threading for
     # mingw-w64 gcc: https://github.com/mreineck/pocketfft/issues/1
-    pocketfft_threads += ['-DPOCKETFFT_NO_MULTITHREADING']
+    pocketfft_threads += ['-DDUCC0_NO_LOWLEVEL_THREADING']
   else
     if thread_dep.found()
       # Use native Windows threading for MSVC/Clang. `pthreads` is probably not
@@ -23,11 +23,14 @@ else
     pocketfft_threads += ['-DPOCKETFFT_PTHREADS']
   endif
 endif
-pocketfft_args = pocketfft_threads + ['-DPOCKETFFT_CACHE_SIZE=16']
+pocketfft_args = pocketfft_threads
 
-incdir = include_directories('../../_lib/pocketfft')
+incdir = include_directories('../../_lib/ducc/src')
 
 py3.extension_module('pypocketfft',
+  '../../_lib/ducc/src/ducc0/infra/string_utils.cc',
+  '../../_lib/ducc/src/ducc0/infra/threading.cc',
+  '../../_lib/ducc/src/ducc0/infra/mav.cc',
   'pypocketfft.cxx',
   cpp_args: pocketfft_args,
   dependencies: [fft_deps, pybind11_dep],
