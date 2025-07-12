@@ -30,7 +30,7 @@ from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 from scipy.signal._filter_design import _logspace
 from scipy.signal import _polyutils as _pu
-from scipy.signal._polyutils import _sort_cmplx
+from scipy.signal._polyutils import (_sort_cmplx, _trim_zeros)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -1704,6 +1704,19 @@ class TestBilinear:
 
         with pytest.raises(ValueError, match="Sampling.*be none"):
             bilinear(b, a, fs=None)
+
+    def test_trim_zeros(self):
+        # Test for leading zeros
+        b = [0, 0, 1, 2, 3, 0, 0]
+        expected_b = [1, 2, 3]
+        b_trimmed = _trim_zeros(np.array(b), 'fb')
+        assert_array_almost_equal(b_trimmed, expected_b)
+
+        # Test for trailing zeros
+        b = [1, 2, 3, 0, 0]
+        expected_b = [1, 2, 3]
+        b_trimmed = _trim_zeros(np.array(b), 'fb')
+        assert_array_almost_equal(b_trimmed, expected_b)
 
 
 class TestLp2lp_zpk:
@@ -4912,3 +4925,14 @@ class TestGammatone:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             gammatone(440, 'iir', fs=np.asarray([10, 20]))
+
+def test_poly1d_invalid_dimension():
+    with pytest.raises(ValueError, match="Polynomial must be 1d only."):
+        z = np.asarray([[1, 2], [3, 4]])  # 2D array
+        _ = _pu._poly1d(z, xp=np)  # This should raise an error
+
+def test_poly1d_empty_trimmed():
+    # Testing trimming that results in an empty array
+    z = np.asarray([])  # Empty array input
+    result = _pu._poly1d(z, xp=np)
+    assert np.array_equal(result, np.asarray([0]))  # Should return zero array
