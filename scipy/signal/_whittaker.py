@@ -12,7 +12,8 @@ from scipy.special import binom
 
 def _solveh_banded(ab, b, calc_logdet=False):
     """
-    Solve equation a x = b. a is Hermitian positive-definite banded matrix.
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Hermitian positive-definite banded matrix defined by `ab`.
 
     Same as scipy.linalg.solveh_banded(lower=True, check_finite=False), but:
     - also returns the log of the determinant
@@ -70,12 +71,12 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
     This implements WH smoothing with a difference penalty of the specified `order` and
-    penalty strength `lamb`, see [1] and [2]. WH can be seen as a P-Spline
+    penalty strength `lamb`, see [1]_, [2]_ and [3]_. WH can be seen as a P-Spline
     (penalized B-Spline) of degree zero for equidistant knots (at the signal
     positions).
 
     In econometrics, the WH graduation of order 2 is referred to as the Hodrick and
-    Prescott filter (https://doi.org/10.2307/2953682).
+    Prescott filter [4]_.
     
     Parameters
     ----------
@@ -103,13 +104,13 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     Notes
     -----
     For the signal :math:`y = (y_1, y_2, \ldots, y_n)` and weights
-    :math:`w = (w_1, w_2, \ldots, w_n)`, WH of order :math:`p=2` with smoothing or
+    :math:`w = (w_1, w_2, \ldots, w_n)`, WH of order :math:`p` with smoothing or
     penalty parameter :math:`\lambda` solves the following optimization problem:
 
     .. math::
 
         \operatorname{argmin}_{x_i} \sum_i^n w_i (y_i - x_i)^2
-        + \lambda \sum_i^{n-p} (\Delta^p x_i) \,,
+        + \lambda \sum_i^{n-p} (\Delta^p x_i)^2 \,,
 
     with forward difference :math:`\Delta x_i = x_{i+1} - x_i` and
     :math:`\Delta^2 x_i = \Delta(\Delta x_i) = x_{i+2} - 2x_{i+1} + x_i`.
@@ -117,13 +118,18 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
 
     References
     ----------
-    .. [1] Eilers, P.H.C. (2003).
+    .. [1] Whittaker-Henderson smoothing,
+           https://en.wikipedia.org/wiki/Whittaker%E2%80%93Henderson_smoothing
+    .. [2] Eilers, P.H.C. (2003).
            "A perfect smoother". Analytical Chem. 75, 3631-3636.
            :doi:`10.1021/AC034173T`
-    .. [2] Weinert, Howard L. (2007).
+    .. [3] Weinert, Howard L. (2007).
            "Efficient computation for Whittaker-Henderson smoothing".
            Computational Statistics and Data Analysis 52:959-74.
            :doi:`10.1016/j.csda.2006.11.038`
+    .. [4] Hodrick, R. J., & Prescott, E. C. (1997).
+           Postwar U.S. Business Cycles: An Empirical Investigation.
+          :doi:`10.2307/2953682`
     """
     if order < 1 or int(order) != order:
         raise ValueError("Parameter order must be an integer larger equal 1.")
@@ -180,16 +186,34 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
 
 
 def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
-    """Solve the WH optimization problem directly with matrices."""
+    """
+    Solve the WH optimization problem via the normal equations.
+    
+    A @ x = y
+    A = I + lamb * P = I + lamb * D' @ D
+    D = difference matrix of order=`order` 
+
+    With weights W = diag(weights):
+    A = W + lamb * P
+    A @ x = W @ y
+
+    Returns
+    -------
+    x : ndarray
+        The solution.
+    logdet : float
+        Logarithm of the determinant of matrix A.
+    """
     n = y.shape[0]  # n >= p + 1 was already checked
     p = order  # order of difference penalty
-    # Construct penalty matrix M of shape (n-p, n) as if n = 2p+1 (to save memory).
+    # Construct penalty matrix P = D'D of shape (n-p, n) as if n = 2p+1 (to save
+    # memory).
     if n < 2*p + 1:
-        M_raw = np.diff(np.eye(n), n=p, axis=0)  # shape (n-p, n)
+        D = np.diff(np.eye(n), n=p, axis=0)  # shape (n-p, n)
     else:
-        M_raw = np.diff(np.eye(2*p + 1), n=p, axis=0)  # shape (p+1, 2p+1)
-    MTM_raw = M_raw.T @ M_raw  # shape (2p+1, 2p+1) if n>=2p+1 else (n, n)
-    # Because our matrix A = np.eye(n, dtype=np.float64) + lamb * (M.T @ M) is
+        D = np.diff(np.eye(2*p + 1), n=p, axis=0)  # shape (p+1, 2p+1)
+    P_raw = D.T @ D  # shape (2p+1, 2p+1) if n >= 2p+1 else (n, n)
+    # Because our matrix A = np.eye(n, dtype=np.float64) + lamb * (D.T @ D) is
     # symmetric and banded with u = l = p, we construct it in the lower "ab"-format
     # for use in solveh_banded, i.e. each row in ab is a subdiagonal of A:
     #   ab[0, :]   = np.diagonal(A, 0)
@@ -198,7 +222,7 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
     #   ..
     ab = np.zeros((p + 1, min(2*p + 1, n)))
     for i in range(p + 1):
-        ab[i, :ab.shape[1] - i] = np.diagonal(MTM_raw, i)
+        ab[i, :ab.shape[1] - i] = np.diagonal(P_raw, i)
     ab *= lamb
     if n > 2*p + 1:
         ab = np.hstack([
@@ -226,7 +250,8 @@ def _solve_WH_order2_fast(y, lamb):
     https://doi.org/10.1016/j.csda.2006.11.038
     """
     n = y.shape[0]
-    # Convert penalty to convention of Weinert (2007), i.e. A = lambda I + M'M.
+    # Convert penalty to convention of Weinert (2007), i.e. A = lambda I + D'D.
+    # Note that Weinert denotes the difference matrix M instead of D.
     lamb = 1 / lamb
     # A = LDL' decompositon, i.e. L is unit lower triangular and banded
     # (bandwith=2) and D diagonal.
@@ -329,44 +354,47 @@ def _reml(lamb, y, order, weights=None):
 
     References
     ----------
-    - Biessy https://arxiv.org/abs/2306.06932
+    - Biessy https://arxiv.org/abs/2306.06932 (version 4)
     - Wood https://doi.org/10.1111/j.1467-9868.2010.00749.x
     """
     n = y.shape[0]
     x, logdet = _solve_WH_banded(
         y=y, lamb=lamb, order=order, weights=weights, calc_logdet=True
     )
-    logdet_M = _logdet_difference_matrix(order=order, n=n)
+    logdet_DtD = _logdet_difference_matrix(order=order, n=n)
     residual = y - x
-    # Eq. 12 of Biessy gives the REML criterion. But note that Biessy forgot the
-    # process error sigma as in var(Y|theta) ~ W^-1 * sigma^2. To correct for this, we
-    # set W -> W / sigma^2 and P = M / tau^2 with lambda = sigma^2 / tau^2 and M = D'D
-    # the difference penalty matrix.
-    # This can be derived from a mixed model formulation of P-splines, see e.g. Currie
-    # and Durban https://doi.org/10.1191/1471082x02st039ob or Boer
-    # https://doi.org/10.1177/1471082X231178591
-    # Possibly neglecting terms not dependent on sigma nor tau, we have:
-    #     REML(sigma, tau) = (log of restriced maximum likelihood)
-    #     = -1/2 ((y - theta) W (y - theta) / sigma^2 + theta M theta / tau^2 
-    #             -log|W / sigma^2| - log|M / tau^2| + log|W / sigma^2 + M / tau^2|)
-    # where theta = x = solution of the smoothed signal. Upon replacing
-    # tau^2 = sigma^2 / lambda, optimizing for sigma^2 gives
-    #     sigma^2 = r2 / (n - d)
-    #     r^2     = (y - theta) W (y - theta) + lambda theta M theta
-    # d is the order of the difference penalty. The profiled REML is then
-    #     profiled REML = -1/2 (
-    #                            (n-d) (1 + log(r^2 / (n-d)))
-    #                            -log|lambda M| + log|W + lambda M|
-    #                          )
+    # Eq. 12 of Biessy gives the REML criterion:
+    # REML(lambda, sigma) = (log of restriced maximum likelihood)
+    #     = -1/2 ((y - theta) W (y - theta) / sigma^2 + lambda theta D'D theta / sigma^2
+    #             - log|lambda D'D| + log|(W + lambda D'D)| + (n - p) log(sigma^2)
+    #             + const
+    #            )
+    # where the constant term "const" does not depend on lambda or sigma and p is the
+    # order of the difference penalty.
+    # Note that Biessy then does not mention to use the profiled REML criterion, i.e.,
+    # analytically plug in the optimal sigma^2. This gives us
+    #     sigma^2 = r2 / (n - p)
+    #     r^2     = (y - theta) W (y - theta) + lambda theta D'D theta
+    #     profiled REML(lambda) =
+    #         -1/2 (
+    #               (n-p) (1 + log(r^2 / (n-p)))
+    #               -log|lambda D'D| + log|W + lambda D'D| + const
+    #              )
     # This can be compared to Eq. 41 of Bates et al
-    # https://doi.org/10.18637/jss.v067.i01
+    # https://doi.org/10.18637/jss.v067.i01.
+    # An alternative derivation stems from a mixed model formulation of P-splines, see
+    # Currie and Durban https://doi.org/10.1191/1471082x02st039ob or Boer
+    # https://doi.org/10.1177/1471082X231178591. One then has 2 variance parameters
+    # sigma^2 (from y) and tau^2 (from the random effect) leading to
+    #     -1/2 ((y - theta) W (y - theta) / sigma^2 + theta D'D theta / tau^2 + ...
+    # One then sets tau^2 = sigma^2 / lambda.
     if weights is None:
         r2 = residual @ residual
     else:
         r2 = residual @ (weights * residual)
-    r2 += lamb * np.sum(np.diff(x, n=order)**2)  # + lambda theta P theta
+    r2 += lamb * np.sum(np.diff(x, n=order)**2)  # + lambda theta D'D theta
     reml = (n - order) * (1 + np.log(r2 / (n - order)))
-    reml -= (n - order) * np.log(lamb) + logdet_M  # -log|lambda M|
-    reml += logdet  # +log|W + lambda M|
+    reml -= (n - order) * np.log(lamb) + logdet_DtD  # -log|lambda D'D|
+    reml += logdet  # +log|W + lambda D'D|
     reml *= -0.5
     return reml
