@@ -674,6 +674,7 @@ class SVDSCommonTests:
 
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
+    @pytest.mark.parallel_threads(4)  # Very slow
     @pytest.mark.parametrize("shape", SHAPES)
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))

@@ -1,8 +1,8 @@
 import os
 import os.path
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 
 from scipy._lib._array_api import (
     is_torch,
@@ -868,8 +868,8 @@ def test_variance01(xp):
         for type in types:
             dtype = getattr(xp, type)
             input = xp.asarray([], dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
                 output = ndimage.variance(input)
             assert xp.isnan(output)
 
@@ -922,8 +922,8 @@ def test_standard_deviation01(xp):
         for type in types:
             dtype = getattr(xp, type)
             input = xp.asarray([], dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
                 output = ndimage.standard_deviation(input)
             assert xp.isnan(output)
 

@@ -82,6 +82,7 @@ __all__ = ['ode', 'complex_ode']
 
 import re
 import threading
+import types
 import warnings
 
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
@@ -351,6 +352,9 @@ class ode:
         Springer-Verlag (1993)
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __init__(self, f, jac=None):
         self.stiff = 0
@@ -788,6 +792,9 @@ class IntegratorBase:
     integrator_classes = []
     scalar = float
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def acquire_new_handle(self):
         # Some of the integrators have internal state (ancient
         # Fortran...), and so only one instance can use them at a time.
@@ -1054,6 +1061,8 @@ class zvode(vode):
     scalar = complex
     active_global_handle = 0
 
+    __class_getitem__ = None
+
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
 
@@ -1130,6 +1139,8 @@ class dopri5(IntegratorBase):
                 -3: 'step size becomes too small',
                 -4: 'problem is probably stiff (interrupted)',
                 }
+
+    __class_getitem__ = None
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
@@ -1261,6 +1272,8 @@ class lsoda(IntegratorBase):
         -6: "Error weight became zero during problem.",
         -7: "Internal workspace insufficient to finish (internal error)."
     }
+
+    __class_getitem__ = None
 
     def __init__(self,
                  with_jacobian=False,

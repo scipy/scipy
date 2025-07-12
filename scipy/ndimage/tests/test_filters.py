@@ -3,10 +3,11 @@ import functools
 import itertools
 import re
 import contextlib
+import warnings
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal
 from hypothesis import strategies as st
 from hypothesis import given
 import hypothesis.extra.numpy as npst
@@ -2705,9 +2706,9 @@ def test_rank_filter_noninteger_rank(xp):
 def test_size_footprint_both_set(xp):
     # test for input validation, expect user warning when
     # size and footprint is set
-    with suppress_warnings() as sup:
-        sup.filter(UserWarning,
-                   "ignoring size because footprint is set")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",
+                                "ignoring size because footprint is set", UserWarning)
         arr = xp.asarray(np.random.random((10, 20, 30)))
         footprint = xp.asarray(np.ones((1, 1, 10), dtype=bool))
         ndimage.rank_filter(
