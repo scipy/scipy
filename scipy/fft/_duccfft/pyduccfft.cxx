@@ -1,12 +1,12 @@
 /*
- * This file is part of pocketfft.
+ * This file is part of duccfft.
  * Licensed under a 3-clause BSD style license - see LICENSE.md
  */
 
 /*
  *  Python interface.
  *
- *  Copyright (C) 2019 Max-Planck-Society
+ *  Copyright (C) 2019-2025 Max-Planck-Society
  *  Copyright (C) 2019 Peter Bell
  *  \author Martin Reinecke
  *  \author Peter Bell
@@ -390,16 +390,15 @@ PyObject * prev_good_size(PyObject * /*self*/, PyObject * args, PyObject * kwarg
     real ? prev_good_size_real(n) : prev_good_size_cmplx(n));
   }
 
-const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
+const char *pyduccfft_DS = R"""(Fast Fourier and trogonomeric transforms.
 
 This module supports
 - single, double, and long double precision
 - complex and real-valued transforms
 - multi-dimensional transforms
 
-For two- and higher-dimensional transforms the code will use SSE2 and AVX
-vector instructions for faster execution if these are supported by the CPU and
-were enabled during compilation.
+The code will use SSE2 and AVX vector instructions for faster execution if
+these are supported by the CPU and were enabled during compilation.
 )""";
 
 const char *c2c_DS = R"""(Performs a complex FFT.
@@ -651,13 +650,13 @@ out : int
 
 } // unnamed namespace
 
-PYBIND11_MODULE(pypocketfft, m, py::mod_gil_not_used())
+PYBIND11_MODULE(pyduccfft, m, py::mod_gil_not_used())
   {
   using namespace pybind11::literals;
 
   auto None = py::none();
 
-  m.doc() = pypocketfft_DS;
+  m.doc() = pyduccfft_DS;
   m.def("c2c", c2c, c2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,
     "inorm"_a=0, "out"_a=None, "nthreads"_a=1);
   m.def("r2c", r2c, r2c_DS, "a"_a, "axes"_a=None, "forward"_a=true,

@@ -5,7 +5,7 @@ Discrete Fourier Transforms - _basic.py
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-from scipy.fft import _pocketfft
+from scipy.fft import _duccfft
 from ._helper import _good_shape
 
 
@@ -85,7 +85,7 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     True
 
     """
-    return _pocketfft.fft(x, n, axis, None, overwrite_x)
+    return _duccfft.fft(x, n, axis, None, overwrite_x)
 
 
 def ifft(x, n=None, axis=-1, overwrite_x=False):
@@ -141,7 +141,7 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     True
 
     """
-    return _pocketfft.ifft(x, n, axis, None, overwrite_x)
+    return _duccfft.ifft(x, n, axis, None, overwrite_x)
 
 
 def rfft(x, n=None, axis=-1, overwrite_x=False):
@@ -202,7 +202,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     array([  4.,   8.,  12.,  16.])
 
     """
-    return _pocketfft.rfft_fftpack(x, n, axis, None, overwrite_x)
+    return _duccfft.rfft_fftpack(x, n, axis, None, overwrite_x)
 
 
 def irfft(x, n=None, axis=-1, overwrite_x=False):
@@ -271,7 +271,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
     array([1., 2., 3., 4., 5.])
 
     """
-    return _pocketfft.irfft_fftpack(x, n, axis, None, overwrite_x)
+    return _duccfft.irfft_fftpack(x, n, axis, None, overwrite_x)
 
 
 def fftn(x, shape=None, axes=None, overwrite_x=False):
@@ -334,7 +334,7 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
     """
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.fftn(x, shape, axes, None, overwrite_x)
+    return _duccfft.fftn(x, shape, axes, None, overwrite_x)
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=False):
@@ -366,7 +366,7 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
 
     """
     shape = _good_shape(x, shape, axes)
-    return _pocketfft.ifftn(x, shape, axes, None, overwrite_x)
+    return _duccfft.ifftn(x, shape, axes, None, overwrite_x)
 
 
 def fft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
