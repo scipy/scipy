@@ -1889,7 +1889,7 @@ class _ProbabilityDistribution(ABC):
         True
 
         For a random variable with negative entropy, the log-entropy has an
-        imaginary part equal to `np.pi`.
+        imaginary part equal to ``np.pi``.
 
         >>> X = stats.Uniform(a=-.1, b=.1)
         >>> X.entropy(), X.logentropy()

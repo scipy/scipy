@@ -578,6 +578,8 @@ class _Parameter(ABC):
     typical : 2-tuple of floats or strings (consider making a _Domain)
         Defines the endpoints of a typical range of values of the parameter.
         Used for sampling.
+    docstring : str
+        A string that describes the parameter.
 
     Methods
     -------
@@ -594,17 +596,17 @@ class _Parameter(ABC):
         of the parameter.
 
    """
-
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
 
-    def __init__(self, name, *, domain, symbol=None, typical=None):
+    def __init__(self, name, *, domain, symbol=None, typical=None, docstring=None):
         self.name = name
         self.symbol = symbol or name
         self.domain = domain
         if typical is not None and not isinstance(typical, _Domain):
             typical = domain.__class__(typical)
         self.typical = typical or domain
+        self.docstring = docstring
 
     def __str__(self):
         r""" String representation of the parameter for use in documentation."""
@@ -729,6 +731,30 @@ class _RealParameter(_Parameter):
     All attributes are inherited.
 
     """
+    def __init__(self, name, *, domain, symbol=None, typical=None, docstring=None):
+        r""" Initializes a real-valued parameter.
+
+        Parameters
+        ----------
+        name : str
+            The keyword used to pass numerical values of the parameter into the
+            initializer of the distribution.
+        domain : _Domain
+            The domain of the parameter for which the distribution is valid.
+        symbol : str, optional
+            The text representation of the variable in the documentation. May
+            include LaTeX. Defaults to `name`.
+        typical : 2-tuple of floats or strings, optional
+            Defines the endpoints of a typical range of values of the parameter.
+            Used for sampling. Defaults to `domain`.
+        docstring : str, optional
+            A string that describes the parameter. Defaults to None.
+
+        """
+        super().__init__(name, domain=domain, symbol=symbol, typical=typical,
+                         docstring=docstring)
+        self.__doc__ = self.docstring = docstring
+
     def validate(self, arr, parameter_values):
         r""" Input validation/standardization of numerical values of a parameter.
 
@@ -814,12 +840,17 @@ class _Parameterization:
     """
     def __init__(self, *parameters):
         self.parameters = {param.name: param for param in parameters}
+        for param in parameters:
+            self.parameters[param.name].__doc__ = param.docstring
 
     def __len__(self):
         return len(self.parameters)
 
     def copy(self):
         return _Parameterization(*self.parameters.values())
+
+    def get_param_doc(self, param):
+        return self.parameters[param].__doc__ if param in self.parameters else None
 
     def matches(self, parameters):
         r""" Checks whether the keyword arguments match the parameterization.
@@ -1327,7 +1358,6 @@ def _combine_docs(dist_family, *, include_examples=True):
     fields.remove('index')
     if not include_examples:
         fields.remove('Examples')
-
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(UnivariateDistribution)
     for field in fields:
@@ -1536,7 +1566,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     Attributes
     ----------
-    All parameters are available as attributes.
+    tol, validation_policy, cache_policy :
+        All parameters are available as attributes.
 
     Methods
     -------
@@ -1694,8 +1725,14 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # Make parameters properties of the class; return values from the instance
             if hasattr(self.__class__, name):
                 continue
-            setattr(self.__class__, name, property(lambda self_, name_=name:
-                                                   self_._parameters[name_].copy()[()]))
+            setattr(
+                self.__class__,
+                name,
+                property(
+                    lambda self_, name_=name: self_._parameters[name_].copy()[()],
+                    doc=self._get_parameter_doc(name)
+                )
+            )
 
     def reset_cache(self):
         r""" Clear all cached values.
@@ -1819,6 +1856,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
         return f"{{{', '.join(parameters.keys())}}}"
+
+    def _get_parameter_doc(self, param):
+        # Get the __doc__ string of a parameterization parameter.
+        return self._parameterizations[0].get_param_doc(param)
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
