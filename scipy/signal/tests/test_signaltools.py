@@ -32,6 +32,7 @@ from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype, array_namespace
 )
+import scipy._lib.array_api_extra as xpx
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
@@ -3372,6 +3373,7 @@ class TestHilbert:
         assert xp.real(hilbert(in_typed)).dtype == dtype
 
 
+
 @skip_xp_backends("jax.numpy",
    reason="jax arrays do not support item assignment")
 class TestHilbert2:
@@ -3385,14 +3387,11 @@ class TestHilbert2:
         x = xp.asarray([[1.0 + 0.0j]])
         assert_raises(ValueError, hilbert2, x)
 
-        # x must be rank 2.
-        x = xp.reshape(xp.arange(24), (2, 3, 4))
-        assert_raises(ValueError, hilbert2, x)
-
         # Bad value for N.
         x = xp.reshape(xp.arange(16), (4, 4))
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2, 0))
+        assert_raises(ValueError, hilbert2, x, N=(0, 0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
@@ -3400,6 +3399,73 @@ class TestHilbert2:
         dtype = getattr(xp, dtype)
         in_typed = xp.zeros((2, 32), dtype=dtype)
         assert xp.real(signal.hilbert2(in_typed)).dtype == dtype
+    
+    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
+    def test_hilbert2_old_implementation(self, xp, shape):
+
+        def _hilbert2(x, N=None):
+            """
+            Compute the '2-D' analytic signal of `x`
+
+            Parameters
+            ----------
+            x : array_like
+                2-D signal data.
+            N : int or tuple of two ints, optional
+                Number of Fourier components. Default is ``x.shape``
+
+            Returns
+            -------
+            xa : ndarray
+                Analytic signal of `x` taken along axes (0,1).
+
+            References
+            ----------
+            .. [1] Wikipedia, "Analytic signal",
+                https://en.wikipedia.org/wiki/Analytic_signal
+
+            """
+            xp = array_namespace(x)
+            x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
+            if x.ndim > 2:
+                raise ValueError("x must be 2-D.")
+            if xp.isdtype(x.dtype, 'complex floating'):
+                raise ValueError("x must be real.")
+
+            if N is None:
+                N = x.shape
+            elif isinstance(N, int):
+                if N <= 0:
+                    raise ValueError("N must be positive.")
+                N = (N, N)
+            elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
+                raise ValueError("When given as a tuple, N must hold exactly "
+                                "two positive integers")
+
+            Xf = sp_fft.fft2(x, N, axes=(0, 1))
+            h1 = xp.zeros(N[0], dtype=Xf.dtype)
+            h2 = xp.zeros(N[1], dtype=Xf.dtype)
+            for h in (h1, h2):
+                N1 = h.shape[0]
+                if N1 % 2 == 0:
+                    h[0] = h[N1 // 2] = 1
+                    h[1:N1 // 2] = 2
+                else:
+                    h[0] = 1
+                    h[1:(N1 + 1) // 2] = 2
+
+            h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
+            k = x.ndim
+            while k > 2:
+                h = h[:, xp.newaxis]
+                k -= 1
+            x = sp_fft.ifft2(Xf * h, axes=(0, 1))
+            return x
+
+        x = xp.arange(shape[0] * shape[1]).reshape(shape)
+        xh_old = _hilbert2(x)
+        xh = hilbert2(x)
+        xp_assert_close(xh_old, xh)
 
 
 class TestEnvelope:
