@@ -3627,6 +3627,26 @@ class ContinuousDistribution(UnivariateDistribution):
 
 
 class DiscreteDistribution(UnivariateDistribution):
+    def __add__(self, loc):
+        loc = np.asarray(loc)
+        integral = (loc == np.round(loc))
+        loc[~integral] = np.nan
+        return super().__add__(loc=loc)
+
+    def __sub__(self, loc):
+        loc = np.asarray(loc)
+        integral = (loc == np.round(loc))
+        loc[~integral] = np.nan
+        return super.__sub__(loc=-loc)
+
+    def __mul__(self, scale):
+        message = "Scaling is currently only supported for continuous RVs."
+        raise NotImplementedError(message)
+
+    def __truediv__(self, scale):
+        message = "Scaling is currently only supported for continuous RVs."
+        raise NotImplementedError(message)
+
     def _overrides(self, method_name):
         if method_name in {'_logpdf_formula', '_pdf_formula'}:
             return True
@@ -4396,9 +4416,6 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
-        if not isinstance(X, ContinuousDistribution):
-            message = "Transformations are currently only supported for continuous RVs."
-            raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
         self._dist = X
@@ -4467,6 +4484,10 @@ class TruncatedDistribution(TransformedDistribution):
                           _Parameterization(_ub_param)]
 
     def __init__(self, X, /, *args, lb=-np.inf, ub=np.inf, **kwargs):
+        if not isinstance(X, ContinuousDistribution):
+            message = ("Truncated distributions are currently only supported for "
+                       "continuous RVs.")
+            raise NotImplementedError(message)
         return super().__init__(X, *args, lb=lb, ub=ub, **kwargs)
 
     def _process_parameters(self, lb=None, ub=None, **params):
@@ -4894,6 +4915,10 @@ class OrderStatisticDistribution(TransformedDistribution):
     _parameterizations = [_Parameterization(_r_param, _n_param)]
 
     def __init__(self, dist, /, *args, r, n, **kwargs):
+        if not isinstance(dist, ContinuousDistribution):
+            message = ("Order statistics are currently only supported for continuous "
+                       "RVs.")
+            raise NotImplementedError(message)
         super().__init__(dist, *args, r=r, n=n, **kwargs)
 
     def _support(self, *args, r, n, **kwargs):
@@ -5430,6 +5455,10 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     def __init__(self, X, /, *args, g, h, dh, logdh=None,
                  increasing=True, repr_pattern=None,
                  str_pattern=None, **kwargs):
+        if not isinstance(X, ContinuousDistribution):
+            message = ("Monotonic transforms are currently only supported for "
+                       "continuous RVs.")
+            raise NotImplementedError(message)
         super().__init__(X, *args, **kwargs)
         self._g = g
         self._h = h
@@ -5536,6 +5565,10 @@ class FoldedDistribution(TransformedDistribution):
     # with the general case; enhance later.
 
     def __init__(self, X, /, *args, **kwargs):
+        if not isinstance(X, ContinuousDistribution):
+            message = ("Folded distributions are currently only supported for "
+                       "continuous RVs.")
+            raise NotImplementedError(message)
         super().__init__(X, *args, **kwargs)
         # I think we need to allow `_support` to define whether the endpoints
         # are inclusive or not. In the meantime, it's best to ensure that the lower
