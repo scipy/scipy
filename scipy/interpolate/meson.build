@@ -211,6 +211,7 @@ py3.install_sources([
     '_polyint.py',
     '_rbf.py',
     '_rbfinterp.py',
+    '_rbfinterp_np.py',
     '_rgi.py',
     '_ndbspline.py',
     'dfitpack.py',
