@@ -357,7 +357,7 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
-        t = _as_float_array(t)
+        t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
         c[k] = 1.
