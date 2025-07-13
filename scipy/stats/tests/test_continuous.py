@@ -1464,19 +1464,17 @@ class TestMakeDistribution:
                 def support(self):
                     return 'a', 'b'
 
-                def pdf(self, x, a, b):
-                    return 1 / (x * (np.log(b) - np.log(a)))
-
             LogUniform = stats.make_distribution(MyLogUniform())
             dist_instance = LogUniform(a=2.0, b=3.0)
 
             # Test __str__ method
             assert str(dist_instance) == 'MyLogUniform(a=2.0, b=3.0)'
             # Test __repr__ method
-            assert repr(dist_instance) in {
-                'MyLogUniform(a=np.float64(2.0), b=np.float64(3.0))',
-                'MyLogUniform(a=2.0, b=3.0)',
-            }
+            if np.__version__ >= "2":
+                assert repr(dist_instance) == \
+                    'MyLogUniform(a=np.float64(2.0), b=np.float64(3.0))'
+            else:
+                assert repr(dist_instance) == 'MyLogUniform(a=2.0, b=3.0)'
 
 
 class TestTransforms:
