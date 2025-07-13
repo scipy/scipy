@@ -2,11 +2,11 @@
 import warnings
 from itertools import combinations_with_replacement
 from types import GenericAlias
+from math import comb
 
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.spatial import KDTree
-from scipy.special import comb
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
 from ._rbfinterp_pythran import (_build_system,
@@ -48,7 +48,7 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-def _monomial_powers(ndim, degree):
+def _monomial_powers_impl(ndim, degree):
     """Return the powers for each monomial in a polynomial.
 
     Parameters
@@ -65,18 +65,24 @@ def _monomial_powers(ndim, degree):
         monomial.
 
     """
-    nmonos = comb(degree + ndim, ndim, exact=True)
-    out = np.zeros((nmonos, ndim), dtype=np.dtype("long"))
+    nmonos = comb(degree + ndim, ndim)
+    out = [[0]*ndim for _ in range(nmonos)]
     count = 0
     for deg in range(degree + 1):
         for mono in combinations_with_replacement(range(ndim), deg):
             # `mono` is a tuple of variables in the current monomial with
             # multiplicity indicating power (e.g., (0, 1, 1) represents x*y**2)
             for var in mono:
-                out[count, var] += 1
+                out[count][var] += 1
 
             count += 1
 
+
+def _monomial_powers(ndim, degree):
+    out = _monomial_powers_impl(ndim, degree)
+    out = np.asarray(out, dtype=np.dtype("long"))
+    if len(out) == 0:
+        out = out.reshape(0, ndim)
     return out
 
 
