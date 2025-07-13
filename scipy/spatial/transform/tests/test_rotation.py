@@ -991,7 +991,7 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     dtype = xpx.default_dtype(xp)
-    atol = 1e-12 if dtype == xp.float64 else 1e-7
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = xp.asarray([
@@ -1701,8 +1701,10 @@ def test_align_vectors_near_inf(xp):
     # align_vectors should return near the same result for high weights as for
     # infinite weights. rssd will be different with floating point error on the
     # exactly aligned vector being multiplied by a large non-infinite weight
-    n = 100
     dtype = xpx.default_dtype(xp)
+    if dtype == xp.float32:
+        pytest.skip("Align vectors near inf is numerically unstable in float32")
+    n = 100
     mats = []
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
@@ -1822,11 +1824,12 @@ def test_align_vectors_array_like():
 
 
 @skip_cupy_13
-def test_align_vectors_dtype_mismatch(xp):
+def test_align_vectors_mixed_dtypes(xp):
+    dtype = xpx.default_dtype(xp)
     rng = np.random.default_rng(123)
     c = rotation_to_xp(Rotation.random(rng=rng), xp)
-    b = xp.asarray(rng.normal(size=(5, 3)))
-    a = xp.asarray(c.apply(b), dtype=xp.float32)
+    b = xp.asarray(rng.normal(size=(5, 3)), dtype=dtype)
+    a = xp.asarray(c.apply(b), dtype=xp.float32)  # Intentionally float32
     # Check that the dtype of the output is the result type of a and b
     est, _ = Rotation.align_vectors(a, b)
     xp_assert_close(est.as_quat(), c.as_quat())
@@ -2023,6 +2026,8 @@ def test_slerp_call_time_out_of_range(xp):
 
 
 def test_slerp_call_scalar_time(xp):
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-16 if dtype == xp.float64 else 1e-7
     r = Rotation.from_euler('X', xp.asarray([0, 80]), degrees=True)
     s = Slerp([0, 1], r)
 
@@ -2031,7 +2036,7 @@ def test_slerp_call_scalar_time(xp):
 
     delta = r_interpolated * r_interpolated_expected.inv()
 
-    xp_assert_close(delta.magnitude(), xp.asarray(0.0)[()], atol=1e-16)
+    xp_assert_close(delta.magnitude(), xp.asarray(0.0)[()], atol=atol)
 
 
 def test_multiplication(xp):

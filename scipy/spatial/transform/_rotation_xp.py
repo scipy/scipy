@@ -860,14 +860,23 @@ def _align_vectors_fixed(
 def pow(quat: Array, n: float) -> Array:
     xp = array_namespace(quat)
     device = xp_device(quat)
-    result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
-    # Special cases 0 -> identity, -1 -> inv, 1 -> copy
-    identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
-    identity = xpx.at(identity)[..., 3].set(1)
-    result = xp.where(xp.asarray(n == 0, device=device), identity, result)
-    result = xp.where(xp.asarray(n == -1, device=device), inv(quat), result)
-    result = xp.where(xp.asarray(n == 1, device=device), quat, result)
-    return result
+    if is_lazy_array(quat):
+        result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
+        # Special cases 0 -> identity, -1 -> inv, 1 -> copy
+        identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
+        identity = xpx.at(identity)[..., 3].set(1)
+        result = xp.where(xp.asarray(n == 0, device=device), identity, result)
+        result = xp.where(xp.asarray(n == -1, device=device), inv(quat), result)
+        result = xp.where(xp.asarray(n == 1, device=device), quat, result)
+        return result
+    if n == 0:
+        identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
+        return xpx.at(identity)[..., 3].set(1)
+    if n == -1:
+        return inv(quat)
+    if n == 1:
+        return quat
+    return from_rotvec(n * as_rotvec(quat))
 
 
 def _normalize_quaternion(quat: Array) -> Array:
@@ -1023,6 +1032,8 @@ def _get_angles(
     eps = 1e-7
     half_sum = xp.atan2(b, a)
     half_diff = xp.atan2(d, c)
+    # We zero-initialize to automatically cover singular cases where the second angle is
+    # not defined uniquely.
     angles = xp.zeros((*a.shape, 3), dtype=a.dtype, device=device)
 
     angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
@@ -1045,12 +1056,18 @@ def _get_angles(
             stacklevel=3,
         )
 
+    # This writes case1 into a0 where True and case2 everywhere else. This is sound
+    # because we later overwrite any values without singularity with the regular value
+    # of case0. The second angle is covered by default since we zero-initialized the
+    # second dimension.
     a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * (-1 if extrinsic else 1))
     angles = xpx.at(angles)[..., 0].set(a0)
 
+    # We overwrite the values of angles without singularities (case0)
     a1 = xp.where(case0, half_sum - half_diff, angles[..., angle_first])
     angles = xpx.at(angles)[..., angle_first].set(a1)
 
+    # Same as above but for the third angle. We overwrite the non-singular case0 values
     a3 = xp.where(case0, half_sum + half_diff, angles[..., angle_third])
     if not symmetric:
         a3 = a3 * sign
