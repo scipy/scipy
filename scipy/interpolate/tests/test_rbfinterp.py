@@ -20,22 +20,22 @@ def _vandermonde(x, degree):
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
 
-def _1d_test_function(x):
+def _1d_test_function(x, xp):
     # Test function used in Wahba's "Spline Models for Observational Data".
     # domain ~= (0, 3), range ~= (-1.0, 0.2)
     x = x[:, 0]
-    y = 4.26*(np.exp(-x) - 4*np.exp(-2*x) + 3*np.exp(-3*x))
+    y = 4.26*(xp.exp(-x) - 4*xp.exp(-2*x) + 3*xp.exp(-3*x))
     return y
 
 
-def _2d_test_function(x):
+def _2d_test_function(x, xp):
     # Franke's test function.
     # domain ~= (0, 1) X (0, 1), range ~= (0.0, 1.2)
     x1, x2 = x[:, 0], x[:, 1]
-    term1 = 0.75 * np.exp(-(9*x1-2)**2/4 - (9*x2-2)**2/4)
-    term2 = 0.75 * np.exp(-(9*x1+1)**2/49 - (9*x2+1)/10)
-    term3 = 0.5 * np.exp(-(9*x1-7)**2/4 - (9*x2-3)**2/4)
-    term4 = -0.2 * np.exp(-(9*x1-4)**2 - (9*x2-7)**2)
+    term1 = 0.75 * xp.exp(-(9*x1-2)**2/4 - (9*x2-2)**2/4)
+    term2 = 0.75 * xp.exp(-(9*x1+1)**2/49 - (9*x2+1)/10)
+    term3 = 0.5 * xp.exp(-(9*x1-7)**2/4 - (9*x2-3)**2/4)
+    term4 = -0.2 * xp.exp(-(9*x1-4)**2 - (9*x2-7)**2)
     y = term1 + term2 + term3 + term4
     return y
 
@@ -87,7 +87,7 @@ class _TestRBFInterpolator:
         # shape parameter (when smoothing == 0) in 1d.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
         x = 3*seq.random(50)
-        y = _1d_test_function(x)
+        y = _1d_test_function(x, np)
         xitp = 3*seq.random(50)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
@@ -99,7 +99,7 @@ class _TestRBFInterpolator:
         # shape parameter (when smoothing == 0) in 2d.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
         x = seq.random(100)
-        y = _2d_test_function(x)
+        y = _2d_test_function(x, np)
         xitp = seq.random(100)
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
@@ -114,7 +114,7 @@ class _TestRBFInterpolator:
         shift = 1e55
 
         x = seq.random(100)
-        y = _2d_test_function(x)
+        y = _2d_test_function(x, np)
         xitp = seq.random(100)
 
         if kernel in _SCALE_INVARIANT:
@@ -195,8 +195,8 @@ class _TestRBFInterpolator:
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = np.array([_2d_test_function(x),
-                      _2d_test_function(x[:, ::-1])]).T
+        y = np.array([_2d_test_function(x, np),
+                      _2d_test_function(x[:, ::-1], np)]).T
 
         yitp1 = self.build(x, y)(xitp)
         yitp2 = self.build(x, y[:, 0])(xitp)
@@ -213,7 +213,7 @@ class _TestRBFInterpolator:
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = _2d_test_function(x) + 1j*_2d_test_function(x[:, ::-1])
+        y = _2d_test_function(x, np) + 1j*_2d_test_function(x[:, ::-1], np)
 
         yitp1 = self.build(x, y)(xitp)
         yitp2 = self.build(x, y.real)(xitp)
@@ -231,8 +231,8 @@ class _TestRBFInterpolator:
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
 
-        y = _1d_test_function(x)
-        ytrue = _1d_test_function(xitp)
+        y = _1d_test_function(x, np)
+        ytrue = _1d_test_function(xitp, np)
         yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
 
         mse = np.mean((yitp - ytrue)**2)
@@ -247,8 +247,8 @@ class _TestRBFInterpolator:
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = _2d_test_function(x)
-        ytrue = _2d_test_function(xitp)
+        y = _2d_test_function(x, np)
+        ytrue = _2d_test_function(xitp, np)
         yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
 
         mse = np.mean((yitp - ytrue)**2)
@@ -266,8 +266,8 @@ class _TestRBFInterpolator:
         smoothing_range = 10**np.linspace(-4, 1, 20)
 
         x = 3*seq.random(100)
-        y = _1d_test_function(x) + rng.normal(0.0, noise, (100,))
-        ytrue = _1d_test_function(x)
+        y = _1d_test_function(x, np) + rng.normal(0.0, noise, (100,))
+        ytrue = _1d_test_function(x, np)
         rmse_within_tol = False
         for smoothing in smoothing_range:
             ysmooth = self.build(
@@ -305,7 +305,7 @@ class _TestRBFInterpolator:
         # ValueError should be raised if the observation points and evaluation
         # points have a different number of dimensions.
         y = Halton(2, scramble=False, seed=np.random.RandomState()).random(10)
-        d = _2d_test_function(y)
+        d = _2d_test_function(y, np)
         x = Halton(1, scramble=False, seed=np.random.RandomState()).random(10)
         match = 'Expected the second axis of `x`'
         with pytest.raises(ValueError, match=match):
@@ -409,7 +409,7 @@ class _TestRBFInterpolator:
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
 
-        y = _1d_test_function(x)
+        y = _1d_test_function(x, np)
 
         interp = self.build(x, y)
 
@@ -434,7 +434,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
 
-        y = _1d_test_function(x)
+        y = _1d_test_function(x, np)
 
         yitp1 = self.build(
             x, y,
@@ -459,7 +459,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = _2d_test_function(x)
+        y = _2d_test_function(x, np)
 
         yitp1 = self.build(
             x, y,
@@ -485,7 +485,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = _2d_test_function(x)
+        y = _2d_test_function(x, np)
 
         yitp1 = self.build(x, y)(xitp)
 
@@ -504,7 +504,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
         x = seq.random(100)
         xitp = seq.random(100)
 
-        y = _2d_test_function(x)
+        y = _2d_test_function(x, np)
 
         interp = self.build(x, y)
 
@@ -526,7 +526,7 @@ class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)
 
-        y = _1d_test_function(x)
+        y = _1d_test_function(x, np)
         yitp1 = self.build(x, y)(xitp)
         yitp2 = RBFInterpolator(x, y)(xitp)
 
