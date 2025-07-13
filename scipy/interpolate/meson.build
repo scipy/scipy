@@ -212,6 +212,7 @@ py3.install_sources([
     '_rbf.py',
     '_rbfinterp.py',
     '_rbfinterp_np.py',
+    '_rbfinterp_xp.py',
     '_rgi.py',
     '_ndbspline.py',
     'dfitpack.py',
