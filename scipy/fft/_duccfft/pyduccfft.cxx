@@ -225,8 +225,7 @@ template<typename T> NpArr r2r_fftpack_internal(const CNpArr &in_,
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, in.shape(), axes);
-  ducc0::r2r_fftpack(in, res, axes, real2hermitian, forward,
-    fct, nthreads);
+  ducc0::r2r_fftpack(in, res, axes, real2hermitian, forward, fct, nthreads);
   }
   return res_;
   }
