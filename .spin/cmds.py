@@ -721,10 +721,19 @@ def _dirty_git_working_dir():
     required=False,
     nargs=-1
 )
+@click.option(
+    '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
+    multiple=True,
+    help=(
+        "Array API backend "
+        "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', "
+        "'jax.numpy', 'dask.array')."
+    )
+)
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build_dir=None, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -759,6 +768,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
 
     if quick:
         bench_args = ['--quick'] + bench_args
+
+    if len(array_api_backend) != 0:
+        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
     if not compare:
         # No comparison requested; we build and benchmark the current version
