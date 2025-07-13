@@ -12,10 +12,8 @@
  *  \author Peter Bell
  */
 
-// Note: do not reorder, pybind11.h must come first (it includes Python.h)
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <pybind11/stl.h>
+#include <optional>
+#include <complex>
 
 #include "ducc0/fft/fft.h"
 #include "ducc0/fft/fftnd_impl.h"
@@ -28,7 +26,10 @@ using stride_t = ducc0::fmav_info::stride_t;
 using std::size_t;
 using std::ptrdiff_t;
 
-namespace py = pybind11;
+namespace py = ducc0::py;
+using ducc0::CNpArr;
+using ducc0::NpArr;
+using ducc0::OptNpArr;
 
 // Only instantiate long double transforms if they offer more precision
 using ldbl_t = typename std::conditional<
@@ -40,6 +41,8 @@ using clong = std::complex<ldbl_t>;
 using f32 = float;
 using f64 = double;
 using flong = ldbl_t;
+
+using OptAxes = std::optional<std::vector<ptrdiff_t>>;
 
 DUCC0_NOINLINE static size_t prev_good_size_cmplx(size_t n)
   {
@@ -88,16 +91,16 @@ DUCC0_NOINLINE static size_t prev_good_size_real(size_t n)
     return bestfound;
   }
 
-shape_t makeaxes(const py::array &in, const py::object &axes)
+shape_t makeaxes(const CNpArr &in, const OptAxes &axes)
   {
-  if (axes.is_none())
+  if (!axes)
     {
     shape_t res(size_t(in.ndim()));
     for (size_t i=0; i<res.size(); ++i)
       res[i]=i;
     return res;
     }
-  auto tmp=axes.cast<std::vector<ptrdiff_t>>();
+  auto tmp=axes.value();
   auto ndim = in.ndim();
   if ((tmp.size()>size_t(ndim)) || (tmp.size()==0))
     throw std::runtime_error("bad axes argument");
@@ -113,9 +116,9 @@ shape_t makeaxes(const py::array &in, const py::object &axes)
 
 #define DISPATCH(arr, T1, T2, T3, func, args) \
   { \
-  if (py::isinstance<py::array_t<T1>>(arr)) return func<double> args; \
-  if (py::isinstance<py::array_t<T2>>(arr)) return func<float> args;  \
-  if (py::isinstance<py::array_t<T3>>(arr)) return func<ldbl_t> args; \
+  if (ducc0::isPyarr<T1>(arr)) return func<double> args; \
+  if (ducc0::isPyarr<T2>(arr)) return func<float> args;  \
+  if (ducc0::isPyarr<T3>(arr)) return func<ldbl_t> args; \
   throw std::runtime_error("unsupported data type"); \
   }
 
@@ -137,24 +140,13 @@ template<typename T> T norm_fct(int inorm, const shape_t &shape,
   return norm_fct<T>(inorm, N);
   }
 
-template<typename T> py::array_t<T> prepare_output(py::object &out_,
-  const shape_t &dims)
-  {
-  if (out_.is_none()) return py::array_t<T>(dims);
-  auto tmp = out_.cast<py::array_t<T>>();
-  if (!tmp.is(out_)) // a new object was created during casting
-    throw std::runtime_error("unexpected data type for output array");
-  return tmp;
-  }
-
-template<typename T> py::array c2c_internal(const py::array &in_,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
+template<typename T> NpArr c2c_internal(const CNpArr &in_,
+  const OptAxes &axes_, bool forward, int inorm, const OptNpArr &out_,
   size_t nthreads)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<std::complex<T>>(in_);
-  auto res_ = prepare_output<std::complex<T>>(out_, in.shape());
-  auto res = ducc0::to_vfmav<std::complex<T>>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<std::complex<T>>(out_, in.shape(), "out");
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, in.shape(), axes);
@@ -163,14 +155,13 @@ template<typename T> py::array c2c_internal(const py::array &in_,
   return std::move(res_);
   }
 
-template<typename T> py::array c2c_sym_internal(const py::array &in_,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
+template<typename T> NpArr c2c_sym_internal(const CNpArr &in_,
+  const OptAxes &axes_, bool forward, int inorm, const OptNpArr &out_,
   size_t nthreads)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<T>(in_);
-  auto res_ = prepare_output<std::complex<T>>(out_, in.shape());
-  auto res = ducc0::to_vfmav<std::complex<T>>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<std::complex<T>>(out_, in.shape(), "out");
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, in.shape(), axes);
@@ -189,8 +180,8 @@ template<typename T> py::array c2c_sym_internal(const py::array &in_,
   return std::move(res_);
   }
 
-py::array c2c(const py::array &a, const py::object &axes_, bool forward,
-  int inorm, py::object &out_, size_t nthreads)
+NpArr c2c(const CNpArr &a, const OptAxes &axes_, bool forward,
+  int inorm, const OptNpArr &out_, size_t nthreads)
   {
   if (a.dtype().kind() == 'c')
     DISPATCH(a, c128, c64, clong, c2c_internal, (a, axes_, forward,
@@ -200,16 +191,15 @@ py::array c2c(const py::array &a, const py::object &axes_, bool forward,
            inorm, out_, nthreads))
   }
 
-template<typename T> py::array r2c_internal(const py::array &in_,
-  const py::object &axes_, bool forward, int inorm, py::object &out_,
+template<typename T> NpArr r2c_internal(const CNpArr &in_,
+  const OptAxes &axes_, bool forward, int inorm, const OptNpArr &out_,
   size_t nthreads)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<T>(in_);
   auto dims_out(in.shape());
   dims_out[axes.back()] = (dims_out[axes.back()]>>1)+1;
-  auto res_ = prepare_output<std::complex<T>>(out_, dims_out);
-  auto res = ducc0::to_vfmav<std::complex<T>>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<std::complex<T>>(out_, dims_out, "out");
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, in.shape(), axes);
@@ -218,21 +208,20 @@ template<typename T> py::array r2c_internal(const py::array &in_,
   return res_;
   }
 
-py::array r2c(const py::array &in, const py::object &axes_, bool forward,
-  int inorm, py::object &out_, size_t nthreads)
+NpArr r2c(const CNpArr &in, const OptAxes &axes_, bool forward,
+  int inorm, const OptNpArr &out_, size_t nthreads)
   {
   DISPATCH(in, f64, f32, flong, r2c_internal, (in, axes_, forward, inorm, out_,
     nthreads))
   }
 
-template<typename T> py::array r2r_fftpack_internal(const py::array &in_,
-  const py::object &axes_, bool real2hermitian, bool forward, int inorm,
-  py::object &out_, size_t nthreads)
+template<typename T> NpArr r2r_fftpack_internal(const CNpArr &in_,
+  const OptAxes &axes_, bool real2hermitian, bool forward, int inorm,
+  const OptNpArr &out_, size_t nthreads)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<T>(in_);
-  auto res_ = prepare_output<T>(out_, in.shape());
-  auto res = ducc0::to_vfmav<T>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<T>(out_, in.shape(), "out");
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, in.shape(), axes);
@@ -242,22 +231,21 @@ template<typename T> py::array r2r_fftpack_internal(const py::array &in_,
   return res_;
   }
 
-py::array r2r_fftpack(const py::array &in, const py::object &axes_,
-  bool real2hermitian, bool forward, int inorm, py::object &out_,
+NpArr r2r_fftpack(const CNpArr &in, const OptAxes &axes_,
+  bool real2hermitian, bool forward, int inorm, const OptNpArr &out_,
   size_t nthreads)
   {
   DISPATCH(in, f64, f32, flong, r2r_fftpack_internal, (in, axes_,
     real2hermitian, forward, inorm, out_, nthreads))
   }
 
-template<typename T> py::array dct_internal(const py::array &in_,
-  const py::object &axes_, int type, int inorm, py::object &out_,
+template<typename T> NpArr dct_internal(const CNpArr &in_,
+  const OptAxes &axes_, int type, int inorm, const OptNpArr &out_,
   size_t nthreads, bool ortho)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<T>(in_);
-  auto res_ = prepare_output<T>(out_, in.shape());
-  auto res = ducc0::to_vfmav<T>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<T>(out_, in.shape(), "out");
   {
   py::gil_scoped_release release;
   T fct = (type==1) ? norm_fct<T>(inorm, in.shape(), axes, 2, -1)
@@ -267,8 +255,8 @@ template<typename T> py::array dct_internal(const py::array &in_,
   return res_;
   }
 
-py::array dct(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads, const py::object & ortho_obj)
+NpArr dct(const CNpArr &in, int type, const OptAxes &axes_,
+  int inorm, const OptNpArr &out_, size_t nthreads, const py::object &ortho_obj)
   {
   bool ortho=inorm==1;
   if (!ortho_obj.is_none())
@@ -279,14 +267,13 @@ py::array dct(const py::array &in, int type, const py::object &axes_,
     nthreads, ortho))
   }
 
-template<typename T> py::array dst_internal(const py::array &in_,
-  const py::object &axes_, int type, int inorm, py::object &out_,
+template<typename T> NpArr dst_internal(const CNpArr &in_,
+  const OptAxes &axes_, int type, int inorm, const OptNpArr &out_,
   size_t nthreads, bool ortho)
   {
   auto axes = makeaxes(in_, axes_);
   auto in = ducc0::to_cfmav<T>(in_);
-  auto res_ = prepare_output<T>(out_, in.shape());
-  auto res = ducc0::to_vfmav<T>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<T>(out_, in.shape(), "out");
   {
   py::gil_scoped_release release;
   T fct = (type==1) ? norm_fct<T>(inorm, in.shape(), axes, 2, 1)
@@ -296,8 +283,8 @@ template<typename T> py::array dst_internal(const py::array &in_,
   return res_;
   }
 
-py::array dst(const py::array &in, int type, const py::object &axes_,
-  int inorm, py::object &out_, size_t nthreads, const py::object &ortho_obj)
+NpArr dst(const CNpArr &in, int type, const OptAxes &axes_,
+  int inorm, const OptNpArr &out_, size_t nthreads, const py::object &ortho_obj)
   {
   bool ortho=inorm==1;
   if (!ortho_obj.is_none())
@@ -308,9 +295,9 @@ py::array dst(const py::array &in, int type, const py::object &axes_,
     out_, nthreads, ortho))
   }
 
-template<typename T> py::array c2r_internal(const py::array &in_,
-  const py::object &axes_, size_t lastsize, bool forward, int inorm,
-  py::object &out_, size_t nthreads)
+template<typename T> NpArr c2r_internal(const CNpArr &in_,
+  const OptAxes &axes_, size_t lastsize, bool forward, int inorm,
+  const OptNpArr &out_, size_t nthreads)
   {
   auto axes = makeaxes(in_, axes_);
   size_t axis = axes.back();
@@ -320,8 +307,7 @@ template<typename T> py::array c2r_internal(const py::array &in_,
   if ((lastsize/2) + 1 != in.shape(axis))
     throw std::invalid_argument("bad lastsize");
   dims_out[axis] = lastsize;
-  py::array res_ = prepare_output<T>(out_, dims_out);
-  auto res = ducc0::to_vfmav<T>(res_);
+  auto [res_, res] = ducc0::get_OptNpArr_and_vfmav<T>(out_, dims_out, "out");
   {
   py::gil_scoped_release release;
   T fct = norm_fct<T>(inorm, dims_out, axes);
@@ -330,8 +316,8 @@ template<typename T> py::array c2r_internal(const py::array &in_,
   return res_;
   }
 
-py::array c2r(const py::array &in, const py::object &axes_, size_t lastsize,
-  bool forward, int inorm, py::object &out_, size_t nthreads)
+NpArr c2r(const CNpArr &in, const OptAxes &axes_, size_t lastsize,
+  bool forward, int inorm, const OptNpArr &out_, size_t nthreads)
   {
   DISPATCH(in, c128, c64, clong, c2r_internal, (in, axes_, lastsize, forward,
     inorm, out_, nthreads))
