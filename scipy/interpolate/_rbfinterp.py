@@ -1,4 +1,5 @@
 """Module for RBF interpolation."""
+import os
 import warnings
 from types import GenericAlias
 
@@ -9,7 +10,7 @@ from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
 from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
+    _asarray, array_namespace, xp_size, is_numpy, is_torch, is_jax, xp_capabilities
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -48,10 +49,29 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
+USE_JIT = os.environ.get("SCIPY_JIT", 0) == "1"
+
 def _get_backend(xp):
     if is_numpy(xp):
-        return _rbfinterp_np
-    return _rbfinterp_xp
+        if USE_JIT:
+            from . import _rbfinterp_numba
+            return _rbfinterp_numba
+        else:
+            return _rbfinterp_np
+    elif is_torch(xp):
+        if USE_JIT:
+            from . import _rbfinterp_dynamo
+            return _rbfinterp_dynamo
+        else:
+            return _rbfinterp_xp
+    elif is_jax(xp):
+        if USE_JIT:
+            from . import _rbfinterp_jaxjit
+            return  _rbfinterp_jaxjit
+        else:
+            return _rbfinterp_xp
+    else:
+        return _rbfinterp_xp
 
 
 extra_note="""Only the default ``neighbors=None`` is Array API compatible.
