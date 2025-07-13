@@ -6,8 +6,7 @@ from scipy._lib._array_api import xp_assert_close
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
-    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, _monomial_powers,
-    RBFInterpolator
+    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
 from scipy._lib._testutils import _run_concurrent_barrier
@@ -16,6 +15,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 def _vandermonde(x, degree):
     # Returns a matrix of monomials that span polynomials with the specified
     # degree evaluated at x.
+    from scipy.interpolate._rbfinterp_np import _monomial_powers  # XXX backends
     powers = _monomial_powers(x.shape[1], degree)
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
