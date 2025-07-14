@@ -2017,8 +2017,7 @@ trimdoc = """
         Whether to consider the limits as absolute values (False) or proportions
         to cut (True).
     axis : int, optional
-        Axis along which to trim.
-"""
+        Axis along which to trim."""
 
 
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
@@ -2026,8 +2025,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
     Trims an array by masking the data outside some given limits.
 
     Returns a masked version of the input array.
-
-    %s
+%s
 
     Examples
     --------
@@ -2126,8 +2124,7 @@ trim1 = trimtail
 def trimmed_mean(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                  axis=None):
     """Returns the trimmed mean of the data along the given axis.
-
-    %s
+%s
 
     """
     if (not isinstance(limits,tuple)) and isinstance(limits,float):
@@ -2145,8 +2142,7 @@ if trimmed_mean.__doc__:
 def trimmed_var(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
     """Returns the trimmed variance of the data along the given axis.
-
-    %s
+%s
     ddof : {0,integer}, optional
         Means Delta Degrees of Freedom. The denominator used during computations
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
@@ -2170,8 +2166,7 @@ if trimmed_var.__doc__:
 def trimmed_std(a, limits=(0.1,0.1), inclusive=(1,1), relative=True,
                 axis=None, ddof=0):
     """Returns the trimmed standard deviation of the data along the given axis.
-
-    %s
+%s
     ddof : {0,integer}, optional
         Means Delta Degrees of Freedom. The denominator used during computations
         is (n-ddof). DDOF=0 corresponds to a biased estimate, DDOF=1 to an un-
