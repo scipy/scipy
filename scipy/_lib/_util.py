@@ -9,6 +9,7 @@ import inspect
 import math
 import os
 import sys
+import textwrap
 from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
@@ -1209,3 +1210,8 @@ def np_vecdot(x1, x2, /, *, axis=-1):
         # of course there are other fancy ways of doing this (e.g. `einsum`)
         # but let's keep it simple since it's temporary
         return np.sum(x1 * x2, axis=axis)
+
+
+def _dedent_for_py313(s):
+    """Apply textwrap.dedent to s for Python versions 3.13 or later."""
+    return s if sys.version_info < (3, 13) else textwrap.dedent(s)
