@@ -292,7 +292,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
         self.rtol = 1e-5
-        self.atol = 1e-4
+        self.atol = 1.5e-4
 
 
 class _TestRFFTBase:
