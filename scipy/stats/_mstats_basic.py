@@ -41,7 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _dedent_for_py313
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
@@ -1987,7 +1987,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
 
 
-trimdoc = """
+trimdoc = _dedent_for_py313("""
     Parameters
     ----------
     a : sequence
@@ -2017,8 +2017,7 @@ trimdoc = """
         Whether to consider the limits as absolute values (False) or proportions
         to cut (True).
     axis : int, optional
-        Axis along which to trim.
-"""
+        Axis along which to trim.""")
 
 
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
