@@ -10,7 +10,7 @@ from ._rbfinterp_pythran import (
 )
 
 
-def _monomial_powers(ndim, degree):
+def _monomial_powers(ndim, degree, xp):
     out = _monomial_powers_impl(ndim, degree)
     out = np.asarray(out, dtype=np.dtype("long"))
     if len(out) == 0:

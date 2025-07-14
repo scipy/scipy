@@ -300,7 +300,7 @@ class RBFInterpolator:
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
-        powers = _backend._monomial_powers(ndim, degree)
+        powers = _backend._monomial_powers(ndim, degree, xp)
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
         # fewer observations than monomials.
