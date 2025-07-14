@@ -1,5 +1,5 @@
+import warnings
 import numpy as np
-from scipy.linalg import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.optimize import minimize_scalar
 from scipy.special import binom
@@ -16,7 +16,9 @@ def _solveh_banded(ab, b, calc_logdet=False):
     Hermitian positive-definite banded matrix defined by `ab`.
 
     Same as scipy.linalg.solveh_banded(lower=True, check_finite=False), but:
-    - also returns the log of the determinant
+    - also returns the log of the determinant and info
+    - sets info = 1 for condition number > MAX_COND
+    - no error is raised if info > 0
     - no input validation
     - only real values, no complex
     - only `lower = True` code path
@@ -36,12 +38,14 @@ def _solveh_banded(ab, b, calc_logdet=False):
         The solution to the system ``a x = b``. Shape of return matches shape of `b`.
     logdet : float
         Logarithm of the determinant of `ab`.
+    info : int
     """
     a1 = ab
     b1 = b
     overwrite_b = False
     overwrite_ab = False
-    logdet = 0
+    logdet = 0.0
+    MAX_COND = 1e20  # seems a bit arbitrary
 
     if a1.shape[0] == 2:
         ptsv, = get_lapack_funcs(("ptsv",), (a1, b1))
@@ -50,20 +54,26 @@ def _solveh_banded(ab, b, calc_logdet=False):
         e = a1[1, :-1]
         # ptsv uses LDL', returnes d=diag(D), du=diag(L, -1)
         d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
-        if calc_logdet:
+        dmin, dmax = d.min(), d.max()
+        if info == 0 and dmin < 0 or dmax > MAX_COND * dmin:
+            # Condition number = d.max() / d.min().
+            info = 1
+        if calc_logdet and info == 0:
             logdet = np.log(d).sum()
     else:
         pbsv, = get_lapack_funcs(("pbsv",), (a1, b1))
         # pbsv uses Cholesky LL', returns c=L in ab-storage format
         c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
                           overwrite_b=overwrite_b)
-        if calc_logdet:
+        cmin, cmax = c[0].min(), c[0].max()
+        if info == 0 and cmax**2 > MAX_COND * cmin**2:
+            # Condition number = c[0].max()**2 / c[0].min()**2.
+            info = 1
+        if calc_logdet and info == 0:
             logdet = 2 * np.log(c[0, :]).sum()
-    if info > 0:
-        raise LinAlgError(f"{info}th leading minor not positive definite")
     if info < 0:
         raise ValueError(f"illegal value in {-info}th argument of internal pbsv")
-    return x, logdet
+    return x, logdet, info
 
 
 def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
@@ -185,7 +195,7 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     return x
 
 
-def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
+def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_user=True):
     """
     Solve the WH optimization problem via the normal equations.
     
@@ -213,6 +223,7 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
     else:
         D = np.diff(np.eye(2*p + 1), n=p, axis=0)  # shape (p+1, 2p+1)
     P_raw = D.T @ D  # shape (2p+1, 2p+1) if n >= 2p+1 else (n, n)
+
     # Because our matrix A = np.eye(n, dtype=np.float64) + lamb * (D.T @ D) is
     # symmetric and banded with u = l = p, we construct it in the lower "ab"-format
     # for use in solveh_banded, i.e. each row in ab is a subdiagonal of A:
@@ -230,12 +241,44 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
             np.repeat(ab[:, p:p+1], n - (2*p+1), axis=1),
             ab[:, -p:],
         ])
+
     if weights is None:
         ab[0, :] += 1.0  # This corresponds to np.eye(n).
-        x, logdet = _solveh_banded(ab, y, calc_logdet=calc_logdet)
+        x, logdet, info = _solveh_banded(ab, y, calc_logdet=calc_logdet)
     else:
         ab[0, :] += weights
-        x, logdet = _solveh_banded(ab, weights * y, calc_logdet=calc_logdet)
+        x, logdet, info = _solveh_banded(ab, weights * y, calc_logdet=calc_logdet)
+    if info > 0:
+        # LinAlgError(f"{info}th leading minor not positive definite")
+        # For very large values of lamb, we know that
+        #   - the linear solver breaks down
+        #   - the solution approaches a polynomial least squares fit of degree
+        #     order - 1.
+        # Note that for a certain large lamb, WH reaches the polynomial least squares
+        # fit almost exactly. For larger lamb, WH starts to deviate from the polynomial
+        # (=worse solution due to numerical instability), until the solver breaks down.
+        if warn_user:
+            msg_weights = "" if weights is None else " or due to the weights"
+            msg = (
+                "The linear solver in Whittaker-Henderson smoothing detected a "
+                "numerical instability. This is likely due to a very large value of "
+                f"{lamb=}"
+                + msg_weights + ". "
+                "As Whittaker-Henderson approaches a polynomial of degree 'order - 1' "
+                "for large lamb, this polynomial (via least squares) is returned."
+            )
+            warnings.warn(msg, UserWarning, stacklevel=2)
+        x_range = np.arange(len(y))
+        poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
+        x = poly(x_range)
+        # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
+        # (with determinant understood as product of non-zero eigenvalues). 
+        # TODO: What about weights?
+        if calc_logdet:
+            logdet_DtD = _logdet_difference_matrix(order=order, n=n)
+            logdet = (n - order) * np.log(lamb) + logdet_DtD
+        else:
+            logdet = 0.0
     return x, logdet
 
 
@@ -359,7 +402,7 @@ def _reml(lamb, y, order, weights=None):
     """
     n = y.shape[0]
     x, logdet = _solve_WH_banded(
-        y=y, lamb=lamb, order=order, weights=weights, calc_logdet=True
+        y=y, lamb=lamb, order=order, weights=weights, calc_logdet=True, warn_user=False
     )
     logdet_DtD = _logdet_difference_matrix(order=order, n=n)
     residual = y - x

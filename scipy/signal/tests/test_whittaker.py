@@ -19,12 +19,12 @@ def test_solveh_banded():
     ab[0, :] = np.diagonal(A, 0)
     for i in range(1, n):
         ab[i, :-i] = np.diagonal(A, i)
-    x, logdet = _solveh_banded(ab, b, calc_logdet=True)
+    x, logdet, _ = _solveh_banded(ab, b, calc_logdet=True)
     assert_allclose(x, np.linalg.solve(A, b))
     assert_allclose(logdet, np.log(np.linalg.det(A)))
 
     # tridiagonal case
-    x, logdet = _solveh_banded(ab[:2], b, calc_logdet=True)
+    x, logdet, _ = _solveh_banded(ab[:2], b, calc_logdet=True)
     A_tri = (
         np.diag(np.diag(A)) + np.diag(np.diag(A, -1), -1) + np.diag(np.diag(A, 1), 1)
     )
@@ -116,7 +116,7 @@ def test_whittaker_direct_vs_fast_order2(n):
     assert_allclose(x1, x2)
 
 
-@pytest.mark.parametrize("order", [1, 2, 3])
+@pytest.mark.parametrize("order", [1, 2, 3, 4])
 def test_whittaker_limit_penalty(order):
     """Test that whittaker for close to zero and infinity penalty."""
     rng = np.random.default_rng(42)
@@ -138,6 +138,15 @@ def test_whittaker_limit_penalty(order):
         # As the sine is positive fom 0 to pi and negative from pi to 2*pi, we expect
         # a negative slope.
         assert np.diff(x)[0] < 0
+
+    # Extremely large lambda should trigger a user warning and produce the exact
+    # polynomial fit (separate code path where linear solver breaks down).
+    with pytest.warns(
+        UserWarning,
+        match="The linear solver in Whittaker-Henderson smoothing detected a numerical",
+    ):
+        x = whittaker_henderson(y, lamb=1e40, order=order)
+    assert_allclose(x, poly(x_poly), rtol=1e-10)
 
 
 def test_whittaker_unpenalized():
