@@ -355,13 +355,13 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     symmetric = i == k
     k = 3 - i - j if symmetric else k
 
-    symmetric = xp.asarray(symmetric, device=device)
+    mask = xp.asarray(symmetric, device=device)
     sign = xp.asarray((i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=device)
     # Permute quaternion elements
-    a = xp.where(symmetric, quat[..., 3], quat[..., 3] - quat[..., j])
-    b = xp.where(symmetric, quat[..., i], quat[..., i] + quat[..., k] * sign)
-    c = xp.where(symmetric, quat[..., j], quat[..., j] + quat[..., 3])
-    d = xp.where(symmetric, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
+    a = xp.where(mask, quat[..., 3], quat[..., 3] - quat[..., j])
+    b = xp.where(mask, quat[..., i], quat[..., i] + quat[..., k] * sign)
+    c = xp.where(mask, quat[..., j], quat[..., j] + quat[..., 3])
+    d = xp.where(mask, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
     angles = _get_angles(extrinsic, symmetric, sign, np.pi / 2, a, b, c, d)
     return _rad2deg(angles) if degrees else angles
