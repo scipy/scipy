@@ -5,11 +5,6 @@ from types import GenericAlias
 import numpy as np
 from scipy.spatial import KDTree
 
-#from ._rbfinterp_np import (
-#    _build_and_solve_system,
-#    _build_evaluation_coefficients,
-#)
-
 from . import _rbfinterp_np
 from . import _rbfinterp_xp
 

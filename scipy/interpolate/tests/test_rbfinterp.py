@@ -6,17 +6,21 @@ from scipy._lib._array_api import xp_assert_close
 from scipy.stats.qmc import Halton
 from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
-    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator
+    _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, RBFInterpolator,
+    _get_backend
     )
 from scipy.interpolate import _rbfinterp_pythran
 from scipy._lib._testutils import _run_concurrent_barrier
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
-def _vandermonde(x, degree):
+
+def _vandermonde(x, degree, xp=np):
     # Returns a matrix of monomials that span polynomials with the specified
     # degree evaluated at x.
     from scipy.interpolate._rbfinterp_np import _monomial_powers  # XXX backends
-    powers = _monomial_powers(x.shape[1], degree, np)
+    backend = _get_backend(xp)
+    powers = backend._monomial_powers(x.shape[1], degree, xp)
     return _rbfinterp_pythran._polynomial_matrix(x, powers)
 
 
@@ -82,13 +86,17 @@ def test_conditionally_positive_definite(kernel):
 
 class _TestRBFInterpolator:
     @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
-    def test_scale_invariance_1d(self, kernel):
+    def test_scale_invariance_1d(self, kernel, xp):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 1d.
         seq = Halton(1, scramble=False, seed=np.random.RandomState())
         x = 3*seq.random(50)
-        y = _1d_test_function(x, np)
+        x = xp.asarray(x)
+
+        y = _1d_test_function(x, xp)
         xitp = 3*seq.random(50)
+        xitp = xp.asarray(xitp)
+
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         xp_assert_close(yitp1, yitp2, atol=1e-8)
@@ -474,6 +482,7 @@ class TestRBFInterpolatorNeighborsNone(_TestRBFInterpolator):
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
 
+@skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
 class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
     # RBFInterpolator using 20 nearest neighbors.
     def build(self, *args, **kwargs):
@@ -514,6 +523,7 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
         _run_concurrent_barrier(10, worker_fn, interp, xitp)
 
 
+@skip_xp_backends(np_only=True, reason="neighbors not None uses KDTree")
 class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
     # RBFInterpolator using neighbors=np.inf. This should give exactly the same
     # results as neighbors=None, but it will be slower.
