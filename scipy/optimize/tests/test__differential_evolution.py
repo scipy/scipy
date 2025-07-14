@@ -1,7 +1,6 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-import multiprocessing
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
 import warnings
@@ -705,25 +704,18 @@ class TestDifferentialEvolutionSolver:
         )
         assert res.success
 
-    @pytest.mark.thread_unsafe
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
         bounds = [(0., 2.), (0., 2.)]
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
-        # Safely forking from a multithreaded process is
-        # problematic, and deprecated in Python 3.12, so
-        # we use a slower but portable alternative
-        # see gh-19848
-        ctx = multiprocessing.get_context("spawn")
-        with ctx.Pool(2) as p:
-            # should raise a UserWarning because the updating='immediate'
-            # is being overridden by the workers keyword
-            with warns(UserWarning):
-                with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
-                    solver.solve()
-            assert s._updating == 'deferred'
+        # should raise a UserWarning because the updating='immediate'
+        # is being overridden by the workers keyword
+        with warns(UserWarning):
+            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as s:
+                solver.solve()
+        assert s._updating == 'deferred'
 
     @pytest.mark.fail_slow(10)
     def test_parallel(self):
