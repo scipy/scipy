@@ -2643,8 +2643,10 @@ class Slerp:
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
         alpha = xpx.at(alpha, invalid_ind).set(xp.nan)
 
-        # TODO: Change indexing once integer arrays + ellipsis are supported by the
-        # Array API
+        # The array API does not support integer arrays + ellipsis indexing and won't
+        # stabilize this feature due to blockers in PyTorch. Therefore we need to
+        # construct the index for the last dimension manually.
+        # See https://github.com/scipy/scipy/pull/23249#discussion_r2198363047
         result = self.rotations[ind] * Rotation.from_rotvec(
             self.rotvecs[ind[:, None], xp.arange(3)] * alpha[:, None]
         )

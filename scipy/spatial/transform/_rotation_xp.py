@@ -19,6 +19,7 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_result_type,
     xp_promote,
+    is_jax,
 )
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
@@ -178,7 +179,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if num_axes < 1 or num_axes > 3:
         raise ValueError(
             "Expected axis specification to be a non-empty "
-            f"string of upto 3 characters, got {seq}"
+            f"string of up to 3 characters, got {seq}"
         )
 
     intrinsic = re.match(r"^[XYZ]{1,3}$", seq) is not None
@@ -666,7 +667,8 @@ def align_vectors(
     #
     # Note that we could also solve this by exploiting the externals of xpx.apply_where.
     # However, we'd have to rely on the implementation details of apply_where, which is
-    # something we should avoid in the long run.
+    # something we should avoid.
+    # See https://github.com/scipy/scipy/pull/22777#discussion_r2028868364
     if is_lazy_array(inf_branch):
         q_opt, rssd, sensitivity = _align_vectors(a, b, weights)
         q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_fixed(a, b, weights)
@@ -735,13 +737,12 @@ def _align_vectors_fixed(
     # arrays.
 
     inf_idx = xp.argmax(xp.astype(weight_is_inf, xp.uint8))
-    # xp.argmax returns an Array, but xp.roll does not support Arrays as shifts. For
-    # lazy execution models, we cannot convert to int because this raises concretization
-    # errors. We therefore convert to int only for eager execution models. This will
-    # ideally be solved by an update of array-api-compat.
-    # TODO: Double-check if this works for other lazy frameworks besides jax.
-    # Tracking issue: https://github.com/data-apis/array-api/issues/914
-    if not is_lazy_array(inf_idx):
+    # xp.argmax returns an Array, but the specification of xp.roll does not support
+    # Arrays as shifts. For lazy execution models we cannot convert to int because this
+    # raises a concretization error. However, jax does accept Arrays as shifts which
+    # allows jit compiling the function. Hence we do not convert to int for jax.
+    # See https://github.com/data-apis/array-api/issues/914#issuecomment-2918959918
+    if not is_jax(xp):
         inf_idx = int(inf_idx)
     a_sorted = xp.roll(a, shift=-inf_idx, axis=0)
     b_sorted = xp.roll(b, shift=-inf_idx, axis=0)

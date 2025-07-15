@@ -2379,7 +2379,7 @@ def test_compare_from_davenport_from_euler(xp):
                             rtol=rtol)
 
     # asymmetric sequences
-    angles = xpx.at(angles)[:, 1].set(angles[:, 1] - np.pi / 2)
+    angles = xpx.at(angles)[:, 1].subtract(np.pi / 2)
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
