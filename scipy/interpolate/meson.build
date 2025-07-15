@@ -162,17 +162,15 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
+extra_f2py_arg = '--f2cmap=""'
 if use_ilp64
    # generator only accepts strings, not files
    f2c_map_file = f2py_ilp64_opts[1]
-   extra_arg = f2py_ilp64_opts[0] + '=' + fs.parent(f2c_map_file) / fs.name(f2c_map_file)
-  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf', extra_args: extra_arg)
-else
-  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf')
+   extra_f2py_arg = f2py_ilp64_opts[0] + '=' + fs.parent(f2c_map_file) / fs.name(f2c_map_file)
 endif
 
 py3.extension_module('_dfitpack',
-  _dfitpackmodule_obj,
+  f2py_gen.process('src/dfitpack.pyf', extra_args: extra_f2py_arg),
   c_args: [Wno_unused_variable] +  c_flags_ilp64,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
