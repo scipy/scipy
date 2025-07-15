@@ -131,8 +131,6 @@ if use_ilp64
 
   py3.extension_module('_fblas_64',
     fblas64_module,
-    #['_fblas_64module.c'],
-    fortran_args: _fflag_ilp64,
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
@@ -149,9 +147,7 @@ if use_ilp64
 
   py3.extension_module('_flapack_64',
     flapack64_module,
-    #['_flapack_64module.c'],
     c_args: [Wno_empty_body],
-    fortran_args: _fflag_ilp64,
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],

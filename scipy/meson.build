@@ -666,8 +666,8 @@ if blas_symbol_suffix != ''
   # In addition, we now need to enable the Fortran preprocessor on all targets
   # that depend on BLAS/LAPACK
   # Note: this came from `scipy/build_utils/_fortran.py` in the distutils build.
-  _fflag_lp64 += _fflag_preprocess  # TODO: propagate _fflag_lp64
-  _fflag_ilp64 += _fflag_preprocess
+ # _fflag_lp64 += _fflag_preprocess
+ # _fflag_ilp64 += _fflag_preprocess
 endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
@@ -800,21 +800,25 @@ subdir('_build_utils')
 # Update BLAS/LAPACK dependencies to include wrapper libs
 blas_dep = declare_dependency(
   dependencies: blas_dep,
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
+  compile_args: [_fflag_lp64]  # XXX
 )
 lapack_dep = declare_dependency(
   dependencies: lapack_dep,
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
+  compile_args: [_fflag_lp64]
 )
 
 if use_ilp64
   blas_ilp64 = declare_dependency(
     dependencies: blas_ilp64,
-    link_with: [g77_abi_wrappers_ilp64]
+    link_with: [g77_abi_wrappers_ilp64],
+    compile_args: [_fflag_ilp64]
   )
   lapack_ilp64 = declare_dependency(
     dependencies: lapack_ilp64,
-    link_with: [g77_abi_wrappers_ilp64]
+    link_with: [g77_abi_wrappers_ilp64],
+    compile_args: [_fflag_ilp64]
   )
 endif
 
