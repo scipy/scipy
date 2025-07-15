@@ -130,6 +130,34 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     .. [4] Hodrick, R. J., & Prescott, E. C. (1997).
            Postwar U.S. Business Cycles: An Empirical Investigation.
           :doi:`10.2307/2953682`
+
+    Examples
+    --------
+    We use data from https://data.giss.nasa.gov/gistemp/ for global temperature
+    anomalies, i.e., deviations from the corresponding 1951-1980 means (Combined
+    Land-Surface Air and Sea-Surface Water Temperature Anomalies, Land-Ocean Temperature
+    Index, L-OTI).
+    We use weights to indicate where to inter- and extrapolate the missing data.
+
+    >>> import numpy as np
+    >>> from scipy.signal import whittaker_henderson
+    >>> import matplotlib.pyplot as plt
+    >>> data = np.genfromtxt(
+    ...     fname="https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv",
+    ...     delimiter=",", skip_header=2, missing_values="***"
+    ... )
+    >>> year = data[:, 0]
+    >>> x = year[0] + np.arange(len(y)) / 12
+    >>> y = data[:, 1:13].ravel()  # monthly temperature anomalies
+    >>> w = np.ones_like(y)
+    >>> w[np.isnan(y)] = 0
+    >>> z = whittaker_henderson(y, weights=w)
+    >>> plt.plot(x, y, label="measurement")
+    >>> plt.plot(x, z, label="smooth")
+    >>> plt.plot(x[w==0], z[w==0], color="red", label="inter-/extrapolation")
+    >>> plt.xlabel("year")
+    >>> plt.ylabel("temperatur deviation [°C]")
+    >>> plt.legend()
     """
     if order < 1 or int(order) != order:
         raise ValueError("Parameter order must be an integer larger equal 1.")
