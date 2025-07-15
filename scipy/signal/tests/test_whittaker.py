@@ -139,13 +139,16 @@ def test_whittaker_limit_penalty(order):
         # a negative slope.
         assert np.diff(x)[0] < 0
 
-    # Extremely large lambda should trigger a user warning and produce the exact
-    # polynomial fit (separate code path where linear solver breaks down).
-    with pytest.warns(
-        UserWarning,
-        match="The linear solver in Whittaker-Henderson smoothing detected a numerical",
-    ):
-        x = whittaker_henderson(y, lamb=1e40, order=order)
+    if order > 2:
+        # Very large lambda should trigger a user warning and produce the exact
+        # polynomial fit (separate code path where linear solver breaks down).
+        with pytest.warns(
+            UserWarning,
+            match="The linear solver in Whittaker-Henderson smoothing detected",
+        ):
+            x = whittaker_henderson(y, lamb=1e15, order=order)
+    else:
+        x = whittaker_henderson(y, lamb=1e20, order=order)
     assert_allclose(x, poly(x_poly), rtol=1e-10)
 
 

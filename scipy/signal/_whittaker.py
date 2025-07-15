@@ -17,7 +17,6 @@ def _solveh_banded(ab, b, calc_logdet=False):
 
     Same as scipy.linalg.solveh_banded(lower=True, check_finite=False), but:
     - also returns the log of the determinant and info
-    - sets info = 1 for condition number > MAX_COND
     - no error is raised if info > 0
     - no input validation
     - only real values, no complex
@@ -45,7 +44,6 @@ def _solveh_banded(ab, b, calc_logdet=False):
     overwrite_b = False
     overwrite_ab = False
     logdet = 0.0
-    MAX_COND = 1e20  # seems a bit arbitrary
 
     if a1.shape[0] == 2:
         ptsv, = get_lapack_funcs(("ptsv",), (a1, b1))
@@ -54,10 +52,6 @@ def _solveh_banded(ab, b, calc_logdet=False):
         e = a1[1, :-1]
         # ptsv uses LDL', returnes d=diag(D), du=diag(L, -1)
         d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
-        dmin, dmax = d.min(), d.max()
-        if info == 0 and dmin < 0 or dmax > MAX_COND * dmin:
-            # Condition number = d.max() / d.min().
-            info = 1
         if calc_logdet and info == 0:
             logdet = np.log(d).sum()
     else:
@@ -65,10 +59,6 @@ def _solveh_banded(ab, b, calc_logdet=False):
         # pbsv uses Cholesky LL', returns c=L in ab-storage format
         c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
                           overwrite_b=overwrite_b)
-        cmin, cmax = c[0].min(), c[0].max()
-        if info == 0 and cmax**2 > MAX_COND * cmin**2:
-            # Condition number = c[0].max()**2 / c[0].min()**2.
-            info = 1
         if calc_logdet and info == 0:
             logdet = 2 * np.log(c[0, :]).sum()
     if info < 0:
@@ -195,6 +185,22 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     return x
 
 
+def _polynomial_fit(y, lamb, order=2, weights=None, calc_logdet=False):
+    """Polynomial fit equivalent to WH for lamb -> intifity."""
+    n = len(y)
+    x_range = np.arange(n)
+    poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
+    if calc_logdet:
+        # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
+        # (with determinant understood as product of non-zero eigenvalues). 
+        # TODO: What about weights?
+        logdet_DtD = _logdet_difference_matrix(order=order, n=n)
+        logdet = (n - order) * np.log(lamb) + logdet_DtD
+    else:
+        logdet = 0.0
+    return poly(x_range), logdet
+
+
 def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_user=True):
     """
     Solve the WH optimization problem via the normal equations.
@@ -243,20 +249,39 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_use
         ])
 
     if weights is None:
-        ab[0, :] += 1.0  # This corresponds to np.eye(n).
-        x, logdet, info = _solveh_banded(ab, y, calc_logdet=calc_logdet)
+        # Check if lambda is so large that A = I + lambda D'D = lambda D'D. We even add
+        # a factor of 8, i.e. A should have at least 4 bits from I (not only D'D).
+        # Note that the minimal diagonal element of D'D is always 1.
+        if lamb * np.finfo(np.float64).eps > 8:
+            # If lambda approaches infinity, WH approaches a polynomial fit.
+            x, logdet = _polynomial_fit(
+                y, lamb=lamb, order=order, calc_logdet=calc_logdet
+            )
+            info = 0
+        else:
+            ab[0, :] += 1.0  # This corresponds to np.eye(n).
+            x, logdet, info = _solveh_banded(ab, y, calc_logdet=calc_logdet)
     else:
-        ab[0, :] += weights
-        x, logdet, info = _solveh_banded(ab, weights * y, calc_logdet=calc_logdet)
+        if (ab[0, :] == ab[0, :] + weights * 8).all():
+            # If lambda approaches infinity, WH approaches a polynomial fit.
+            x, logdet = _polynomial_fit(
+                y, lamb=lamb, order=order, weights=weights, calc_logdet=calc_logdet
+            )
+            info = 0
+        else:
+            ab[0, :] += weights
+            x, logdet, info = _solveh_banded(ab, weights * y, calc_logdet=calc_logdet)
+
     if info > 0:
         # LinAlgError(f"{info}th leading minor not positive definite")
         # For very large values of lamb, we know that
         #   - the linear solver breaks down
         #   - the solution approaches a polynomial least squares fit of degree
         #     order - 1.
-        # Note that for a certain large lamb, WH reaches the polynomial least squares
-        # fit almost exactly. For larger lamb, WH starts to deviate from the polynomial
-        # (=worse solution due to numerical instability), until the solver breaks down.
+        # Note that for a certain large lamb, WH already reaches the polynomial least
+        # squares fit almost exactly. For larger lamb, WH starts to deviate from the
+        # polynomial (=worse solution due to numerical instability), until the solver
+        # breaks down and reports info > 0.
         if warn_user:
             msg_weights = "" if weights is None else " or due to the weights"
             msg = (
@@ -268,17 +293,9 @@ def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False, warn_use
                 "for large lamb, this polynomial (via least squares) is returned."
             )
             warnings.warn(msg, UserWarning, stacklevel=2)
-        x_range = np.arange(len(y))
-        poly = np.polynomial.Polynomial.fit(x=x_range, y=y, deg=order - 1, w=weights)
-        x = poly(x_range)
-        # For large lambda, log|W + lambda D'D| ~ log|lambda D'D|
-        # (with determinant understood as product of non-zero eigenvalues). 
-        # TODO: What about weights?
-        if calc_logdet:
-            logdet_DtD = _logdet_difference_matrix(order=order, n=n)
-            logdet = (n - order) * np.log(lamb) + logdet_DtD
-        else:
-            logdet = 0.0
+        x, logdet = _polynomial_fit(
+            y, lamb, order=order, weights=weights, calc_logdet=calc_logdet
+        )
     return x, logdet
 
 
