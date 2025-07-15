@@ -664,25 +664,30 @@ add_newdoc("btdtria",
 
     See Also
     --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function
     btdtrib : Inverse of the beta cumulative distribution function, with respect to `b`.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
+    This function wraps the ``ibeta_inva`` routine from the
+    Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Algorithm 708: Significant Digit Computation of the Incomplete Beta
-           Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`b` and :math:`x`.
+
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+    >>> sc.btdtria(y, b, x)
+    1.2
 
     """)
 
@@ -717,26 +722,30 @@ add_newdoc("btdtrib",
 
     See Also
     --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function with
+                 respect to `x`.
     btdtria : Inverse of the beta cumulative distribution function, with respect to `a`.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `b`.
+    Wrapper for the `ibeta_invb` routine from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Algorithm 708: Significant Digit Computation of the Incomplete Beta
-           Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
+    Examples
+    --------
+    >>> import scipy.special as sc
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+
+    `btdtrib` is the inverse of `betainc` for fixed values of :math:`a` and
+    :math:`x`:
+
+    >>> sc.btdtrib(a, y, x)
+    3.1
 
     """)
 
@@ -5706,13 +5715,6 @@ add_newdoc("lpmv",
     -------
     pmv : scalar or ndarray
         Value of the associated Legendre function.
-
-    See Also
-    --------
-    lpmn : Compute the associated Legendre function for all orders
-           ``0, ..., m`` and degrees ``0, ..., n``.
-    clpmn : Compute the associated Legendre function at complex
-            arguments.
 
     Notes
     -----

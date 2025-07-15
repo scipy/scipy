@@ -10,28 +10,18 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork
+from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
                                       ishermitian)
+from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
-
-
-# The numpy facilities for type-casting checks are too slow for small sized
-# arrays and eat away the time budget for the checkups. Here we set a
-# precomputed dict container of the numpy.can_cast() table.
-
-# It can be used to determine quickly what a dtype can be cast to LAPACK
-# compatible types, i.e., 'float32, float64, complex64, complex128'.
-# Then it can be checked via "casting_dict[arr.dtype.char]"
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 
 # Linear equations
@@ -804,12 +794,6 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
 
-    .. warning::
-
-        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-        before passing them to `solve_toeplitz`.
-
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
@@ -876,8 +860,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     return _solve_toeplitz(c, r, b, check_finite)
 
 
-# Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
-# @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
@@ -1116,21 +1099,38 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-@_apply_over_batch(('a', 2))
-def inv(a, overwrite_a=False, check_finite=True):
-    """
+def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
+    r"""
     Compute the inverse of a matrix.
+
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    =============================  ================================
+     general                        'general' (or 'gen')
+     upper triangular               'upper triangular'
+     lower triangular               'lower triangular'
+     symmetric positive definite    'pos', 'pos upper', 'pos lower'
+    =============================  ================================
+
+    For the 'pos upper' and 'pos lower' options, only the specified
+    triangle of the input matrix is used, and the other triangle is not referenced.
 
     Parameters
     ----------
-    a : array_like
-        Square matrix to be inverted.
+    a : array_like, shape (..., M, M)
+        Square matrix (or a batch of matrices) to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    assume_a : str, optional
+        Valid entries are described above.
+        If omitted or ``None``, checks are performed to identify structure so the
+        appropriate solver can be called.
 
     Returns
     -------
@@ -1156,38 +1156,59 @@ def inv(a, overwrite_a=False, check_finite=True):
     array([[ 1.,  0.],
            [ 0.,  1.]])
 
+    Notes
+    -----
+
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
+
+    This routine checks the condition number of the `a` matrix and emits a
+    `LinAlgWarning` for ill-conditioned inputs.
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
 
-    # accommodate empty square matrices
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected square matrix, got {a1.shape=}")
+
+    # accommodate empty matrices
     if a1.size == 0:
         dt = inv(np.eye(2, dtype=a1.dtype)).dtype
         return np.empty_like(a1, dtype=dt)
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
-                                                  'getri_lwork'),
-                                                 (a1,))
-    lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
-    if info == 0:
-        lwork = _compute_lwork(getri_lwork, a1.shape[0])
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
-        # XXX: the following line fixes curious SEGFAULT when
-        # benchmarking 500x500 matrix inverse. This seems to
-        # be a bug in LAPACK ?getri routine because if lwork is
-        # minimal (when using lwork[0] instead of lwork[1]) then
-        # all tests pass. Further investigation is required if
-        # more such SEGFAULTs occur.
-        lwork = int(1.01 * lwork)
-        inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
-    if info > 0:
-        raise LinAlgError("singular matrix")
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
+
+    # keep the numbers in sync with C
+    structure = {
+        None: -1,
+        'general': 0,
+        # 'diagonal': 11,
+        'upper triangular': 21,
+        'lower triangular': 22,
+        'pos' : 101,
+        'pos upper': 111,     # the "other" triangle is not referenced
+        'pos lower': 112,
+    }[assume_a]
+
+    # a1 is well behaved, invert it.
+    result = _batched_linalg._inv(a1, structure, overwrite_a)
+    inv_a, is_ill_cond, is_singular, info = result
+
     if info < 0:
-        raise ValueError(
-            f'illegal value in {-info}-th argument of internal getrf|getri'
-        )
+        raise ValueError("Internal LAPACK error.")
+    if is_singular:
+        raise LinAlgError("A singular matrix detected")
+    if is_ill_cond:
+        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+
     return inv_a
 
 
@@ -1264,14 +1285,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype "{a1.dtype.name}" cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
@@ -1953,15 +1967,6 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         c = _asarray_validated(c_or_cr, check_finite=check_finite)
         r = c.conjugate()
 
-    if c.ndim > 1 or r.ndim > 1:
-        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
-               "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` arguments before passing them to "
-               "`toeplitz`, `matmul_toeplitz`, and `solve_toeplitz`.")
-        warnings.warn(msg, FutureWarning, stacklevel=2)
-        c = c.ravel()
-        r = r.ravel()
-
     if b is None:
         raise ValueError('`b` must be an array, not None.')
 
@@ -1993,12 +1998,6 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
-
-    .. warning::
-
-        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-        before passing them to `matmul_toeplitz`.
 
     Parameters
     ----------
@@ -2113,9 +2112,16 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     """
 
     from ..fft import fft, ifft, rfft, irfft
+    c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
 
-    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False)
+    return _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
+
+
+@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'))
+def _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
+                                                              keep_b_shape=False,
+                                                              enforce_square=False)
     n, m = x.shape
 
     T_nrows = len(c)

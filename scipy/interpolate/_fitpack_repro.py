@@ -57,7 +57,11 @@ def _get_residuals(x, y, t, k, w):
     _, _, c = _lsq_solve_qr(x, y, t, k, w)
     c = np.ascontiguousarray(c)
     spl = BSpline(t, c, k)
-    return _compute_residuals(w2, spl(x), y)
+    residuals = _compute_residuals(w2, spl(x), y)
+    fp = residuals.sum()
+    if np.isnan(fp):
+        raise ValueError(_iermesg[1])
+    return residuals, fp
 
 
 def _compute_residuals(w2, splx, y):
@@ -226,10 +230,10 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
         x, y, w, k, s, xb, xe, parametric=np.ndim(y) == 2
     )
 
-    yield from _generate_knots_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, nest=nest)
+    yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
 
 
-def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
+def _generate_knots_impl(x, y, w, xb, xe, k, s, nest):
 
     acc = s * TOL
     m = x.size    # the number of data points
@@ -258,8 +262,7 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
 
         # construct the LSQ spline with this set of knots
         fpold = fp
-        residuals = _get_residuals(x, y, t, k, w=w)
-        fp = residuals.sum()
+        residuals, fp = _get_residuals(x, y, t, k, w=w)
         fpms = fp - s
 
         # c  test whether the approximation sinf(x) is an acceptable solution.
@@ -300,7 +303,7 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
 
             # recompute if needed
             if j < nplus - 1:
-                residuals = _get_residuals(x, y, t, k, w=w)
+                residuals, _ = _get_residuals(x, y, t, k, w=w)
 
     # this should never be reached
     return
@@ -536,11 +539,15 @@ class Bunch:
         self.__dict__.update(**kwargs)
 
 
-_iermesg = {
-2: """error. a theoretically impossible result was found during
+_iermesg1 = """error. a theoretically impossible result was found during
 the iteration process for finding a smoothing spline with
 fp = s. probably causes : s too small.
-there is an approximation returned but the corresponding
+"""
+
+_iermesg = {
+1: _iermesg1 + """the weighted sum of squared residuals is becoming NaN
+""",
+2: _iermesg1 + """there is an approximation returned but the corresponding
 weighted sum of squared residuals does not satisfy the
 condition abs(fp-s)/s < tol.
 """,
@@ -647,7 +654,7 @@ def root_rati(f, p0, bracket, acc):
     return Bunch(converged=converged, root=p, iterations=it, ier=ier)
 
 
-def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
+def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest):
     """Shared infra for make_splrep and make_splprep.
     """
     acc = s * TOL
@@ -659,12 +666,12 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
         nest = max(m + k + 1, 2*k + 3)
     else:
         if nest < 2*(k + 1):
-            raise ValueError(f"`nest` too small: {nest = } < 2*(k+1) = {2*(k+1)}.")    
+            raise ValueError(f"`nest` too small: {nest = } < 2*(k+1) = {2*(k+1)}.")
         if t is not None:
             raise ValueError("Either supply `t` or `nest`.")
 
     if t is None:
-        gen = _generate_knots_impl(x, y, w=w, k=k, s=s, xb=xb, xe=xe, nest=nest)
+        gen = _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
         t = list(gen)[-1]
     else:
         fpcheck(x, t, k)
@@ -685,13 +692,11 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
     # ### bespoke solver ####
     # initial conditions
     # f(p=inf) : LSQ spline with knots t   (XXX: reuse R, c)
-    residuals = _get_residuals(x, y, t, k, w=w)
-    fp = residuals.sum()
+    _, fp = _get_residuals(x, y, t, k, w=w)
     fpinf = fp - s
 
     # f(p=0): LSQ spline without internal knots
-    residuals = _get_residuals(x, y, np.array([xb]*(k+1) + [xe]*(k+1)), k, w)
-    fp0 = residuals.sum()
+    _, fp0 = _get_residuals(x, y, np.array([xb]*(k+1) + [xe]*(k+1)), k, w)
     fp0 = fp0 - s
 
     # solve
@@ -837,7 +842,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
     x, y, w, k, s, xb, xe = _validate_inputs(x, y, w, k, s, xb, xe, parametric=False)
 
-    spl = _make_splrep_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, t=t, nest=nest)
+    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest)
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
@@ -854,7 +859,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
 
     Parameters
     ----------
-    x : array_like, shape (m, ndim)
+    x : array_like, shape (ndim, m)
         Sampled data points representing the curve in ``ndim`` dimensions.
         The typical use is a list of 1D arrays, each of length ``m``.
     w : array_like, shape(m,), optional
@@ -981,7 +986,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue, parametric=True)
 
-    spl = _make_splrep_impl(u, x, w=w, xb=ub, xe=ue, k=k, s=s, t=t, nest=nest)
+    spl = _make_splrep_impl(u, x, w, ub, ue, k, s, t, nest)
 
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
@@ -989,4 +994,3 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     spl1 = BSpline(spl.t, cc, spl.k, axis=1)
 
     return spl1, u
-

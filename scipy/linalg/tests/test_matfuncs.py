@@ -6,12 +6,12 @@
 """
 import functools
 import pytest
+import warnings
 
 import numpy as np
 from numpy import array, identity, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
-                           assert_array_less, assert_array_equal, assert_warns,
-                           suppress_warnings)
+                           assert_array_less, assert_array_equal)
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
@@ -91,9 +91,6 @@ class TestSignM:
 
 
 class TestLogM:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1738098768840254)
-
     @pytest.mark.filterwarnings("ignore:.*inaccurate.*:RuntimeWarning")
     def test_nils(self):
         a = array([[-2., 25., 0., 0., 0., 0., 0.],
@@ -125,8 +122,9 @@ class TestLogM:
         assert_(not np.allclose(A_round_trip, A, rtol=1e-5, atol=1e-14))
 
     def test_round_trip_random_float(self):
+        rng = np.random.default_rng(1738098768840254)
         for n in range(1, 6):
-            M_unscaled = self.rng.uniform(size=(n, n))
+            M_unscaled = rng.uniform(size=(n, n))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
 
@@ -140,18 +138,18 @@ class TestLogM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
                 # Check logm round trip.
-                with suppress_warnings() as sup:
-                    sup.filter(category=RuntimeWarning)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
 
                     M_logm = logm(M)
                     M_logm_round_trip = expm(M_logm)
                     assert_allclose(M_logm_round_trip, M, err_msg=err_msg)
 
     def test_round_trip_random_complex(self):
-
+        rng = np.random.default_rng(1738098768840254)
         for n in range(1, 6):
-            M_unscaled = (self.rng.standard_normal((n, n)) +
-                          1j*self.rng.standard_normal((n, n)))
+            M_unscaled = (rng.standard_normal((n, n)) +
+                          1j*rng.standard_normal((n, n)))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_logm = logm(M)
@@ -211,21 +209,19 @@ class TestLogM:
                 A_logm, info = logm(A)
                 assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
-    @pytest.mark.thread_unsafe
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
-            expected_warning = _matfuncs_inv_ssq.LogmExactlySingularWarning
-            L = assert_warns(expected_warning, logm, M)
+            with pytest.warns(_matfuncs_inv_ssq.LogmExactlySingularWarning):
+                L = logm(M)
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
-    @pytest.mark.thread_unsafe
     def test_nearly_singular(self):
         M = np.array([[1e-100]])
-        expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
-        L = assert_warns(expected_warning, logm, M)
+        with pytest.warns(_matfuncs_inv_ssq.LogmNearlySingularWarning):
+            L = logm(M)
         E = expm(L)
         assert_allclose(E, M, atol=1e-14)
 
@@ -261,7 +257,6 @@ class TestLogM:
         assert log_a.shape == (0, 0)
         assert log_a.dtype == log_a0.dtype
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('dtype', [int, float, np.float32, complex, np.complex64])
     def test_no_ZeroDivisionError(self, dtype):
         # gh-17136 reported inconsistent behavior in `logm` depending on input dtype:
@@ -329,8 +324,8 @@ class TestSqrtM:
             assert_(not any(w.imag or w.real < 0 for w in W))
 
             # Last test matrix is singular so suppress the warning
-            with suppress_warnings() as sup:
-                sup.filter(category=LinAlgWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", LinAlgWarning)
 
                 # check float type preservation
                 A = np.array(matrix_as_list, dtype=float)
@@ -385,8 +380,8 @@ class TestSqrtM:
                 [0, 0, 3, 0],
                 [0, 0, 0, 3],
                 [0, 0, 0, 0]], dtype=dt)
-            with suppress_warnings() as sup:
-                sup.filter(category=LinAlgWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", LinAlgWarning)
 
                 A_sqrtm = sqrtm(A)
                 assert_allclose(np.tril(A_sqrtm), np.zeros((4, 4)))
@@ -432,8 +427,8 @@ class TestSqrtM:
                       [0, 0, 0, 0],
                       [sqrt(0.5), 0, 0, sqrt(0.5)]])
         assert_allclose(R @ R, M, atol=1e-14)
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LinAlgWarning)
 
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
@@ -441,16 +436,16 @@ class TestSqrtM:
         M = np.diag([2, 1, 0])
         R = np.diag([sqrt(2), 1, 0])
         assert_allclose(R @ R, M, atol=1e-14)
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=LinAlgWarning)
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh7839(self):
         M = np.zeros((2, 2))
         R = np.zeros((2, 2))
         # Catch and silence LinAlgWarning
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=LinAlgWarning)
 
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
@@ -459,6 +454,13 @@ class TestSqrtM:
         M.fill(0.94)
         np.fill_diagonal(M, 1)
         assert np.isrealobj(sqrtm(M))
+
+    def test_gh23278(self):
+        M = np.array([[1., 0., 0.], [0, 1, -1j], [0, 1j, 2]])
+        sq = sqrtm(M)
+        assert_allclose(sq @ sq, M, atol=1e-14)
+        sq = sqrtm(M.astype(np.complex64))
+        assert_allclose(sq @ sq, M, atol=1e-6)
 
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.eye(10, dtype=np.uint8)
@@ -567,10 +569,11 @@ class TestSqrtM:
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         for p in range(1, 5):
             for n in range(1, 5):
-                M_unscaled = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                M_unscaled = (rng.standard_normal((n, n)) +
+                              1j * rng.standard_normal((n, n)))
                 for scale in np.logspace(-4, 4, 9):
                     M = M_unscaled * scale
                     M_root = fractional_matrix_power(M, 1/p)
@@ -582,10 +585,10 @@ class TestFractionalMatrixPower:
         # this happens when the matrix has an eigenvalue
         # with no imaginary component and with a real negative component,
         # and it means that the principal branch does not exist.
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         for p in range(1, 5):
             for n in range(1, 5):
-                M_unscaled = np.random.randn(n, n)
+                M_unscaled = rng.standard_normal((n, n))
                 for scale in np.logspace(-4, 4, 9):
                     M = M_unscaled * scale
                     M_root = fractional_matrix_power(M, 1/p)
@@ -593,10 +596,10 @@ class TestFractionalMatrixPower:
                     assert_allclose(M_round_trip, M)
 
     def test_larger_abs_fractional_matrix_powers(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         for n in (2, 3, 5):
             for i in range(10):
-                M = np.random.randn(n, n) + 1j * np.random.randn(n, n)
+                M = rng.standard_normal((n, n)) + 1j * rng.standard_normal((n, n))
                 M_one_fifth = fractional_matrix_power(M, 0.2)
                 # Test the round trip.
                 M_round_trip = np.linalg.matrix_power(M_one_fifth, 5)
@@ -656,8 +659,8 @@ class TestFractionalMatrixPower:
             assert_allclose(np.tril(A_round_trip, 1), np.tril(A, 1))
 
     def test_briggs_helper_function(self):
-        np.random.seed(1234)
-        for a in np.random.randn(10) + 1j * np.random.randn(10):
+        rng = np.random.default_rng(1234)
+        for a in rng.standard_normal(10) + 1j * rng.standard_normal(10):
             for k in range(5):
                 x_observed = _matfuncs_inv_ssq._briggs_helper_function(a, k)
                 x_expected = a ** np.exp2(-k) - 1
@@ -810,7 +813,6 @@ class TestExpM:
         a.flags.writeable = False
         expm(a)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(5)
     def test_gh18086(self):
         A = np.zeros((400, 400), dtype=float)
@@ -894,10 +896,10 @@ class TestExpmFrechet:
         rng = np.random.default_rng(1726500908359153)
         # try a bunch of crazy inputs
         rfuncs = (
-                np.random.uniform,
-                np.random.normal,
-                np.random.standard_cauchy,
-                np.random.exponential)
+                rng.uniform,
+                rng.normal,
+                rng.standard_cauchy,
+                rng.exponential)
         ntests = 100
         for i in range(ntests):
             rfunc = rfuncs[rng.choice(4)]
@@ -941,8 +943,9 @@ class TestExpmFrechet:
     def test_medium_matrix(self):
         # profile this to see the speed difference
         n = 1000
-        A = np.random.exponential(size=(n, n))
-        E = np.random.exponential(size=(n, n))
+        rng = np.random.default_rng(1234)
+        A = rng.exponential(size=(n, n))
+        E = rng.exponential(size=(n, n))
         sps_expm, sps_frechet = expm_frechet(
                 A, E, method='SPS')
         blockEnlarge_expm, blockEnlarge_frechet = expm_frechet(
@@ -972,9 +975,9 @@ def _relative_error(f, A, perturbation):
 
 class TestExpmConditionNumber:
     def test_expm_cond_smoke(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         for n in range(1, 4):
-            A = np.random.randn(n, n)
+            A = rng.standard_normal((n, n))
             kappa = expm_cond(A)
             assert_array_less(0, kappa)
 
@@ -989,7 +992,7 @@ class TestExpmConditionNumber:
         assert_array_less(1e36, kappa)
 
     def test_univariate(self):
-        np.random.seed(12345)
+        rng = np.random.default_rng(1234)
         for x in np.linspace(-5, 5, num=11):
             A = np.array([[x]])
             assert_allclose(expm_cond(A), abs(x))
@@ -997,7 +1000,7 @@ class TestExpmConditionNumber:
             A = np.array([[x]])
             assert_allclose(expm_cond(A), abs(x))
         for i in range(10):
-            A = np.random.randn(1, 1)
+            A = rng.standard_normal((1, 1))
             assert_allclose(expm_cond(A), np.absolute(A)[0, 0])
 
     @pytest.mark.slow

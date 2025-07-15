@@ -388,7 +388,7 @@ def rosen(x):
     return r
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -472,7 +472,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.

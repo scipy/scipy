@@ -343,8 +343,8 @@ problem it solves.
 The main user-visible difference of the parametric case is the user interface:
 
 - instead of two data arrays, ``x`` and ``y``, `make_splprep` receives a single
-  two-dimensional array, where the second dimension has size :math:`d` and each
-  data array is stored along the first dimension (alternatively, you can supply
+  two-dimensional array, where the first dimension has size :math:`d` and each
+  data array is stored along the second dimension (alternatively, you can supply
   a list of 1D arrays).
 
 - the return value is pair: a `BSpline` instance and the array of parameter

@@ -1299,7 +1299,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     n = xp.arange(0, M, dtype=xp.float64, device=device)
     alpha = (M - 1) / 2.0
     w = (special.i0(beta * xp.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
-         special.i0(beta))
+         special.i0(xp.asarray(beta, dtype=xp.float64)))
 
     return _truncate(w, needs_trunc)
 

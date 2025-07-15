@@ -30,7 +30,7 @@ dependencies:
   - asv >=0.6
   - conda-build
   - hypothesis
-  - array-api-strict<2.1.1
+  - array-api-strict>=2.3.1
   # For type annotations
   - mypy
   - typing_extensions
@@ -56,10 +56,6 @@ dependencies:
   - threadpoolctl
   # For CLI
   - spin
-  - rich-click
-  - click
-  - doit>=0.36.0
-  - pydevtool
   # For linting
   - ruff>=0.0.292
   - cython-lint

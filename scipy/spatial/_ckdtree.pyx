@@ -31,10 +31,6 @@ cdef extern from "<limits.h>":
 
 __all__ = ['cKDTree']
 
-cdef extern from *:
-    int NPY_LIKELY(int)
-    int NPY_UNLIKELY(int)
-
 
 # C++ implementations
 # ===================
@@ -188,7 +184,7 @@ cdef class coo_entries:
         _dtype = [('i',np.intp),('j',np.intp),('v',np.float64)]
         res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.uint8)
@@ -211,7 +207,7 @@ cdef class coo_entries:
             coo_entry *pr
             dict res_dict
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             res_dict = dict()
             for k in range(n):
@@ -261,7 +257,7 @@ cdef class ordered_pairs:
             np.uintp_t uintptr
             np.intp_t n
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.intp)
@@ -1076,7 +1072,7 @@ cdef class cKDTree:
         results = n * [None]
         for i in range(n):
             m = <np.intp_t> (vvres[i].size())
-            if NPY_LIKELY(m > 0):
+            if (m > 0):
                 tmp = m * [None]
                 cur = vvres[i].data()
                 for j in range(m):

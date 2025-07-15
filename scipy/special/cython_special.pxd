@@ -49,8 +49,8 @@ cpdef double betaln(double x0, double x1) noexcept nogil
 cpdef double binom(double x0, double x1) noexcept nogil
 cpdef double boxcox(double x0, double x1) noexcept nogil
 cpdef double boxcox1p(double x0, double x1) noexcept nogil
-cpdef double btdtria(double x0, double x1, double x2) noexcept nogil
-cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double cbrt(double x0) noexcept nogil
 cpdef double chdtr(double x0, double x1) noexcept nogil
 cpdef double chdtrc(double x0, double x1) noexcept nogil
@@ -237,7 +237,6 @@ cpdef double sindg(double x0) noexcept nogil
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil
 cpdef double stdtr(double x0, double x1) noexcept nogil
 cpdef double stdtridf(double x0, double x1) noexcept nogil
 cpdef double stdtrit(double x0, double x1) noexcept nogil

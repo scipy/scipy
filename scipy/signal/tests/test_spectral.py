@@ -1,16 +1,18 @@
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp, suppress_warnings)
+                           assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
+from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
-from scipy.signal import (periodogram, welch, lombscargle, coherence,
+from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
                           spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
 from scipy.signal._spectral_py import _spectral_helper
@@ -18,7 +20,6 @@ from scipy.signal._spectral_py import _spectral_helper
 # Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
-from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 
 
 class TestPeriodogram:
@@ -415,9 +416,9 @@ class TestWelch:
         x[0] = 1
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with suppress_warnings() as sup:
-            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
-            sup.filter(UserWarning, msg)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "nperseg=256 is greater than signal.*", UserWarning)
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -560,6 +561,15 @@ class TestWelch:
         assert_raises(ValueError, welch, x, nperseg=8,
                       average='unrecognised-average')
 
+    def test_ratio_scale_to(self):
+        """Verify the factor of ``sum(abs(window)**2)*fs / abs(sum(window))**2``
+        used in the `welch`  and `csd` docstrs. """
+        x, win, fs = np.array([1., 0, 0, 0]), np.ones(4), 12
+        params = dict(fs=fs, window=win, return_onesided=False, detrend=None)
+        p_dens = welch(x, scaling='density', **params)[1]
+        p_spec = welch(x, scaling='spectrum', **params)[1]
+        p_fac = sum(win**2)*fs / abs(sum(win))**2
+        assert_allclose(p_spec / p_dens, p_fac)
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -583,6 +593,36 @@ class TestCSD:
 
         assert_allclose(f, f1)
         assert_allclose(c, c1)
+
+    def test_unequal_length_input_1D(self):
+        """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 1d arrays.
+
+        This test ensures that issue 23036 is fixed.
+        """
+        x = np.tile([4, 0, -4, 0], 4)
+
+        kw = dict(fs=len(x), window='boxcar', nperseg=4)
+        X0 = signal.csd(x, np.copy(x), **kw)[1]  # `x is x` must be False
+        X1 = signal.csd(x, x[:8], **kw)[1]
+        X2 = signal.csd(x[:8], x, **kw)[1]
+        xp_assert_close(X1, X0 / 2)
+        xp_assert_close(X2, X0 / 2)
+
+    def test_unequal_length_input_3D(self):
+        """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 3d arrays.
+
+        This test ensures that issue 23036 is fixed.
+        """
+        n = 8
+        x = np.zeros(2 * 3 * n).reshape(2, n, 3)
+        x[:, 0, :] = n
+
+        kw = dict(fs=n, window='boxcar', nperseg=n, detrend=None, axis=1)
+        X0 = signal.csd(x, x.copy(), **kw)[1]  # `x is x` must be False
+        X1 = signal.csd(x, x[:, :2, :], **kw)[1]
+        X2 = signal.csd(x[:, :2, :], x, **kw)[1]
+        xp_assert_close(X1, X0)
+        xp_assert_close(X2, X0)
 
     def test_real_onesided_even(self):
         x = np.zeros(16)
@@ -735,6 +775,8 @@ class TestCSD:
         win_err = signal.get_window('hann', 32)
         assert_raises(ValueError, csd, x, x,
               10, win_err, nperseg=None)  # because win longer than signal
+        with pytest.raises(ValueError, match="Parameter nperseg=0.*"):
+            csd(x, x, 0, nperseg=0)
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))
@@ -778,9 +820,9 @@ class TestCSD:
 
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with suppress_warnings() as sup:
-            msg = "nperseg = 256 is greater than input length  = 8, using nperseg = 8"
-            sup.filter(UserWarning, msg)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "nperseg=256 is greater than signal length.*", UserWarning)
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -810,6 +852,11 @@ class TestCSD:
     def test_nfft_too_short(self):
         assert_raises(ValueError, csd, np.ones(12), np.zeros(12), nfft=3,
                       nperseg=4)
+
+    def test_incompatible_inputs(self):
+        with pytest.raises(ValueError, match='x and y cannot be broadcast.*'):
+            csd(np.ones((1, 8, 1)), np.ones((2, 8)), nperseg=4)
+
 
     def test_real_onesided_even_32(self):
         x = np.zeros(16, 'f')
@@ -957,10 +1004,13 @@ class TestSpectrogram:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "nperseg = 1025 is greater than input length  = 1024, "
-                       "using nperseg = 1024",)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "nperseg = 1025 is greater than input length  = 1024, "
+                "using nperseg = 1024",
+                UserWarning,
+            )
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
@@ -1772,9 +1822,12 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg)
 
         # Check that asking for onesided switches to twosided
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "Input data is complex, switching to return_onesided=False")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Input data is complex, switching to return_onesided=False",
+                UserWarning,
+            )
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
                             return_onesided=True, scaling=scaling)

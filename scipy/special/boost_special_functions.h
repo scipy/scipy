@@ -264,6 +264,91 @@ ibeta_inv_double(double a, double b, double p)
     return ibeta_inv_wrap(a, b, p, SpecialPolicy());
 }
 
+template<typename Real>
+static inline
+Real ibeta_inva_wrap(Real p, Real b, Real x)
+{
+    Real y;
+
+    if (std::isnan(p) || std::isnan(b) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((b <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_inva(b, x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("btdtria", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("btdtria", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("btdtria", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_inva_float(float p, float b, float x)
+{
+    return ibeta_inva_wrap(p, b, x);
+}
+
+double
+ibeta_inva_double(double p, double b, double x)
+{
+    return ibeta_inva_wrap(p, b, x);
+}
+
+template<typename Real>
+static inline
+Real ibeta_invb_wrap(Real a, Real p, Real x)
+{
+    Real y;
+
+    if (std::isnan(p) || std::isnan(a) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((a <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_invb(a, x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("btdtrib", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_invb_float(float a, float p, float x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
+
+double
+ibeta_invb_double(double a, double p, double x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
 
 template<typename Real>
 static inline
@@ -699,8 +784,22 @@ Real
 ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {
+        try {
         return boost::math::pdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    }
+    catch (const std::overflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
+    }
+    catch (const std::underflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
+        return 0;
+    }
+    catch (...) {
+        sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
+        return NAN;
+    }
     }
     return NAN; // inf or -inf returns NAN
 }
@@ -1317,6 +1416,9 @@ binom_cdf_wrap(const Real x, const Real n, const Real p)
     if (std::isfinite(x)) {
         return boost::math::cdf(
             boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    }
+    if (std::isnan(x)) {
+	return std::numeric_limits<double>::quiet_NaN();
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);

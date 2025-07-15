@@ -1,7 +1,10 @@
+import warnings
+
 from itertools import product
 from unittest.mock import Mock
+
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
-                           assert_equal, assert_no_warnings, suppress_warnings)
+                           assert_equal, assert_no_warnings)
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
@@ -190,10 +193,12 @@ def test_integration():
         else:
             fun = fun_rational
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun, t_span, y0, rtol=rtol,
                             atol=atol, method=method, dense_output=True,
                             jac=jac, vectorized=vectorized)
@@ -247,10 +252,12 @@ def test_integration_complex():
     tc = np.linspace(t_span[0], t_span[1])
     for method, jac in product(['RK23', 'RK45', 'DOP853', 'BDF'],
                                [None, jac_complex, jac_complex_sparse]):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_complex, t_span, y0, method=method,
                             dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
@@ -779,10 +786,12 @@ def test_t_eval_early_event():
     t_span = [5, 9]
     t_eval = np.linspace(7.5, 9, 16)
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
                             method=method, t_eval=t_eval, events=early_event,
                             jac=jac_rational)
