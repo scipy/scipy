@@ -717,9 +717,7 @@ class TestDifferentialEvolutionSolver:
                 solver.solve()
         assert s._updating == 'deferred'
 
-    @pytest.mark.thread_unsafe(reason="ThreadPool deadlocks")
-    @pytest.mark.fail_slow(10)
-    def test_parallel(self):
+    def test_parallel_threads(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         # use threads instead of Process to speed things up for this simple example
@@ -730,6 +728,9 @@ class TestDifferentialEvolutionSolver:
             assert solver._updating == 'deferred'
             solver.solve()
 
+    @pytest.mark.fail_slow(10)
+    def test_parallel_processes(self):
+        bounds = [(0., 2.), (0., 2.)]
         with DifferentialEvolutionSolver(
             rosen, bounds, updating='deferred', workers=2, popsize=3, tol=0.1
         ) as solver:
