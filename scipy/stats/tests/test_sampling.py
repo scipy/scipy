@@ -505,7 +505,7 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
-    @pytest.mark.thread_unsafe(reason="deadlocks in parallel")
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     def test_basic(self, dist, mv_ex):
         with warnings.catch_warnings():
             # filter the warnings thrown by UNU.RAN
