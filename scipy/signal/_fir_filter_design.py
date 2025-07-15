@@ -834,7 +834,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     xp = array_namespace(bands, desired, weight)
     bands = np.asarray(bands)
     desired = np.asarray(desired)
-    if weight:
+    if weight is not None:
         weight = np.asarray(weight)
 
     fs = _validate_fs(fs, allow_none=True)

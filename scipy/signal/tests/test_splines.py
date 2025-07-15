@@ -3,8 +3,7 @@ import math
 
 import numpy as np
 import pytest
-import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import is_cupy, xp_default_dtype
+from scipy._lib._array_api import is_cupy, xp_default_dtype, concat_1d
 from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 from scipy.signal._spline import (
@@ -13,10 +12,6 @@ from scipy.signal import symiirorder1, symiirorder2
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-
-
-def npr(xp, *args):
-    return xp.concat(tuple(xpx.atleast_nd(x, ndim=1, xp=xp) for x in args))
 
 
 def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
@@ -263,7 +258,7 @@ class TestSymIIR:
              r**(n_exp + 3) * xp.sin(omega * (n_exp + 4)) +
              r**(n_exp + 4) * xp.sin(omega * (n_exp + 3))) / xp.sin(omega))
 
-        expected = npr(xp, fwd_initial_1, fwd_initial_2)[None, :]
+        expected = concat_1d(xp, fwd_initial_1, fwd_initial_2)[None, :]
         expected = xp.astype(expected, dtype)
 
         n = 100

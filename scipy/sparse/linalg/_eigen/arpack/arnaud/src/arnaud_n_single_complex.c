@@ -364,7 +364,8 @@ ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC, multiply with reciprocal
-            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / cabsf(workl[iheig + k]));
+            float mag_sq = powf(cabsf(workl[iheig + k]), 2.0);
+            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / mag_sq);
             workl[ihbds + k] = _FCmulcc(_FCmulcc(workl[ihbds + k], temp), temp);
 #else
             temp = workl[iheig + k];
@@ -386,7 +387,8 @@ ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC
-            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / cabsf(workl[iheig + k]));
+            float mag_sq = powf(cabsf(workl[iheig + k]), 2.0);
+            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / mag_sq);
             d[k] = ARNAUD_cplxf(crealf(temp) + crealf(sigma), cimagf(temp) + cimagf(sigma));
 #else
             d[k] = 1.0 / workl[iheig + k] + sigma;
@@ -415,7 +417,8 @@ ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
             {
 #if defined(_MSC_VER)
                 // Complex division is not supported in MSVC
-                temp = _FCmulcr(conjf(workl[iheig + j]), 1.0 / cabsf(workl[iheig + j]));
+                float mag_sq = powf(cabsf(workl[iheig + j]), 2.0);
+                temp = _FCmulcr(conjf(workl[iheig + j]), 1.0 / mag_sq);
                 workev[j] = _FCmulcc(workl[invsub + j*ldq + V->ncv], temp);
 #else
                 workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
@@ -1312,10 +1315,6 @@ cnapps(int n, int* kev, int np, ARNAUD_CPLXF_TYPE* shift, ARNAUD_CPLXF_TYPE* v,
     float tmp_dbl;
     ARNAUD_CPLXF_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
 
-    #if defined(_MSC_VER)
-    ARNAUD_CPLXF_TYPE tmp_cplx2;
-    #endif
-
     ARNAUD_CPLXF_TYPE cdbl1 = ARNAUD_cplxf(1.0, 0.0);
     ARNAUD_CPLXF_TYPE cdbl0 = ARNAUD_cplxf(0.0, 0.0);
 
@@ -1513,7 +1512,8 @@ cneigh(float* rnorm, int n, ARNAUD_CPLXF_TYPE* h, int ldh, ARNAUD_CPLXF_TYPE* ri
     int select[1] = { 0 };
     int int1 = 1, j;
     float temp;
-    ARNAUD_CPLXF_TYPE vl[1] = { 0.0 };
+    ARNAUD_CPLXF_TYPE vl[1];
+    vl[0] = ARNAUD_cplxf(0.0, 0.0);
     ARNAUD_CPLXF_TYPE c1 = ARNAUD_cplxf(1.0, 0.0), c0 = ARNAUD_cplxf(0.0, 0.0);
 
     //  1. Compute the eigenvalues, the last components of the
