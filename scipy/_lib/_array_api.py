@@ -166,9 +166,6 @@ def eager_warns(warning_type, *, match=None, xp):
     """
     import pytest
     from scipy._lib._util import ignore_warns
-    # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
-    # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
-    __thread_safe__ = False  # noqa: F841
     if is_numpy(xp) or is_array_api_strict(xp) or is_cupy(xp):
         return pytest.warns(warning_type, match=match)
     return ignore_warns(warning_type, match='' if match is None else match)
