@@ -52,9 +52,9 @@ end python module zvode__user__routines
 python module _vode
   usercode '''
 #ifdef HAVE_BLAS_ILP64
-typedef npy_int64 F_INT;
+#define F_INT npy_int64
 #else
-typedef int F_INT;
+#define F_INT int
 #endif
 '''
     interface
