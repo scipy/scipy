@@ -106,13 +106,7 @@ Support for ILP64 BLAS and LAPACK is still experimental; at the time of writing
 SciPy always requires LP64 (32-bit integer size) BLAS/LAPACK. You can build SciPy
 with *additional* ILP64 support. This will result in SciPy requiring both BLAS and
 LAPACK variants, where some extensions link to the ILP64 variant, while other
-extensions link to the LP64 variant. From Python, choosing the variant is done
-through the ``get_blas_funcs`` and ``get_lapack_funcs`` functions::
-
-    >>> from scipy.linalg.blas import get_blas_funcs
-    >>> daxpy = get_blas_funcs('axpy', (np.ones(3),), ilp64='preferred')
-    >>> daxpy.int_dtype
-    dtype('int64')
+extensions link to the LP64 variant.
 
 Building with ILP64 support requires several NumPy additions to ``meson``, which have
 not been merged to upstream yet::
@@ -132,6 +126,27 @@ for the ILP64 variant::
     >>> python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
     >>> export PKG_CONFIG_PATH=`pwd`
     >>> spin build --with-scipy-openblas -S-Duse-ilp64=true
+
+From Python, low-level BLAS and LAPACK functions are available from ``scipy.linalg.blas``
+and ``scipy.linalg.lapack`` namespaces. For backwards compatibility, importing a name
+from either of these namespaces always gives you an LP64 variant, regardless of
+whether SciPy is built with or without the ILP64 support:
+
+```
+>>> from scipy.linalg.blas import dgemm     # this is an LP64 function
+```
+
+To choose the variant of a low-level routine, use ``get_blas_funcs`` and
+``get_lapack_funcs`` functions::
+
+    >>> from scipy.linalg.blas import get_blas_funcs
+    >>> daxpy = get_blas_funcs('axpy', (np.ones(3),), ilp64='preferred')
+    >>> daxpy.int_dtype
+    dtype('int64')       # depends on the build option
+
+
+High-level linear algebra functions (``norm``, ``solve`` and so on) should use this
+mechanism under the hood.
 
 
 Work-in-progress
