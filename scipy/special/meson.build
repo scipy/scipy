@@ -176,7 +176,7 @@ py3.extension_module('_ellip_harm_2',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep, lapack_dep],
+  dependencies: [xsf_dep, lapack_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
 )

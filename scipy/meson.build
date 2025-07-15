@@ -312,7 +312,6 @@ if blas_name == 'mkl'
   endif
 endif
 
-# fallback BLAS detection
 blas_dep = declare_dependency(
   dependencies: blas,
   compile_args: _args_blas_lapack
@@ -369,12 +368,6 @@ else
   )
 endif
 
-# Reuse the names, so we ensure we don't lose the arguments wrapped in with
-# declare_dependency. Also, avoids changing `dependencies: blas` to blas_dep in other files.
-# XXX: unused, remove?
-#blas = blas_dep
-#lapack = lapack_dep
-
 # Run ILP64 BLAS detection, if asked
 if use_ilp64
   # Okay, we need ILP64 BLAS and LAPACK *in addition to LP64*. So we need to
@@ -407,10 +400,6 @@ if use_ilp64
       blas_ilp64 = dependency('scipy-openblas64')
       lapack_ilp64 = blas_ilp64
 
-      if not blas_ilp64.found()
-        error('scipy-openblas64 not found.')
-      endif
-
   else
     # XXX: ILP64 detection has only been tested for MKL and scipy-openblas64
     if blas_name == 'openblas'
@@ -438,8 +427,6 @@ if use_ilp64
     _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
     _blas_incdir = ['.']
   endif
-  # Declare the ILP64 dependencies
-  message('BLAS / LAPACK ILP64 detected: ', blas_ilp64.name(), ', ', lapack_ilp64.name())
 
   blas_ilp64 = declare_dependency(
     dependencies: [blas_ilp64],

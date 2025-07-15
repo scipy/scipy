@@ -1,19 +1,16 @@
 name: BLAS tests (Linux)
 
-# This file is meant for testing different BLAS/LAPACK flavors and build
-# options on Linux. All other yml files for Linux will only test without BLAS
-# (mostly because that's easier and faster to build) or with the same 64-bit
-# OpenBLAS build that is used in the wheel jobs.
+# This file is meant for testing LP64/ILP64 BLAS/LAPACK flavors and build
+# options on Linux. All other yml files for Linux will only test LP64 BLAS/LAPACK flavors.
 #
 # Jobs and their purpose:
 #
 #   - mkl:
-#         Tests MKL installed from PyPI (because easiest/fastest, if broken) in
-#         3 ways: both LP64 and ILP64 via pkg-config, and then using the
-#         Single Dynamic Library (SDL, or `libmkl_rt`).
+#         Tests MKL installed from PyPI (because easiest/fastest) in
+#         2 ways: both LP64 and ILP64 via pkg-config.
 #
 #    - scipy-openblas64:
-#         Test ILP64-enabled build with scipy-openblas32 and scipy-openblas64.
+#         Tests ILP64-enabled build with scipy-openblas32 and scipy-openblas64.
 #
 
 on:
@@ -39,11 +36,12 @@ jobs:
     runs-on: ubuntu-latest
     name: "MKL LP64"
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
       with:
         submodules: recursive
         fetch-depth: 0
-    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.11'
 
@@ -62,18 +60,19 @@ jobs:
         spin build -S-Dblas=mkl
 
     - name: Test
-      run: spin test -j 2
+      run: spin test -j2
 
 
   mkl-ilp64:
     runs-on: ubuntu-latest
     name: "MKL ILP64"
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
       with:
         submodules: recursive
         fetch-depth: 0
-    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.11'
 
@@ -92,18 +91,18 @@ jobs:
         spin build -S-Dblas=mkl -S-Duse-ilp64=true
 
     - name: Test
-      run: spin test -j 2
+      run: spin test -j2
 
 
   scipy-openblas-ilp64:
     runs-on: ubuntu-latest
     name: "scipy-openblas ILP64"
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
         fetch-depth: 0
-    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.11'
 
@@ -115,15 +114,16 @@ jobs:
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
         pip install scipy-openblas32 scipy-openblas64
+
+    - name: Write out scipy-openblas64.pc
         # spin does this for scipy-openblas32
         python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
-        export PKG_CONFIG_PATH=`pwd`
 
     - name: Build with ILP64
       run: |
         spin build --with-scipy-openblas -S-Duse-ilp64=true
 
     - name: Test
-      run: spin test -j 2
+      run: spin test -j2
 
 

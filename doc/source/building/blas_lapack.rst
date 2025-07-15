@@ -100,13 +100,13 @@ user wants to override this autodetection mechanism for building against plain
 ----------------------------------
 
 Support for ILP64 BLAS and LAPACK is still experimental; at the time of writing
-(Apr 2025) it is only available for two BLAS/LAPACK configurations: MKL and
+(July 2025) it is only available for two BLAS/LAPACK configurations: MKL and
 ``scipy-openblas``.
 
 SciPy always requires LP64 (32-bit integer size) BLAS/LAPACK. You can build SciPy
 with *additional* ILP64 support. This will result in SciPy requiring both BLAS and
 LAPACK variants, where some extensions link to the ILP64 variant, while other
-extensions link to the LP64 variant. From python, choosing the variant is done
+extensions link to the LP64 variant. From Python, choosing the variant is done
 through the ``get_blas_funcs`` and ``get_lapack_funcs`` functions::
 
     >>> from scipy.linalg.blas import get_blas_funcs
@@ -120,7 +120,7 @@ not been merged to upstream yet::
     $ pip install git+https://github.com/numpy/meson.git@main-numpymeson
 
 For a development build with MKL, install the library and its development headers, and
-give use the ``ilp64=true`` option::
+give use the ``ilp64=true`` build option::
 
     $ pip install mkl mkl-devel
     $ spin build -S-Dblas=mkl -S-Duse-ilp64=true
