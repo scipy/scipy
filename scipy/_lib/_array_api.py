@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal, TypeAlias
+from collections.abc import Iterable
 
 import numpy as np
 import numpy.typing as npt
@@ -38,6 +39,8 @@ from scipy._lib._array_api_override import (
     array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
 )
 from scipy._lib._docscrape import FunctionDoc
+from scipy._lib import array_api_extra as xpx
+
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -163,9 +166,6 @@ def eager_warns(warning_type, *, match=None, xp):
     """
     import pytest
     from scipy._lib._util import ignore_warns
-    # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
-    # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
-    __thread_safe__ = False  # noqa: F841
     if is_numpy(xp) or is_array_api_strict(xp) or is_cupy(xp):
         return pytest.warns(warning_type, match=match)
     return ignore_warns(warning_type, match='' if match is None else match)
@@ -549,6 +549,15 @@ def xp_result_device(*args):
         if is_array_api_obj(arg):
             return xp_device(arg)
     return None
+
+
+# np.r_ replacement
+def concat_1d(xp: ModuleType | None, *arrays: Iterable[ArrayLike]) -> Array:
+    """A replacement for `np.r_` as `xp.concat` does not accept python scalars
+       or 0-D arrays.
+    """
+    arys = [xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp) for a in arrays]
+    return xp.concat(arys)
 
 
 def is_marray(xp):

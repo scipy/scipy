@@ -1,7 +1,7 @@
 import sys
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
     _asarray, assert_array_almost_equal,
     is_jax, np_compat,
@@ -843,10 +843,11 @@ class TestAffineTransform:
     def test_affine_transform24(self, order, xp):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = xp.asarray([4, 1, 3, 2])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                'The behavior of affine_transform with a 1-D array .* has changed',
+                UserWarning)
             out1 = ndimage.affine_transform(data, xp.asarray([2]), -1, order=order)
         out2 = ndimage.affine_transform(data, xp.asarray([[2]]), -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -855,10 +856,10 @@ class TestAffineTransform:
     def test_affine_transform25(self, order, xp):
         # consistency between diagonal and non-diagonal case; see issue #1547
         data = xp.asarray([4, 1, 3, 2])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                        'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+                       'has changed', UserWarning)
             out1 = ndimage.affine_transform(data, xp.asarray([0.5]), -1, order=order)
         out2 = ndimage.affine_transform(data, xp.asarray([[0.5]]), -1, order=order)
         assert_array_almost_equal(out1, out2)
@@ -912,10 +913,10 @@ class TestAffineTransform:
         for out in [xp.empty_like(data),
                     xp.empty_like(data).astype(data.dtype.newbyteorder()),
                     data.dtype, data.dtype.newbyteorder()]:
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
                            'The behavior of affine_transform with a 1-D array '
-                           '.* has changed')
+                           '.* has changed', UserWarning)
                 matrix = xp.asarray([1, 1])
                 returned = ndimage.affine_transform(data, matrix, output=out)
             result = out if returned is None else returned
@@ -1234,10 +1235,10 @@ class TestZoom:
                            [9, 10, 11, 12]], dtype=dtype)
         if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                        'The behavior of affine_transform with a 1-D array .* '
-                       'has changed')
+                       'has changed', UserWarning)
             out = ndimage.affine_transform(data, xp.asarray([0.5, 0.5]), 0,
                                            (6, 8), order=order)
         assert_array_almost_equal(out[::2, ::2], data)
@@ -1300,7 +1301,6 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
-    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))

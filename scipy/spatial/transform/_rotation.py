@@ -2457,7 +2457,12 @@ class Rotation:
         to the correct type in frameworks that may not support double precision (e.g.
         jax by default).
         """
-        dtype = xp_result_type(quat, xp=xp, force_floating=True)
+        # Legacy behavior: NumPy rotations always use float64. The cython backend uses
+        # float64 views and will raise on Buffer dtype mismatches.
+        if is_numpy(xp):
+            dtype = np.float64
+        else:
+            dtype = xp_result_type(quat, xp=xp, force_floating=True)
         quat = xp.asarray(quat, dtype=dtype)
         # TODO: Remove this once we properly support broadcasting
         if quat.ndim not in (1, 2) or quat.shape[-1] != 4:

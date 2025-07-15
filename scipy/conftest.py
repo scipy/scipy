@@ -1,13 +1,14 @@
 # Pytest customization
 import json
+import multiprocessing
 import os
+import sys
 import warnings
 import tempfile
 from contextlib import contextmanager
 from typing import Literal
 
 import numpy as np
-import numpy.testing as npt
 import pytest
 import hypothesis
 
@@ -86,6 +87,12 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
+    if os.name == 'posix' and sys.version_info < (3, 14):
+        # On POSIX, Python 3.13 and older uses the 'fork' context by
+        # default. Calling fork() from multiple threads leads to
+        # deadlocks. This has been changed in 3.14 to 'forkserver'.
+        multiprocessing.set_start_method('forkserver', force=True)
+
 
 def pytest_runtest_setup(item):
     mark = item.get_closest_marker("xslow")
@@ -103,8 +110,8 @@ def pytest_runtest_setup(item):
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441
-    with npt.suppress_warnings() as sup:
-        sup.filter(pytest.PytestUnraisableExceptionWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pytest.PytestUnraisableExceptionWarning)
 
         try:
             from threadpoolctl import threadpool_limits
@@ -588,8 +595,7 @@ if HAVE_SCPDT:
             np.random.seed(None)
             with warnings.catch_warnings():
                 if test and test.name in known_warnings:
-                    warnings.filterwarnings('ignore',
-                                            **known_warnings[test.name])
+                    warnings.filterwarnings('ignore', **known_warnings[test.name])
                     yield
                 elif test and test.name in legit:
                     yield

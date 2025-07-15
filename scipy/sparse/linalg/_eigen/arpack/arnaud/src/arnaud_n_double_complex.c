@@ -1,28 +1,29 @@
-#include "_arpack_n_double_complex.h"
+#include "arnaud_n_double_complex.h"
+#include <float.h>
 
-typedef int ARPACK_compare_cfunc(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-typedef int ARPACK_compare_rfunc(const double, const double);
+typedef int ARNAUD_compare_cfunc(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+typedef int ARNAUD_compare_rfunc(const double, const double);
 
-static const double unfl = 2.2250738585072014e-308;
-// static const double ovfl = 1.0 / 2.2250738585072014e-308;
-static const double ulp = 2.220446049250313e-16;
+static const double unfl = DBL_MIN;    // 2.2250738585072014e-308
+// static const double ovfl = DBL_MAX; // 1.0 / 2.2250738585072014e-308;
+static const double ulp = DBL_EPSILON; // 2.220446049250313e-16;
 
-static ARPACK_CPLX_TYPE zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const ARPACK_CPLX_TYPE* restrict y, const int* incy);
-static void zgetv0(struct ARPACK_arnoldi_update_vars_d*, int, int, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*, ARPACK_CPLX_TYPE*);
-static void znaup2(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE* , ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int*, ARPACK_CPLX_TYPE*, double*);
-static void znaitr(struct ARPACK_arnoldi_update_vars_d*, int, int, ARPACK_CPLX_TYPE*, double*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, int*, ARPACK_CPLX_TYPE*);
-static void znapps(int, int*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
-static void zneigh(double*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*);
-static void zngets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
-static void zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE* x, ARPACK_CPLX_TYPE* y);
-static int sortc_LM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-static int sortc_SM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-static int sortc_LR(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-static int sortc_SR(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-static int sortc_LI(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-static int sortc_SI(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
+static ARNAUD_CPLX_TYPE zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const ARNAUD_CPLX_TYPE* restrict y, const int* incy);
+static void zgetv0(struct ARNAUD_state_d*, int, int, int, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, double*, int*, ARNAUD_CPLX_TYPE*);
+static void znaup2(struct ARNAUD_state_d*, ARNAUD_CPLX_TYPE* , ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, int*, ARNAUD_CPLX_TYPE*, double*);
+static void znaitr(struct ARNAUD_state_d*, int, int, ARNAUD_CPLX_TYPE*, double*, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, int, int*, ARNAUD_CPLX_TYPE*);
+static void znapps(int, int*, int, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
+static void zneigh(double*, int, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*, int, ARNAUD_CPLX_TYPE*, double*, int*);
+static void zngets(struct ARNAUD_state_d*, int*, int*, ARNAUD_CPLX_TYPE*, ARNAUD_CPLX_TYPE*);
+static void zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y);
+static int sortc_LM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SM(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_LR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SR(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_LI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
+static int sortc_SI(const ARNAUD_CPLX_TYPE, const ARNAUD_CPLX_TYPE);
 
-enum ARPACK_neupd_type {
+enum ARNAUD_neupd_type {
     REGULAR,
     SHIFTI,
     REALPART,
@@ -31,22 +32,22 @@ enum ARPACK_neupd_type {
 
 
 void
-ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
-       ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, ARPACK_CPLX_TYPE sigma,
-       ARPACK_CPLX_TYPE* workev, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv,
-       int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork)
+ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
+       ARNAUD_CPLX_TYPE* d, ARNAUD_CPLX_TYPE* z, int ldz, ARNAUD_CPLX_TYPE sigma,
+       ARNAUD_CPLX_TYPE* workev, ARNAUD_CPLX_TYPE* resid, ARNAUD_CPLX_TYPE* v, int ldv,
+       int* ipntr, ARNAUD_CPLX_TYPE* workd, ARNAUD_CPLX_TYPE* workl, double* rwork)
 {
     const double eps23 = pow(ulp, 2.0 / 3.0);
-    int ibd, ih, iheig, ihbds, iuptri, invsub, irz, iwev, j, jj;
-    int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz, wr;
+    int ibd, ih, iheig, ihbds, iuptri, invsub, irz, j, jj;
+    int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz;
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0;
     double conds, sep, temp1, rtemp;
-    ARPACK_CPLX_TYPE rnorm, temp;
-    ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
-    ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
-    ARPACK_CPLX_TYPE cdblm1 = ARPACK_cplx(-1.0, 0.0);
-    ARPACK_CPLX_TYPE vl[1] = { cdbl0 };
-    enum ARPACK_neupd_type TYP;
+    ARNAUD_CPLX_TYPE rnorm, temp;
+    ARNAUD_CPLX_TYPE cdbl0 = ARNAUD_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE cdbl1 = ARNAUD_cplx(1.0, 0.0);
+    ARNAUD_CPLX_TYPE cdblm1 = ARNAUD_cplx(-1.0, 0.0);
+    ARNAUD_CPLX_TYPE vl[1] = { cdbl0 };
+    enum ARNAUD_neupd_type TYP;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -118,8 +119,6 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
     ipntr[10] = ihbds;
     ipntr[11] = iuptri;
     ipntr[12] = invsub;
-    wr = 0;
-    iwev = wr + V->ncv;
 
     //  irz points to the Ritz values computed
     //      by _neigh before exiting _naup2.
@@ -133,7 +132,7 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
     //  RNORM is B-norm of the RESID(1:N).
 
     rnorm = workl[ih+2];
-    workl[ih+2] = ARPACK_cplx(0.0, 0.0);
+    workl[ih+2] = ARNAUD_cplx(0.0, 0.0);
 
     if (rvec) {
         reord = 0;
@@ -143,7 +142,7 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
 
         for (j = 0; j < V->ncv; j++)
         {
-            workl[bounds + j] = ARPACK_cplx(j, 0.0);
+            workl[bounds + j] = ARNAUD_cplx(j, 0.0);
             select[j] = 0;
         }
         // 10
@@ -365,7 +364,8 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC, multiply with reciprocal
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
             workl[ihbds + k] = _Cmulcc(_Cmulcc(workl[ihbds + k], temp), temp);
 #else
             temp = workl[iheig + k];
@@ -387,8 +387,9 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC
-            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / cabs(workl[iheig + k]));
-            d[k] = ARPACK_cplx(creal(temp) + creal(sigma), cimag(temp) + cimag(sigma));
+            double mag_sq = pow(cabs(workl[iheig + k]), 2.0);
+            temp = _Cmulcr(conj(workl[iheig + k]), 1.0 / mag_sq);
+            d[k] = ARNAUD_cplx(creal(temp) + creal(sigma), cimag(temp) + cimag(sigma));
 #else
             d[k] = 1.0 / workl[iheig + k] + sigma;
 #endif
@@ -416,7 +417,8 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
             {
 #if defined(_MSC_VER)
                 // Complex division is not supported in MSVC
-                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / cabs(workl[iheig + j]));
+                double mag_sq = pow(cabs(workl[iheig + j]), 2.0);
+                temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / mag_sq);
                 workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv], temp);
 #else
                 workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
@@ -436,9 +438,9 @@ ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
 
 
 void
-ARPACK_znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
-       ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd,
-       ARPACK_CPLX_TYPE* workl, double* rwork)
+ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
+       ARNAUD_CPLX_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLX_TYPE* workd,
+       ARNAUD_CPLX_TYPE* workl, double* rwork)
 {
     int bounds, ierr = 0, ih, iq, iw, ldh, ldq, next, iritz;
 
@@ -488,7 +490,7 @@ ARPACK_znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
 
         for (int j = 0; j < 3 * (V->ncv*V->ncv) + 6*V->ncv; j++)
         {
-            workl[j] = ARPACK_cplx(0.0, 0.0);
+            workl[j] = ARNAUD_cplx(0.0, 0.0);
         }
     }
     //  Pointer into WORKL for address of H, RITZ, BOUNDS, Q
@@ -539,13 +541,13 @@ ARPACK_znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
 
 
 void
-znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
-       ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh,
-       ARPACK_CPLX_TYPE* ritz, ARPACK_CPLX_TYPE* bounds,
-       ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl, int* ipntr,
-       ARPACK_CPLX_TYPE* workd, double* rwork)
+znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
+       ARNAUD_CPLX_TYPE* v, int ldv, ARNAUD_CPLX_TYPE* h, int ldh,
+       ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds,
+       ARNAUD_CPLX_TYPE* q, int ldq, ARNAUD_CPLX_TYPE* workl, int* ipntr,
+       ARNAUD_CPLX_TYPE* workd, double* rwork)
 {
-    enum ARPACK_which temp_which;
+    enum ARNAUD_which temp_which;
     int i, int1 = 1, j, tmp_int;
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0, rtemp;
@@ -756,14 +758,14 @@ LINE20:
         //   Use h( 3,1 ) as storage to communicate
         //   rnorm to _neupd if needed
 
-         h[2] = ARPACK_cplx(V->aup2_rnorm, 0.0);
+         h[2] = ARNAUD_cplx(V->aup2_rnorm, 0.0);
 
         // Sort Ritz values so that converged Ritz
         // values appear within the first NEV locations
         // of ritz and bounds, and the most desired one
         // appears at the front.
 
-        // Translation note: Is this all because ARPACK did not have complex sort?
+        // Translation note: Is this all because ARNAUD did not have complex sort?
 
         if (V->which == which_LM) { temp_which = which_SM; }
         if (V->which == which_SM) { temp_which = which_LM; }
@@ -780,7 +782,7 @@ LINE20:
         for (j = 0; j < V->aup2_nev0; j++)
         {
             temp = fmax(eps23, cabs(ritz[j]));
-            bounds[j] = ARPACK_cplx(creal(bounds[j]) / temp, cimag(bounds[j]) / temp);
+            bounds[j] = ARNAUD_cplx(creal(bounds[j]) / temp, cimag(bounds[j]) / temp);
         }
         // 35
 
@@ -798,7 +800,7 @@ LINE20:
         for (j = 0; j < V->aup2_nev0; j++)
         {
             temp = fmax(eps23, cabs(ritz[j]));
-            bounds[j] = ARPACK_cplx(creal(bounds[j]) * temp, cimag(bounds[j]) * temp);
+            bounds[j] = ARNAUD_cplx(creal(bounds[j]) * temp, cimag(bounds[j]) * temp);
         }
         // 40
 
@@ -932,9 +934,9 @@ LINE100:
 
 
 static void
-znaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, ARPACK_CPLX_TYPE* resid,
-       double* rnorm, ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh,
-       int* ipntr, ARPACK_CPLX_TYPE* workd)
+znaitr(struct ARNAUD_state_d *V, int k, int np, ARNAUD_CPLX_TYPE* resid,
+       double* rnorm, ARNAUD_CPLX_TYPE* v, int ldv, ARNAUD_CPLX_TYPE* h, int ldh,
+       int* ipntr, ARNAUD_CPLX_TYPE* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     double smlnum = unfl * ( V->n / ulp);
@@ -942,9 +944,9 @@ znaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, ARPACK_CPLX_TYPE* 
 
     int int1 = 1;
     double dbl1 = 1.0, temp1, tst1;
-    ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
-    ARPACK_CPLX_TYPE cdblm1 = ARPACK_cplx(-1.0, 0.0);
-    ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE cdbl1 = ARNAUD_cplx(1.0, 0.0);
+    ARNAUD_CPLX_TYPE cdblm1 = ARNAUD_cplx(-1.0, 0.0);
+    ARNAUD_CPLX_TYPE cdbl0 = ARNAUD_cplx(0.0, 0.0);
 
     n = V->n;  // n is constant, this is just for typing convenience
     ipj = 0;
@@ -1126,7 +1128,7 @@ LINE60:
 
     zgemv_("N", &n, &tmp_int, &cdblm1, v, &ldv, &h[ldh*(V->aitr_j)], &int1, &cdbl1, resid, &int1);
 
-    if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = ARPACK_cplx(V->aitr_betaj, 0.0); }
+    if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = ARNAUD_cplx(V->aitr_betaj, 0.0); }
 
     V->aitr_orth1 = 1;
     if (V->bmat)
@@ -1256,7 +1258,7 @@ LINE90:
 
         for (jj = 0; jj < n; jj++)
         {
-            resid[jj] = ARPACK_cplx(0.0, 0.0);
+            resid[jj] = ARNAUD_cplx(0.0, 0.0);
         }
         *rnorm = 0.0;
     }
@@ -1290,7 +1292,7 @@ LINE100:
             }
             if (cabs(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
             {
-                h[i+1 + ldh*i] = ARPACK_cplx(0.0, 0.0);
+                h[i+1 + ldh*i] = ARNAUD_cplx(0.0, 0.0);
             }
         }
         // 110
@@ -1302,23 +1304,19 @@ LINE100:
 
 
 static void
-znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
-       int ldv, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* resid,
-       ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl,
-       ARPACK_CPLX_TYPE* workd)
+znapps(int n, int* kev, int np, ARNAUD_CPLX_TYPE* shift, ARNAUD_CPLX_TYPE* v,
+       int ldv, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* resid,
+       ARNAUD_CPLX_TYPE* q, int ldq, ARNAUD_CPLX_TYPE* workl,
+       ARNAUD_CPLX_TYPE* workd)
 {
     int i, j, jj, int1 = 1, istart, iend = 0, tmp_int;
     double smlnum = unfl * ( n / ulp);
     double c, tst1;
     double tmp_dbl;
-    ARPACK_CPLX_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
+    ARNAUD_CPLX_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
 
-#if defined(_MSC_VER)
-    ARPACK_CPLX_TYPE tmp_cplx2;
-#endif
-
-    ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
-    ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE cdbl1 = ARNAUD_cplx(1.0, 0.0);
+    ARNAUD_CPLX_TYPE cdbl0 = ARNAUD_cplx(0.0, 0.0);
 
     int kplusp = *kev + np;
 
@@ -1370,13 +1368,13 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
                 // Valid block found and it's not the entire remaining array
                 // Clean up the noise
 
-                    h[iend+1 + ldh*iend] = ARPACK_cplx(0.0, 0.0);
+                    h[iend+1 + ldh*iend] = ARNAUD_cplx(0.0, 0.0);
             }
 
             h11 = h[istart + ldh*istart];
             h21 = h[istart + 1 + ldh*istart];
             // f = h11 - sigma;
-            f = ARPACK_cplx(creal(h11)-creal(sigma), cimag(h11)-cimag(sigma));
+            f = ARNAUD_cplx(creal(h11)-creal(sigma), cimag(h11)-cimag(sigma));
             g = h21;
 
             for (i = istart; i < iend; i++)
@@ -1388,7 +1386,7 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
                 if (i > istart)
                 {
                     h[i + ldh*(i-1)] = r;
-                    h[i + 1 + ldh*(i-1)] = ARPACK_cplx(0.0, 0.0);
+                    h[i + 1 + ldh*(i-1)] = ARNAUD_cplx(0.0, 0.0);
                 }
                 tmp_int = kplusp - i;
                 zrot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
@@ -1417,7 +1415,7 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
         if ((creal(h[j+1 + ldh*j]) < 0.0) || (cimag(h[j+1 + ldh*j]) != 0.0))
         {
             tmp_dbl = cabs(h[j+1 + ldh*j]);
-            t = ARPACK_cplx(creal(h[j+1 + ldh*j]) / tmp_dbl,
+            t = ARNAUD_cplx(creal(h[j+1 + ldh*j]) / tmp_dbl,
             cimag(h[j+1 + ldh*j]) / tmp_dbl);
 
             tmp_cplx = conj(t);
@@ -1430,7 +1428,7 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
             tmp_int = (j+np+2 > kplusp ? kplusp : j+np+2);
             zscal_(&tmp_int, &t, &q[ldq*(j+1)], &int1);
 
-            h[j+1 + ldh*j] = ARPACK_cplx(creal(h[j+1 + ldh*j]), 0.0);
+            h[j+1 + ldh*j] = ARNAUD_cplx(creal(h[j+1 + ldh*j]), 0.0);
         }
     }
     // 120
@@ -1453,7 +1451,7 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
         }
         if (creal(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
         {
-            h[i+1 + ldh*i] = ARPACK_cplx(0.0, 0.0);
+            h[i+1 + ldh*i] = ARNAUD_cplx(0.0, 0.0);
         }
     }
     // 130
@@ -1507,15 +1505,16 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
 
 
 static void
-zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* ritz,
-       ARPACK_CPLX_TYPE* bounds, ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl,
+zneigh(double* rnorm, int n, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* ritz,
+       ARNAUD_CPLX_TYPE* bounds, ARNAUD_CPLX_TYPE* q, int ldq, ARNAUD_CPLX_TYPE* workl,
        double* rwork, int* ierr)
 {
     int select[1] = { 0 };
     int int1 = 1, j;
     double temp;
-    ARPACK_CPLX_TYPE vl[1] = { 0.0 };
-    ARPACK_CPLX_TYPE c1 = ARPACK_cplx(1.0, 0.0), c0 = ARPACK_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE vl[1];
+    vl[0] = ARNAUD_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE c1 = ARNAUD_cplx(1.0, 0.0), c0 = ARNAUD_cplx(0.0, 0.0);
 
     //  1. Compute the eigenvalues, the last components of the
     //     corresponding Schur vectors and the full Schur form T
@@ -1562,8 +1561,8 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
 
 
 void
-zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
-       ARPACK_CPLX_TYPE* ritz, ARPACK_CPLX_TYPE* bounds)
+zngets(struct ARNAUD_state_d *V, int* kev, int* np,
+       ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds)
 {
 
     zsortc(V->which, 1, *kev + *np, ritz, bounds);
@@ -1586,15 +1585,15 @@ zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
 
 
 static void
-zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
-       ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* resid, double* rnorm,
-       int* ipntr, ARPACK_CPLX_TYPE* workd)
+zgetv0(struct ARNAUD_state_d *V, int initv, int n, int j,
+       ARNAUD_CPLX_TYPE* v, int ldv, ARNAUD_CPLX_TYPE* resid, double* rnorm,
+       int* ipntr, ARNAUD_CPLX_TYPE* workd)
 {
     int jj, int1 = 1;
     const double sq2o2 = sqrt(2.0) / 2.0;
-    ARPACK_CPLX_TYPE c0 = ARPACK_cplx(0.0, 0.0);
-    ARPACK_CPLX_TYPE c1 = ARPACK_cplx(1.0, 0.0);
-    ARPACK_CPLX_TYPE cm1 = ARPACK_cplx(-1.0, 0.0);
+    ARNAUD_CPLX_TYPE c0 = ARNAUD_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE c1 = ARNAUD_cplx(1.0, 0.0);
+    ARNAUD_CPLX_TYPE cm1 = ARNAUD_cplx(-1.0, 0.0);
 
     if (V->ido == ido_FIRST)
     {
@@ -1742,7 +1741,7 @@ LINE40:
 
         //  Iterative refinement step "failed"
 
-        for (jj = 0; jj < n; jj++) { resid[jj] = ARPACK_cplx(0.0, 0.0); }
+        for (jj = 0; jj < n; jj++) { resid[jj] = ARNAUD_cplx(0.0, 0.0); }
         *rnorm = 0.0;
         V->info = -1;
     }
@@ -1753,11 +1752,11 @@ LINE40:
 
 
 static void
-zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE* x, ARPACK_CPLX_TYPE* y)
+zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y)
 {
     int i, igap, j;
-    ARPACK_CPLX_TYPE temp;
-    ARPACK_compare_cfunc *f;
+    ARNAUD_CPLX_TYPE temp;
+    ARNAUD_compare_cfunc *f;
 
     switch (w)
     {
@@ -1813,23 +1812,23 @@ zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE
 }
 
 
-static int sortc_LM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
-static int sortc_SM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
-static int sortc_LR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) > creal(y)); }
-static int sortc_SR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) < creal(y)); }
-static int sortc_LI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
-static int sortc_SI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
+static int sortc_LM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
+static int sortc_SM(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
+static int sortc_LR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) > creal(y)); }
+static int sortc_SR(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (creal(x) < creal(y)); }
+static int sortc_LI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
+static int sortc_SI(const ARNAUD_CPLX_TYPE x, const ARNAUD_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
 
 
 // zdotc is the complex conjugate dot product of two complex vectors.
 // Due some historical reasons, this function can cause segfaults on some
 // platforms. Hence implemented here instead of using the BLAS version.
-static ARPACK_CPLX_TYPE
-zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const ARPACK_CPLX_TYPE* restrict y, const int* incy)
+static ARNAUD_CPLX_TYPE
+zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const ARNAUD_CPLX_TYPE* restrict y, const int* incy)
 {
-    ARPACK_CPLX_TYPE result = ARPACK_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE result = ARNAUD_cplx(0.0, 0.0);
 #ifdef _MSC_VER
-    ARPACK_CPLX_TYPE temp = ARPACK_cplx(0.0, 0.0);
+    ARNAUD_CPLX_TYPE temp = ARNAUD_cplx(0.0, 0.0);
 #endif
     if (*n <= 0) { return result; }
     if ((*incx == 1) && (*incy == 1))
@@ -1838,7 +1837,7 @@ zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const 
         {
 #ifdef _MSC_VER
             temp = _Cmulcc(x[i], conj(y[i]));
-            result = ARPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
+            result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
             result = result + (x[i] * conj(y[i]));
 #endif
@@ -1850,7 +1849,7 @@ zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const 
         {
 #ifdef _MSC_VER
             temp = _Cmulcc(x[i * (*incx)], conj(y[i * (*incy)]));
-            result = ARPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
+            result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
             result = result + (x[i * (*incx)] * conj(y[i * (*incy)]));
 #endif

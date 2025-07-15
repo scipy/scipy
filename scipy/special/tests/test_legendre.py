@@ -1,10 +1,10 @@
 import math
+import warnings
 
 import numpy as np
 
 import pytest
-from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,
-    suppress_warnings)
+from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal)
 
 from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
@@ -738,8 +738,8 @@ class TestLegendreFunctions:
         if z_complex:
             z = 1j * z + 0.5j * z
 
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
             P_z, P_d_z = function(n, z)
         assert P_z.shape == (n + 1, ) + input_shape
         assert P_d_z.shape == (n + 1, ) + input_shape
@@ -783,8 +783,8 @@ class TestLegendreFunctions:
         z = rng.uniform(-1, 1, size=input_shape)
         z = 1j * z + 0.5j * z
 
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
             P_z, P_d_z = function(m, n, z)
 
         assert P_z.shape == (m + 1, n + 1) + input_shape

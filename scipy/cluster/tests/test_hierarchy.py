@@ -417,16 +417,15 @@ class TestIsIsomorphic:
         assert not is_isomorphic(a, b)
 
     def is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0, *, xp):
+        rng = np.random.default_rng()
         for _ in range(3):
-            a = (np.random.rand(nobs) * nclusters).astype(int)
-            b = np.zeros(a.size, dtype=int)
-            P = np.random.permutation(nclusters)
-            for i in range(0, a.shape[0]):
-                b[i] = P[a[i]]
+            a = rng.integers(0, nclusters, size=nobs)
+            p = rng.permutation(nclusters)
+            b = p.take(a.astype(np.intp))
             if noniso:
-                Q = np.random.permutation(nobs)
-                b[Q[0:nerrors]] += 1
-                b[Q[0:nerrors]] %= nclusters
+                q = rng.permutation(nobs)
+                b[q[0:nerrors]] += 1
+                b[q[0:nerrors]] %= nclusters
             a = xp.asarray(a)
             b = xp.asarray(b)
             assert is_isomorphic(a, b) == (not noniso)

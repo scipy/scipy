@@ -1,9 +1,10 @@
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp, suppress_warnings)
+                           assert_array_almost_equal_nulp)
 import pytest
 from pytest import raises as assert_raises
 
@@ -415,8 +416,9 @@ class TestWelch:
         x[0] = 1
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg=256 is greater than signal.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "nperseg=256 is greater than signal.*", UserWarning)
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -818,8 +820,9 @@ class TestCSD:
 
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "nperseg=256 is greater than signal length.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "nperseg=256 is greater than signal length.*", UserWarning)
             f, p = csd(x, x, window='hann')  # default nperseg
             f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
@@ -1001,10 +1004,13 @@ class TestSpectrogram:
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
         f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "nperseg = 1025 is greater than input length  = 1024, "
-                       "using nperseg = 1024",)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "nperseg = 1025 is greater than input length  = 1024, "
+                "using nperseg = 1024",
+                UserWarning,
+            )
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
@@ -1505,7 +1511,6 @@ class TestLombscargle:
 
 
 class TestSTFT:
-    @pytest.mark.thread_unsafe
     def test_input_validation(self):
 
         def chk_VE(match):
@@ -1706,7 +1711,6 @@ class TestSTFT:
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
-    @pytest.mark.thread_unsafe
     def test_roundtrip_not_nola(self):
         rng = np.random.RandomState(1234)
 
@@ -1785,7 +1789,6 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_complex(self, scaling):
         rng = np.random.RandomState(1234)
@@ -1816,9 +1819,12 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg)
 
         # Check that asking for onesided switches to twosided
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "Input data is complex, switching to return_onesided=False")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Input data is complex, switching to return_onesided=False",
+                UserWarning,
+            )
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
                             return_onesided=True, scaling=scaling)

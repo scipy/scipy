@@ -1005,7 +1005,7 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
