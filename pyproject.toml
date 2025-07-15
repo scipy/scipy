@@ -75,7 +75,6 @@ test = [
     "pytest-cov",
     "pytest-timeout",
     "pytest-xdist",
-    "array_api_extra",
     "asv",
     "mpmath",
     "gmpy2",
