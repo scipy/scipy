@@ -69,7 +69,6 @@ py3.extension_module('_fblas',
   fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  link_with: [g77_abi_wrappers],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -137,7 +136,6 @@ if use_ilp64
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
-    link_with: [g77_abi_wrappers_ilp64],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -157,7 +155,6 @@ if use_ilp64
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
     dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
-    link_with: [g77_abi_wrappers_ilp64],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
