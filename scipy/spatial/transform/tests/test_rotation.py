@@ -2057,9 +2057,8 @@ def test_multiplication_stability(xp):
     qs = rotation_to_xp(Rotation.random(50, rng=0), xp)
     rs = rotation_to_xp(Rotation.random(1000, rng=1), xp)
     expected = xp.ones(len(rs))
-    # TODO: Check why jax iteration over qs is slower than using for q in qs.
-    for i in range(len(qs)):
-        rs = rs * qs[i] * rs
+    for r in qs:
+        rs = rs * r * rs
         xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), expected)
 
 
@@ -2604,3 +2603,12 @@ def test_boolean_indexes(xp):
 
     with pytest.raises(IndexError):
         r[xp.asarray([True, True])]
+
+
+def test_rotation_iter(xp):
+    r = rotation_to_xp(Rotation.random(3), xp)
+    for i, r_i in enumerate(r):
+        assert isinstance(r_i, Rotation)
+        xp_assert_equal(r_i.as_quat(), r[i].as_quat())
+        if i > len(r):
+            raise RuntimeError("Iteration exceeded length of rotations")

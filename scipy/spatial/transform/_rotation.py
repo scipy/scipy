@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from types import EllipsisType, ModuleType, NotImplementedType
 
 import numpy as np
@@ -2463,6 +2463,17 @@ class Rotation:
         if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
             raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
         return quat
+
+    def __iter__(self) -> Iterator[Rotation]:
+        """Iterate over rotations."""
+        if self._single or self._quat.ndim == 1:
+            raise TypeError("Single rotation is not iterable.")
+        # We return a generator that yields a new Rotation object for each rotation
+        # in the current object. We cannot rely on the default implementation using
+        # __getitem__ because jax will not raise an IndexError for out-of-bounds
+        # indices.
+        for i in range(self._quat.shape[0]):
+            yield Rotation(self._quat[i, ...], normalize=False, copy=False)
 
 
 class Slerp:
