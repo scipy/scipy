@@ -31,7 +31,6 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from array_api_extra._lib._testing import xp_assert_equal, xp_assert_close
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal, assert_
 import pytest
@@ -49,6 +48,7 @@ from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
 from scipy._lib._array_api import eager_warns, make_xp_test_case
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_extra._lib._testing import xp_assert_equal, xp_assert_close
 
 from threading import Lock
 

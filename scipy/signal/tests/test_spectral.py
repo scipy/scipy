@@ -1,7 +1,6 @@
 import sys
 import warnings
 
-from array_api_extra._lib._testing import xp_assert_close
 import numpy as np
 from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
@@ -20,6 +19,7 @@ from scipy.signal._spectral_py import _spectral_helper
 # Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 
 class TestPeriodogram:

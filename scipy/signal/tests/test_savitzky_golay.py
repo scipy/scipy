@@ -1,10 +1,10 @@
-from array_api_extra._lib._testing import xp_assert_close
 import pytest
 import numpy as np
 from numpy.testing import (assert_equal, 
                            assert_array_equal,
 )
 from scipy._lib._array_api import assert_almost_equal, assert_array_almost_equal
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
 
