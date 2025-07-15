@@ -632,7 +632,7 @@ _gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-
 if ff.has_multi_arguments(_gfortran_preprocess)
   _fflag_preprocess = _gfortran_preprocess
 else
-  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', 'cpp'])
+  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
 endif
 
 _fflag_lp64 = []
