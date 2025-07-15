@@ -24,6 +24,7 @@
 #include "npy_cblas.h"
 #define F_FUNC(f, F) BLAS_FUNC(f)
 
+// https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/Missing-cspr-64-symbol-in-ILP64-MKL/td-p/1703471
 #ifdef FIX_MKL_2025_ILP64_MISSING_SYMBOL
 #define cspr_64_ cspr_64
 #endif
