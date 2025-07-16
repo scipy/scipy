@@ -4935,4 +4935,4 @@ def test_poly1d_empty_trimmed(xp):
     # Testing trimming that results in an empty array
     z = xp.asarray([])  # Empty array input
     result = _pu._poly1d(z, xp=xp)
-    assert xp.array_equal(result, xp.asarray([0]))  # Should return zero array
+    xp_assert_equal(result, xp.asarray([0.]))
