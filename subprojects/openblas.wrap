@@ -1,0 +1,13 @@
+[wrap-file]
+directory = OpenBLAS-0.3.28
+source_url = https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.28/OpenBLAS-0.3.28.tar.gz
+source_filename = OpenBLAS-0.3.28.tar.gz
+source_hash = f1003466ad074e9b0c8d421a204121100b0751c96fc6fcf3d1456bd12f8a00a1
+patch_filename = openblas_0.3.28-2_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/openblas_0.3.28-2/get_patch
+patch_hash = 0dae8341551cba0e985dd13ec58a5ee6cbdafd6b69004317f13c880bd8d290af
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/openblas_0.3.28-2/OpenBLAS-0.3.28.tar.gz
+wrapdb_version = 0.3.28-2
+
+[provide]
+openblas = openblas_dep
