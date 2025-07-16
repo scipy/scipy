@@ -312,7 +312,7 @@ if blas_name == 'mkl'
   endif
 endif
 
-blas_dep = declare_dependency(
+blas_lp64_dep = declare_dependency(
   dependencies: blas,
   compile_args: _args_blas_lapack
 )
@@ -335,14 +335,14 @@ if not lapack.found()
   error('No LAPACK library detected! SciPy needs one, please install it.')
 endif
 
-lapack_dep = declare_dependency(
-  dependencies: [lapack, blas_dep],
+lapack_lp64_dep = declare_dependency(
+  dependencies: [lapack, blas_lp64_dep],
   compile_args: _args_blas_lapack
 )
 
 dependency_map = {
-  'BLAS': blas_dep,
-  'LAPACK': lapack_dep,
+  'BLAS': blas_lp64_dep,
+  'LAPACK': lapack_lp64_dep,
   'PYBIND11': pybind11_dep,
 }
 
@@ -356,14 +356,14 @@ if use_g77_abi
   g77_abi_wrappers = static_library(
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [py3_dep, cblas, blas_dep, np_dep],
+    dependencies: [py3_dep, cblas, blas_lp64_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: [py3_dep, blas_dep, np_dep],
+    dependencies: [py3_dep, blas_lp64_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 endif
@@ -798,13 +798,13 @@ configure_file(
 # better)
 subdir('_build_utils')
 # Update BLAS/LAPACK dependencies to include wrapper libs
-blas_dep = declare_dependency(
-  dependencies: blas_dep,
+blas_lp64_dep = declare_dependency(
+  dependencies: blas_lp64_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   compile_args: [_fflag_lp64]  # XXX
 )
-lapack_dep = declare_dependency(
-  dependencies: lapack_dep,
+lapack_lp64_dep = declare_dependency(
+  dependencies: [lapack_lp64_dep, blas_lp64_dep],
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   compile_args: [_fflag_lp64]
 )
