@@ -21,6 +21,12 @@ class Normal(ContinuousDistribution):
         f(x) = \frac{1}{\sigma \sqrt{2 \pi}} \exp {
             \left( -\frac{1}{2}\left( \frac{x - \mu}{\sigma} \right)^2 \right)}
 
+    Notes
+    -----
+
+    This distribution is a subclass of the :class:`ContinuousDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
+
     """
     # `ShiftedScaledDistribution` allows this to be generated automatically from
     # an instance of `StandardNormal`, but the normal distribution is so frequently
@@ -29,10 +35,23 @@ class Normal(ContinuousDistribution):
     _sigma_domain = _RealInterval(endpoints=(0, inf))
     _x_support = _RealInterval(endpoints=(-inf, inf))
 
-    _mu_param = _RealParameter('mu',  symbol=r'\mu', domain=_mu_domain,
-                               typical=(-1, 1))
-    _sigma_param = _RealParameter('sigma', symbol=r'\sigma', domain=_sigma_domain,
-                                  typical=(0.5, 1.5))
+    _mu_param = _RealParameter(
+        "mu",
+        symbol=r"\mu",
+        domain=_mu_domain,
+        typical=(-1, 1),
+        docstring="The location parameter, which is also the mean, median, and mode. "\
+                  "Default: 0.0.",
+    )
+    
+    _sigma_param = _RealParameter(
+        'sigma',
+        symbol=r'\sigma',
+        domain=_sigma_domain,
+        typical=(0.5, 1.5),
+        docstring="The scalar parameter, which is also the standard deviation. "\
+                  "Default: 1.0.",
+    )
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     _parameterizations = [_Parameterization(_mu_param, _sigma_param)]
@@ -277,6 +296,12 @@ class Uniform(ContinuousDistribution):
         f(x; a, b) = \frac{1}
                           {b - a}
 
+    Notes
+    -----
+
+    This distribution is a subclass of the :class:`ContinuousDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
+
     """
 
     _a_domain = _RealInterval(endpoints=(-inf, inf))
@@ -375,6 +400,12 @@ class Binomial(DiscreteDistribution):
     .. math::
 
         f(x) = {n \choose x} p^x (1 - p)^{n-x}
+
+    Notes
+    -----
+
+    This distribution is a subclass of the :class:`DiscreteDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
