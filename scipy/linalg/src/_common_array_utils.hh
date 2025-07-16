@@ -260,6 +260,64 @@ GEN_POTRS(c, npy_complex64)
 GEN_POTRS(z, npy_complex128)
 
 
+
+// Structure tags; python side maps assume_a strings to these values
+enum St : Py_ssize_t
+{
+    NONE = -1,
+    GENERAL = 0,
+    UPPER_TRIANGULAR = 21,
+    LOWER_TRIANGULAR = 22,
+    POS_DEF = 101,
+    POS_DEF_UPPER = 111,
+    POS_DEF_LOWER = 112,
+};
+
+
+/*
+ * Copy n-by-m slice from slice_ptr to dst.
+ */
+template<typename T>
+void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp j = 0; j < m; j++) {
+            dst[i * m + j] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));
+        }
+    }
+}
+
+
+/*
+ * Copy n-by-m C-order slice from slice_ptr to dst in F-order.
+ */
+template<typename T>
+void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp j = 0; j < m; j++) {
+            dst[i + j*n] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
+        }
+    }
+}
+
+/*
+ * Copy n-by-m F-ordered `src` to C-ordered `dst`.
+ */
+template<typename T>
+void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp j = 0; j < m; j++) {
+            dst[i*m + j] = src[i + j*n];
+        }
+    }
+}
+
+
+
+
+
 /*
  * 1-norm of a matrix
  */

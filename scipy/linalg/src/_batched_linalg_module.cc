@@ -2,6 +2,7 @@
 #define _LINALG_INV_H
 
 #include "_linalg_inv.hh"
+#include "_linalg_solve.hh"
 #include "_common_array_utils.hh"
 
 
