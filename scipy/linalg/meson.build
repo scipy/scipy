@@ -133,7 +133,7 @@ if use_ilp64
     fblas64_module,
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
-    dependencies: [lapack_ilp64, fortranobject_dep],
+    dependencies: [lapack_dep, fortranobject_dep],  # lapack_dep is ILP64 if use_ilp64==true
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -150,7 +150,7 @@ if use_ilp64
     c_args: [Wno_empty_body],
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
-    dependencies: [lapack_ilp64, fortranobject_dep],
+    dependencies: [lapack_dep, fortranobject_dep],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'

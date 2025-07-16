@@ -428,25 +428,25 @@ if use_ilp64
     _blas_incdir = ['.']
   endif
 
-  blas_ilp64 = declare_dependency(
+  blas_dep = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas_ilp64,
     include_directories: _blas_incdir,
   )
-  lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
+  lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
 
   g77_abi_wrappers_ilp64 = static_library(
     'g77_abi_wrappers_ilp64',
      ['_build_utils/src/wrap_g77_abi.c'],
-     dependencies: [py3_dep, blas_ilp64, np_dep],
+     dependencies: [py3_dep, blas_dep, np_dep],
      c_args: _args_blas_ilp64,
      gnu_symbol_visibility: 'hidden',
    )
 else
   # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
-  blas_ilp64 = blas
-  lapack_ilp64 = lapack
+  blas_dep = blas
+  lapack_dep = lapack
   c_flags_ilp64 = []
   message('LAPACK ILP64 not requested / not detected.')
 endif
@@ -798,6 +798,22 @@ configure_file(
 # better)
 subdir('_build_utils')
 # Update BLAS/LAPACK dependencies to include wrapper libs
+#
+# NB:
+#  - lapack_lp64_dep is LP64, which is always available
+#  - lapack_dep is ILP64 if available, and LP64 otherwise
+#
+# An extensions should declare `lapack_dep` as a dependency if it is ready to build-time
+# switch between LP64 and ILP64 variants; otherwise, it should depend on lapack_lp64_dep.
+#
+# Also note that lapack_*_dep includes blas_*dep, so there is no need to explicitly
+# depend on blas_*_dep.
+#
+# Also note that {blas,lapack}_*_dep objects do not include compile flags for Fortran.
+# This is because we expect that the need for Fortran code is limited. If desired,
+# can create the _fortran variants of the _dep objects to include
+# `compile_args: [_fflag_{lp64,ilp64}]`
+#
 blas_lp64_dep = declare_dependency(
   dependencies: blas_lp64_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
@@ -810,13 +826,13 @@ lapack_lp64_dep = declare_dependency(
 )
 
 if use_ilp64
-  blas_ilp64 = declare_dependency(
-    dependencies: blas_ilp64,
+  blas_dep = declare_dependency(
+    dependencies: blas_dep,
     link_with: [g77_abi_wrappers_ilp64],
     compile_args: [_fflag_ilp64]
   )
-  lapack_ilp64 = declare_dependency(
-    dependencies: [lapack_ilp64, blas_ilp64],
+  lapack_dep = declare_dependency(
+    dependencies: [lapack_dep, blas_dep],
     link_with: [g77_abi_wrappers_ilp64],
     compile_args: [_fflag_ilp64]
   )
