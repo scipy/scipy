@@ -4926,13 +4926,13 @@ class TestGammatone:
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             gammatone(440, 'iir', fs=np.asarray([10, 20]))
 
-def test_poly1d_invalid_dimension():
+def test_poly1d_invalid_dimension(xp):
     with pytest.raises(ValueError, match="Polynomial must be 1d only."):
-        z = np.asarray([[1, 2], [3, 4]])  # 2D array
-        _ = _pu._poly1d(z, xp=np)  # This should raise an error
+        z = xp.asarray([[1, 2], [3, 4]])  # 2D array
+        _ = _pu._poly1d(z, xp=xp)  # This should raise an error
 
-def test_poly1d_empty_trimmed():
+def test_poly1d_empty_trimmed(xp):
     # Testing trimming that results in an empty array
-    z = np.asarray([])  # Empty array input
-    result = _pu._poly1d(z, xp=np)
-    assert np.array_equal(result, np.asarray([0]))  # Should return zero array
+    z = xp.asarray([])  # Empty array input
+    result = _pu._poly1d(z, xp=xp)
+    assert xp.array_equal(result, xp.asarray([0]))  # Should return zero array
