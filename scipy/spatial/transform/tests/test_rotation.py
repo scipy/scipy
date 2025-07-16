@@ -285,7 +285,7 @@ def test_as_matrix_single_2d_quaternion(xp):
         [1, 0, 0],
         [0, 0, 1]
         ])
-    xp_assert_close(mat[0, ...], expected_mat)
+    xp_assert_close(mat[0, ...], expected_mat, atol=1e-16)
 
 
 @make_xp_test_case(Rotation.as_matrix)

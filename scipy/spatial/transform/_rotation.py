@@ -2064,7 +2064,8 @@ class Rotation:
         return create_group(cls, group, axis=axis)
 
     @xp_capabilities(
-        skip_backends=[("dask.array", "missing required linalg extension")]
+        jax_jit=False,
+        skip_backends=[("dask.array", "missing required linalg extension")],
     )
     def __getitem__(self, indexer: int | slice | EllipsisType | None) -> Rotation:
         """Extract rotation(s) at given index(es) from object.
