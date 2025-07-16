@@ -116,6 +116,7 @@ jobs:
         pip install scipy-openblas32 scipy-openblas64
 
     - name: Write out scipy-openblas64.pc
+      run: |
         # spin does this for scipy-openblas32
         python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
 
