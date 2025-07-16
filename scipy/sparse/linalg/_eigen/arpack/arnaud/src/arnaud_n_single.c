@@ -37,13 +37,13 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
        float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd,
        float* workl)
 {
-    const float eps23 = powf(ulp, 2.0 / 3.0);
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
     int ibd, iconj, ih, iheigr, iheigi, ihbds, iuptri, invsub, iri, irr, j, jj;
     int bounds, k, ldh, ldq, np, numcnv, reord, ritzr, ritzi;
     int iwork[1] = { 0 };
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0, outncv;
-    float conds, rnorm, sep, temp, temp1, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
-    float vl[1] = { 0.0 };
+    float conds, rnorm, sep, temp, temp1, dbl0 = 0.0f, dbl1 = 1.0f, dblm1 = -1.0f;
+    float vl[1] = { 0.0f };
     enum ARNAUD_neupd_type TYP;
 
     if (V->nconv <= 0) {
@@ -66,7 +66,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
     if ((V->mode == 1) || (V->mode == 2)) {
         TYP = REGULAR;
-    } else if ((V->mode == 3) && (sigmai == 0.0)) {
+    } else if ((V->mode == 3) && (sigmai == 0.0f)) {
         TYP = SHIFTI;
     } else if (V->mode == 3) {
         TYP = REALPART;
@@ -132,7 +132,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
     //  RNORM is B-norm of the RESID(1:N).
     rnorm = workl[ih+2];
-    workl[ih+2] = 0.0;
+    workl[ih+2] = 0.0f;
 
     if (rvec) {
         reord = 0;
@@ -142,7 +142,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
         for (j = 0; j < V->ncv; j++)
         {
-            workl[bounds + j] = j;
+            workl[bounds + j] = j*1.0f;
             select[j] = 0;
         }
         // 10
@@ -265,7 +265,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
         for (j = 0; j < V->nconv; j++)
         {
-            if (workl[invsub + j*ldq + j] < 0.0)
+            if (workl[invsub + j*ldq + j] < 0.0f)
             {
                 sscal_(&V->nconv, &dblm1, &workl[iuptri + j], &ldq);
                 sscal_(&V->nconv, &dblm1, &workl[iuptri + j*ldq], &int1);
@@ -308,12 +308,12 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
             iconj = 0;
             for (j = 0; j < V->nconv; j++)
             {
-                if (workl[iheigi + j] == 0.0)
+                if (workl[iheigi + j] == 0.0f)
                 {
 
                     //  real eigenvalue case
 
-                    temp = 1.0 / snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
+                    temp = 1.0f / snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
                     sscal_(&V->ncv, &temp, &workl[invsub + j*ldq], &int1);
 
                 } else {
@@ -326,7 +326,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
                     if (iconj == 0)
                     {
-                        temp = 1.0 / hypotf(snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1),
+                        temp = 1.0f / hypotf(snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1),
                                            snrm2_(&V->ncv, &workl[invsub + (j+1)*ldq], &int1));
                         sscal_(&V->ncv, &temp, &workl[invsub + j*ldq], &int1);
                         sscal_(&V->ncv, &temp, &workl[invsub + (j+1)*ldq], &int1);
@@ -343,7 +343,7 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
             iconj = 0;
             for (j = 0; j < V->nconv; j++)
             {
-                if (workl[iheigi + j] != 0.0)
+                if (workl[iheigi + j] != 0.0f)
                 {
 
                     //  Complex conjugate pair case. Note that
@@ -475,19 +475,19 @@ ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
         iconj = 0;
         for (j = 0; j < V->nconv; j++)
         {
-            if ((workl[iheigi+j] == 0.0) && (workl[iheigr+j] != 0.0))
+            if ((workl[iheigi+j] == 0.0f) && (workl[iheigr+j] != 0.0f))
             {
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheigr+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheigr+j];
             } else if (iconj == 0) {
 
                 temp = hypotf(workl[iheigr+j], workl[iheigi+j]);
-                if (temp != 0.0)
+                if (temp != 0.0f)
                 {
-                    workev[j] = (workl[invsub + j*ldq + V->ncv]*workl[iheigr+j] +
-                                 workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j] = (workl[invsub + j*ldq + V->ncv - 1]*workl[iheigr+j] +
+                                 workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
-                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigr+j] -
-                                 workl[invsub + j*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigr+j] -
+                                 workl[invsub + j*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
                 }
                 iconj = 1;
@@ -541,14 +541,14 @@ ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v,
             return;
         }
 
-        if (V->tol <= 0.0) {
+        if (V->tol <= 0.0f) {
             V->tol = ulp;
         }
         V->np = V->ncv - V->nev;
 
         for (j = 0; j < 3 * (V->ncv)*(V->ncv) + 6*(V->ncv); j++)
         {
-            workl[j] = 0.0;
+            workl[j] = 0.0f;
         }
     }
 
@@ -612,8 +612,8 @@ snaup2(struct ARNAUD_state_s *V, float* resid, float* v, int ldv,
 {
     enum ARNAUD_which temp_which;
     int int1 = 1, j, tmp_int;
-    const float eps23 = powf(ulp, 2.0 / 3.0);
-    float temp = 0.0;
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
+    float temp = 0.0f;
 
     if (V->ido == ido_FIRST)
     {
@@ -659,7 +659,7 @@ snaup2(struct ARNAUD_state_s *V, float* resid, float* v, int ldv,
         V->getv0_itry = 1;
         sgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
         if (V->ido != ido_DONE) { return; }
-        if (V->aup2_rnorm == 0.0)
+        if (V->aup2_rnorm == 0.0f)
         {
             V->info = -9;
             V->ido = ido_DONE;
@@ -798,7 +798,7 @@ LINE20:
 
     for (j = 0; j < nptemp; j++)
     {
-        if (bounds[j] == 0.0)
+        if (bounds[j] == 0.0f)
         {
             V->np -= 1;
             V->nev += 1;
@@ -1016,7 +1016,7 @@ LINE100:
 void
 snconv(int n, float* ritzr, float* ritzi, float* bounds, const float tol, int* nconv)
 {
-    const float eps23 = powf(ulp, 2.0 / 3.0);
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
     float temp;
 
     *nconv = 0;
@@ -1038,7 +1038,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
 {
     int select[1] = { 0 };
     int i, iconj, int1 = 1, j;
-    float dbl1 = 1.0, dbl0 = 0.0, temp, tmp_dbl, vl[1] = { 0.0 };
+    float dbl1 = 1.0f, dbl0 = 0.0f, temp, tmp_dbl, vl[1] = { 0.0f };
 
     //  1. Compute the eigenvalues, the last components of the
     //     corresponding Schur vectors and the full Schur form T
@@ -1049,9 +1049,9 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     slacpy_("A", &n, &n, h, &ldh, workl, &n);
     for (j = 0; j < n-1; j++)
     {
-        bounds[j] = 0.0;
+        bounds[j] = 0.0f;
     }
-    bounds[n-1] = 1.0;
+    bounds[n-1] = 1.0f;
     slahqr_(&int1, &int1, &n, &int1, &n, workl, &n, ritzr, ritzi, &int1, &int1, bounds, &int1, ierr);
 
     if (*ierr != 0) { return; }
@@ -1077,13 +1077,13 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     iconj = 0;
     for (i = 0; i < n; i++)
     {
-        if (fabsf(ritzi[i]) == 0.0)
+        if (fabsf(ritzi[i]) == 0.0f)
         {
 
             //  Real eigenvalue case
 
             temp = snrm2_(&n, &q[ldq*i], &int1);
-            tmp_dbl = 1.0 / temp;
+            tmp_dbl = 1.0f / temp;
             sscal_(&n, &tmp_dbl, &q[ldq*i], &int1);
 
         } else {
@@ -1098,7 +1098,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
             {
                 temp = hypotf(snrm2_(&n, &q[ldq*i], &int1),
                              snrm2_(&n, &q[ldq*(i+1)], &int1));
-                tmp_dbl = 1.0 / temp;
+                tmp_dbl = 1.0f / temp;
                 sscal_(&n, &tmp_dbl, &q[ldq*i], &int1);
                 sscal_(&n, &tmp_dbl, &q[ldq*(i+1)], &int1);
                 iconj = 1;
@@ -1116,7 +1116,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     iconj = 0;
     for (i = 0; i < n; i++)
     {
-        if (fabsf(ritzi[i]) == 0.0)
+        if (fabsf(ritzi[i]) == 0.0f)
         {
 
             //  Real eigenvalue case
@@ -1155,7 +1155,7 @@ snaitr(struct ARNAUD_state_s *V, int k, int np, float* resid, float* rnorm,
     const float sq2o2 = sqrtf(2.0) / 2.0;
 
     int int1 = 1;
-    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0, temp1, tst1;
+    float dbl1 = 1.0f, dbl0 = 0.0f, dblm1 = -1.0f, temp1, tst1;
 
     n = V->n;  // n is constant, this is just for typing convenience
     ipj = 0;
@@ -1206,13 +1206,13 @@ LINE1000:
 
     V->aitr_betaj = *rnorm;
 
-    if (*rnorm > 0.0) { goto LINE40; }
+    if (*rnorm > 0.0f) { goto LINE40; }
 
     //  Invariant subspace found, generate a new starting
     //  vector which is orthogonal to the current Arnoldi
     //  basis and continue the iteration.
 
-    V->aitr_betaj = 0.0;
+    V->aitr_betaj = 0.0f;
     V->getv0_itry = 1;
 
 LINE20:
@@ -1251,7 +1251,7 @@ LINE40:
     scopy_(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
-        temp1 = 1.0 / *rnorm;
+        temp1 = 1.0f / *rnorm;
         sscal_(&n, &temp1, &v[ldv*(V->aitr_j)], &int1);
         sscal_(&n, &temp1, &workd[ipj], &int1);
     } else {
@@ -1470,9 +1470,9 @@ LINE90:
 
         for (jj = 0; jj < n; jj++)
         {
-            resid[jj] = 0.0;
+            resid[jj] = 0.0f;
         }
-        *rnorm = 0.0;
+        *rnorm = 0.0f;
     }
 
     // Branch here directly if iterative refinement
@@ -1498,14 +1498,14 @@ LINE100:
             //  REFERENCE: LAPACK subroutine dlahqr
 
             tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
-            if (tst1 == 0.0)
+            if (tst1 == 0.0f)
             {
                 tmp_int = k + np;
                 tst1 = slanhs_("1", &tmp_int, h, &ldh, &workd[n]);
             }
             if (fabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
             {
-                h[i+1 + ldh*i] = 0.0;
+                h[i+1 + ldh*i] = 0.0f;
             }
         }
         // 110
@@ -1526,8 +1526,8 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
     int kplusp = *kev + np;
     float smlnum = unfl * ( n / ulp);
     float c, f, g, h11, h21, h12, h22, h32, s, sigmar, sigmai, r, t, tau, tst1;
-    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
-    float u[3] = { 0.0 };
+    float dbl1 = 1.0f, dbl0 = 0.0f, dblm1 = -1.0f;
+    float u[3] = { 0.0f };
 
     //  Initialize Q to the identity to accumulate
     //  the rotations and reflections
@@ -1558,14 +1558,14 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
             cconj = 0;
             continue;
 
-        } else if ((jj < np - 1) && fabsf(sigmai) != 0.0) {
+        } else if ((jj < np - 1) && fabsf(sigmai) != 0.0f) {
 
             // This shift has nonzero imaginary part, so we will apply
             // together with the next one; turn on the skip flag.
 
             cconj = 1;
 
-        } else if ((jj == np - 1) && (fabsf(sigmai) != 0.0)) {
+        } else if ((jj == np - 1) && (fabsf(sigmai) != 0.0f)) {
 
             // We have one block left but the shift has nonzero imaginary part.
             // Don't apply it and reduce the number of shifts by incrementing
@@ -1589,7 +1589,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
             for (iend = istart; iend < kplusp - 1; iend++)
             {
                 tst1 = fabsf(h[iend + (iend * ldh)]) + fabsf(h[iend + 1 + (iend + 1) * ldh]);
-                if (tst1 == 0.0)
+                if (tst1 == 0.0f)
                 {
                     tmp_int = kplusp - jj;
                     tst1 = slanhs_("1", &tmp_int, h, &ldh, workl);
@@ -1603,18 +1603,18 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
             {
                 istart += 1;
                 continue;
-            } else if  ((istart + 1 == iend) && fabsf(sigmai) > 0.0) {
+            } else if  ((istart + 1 == iend) && fabsf(sigmai) > 0.0f) {
                 istart += 2;
                 continue;
             } else {
-                h[iend+1 + (iend * ldh)] = 0.0;
+                h[iend+1 + (iend * ldh)] = 0.0f;
             }
 
             // We have a block [istart, iend] inclusive.
             h11 = h[istart + istart * ldh];
             h21 = h[istart + 1 + istart * ldh];
 
-            if (fabsf(sigmai) == 0.0)
+            if (fabsf(sigmai) == 0.0f)
             {
 
                 f = h11 - sigmar;
@@ -1625,7 +1625,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
                     if (i > istart)
                     {
                         h[i + (i - 1) * ldh] = r;
-                        h[i + 1 + (i - 1) * ldh] = 0.0;
+                        h[i + 1 + (i - 1) * ldh] = 0.0f;
                     }
                     tmp_int = kplusp - i;
                     srot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
@@ -1660,10 +1660,10 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
                     if (i > istart)
                     {
                         h[i + (i - 1) * ldh] = u[0];
-                        h[i + 1 + (i - 1) * ldh] = 0.0;
-                        if (i < iend - 1) { h[i + 2 + (i - 1) * ldh] = 0.0; }
+                        h[i + 1 + (i - 1) * ldh] = 0.0f;
+                        if (i < iend - 1) { h[i + 2 + (i - 1) * ldh] = 0.0f; }
                     }
-                    u[0] = 1.0;
+                    u[0] = 1.0f;
 
                     tmp_int = kplusp - i;
                     slarf_("L", &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
@@ -1686,7 +1686,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
     for (j = 0; j < *kev; j++)
     {
-        if (h[j+1 + ldh*j] < 0.0)
+        if (h[j+1 + ldh*j] < 0.0f)
         {
             tmp_int = kplusp - j;
             sscal_(&tmp_int, &dblm1, &h[j+1 + ldh*j], &ldh);
@@ -1706,13 +1706,13 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
         //  REFERENCE: LAPACK subroutine dlahqr
 
         tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
-        if (tst1 == 0.0)
+        if (tst1 == 0.0f)
         {
             tst1 = slanhs_("1", kev, h, &ldh, workl);
         }
         if (h[i+1 + ldh*i] <= fmaxf(ulp*tst1, smlnum))
         {
-            h[i+1 + ldh*i] = 0.0;
+            h[i+1 + ldh*i] = 0.0f;
         }
     }
     // 130
@@ -1723,7 +1723,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
     //  cannot GUARANTEE that the corresponding entry
     //  of H would be zero as in exact arithmetic.
 
-    if (h[*kev + ldh*(*kev-1)] > 0.0)
+    if (h[*kev + ldh*(*kev-1)] > 0.0f)
     {
         sgemv_("N", &n, &kplusp, &dbl1, v, &ldv, &q[(*kev)*ldq], &int1, &dbl0, &workd[n], &int1);
     }
@@ -1747,7 +1747,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
-    if (h[*kev + ldh*(*kev-1)] > 0.0){
+    if (h[*kev + ldh*(*kev-1)] > 0.0f){
         scopy_(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
     }
 
@@ -1759,7 +1759,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
     sscal_(&n, &q[kplusp-1 + ldq*(*kev-1)], resid, &int1);
 
-    if (h[*kev + ldh*(*kev-1)] > 0.0)
+    if (h[*kev + ldh*(*kev-1)] > 0.0f)
     {
         saxpy_(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
     }
@@ -1813,7 +1813,7 @@ sngets(struct ARNAUD_state_s *V, int* kev, int* np,
     //  Accordingly decrease NP by one. In other words keep
     //  complex conjugate pairs together.
 
-    if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] + ritzi[*np-1] == 0.0))
+    if ((ritzr[*np] - ritzr[*np-1] == 0.0f) && (ritzi[*np] + ritzi[*np-1] == 0.0f))
     {
         *np -= 1;
         *kev += 1;
@@ -1841,7 +1841,7 @@ sgetv0(struct ARNAUD_state_s *V, int initv, int n, int j,
 {
     int jj, int1 = 1;
     const float sq2o2 = sqrtf(2.0) / 2.0;
-    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;;
+    float dbl1 = 1.0f, dbl0 = 0.0f, dblm1 = -1.0f;;
 
     if (V->ido == ido_FIRST)
     {
@@ -1987,8 +1987,8 @@ LINE40:
 
         //  Iterative refinement step "failed"
 
-        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0; }
-        *rnorm = 0.0;
+        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0f; }
+        *rnorm = 0.0f;
         V->info = -1;
     }
 
@@ -1997,10 +1997,11 @@ LINE40:
     return;
 }
 
-void
+
+static void
 ssortc(const enum ARNAUD_which w, const int apply, const int n, float* xreal, float* ximag, float* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     float temp;
     ARNAUD_compare_cfunc *f;
 
@@ -2029,36 +2030,35 @@ ssortc(const enum ARNAUD_which w, const int apply, const int n, float* xreal, fl
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(xreal[j], ximag[j], xreal[j+igap], ximag[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(xreal[pos], ximag[pos], xreal[pos+gap], ximag[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = xreal[j];
-                xreal[j] = xreal[j+igap];
-                xreal[j+igap] = temp;
-                temp = ximag[j];
-                ximag[j] = ximag[j+igap];
-                ximag[j+igap] = temp;
+                temp = xreal[pos];
+                xreal[pos] = xreal[pos+gap];
+                xreal[pos+gap] = temp;
+                temp = ximag[pos];
+                ximag[pos] = ximag[pos+gap];
+                ximag[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
+
 
 // The void casts are to avoid compiler warnings for unused parameters
 int

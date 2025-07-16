@@ -118,6 +118,7 @@ py3.extension_module('_batched_linalg',
   [
     'src/_common_array_utils.hh',
     'src/_linalg_inv.hh',
+    'src/_linalg_solve.hh',
     'src/_npymath.hh',
     'src/_batched_linalg_module.cc'
   ],
