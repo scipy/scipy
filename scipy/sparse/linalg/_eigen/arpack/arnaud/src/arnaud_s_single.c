@@ -172,7 +172,7 @@ ARNAUD_sseupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
 
         for (j = 0; j < V->ncv; j++)
         {
-            workl[bounds + j] = j;
+            workl[bounds + j] = j*1.0f;
             select[j] = 0;
         }
         // 10
