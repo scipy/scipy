@@ -51,7 +51,8 @@ __all__ = [
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
-    'xp_result_type', 'xp_promote'
+    'xp_result_type', 'xp_promote',
+    'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
 ]
 
 
@@ -166,9 +167,6 @@ def eager_warns(warning_type, *, match=None, xp):
     """
     import pytest
     from scipy._lib._util import ignore_warns
-    # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
-    # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
-    __thread_safe__ = False  # noqa: F841
     if is_numpy(xp) or is_array_api_strict(xp) or is_cupy(xp):
         return pytest.warns(warning_type, match=match)
     return ignore_warns(warning_type, match='' if match is None else match)
@@ -755,36 +753,6 @@ def xp_capabilities(
     return decorator
 
 
-def _make_xp_pytest_marks(*funcs, capabilities_table=None):
-    capabilities_table = (xp_capabilities_table if capabilities_table is None
-                          else capabilities_table)
-    import pytest
-
-    marks = []
-    for func in funcs:
-        capabilities = capabilities_table[func]
-        exceptions = capabilities['exceptions']
-        reason = capabilities['reason']
-
-        if capabilities['cpu_only']:
-            marks.append(pytest.mark.skip_xp_backends(
-                cpu_only=True, exceptions=exceptions, reason=reason))
-        if capabilities['np_only']:
-            marks.append(pytest.mark.skip_xp_backends(
-                np_only=True, exceptions=exceptions, reason=reason))
-
-        for mod_name, reason in capabilities['skip_backends']:
-            marks.append(pytest.mark.skip_xp_backends(mod_name, reason=reason))
-        for mod_name, reason in capabilities['xfail_backends']:
-            marks.append(pytest.mark.xfail_xp_backends(mod_name, reason=reason))
-
-        lazy_kwargs = {k: capabilities[k]
-                       for k in ('allow_dask_compute', 'jax_jit')}
-        lazy_xp_function(func, **lazy_kwargs)
-
-    return marks
-
-
 def make_xp_test_case(*funcs, capabilities_table=None):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
@@ -799,13 +767,39 @@ def make_xp_test_case(*funcs, capabilities_table=None):
       for the decorated test function
     - Tag the function with `xpx.testing.lazy_xp_function`
 
+    Example::
+
+        @make_xp_test_case(f1)
+        def test_f1(xp):
+            ...
+
+        @make_xp_test_case(f2)
+        def test_f2(xp):
+            ...
+
+        @make_xp_test_case(f1, f2)
+        def test_f1_and_f2(xp):
+            ...
+
+    The above is equivalent to::
+        @pytest.mark.skip_xp_backends(...)
+        @pytest.mark.skip_xp_backends(...)        
+        @pytest.mark.xfail_xp_backends(...)
+        @pytest.mark.xfail_xp_backends(...)
+        def test_f1(xp):
+            ...
+
+    etc., where the arguments of ``skip_xp_backends`` and ``xfail_xp_backends`` are
+    determined by the ``@xp_capabilities`` decorator applied to the functions.
+
     See Also
     --------
     xp_capabilities
+    make_xp_pytest_marks
     make_xp_pytest_param
     array_api_extra.testing.lazy_xp_function
     """
-    marks = _make_xp_pytest_marks(*funcs, capabilities_table=capabilities_table)
+    marks = make_xp_pytest_marks(*funcs, capabilities_table=capabilities_table)
     return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
 
 
@@ -851,12 +845,71 @@ def make_xp_pytest_param(func, *args, capabilities_table=None):
     --------
     xp_capabilities
     make_xp_test_case
+    make_xp_pytest_marks
     array_api_extra.testing.lazy_xp_function
     """
     import pytest
 
-    marks = _make_xp_pytest_marks(func, capabilities_table=capabilities_table)
+    marks = make_xp_pytest_marks(func, capabilities_table=capabilities_table)
     return pytest.param(func, *args, marks=marks, id=func.__name__)
+
+
+def make_xp_pytest_marks(*funcs, capabilities_table=None):
+    """Variant of ``make_xp_test_case`` that returns a list of pytest marks,
+    which can be used with the module-level `pytestmark = ...` variable::
+
+        pytestmark = make_xp_pytest_marks(f1, f2)
+
+        def test(xp):
+            ...
+
+    In this example, the whole test module is dedicated to testing `f1` or `f2`,
+    and the two functions have the same capabilities, so it's unnecessary to
+    cherry-pick which test tests which function.
+    The above is equivalent to::
+
+        pytestmark = [
+            pytest.mark.skip_xp_backends(...),
+            pytest.mark.xfail_xp_backends(...), ...]),
+        ]
+
+        def test(xp):
+            ...
+    
+    See Also
+    --------
+    xp_capabilities
+    make_xp_test_case
+    make_xp_pytest_param
+    array_api_extra.testing.lazy_xp_function
+    """
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+    import pytest
+
+    marks = []
+    for func in funcs:
+        capabilities = capabilities_table[func]
+        exceptions = capabilities['exceptions']
+        reason = capabilities['reason']
+
+        if capabilities['cpu_only']:
+            marks.append(pytest.mark.skip_xp_backends(
+                cpu_only=True, exceptions=exceptions, reason=reason))
+        if capabilities['np_only']:
+            marks.append(pytest.mark.skip_xp_backends(
+                np_only=True, exceptions=exceptions, reason=reason))
+
+        for mod_name, reason in capabilities['skip_backends']:
+            marks.append(pytest.mark.skip_xp_backends(mod_name, reason=reason))
+        for mod_name, reason in capabilities['xfail_backends']:
+            marks.append(pytest.mark.xfail_xp_backends(mod_name, reason=reason))
+
+        lazy_kwargs = {k: capabilities[k]
+                       for k in ('allow_dask_compute', 'jax_jit')}
+        lazy_xp_function(func, **lazy_kwargs)
+
+    return marks
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?

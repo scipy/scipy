@@ -335,7 +335,6 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (1,))
 @pytest.mark.parametrize(("data_generator"), ("mixed",))
-@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
@@ -519,7 +518,6 @@ def skip_nan_unexpected_exception():
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("data_generator"),
                          ("all_nans", "all_finite", "mixed", "empty"))
-@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
@@ -857,7 +855,6 @@ def _check_arrays_broadcastable(arrays, axis):
 @pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
-@pytest.mark.parallel_threads(1)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
     if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:

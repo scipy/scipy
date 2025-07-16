@@ -832,6 +832,10 @@ class rv_generic:
 
     def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         tempdict = docdict.copy()
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
@@ -874,6 +878,10 @@ class rv_generic:
     def _construct_default_doc(self, longname=None,
                                docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         if longname is None:
             longname = 'A'
         self.__doc__ = ''.join([f'{longname} {discrete} random variable.',

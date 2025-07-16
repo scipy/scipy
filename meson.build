@@ -111,6 +111,10 @@ if cc.get_id() == 'clang-cl'
   add_project_arguments('-Qunused-arguments', language: ['c', 'cpp'])
 endif
 
+if cpp.get_id() == 'msvc'
+  add_project_arguments('/bigobj', language: 'cpp')
+endif
+
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
