@@ -2151,7 +2151,8 @@ class Rotation:
         return Rotation(self._quat[indexer, ...], normalize=False)
 
     @xp_capabilities(
-        skip_backends=[("dask.array", "missing required linalg extension")]
+        jax_jit=False,
+        skip_backends=[("dask.array", "missing required linalg extension")],
     )
     def __setitem__(self, indexer: int | slice | EllipsisType | None, value: Rotation):
         """Set rotation(s) at given index(es) from object.
@@ -2477,11 +2478,15 @@ class Rotation:
             return Rotation(q, normalize=False, copy=False), rssd, sensitivity
         return Rotation(q, normalize=False, copy=False), rssd
 
-    @xp_capabilities()
+    @xp_capabilities(
+        jax_jit=False, skip_backends=[("array_api_strict", "pickling not supported")]
+    )
     def __getstate__(self) -> tuple[Array, bool]:
         return (self._quat, self._single)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        jax_jit=False, skip_backends=[("array_api_strict", "pickling not supported")]
+    )
     def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
@@ -2559,7 +2564,8 @@ class Rotation:
         return quat
 
     @xp_capabilities(
-        skip_backends=[("dask.array", "missing required linalg extension")]
+        jax_jit=False,
+        skip_backends=[("dask.array", "missing required linalg extension")],
     )
     def __iter__(self) -> Iterator[Rotation]:
         """Iterate over rotations."""
