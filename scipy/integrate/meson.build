@@ -84,7 +84,7 @@ py3.extension_module('_vode',
   link_with: [vode_lib],
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'

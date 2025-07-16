@@ -104,7 +104,7 @@ foreach ele: elements
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+    dependencies: [lapack_dep, fortranobject_dep],
     link_args: version_link_args,
     install: true,
     link_language: 'fortran',

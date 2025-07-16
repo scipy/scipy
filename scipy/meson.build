@@ -336,7 +336,7 @@ if not lapack.found()
 endif
 
 lapack_dep = declare_dependency(
-  dependencies: lapack,
+  dependencies: [lapack, blas_dep],
   compile_args: _args_blas_lapack
 )
 
@@ -816,7 +816,7 @@ if use_ilp64
     compile_args: [_fflag_ilp64]
   )
   lapack_ilp64 = declare_dependency(
-    dependencies: lapack_ilp64,
+    dependencies: [lapack_ilp64, blas_ilp64],
     link_with: [g77_abi_wrappers_ilp64],
     compile_args: [_fflag_ilp64]
   )

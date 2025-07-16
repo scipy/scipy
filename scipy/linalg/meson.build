@@ -68,7 +68,7 @@ py3.extension_module('_fblas',
   fblas_module,
   fortran_args: _fflag_lp64,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -98,7 +98,7 @@ py3.extension_module('_flapack',
   c_args: [Wno_empty_body],
   fortran_args: _fflag_lp64,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -133,7 +133,7 @@ if use_ilp64
     fblas64_module,
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
+    dependencies: [lapack_ilp64, fortranobject_dep],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -150,7 +150,7 @@ if use_ilp64
     c_args: [Wno_empty_body],
     link_args: version_link_args,
     include_directories: ['../_build_utils/src'],   # for npy_cblas.h
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
+    dependencies: [lapack_ilp64, fortranobject_dep],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -179,7 +179,7 @@ py3.extension_module('_batched_linalg',
     'src/_npymath.hh',
     'src/_batched_linalg_module.cc'
   ],
-  dependencies: [np_dep, lapack_dep, blas_dep],
+  dependencies: [np_dep, lapack_dep],
   include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/linalg'
@@ -212,7 +212,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -225,7 +225,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -260,7 +260,7 @@ py3.extension_module('_matfuncs_expm',
     '_matfuncs_expm.h',
     '_matfuncs_expm.c',
   ],
-  dependencies: [np_dep, lapack_dep, blas_dep],
+  dependencies: [np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -271,7 +271,7 @@ py3.extension_module('_matfuncs_schur_sqrtm',
     '_matfuncs_sqrtm.h',
     '_matfuncs_sqrtm.c',
   ],
-  dependencies: [np_dep, lapack_dep, blas_dep],
+  dependencies: [np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
