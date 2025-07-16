@@ -16,7 +16,8 @@ from scipy._lib._array_api import (
     xp_assert_close,
     eager_warns,
     xp_default_dtype,
-    make_xp_test_case
+    make_xp_test_case,
+    is_cupy
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1784,7 +1785,13 @@ def test_align_vectors_antiparallel(xp):
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
 
     # GPU computations are less accurate
-    if os.environ.get("SCIPY_DEVICE") == "cuda":
+    # We currently have no unified way to check which device is being used. Cupy will
+    # always run on the GPU regardless of SCIPY_DEVICE, hence the explicit check for
+    # cupy. Note that the current implementation lets other frameworks, e.g. numpy, run
+    # on the CPU regardless of SCIPY_DEVICE but with increased GPU tolerances.
+    # TODO: Add a better way to detect device usage.
+    # See https://github.com/scipy/scipy/pull/23249#discussion_r2208669155
+    if os.environ.get("SCIPY_DEVICE") == "cuda" or is_cupy(xp):
         atol = 1e-7
 
     for a in as_to_test:
