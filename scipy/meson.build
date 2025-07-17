@@ -448,7 +448,6 @@ else
   blas_dep = blas
   lapack_dep = lapack
   c_flags_ilp64 = []
-  message('LAPACK ILP64 not requested / not detected.')
 endif
 
 # End of BLAS/LAPACK handling
@@ -661,15 +660,6 @@ if use_ilp64
   f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
 endif
 
-if blas_symbol_suffix != ''
-  # We need to patch source files that use BLAS/LAPACK symbols.
-  # In addition, we now need to enable the Fortran preprocessor on all targets
-  # that depend on BLAS/LAPACK
-  # Note: this came from `scipy/build_utils/_fortran.py` in the distutils build.
- # _fflag_lp64 += _fflag_preprocess
- # _fflag_ilp64 += _fflag_preprocess
-endif
-
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
 # explicitly add the define as a compiler flag for Cython-generated code.
@@ -817,24 +807,22 @@ subdir('_build_utils')
 blas_lp64_dep = declare_dependency(
   dependencies: blas_lp64_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
-  compile_args: [_fflag_lp64]  # XXX
 )
 lapack_lp64_dep = declare_dependency(
   dependencies: [lapack_lp64_dep, blas_lp64_dep],
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
-  compile_args: [_fflag_lp64]
 )
 
 if use_ilp64
   blas_dep = declare_dependency(
     dependencies: blas_dep,
     link_with: [g77_abi_wrappers_ilp64],
-    compile_args: [_fflag_ilp64]
+    compile_args: [c_flags_ilp64]
   )
   lapack_dep = declare_dependency(
     dependencies: [lapack_dep, blas_dep],
     link_with: [g77_abi_wrappers_ilp64],
-    compile_args: [_fflag_ilp64]
+    compile_args: [c_flags_ilp64]
   )
 endif
 

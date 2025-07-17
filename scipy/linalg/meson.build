@@ -179,7 +179,7 @@ py3.extension_module('_batched_linalg',
     'src/_npymath.hh',
     'src/_batched_linalg_module.cc'
   ],
-  dependencies: [np_dep, lapack_lp64_dep],
+  dependencies: [np_dep, lapack_dep],
   include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/linalg'

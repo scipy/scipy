@@ -15,7 +15,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject* ap_Am = NULL;
     PyArrayObject *ap_Ainv = NULL;
-    int info = 0;
+    CBLAS_INT info = 0;
     int isIllconditioned = 0;
     int isSingular = 0;
     St structure = St::NONE;
