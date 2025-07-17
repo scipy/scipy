@@ -332,18 +332,21 @@
         }
     },
     "fdtr": {
-        "xsf_wrappers.h": {
-            "xsf_fdtr": "ddd->d"
+        "boost_special_functions.h++": {
+            "f_cdf_float": "fff->f",
+            "f_cdf_double": "ddd->d"
         }
     },
     "fdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_fdtrc": "ddd->d"
+        "boost_special_functions.h++": {
+            "f_sf_float": "fff->f",
+            "f_sf_double": "ddd->d"
         }
     },
     "fdtri": {
-        "xsf_wrappers.h": {
-            "xsf_fdtri": "ddd->d"
+        "boost_special_functions.h++": {
+            "f_ppf_float": "fff->f",
+            "f_ppf_double": "ddd->d"
         }
     },
     "fdtridfd": {

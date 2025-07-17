@@ -3216,15 +3216,15 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtr` directly can improve
-    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtr` directly can improve performance compared to the ``cdf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
 
     Examples
     --------
@@ -3317,15 +3317,14 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
-    performance compared to the ``sf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtrc` directly can improve performance compared to the ``sf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -3411,30 +3410,14 @@ add_newdoc("fdtri",
 
     Notes
     -----
-    The computation is carried out using the relation to the inverse
-    regularized beta function, :math:`I^{-1}_x(a, b)`.  Let
-    :math:`z = I^{-1}_p(d_d/2, d_n/2).`  Then,
-
-    .. math::
-        x = \frac{d_d (1 - z)}{d_n z}.
-
-    If `p` is such that :math:`x < 0.5`, the following relation is used
-    instead for improved stability: let
-    :math:`z' = I^{-1}_{1 - p}(d_n/2, d_d/2).` Then,
-
-    .. math::
-        x = \frac{d_d z'}{d_n (1 - z')}.
-
-    Wrapper for the Cephes [1]_ routine `fdtri`.
-
-    The F distribution is also available as `scipy.stats.f`. Calling
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
     `fdtri` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
