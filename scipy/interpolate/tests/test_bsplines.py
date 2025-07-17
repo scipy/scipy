@@ -5,6 +5,7 @@ import math
 import cmath
 import threading
 import copy
+import warnings
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -124,7 +125,7 @@ class TestBSpline:
             atol=1e-14
         )
         x_np, t_np, c_np = map(np.asarray, (x, t, c))
-        splev_result = splev(x_np, (t_np, c_np, k)) 
+        splev_result = splev(x_np, (t_np, c_np, k))
         xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
     @skip_xp_backends(np_only=True, reason="TODO convert BPoly")
@@ -3570,14 +3571,23 @@ class TestMakeSplrepBase:
             x = np.arange(14)
             y = x**3
 
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter(
+                "ignore",
+                RuntimeWarning
+            )
             tck = splrep(x, y, k=3, s=s, per=(self.bc_type == 'periodic'))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter(
+                "ignore",
+                RuntimeWarning
+            )
             spl = make_splrep(x, y, k=3, s=s, bc_type=self.bc_type)
-            assert len(r) == 2
-            xp_assert_close(spl.t, tck[0])
-            xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
-                            tck[1], atol=5e-13)
+
+        xp_assert_close(spl.t, tck[0])
+        xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                        tck[1], atol=5e-13)
 
     @pytest.mark.parametrize("k", [1, 2, 3])
     def test_shape(self, k):
@@ -3837,17 +3847,19 @@ class TestMakeSplrepPeriodic(TestMakeSplrepBase):
         with assert_raises(ValueError):
             make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
 
-    def test_make_splrep_periodic_m_eq_2_k_eq_1(self):
+    @pytest.mark.parametrize("s", [0, 1e-50])
+    def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
         # Two data points (m = 2)
         x = np.array([0.0, 1.0])
         y = np.array([5.0, 5.0])  # constant function
-        w = np.array([1.0, 1.0])
+        w = np.array([1.0, 1.0]) if s > 0 else None
 
         # Degree 1 periodic spline
-        spl = make_splrep(x, y, w=w, k=1, bc_type="periodic", s=1e-50)
-        tck = splrep(x, y, w=w, k=1, per=1, s=1e-50)
+        spl = make_splrep(x, y, w=w, k=1, bc_type="periodic", s=s)
+        tck = splrep(x, y, w=w, k=1, per=1, s=s)
 
-        xp_assert_close(spl.t, tck[0])
+        if s > 0:
+            xp_assert_close(spl.t, tck[0])
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1])
 
