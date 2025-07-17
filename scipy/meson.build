@@ -634,7 +634,6 @@ else
   _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', '-cpp'])
 endif
 
-_fflag_lp64 = []
 _fflag_ilp64 = []
 f2py_ilp64_opts = []
 if use_ilp64
