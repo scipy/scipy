@@ -1710,13 +1710,13 @@ class TestBilinear:
         b = [0, 0, 1, 2, 3, 0, 0]
         expected_b = [1, 2, 3]
         b_trimmed = _trim_zeros(np.array(b), 'fb')
-        assert_array_almost_equal(b_trimmed, expected_b)
+        np.testing.assert_array_equal(b_trimmed, expected_b)
 
         # Test for trailing zeros
         b = [1, 2, 3, 0, 0]
         expected_b = [1, 2, 3]
         b_trimmed = _trim_zeros(np.array(b), 'fb')
-        assert_array_almost_equal(b_trimmed, expected_b)
+        np.testing.assert_array_equal(b_trimmed, expected_b)
 
 
 class TestLp2lp_zpk:
