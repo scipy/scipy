@@ -142,8 +142,8 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
         xe = max(x)
 
     if periodic and not np.allclose(y[0], y[-1], atol=1e-15):
-        raise ValueError("First and last points does not match while "
-                         "periodic case expected")
+        raise ValueError("First and last points does not match which is required "
+                         "for `bc_type='periodic'`.")
 
     return x, y, w, k, s, xb, xe
 
@@ -173,7 +173,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
           ends are equivalent.
     bc_type : str, optional
         Boundary conditions.
-        Default is None.
+        Default is `"not-a-knot"`.
         The following boundary conditions are recognized:
 
         * ``"not-a-knot"`` (default): The first and second segments are the
@@ -701,7 +701,7 @@ class Fperiodic:
             # _lsq_solve_qr_for_root_rati_periodic computes QR factorization of
             # data matrix and returns related matrices.
             # Refer: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L171-L215
-            (R, A1, A2, Z), _, _, _, _ = _lsq_solve_qr_for_root_rati_periodic(
+            R, A1, A2, Z, _, _, _, _ = _lsq_solve_qr_for_root_rati_periodic(
                 x, y, t, k, w)
 
         # Initialize augmented matrices G1, G2, H1, H2 and offset used
@@ -1046,13 +1046,13 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
         larger than `nest`.
         Default is None (no limit, add up to ``m + k + 1`` knots).
     periodic : bool, optional
-        If non-zero, data points are considered periodic with period ``x[m-1]`` -
+        If True, data points are considered periodic with period ``x[m-1]`` -
         ``x[0]`` and a smooth periodic spline approximation is returned. Values of
         ``y[m-1]`` and ``w[m-1]`` are not used.
-        The default is zero, corresponding to boundary condition 'not-a-knot'.
+        The default is False, corresponding to boundary condition 'not-a-knot'.
     bc_type : str, optional
         Boundary conditions.
-        Default is None.
+        Default is `"not-a-knot"`.
         The following boundary conditions are recognized:
 
         * ``"not-a-knot"`` (default): The first and second segments are the
@@ -1211,7 +1211,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
         Default is None (no limit, add up to ``m + k + 1`` knots).
     bc_type : str, optional
         Boundary conditions.
-        Default is None.
+        Default is `"not-a-knot"`.
         The following boundary conditions are recognized:
 
         * ``"not-a-knot"`` (default): The first and second segments are the

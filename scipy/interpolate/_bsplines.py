@@ -1907,8 +1907,6 @@ def _lsq_solve_qr_for_root_rati_periodic(x, y, t, k, w):
     `w` is always 1D: one weight value per `x` value.
 
     """
-    assert y.ndim == 2
-
     y_w = y * w[:, None]
     # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
     R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
@@ -1929,8 +1927,6 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
     `w` is always 1D: one weight value per `x` value.
 
     """
-    assert y.ndim == 2
-
     y_w = y * w[:, None]
     if not periodic:
         A, offset, nc = _dierckx.data_matrix(x, t, k, w)

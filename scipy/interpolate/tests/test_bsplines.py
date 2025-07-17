@@ -26,6 +26,7 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
+from scipy.interpolate._fitpack_repro import Fperiodic, root_rati
 
 from scipy.interpolate import generate_knots, make_splrep, make_splprep
 
@@ -3904,6 +3905,30 @@ class TestMakeSplrepPeriodic(TestMakeSplrepBase):
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1])
 
+    @pytest.mark.parametrize("k_fp", [(1, -0.0001), (2, -0.0001), (3, -8.62e-05)])
+    @pytest.mark.parametrize("s", [1e-4])
+    def test_fperiodic_basic_fit(self, k_fp, s):
+        n = 10
+        x = np.linspace(0, 1, n)
+        y = np.sin(2 * np.pi * x)
+        k, fp = k_fp
+
+        tck = splrep(x, y, k=k, s=s, per=1)
+
+        fp0 = 4.5
+
+        spline = Fperiodic(x, y[:, None], tck[0], k=k, s=s)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            _ = root_rati(spline, 2.0, ((0, fp0 - s), (np.inf, fp - s)), s * 0.001)
+
+        # Check the returned spline is periodic at endpoints
+        bs = spline.spl
+        x_check = np.array([0.0, 1.0])
+        y_check = bs(x_check)
+
+        xp_assert_close(y_check[0], y_check[1])
+
 @skip_xp_backends(cpu_only=True)
 class TestMakeSplprep:
     def _get_xyk(self, m=10, k=3, xp=np):
@@ -3954,8 +3979,7 @@ class TestMakeSplprep:
         xp_assert_close(u, u_a, atol=s)
         xp_assert_close(tck[0], tck_a[0], atol=1e-15)
         assert len(tck[1]) == len(tck_a[1])
-        for c1, c2 in zip(tck[1], tck_a[1]):
-            xp_assert_close(c1, c2, atol=1e-15)
+        xp_assert_close(tck[1], tck_a[1], atol=1e-15)
         assert tck[2] == tck_a[2]
         assert np.shape(splev(u, tck)) == np.shape(y)
 
