@@ -157,6 +157,47 @@ void solve_slice_sym_herm(
 
 
 
+// Diagonal array solve
+template<typename T>
+inline void solve_slice_diagonal(
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+    value_type *pdata = reinterpret_cast<value_type *>(data);
+    value_type *p_bdata = reinterpret_cast<value_type *>(b_data);
+
+    value_type zero(0.), one(1.);
+    real_type maxa(0.), maxinva(0.);
+
+    for (CBLAS_INT j=0; j<N; j++) {
+        value_type ajj = pdata[j*N + j];
+
+        status.is_singular = (ajj == zero);
+        if (status.is_singular) {
+            status.lapack_info = j;
+            return;
+        }
+
+        value_type inv_ajj = one / ajj;
+        for (CBLAS_INT i=0; i<NRHS; i++) {
+            p_bdata[j + i*N] *= inv_ajj;
+        }
+
+        // condition number
+        real_type absa = std::abs(ajj), absinva = std::abs(inv_ajj);
+
+        if(absa != absa) {
+            status.is_ill_conditioned = true;
+        } else {
+            if(absa > maxa) {maxa = absa;}
+            if(absinva > maxinva) {maxinva = absinva;}
+        }
+    }
+    status.is_ill_conditioned = status.is_ill_conditioned || (maxa * maxinva > 1./ numeric_limits<real_type>::eps);
+    status.rcond = maxa * maxinva;
+}
+
 
 template<typename T>
 int
@@ -292,7 +333,10 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             // Get the bandwidth of the slice
             bandwidth(data, n, n, &lower_band, &upper_band);
 
-            if(lower_band == 0) {
+            if ((upper_band == 0) && (lower_band == 0)) {
+                slice_structure = St::DIAGONAL;
+            }
+            else if(lower_band == 0) {
                 slice_structure = St::UPPER_TRIANGULAR;
                 uplo = 'U';
             } else if (upper_band == 0) {
@@ -314,6 +358,20 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
         init_status(slice_status, idx, slice_structure);
 
         switch(slice_structure) {
+            case St::DIAGONAL:
+            {
+                solve_slice_diagonal(intn, int_nrhs, data, data_b, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                break;
+            }
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
