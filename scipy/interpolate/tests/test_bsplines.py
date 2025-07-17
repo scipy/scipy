@@ -3553,8 +3553,11 @@ class TestMakeSplrepBase:
     def _test_default_s(self, x, y, k):
         spl = make_splrep(x, y, k=k, bc_type=self.bc_type)
         spl_i = make_interp_spline(x, y, k=k, bc_type=self.bc_type)
+        t = list(generate_knots(x, y, k=k, bc_type=self.bc_type))[-1]
 
         xp_assert_close(spl.c, spl_i.c, atol=1e-15)
+        xp_assert_close(spl.t, t, atol=1e-15)
+        xp_assert_close(spl_i.t, t, atol=1e-15)
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
     def test_default_s(self, k):
