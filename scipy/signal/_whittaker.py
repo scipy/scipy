@@ -127,9 +127,9 @@ def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
            "Efficient computation for Whittaker-Henderson smoothing".
            Computational Statistics and Data Analysis 52:959-74.
            :doi:`10.1016/j.csda.2006.11.038`
-    .. [4] Hodrick, R. J., & Prescott, E. C. (1997).
-           Postwar U.S. Business Cycles: An Empirical Investigation.
-          :doi:`10.2307/2953682`
+    .. [4] Hodrick, R. J., and Prescott, E. C. (1997).
+           "Postwar U.S. Business Cycles: An Empirical Investigation".
+           :doi:`10.2307/2953682`
 
     Examples
     --------
