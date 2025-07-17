@@ -109,6 +109,48 @@ inline CBLAS_INT solve_slice_cholesky(
 }
 
 
+// Diagonal array solve
+template<typename T>
+inline CBLAS_INT solve_slice_diagonal(
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, int* isIllconditioned, int* isSingular
+) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+    value_type *pdata = reinterpret_cast<value_type *>(data);
+    value_type *p_bdata = reinterpret_cast<value_type *>(b_data);
+
+    value_type zero(0.), one(1.);
+    real_type maxa(0.), maxinva(0.);
+    *isIllconditioned = false;
+
+    for (CBLAS_INT j=0; j<N; j++) {
+        value_type ajj = pdata[j*N + j];
+
+        if (ajj == zero) {
+            *isSingular = 1;
+            return j;
+        }
+
+        value_type inv_ajj = one / ajj;
+        for (CBLAS_INT i=0; i<NRHS; i++) {
+            p_bdata[j + i*N] *= inv_ajj;
+        }
+
+        // condition number
+        real_type absa = std::abs(ajj), absinva = std::abs(inv_ajj);
+
+        if(absa != absa) {
+            *isIllconditioned = true;
+        } else {
+            if(absa > maxa) {maxa = absa;}
+            if(absinva > maxinva) {maxinva = absinva;}
+        }
+    }
+    *isIllconditioned = *isIllconditioned || maxa * maxinva > 1./ numeric_limits<real_type>::eps;
+
+    return 0;
+}
+
 template<typename T>
 void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int transposed, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
 {
@@ -227,7 +269,10 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             // Get the bandwidth of the slice
             bandwidth(data, n, n, &lower_band, &upper_band);
 
-            if(lower_band == 0) {
+            if ((upper_band == 0) && (lower_band == 0)) {
+                slice_structure = St::DIAGONAL;
+            }
+            else if(lower_band == 0) {
                 slice_structure = St::UPPER_TRIANGULAR;
                 uplo = 'U';
             } else if (upper_band == 0) {
@@ -248,6 +293,11 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
         }
 
         switch(slice_structure) {
+            case St::DIAGONAL:
+            {
+                *info = solve_slice_diagonal(intn, int_nrhs, data, data_b, isIllconditioned, isSingular);
+                break;
+            }
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
