@@ -243,7 +243,9 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None,
     if s == 0:
         if nest is not None or w is not None:
             raise ValueError("s == 0 is interpolation only")
-        if periodic:
+        # For special-case k=1 (e.g., Lyche and Morken, Eq.(2.16)),
+        # _not_a_knot produces desired knot vector
+        if periodic and k > 1:
             t = _periodic_knots(x, k)
         else:
             t = _not_a_knot(x, k)
