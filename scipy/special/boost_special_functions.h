@@ -1,6 +1,7 @@
 #ifndef BOOST_SPECIAL_FUNCTIONS_H
 #define BOOST_SPECIAL_FUNCTIONS_H
 
+#include <iostream>
 #include <cmath>
 #include <stdexcept>
 #include "sf_error.h"
@@ -1871,49 +1872,88 @@ landau_isf_double(double p, double loc, double scale)
 }
 
 
-template <class T>
+template <typename Real>
 struct ncfdtrinc_target
 {
-    ncfdtrinc_target(T const& x, T const& dfn, T const& dfd, T const& p)
-        : x_(x), dfn_(dfn), dfd_(dfd), p_(p) {}
+    ncfdtrinc_target(const Real x_, const Real dfn_, const Real dfd_, const Real p_)
+        : x(x_), dfn(dfn_), dfd(dfd_), p(p_), q(1.0 - p_), use_cdf(p_ <= 1.0 - p_) {}
 
-    T operator()(T nc) const
+    Real operator()(Real nc) const
     {
-        T q_ = 1.0 - p_;
-        T objective;
-        if (p_ <= q_) {
-            objective = boost::math::cdf(
-                boost::math::non_central_f_distribution<T, SpecialPolicy>(dfn_, dfd_, nc), x_) - p_;
-    }
-        else {
-            objective = q_ - boost::math::cdf(boost::math::complement(
-                boost::math::non_central_f_distribution<T, SpecialPolicy>(dfn_, dfd_, nc), x_));
+        if (use_cdf) {
+            return boost::math::cdf(
+                boost::math::non_central_f_distribution<Real, SpecialPolicy>(dfn, dfd, nc), x) - p;
+        } else {
+            return q - boost::math::cdf(boost::math::complement(
+                boost::math::non_central_f_distribution<Real, SpecialPolicy>(dfn, dfd, nc), x));
         }
-        return objective;
     }
 private:
-    T x_, dfn_, dfd_, p_;
+    Real x, dfn, dfd, p, q;
+    bool use_cdf; // true if we are using the CDF, false if we are using the complement CDF.
 };
 
-template <class T>
-T _ncfdtrinc(T dfn, T dfd, T p, T x)
+template <typename Real>
+Real
+_ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
 {
-    T guess = 1;  // As good a guess as any, we can start with 1.
-    T factor = 8;                                 // How big steps to take when searching.
-
+    if (std::isnan(dfn) || std::isnan(dfd) || std::isnan(p) || std::isnan(x)) {
+        return NAN;
+    }
+    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
+    Real factor = 8;                                 // How big steps to take when searching.
     const std::uintmax_t maxit = 500;            // Limit to maximum iterations.
-    std::uintmax_t it = maxit;                  // Initially our chosen max iterations, but updated with actual.
-    bool is_rising = false;                        // So if result if guess^3 is too low, then try increasing guess.
-    int digits = std::numeric_limits<T>::digits;  // Maximum possible binary digits accuracy for type T.
+    std::uintmax_t it = 0;                // Root finding iteration counter.
+    bool is_rising = false;                        // Function to be rooted is monotonically decreasing.
+    int digits = std::numeric_limits<Real>::digits;  // Maximum possible binary digits accuracy for type T.
     // Some fraction of digits is used to control how accurate to try to make the result.
     int get_digits = digits - 3;                  // We have to have a non-zero interval at each step, so
                                                 // maximum accuracy is digits - 1.  But we also have to
                                                 // allow for inaccuracy in f(x), otherwise the last few
                                                 // iterations just thrash around.
-    boost::math::tools::eps_tolerance<T> tol(get_digits);             // Set the tolerance.
-    std::pair<T, T> r = boost::math::tools::bracket_and_solve_root(
-                        ncfdtrinc_target<T>(x, dfn, dfd, p), guess, factor, is_rising, tol, it);
-    return (it == maxit) ? NAN : r.first + (r.second - r.first)/2;      // Midway between brackets is our result, if necessary we could
+    boost::math::tools::eps_tolerance<Real> tol(get_digits);           // Set the tolerance.
+    Real y;
+    std::pair<Real, Real> result_bracket;
+    try {
+        result_bracket = boost::math::tools::bracket_and_solve_root(
+                            ncfdtrinc_target<Real>(x, dfn, dfd, p), guess, factor, is_rising, tol, it);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    }
+    catch (const std::overflow_error& e) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    }
+    catch (const std::underflow_error& e) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    }
+    catch (...) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (it >= maxit) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (!std::isfinite(result_bracket.first) || !std::isfinite(result_bracket.second) ||
+                       result_bracket.first < 0 || result_bracket.second < 0) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (result_bracket.first > result_bracket.second) {
+        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // We have a valid result, return the midpoint of the brackets.
+    y = result_bracket.first + (result_bracket.second - result_bracket.first)/2;
+    return y;
 }
 
 
@@ -1928,4 +1968,5 @@ ncfdtrinc_new_double(double dfn, double dfd, double p, double x)
 {
     return _ncfdtrinc(dfn, dfd, p, x);
 }
+
 #endif
