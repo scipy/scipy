@@ -1901,7 +1901,7 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
         return NAN;
     }
     if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_DOMAIN, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
     Real guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
@@ -1923,32 +1923,32 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
                             ncfdtrinc_target<Real>(x, dfn, dfd, p), guess, factor, is_rising, tol, it);
     }
     catch (const std::domain_error& e) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_DOMAIN, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
         y = NAN;
     }
     catch (const std::overflow_error& e) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_OVERFLOW, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_OVERFLOW, NULL);
         y = INFINITY;
     }
     catch (const std::underflow_error& e) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_UNDERFLOW, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     }
     catch (...) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if (it >= maxit) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if (!std::isfinite(result_bracket.first) || !std::isfinite(result_bracket.second) ||
                        result_bracket.first < 0 || result_bracket.second < 0) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if (result_bracket.first > result_bracket.second) {
-        sf_error("_ncfdtrinc_new", SF_ERROR_NO_RESULT, NULL);
+        sf_error("ncfdtrinc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     // We have a valid result, return the midpoint of the brackets.
@@ -1958,13 +1958,13 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
 
 
 float
-ncfdtrinc_new_float(float dfn, float dfd, float p, float x)
+ncfdtrinc_float(float dfn, float dfd, float p, float x)
 {
     return _ncfdtrinc(dfn, dfd, p, x);
 }
 
 double
-ncfdtrinc_new_double(double dfn, double dfd, double p, double x)
+ncfdtrinc_double(double dfn, double dfd, double p, double x)
 {
     return _ncfdtrinc(dfn, dfd, p, x);
 }

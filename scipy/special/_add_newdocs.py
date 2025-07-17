@@ -6580,6 +6580,15 @@ add_newdoc("ncfdtrinc",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
 
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central F distribution using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import ncfdtr, ncfdtrinc
@@ -6597,37 +6606,6 @@ add_newdoc("ncfdtrinc",
     array([ 0.5,  1.5,  2. ])
 
     """)
-
-add_newdoc("_ncfdtrinc_new",
-    """
-    ncfdtrinc(dfn, dfd, p, f, out=None)
-
-    Calculate non-centrality parameter for non-central F distribution.
-
-    This is the inverse with respect to `nc` of `ncfdtr`.
-    See `ncfdtr` for more details.
-
-    Parameters
-    ----------
-    dfn : array_like
-        Degrees of freedom of the numerator sum of squares. Range (0, inf).
-    dfd : array_like
-        Degrees of freedom of the denominator sum of squares. Range (0, inf).
-    p : array_like
-        Value of the cumulative distribution function. Must be in the
-        range [0, 1].
-    f : array_like
-        Quantiles, i.e., the upper limit of integration.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    nc : scalar or ndarray
-        Noncentrality parameter.
-
-    """)
-
 
 add_newdoc("nctdtr",
     """

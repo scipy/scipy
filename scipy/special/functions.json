@@ -537,13 +537,9 @@
             "ncfdtridfn": "dddd->d"        }
     },
     "ncfdtrinc": {
-        "_cdflib_wrappers.pxd": {
-            "ncfdtrinc": "dddd->d"        }
-    },
-    "_ncfdtrinc_new": {
         "boost_special_functions.h++": {
-            "ncfdtrinc_new_float": "ffff->f",
-            "ncfdtrinc_new_double": "dddd->d"
+            "ncfdtrinc_float": "ffff->f",
+            "ncfdtrinc_double": "dddd->d"
         }
     },
     "nctdtr": {
