@@ -10,7 +10,11 @@ from typing import Literal
 
 import numpy as np
 import pytest
-import hypothesis
+try:
+    import hypothesis
+    hypothesis_available = True
+except ImportError:
+    hypothesis_available = False
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
@@ -495,31 +499,32 @@ def devices(xp):
     return xp.__array_namespace_info__().devices() + [None]
 
 
-# Following the approach of NumPy's conftest.py...
-# Use a known and persistent tmpdir for hypothesis' caches, which
-# can be automatically cleared by the OS or user.
-hypothesis.configuration.set_hypothesis_home_dir(
-    os.path.join(tempfile.gettempdir(), ".hypothesis")
-)
+if hypothesis_available:
+    # Following the approach of NumPy's conftest.py...
+    # Use a known and persistent tmpdir for hypothesis' caches, which
+    # can be automatically cleared by the OS or user.
+    hypothesis.configuration.set_hypothesis_home_dir(
+        os.path.join(tempfile.gettempdir(), ".hypothesis")
+    )
 
-# We register two custom profiles for SciPy - for details see
-# https://hypothesis.readthedocs.io/en/latest/settings.html
-# The first is designed for our own CI runs; the latter also
-# forces determinism and is designed for use via scipy.test()
-hypothesis.settings.register_profile(
-    name="nondeterministic", deadline=None, print_blob=True,
-)
-hypothesis.settings.register_profile(
-    name="deterministic",
-    deadline=None, print_blob=True, database=None, derandomize=True,
-    suppress_health_check=list(hypothesis.HealthCheck),
-)
+    # We register two custom profiles for SciPy - for details see
+    # https://hypothesis.readthedocs.io/en/latest/settings.html
+    # The first is designed for our own CI runs; the latter also
+    # forces determinism and is designed for use via scipy.test()
+    hypothesis.settings.register_profile(
+        name="nondeterministic", deadline=None, print_blob=True,
+    )
+    hypothesis.settings.register_profile(
+        name="deterministic",
+        deadline=None, print_blob=True, database=None, derandomize=True,
+        suppress_health_check=list(hypothesis.HealthCheck),
+    )
 
-# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into `.spin/cmds.py`.
-SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
-                                          "deterministic")
-hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
+    # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+    # In the future, it would be good to work the choice into `.spin/cmds.py`.
+    SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                              "deterministic")
+    hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 
 
 ############################################################################
