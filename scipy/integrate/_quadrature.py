@@ -8,7 +8,7 @@ from collections.abc import Callable
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib._array_api import _asarray, array_namespace, xp_result_type
+from scipy._lib._array_api import xp_asarray, array_namespace, xp_result_type
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -120,7 +120,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     array([2.,  8.])
     """
     xp = array_namespace(y)
-    y = _asarray(y, xp=xp, subok=True)
+    y = xp_asarray(y, xp=xp, subok=True)
     # Cannot just use the broadcasted arrays that are returned
     # because trapezoid does not follow normal broadcasting rules
     # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
@@ -133,7 +133,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     if x is None:
         d = dx
     else:
-        x = _asarray(x, xp=xp, subok=True)
+        x = xp_asarray(x, xp=xp, subok=True)
         if x.ndim == 1:
             d = x[1:] - x[:-1]
             # make d broadcastable to y
