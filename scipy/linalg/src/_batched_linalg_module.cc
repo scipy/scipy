@@ -101,9 +101,10 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     St structure = St::NONE;
     int overwrite_a = 0;
     int transposed = 0;
+    int lower=0;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!|npp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &transposed, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, "O!O!|nppp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &lower, &transposed, &overwrite_a)) {
         return NULL;
     }
 
@@ -154,16 +155,16 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
         case(NPY_FLOAT32):
-            _solve<float>(ap_Am, ap_b, (float *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_FLOAT64):
-            _solve<double>(ap_Am, ap_b, (double *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_COMPLEX64):
-            _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_COMPLEX128):
-            _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
