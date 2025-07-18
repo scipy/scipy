@@ -108,13 +108,15 @@ with *additional* ILP64 support. This will result in SciPy requiring both BLAS a
 LAPACK variants, where some extensions link to the ILP64 variant, while other
 extensions link to the LP64 variant.
 
-Building with ILP64 support requires several NumPy additions to ``meson``, which have
-not been merged to upstream yet::
+Building with ILP64 support requires BLAS/LAPACK support in ``meson``, which isn't
+yet merged upstream (see `meson#10921
+<https://github.com/mesonbuild/meson/pull/10921>`__). For now the easiest way to
+install a version that contains those changes is::
 
     $ pip install git+https://github.com/numpy/meson.git@main-numpymeson
 
 For a development build with MKL, install the library and its development headers, and
-give use the ``ilp64=true`` build option::
+use the ``ilp64=true`` build option::
 
     $ pip install mkl mkl-devel
     $ spin build -S-Dblas=mkl -S-Duse-ilp64=true
@@ -143,7 +145,6 @@ To choose the variant of a low-level routine, use ``get_blas_funcs`` and
     >>> daxpy = get_blas_funcs('axpy', (np.ones(3),), ilp64='preferred')
     >>> daxpy.int_dtype
     dtype('int64')       # depends on the build option
-
 
 High-level linear algebra functions (``norm``, ``solve`` and so on) should use this
 mechanism under the hood.

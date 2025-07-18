@@ -87,10 +87,9 @@ fitpack_src = [
   'fitpack/pardtc.f'
 ]
 
+_fflag_intsize = []
 if use_ilp64
   _fflag_intsize = _fflag_ilp64
-else
-  _fflag_intsize = []
 endif
 
 fitpack_lib = static_library('fitpack_lib',

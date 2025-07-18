@@ -341,8 +341,8 @@ lapack_lp64_dep = declare_dependency(
 )
 
 dependency_map = {
-  'BLAS': blas_lp64_dep,
-  'LAPACK': lapack_lp64_dep,
+  'BLAS': blas,
+  'LAPACK': lapack,
   'PYBIND11': pybind11_dep,
 }
 
