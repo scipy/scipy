@@ -417,7 +417,7 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
 
 
 def test_default_is_matrix_diags():
-    m = scipy.sparse.diags([0, 1, 2])
+    m = scipy.sparse.diags([0.0, 1.0, 2.0])
     assert not isinstance(m, scipy.sparse.sparray)
 
 
@@ -427,7 +427,7 @@ def test_default_is_matrix_eye():
 
 
 def test_default_is_matrix_spdiags():
-    m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
+    m = scipy.sparse.spdiags([1.0, 2.0, 3.0], 0, 3, 3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 
