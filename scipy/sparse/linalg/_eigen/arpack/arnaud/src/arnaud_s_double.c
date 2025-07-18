@@ -1801,10 +1801,10 @@ LINE40:
 }
 
 
-void
+static void
 dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, double* x2)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
     ARNAUD_compare_rfunc *f;
 
@@ -1827,39 +1827,37 @@ dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, doub
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x1[j], x1[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x1[pos], x1[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x1[j];
-                x1[j] = x1[j+igap];
-                x1[j+igap] = temp;
+                temp = x1[pos];
+                x1[pos] = x1[pos+gap];
+                x1[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = x2[j];
-                    x2[j] = x2[j+igap];
-                    x2[j+igap] = temp;
+                    temp = x2[pos];
+                    x2[pos] = x2[pos+gap];
+                    x2[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
 
-void
+static void
 dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int na, double* a, const int lda)
 {
-    int i, igap, j, int1 = 1;
+    int i, gap, pos, int1 = 1;
     double temp;
     ARNAUD_compare_rfunc *f;
 
@@ -1882,31 +1880,28 @@ dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int n
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j + igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos + gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    dswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
+                    dswap_(&na, &a[lda*pos], &int1, &a[lda*(pos+gap)], &int1);
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
-    // 10, 40, 70, 120
 }
 
 

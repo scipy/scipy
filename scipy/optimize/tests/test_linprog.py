@@ -1727,6 +1727,9 @@ class LinprogCommonTests:
                 "ignore", "invalid value encountered...", RuntimeWarning)
             warnings.filterwarnings(
                 "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
@@ -2201,6 +2204,9 @@ class TestLinprogIPSpecific:
                 "ignore", "Solving system with option...", OptimizeWarning)
             warnings.filterwarnings(
                 "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
