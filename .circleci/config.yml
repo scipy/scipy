@@ -78,7 +78,7 @@ jobs:
             pip install -r requirements/doc.txt
             pip install mpmath gmpy2 "asv>=0.6.0" pooch threadpoolctl spin
             # extra benchmark deps
-            pip install pyfftw cffi pytest hypothesis
+            pip install pyfftw cffi pytest
 
       - run:
           name: build SciPy
