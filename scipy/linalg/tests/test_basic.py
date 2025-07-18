@@ -1008,6 +1008,33 @@ class TestSolve:
         b = np.ones((2, 2)) * [1, 2]
         assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
+    def test_pos_lower(self):
+        # regression test for
+        # https://github.com/scipy/scipy/pull/23071#issuecomment-3085826112
+        rng = np.random.default_rng(0)
+        a = rng.normal(size=(4, 4))
+        a = np.tril(np.matmul(a, np.conj(a.T)))  # lower triangle of hermitian array
+        b = rng.normal(size=(4, 2))
+        out = solve(a, b, assume_a='pos', lower=True)
+
+        aa = a + a.T - np.diag(np.diag(a))   # the full hermitian array
+        result_np = np.linalg.solve(aa, b)
+        assert_allclose(out, result_np, atol=1e-15)
+
+        out = solve(a, b, assume_a='pos lower')
+        assert_allclose(out, result_np, atol=1e-15)
+
+        # repeat with uplo='U'
+        out = solve(a.T, b, assume_a='pos', lower=False)
+        assert_allclose(out, result_np, atol=1e-15)
+
+        out = solve(a.T, b, assume_a='pos upper')
+        assert_allclose(out, result_np, atol=1e-15)
+
+        # conflicting assume_a & lower
+        with assert_raises(ValueError):
+            solve(a, b, assume_a='pos upper', lower=True)
+
     def test_readonly(self):
         a = np.eye(3)
         a.flags.writeable = False
