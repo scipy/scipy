@@ -39,7 +39,7 @@ static propack_callback_info_t* _active_callback_info = NULL;
 
 /* ===== CALLBACK INFRA ===== */
 
-// Error handling macros for consistent cleanup patterns
+// Error handling macros
 #define HANDLE_ERROR_AND_CLEANUP(info, x_view, y_view, gstate, msg) do { \
     (info)->error_occurred = 1; \
     PyErr_SetString(PyExc_RuntimeError, (msg)); \
@@ -61,7 +61,7 @@ static propack_callback_info_t* _active_callback_info = NULL;
 } while(0)
 
 /*
- * Helper function to create a zero-copy NumPy array view with proper ownership
+ * Helper function to create a zero-copy NumPy array view
  *
  * Creating NumPy array views with non-owning data is discouraged by NumPy C API
  * guidelines. Instead the array is created by setting up the base object using
@@ -153,10 +153,10 @@ propack_callback_##suffix(int transa, int m, int n, const ctype* x, ctype* y, ct
     CLEANUP_AND_RETURN(x_view, y_view, gstate); \
 }
 
-DEFINE_PROPACK_CALLBACK(d, double, NPY_FLOAT64)
 DEFINE_PROPACK_CALLBACK(s, float, NPY_FLOAT32)
-DEFINE_PROPACK_CALLBACK(c, npy_cfloat, NPY_COMPLEX64)
-DEFINE_PROPACK_CALLBACK(z, npy_cdouble, NPY_COMPLEX128)
+DEFINE_PROPACK_CALLBACK(d, double, NPY_FLOAT64)
+DEFINE_PROPACK_CALLBACK(c, PROPACK_CPLXF_TYPE, NPY_COMPLEX64)
+DEFINE_PROPACK_CALLBACK(z, PROPACK_CPLX_TYPE, NPY_COMPLEX128)
 
 /*
  * Cleanup callback context
@@ -195,15 +195,15 @@ static void cleanup_propack_context(propack_callback_info_t* info) {
 
 // Single precision IRL SVD wrapper function slansvd_irl
 static PyObject*
-propack_slansvd_irl(PyObject* self, PyObject* args) {
+propack_slansvd(PyObject* self, PyObject* args) {
 
-    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    int jobu, jobv, k, kmax, m, n, shifts, neig, maxiter, propack_info;
     float tol;
     PyObject* py_callback;
-    PyArrayObject *U, *V, *work, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
+    PyArrayObject *U, *V, *work, *iwork, *doption, *ioption, *sparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiifOO!O!O!O!O!O!O!O!O!",
-                         &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
+    if (!PyArg_ParseTuple(args, "iiiiiiifOO!O!O!O!O!O!O!O!O!",
+                         &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_callback,
                          &PyArray_Type, &U,
                          &PyArray_Type, &V,
@@ -211,7 +211,7 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
                          &PyArray_Type, &iwork,
                          &PyArray_Type, &doption,
                          &PyArray_Type, &ioption,
-                         &PyArray_Type, &dparm,
+                         &PyArray_Type, &sparm,
                          &PyArray_Type, &iparm,
                          &PyArray_Type, &ap_rng_state)) {
         return NULL;
@@ -226,8 +226,8 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
     info.py_callback = py_callback;
     Py_INCREF(py_callback);
 
-    info.py_dparm = (PyObject*)dparm;
-    Py_INCREF((PyObject*)dparm);
+    info.py_dparm = (PyObject*)sparm;
+    Py_INCREF((PyObject*)sparm);
 
     info.py_iparm = (PyObject*)iparm;
     Py_INCREF((PyObject*)iparm);
@@ -240,8 +240,133 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
     // Set module-level callback context
     _active_callback_info = &info;
 
-    float dparm[1] = {0.0f};
-    int iparm[1] = {0};
+    int dim = shifts + neig;
+
+    // Create result arrays for singular values and bounds
+    npy_intp result_size = neig;
+    PyArrayObject* sigma = (PyArrayObject*)PyArray_SimpleNew(1, &result_size, NPY_FLOAT32);
+    PyArrayObject* bnd = (PyArrayObject*)PyArray_SimpleNew(1, &result_size, NPY_FLOAT32);
+
+    if (!sigma || !bnd) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result arrays");
+        Py_XDECREF((PyObject*)sigma);
+        Py_XDECREF((PyObject*)bnd);
+        _active_callback_info = NULL;
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    // Call PROPACK slansvd_irl function
+    slansvd(
+        jobu, jobv,                                       // whether to compute U, V
+        m, n, k, kmax,                                    // matrix and algorithm dimensions
+        &neig,                                            // number of converged values (input/output)
+        maxiter,                                          // maximum iterations
+        propack_callback_s,                               // Py callback function
+        (float*)PyArray_DATA(U), PyArray_DIM(U, 1),       // U matrix and leading dimension
+        (float*)PyArray_DATA(sigma),                      // singular values output
+        (float*)PyArray_DATA(bnd),                        // error bounds output
+        (float*)PyArray_DATA(V), PyArray_DIM(V, 1),       // V matrix and leading dimension
+        tol,                                              // tolerance
+        (float*)PyArray_DATA(work), PyArray_SIZE(work),   // main workspace
+        (int*)PyArray_DATA(iwork),                        // integer workspace
+        (float*)PyArray_DATA(doption),                    // float options array
+        (int*)PyArray_DATA(ioption),                      // integer options array
+        &propack_info,                                    // return code
+        (float*)PyArray_DATA(sparm),                      // float parameter array (unused)
+        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
+        (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
+    );
+
+    // Clear module-level callback context
+    _active_callback_info = NULL;
+
+    // Check for Python callback error
+    if (info.error_occurred) {
+        // Restore exception from the callback
+        if (info.error_type) {
+            PyErr_Restore(info.error_type, info.error_value, info.error_traceback);
+            info.error_type = NULL;
+            info.error_value = NULL;
+            info.error_traceback = NULL;
+        } else {
+            PyErr_SetString(PropackError, "Error occurred in Python callback");
+        }
+        Py_DECREF((PyObject*)sigma);
+        Py_DECREF((PyObject*)bnd);
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    if (propack_info != 0)
+    {
+        if (propack_info > 0) {
+            PyErr_Format(PropackError, "PROPACK found invariant subspace of dimension %d", propack_info);
+        } else {
+            PyErr_Format(PropackError, "PROPACK failed to converge (info=%d)", propack_info);
+        }
+        Py_DECREF((PyObject*)sigma);
+        Py_DECREF((PyObject*)bnd);
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    // Clean up callback context
+    cleanup_propack_context(&info);
+    return Py_BuildValue("(NNNNI)", PyArray_Return(U), PyArray_Return(sigma), PyArray_Return(V), PyArray_Return(bnd), propack_info);
+}
+
+
+
+
+
+// Single precision IRL SVD wrapper function slansvd_irl
+static PyObject*
+propack_slansvd_irl(PyObject* self, PyObject* args) {
+
+    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    float tol;
+    PyObject* py_callback;
+    PyArrayObject *U, *V, *work, *iwork, *doption, *ioption, *sparm, *iparm, *ap_rng_state;
+
+    if (!PyArg_ParseTuple(args, "iiiiiiiifOO!O!O!O!O!O!O!O!O!",
+                         &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
+                         &py_callback,
+                         &PyArray_Type, &U,
+                         &PyArray_Type, &V,
+                         &PyArray_Type, &work,
+                         &PyArray_Type, &iwork,
+                         &PyArray_Type, &doption,
+                         &PyArray_Type, &ioption,
+                         &PyArray_Type, &sparm,
+                         &PyArray_Type, &iparm,
+                         &PyArray_Type, &ap_rng_state)) {
+        return NULL;
+    }
+
+    if (!PyCallable_Check(py_callback)) {PyErr_SetString(PyExc_TypeError, "Callback must be callable"); return NULL; }
+
+    // 0-Initialize callback context structure
+    propack_callback_info_t info = {0};
+
+    // Store Python objects in context and increment refcount
+    info.py_callback = py_callback;
+    Py_INCREF(py_callback);
+
+    info.py_dparm = (PyObject*)sparm;
+    Py_INCREF((PyObject*)sparm);
+
+    info.py_iparm = (PyObject*)iparm;
+    Py_INCREF((PyObject*)iparm);
+
+    // Store additional context fields
+    info.m = m;
+    info.n = n;
+    info.error_occurred = 0;
+
+    // Set module-level callback context
+    _active_callback_info = &info;
+
     int dim = shifts + neig;
 
     // Create result arrays for singular values and bounds
@@ -265,7 +390,7 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
         m, n, dim, shifts,                                // matrix and algorithm dimensions
         &neig,                                            // number of converged values (input/output)
         maxiter,                                          // maximum iterations
-        propack_callback_s,                               // our callback function
+        propack_callback_s,                               // Py callback function
         (float*)PyArray_DATA(U), PyArray_DIM(U, 1),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                      // singular values output
         (float*)PyArray_DATA(bnd),                        // error bounds output
@@ -276,7 +401,8 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
         (float*)PyArray_DATA(doption),                    // float options array
         (int*)PyArray_DATA(ioption),                      // integer options array
         &propack_info,                                    // return code
-        dparm, iparm,                                     // parameter arrays (unused)
+        (float*)PyArray_DATA(sparm),                      // float parameter array (unused)
+        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
     );
 
@@ -366,8 +492,6 @@ propack_dlansvd_irl(PyObject* self, PyObject* args) {
     // Set module-level callback context
     _active_callback_info = &info;
 
-    double dparm[1] = {0.0};
-    int iparm[1] = {0};
     int dim = shifts + neig;
 
     // Create result arrays for singular values and bounds
@@ -391,7 +515,7 @@ propack_dlansvd_irl(PyObject* self, PyObject* args) {
         m, n, dim, shifts,                                // matrix and algorithm dimensions
         &neig,                                            // number of converged values (input/output)
         maxiter,                                          // maximum iterations
-        propack_callback_d,                               // our callback function
+        propack_callback_d,                               // Py callback function
         (double*)PyArray_DATA(U), PyArray_DIM(U, 1),      // U matrix and leading dimension
         (double*)PyArray_DATA(sigma),                     // singular values output
         (double*)PyArray_DATA(bnd),                       // error bounds output
@@ -402,7 +526,8 @@ propack_dlansvd_irl(PyObject* self, PyObject* args) {
         (double*)PyArray_DATA(doption),                   // double options array
         (int*)PyArray_DATA(ioption),                      // integer options array
         &propack_info,                                    // return code
-        dparm, iparm,                                     // parameter arrays (unused)
+        (double*)PyArray_DATA(dparm),                     // double parameter array (unused)
+        (int*)PyArray_DATA(iparm),                        // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)             // random number state
     );
 
@@ -452,7 +577,7 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
     int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
     float tol;
     PyObject* py_callback;
-    PyArrayObject *U, *V, *work, *cwork, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
+    PyArrayObject *U, *V, *work, *cwork, *iwork, *doption, *ioption, *cparm, *iparm, *ap_rng_state;
 
     if (!PyArg_ParseTuple(args, "iiiiiiiifOO!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
@@ -464,7 +589,7 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
                          &PyArray_Type, &iwork,
                          &PyArray_Type, &doption,
                          &PyArray_Type, &ioption,
-                         &PyArray_Type, &dparm,
+                         &PyArray_Type, &cparm,
                          &PyArray_Type, &iparm,
                          &PyArray_Type, &ap_rng_state)) {
         return NULL;
@@ -479,8 +604,8 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
     info.py_callback = py_callback;
     Py_INCREF(py_callback);
 
-    info.py_dparm = (PyObject*)dparm;
-    Py_INCREF((PyObject*)dparm);
+    info.py_dparm = (PyObject*)cparm;
+    Py_INCREF((PyObject*)cparm);
 
     info.py_iparm = (PyObject*)iparm;
     Py_INCREF((PyObject*)iparm);
@@ -493,8 +618,6 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
     // Set module-level callback context
     _active_callback_info = &info;
 
-    PROPACK_CPLXF_TYPE dparm[1] = {0.0f};
-    int iparm[1] = {0};
     int dim = shifts + neig;
 
     // Create result arrays for singular values and bounds
@@ -518,19 +641,20 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
         m, n, dim, shifts,                                             // matrix and algorithm dimensions
         &neig,                                                         // number of converged values (input/output)
         maxiter,                                                       // maximum iterations
-        propack_callback_c,                                            // our callback function
+        propack_callback_c,                                            // Py callback function
         (PROPACK_CPLXF_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 1),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                                   // singular values output
         (float*)PyArray_DATA(bnd),                                     // error bounds output
         (PROPACK_CPLXF_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 1),       // V matrix and leading dimension
         tol,                                                           // tolerance
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(work), PyArray_SIZE(work),   // main workspace
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork), // complex workspace
+        (float*)PyArray_DATA(work), PyArray_SIZE(work),                // float workspace
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork), // float complex workspace
         (int*)PyArray_DATA(iwork),                                     // integer workspace
-        (PROPACK_CPLXF_TYPE*)PyArray_DATA(doption),                    // complex options array
+        (float*)PyArray_DATA(doption),                                 // float options array
         (int*)PyArray_DATA(ioption),                                   // integer options array
         &propack_info,                                                 // return code
-        dparm, iparm,                                                  // parameter arrays (unused)
+        (PROPACK_CPLXF_TYPE*)PyArray_DATA(cparm),                      // float parameter array (unused)
+        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
         (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
     );
 
@@ -573,6 +697,135 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
 }
 
 
+// Double precision complex IRL SVD wrapper function zlansvd_irl
+static PyObject*
+propack_zlansvd_irl(PyObject* self, PyObject* args) {
+
+    int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
+    double tol;
+    PyObject* py_callback;
+    PyArrayObject *U, *V, *work, *cwork, *iwork, *doption, *ioption, *zparm, *iparm, *ap_rng_state;
+
+    if (!PyArg_ParseTuple(args, "iiiiiiiidOO!O!O!O!O!O!O!O!O!O!",
+                         &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
+                         &py_callback,
+                         &PyArray_Type, &U,
+                         &PyArray_Type, &V,
+                         &PyArray_Type, &work,
+                         &PyArray_Type, &cwork,
+                         &PyArray_Type, &iwork,
+                         &PyArray_Type, &doption,
+                         &PyArray_Type, &ioption,
+                         &PyArray_Type, &zparm,
+                         &PyArray_Type, &iparm,
+                         &PyArray_Type, &ap_rng_state)) {
+        return NULL;
+    }
+
+    if (!PyCallable_Check(py_callback)) {
+        PyErr_SetString(PyExc_TypeError, "Callback must be callable");
+        return NULL;
+    }
+
+    // 0-Initialize callback context structure
+    propack_callback_info_t info = {0};
+
+    // Store Python objects in context and increment refcount
+    info.py_callback = py_callback;
+    Py_INCREF(py_callback);
+
+    info.py_dparm = (PyObject*)zparm;
+    Py_INCREF((PyObject*)zparm);
+
+    info.py_iparm = (PyObject*)iparm;
+    Py_INCREF((PyObject*)iparm);
+
+    // Store additional context fields
+    info.m = m;
+    info.n = n;
+    info.error_occurred = 0;
+
+    // Set module-level callback context
+    _active_callback_info = &info;
+
+    int dim = shifts + neig;
+
+    // Create result arrays for singular values and bounds
+    npy_intp result_size = neig;
+    PyArrayObject* sigma = (PyArrayObject*)PyArray_SimpleNew(1, &result_size, NPY_DOUBLE);
+    PyArrayObject* bnd = (PyArrayObject*)PyArray_SimpleNew(1, &result_size, NPY_DOUBLE);
+
+    if (!sigma || !bnd) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate result arrays");
+        Py_XDECREF((PyObject*)sigma);
+        Py_XDECREF((PyObject*)bnd);
+        _active_callback_info = NULL;
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    // Call PROPACK zlansvd_irl function
+    zlansvd_irl(
+        which,                                                         // which singular values to compute
+        jobu, jobv,                                                    // whether to compute U, V
+        m, n, dim, shifts,                                             // matrix and algorithm dimensions
+        &neig,                                                         // number of converged values (input/output)
+        maxiter,                                                       // maximum iterations
+        propack_callback_z,                                            // our callback function
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(U), PyArray_DIM(U, 1),        // U matrix and leading dimension
+        (double*)PyArray_DATA(sigma),                                  // singular values output
+        (double*)PyArray_DATA(bnd),                                    // error bounds output
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(V), PyArray_DIM(V, 1),        // V matrix and leading dimension
+        tol,                                                           // tolerance
+        (double*)PyArray_DATA(work), PyArray_SIZE(work),               // double workspace
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(cwork), PyArray_SIZE(cwork),  // double complex workspace
+        (int*)PyArray_DATA(iwork),                                     // integer workspace
+        (double*)PyArray_DATA(doption),                                // double options array
+        (int*)PyArray_DATA(ioption),                                   // integer options array
+        &propack_info,                                                 // return code
+        (PROPACK_CPLX_TYPE*)PyArray_DATA(zparm),                       // double parameter array (unused)
+        (int*)PyArray_DATA(iparm),                                     // integer parameter array (unused)
+        (uint64_t*)PyArray_DATA(ap_rng_state)                          // random number state
+    );
+
+    // Clear module-level callback context
+    _active_callback_info = NULL;
+
+    // Check for Python callback error
+    if (info.error_occurred) {
+        // Restore exception from the callback
+        if (info.error_type) {
+            PyErr_Restore(info.error_type, info.error_value, info.error_traceback);
+            info.error_type = NULL;
+            info.error_value = NULL;
+            info.error_traceback = NULL;
+        } else {
+            PyErr_SetString(PropackError, "Error occurred in Python callback");
+        }
+        Py_DECREF((PyObject*)sigma);
+        Py_DECREF((PyObject*)bnd);
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    if (propack_info != 0) {
+        if (propack_info > 0) {
+            PyErr_Format(PropackError, "PROPACK found invariant subspace of dimension %d", propack_info);
+        } else {
+            PyErr_Format(PropackError, "PROPACK failed to converge (info=%d)", propack_info);
+        }
+        Py_DECREF((PyObject*)sigma);
+        Py_DECREF((PyObject*)bnd);
+        cleanup_propack_context(&info);
+        return NULL;
+    }
+
+    // Clean up callback context
+    cleanup_propack_context(&info);
+    return Py_BuildValue("(NNNNI)", PyArray_Return(U), PyArray_Return(sigma), PyArray_Return(V), PyArray_Return(bnd), propack_info);
+}
+
+
 /*
  * Module method table
  *
@@ -584,6 +837,7 @@ static PyMethodDef propack_methods[] = {
     {"slansvd_irl", propack_slansvd_irl, METH_VARARGS, "Single precision implicitly restarted Lanczos SVD"},
     {"dlansvd_irl", propack_dlansvd_irl, METH_VARARGS, "Double precision implicitly restarted Lanczos SVD"},
     {"clansvd_irl", propack_clansvd_irl, METH_VARARGS, "Single precision complex implicitly restarted Lanczos SVD"},
+    {"zlansvd_irl", propack_clansvd_irl, METH_VARARGS, "Double precision complex implicitly restarted Lanczos SVD"},
     {NULL, NULL, 0, NULL}  /* Sentinel */
 };
 
@@ -624,6 +878,7 @@ static struct PyModuleDef propack_module = {
     .m_clear = NULL,
     .m_free = NULL
 };
+
 
 PyMODINIT_FUNC PyInit__propack(void) {
     return PyModuleDef_Init(&propack_module);
