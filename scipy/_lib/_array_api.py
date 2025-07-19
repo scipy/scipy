@@ -24,6 +24,11 @@ import numpy.typing as npt
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
     is_lazy_array,
+    is_numpy_array,
+    is_cupy_array,
+    is_torch_array,
+    is_jax_array,
+    is_dask_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -914,3 +919,20 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?
 xp_capabilities_table = {}  # type: ignore[var-annotated]
+
+
+def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
+    if is_numpy_array(a):
+        return "cpu"
+    if is_cupy_array(a):
+        return "cuda"
+    if is_torch_array(a):
+        # TODO this can return other backends e.g. tpu but they're unsupported in scipy
+        return a.device.type
+    if is_jax_array(a):
+        # TODO this can return other backends e.g. tpu but they're unsupported in scipy
+        return "cuda" if (p := a.device.platform) == "gpu" else p
+    if is_dask_array(a):
+        return xp_device_type(a._meta)
+    # array-api-strict is a stand-in for unknown libraries; don't special-case it
+    return None

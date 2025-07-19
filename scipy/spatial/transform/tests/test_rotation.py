@@ -1,5 +1,4 @@
 import math
-import os
 
 import pytest
 
@@ -18,7 +17,7 @@ from scipy._lib._array_api import (
     xp_default_dtype,
     make_xp_test_case,
     make_xp_pytest_marks,
-    is_cupy
+    xp_device_type,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -26,7 +25,7 @@ import pickle
 import copy
 
 
-lazy_xp_modules = [Rotation]
+lazy_xp_modules = [Rotation, Slerp]
 
 # from_quat and as_quat are used in almost all tests, so we mark them module-wide 
 pytestmark = make_xp_pytest_marks(Rotation.as_quat, Rotation.from_quat)
@@ -202,7 +201,7 @@ def test_quat_double_to_canonical_single_cover(xp):
     xp_assert_close(r.as_quat(canonical=True), expected_quat)
 
 
-@make_xp_test_case(Rotation.inv)
+@make_xp_test_case(Rotation.inv, Rotation.__mul__)
 def test_quat_double_cover(xp):
     # See the Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.
@@ -578,6 +577,8 @@ def test_malformed_2d_from_rotvec(xp):
 
 
 @make_xp_test_case(Rotation.as_rotvec)
+@pytest.mark.skip_xp_backends("dask.array",
+                              reason="missing required linalg.cross function")
 def test_as_generic_rotvec(xp):
     dtype = xpx.default_dtype(xp)
     atol = 1e-15 if dtype == xp.float64 else 1e-7
@@ -1513,7 +1514,7 @@ def test_setitem_wrong_type(xp):
         r[0] = 1
 
 
-@make_xp_test_case(Rotation.from_matrix, Rotation.__len__)
+@make_xp_test_case(Rotation.from_matrix)
 def test_n_rotations(xp):
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1854,14 +1855,16 @@ def test_align_vectors_antiparallel(xp):
     for dR in dRs:
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
 
-    # GPU computations are less accurate
+    # GPU computations may be less accurate. See e.g.
+    # https://github.com/jax-ml/jax/issues/18934 and
+    # https://docs.pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html
     # We currently have no unified way to check which device is being used. Cupy will
     # always run on the GPU regardless of SCIPY_DEVICE, hence the explicit check for
     # cupy. Note that the current implementation lets other frameworks, e.g. numpy, run
     # on the CPU regardless of SCIPY_DEVICE but with increased GPU tolerances.
     # TODO: Add a better way to detect device usage.
     # See https://github.com/scipy/scipy/pull/23249#discussion_r2208669155
-    if os.environ.get("SCIPY_DEVICE") == "cuda" or is_cupy(xp):
+    if xp_device_type(xp.asarray(0)) == "cuda":
         atol = 1e-7
 
     for a in as_to_test:
@@ -1943,7 +1946,7 @@ Rotation.from_matrix(array([[[ 0.,  0.,  1.],
         assert actual.startswith("Rotation.from_matrix(")
 
 
-@make_xp_test_case(Slerp.__call__)
+@make_xp_test_case(Slerp.__init__, Slerp.__call__)
 def test_slerp(xp):
     rnd = np.random.RandomState(0)
 
@@ -1991,7 +1994,7 @@ def test_slerp(xp):
     assert_equal(len(interp_rots), len(times))
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_rot_is_rotation(xp):
     with pytest.raises(TypeError, match="must be a `Rotation` instance"):
         r = xp.asarray([[1,2,3,4],
@@ -2003,14 +2006,14 @@ def test_slerp_rot_is_rotation(xp):
 SLERP_EXCEPTION_MESSAGE = "must be a sequence of at least 2 rotations"
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_single_rot(xp):
     r = Rotation.from_quat(xp.asarray([[1.0, 2, 3, 4]]))
     with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
         Slerp([1], r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_rot_len0(xp):
     r = Rotation.random()
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2018,7 +2021,7 @@ def test_slerp_rot_len0(xp):
         Slerp([], r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_rot_len1(xp):
     r = Rotation.random(1)
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2026,7 +2029,7 @@ def test_slerp_rot_len1(xp):
         Slerp([1], r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_time_dim_mismatch(xp):
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
@@ -2037,7 +2040,7 @@ def test_slerp_time_dim_mismatch(xp):
         Slerp(t, r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_num_rotations_mismatch(xp):
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
@@ -2047,7 +2050,7 @@ def test_slerp_num_rotations_mismatch(xp):
         Slerp(t, r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_equal_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2061,7 +2064,7 @@ def test_slerp_equal_times(xp):
             Slerp(t, r)
 
 
-@make_xp_test_case()
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_decreasing_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2075,7 +2078,7 @@ def test_slerp_decreasing_times(xp):
             Slerp(t, r)
 
 
-@make_xp_test_case(Slerp.__call__)
+@make_xp_test_case(Slerp.__init__, Slerp.__call__)
 def test_slerp_call_time_dim_mismatch(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2089,7 +2092,7 @@ def test_slerp_call_time_dim_mismatch(xp):
         s(interp_times)
 
 
-@make_xp_test_case(Slerp.__call__)
+@make_xp_test_case(Slerp.__init__, Slerp.__call__)
 def test_slerp_call_time_out_of_range(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2114,7 +2117,7 @@ def test_slerp_call_time_out_of_range(xp):
             s(times_high)
 
 
-@make_xp_test_case(Slerp.__call__, Rotation.from_euler, Rotation.inv,
+@make_xp_test_case(Slerp.__init__, Slerp.__call__, Rotation.from_euler, Rotation.inv,
                    Rotation.magnitude)
 def test_slerp_call_scalar_time(xp):
     dtype = xpx.default_dtype(xp)
@@ -2233,7 +2236,9 @@ def test_rotation_within_numpy_array():
     assert_equal(array.shape, (3, 2))
 
 
-@make_xp_test_case(Rotation.__getstate__, Rotation.__setstate__, Rotation.as_matrix)
+@make_xp_test_case(Rotation.as_matrix)
+@pytest.mark.skip_xp_backends("array_api_strict",
+                              reason="array API doesn't support pickling")
 def test_pickling(xp):
     r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     pkl = pickle.dumps(r)
@@ -2241,7 +2246,9 @@ def test_pickling(xp):
     xp_assert_close(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-@make_xp_test_case(Rotation.__getstate__, Rotation.__setstate__, Rotation.as_matrix)
+@make_xp_test_case(Rotation.as_matrix)
+@pytest.mark.skip_xp_backends("array_api_strict",
+                              reason="array API doesn't support deepcopy")
 def test_deepcopy(xp):
     r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     r1 = copy.deepcopy(r)
@@ -2289,7 +2296,7 @@ def test_concatenate_wrong_type(xp):
 
 
 # Regression test for gh-16663
-@make_xp_test_case(Rotation.__len__)
+@make_xp_test_case()
 def test_len_and_bool(xp):
     rotation_multi_one = Rotation(xp.asarray([[0, 0, 0, 1]]))
     rotation_multi = Rotation(xp.asarray([[0, 0, 0, 1], [0, 0, 0, 1]]))
@@ -2526,8 +2533,8 @@ def test_compare_as_davenport_as_euler(xp):
             xp_assert_close(eul, dav, rtol=1e-12)
 
 
-@make_xp_test_case(Rotation.__len__, Rotation.from_matrix, Rotation.from_euler,
-                   Rotation.from_rotvec, Rotation.from_davenport, Rotation.from_mrp)
+@make_xp_test_case(Rotation.from_matrix, Rotation.from_euler, Rotation.from_rotvec,
+                   Rotation.from_davenport, Rotation.from_mrp)
 def test_zero_rotation_construction(xp):
     r = Rotation.random(num=0)
     assert len(r) == 0
@@ -2682,6 +2689,7 @@ def test_zero_rotation_approx_equal(xp):
 
 @pytest.mark.skip_xp_backends("jax.numpy",
                               reason="JAX out-of-bounds indexing deviates from numpy")
+@pytest.mark.skip_xp_backends("dask.array", reason="zero-length arrays have nan-shapes")
 def test_zero_rotation_get_set(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 

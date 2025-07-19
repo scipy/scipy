@@ -21,6 +21,7 @@ from scipy._lib._array_api import (
     xp_promote,
     is_jax,
 )
+from scipy._lib._util import broadcastable
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
 
@@ -364,7 +365,7 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     c = xp.where(mask, quat[..., j], quat[..., j] + quat[..., 3])
     d = xp.where(mask, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
-    angles = _get_angles(extrinsic, symmetric, sign, np.pi / 2, a, b, c, d)
+    angles = _get_angles(extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d)
     return _rad2deg(angles) if degrees else angles
 
 
@@ -455,35 +456,36 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
-        weights = xp.ones(quat.shape[:-1], dtype=dtype, device=device)
-        weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
+        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        K = quat.T @ quat
     else:
-        weights = xp.asarray(weights, dtype=dtype, copy=True, device=device)
-    if not lazy and xp.any(weights < 0):
-        raise ValueError("`weights` must be non-negative.")
+        weights = xp.asarray(weights, dtype=dtype, device=device)
+        if not lazy and xp.any(weights < 0):
+            raise ValueError("`weights` must be non-negative.")
 
-    # TODO: Missing full broadcasting support.
-    if weights.ndim != 1:
-        raise ValueError(
-            f"Expected `weights` to be 1 dimensional, got shape {weights.shape}."
-        )
-    n_rot = quat.shape[0] if quat.ndim > 1 else 1
-    if weights.shape[0] != n_rot:
-        raise ValueError(
-            "Expected `weights` to have number of values equal to number of rotations, "
-            f"got {weights.shape[0]} values and {n_rot} rotations."
-        )
-    neg_weights = weights < 0
-    if not lazy and xp.any(neg_weights):
-        raise ValueError("`weights` must be non-negative.")
-    elif lazy:
-        # We cannot check for negative weights because jit code needs to be
-        # non-branching. We return NaN instead
-        weights = xp.where(neg_weights, xp.nan, weights)
+        # TODO: Missing full broadcasting support.
+        if weights.ndim != 1:
+            raise ValueError(
+                f"Expected `weights` to be 1 dimensional, got shape {weights.shape}."
+            )
+        n_rot = quat.shape[0] if quat.ndim > 1 else 1
+        if weights.shape[0] != n_rot:
+            raise ValueError(
+                "Expected `weights` to have number of values equal to number of "
+                f"rotations, got {weights.shape[0]} values and {n_rot} rotations."
+            )
+        neg_weights = weights < 0
+        if not lazy and xp.any(neg_weights):
+            raise ValueError("`weights` must be non-negative.")
+        elif lazy:
+            # We cannot check for negative weights because jit code needs to be
+            # non-branching. We return NaN instead
+            weights = xp.where(neg_weights, xp.nan, weights)
 
-    # Make sure we can transpose quat
-    quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-    K = (weights * quat.T) @ quat
+        # Make sure we can transpose quat
+        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        K = (weights * quat.T) @ quat
+
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 
@@ -774,7 +776,7 @@ def _align_vectors_fixed(
 
     # Near pi radians, the Taylor series approximation of x/sin(x) diverges, so for
     # numerical stability we flip pi and then rotate back by the small angle pi - theta
-    flip = np.pi - theta < tolerance
+    flip = xp.pi - theta < tolerance
     # For antiparallel vectors, cross = [0, 0, 0] so we need to manually set an
     # arbitrary orthogonal axis of rotation
     i = xp.argmin(xp.abs(a_pri[..., 0, :]))
@@ -792,8 +794,8 @@ def _align_vectors_fixed(
     )
     r = xp.where(cross_norm == 0, r_components, cross)
 
-    q_flip = xp.where(flip, from_rotvec(r / xp_vector_norm(r, xp=xp) * np.pi), q_flip)
-    theta = xp.where(flip, np.pi - theta, theta)
+    q_flip = xp.where(flip, from_rotvec(r / xp_vector_norm(r, xp=xp) * xp.pi), q_flip)
+    theta = xp.where(flip, xp.pi - theta, theta)
     cross = xp.where(flip, -cross, cross)
 
     # Small angle Taylor series approximation for numerical stability
@@ -884,11 +886,10 @@ def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True, xp=xp)
     zero_norm = quat_norm == 0
-    if not is_lazy_array(quat_norm):
-        if xp.any(zero_norm):
-            raise ValueError("Found zero norm quaternions in `quat`.")
-    else:
+    if is_lazy_array(quat_norm):
         quat = xp.where(zero_norm, xp.nan, quat)
+    elif xp.any(zero_norm):
+        raise ValueError("Found zero norm quaternions in `quat`.")
     return quat / quat_norm
 
 
@@ -1047,7 +1048,7 @@ def _get_angles(
     # - Case 1: Second angle is close to 0.
     # - Case 2: Second angle is close to pi.
     case1 = xp.abs(angles[..., 1]) <= eps
-    case2 = xp.abs(angles[..., 1] - np.pi) <= eps
+    case2 = xp.abs(angles[..., 1] - xp.pi) <= eps
     case0 = ~(case1 | case2)
     if not is_lazy_array(case0) and xp.any(~case0):
         warnings.warn(
@@ -1075,7 +1076,7 @@ def _get_angles(
         angles = xpx.at(angles)[..., 1].set(angles[..., 1] - lamb)
     angles = xpx.at(angles)[..., angle_third].set(a3)
 
-    angles = (angles + np.pi) % (2 * np.pi) - np.pi
+    angles = (angles + xp.pi) % (2 * xp.pi) - xp.pi
     return angles
 
 
@@ -1095,14 +1096,7 @@ def compose_quat(p: Array, q: Array) -> Array:
     return quat
 
 
-def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
-    """Check if two shapes are broadcastable."""
-    return all(
-        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
-    )
-
-
-def _split_rotation(q, xp):
+def _split_rotation(q: Array, xp) -> tuple[Array, Array]:
     q = xpx.atleast_nd(q, ndim=2, xp=xp)
     return q[..., -1], q[..., :-1]
 
