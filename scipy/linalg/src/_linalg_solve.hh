@@ -110,7 +110,7 @@ inline CBLAS_INT solve_slice_cholesky(
 
 
 template<typename T>
-void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int transposed, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
+void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int lower, int transposed, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
@@ -173,10 +173,9 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     if (irwork == NULL) { free(irwork); *info = -102; return; }
 
     // normalize the structure detection inputs
-    uplo = 'U';
     if (structure == St::POS_DEF) {
-        uplo = 'U';
         posdef_fallback = false;
+        uplo = lower ? 'L' : 'U';
     }
     else {
         if (structure == St::POS_DEF_UPPER) {
