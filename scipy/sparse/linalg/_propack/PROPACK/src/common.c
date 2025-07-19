@@ -220,7 +220,7 @@ void scompute_int(float* restrict mu, const int j, const float delta, const floa
     // the peaks that are higher than eta on both sides for all peaks.
 
     if (delta < eta) { return; }  // Malformed input
-    int i = 0, ip = 0, k = 0, s = 0, tmp = 0;
+    int i = 0, ip = 0, k = 0, s = 0;
     indices[0] = 0;
     while (i < j) {
         // Find next k > i where |mu[k]| > delta
@@ -488,7 +488,7 @@ void dcompute_int(double* restrict mu, const int j, const double delta, const do
     // the peaks that are higher than eta on both sides for all peaks.
 
     if (delta < eta) { return; }  // Malformed input
-    int i = 0, ip = 0, k = 0, s = 0, tmp = 0;
+    int i = 0, ip = 0, k = 0, s = 0;
     indices[0] = 0;
     while (i < j) {
         // Find next k > i where |mu[k]| > delta
