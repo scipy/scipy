@@ -820,4 +820,7 @@ _special_funcs = (
 # When SCIPY_ARRAY_API is disabled, this exclusively updates the docstrings in place
 # and populates the xp_capabilities table, while retaining the original ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
-__all__ = [nfo.func.__name__ for nfo in _special_funcs]
+# digamma is an alias for psi. Define here so it also has alternative backend
+# support.
+digamma = psi
+__all__ = [nfo.func.__name__ for nfo in _special_funcs] + ["digamma"]

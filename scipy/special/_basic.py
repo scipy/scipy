@@ -31,7 +31,6 @@ __all__ = [
     'berp_zeros',
     'bi_zeros',
     'comb',
-    'digamma',
     'diric',
     'erf_zeros',
     'euler',
@@ -1531,9 +1530,6 @@ def assoc_laguerre(x, n, k=0.0):
 
     """
     return _ufuncs.eval_genlaguerre(n, k, x)
-
-
-digamma = psi
 
 
 def polygamma(n, x):
