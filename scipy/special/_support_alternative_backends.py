@@ -305,7 +305,7 @@ _special_funcs = (
         _ufuncs.bdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         int_only=(False, True, False),
     ),
@@ -313,7 +313,7 @@ _special_funcs = (
         _ufuncs.bdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         int_only=(False, True, False),
     ),
@@ -323,7 +323,7 @@ _special_funcs = (
         _ufuncs.betaincinv, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         test_large_ints=False, positive_only=True,
     ),
@@ -338,28 +338,28 @@ _special_funcs = (
         _ufuncs.binom, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.boxcox, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.boxcox1p, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.cbrt, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
@@ -370,14 +370,14 @@ _special_funcs = (
         _ufuncs.chdtri, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.cosdg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         test_large_ints=False
     ),
@@ -385,28 +385,28 @@ _special_funcs = (
         _ufuncs.cosm1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.cotdg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.ellipk, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.ellipkm1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.entr, 1),
@@ -416,7 +416,7 @@ _special_funcs = (
         _ufuncs.erfcx, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.erfinv, 1),
@@ -424,28 +424,28 @@ _special_funcs = (
         _ufuncs.exp1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.exp10, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.exp2, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.exprel, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
@@ -465,21 +465,21 @@ _special_funcs = (
         _ufuncs.fdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.fdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.fdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
@@ -496,14 +496,14 @@ _special_funcs = (
         _ufuncs.gammainccinv, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.gammaincinv, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.gammaln, 1),
@@ -515,21 +515,21 @@ _special_funcs = (
         _ufuncs.gdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.gdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.huber, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
@@ -548,14 +548,14 @@ _special_funcs = (
         _ufuncs.inv_boxcox, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _ufuncs.inv_boxcox1p, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.i0, 1),
@@ -566,7 +566,7 @@ _special_funcs = (
         _ufuncs.j0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "bessel_j0"}, test_large_ints=False,
     ),
@@ -574,7 +574,7 @@ _special_funcs = (
         _ufuncs.j1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "bessel_j1"}, test_large_ints=False,
     ),
@@ -582,7 +582,7 @@ _special_funcs = (
         _ufuncs.k0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "modified_bessel_k0"},
     ),
@@ -590,7 +590,7 @@ _special_funcs = (
         _ufuncs.k0e, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k0"},
         test_large_ints=False,
@@ -599,7 +599,7 @@ _special_funcs = (
         _ufuncs.k1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "modified_bessel_k1"},
     ),
@@ -607,7 +607,7 @@ _special_funcs = (
         _ufuncs.k1e, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "scaled_modified_bessel_k1"},
         test_large_ints=False),
@@ -620,7 +620,7 @@ _special_funcs = (
         _ufuncs.loggamma, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.logit, 1),
@@ -628,7 +628,7 @@ _special_funcs = (
         _ufuncs.lpmv, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         test_large_ints=False,
     ),
@@ -653,7 +653,7 @@ _special_funcs = (
         _ufuncs.nbdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         int_only=(True, True, False), positive_only=True,
     ),
@@ -661,7 +661,7 @@ _special_funcs = (
         _ufuncs.nbdtrc, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         int_only=(True, True, False), positive_only=True,
     ),
@@ -669,7 +669,7 @@ _special_funcs = (
         _ufuncs.nbdtri, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         int_only=(True, True, False), positive_only=True,
     ),
@@ -679,7 +679,7 @@ _special_funcs = (
         _ufuncs.pdtr, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         positive_only=True,
     ),
@@ -687,7 +687,7 @@ _special_funcs = (
         _ufuncs.pdtrc, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         positive_only=True,
     ),
@@ -695,7 +695,7 @@ _special_funcs = (
         _ufuncs.pdtri, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         int_only=(True, False), positive_only=True,
     ),
@@ -708,7 +708,7 @@ _special_funcs = (
         _ufuncs.pseudo_huber, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
@@ -722,7 +722,7 @@ _special_funcs = (
         _ufuncs.radian, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
@@ -730,14 +730,14 @@ _special_funcs = (
         _ufuncs.rgamma, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
     _FuncInfo(
         _basic.sinc, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         is_ufunc=False,
     ),
@@ -745,7 +745,7 @@ _special_funcs = (
         _ufuncs.sindg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         test_large_ints=False,
     ),
@@ -766,7 +766,7 @@ _special_funcs = (
         _ufuncs.tandg, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         test_large_ints=False,
     ),
@@ -781,7 +781,7 @@ _special_funcs = (
         _ufuncs.y0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "bessel_y0"}, test_large_ints=False,
     ),
@@ -789,7 +789,7 @@ _special_funcs = (
         _ufuncs.y1, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         alt_names_map={"torch": "bessel_y1"}, test_large_ints=False,
     ),
@@ -797,10 +797,10 @@ _special_funcs = (
         _ufuncs.yn, 2,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
         positive_only={"cupy": (True, False)}, int_only=(True, False),
-        test_large_ints=False
+        test_large_ints=False,
     ),
     _FuncInfo(
         _basic.zeta, 2, is_ufunc=False,
@@ -811,7 +811,7 @@ _special_funcs = (
         _ufuncs.zetac, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")],
+            jax_jit=False,
         ),
     ),
 )
