@@ -71,17 +71,24 @@ def laplacian(
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
     signed_graph_variant : 'standard', 'opposing' or 'unsigned'
-        Specifies the method used to compute vertex degrees.
-        All variants are the same in the case of non-negative edge weights.
-        Detailed discussions on the reasoning behind each type of variant
-        can be found in [2].:
+        This option only has an effect when the graph contains negative edge weights;
+        it does nothing for graphs with all non-negative weights.  The Laplacian is
+        always assembled as $L = D - A$, but D and A are replaced as described below.
+        See [2] for a detailed discussion of each variant:
 
-        * 'standard' is standard degree calculation using edge weights.
-        * 'opposing' computes the degree using absolute values of edge weights.
-          This prevents cancellation of positive and negative edge weights in
-          signed graphs, as described in [3].
-        * 'unsigned' discards the sign of edge weights.
-          This removes all the information contained in the sign.
+        * 'standard': No modification of edge weights when computing D or A.
+          This is called "repelling" in [2].
+          - $D_i = \\sum_j G_{ij}$
+          - $A_{ij} = G_{ij}$
+        * 'opposing': Absolute value only for the degree computation,
+          so that positive and negative weights cannot cancel out.
+          see [3] for a discussion of this variant.
+          - $D_i = \\sum_j |G_{ij}|$
+          - $A_{ij} = G_{ij}$
+        * 'unsigned': Absolute value for both degree and adjacency,
+          discarding all sign information.
+          - $D_i = \\sum_j |G_{ij}|$
+          - $A_{ij} = |G_{ij}|$
 
         Default: 'standard'.
 
@@ -320,7 +327,7 @@ def laplacian(
     array([0, 2, 0])
 
     Setting signed_graph_variant="opposing" prevents cancellation
-    by summing absolute edge weights:
+    for the degree computation by summing absolute edge weights:
 
     >>> L_opposing, d_opposing = csgraph.laplacian(
     ...     G,
@@ -334,8 +341,8 @@ def laplacian(
     >>> d_opposing
     array([2, 2, 2])
 
-    Setting signed_graph_variant="unsigned" discards the sign of edge weights
-    and computes the Laplacian using absolute edge weights
+    Setting signed_graph_variant="unsigned" uses absolute value
+    for both degree and adjacency, discarding all sign information.
     This is same as
     csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard"):
 
