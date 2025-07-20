@@ -73,22 +73,22 @@ def laplacian(
     signed_graph_variant : 'standard', 'opposing' or 'unsigned'
         This option only has an effect when the graph contains negative edge weights;
         it does nothing for graphs with all non-negative weights.  The Laplacian is
-        always assembled as $L = D - A$, but D and A are replaced as described below.
+        always assembled as :math:`L = D - A`, but D and A are replaced as described below.
         See [2] for a detailed discussion of each variant:
 
         * 'standard': No modification of edge weights when computing D or A.
           This is called "repelling" in [2].
-          - $D_i = \\sum_j G_{ij}$
-          - $A_{ij} = G_{ij}$
+          - :math:`D_i = \\sum_j G_{ij}`
+          - :math:`A_{ij} = G_{ij}`
         * 'opposing': Absolute value only for the degree computation,
           so that positive and negative weights cannot cancel out.
           see [3] for a discussion of this variant.
-          - $D_i = \\sum_j |G_{ij}|$
-          - $A_{ij} = G_{ij}$
+          - :math:`D_i = \\sum_j |G_{ij}|`
+          - :math:`A_{ij} = G_{ij}`
         * 'unsigned': Absolute value for both degree and adjacency,
           discarding all sign information.
-          - $D_i = \\sum_j |G_{ij}|$
-          - $A_{ij} = |G_{ij}|$
+          - :math:`D_i = \\sum_j |G_{ij}|`
+          - :math:`A_{ij} = |G_{ij}|`
 
         Default: 'standard'.
 
