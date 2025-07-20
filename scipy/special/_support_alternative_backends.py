@@ -306,7 +306,7 @@ _special_funcs = (
         _ufuncs.bdtr, 3,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy"],
-            skip_backends=[("jax.numpy", "unavailable")]
+            jax_jit=False,
         ),
         int_only=(False, True, False), torch_native=False,
     ),
