@@ -115,7 +115,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         dtypes = (base_dtype, ) * nfo.n_args
     else:
         dtypes = tuple(
-            'int64' if needs_int else base_dtype for needs_int in int_only
+            'intp' if needs_int else base_dtype for needs_int in int_only
         )
 
     positive_only, dtypes = _skip_or_tweak_alternative_backends(
