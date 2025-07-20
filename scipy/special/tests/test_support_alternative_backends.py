@@ -30,6 +30,9 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
     -------
     positive_only : list[bool]
         Whether you should exclusively test positive inputs.
+    dtypes : list[str]
+        dtype strings 'float64', 'int32', 'int64', etc. with integer types
+        mapped to the type of the NumPy default int.
     """
     f_name = nfo.name
     if isinstance(nfo.positive_only, dict):
@@ -38,6 +41,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         positive_only = nfo.positive_only
     if isinstance(positive_only, bool):
         positive_only = [positive_only]*nfo.n_args
+
+    dtypes = [np.intp.__name__ if dtype == "intp" else dtype for dtype in dtypes]
 
     if f_name in {'betaincinv'} and is_cupy(xp):
         pytest.xfail("CuPy uses different convention for out of domain input.")
@@ -49,7 +54,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         pytest.xfail("https://github.com/numpy/numpy/issues/11204")
 
     if not any('int' in dtype for dtype in dtypes):
-        return positive_only
+        return positive_only, dtypes
 
     # Integer-specific issues from this point onwards
 
@@ -93,14 +98,14 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         if not nfo.torch_native:
             pytest.xfail("dtypes no not match")
 
-    return positive_only
+    return positive_only, dtypes
 
 
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-@pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'int64'])
+@pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'intp'])
 @pytest.mark.parametrize(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
 def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
@@ -113,7 +118,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
             'int64' if needs_int else base_dtype for needs_int in int_only
         )
 
-    positive_only = _skip_or_tweak_alternative_backends(
+    positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, int_only
     )
 
@@ -222,15 +227,16 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
                          'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtypes = ['int64', 'float32', 'float64', 'float64'][:nfo.n_args]
-    dtypes_np = [getattr(np, dtype) for dtype in dtypes]
-    dtypes_xp = [xp.int64, xp.float32, xp.float64, xp.float64][:nfo.n_args]
-    positive_only = _skip_or_tweak_alternative_backends(
+    dtypes = ['intp', 'float32', 'float64', 'float64'][:nfo.n_args]
+
+    positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes, (False,)*nfo.n_args
     )
+    dtypes_np = [getattr(np, dtype) for dtype in dtypes]
+    dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
 
     rng = np.random.default_rng(984254252920492019)
-    iinfo = np.iinfo(np.int64)
+    iinfo = np.iinfo(np.intp)
     if nfo.test_large_ints:
         randint = partial(rng.integers, iinfo.min, iinfo.max + 1)
     else:
@@ -280,12 +286,12 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
                          'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
-    positive_only = _skip_or_tweak_alternative_backends(
+    dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'intp']))
+    positive_only, dtypes = _skip_or_tweak_alternative_backends(
         xp, nfo, [dtype], (False,)*nfo.n_args
     )
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
+    dtype_np = getattr(np, dtypes[0])
+    dtype_xp = getattr(xp, dtypes[0])
 
     elements = {'allow_subnormal': False}
     # Most failures are due to NaN or infinity; uncomment to suppress them
