@@ -110,7 +110,7 @@ inline CBLAS_INT invert_slice_triangular(
 
 
 template<typename T>
-void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
+void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, CBLAS_INT* info)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
