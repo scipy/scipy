@@ -20,7 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    signed_graph_variant="repelling",
+    signed_graph_variant="standard",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -70,20 +70,20 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
-    signed_graph_variant : 'repelling', 'opposing' or 'unsigned'
+    signed_graph_variant : 'standard', 'opposing' or 'unsigned'
         Specifies the method used to compute vertex degrees.
         All variants are the same in the case of non-negative edge weights.
         Detailed discussions on the reasoning behind each type of variant
         can be found in [2].:
 
-        * 'repelling' is standard degree calculation using edge weights.
+        * 'standard' is standard degree calculation using edge weights.
         * 'opposing' computes the degree using absolute values of edge weights.
           This prevents cancellation of positive and negative edge weights in
           signed graphs, as described in [3].
         * 'unsigned' discards the sign of edge weights.
           This removes all the information contained in the sign.
 
-        Default: 'repelling'.
+        Default: 'standard'.
 
     Returns
     -------
@@ -308,15 +308,15 @@ def laplacian(
            [ 1,  0,  1],
            [-1,  1,  0]])
 
-    Setting signed_graph_variant="repelling" (default),
+    Setting signed_graph_variant="standard" (default),
     positive and negative edge weights cancel during degree computation:
 
-    >>> L_repelling, d_repelling = csgraph.laplacian(G, return_diag=True)
-    >>> L_repelling
+    >>> L_standard, d_standard = csgraph.laplacian(G, return_diag=True)
+    >>> L_standard
     array([[ 0, -1,  1],
            [-1,  2, -1],
            [ 1, -1,  0]])
-    >>> d_repelling
+    >>> d_standard
     array([0, 2, 0])
 
     Setting signed_graph_variant="opposing" prevents cancellation
@@ -337,7 +337,7 @@ def laplacian(
     Setting signed_graph_variant="unsigned" discards the sign of edge weights
     and computes the Laplacian using absolute edge weights
     This is same as
-    csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="repelling"):
+    csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard"):
 
     >>> L_unsigned, d_unsigned = csgraph.laplacian(
     ...     G,
@@ -504,7 +504,7 @@ def _laplacian_sparse_flo(
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
     graph_diagonal = graph.diagonal()
 
-    if signed_graph_variant == "repelling" or signed_graph_variant == "unsigned":
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
@@ -573,7 +573,7 @@ def _laplacian_sparse(
         else:
             np.abs(m.data, out=m.data)
 
-    if signed_graph_variant == "repelling" or signed_graph_variant == "unsigned":
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
@@ -632,7 +632,7 @@ def _laplacian_dense_flo(
         graph_sum += m.sum(axis=1 - axis)
     graph_diagonal = m.diagonal()
 
-    if signed_graph_variant == "repelling" or signed_graph_variant == "unsigned":
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
@@ -701,7 +701,7 @@ def _laplacian_dense(
         # Discard the sign of edge weights.
         np.abs(m, out=m)
 
-    if signed_graph_variant == "repelling" or signed_graph_variant == "unsigned":
+    if signed_graph_variant == "standard" or signed_graph_variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = m.sum(axis=axis)

@@ -24,7 +24,7 @@ def test_laplacian_value_error():
             assert_raises(ValueError, csgraph.laplacian, A)
 
 
-def _explicit_laplacian(x, normed=False, signed_graph_variant='repelling'):
+def _explicit_laplacian(x, normed=False, signed_graph_variant='standard'):
     if sparse.issparse(x):
         x = x.toarray()
     x = np.asarray(x)
@@ -32,7 +32,7 @@ def _explicit_laplacian(x, normed=False, signed_graph_variant='repelling'):
         x = np.abs(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        if signed_graph_variant == 'repelling' or signed_graph_variant == 'unsigned':
+        if signed_graph_variant == 'standard' or signed_graph_variant == 'unsigned':
             y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
         elif signed_graph_variant == 'opposing':
             y[j,j] = np.abs(x[j,j+1:]).sum() + np.abs(x[j,:j]).sum()
@@ -48,7 +48,7 @@ def _check_symmetric_graph_laplacian(
         mat,
         normed,
         copy=True,
-        signed_graph_variant='repelling',
+        signed_graph_variant='standard',
 ):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
@@ -104,7 +104,7 @@ def test_symmetric_graph_laplacian():
     for mat in symmetric_mats:
         for normed in True, False:
             for copy in True, False:
-                for signed_graph_variant in 'repelling', 'opposing', 'unsigned':
+                for signed_graph_variant in 'standard', 'opposing', 'unsigned':
                     _check_symmetric_graph_laplacian(mat, normed, copy,
                                                      signed_graph_variant)
 
@@ -197,7 +197,7 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-@pytest.mark.parametrize("signed_graph_variant", ["repelling", "opposing", "unsigned"])
+@pytest.mark.parametrize("signed_graph_variant", ["standard", "opposing", "unsigned"])
 def test_asymmetric_laplacian(signed_graph_variant, use_out_degree, normed,
                               copy, dtype, arr_type):
     # adjacency matrix
@@ -269,7 +269,7 @@ def test_asymmetric_laplacian(signed_graph_variant, use_out_degree, normed,
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-@pytest.mark.parametrize("signed_graph_variant", ["repelling", "opposing", "unsigned"])
+@pytest.mark.parametrize("signed_graph_variant", ["standard", "opposing", "unsigned"])
 def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
                               copy, dtype, arr_type, signed_graph_variant):
     # adjacency matrix
@@ -279,28 +279,28 @@ def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
     A = arr_type(np.array(A), dtype=dtype)
     A_copy = A.copy()
 
-    if not normed and use_out_degree and signed_graph_variant == 'repelling':
+    if not normed and use_out_degree and signed_graph_variant == 'standard':
         # Laplacian matrix using out-degree
         L = [[0, -2, 2],
              [-2, 4, -2],
              [2, -2, 0]]
         d = [0, 4, 0]
 
-    if normed and use_out_degree and signed_graph_variant == 'repelling':
+    if normed and use_out_degree and signed_graph_variant == 'standard':
         # normalized Laplacian matrix using out-degree
         L = [[0, -1, 2],
              [-1, 1, -1],
              [2, -1, 0]]
         d = [1, 2, 1]
 
-    if not normed and not use_out_degree and signed_graph_variant == 'repelling':
+    if not normed and not use_out_degree and signed_graph_variant == 'standard':
         # Laplacian matrix using in-degree
         L = [[0, -2, 2],
              [-2, 4, -2],
              [2, -2, 0]]
         d = [0, 4, 0]
 
-    if normed and not use_out_degree and signed_graph_variant == 'repelling':
+    if normed and not use_out_degree and signed_graph_variant == 'standard':
         # normalized Laplacian matrix using in-degree
         L = [[0, -1, 2],
              [-1, 1, -1],
@@ -392,7 +392,7 @@ def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
                                  'dok', 'dia', 'bsr'])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("copy", [True, False])
-@pytest.mark.parametrize("signed_graph_variant", ['repelling', 'opposing', 'unsigned'])
+@pytest.mark.parametrize("signed_graph_variant", ['standard', 'opposing', 'unsigned'])
 def test_sparse_formats(fmt, normed, copy, signed_graph_variant):
     mat = sparse.diags_array([1, 1], offsets=[-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy, signed_graph_variant)
@@ -471,7 +471,7 @@ def test_laplacian_symmetrized(arr_type, form):
 @pytest.mark.parametrize("symmetrized", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
-@pytest.mark.parametrize("signed_graph_variant", ["repelling", "opposing", "unsigned"])
+@pytest.mark.parametrize("signed_graph_variant", ["standard", "opposing", "unsigned"])
 def test_format(
     dtype, arr_type, normed, symmetrized, use_out_degree,
     form, signed_graph_variant,
