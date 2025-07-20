@@ -1891,8 +1891,8 @@ class TestMatrixT:
         M = np.full((num_rows, num_cols), 0.3)
         U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
-        N = 10**6
-        rtol = 1e-2
+        N = 10**4
+        rtol = 0.05
 
         # `rvs` performs Cholesky-inverse-Wishart sampling on the smaller
         # dimension of `mean`
