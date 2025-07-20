@@ -119,8 +119,8 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=_NoVa
         Data type of the array.  If `dtype` is None, the output
         data type is determined by the data type of the input diagonals.
 
-        Up until SciPy 1.19, the default behavior will be to always return
-        an array with an inexact data type.  In particular, integer input
+        Up until SciPy 1.19, the default behavior will be to return an array
+        with an inexact (floating point) data type.  In particular, integer input
         will be converted to double precision floating point.  This
         behavior is deprecated, and in SciPy 1.19, the default behavior
         will be changed to return an array with the same data type as the
