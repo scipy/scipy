@@ -1368,6 +1368,10 @@ class TestInv:
         with pytest.warns(LinAlgWarning):
             inv(a)
 
+        a2 = np.stack([np.diag([1., 1e-20]), np.diag([1, 1]), np.diag([1, 1e-20])])
+        with pytest.warns(LinAlgWarning):
+            inv(a2)
+
     def test_wrong_assume_a(self):
         with assert_raises(KeyError):
             inv(np.eye(2), assume_a="kaboom")

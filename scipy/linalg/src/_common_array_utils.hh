@@ -275,6 +275,21 @@ enum St : Py_ssize_t
 
 
 /*
+ * Rich return object
+ */
+struct SliceStatus {
+    Py_ssize_t slice_num;
+    Py_ssize_t structure;
+    int is_singular;
+    int is_ill_conditioned;
+    double rcond;
+    Py_ssize_t lapack_info;
+};
+
+typedef std::vector<SliceStatus> SliceStatusVec;
+
+
+/*
  * Copy n-by-m slice from slice_ptr to dst.
  */
 template<typename T>
