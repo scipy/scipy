@@ -1,5 +1,5 @@
-Array API Standard Support: `signal.windows`
-=================================
+Array API Standard Support: ``signal.windows``
+==============================================
 
 .. _array_api_support_signal_windows_cpu:
 

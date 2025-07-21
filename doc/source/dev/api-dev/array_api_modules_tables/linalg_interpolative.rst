@@ -1,5 +1,5 @@
-Array API Standard Support: `linalg.interpolative`
-=======================================
+Array API Standard Support: ``linalg.interpolative``
+====================================================
 
 .. _array_api_support_linalg_interpolative_cpu:
 

@@ -1,5 +1,5 @@
-Array API Standard Support: `io`
-=====================
+Array API Standard Support: ``io``
+==================================
 
 .. _array_api_support_io_cpu:
 

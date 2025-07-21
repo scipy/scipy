@@ -1,5 +1,5 @@
-Array API Standard Support: `stats.contingency`
-====================================
+Array API Standard Support: ``stats.contingency``
+=================================================
 
 
 .. _array_api_support_stats_contingency_cpu:

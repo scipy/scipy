@@ -1,5 +1,5 @@
-Array API Standard Support: `spatial.distance`
-===================================
+Array API Standard Support: ``spatial.distance``
+================================================
 
 .. _array_api_support_spatial_distance_cpu:
 

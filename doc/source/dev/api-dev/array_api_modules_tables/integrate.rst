@@ -1,5 +1,5 @@
-Array API Standard Support: `integrate`
-============================
+Array API Standard Support: ``integrate``
+=========================================
 
 .. _array_api_support_integrate_cpu:
 
