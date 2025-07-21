@@ -677,7 +677,6 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skip_xp_backends(np_only=True,
                                   reason='Python list input uses NumPy backend')
     def test_small_rtol_warning(self, xp):

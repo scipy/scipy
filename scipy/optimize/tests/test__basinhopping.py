@@ -211,24 +211,24 @@ class TestBasinHopping:
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
     @pytest.mark.fail_slow(40)
-    def test_all_nograd_minimizers(self):
+    @pytest.mark.parametrize("method", [
+        'CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
+        'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA'])
+    def test_all_nograd_minimizers(self, method):
         # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.
         i = 1
-        methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
-                   'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA']
-        minimizer_kwargs = copy.copy(self.kwargs_nograd)
-        for method in methods:
-            # COBYQA takes extensive amount of time on this problem
-            niter = 10 if method == 'COBYQA' else self.niter
-            minimizer_kwargs["method"] = method
-            res = basinhopping(func2d_nograd, self.x0[i],
-                               minimizer_kwargs=minimizer_kwargs,
-                               niter=niter, disp=self.disp, seed=1234)
-            tol = self.tol
-            if method == 'COBYLA':
-                tol = 2
-            assert_almost_equal(res.x, self.sol[i], decimal=tol)
+        minimizer_kwargs = self.kwargs_nograd.copy()
+        minimizer_kwargs["method"] = method
+        # These methods take extensive amount of time on this problem
+        niter = 10 if method in ('COBYLA', 'COBYQA') else self.niter
+
+        res = basinhopping(func2d_nograd, self.x0[i],
+                            minimizer_kwargs=minimizer_kwargs,
+                            niter=niter, disp=self.disp, seed=1234)
+
+        tol = 2 if method == 'COBYLA' else self.tol
+        assert_almost_equal(res.x, self.sol[i], decimal=tol)
 
     def test_pass_takestep(self):
         # test that passing a custom takestep works
@@ -285,9 +285,9 @@ class TestBasinHopping:
         # test if a minimizer fails
         i = 1
         self.kwargs["options"] = dict(maxiter=0)
-        self.niter = 10
+        niter = 10
         res = basinhopping(func2d, self.x0[i], minimizer_kwargs=self.kwargs,
-                           niter=self.niter, disp=self.disp)
+                           niter=niter, disp=self.disp)
         # the number of failed minimizations should be the number of
         # iterations + 1
         assert_equal(res.nit + 1, res.minimization_failures)
@@ -344,7 +344,7 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="unknown thread safety issue")
 class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
@@ -490,6 +490,7 @@ class Test_Metropolis:
         assert not res.success
 
 
+@pytest.mark.thread_unsafe(reason="shared state")
 class Test_AdaptiveStepsize:
     def setup_method(self):
         self.stepsize = 1.

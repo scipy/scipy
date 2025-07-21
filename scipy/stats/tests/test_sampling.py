@@ -377,7 +377,7 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
         w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
@@ -505,7 +505,7 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
-    @pytest.mark.thread_unsafe
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     def test_basic(self, dist, mv_ex):
         with warnings.catch_warnings():
             # filter the warnings thrown by UNU.RAN
@@ -812,6 +812,7 @@ class TestNumericalInversePolynomial:
     mv3 = [-0.45/np.pi, 0.2 * 250/3 * 0.5 - 0.45**2/np.pi**2]
     mvs = [mv0, mv1, mv2, mv3]
 
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
     def test_basic(self, dist, mv_ex):
@@ -1091,12 +1092,12 @@ class TestNumericalInverseHermite:
             # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
             pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
 
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
 
         dist = getattr(stats, distname)(*shapes)
         fni = NumericalInverseHermite(dist)
 
-        x = np.random.rand(10)
+        x = rng.random(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
         u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
@@ -1113,6 +1114,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parallel_threads(4)  # Very slow
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
