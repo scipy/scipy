@@ -388,6 +388,30 @@ helped during the development phase:
 
 Support
 -------
+The below tables show the current state of alternative backend support across
+SciPy's modules for in-scope functions and callable objects from the SciPy public
+API. There is not yet a formal policy for which functions should be considered
+out-of-scope for alternative backend support, but some general classes of functions
+which are currently considered out-of-scope are:
+
+* functions which do not operate on arrays such as :doc:`scipy.constants.value <../../reference/generated/scipy.constants.value>`
+* functions which are too platform specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
+* functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices, such as Mathieu functions and spheroidal wave functions in `scipy.special`, which rely on serial computations requiring maintenance of large amounts of state, making GPU acceleration impractical.
+
+Classes in the public API are not yet included in the tables but there are plans
+to consider at least some of them in-scope in the future. Alternative backend
+support is evolving, so you can expect to see changes in the content of the tables
+as the policies for what parts of SciPy's public API are in-scope become more
+concrete. Currently modules and submodules from which there are no in-scope functions
+or callable objects in SciPy's public API are excluded from the tables.
+
+The module column in the tables below contains the module name along with the
+number of in-scope functions and callable classes in the public API in parentheses.
+The remaining columns show percent coverage for various backends. Following links in
+the module column of these tables will bring you to more granular tables for
+particular modules, showing support for particular functions across backends.
+
+
 .. toctree::
    :hidden:
 
