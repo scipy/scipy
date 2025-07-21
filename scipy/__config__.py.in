@@ -138,13 +138,13 @@ def show(mode=DisplayModes.stdout.value):
 
     Examples
     --------
-    >>> import scipy as sp
-    >>> sp.show_config()
+    >>> import scipy
+    >>> scipy.show_config()
     ... # formatted output is printed to the console
 
-    >>> config_dict = sp.show_config(mode='dicts')
+    >>> config_dict = scipy.show_config(mode='dicts')
     >>> list(config_dict.keys())
-    ['pyyaml', 'lapack_info', 'openblas_info', 'blas_opt_info', 'lapack_opt_info', 'openblas_lapack_info']
+    ['Compilers', 'Machine Information', 'Build Dependencies', 'Python Information']
 
     Notes
     -----
