@@ -96,7 +96,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
         # float32 default dtype, but will impact the output dtype as if
         # they were float64 when falling back to NumPy/SciPy.
         if not nfo.torch_native:
-            pytest.xfail("dtypes no not match")
+            pytest.xfail("dtypes do not match")
 
     return positive_only, dtypes
 

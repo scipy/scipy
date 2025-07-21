@@ -378,7 +378,7 @@ _special_funcs = (
     ),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
     _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc,
-              # gh-20972
+              # scipy/scipy#20972
               positive_only={"cupy": True, "jax.numpy": True, "torch": True}),
     _FuncInfo(
         _ufuncs.chdtri, 2,
