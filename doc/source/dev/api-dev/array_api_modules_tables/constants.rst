@@ -1,4 +1,4 @@
-Array API Standard Support: constants
+Array API Standard Support: `constants`
 ============================
 
 .. _array_api_support_constants_cpu:

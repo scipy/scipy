@@ -1,4 +1,4 @@
-Array API Standard Support: special
+Array API Standard Support: `special`
 ==========================
 
 .. _array_api_support_special_cpu:

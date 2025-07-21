@@ -1,4 +1,4 @@
-Array API Standard Support: sparse
+Array API Standard Support: `sparse`
 =========================
 
 .. _array_api_support_sparse_cpu:

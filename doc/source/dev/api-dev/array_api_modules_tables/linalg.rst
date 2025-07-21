@@ -1,4 +1,4 @@
-Array API Standard Support: linalg
+Array API Standard Support: `linalg`
 =========================
 
 .. _array_api_support_linalg_cpu:

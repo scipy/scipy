@@ -1,4 +1,4 @@
-Array API Standard Support: datasets
+Array API Standard Support: `datasets`
 ===========================
 
 .. _array_api_support_datasets_cpu:

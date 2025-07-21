@@ -1,4 +1,4 @@
-Array API Standard Support: stats
+Array API Standard Support: `stats`
 ========================
 
 .. _array_api_support_stats_cpu:

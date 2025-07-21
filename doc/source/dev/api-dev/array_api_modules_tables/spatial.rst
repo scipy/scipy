@@ -1,4 +1,4 @@
-Array API Standard Support: spatial
+Array API Standard Support: `spatial`
 ==========================
 
 .. _array_api_support_spatial_cpu:

@@ -1,4 +1,4 @@
-Array API Standard Support: sparse.csgraph
+Array API Standard Support: `sparse.csgraph`
 =================================
 
 .. _array_api_support_sparse_csgraph_cpu:

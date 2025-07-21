@@ -1,4 +1,4 @@
-Array API Standard Support: stats.qmc
+Array API Standard Support: `stats.qmc`
 ============================
 
 .. _array_api_support_stats_qmc_cpu:

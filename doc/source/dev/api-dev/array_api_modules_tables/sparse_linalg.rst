@@ -1,4 +1,4 @@
-Array API Standard Support: sparse.linalg
+Array API Standard Support: `sparse.linalg`
 ================================
 
 .. _array_api_support_sparse_linalg_cpu:

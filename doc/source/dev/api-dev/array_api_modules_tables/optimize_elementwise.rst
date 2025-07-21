@@ -1,4 +1,4 @@
-Array API Standard Support: optimize.elementwise
+Array API Standard Support: `optimize.elementwise`
 =======================================
 
 .. _array_api_support_optimize_elementwise_cpu:
