@@ -11,8 +11,10 @@ from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    make_xp_pytest_param, make_xp_test_case,
-                                   xp_default_dtype, get_native_namespace_name)
+                                   get_native_namespace_name)
 from scipy._lib.array_api_compat import numpy as np
+import scipy._lib.array_api_extra as xpx
+
 
 # Run all tests in this module in the Array API CI, including those without
 # the xp fixture
@@ -88,7 +90,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes, int_only):
     ):
         pytest.xfail("dtypes do not match")
 
-    if (is_torch(xp) and xp_default_dtype(xp) == xp.float32):
+    if (is_torch(xp) and xpx.default_dtype(xp) == xp.float32):
         # On PyTorch with float32 default dtype, all ints are promoted
         # to float32, but when falling back to NumPy/SciPy int64 is promoted
         # instead to float64. Integer only parameters essentially do not
@@ -199,7 +201,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     ref = nfo.func(*args_np)  # Unwrapped ufunc
     if (
             is_torch(xp)
-            and xp_default_dtype(xp) == xp.float32
+            and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
         # int64 promotes like float32 on torch with default dtype = float32
@@ -260,7 +262,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     ref = nfo.func(*args_np)  # Unwrapped ufunc
     if (
             is_torch(xp)
-            and xp_default_dtype(xp) == xp.float32
+            and xpx.default_dtype(xp) == xp.float32
             and "float64" not in dtypes
     ):
         # int64 promotes like float32 on torch with default dtype = float32
@@ -312,7 +314,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     ref = nfo.func(*args_np)  # Unwrapped ufunc
     if (
             is_torch(xp)
-            and xp_default_dtype(xp) == xp.float32
+            and xpx.default_dtype(xp) == xp.float32
             and dtype != "float64"
     ):
         # int64 promotes like float32 on torch with default dtype = float32
