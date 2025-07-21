@@ -77,7 +77,7 @@ def _matmul_inplace(x, y, verbosityLevel=0):
         # i.e. x is not a view/slice, x & y have compatible dtypes, and the
         # shape of the result of x @ y matches the shape of x.
 
-        print("????", np.isfinite(x).any(), np.isfinite(y).any())
+        print("????", np.isfinite(x).all(), np.isfinite(y).all())
 
         np.matmul(x, y, out=x)
     else:
