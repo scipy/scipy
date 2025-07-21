@@ -1,4 +1,4 @@
-array API Support: differentiate
+Array API Standard Support: ``differentiate``
 ================================
 
 .. _array_api_support_differentiate_cpu:
