@@ -1,4 +1,4 @@
-array API Support: interpolate
+Array API Standard Support: interpolate
 ==============================
 
 .. _array_api_support_interpolate_cpu:

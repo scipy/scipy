@@ -1,4 +1,4 @@
-array API Support: optimize
+Array API Standard Support: optimize
 ===========================
 
 .. _array_api_support_optimize_cpu:

@@ -1,4 +1,4 @@
-array API Support: cluster.vq
+Array API Standard Support: cluster.vq
 =============================
 
 .. _array_api_support_cluster_vq_cpu:

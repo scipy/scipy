@@ -1,4 +1,4 @@
-array API Support: ndimage
+Array API Standard Support: ndimage
 ==========================
 
 .. _array_api_support_ndimage_cpu:

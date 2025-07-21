@@ -1,4 +1,4 @@
-array API Support: signal
+Array API Standard Support: signal
 =========================
 
 .. _array_api_support_signal_cpu:

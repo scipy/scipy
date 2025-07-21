@@ -1,4 +1,4 @@
-array API Support: cluster.hierarchy
+Array API Standard Support: cluster.hierarchy
 ====================================
 
 .. _array_api_support_cluster_hierarchy_cpu:

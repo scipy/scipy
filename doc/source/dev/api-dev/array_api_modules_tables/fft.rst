@@ -1,4 +1,4 @@
-array API Support: fft
+Array API Standard Support: fft
 ======================
 
 .. _array_api_support_fft_cpu:
