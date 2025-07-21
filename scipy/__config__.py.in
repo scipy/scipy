@@ -136,6 +136,16 @@ def show(mode=DisplayModes.stdout.value):
     out : {`dict`, `None`}
         If mode is `'dicts'`, a dict is returned, else None
 
+    Examples
+    --------
+    >>> import scipy as sp
+    >>> sp.show_config()
+    ... # formatted output is printed to the console
+
+    >>> config_dict = sp.show_config(mode='dicts')
+    >>> list(config_dict.keys())
+    ['pyyaml', 'lapack_info', 'openblas_info', 'blas_opt_info', 'lapack_opt_info', 'openblas_lapack_info']
+
     Notes
     -----
     1. The `'stdout'` mode will give more readable
