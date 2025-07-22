@@ -2310,7 +2310,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     This function checks whether the input is a 2-dimensional square NumPy array
     with a zero diagonal and symmetry within a specified tolerance. These are
-    necessary properties for a distance matrix but not sufficient — in particular,
+    necessary properties for a distance matrix but not sufficient -- in particular,
     this function does **not** check the triangle inequality, which is required
     for a true metric distance matrix.
 
