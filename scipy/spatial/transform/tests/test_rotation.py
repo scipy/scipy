@@ -7,6 +7,8 @@ from numpy.testing import assert_equal
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations, product
+from contextlib import contextmanager
+import warnings
 from scipy._lib._array_api import (
     xp_assert_equal,
     is_numpy,
@@ -919,9 +921,26 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     test_stats(angles_quat - angles, 1e-16, 1e-14)
 
 
+@contextmanager
+def maybe_warn_gimbal_lock(should_warn, xp):
+    if should_warn:
+        # We can only warn on non-lazy backends because we'd need to condition on
+        # traced booleans
+        with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
+            yield
+
+    else:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            yield
+
+
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_euler_degenerate_asymmetric_axes(
+    xp, seq_tuple, intrinsic, suppress_warnings
+):
     atol = 1e-12
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -939,10 +958,10 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We can only warn on non-lazy backends because we'd need to condition on traced
-    # booleans
-    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-        angle_estimates = rotation.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings, xp):
+        angle_estimates = rotation.as_euler(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
@@ -950,7 +969,10 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
-def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_euler_degenerate_symmetric_axes(
+    xp, seq_tuple, intrinsic, suppress_warnings
+):
     atol = 1e-12
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -969,9 +991,10 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We can only warn on non-lazy backends
-    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-        angle_estimates = rotation.as_euler(seq, degrees=True)
+    with maybe_warn_gimbal_lock(not suppress_warnings, xp):
+        angle_estimates = rotation.as_euler(
+            seq, degrees=True, suppress_warnings=suppress_warnings
+        )
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
@@ -2230,7 +2253,8 @@ def test_as_davenport(xp):
             xp_assert_close(angles_dav, xp.asarray(angles))
 
 
-def test_as_davenport_degenerate(xp):
+@pytest.mark.parametrize("suppress_warnings", (False, True))
+def test_as_davenport_degenerate(xp, suppress_warnings):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     rnd = np.random.RandomState(0)
@@ -2253,8 +2277,12 @@ def test_as_davenport_degenerate(xp):
         for order in ['extrinsic', 'intrinsic']:
             ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
             rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
-            with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-                angles_dav = rot.as_davenport(xp.asarray(ax), order)
+            with maybe_warn_gimbal_lock(not suppress_warnings, xp):
+                angles_dav = rot.as_davenport(
+                    xp.asarray(ax),
+                    order,
+                    suppress_warnings=suppress_warnings
+                )
             mat_expected = rot.as_matrix()
             rot_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav)
             mat_estimated = rot_estimated.as_matrix()
