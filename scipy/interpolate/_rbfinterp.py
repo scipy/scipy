@@ -307,8 +307,9 @@ class RBFInterpolator:
 
         if neighbors is None:
             shift, scale, coeffs = _backend._build_and_solve_system(
-                y, d, smoothing, kernel, epsilon, powers
-                )
+                y, d, smoothing, kernel, epsilon, powers,
+                xp
+            )
 
             # Make these attributes private since they do not always exist.
             self._shift = shift
@@ -384,7 +385,7 @@ class RBFInterpolator:
                     self.epsilon,
                     self.powers,
                     shift,
-                    scale)
+                    scale, self._xp)
                 out[i:i + chunksize, :] = vec @ coeffs
         else:
             vec = _backend._build_evaluation_coefficients(
@@ -394,7 +395,7 @@ class RBFInterpolator:
                 self.epsilon,
                 self.powers,
                 shift,
-                scale)
+                scale, self._xp)
             out = vec @ coeffs
         return out
 

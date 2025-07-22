@@ -5,9 +5,17 @@ from ._rbfinterp_common import _monomial_powers_impl
 
 from ._rbfinterp_pythran import (
     _build_system,
-    _build_evaluation_coefficients,
-    _polynomial_matrix
+    _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
+    _polynomial_matrix as _pythran_polynomial_matrix
 )
+
+
+# trampolines for pythran-compiled functions to drop the `xp` argument
+def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, xp):
+    return _pythran_build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale)
+
+def _polynomial_matrix(x, powers, xp):
+    return _pythran_polynomial_matrix(x, powers)
 
 
 def _monomial_powers(ndim, degree, xp):
@@ -18,7 +26,7 @@ def _monomial_powers(ndim, degree, xp):
     return out
 
 
-def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
+def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp=np):
     """Build and solve the RBF interpolation system of equations.
 
     Parameters

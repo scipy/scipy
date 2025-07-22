@@ -18,10 +18,10 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 def _vandermonde(x, degree, xp=np):
     # Returns a matrix of monomials that span polynomials with the specified
     # degree evaluated at x.
-    from scipy.interpolate._rbfinterp_np import _monomial_powers  # XXX backends
+   ### from scipy.interpolate._rbfinterp_np import _monomial_powers  # XXX backends
     backend = _get_backend(xp)
     powers = backend._monomial_powers(x.shape[1], degree, xp)
-    return _rbfinterp_pythran._polynomial_matrix(x, powers)
+    return backend._polynomial_matrix(x, powers, xp)
 
 
 def _1d_test_function(x, xp):
@@ -102,19 +102,23 @@ class _TestRBFInterpolator:
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     @pytest.mark.parametrize('kernel', sorted(_SCALE_INVARIANT))
-    def test_scale_invariance_2d(self, kernel):
+    def test_scale_invariance_2d(self, kernel, xp):
         # Verify that the functions in _SCALE_INVARIANT are insensitive to the
         # shape parameter (when smoothing == 0) in 2d.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
         x = seq.random(100)
-        y = _2d_test_function(x, np)
+        x = xp.asarray(x)
+
+        y = _2d_test_function(x, xp)
         xitp = seq.random(100)
+        xitp = xp.asarray(xitp)
+
         yitp1 = self.build(x, y, epsilon=1.0, kernel=kernel)(xitp)
         yitp2 = self.build(x, y, epsilon=2.0, kernel=kernel)(xitp)
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
     @pytest.mark.parametrize('kernel', sorted(_AVAILABLE))
-    def test_extreme_domains(self, kernel):
+    def test_extreme_domains(self, kernel, xp):
         # Make sure the interpolant remains numerically stable for very
         # large/small domains.
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
@@ -122,8 +126,11 @@ class _TestRBFInterpolator:
         shift = 1e55
 
         x = seq.random(100)
-        y = _2d_test_function(x, np)
+        x = xp.asarray(x)
+
+        y = _2d_test_function(x, xp)
         xitp = seq.random(100)
+        xitp = xp.asarray(xitp)
 
         if kernel in _SCALE_INVARIANT:
             yitp1 = self.build(x, y, kernel=kernel)(xitp)
@@ -141,7 +148,7 @@ class _TestRBFInterpolator:
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
 
-    def test_polynomial_reproduction(self):
+    def test_polynomial_reproduction(self, xp):
         # If the observed data comes from a polynomial, then the interpolant
         # should be able to reproduce the polynomial exactly, provided that
         # `degree` is sufficiently high.
@@ -151,14 +158,17 @@ class _TestRBFInterpolator:
 
         x = seq.random(50)
         xitp = seq.random(50)
+        x = xp.asarray(x)
+        xitp = xp.asarray(xitp)
 
-        P = _vandermonde(x, degree)
-        Pitp = _vandermonde(xitp, degree)
+        P = _vandermonde(x, degree, xp)
+        Pitp = _vandermonde(xitp, degree, xp)
 
         poly_coeffs = rng.normal(0.0, 1.0, P.shape[1])
+        poly_coeffs = xp.asarray(poly_coeffs)
 
-        y = P.dot(poly_coeffs)
-        yitp1 = Pitp.dot(poly_coeffs)
+        y = P @ poly_coeffs  #y = P.dot(poly_coeffs)
+        yitp1 = Pitp @ poly_coeffs  #yitp1 = Pitp.dot(poly_coeffs)
         yitp2 = self.build(x, y, degree=degree)(xitp)
 
         xp_assert_close(yitp1, yitp2, atol=1e-8)
