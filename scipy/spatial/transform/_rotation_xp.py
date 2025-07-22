@@ -860,17 +860,25 @@ def _align_vectors_fixed(
     return q_opt, rssd, xp.asarray(xp.nan, device=device)
 
 
-def pow(quat: Array, n: float) -> Array:
+def pow(quat: Array, n: float | Array) -> Array:
     xp = array_namespace(quat)
     device = xp_device(quat)
-    if is_lazy_array(quat):
+    array_exponent = isinstance(n, type(quat))
+    if array_exponent:
+        if n.shape == (1,):
+            n = n[0]
+        elif n.ndim != 0:
+            raise ValueError("Array exponent must be a scalar")
+        n = xp.asarray(n, dtype=quat.dtype, device=device)
+
+    if is_lazy_array(quat) and array_exponent:
         result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
         # Special cases 0 -> identity, -1 -> inv, 1 -> copy
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
         identity = xpx.at(identity)[..., 3].set(1)
-        result = xp.where(xp.asarray(n == 0, device=device), identity, result)
-        result = xp.where(xp.asarray(n == -1, device=device), inv(quat), result)
-        result = xp.where(xp.asarray(n == 1, device=device), quat, result)
+        result = xp.where(n == 0, identity, result)
+        result = xp.where(n == -1, inv(quat), result)
+        result = xp.where(n == 1, quat, result)
         return result
     if n == 0:
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)

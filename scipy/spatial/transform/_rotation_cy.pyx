@@ -1227,6 +1227,8 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def pow(double[:, :] quat, n) -> double[:, :]:
+    if isinstance(n, np.ndarray) and n.ndim != 0 and n.shape != (1,):
+        raise ValueError("Array exponent must be a scalar")
     # Exact short-cuts
     if n == 0:
         return identity(quat.shape[0])

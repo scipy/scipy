@@ -2190,10 +2190,27 @@ def test_pow(xp):
         r = Rotation.from_rotvec(n * p.as_rotvec())
         xp_assert_close(q.as_quat(), r.as_quat(), atol=atol)
 
+    # Array exponent
+    n = [-5, -2, -1.5, -1, -0.5, -0.0, 0, 0.0, 0.5, 1.0, 1.5, 2]
+    for exponent in n:
+        r = p ** exponent
+        r_array = p ** xp.asarray([exponent])  # Test with 1D array
+        xp_assert_close(r.as_quat(), r_array.as_quat())
+        r_array = p ** xp.asarray(exponent)  # Test with scalar
+        xp_assert_close(r.as_quat(), r_array.as_quat())
+
     # Small angle
     p = Rotation.from_rotvec(xp.asarray([1e-12, 0, 0]))
     n = 3
     q = p ** n
+    r = Rotation.from_rotvec(n * p.as_rotvec())
+    xp_assert_close(q.as_quat(), r.as_quat(), atol=atol)
+
+    # Array exponent
+    q = p ** xp.asarray([n])  # Test with 1D array
+    r = Rotation.from_rotvec(n * p.as_rotvec())
+    xp_assert_close(q.as_quat(), r.as_quat(), atol=atol)
+    q = p ** xp.asarray(n)  # Test with scalar
     r = Rotation.from_rotvec(n * p.as_rotvec())
     xp_assert_close(q.as_quat(), r.as_quat(), atol=atol)
 
@@ -2203,7 +2220,10 @@ def test_pow_errors(xp):
     p = rotation_to_xp(Rotation.random(rng=0), xp)
     with pytest.raises(NotImplementedError, match='modulus not supported'):
         pow(p, 1, 1)
-
+    with pytest.raises(ValueError, match="Array exponent must be a scalar"):
+        p ** xp.asarray([1, 2])
+    with pytest.raises(ValueError, match="Array exponent must be a scalar"):
+        p ** xp.asarray([[1], [2]])
 
 def test_rotation_within_numpy_array():
     # TODO: Do we want to support this for all Array API frameworks?

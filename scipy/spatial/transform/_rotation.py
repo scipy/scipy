@@ -1721,7 +1721,7 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "cannot handle zero-length rotations")]
     )
-    def __pow__(self, n: float, modulus: None = None) -> Rotation:
+    def __pow__(self, n: float | Array, modulus: None = None) -> Rotation:
         """Compose this rotation with itself `n` times.
 
         Composition of a rotation ``p`` with itself can be extended to
