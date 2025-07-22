@@ -12,7 +12,7 @@ from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
-from scipy._lib._util import copy_if_needed
+from scipy._lib._util import copy_if_needed, _dedent_for_py313
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 from inspect import signature
@@ -66,14 +66,14 @@ def _safe_norm(v):
 
 
 _doc_parts = dict(
-    params_basic="""
+    params_basic=_dedent_for_py313("""
     F : function(x) -> f
         Function whose root to find; should take and return an array-like
         object.
     xin : array_like
         Initial guess for the solution
-    """.strip(),
-    params_extra="""
+    """).strip(),
+    params_extra=_dedent_for_py313("""
     iter : int, optional
         Number of iterations to make. If omitted (default), make as many
         as required to meet tolerances.
@@ -113,7 +113,7 @@ _doc_parts = dict(
     NoConvergence
         When a solution was not found.
 
-    """.strip()
+    """).strip()
 )
 
 
@@ -830,7 +830,7 @@ class LowRankMatrix:
         del self.ds[q:]
 
 
-_doc_parts['broyden_params'] = """
+_doc_parts['broyden_params'] = _dedent_for_py313("""
     alpha : float, optional
         Initial guess for the Jacobian is ``(-1/alpha)``.
     reduction_method : str or tuple, optional
@@ -851,7 +851,7 @@ _doc_parts['broyden_params'] = """
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
         Default is infinity (i.e., no rank reduction).
-    """.strip()
+    """).strip()
 
 
 class BroydenFirst(GenericBroyden):

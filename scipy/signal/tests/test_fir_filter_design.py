@@ -543,6 +543,11 @@ class TestRemez:
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             remez(11, .1, 1, fs=np.array([10, 20]))
 
+    def test_gh_23266(self, xp):
+        bands = xp.asarray([0.0, 0.2, 0.3, 0.5])
+        desired = xp.asarray([1.0, 0.0])
+        weight = xp.asarray([1.0, 2.0])
+        remez(21, bands, desired, weight=weight)
 
 
 @skip_xp_backends(cpu_only=True, reason="lstsq")
@@ -673,7 +678,6 @@ class TestFirls:
 
 class TestMinimumPhase:
 
-    @pytest.mark.thread_unsafe
     def test_bad_args(self):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])

@@ -271,6 +271,19 @@ class TestZpk2Tf:
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
+    
+    @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+    @skip_xp_backends("jax.numpy", 
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    def test_zpk2tf_with_multi_dimensional_array(self, xp):
+        z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
+        p = xp.asarray([1, 2])
+        k = 1
+        b, a = zpk2tf(z, p, k)
+        b_ref = xp.asarray([[1, -3, 2], [1, -7, 12]])
+        a_ref = xp.asarray([1, -3, 2])
+        xp_assert_close(b, b_ref, check_dtype=False)
+        xp_assert_close(a, a_ref, check_dtype=False)
 
 
 @skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
@@ -318,7 +331,6 @@ class TestSos2Zpk:
         xp_assert_close(_sort_cmplx(p2, xp=xp), _sort_cmplx(p, xp=xp))
         assert k2 == k
 
-    @pytest.mark.thread_unsafe
     @skip_xp_backends(
         cpu_only=True, reason="XXX zpk2sos is numpy-only",
     )
@@ -1250,6 +1262,9 @@ class TestFreqz_sos:
         # a check that dB[w <= 0.2] is less than or almost equal to -150.
         assert xp.max(dB[w <= 0.2]) < -150*(1 - 1e-12)
 
+    @pytest.mark.thread_unsafe(
+        reason=("mpmath gmpy2 backend is not thread-safe, "
+                "see https://github.com/mpmath/mpmath/issues/974"))
     @mpmath_check("0.10")
     def test_freqz_sos_against_mp(self, xp):
         # Compare the result of freqz_sos applied to a high order Butterworth
@@ -2011,7 +2026,6 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
-    @pytest.mark.thread_unsafe
     def test_runtime_warnings(self):
         msg = "Order is zero.*|divide by zero encountered"
         with pytest.warns(RuntimeWarning, match=msg):
@@ -4695,7 +4709,6 @@ class TestGroupDelay:
                                 0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    @pytest.mark.thread_unsafe
     @skip_xp_backends(np_only=True, reason="numpy.convolve")
     def test_singular(self, xp):
         # Let's create a filter with zeros and poles on the unit circle and

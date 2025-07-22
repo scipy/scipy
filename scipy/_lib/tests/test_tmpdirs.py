@@ -13,7 +13,7 @@ MY_PATH = abspath(__file__)
 MY_DIR = dirname(MY_PATH)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="tempdir is not thread-safe")
 def test_tempdir():
     with tempdir() as tmpdir:
         fname = pjoin(tmpdir, 'example_file.txt')
@@ -22,7 +22,7 @@ def test_tempdir():
     assert_(not exists(tmpdir))
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="in_tempdir is not thread-safe")
 def test_in_tempdir():
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
@@ -34,7 +34,7 @@ def test_in_tempdir():
     assert_equal(getcwd(), my_cwd)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="in_dir is not thread-safe")
 def test_given_directory():
     # Test InGivenDirectory
     cwd = getcwd()

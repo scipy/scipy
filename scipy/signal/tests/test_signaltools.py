@@ -834,9 +834,9 @@ class TestFFTConvolve:
 
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_random_data(self, axes, xp):
-        np.random.seed(1234)
-        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        rng = np.random.default_rng(1234)
+        a_np = np.random.rand(1233) + 1j * rng.random(1233)
+        b_np = np.random.rand(1321) + 1j * rng.random(1321)
         expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
         a = xp.asarray(a_np)
         b = xp.asarray(b_np)
@@ -851,9 +851,9 @@ class TestFFTConvolve:
 
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes, xp):
-        np.random.seed(1234)
-        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
-        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        rng = np.random.default_rng(1234)
+        a_np = np.random.rand(1233) + 1j * rng.random(1233)
+        b_np = np.random.rand(1321) + 1j * rng.random(1321)
         expected = np.convolve(a_np, b_np, 'full')
         a_np = np.tile(a_np, [2, 1])
         b_np = np.tile(b_np, [2, 1])
@@ -879,9 +879,9 @@ class TestFFTConvolve:
                                       [-1, -4]])
     def test_random_data_multidim_axes(self, axes, xp):
         a_shape, b_shape = (123, 22), (132, 11)
-        np.random.seed(1234)
-        a = xp.asarray(np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape))
-        b = xp.asarray(np.random.rand(*b_shape) + 1j * np.random.rand(*b_shape))
+        rng = np.random.default_rng(1234)
+        a = xp.asarray(np.random.rand(*a_shape) + 1j * rng.random(a_shape))
+        b = xp.asarray(np.random.rand(*b_shape) + 1j * rng.random(b_shape))
         expected = convolve2d(a, b, 'full')
 
         a = a[:, :, None, None, None]
@@ -919,7 +919,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         xp_assert_close(out, expected, atol=1e-10)
 
-    @pytest.mark.thread_unsafe
     @skip_xp_backends(np_only=True)
     def test_fft_nan(self, xp):
         n = 1000
@@ -2288,7 +2287,6 @@ class _TestLinearFilter:
         )
 
 
-
 class TestLinearFilterFloat32(_TestLinearFilter):
     dtype = 'float32'
 
@@ -2528,7 +2526,6 @@ class TestCorrelate:
         xp_assert_close(correlate(a, b, mode='valid'), xp.asarray([32]))
 
 
-
 @skip_xp_backends(np_only=True, reason="accepts ints, return numpy array")
 @pytest.mark.parametrize("mode", ["valid", "same", "full"])
 @pytest.mark.parametrize("behind", [True, False])
@@ -2586,11 +2583,11 @@ class TestCorrelateComplex:
         return int(2 * prec / 3)
 
     def _setup_rank1(self, dt, mode, xp):
-        np.random.seed(9)
+        rng = np.random.default_rng(9)
         a = np.random.randn(10).astype(dt)
-        a += 1j * np.random.randn(10).astype(dt)
+        a += 1j * rng.standard_normal(10).astype(dt)
         b = np.random.randn(8).astype(dt)
-        b += 1j * np.random.randn(8).astype(dt)
+        b += 1j * rng.standard_normal(8).astype(dt)
 
         y_r = (correlate(a.real, b.real, mode=mode) +
                correlate(a.imag, b.imag, mode=mode)).astype(dt)
@@ -2981,8 +2978,8 @@ def filtfilt_gust_opt(b, a, x):
 
 def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     # Generate x, the data to be filtered.
-    np.random.seed(123)
-    x = np.random.randn(*shape)
+    rng = np.random.default_rng(123)
+    x = rng.standard_normal(shape)
 
     # Apply filtfilt to x. This is the main calculation to be checked.
     y = filtfilt(b, a, x, axis=axis, method="gust", irlen=irlen)
@@ -3061,8 +3058,6 @@ def test_filtfilt_gust(xp):
     eps = 1e-10
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-
-    np.random.seed(123)
 
     b, a = zpk2tf(z, p, k)
     for irlen in [None, approx_impulse_len]:

@@ -232,7 +232,6 @@ class TestCommon1D:
         assert_allclose(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
-    @pytest.mark.thread_unsafe
     def test_from_array(self, spcreator):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ComplexWarning)
@@ -243,7 +242,6 @@ class TestCommon1D:
             assert_equal(spcreator(A).toarray(), A)
             assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
 
-    @pytest.mark.thread_unsafe
     def test_from_list(self, spcreator):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ComplexWarning)
@@ -256,7 +254,6 @@ class TestCommon1D:
                 spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
         )
 
-    @pytest.mark.thread_unsafe
     def test_from_sparse(self, spcreator):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ComplexWarning)
