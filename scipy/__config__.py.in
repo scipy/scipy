@@ -136,6 +136,16 @@ def show(mode=DisplayModes.stdout.value):
     out : {`dict`, `None`}
         If mode is `'dicts'`, a dict is returned, else None
 
+    Examples
+    --------
+    >>> import scipy
+    >>> scipy.show_config()
+    ... # formatted output is printed to the console
+
+    >>> config_dict = scipy.show_config(mode='dicts')
+    >>> list(config_dict.keys())
+    ['Compilers', 'Machine Information', 'Build Dependencies', 'Python Information']
+
     Notes
     -----
     1. The `'stdout'` mode will give more readable
