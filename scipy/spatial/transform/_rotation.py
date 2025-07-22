@@ -1735,8 +1735,9 @@ class Rotation:
 
         Parameters
         ----------
-        n : float
-            The number of times to compose the rotation with itself.
+        n : float | Array
+            The number of times to compose the rotation with itself. If `n` is
+            an array, then it must be 0d or 1d with shape (1,).
         modulus : None
             This overridden argument is not applicable to Rotations and must be
             ``None``.
