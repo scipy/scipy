@@ -4,7 +4,7 @@ from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 from ._rbfinterp_common import _monomial_powers_impl
 
 from ._rbfinterp_pythran import (
-    _build_system,
+    _build_system as _pythran_build_system,
     _build_evaluation_coefficients as _pythran_build_evaluation_coefficients,
     _polynomial_matrix as _pythran_polynomial_matrix
 )
@@ -24,6 +24,10 @@ def _monomial_powers(ndim, degree, xp):
     if len(out) == 0:
         out = out.reshape(0, ndim)
     return out
+
+
+def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
+    return _pythran_build_system(y, d, smoothing, kernel, epsilon, powers)
 
 
 def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp=np):
@@ -55,7 +59,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp=np):
 
     """
     lhs, rhs, shift, scale = _build_system(
-        y, d, smoothing, kernel, epsilon, powers
+        y, d, smoothing, kernel, epsilon, powers, xp
         )
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
@@ -64,7 +68,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp=np):
         msg = "Singular matrix."
         nmonos = powers.shape[0]
         if nmonos > 0:
-            pmat = _polynomial_matrix((y - shift)/scale, powers)
+            pmat = _polynomial_matrix((y - shift)/scale, powers, xp)
             rank = np.linalg.matrix_rank(pmat)
             if rank < nmonos:
                 msg = (

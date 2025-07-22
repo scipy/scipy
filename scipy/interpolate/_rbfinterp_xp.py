@@ -46,6 +46,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers, xp):
     coeffs = xp.linalg.solve(lhs, rhs)
 
     '''
+    # XXX cannot give same diagnostic in a backend-agnostic way?
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")
