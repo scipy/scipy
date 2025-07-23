@@ -60,6 +60,17 @@ def _is_int_type(x):
         return True
 
 
+def _real_dtype_for_complex(dtyp, *, xp):
+    if xp.isdtype(dtyp, 'real floating'):
+        return dtyp
+    if dtyp == xp.complex64:
+        return xp.float32
+    elif dtyp == xp.complex128:
+        return xp.float64
+    else:
+        raise ValueError(f"Unknown dtype {dtyp}.")
+
+
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
 def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
     if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
@@ -488,6 +499,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.astype(a, xp_default_dtype(xp))
     res_dtype = xp.result_type(b, a)
+    real_dtype = _real_dtype_for_complex(res_dtype, xp=xp)
 
     b = xpx.atleast_nd(b, ndim=1, xp=xp)
     a = xpx.atleast_nd(a, ndim=1, xp=xp)
@@ -509,7 +521,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         # if include_nyquist is true and whole is false, w should
         # include end point
         w = xp.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole, dtype=res_dtype)
+                        endpoint=include_nyquist and not whole, dtype=real_dtype)
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
