@@ -2225,6 +2225,7 @@ def test_pow_errors(xp):
     with pytest.raises(ValueError, match="Array exponent must be a scalar"):
         p ** xp.asarray([[1], [2]])
 
+
 def test_rotation_within_numpy_array():
     # TODO: Do we want to support this for all Array API frameworks?
     single = Rotation.random(rng=0)

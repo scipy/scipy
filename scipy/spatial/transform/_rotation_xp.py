@@ -23,6 +23,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib._util import broadcastable
 from scipy._lib.array_api_compat import device as xp_device
+from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
 
 
@@ -863,15 +864,17 @@ def _align_vectors_fixed(
 def pow(quat: Array, n: float | Array) -> Array:
     xp = array_namespace(quat)
     device = xp_device(quat)
-    array_exponent = isinstance(n, type(quat))
-    if array_exponent:
+    # If n is an array, we sanitize it to a scalar and promote quat and n to
+    # the same dtype.
+    if is_array_api_obj(n):
         if n.shape == (1,):
             n = n[0]
         elif n.ndim != 0:
             raise ValueError("Array exponent must be a scalar")
-        n = xp.asarray(n, dtype=quat.dtype, device=device)
+        quat, n = xp_promote(quat, n, force_floating=True, xp=xp)
 
-    if is_lazy_array(quat) and array_exponent:
+    # If n is a lazy array, we cannot take fast paths for special cases.
+    if is_lazy_array(n):
         result = from_rotvec(n * as_rotvec(quat))  # general scaling of rotation angle
         # Special cases 0 -> identity, -1 -> inv, 1 -> copy
         identity = xp.zeros((*quat.shape[:-1], 4), dtype=quat.dtype, device=device)
