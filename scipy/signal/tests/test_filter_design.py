@@ -384,7 +384,7 @@ class TestTf2Sos:
 
     def test_gh_23221(self):
         # Tests that this tf2sos call below does not produce ComplexWarnings
-        # This test is specific for scipy==1.6.0: later scipy versions do not produce
+        # This test is specific for scipy==1.16.0: later scipy versions do not produce
         # the warning.
         with suppress_warnings():
             warnings.simplefilter("error")
