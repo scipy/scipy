@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
@@ -758,6 +758,7 @@ def test_gh_20850():
 
 # --- Test Monte Carlo Hypothesis Test --- #
 
+@make_xp_test_case(monte_carlo_test)
 class TestMonteCarloHypothesisTest:
     atol = 2.5e-2  # for comparing p-value
 

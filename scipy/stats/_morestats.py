@@ -16,6 +16,7 @@ import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
     array_namespace,
     is_marray,
+    xp_capabilities,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -227,6 +228,7 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -332,6 +334,7 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
@@ -877,6 +880,7 @@ def _log_var(logx, xp, axis):
     return special.logsumexp(2 * logxmu, axis=axis) - math.log(logx.shape[axis])
 
 
+@xp_capabilities()
 def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     r"""The boxcox log-likelihood function.
 
@@ -2856,7 +2860,7 @@ def ansari(x, y, alternative='two-sided'):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-
+@xp_capabilities()
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -4004,6 +4008,7 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4097,6 +4102,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4191,6 +4197,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x, _: (x,)
@@ -4307,6 +4314,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
+@xp_capabilities()
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.

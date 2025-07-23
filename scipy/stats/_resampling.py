@@ -7,7 +7,12 @@ import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_result_type
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    xp_capabilities,
+    xp_result_type,
+)
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -756,6 +761,7 @@ class MonteCarloTestResult:
     null_distribution: np.ndarray
 
 
+@xp_capabilities()
 @_rename_parameter('sample', 'data')
 def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
