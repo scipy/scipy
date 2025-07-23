@@ -20,7 +20,14 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
 
 from scipy._lib._testutils import _run_concurrent_barrier
 
-from scipy.interpolate import make_splrep
+from scipy.interpolate import make_splrep, NdBSpline
+
+def convert_to_ndbspline(lut):
+    tx, ty = lut.get_knots()
+    kx, ky = lut.degrees
+    nx, ny = len(tx), len(ty)
+    c = lut.get_coeffs().reshape((nx - kx - 1, ny - ky - 1))
+    return NdBSpline((tx, ty), c, (kx, ky))
 
 class TestUnivariateSpline:
     def test_linear_constant(self):
@@ -964,6 +971,27 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y,dy=1,grid=False),dy)
         assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
 
+    def make_pair_grid(self, x, y):
+        """
+        Create an array of (xi, yi) pairs for all xi in x and yi in y,
+        and reshape it to the desired shape.
+
+        Parameters
+        ----------
+        x : array_like
+            1D array of x-values.
+        y : array_like
+            1D array of y-values.
+        dest_shape : tuple
+            Desired output shape.
+
+        Returns
+        -------
+        np.ndarray
+            Reshaped array of (x, y) pairs.
+        """
+        return np.array([[xi, yi] for xi in x for yi in y])
+
     def test_partial_derivative_method_grid(self):
         x = array([1, 2, 3, 4, 5])
         y = array([1, 2, 3, 4, 5])
@@ -988,9 +1016,15 @@ class TestRectBivariateSpline:
                       [22, -13.75, 0, 13.75, -22],
                       [-8, 5, 0, -5, 8]]) / 6.
         lut = RectBivariateSpline(x, y, z)
-        assert_array_almost_equal(lut.partial_derivative(1, 0)(x, y), dx)
-        assert_array_almost_equal(lut.partial_derivative(0, 1)(x, y), dy)
-        assert_array_almost_equal(lut.partial_derivative(1, 1)(x, y), dxdy)
+        lut_ndbspline = convert_to_ndbspline(lut)
+        for orders, expected in [([1, 0], dx), ([0, 1], dy), ([1, 1], dxdy)]:
+            actual_rect = lut.partial_derivative(*orders)(x, y)
+            actual_ndb = lut_ndbspline.derivative(orders)(
+                self.make_pair_grid(x, y)
+            ).reshape(expected.shape)
+
+            assert_array_almost_equal(actual_rect, expected)
+            assert_array_almost_equal(actual_ndb, expected)
 
     def test_partial_derivative_method(self):
         x = array([1, 2, 3, 4, 5])
@@ -1000,27 +1034,42 @@ class TestRectBivariateSpline:
                    [1, 2, 3, 2, 1],
                    [1, 2, 2, 2, 1],
                    [1, 2, 1, 2, 1]])
-        dx = array([0, 0, 2./3, 0, 0])
-        dy = array([4, -1, 0, -.25, -4])
-        dxdy = array([160, 65, 0, 55, 32]) / 24.
+        expected = {
+            (1, 0): array([0, 0, 2./3, 0, 0]), # dx
+            (0, 1): array([4, -1, 0, -.25, -4]), # dy
+            (1, 1): array([160, 65, 0, 55, 32]) / 24. # dxdy
+        }
+
         lut = RectBivariateSpline(x, y, z)
-        assert_array_almost_equal(lut.partial_derivative(1, 0)(x, y,
-                                                               grid=False),
-                                  dx)
-        assert_array_almost_equal(lut.partial_derivative(0, 1)(x, y,
-                                                               grid=False),
-                                  dy)
-        assert_array_almost_equal(lut.partial_derivative(1, 1)(x, y,
-                                                               grid=False),
-                                  dxdy)
+        lut_ndbspline = convert_to_ndbspline(lut)
+
+        points = self.make_pair_grid(x, y)  # shape: (25, 2)
+
+        # Evaluate only the diagonal points: (x[i], y[i])
+        diag_idx = np.arange(len(x))
+        diag_points = points[diag_idx * len(y) + diag_idx]
+
+        for orders, expected_vals in expected.items():
+            dx, dy = orders
+            # RectBivariateSpline result
+            actual_rbs = lut.partial_derivative(dx, dy)(x, y, grid=False)
+            assert_array_almost_equal(actual_rbs, expected_vals)
+
+            # NdBSpline result
+            actual_ndb = lut_ndbspline.derivative([dx, dy])(diag_points)
+            assert_array_almost_equal(actual_ndb, expected_vals)
 
     def test_partial_derivative_order_too_large(self):
         x = array([0, 1, 2, 3, 4], dtype=float)
         y = x.copy()
         z = ones((x.size, y.size))
         lut = RectBivariateSpline(x, y, z)
+        lut_ndbspline = convert_to_ndbspline(lut)
         with assert_raises(ValueError):
             lut.partial_derivative(4, 1)
+
+        with assert_raises(ValueError):
+            lut_ndbspline.derivative([4, 1])
 
     def test_broadcast(self):
         x = array([1,2,3,4,5])
@@ -1402,14 +1451,23 @@ class Test_DerivedBivariateSpline:
     def test_creation_from_Rect(self):
         for nux, nuy in self.orders:
             lut_der = self.lut_rect.partial_derivative(nux, nuy)
+            lut_ndspline = convert_to_ndbspline(self.lut_rect)
+            lut_der_ndbspline = lut_ndspline.derivative((nux, nuy))
             a = lut_der(0.5, 1.5, grid=False)
+            a_ndbspline = lut_der_ndbspline([(0.5, 1.5)])
             b = self.lut_rect(0.5, 1.5, dx=nux, dy=nuy, grid=False)
+            b_ndbspline = lut_ndspline([(0.5, 1.5)], nu=(nux, nuy))
             assert a == b
+            assert_almost_equal(a_ndbspline, b_ndbspline)
 
     def test_invalid_attribute_fp(self):
         der = self.lut_rect.partial_derivative(1, 1)
+        lut_ndspline = convert_to_ndbspline(self.lut_rect)
+        der_ndbspline = lut_ndspline.derivative((1, 1))
         with assert_raises(AttributeError):
             der.fp
+        with assert_raises(AttributeError):
+            der_ndbspline.fp
 
     def test_invalid_attribute_get_residual(self):
         der = self.lut_smooth.partial_derivative(1, 1)
