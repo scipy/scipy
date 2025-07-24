@@ -389,27 +389,32 @@ helped during the development phase:
 Support
 -------
 The below tables show the current state of alternative backend support across
-SciPy's modules for in-scope functions and callable objects from the SciPy public
-API. There is not yet a formal policy for which functions should be considered
-out-of-scope for alternative backend support, but some general classes of functions
-which are currently considered out-of-scope are:
+SciPy's modules. Currently only public functions and function-like callable
+objects are included in the tables, but it is planned to eventually also include
+relevant public classes. Functions which are deemed out-of-scope are excluded
+from consideration. If a module or submodule contains no in-scope functions, it
+is excluded from the tables. For example, `scipy.spatial.transform` is currently
+excluded because it's API contains no functions, but may be included in the future
+when the scope expands to include classes. `scipy.odr` is excluded because its
+contents are considered out-of-scope.
+
+There is not yet a formal policy for which functions should be considered
+out-of-scope for alternative backend support. Some general rules of thumb
+that are being followed are to exclude:
 
 * functions which do not operate on arrays such as :doc:`scipy.constants.value <../../reference/generated/scipy.constants.value>`
-* functions which are too platform specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
-* functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices, such as Mathieu functions and spheroidal wave functions in `scipy.special`, which rely on serial computations requiring maintenance of large amounts of state, making GPU acceleration impractical.
+* functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
+* functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
 
-Classes in the public API are not yet included in the tables but there are plans
-to consider at least some of them in-scope in the future. Alternative backend
-support is evolving, so you can expect to see changes in the content of the tables
-as the policies for what parts of SciPy's public API are in-scope become more
-concrete. Currently modules and submodules from which there are no in-scope functions
-or callable objects in SciPy's public API are excluded from the tables.
-
-The module column in the tables below contains the module name along with the
-number of in-scope functions and callable classes in the public API in parentheses.
-The remaining columns show percent coverage for various backends. Following links in
-the module column of these tables will bring you to more granular tables for
-particular modules, showing support for particular functions across backends.
+As an example. The contents of `scipy.odr` are considered out-of-scope for a
+combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
+wrapper of the monolithic ODRPACK Fortran library, and it's API is tied to the
+structure of this monolithic library. Creation of an efficient GPU accelerated
+implementation of nonlinear weighted orthogonal distance regression is also a
+challenging problem in its own right. Nevertheless, considerations of what to
+consider in-scope are evolving, and something which is now considered out-of-scope
+may be decided to be in-scope in the future if sufficient user interest and
+feasability are demonstrated.
 
 
 .. toctree::
@@ -533,3 +538,4 @@ Support with JIT
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit
    :stats.qmc: array_api_support_stats_qmc_jit
+
