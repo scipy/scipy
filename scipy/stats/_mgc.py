@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import check_random_state, MapWrapper, rng_integers, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy.spatial.distance import cdist
@@ -95,6 +96,7 @@ MGCResult = _make_tuple_bunch('MGCResult',
                               ['statistic', 'pvalue', 'mgc_dict'], [])
 
 
+@xp_capabilities(np_only=True)
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                          workers=1, is_twosamp=False, random_state=None):
     r"""Computes the Multiscale Graph Correlation (MGC) test statistic.

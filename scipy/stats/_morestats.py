@@ -54,6 +54,7 @@ Variance = namedtuple('Variance', ('statistic', 'minmax'))
 Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
 
 
+@xp_capabilities(np_only=True)
 def bayes_mvs(data, alpha=0.90):
     r"""
     Bayesian confidence intervals for the mean, var, and std.
@@ -153,6 +154,7 @@ def bayes_mvs(data, alpha=0.90):
     return m_res, v_res, s_res
 
 
+@xp_capabilities(np_only=True)
 def mvsdist(data):
     """
     'Frozen' distributions for mean, variance, and standard deviation of data.
@@ -509,6 +511,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
+@xp_capabilities(np_only=True)
 def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
@@ -672,6 +675,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         return osm, osr
 
 
+@xp_capabilities(np_only=True)
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """Calculate the shape parameter that maximizes the PPCC.
 
@@ -760,6 +764,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
                           args=(osm_uniform, osr, dist.ppf))
 
 
+@xp_capabilities(np_only=True)
 def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     """Calculate and optionally plot probability plot correlation coefficient.
 
@@ -1057,6 +1062,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
+@xp_capabilities(np_only=True)
 def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     r"""Return a dataset transformed by a Box-Cox power transformation.
 
@@ -1219,6 +1225,7 @@ class _BigFloat:
 _BigFloat_singleton = _BigFloat()
 
 
+@xp_capabilities(np_only=True)
 def boxcox_normmax(
     x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
@@ -1488,6 +1495,7 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     return lmbdas, ppcc
 
 
+@xp_capabilities(np_only=True)
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1556,6 +1564,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     return _normplot('boxcox', x, la, lb, plot, N)
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson(x, lmbda=None):
     r"""Return a dataset transformed by a Yeo-Johnson power transformation.
 
@@ -1683,6 +1692,7 @@ def _yeojohnson_transform(x, lmbda):
     return out
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_llf(lmb, data):
     r"""The yeojohnson log-likelihood function.
 
@@ -1789,6 +1799,7 @@ def yeojohnson_llf(lmb, data):
     return loglike
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_normmax(x, brack=None):
     """Compute optimal Yeo-Johnson transform parameter.
 
@@ -1878,6 +1889,7 @@ def yeojohnson_normmax(x, brack=None):
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
 
@@ -1951,6 +1963,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x):
     r"""Perform the Shapiro-Wilk test for normality.
@@ -2145,6 +2158,7 @@ AndersonResult = _make_tuple_bunch('AndersonResult',
                                     'significance_level'], ['fit_result'])
 
 
+@xp_capabilities(np_only=True)
 def anderson(x, dist='norm'):
     """Anderson-Darling test for data coming from a particular distribution.
 
@@ -2435,6 +2449,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
@@ -2693,6 +2708,7 @@ class _ABW:
 _abw_state = threading.local()
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
@@ -2980,6 +2996,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05):
     r"""Perform Levene test for equal variances.
@@ -3136,6 +3153,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3363,6 +3381,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3534,6 +3553,7 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
+@xp_capabilities(np_only=True)
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -3779,6 +3799,7 @@ MedianTestResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -4454,6 +4475,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
+@xp_capabilities(np_only=True)
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 

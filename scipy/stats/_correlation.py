@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import stats
+from scipy._lib._array_api import xp_capabilities
 from scipy.stats._stats_py import _SimpleNormal, SignificanceResult, _get_pvalue
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
@@ -85,6 +86,7 @@ def _unpack(res, _):
     return res.statistic, res.pvalue
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
 def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):

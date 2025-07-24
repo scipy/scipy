@@ -282,6 +282,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -1089,6 +1090,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             n_resamples_int, batch_iv, vals, keys, shape[1:])
 
 
+@xp_capabilities(np_only=True)
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1611,6 +1613,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
             batch_iv, alternative, axis_int, rng)
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=None, n_resamples=9999, batch=None,
