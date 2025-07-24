@@ -311,7 +311,10 @@ class NdBSpline:
             for _ in range(n):
                 k_current = k_new[axis]
                 if k_current < 1:
-                    raise ValueError(f"Derivative order too high along axis {axis}")
+                    # No degree left -> derivative is identically zero
+                    c_new[...] = 0.0
+                    k_new[axis] = 0
+                    break  # No need to continue differentiating this axis
 
                 c_new, t_new[axis] = self._bspline_derivative_along_axis(
                     c_new, t_new[axis], k_current, axis
