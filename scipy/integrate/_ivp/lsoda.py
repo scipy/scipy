@@ -83,6 +83,15 @@ class LSODA(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by methods 'Radau' and 'BDF', but
         will result in slower execution for this solver.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.17.0
 
     Attributes
     ----------
@@ -104,6 +113,9 @@ class LSODA(OdeSolver):
         Number of evaluations of the right-hand side.
     njev : int
         Number of evaluations of the Jacobian.
+    tcrit : ndarray
+        Critical time points to take care of integration.
+       
 
     References
     ----------
@@ -117,7 +129,7 @@ class LSODA(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, first_step=None, min_step=0.0,
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
-                 uband=None, vectorized=False, **extraneous):
+                 uband=None, vectorized=False, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized)
 
@@ -144,8 +156,10 @@ class LSODA(OdeSolver):
                               lband=lband, uband=uband)
         solver.set_initial_value(y0, t0)
 
-        # Inject t_bound into rwork array as needed for itask=5.
-        solver._integrator.rwork[0] = self.t_bound
+        self._initialize_tcrit(t0, tcrit, self.t_bound)
+
+        # Inject first critical point into rwork array as needed for itask=5.
+        solver._integrator.rwork[0] = self.tcrit[0]
         solver._integrator.call_args[4] = solver._integrator.rwork
 
         self._lsoda_solver = solver
@@ -158,10 +172,16 @@ class LSODA(OdeSolver):
         # step and do not go past t_bound.
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
+
+        tcrit = self._find_next_tcrit()
+        
         solver._y, solver.t = integrator.run(
             solver.f, solver.jac or (lambda: None), solver._y, solver.t,
-            self.t_bound, solver.f_params, solver.jac_params)
+            tcrit, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
+
+        # check for new critical point
+        solver._integrator.rwork[0] = self._find_next_tcrit()
 
         if solver.successful():
             self.t = solver.t
@@ -207,6 +227,38 @@ class LSODA(OdeSolver):
 
         return LsodaDenseOutput(self.t_old, self.t, h, order, yh)
 
+    def _initialize_tcrit(self, t0, tcrit, t_bound):
+        if tcrit is None:
+            self.tcrit = np.asarray([t_bound])
+            return
+        tcrit = np.asarray(tcrit)
+        if self.direction == -1:
+            # integrate towards negative infinity, i.e. t0>t_bound
+            # remove critical times outside t0
+            tcrit = tcrit[tcrit<t0]
+            # remove critical times outside end
+            tcrit = tcrit[tcrit>t_bound]
+        elif self.direction == 1:
+            # integrate towards positive infinity, i.e. t0<t_bound
+            # remove critical times before start time
+            tcrit = tcrit[tcrit>t0]
+            # remove critical times after end time
+            tcrit = tcrit[tcrit<t_bound]
+        else:
+            # should be unreachable keep?
+            raise ValueError("Unexpected direction")
+        self.tcrit = np.append(tcrit, t_bound)
+
+    def _find_next_tcrit(self):
+        if self.tcrit.size == 0:
+            # System has reached t_bound
+            return self.t_bound
+        if self._lsoda_solver.t >= self.tcrit[0]:
+            # critical point reached, remove from the list
+            self.tcrit = self.tcrit[1:]
+        if self.tcrit.size == 0:
+            return self.t_bound
+        return self.tcrit[0]
 
 class LsodaDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, yh):

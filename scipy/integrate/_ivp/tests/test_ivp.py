@@ -1293,3 +1293,34 @@ def test_inital_maxstep():
                                             method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)
+
+
+def test_tcrit_lsoda():
+    """Verify that tcrit behavior is correct."""
+    def fun(t, y):
+        return np.array([1]) if t >0.99 and t<1.01 else np.array([0])
+
+    y0 = [0.]
+    t_span = [0., 2.]
+    # result without using critical time fails to find the critical region
+    res = solve_ivp(
+        fun, t_span, y0, method = 'LSODA', max_step=1e-1,
+        atol=1e-6, rtol=1e-6, dense_output=True
+    )
+
+    # result with the critical time finds the critical region
+    res_crit = solve_ivp(
+        fun, t_span, y0, method = 'LSODA', max_step=1e-1, tcrit=[1.],
+        atol=1e-6, rtol=1e-6, dense_output=True
+    )
+
+    t_check = np.linspace(0, 2, 10)
+    sol = res.sol(t_check)
+    crit_sol = res_crit.sol(t_check)
+
+    assert 1. not in res.t
+    assert 1. in res_crit.t
+
+    # solution is y=0.02 at times >=1.01, check last time point
+    assert_allclose(sol[0,-1], 0.)
+    assert_allclose(crit_sol[0,-1], 0.02, rtol=1e-4)
