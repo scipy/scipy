@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
-          
+
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
-          
+
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
@@ -168,7 +168,7 @@ jobs:
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           pytest --pyargs scipy
-          
+
 
   #############################################################################
   fast_spin_arm64:
@@ -182,13 +182,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-        
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           architecture: 'arm64'
-          
+
       - name: Set up Flang and pkgconf for ARM64
         uses: ./.github/windows_arm64_steps
 
@@ -208,7 +208,7 @@ jobs:
         run: |
           $env:OPENBLAS_NUM_THREADS = 1
           spin test -j2 -- --durations=25
-          
+
 
   #############################################################################
   full_build_sdist_wheel_arm64:
@@ -223,7 +223,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-  
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -231,10 +231,10 @@ jobs:
           architecture: 'arm64'
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
-  
+
       - name: Set up Flang and pkgconf for ARM64
         uses: ./.github/windows_arm64_steps
-  
+
       - name: Install OpenBLAS
         shell: bash
         run: |
@@ -244,11 +244,11 @@ jobs:
           python -m pip install -r requirements/openblas.txt
           bash tools/wheels/cibw_before_build_win.sh .
           echo "PKG_CONFIG_PATH=$(cygpath -w "${{ github.workspace }}")" >> $GITHUB_ENV
-  
+
       - name: pip-packages
         run: |
           python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis numpy
-  
+
       - name: Build
         shell: bash
         run: |
@@ -262,10 +262,10 @@ jobs:
           openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
           delvewheel repair --add-path "$openblas_dir" -w wheelhouse "$wheel_name"
           python -m pip install wheelhouse/*
-  
+
       - name: Test
         shell: pwsh
         run: |
           Set-Location $env:RUNNER_TEMP
           $env:OPENBLAS_NUM_THREADS = 1
-          pytest --pyargs scipy -n2  
+          pytest --pyargs scipy -n2
