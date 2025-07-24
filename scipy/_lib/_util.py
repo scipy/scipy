@@ -1215,3 +1215,10 @@ def np_vecdot(x1, x2, /, *, axis=-1):
 def _dedent_for_py313(s):
     """Apply textwrap.dedent to s for Python versions 3.13 or later."""
     return s if sys.version_info < (3, 13) else textwrap.dedent(s)
+
+
+def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
+    )
