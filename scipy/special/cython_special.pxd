@@ -105,9 +105,9 @@ cpdef dfg_number_t expit(dfg_number_t x0) noexcept nogil
 cpdef Dd_number_t expm1(Dd_number_t x0) noexcept nogil
 cpdef double expn(dlp_number_t x0, double x1) noexcept nogil
 cpdef double exprel(double x0) noexcept nogil
-cpdef double fdtr(double x0, double x1, double x2) noexcept nogil
-cpdef double fdtrc(double x0, double x1, double x2) noexcept nogil
-cpdef double fdtri(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil
 cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil
 cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil

@@ -90,13 +90,6 @@ jobs:
         - [windows-2022, win, AMD64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314-dev"], ["cp314t", "cp314-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
-        exclude:
-            # This combination was hanging consistently with CPython 3.14.0b2, retry later
-          - python: ["cp314t", "cp314-dev"]
-            buildplat: [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-            # This combination was failing repeatedly on pythran codegen, see gh-23187
-          - python: ["cp314t", "cp314-dev"]
-            buildplat: [ubuntu-22.04, musllinux, x86_64, "", ""]
 
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
@@ -215,7 +208,7 @@ jobs:
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
+        uses: pypa/cibuildwheel@ffd835cef18fa11522f608fc0fa973b89f5ddc87 # v3.1.0
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
