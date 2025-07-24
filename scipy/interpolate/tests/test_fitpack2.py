@@ -1068,8 +1068,7 @@ class TestRectBivariateSpline:
         with assert_raises(ValueError):
             lut.partial_derivative(4, 1)
 
-        with assert_raises(ValueError):
-            lut_ndbspline.derivative([4, 1])
+        assert (lut_ndbspline.derivative([4, 1]).c == 0.0).all()
 
     def test_broadcast(self):
         x = array([1,2,3,4,5])
