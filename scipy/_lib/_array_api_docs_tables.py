@@ -5,9 +5,8 @@ a wide number of functions at once. Rows correspond to functions and
 columns correspond to library/device/option combinations.
 """
 
-import types
-
 from collections import defaultdict
+from importlib import import_module
 from types import ModuleType
 
 from scipy._lib._array_api import xp_capabilities_table
@@ -145,7 +144,7 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
 
 def is_named_function_like_object(obj):
     return (
-        not isinstance(obj, (ModuleType, type))
+        not isinstance(obj, ModuleType | type)
         and callable(obj) and hasattr(obj, "__name__")
     )
 
