@@ -3,13 +3,12 @@
 
 import numpy as np
 
+
 from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
 
 from numpy import linspace, sin, cos, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
-
-import pytest
 
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
@@ -231,7 +230,6 @@ def test_rbf_epsilon_none_collinear():
     assert rbf.epsilon > 0
 
 
-@pytest.mark.thread_unsafe
 def test_rbf_concurrency():
     x = linspace(0, 10, 100)
     y0 = sin(x)

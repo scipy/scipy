@@ -1,8 +1,10 @@
+import warnings
+
 from collections.abc import Callable
 
 import pytest
 from itertools import product
-from numpy.testing import assert_allclose, suppress_warnings
+from numpy.testing import assert_allclose
 from scipy import special
 from scipy.special import cython_special
 
@@ -316,7 +318,6 @@ def test_cython_api_completeness():
                 raise RuntimeError(f"{name} missing from tests!")
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(20)
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
 def test_cython_api(param):
@@ -355,8 +356,8 @@ def test_cython_api(param):
         # Test it
         pts = _generate_test_points(typecodes)
         for pt in pts:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
             assert_allclose(cyval, pyval, err_msg=f"{pt} {typecodes} {signature}")

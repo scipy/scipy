@@ -664,25 +664,30 @@ add_newdoc("btdtria",
 
     See Also
     --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function
     btdtrib : Inverse of the beta cumulative distribution function, with respect to `b`.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `a` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `a`.
+    This function wraps the ``ibeta_inva`` routine from the
+    Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Algorithm 708: Significant Digit Computation of the Incomplete Beta
-           Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`b` and :math:`x`.
+
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+    >>> sc.btdtria(y, b, x)
+    1.2
 
     """)
 
@@ -717,26 +722,30 @@ add_newdoc("btdtrib",
 
     See Also
     --------
+    betainc : Regularized incomplete beta function
+    betaincinv : Inverse of the regularized incomplete beta function with
+                 respect to `x`.
     btdtria : Inverse of the beta cumulative distribution function, with respect to `a`.
 
     Notes
     -----
-    Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
-
-    The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_. Computation of `b` involves a search for a value
-    that produces the desired value of `p`. The search relies on the
-    monotonicity of `p` with `b`.
+    Wrapper for the `ibeta_invb` routine from the Boost Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
-    .. [2] DiDinato, A. R. and Morris, A. H.,
-           Algorithm 708: Significant Digit Computation of the Incomplete Beta
-           Function Ratios. ACM Trans. Math. Softw. 18 (1993), 360-373.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
+    Examples
+    --------
+    >>> import scipy.special as sc
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+
+    `btdtrib` is the inverse of `betainc` for fixed values of :math:`a` and
+    :math:`x`:
+
+    >>> sc.btdtrib(a, y, x)
+    3.1
 
     """)
 
@@ -3207,15 +3216,15 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtr` directly can improve
-    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtr` directly can improve performance compared to the ``cdf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
 
     Examples
     --------
@@ -3308,15 +3317,14 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
-    performance compared to the ``sf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtrc` directly can improve performance compared to the ``sf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -3402,30 +3410,14 @@ add_newdoc("fdtri",
 
     Notes
     -----
-    The computation is carried out using the relation to the inverse
-    regularized beta function, :math:`I^{-1}_x(a, b)`.  Let
-    :math:`z = I^{-1}_p(d_d/2, d_n/2).`  Then,
-
-    .. math::
-        x = \frac{d_d (1 - z)}{d_n z}.
-
-    If `p` is such that :math:`x < 0.5`, the following relation is used
-    instead for improved stability: let
-    :math:`z' = I^{-1}_{1 - p}(d_n/2, d_d/2).` Then,
-
-    .. math::
-        x = \frac{d_d z'}{d_n (1 - z')}.
-
-    Wrapper for the Cephes [1]_ routine `fdtri`.
-
-    The F distribution is also available as `scipy.stats.f`. Calling
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
     `fdtri` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

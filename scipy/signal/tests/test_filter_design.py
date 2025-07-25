@@ -7,9 +7,7 @@ from itertools import product
 
 from scipy._lib import _pep440
 import numpy as np
-from numpy.testing import (
-    assert_array_almost_equal_nulp, assert_warns, suppress_warnings
-)
+from numpy.testing import assert_array_almost_equal_nulp
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
@@ -213,7 +211,7 @@ class TestTf2zpk:
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
         # filter coefficients.
-        with suppress_warnings():
+        with warnings.catch_warnings():
             warnings.simplefilter("error", BadCoefficients)
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
@@ -273,6 +271,19 @@ class TestZpk2Tf:
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
+    
+    @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+    @skip_xp_backends("jax.numpy", 
+                      reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    def test_zpk2tf_with_multi_dimensional_array(self, xp):
+        z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
+        p = xp.asarray([1, 2])
+        k = 1
+        b, a = zpk2tf(z, p, k)
+        b_ref = xp.asarray([[1, -3, 2], [1, -7, 12]])
+        a_ref = xp.asarray([1, -3, 2])
+        xp_assert_close(b, b_ref, check_dtype=False)
+        xp_assert_close(a, a_ref, check_dtype=False)
 
 
 @skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
@@ -320,18 +331,18 @@ class TestSos2Zpk:
         xp_assert_close(_sort_cmplx(p2, xp=xp), _sort_cmplx(p, xp=xp))
         assert k2 == k
 
-    @pytest.mark.thread_unsafe
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only",
+    )
     def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
-        sos = butter(3, 0.1, output='sos')
-        sos = xp.asarray(sos)   # XXX convert butter
+        sos = butter(3, xp.asarray(0.1), output='sos')
         z, p, k = sos2zpk(sos)
         assert z.shape[0] == 4
         assert p.shape[0] == 4
 
-        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
-                    output='sos')
-        xp = xp.asarray(sos)
+        sos = butter(12, xp.asarray([5., 30.]), 'bandpass', fs=1200., analog=False,
+                     output='sos')
         with pytest.warns(BadCoefficients, match='Badly conditioned'):
             z, p, k = sos2zpk(sos)
         assert z.shape[0] == 24
@@ -706,12 +717,12 @@ class TestFreqs_zpk:
         assert_array_almost_equal(w, expected_w)
 
     @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
+    )
     def test_vs_freqs(self, xp):
-        b, a = cheby1(4, 5, 100, analog=True, output='ba')
-        z, p, k = cheby1(4, 5, 100, analog=True, output='zpk')
-
-        b, a = map(xp.asarray, (b, a))    # XXX convert cheby1
-        z, p = map(xp.asarray, (z, p))
+        b, a = cheby1(4, 5, xp.asarray(100.), analog=True, output='ba')
+        z, p, k = cheby1(4, 5, xp.asarray(100.), analog=True, output='zpk')
 
         w1, h1 = freqs(b, a)
         w2, h2 = freqs_zpk(z, p, k)
@@ -1251,6 +1262,9 @@ class TestFreqz_sos:
         # a check that dB[w <= 0.2] is less than or almost equal to -150.
         assert xp.max(dB[w <= 0.2]) < -150*(1 - 1e-12)
 
+    @pytest.mark.thread_unsafe(
+        reason=("mpmath gmpy2 backend is not thread-safe, "
+                "see https://github.com/mpmath/mpmath/issues/974"))
     @mpmath_check("0.10")
     def test_freqz_sos_against_mp(self, xp):
         # Compare the result of freqz_sos applied to a high order Butterworth
@@ -1372,17 +1386,18 @@ class TestFreqz_zpk:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(8.0) / 8)
         assert_array_almost_equal(h, xp.ones(8))
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
+    )
     def test_vs_freqz(self, xp):
-        b, a = cheby1(4, 5, 0.5, analog=False, output='ba')
-        z, p, k = cheby1(4, 5, 0.5, analog=False, output='zpk')
-
-        b, a = map(xp.asarray, (b, a))  # XXX convert cheby1
-        z, p = map(xp.asarray, (z, p))
+        b, a = cheby1(4, 5, xp.asarray(0.5), analog=False, output='ba')
+        z, p, k = cheby1(4, 5, xp.asarray(0.5), analog=False, output='zpk')
 
         w1, h1 = freqz(b, a)
         w2, h2 = freqz_zpk(z, p, k)
         xp_assert_close(w1, w2)
-        xp_assert_close(h1, h2, rtol=1e-6)
+        xp_assert_close(h1, h2, rtol=1.3e-6)
 
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
@@ -2011,7 +2026,6 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
-    @pytest.mark.thread_unsafe
     def test_runtime_warnings(self):
         msg = "Order is zero.*|divide by zero encountered"
         with pytest.warns(RuntimeWarning, match=msg):
@@ -4695,7 +4709,6 @@ class TestGroupDelay:
                                 0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    @pytest.mark.thread_unsafe
     @skip_xp_backends(np_only=True, reason="numpy.convolve")
     def test_singular(self, xp):
         # Let's create a filter with zeros and poles on the unit circle and
@@ -4711,7 +4724,8 @@ class TestGroupDelay:
 
         w = xp.asarray([0.1 * xp.pi, 0.25 * xp.pi, -0.5 * xp.pi, -0.8 * xp.pi])
 
-        w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
+        with pytest.warns(UserWarning):
+            w, gd = group_delay((b, a), w=w)
 
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default

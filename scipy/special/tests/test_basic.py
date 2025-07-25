@@ -22,6 +22,7 @@ import itertools
 import operator
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -32,8 +33,7 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose, assert_array_almost_equal_nulp,
-        suppress_warnings)
+        assert_, assert_allclose, assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -176,12 +176,6 @@ class TestCephes:
 
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
-
-    def test_btdtria(self):
-        assert_equal(cephes.btdtria(1,1,1),5.0)
-
-    def test_btdtrib(self):
-        assert_equal(cephes.btdtrib(1,1,1),5.0)
 
     def test_cbrt(self):
         assert_approx_equal(cephes.cbrt(1),1.0)
@@ -378,7 +372,11 @@ class TestCephes:
         p = 0.8756751669632105666874
         assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
 
-    @pytest.mark.xfail(reason='Returns nan on i686.')
+    def test_gh20835(self):
+        # gh-20835 reported fdtri failing for extreme inputs
+        dfd, dfn, x = 1, 50000, 29.72591544307521
+        assert_allclose(cephes.fdtri(dfd, dfn, cephes.fdtr(dfd, dfn, x)), x, rtol=1e-15)
+
     def test_fdtri_mysterious_failure(self):
         assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
@@ -567,8 +565,9 @@ class TestCephes:
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
             assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
             assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
@@ -834,8 +833,9 @@ class TestCephes:
         assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+        with warnings.catch_warnings():
+            msg = "floating point number truncated to an integer"
+            warnings.filterwarnings("ignore", msg, RuntimeWarning)
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
@@ -1383,11 +1383,15 @@ class TestBetaInc:
           0.9688708782196045),
          # gh-12796:
          (4, 99997, 0.0001947841578892121, 0.999995)])
-    def test_betainc_betaincinv(self, a, b, x, p):
+    def test_betainc_and_inverses(self, a, b, x, p):
         p1 = special.betainc(a, b, x)
         assert_allclose(p1, p, rtol=1e-15)
         x1 = special.betaincinv(a, b, p)
         assert_allclose(x1, x, rtol=5e-13)
+        a1 = special.btdtria(p, b, x)
+        assert_allclose(a1, a, rtol=1e-13)
+        b1 = special.btdtrib(a, p, x)
+        assert_allclose(b1, b, rtol=1e-13)
 
     # Expected values computed with mpmath:
     #     from mpmath import mp
@@ -1440,13 +1444,14 @@ class TestBetaInc:
         assert_allclose(x, ref, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
+                                      special.btdtria, special.btdtrib,
                                       special.betaincc, special.betainccinv])
     @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
-                special.betainc(*args)
+                func(*args)
 
     @pytest.mark.parametrize(
         "args,expected",
@@ -1555,7 +1560,6 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
-    @pytest.mark.thread_unsafe
     def test_comb_exact_non_int_error(self):
         msg = "`exact=True`"
         with pytest.raises(ValueError, match=msg):
@@ -1576,7 +1580,6 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    @pytest.mark.thread_unsafe
     def test_perm_iv(self):
         # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
@@ -2431,8 +2434,8 @@ class TestFactorialFunctions:
                         special.factorialk(n_ref, k=3, **kw))
         def _check_inf(n):
             # produce inf of same type/dimension
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
                 shaped_inf = n / 0
             assert_func(special.factorial(n, **kw), shaped_inf)
             assert_func(special.factorial2(n, **kw), shaped_inf)
@@ -4380,8 +4383,9 @@ def test_agm_simple():
 
 def test_legacy():
     # Legacy behavior: truncating arguments to integers
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "floating point number truncated to an integer", RuntimeWarning)
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
@@ -4580,7 +4584,6 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-@pytest.mark.thread_unsafe
 def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):

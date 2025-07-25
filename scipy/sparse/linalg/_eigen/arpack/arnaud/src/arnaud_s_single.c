@@ -1,27 +1,28 @@
-#include "_arpack_s_single.h"
+#include "arnaud_s_single.h"
+#include <float.h>
 
-typedef int ARPACK_compare_rfunc(const float, const float);
+typedef int ARNAUD_compare_rfunc(const float, const float);
 
 static int sortr_LM(const float, const float);
 static int sortr_SM(const float, const float);
 static int sortr_LA(const float, const float);
 static int sortr_SA(const float, const float);
 
-static const float unfl = 1.1754943508222875e-38;
-static const float ulp = 1.1920928955078125e-07;
+static const float unfl = FLT_MIN;    // 1.1754943508222875e-38;
+static const float ulp = FLT_EPSILON; // 1.1920928955078125e-07;
 
-static void ssaup2(struct ARPACK_arnoldi_update_vars_s*, float*, float*, int, float*, int, float*, float*, float*, int, float*, int*, float*);
+static void ssaup2(struct ARNAUD_state_s*, float*, float*, int, float*, int, float*, float*, float*, int, float*, int*, float*);
 static void ssconv(int, float*, float*, float, int*);
 static void sseigt(float, int, float*, int, float*, float*, float*, int*);
-static void ssaitr(struct ARPACK_arnoldi_update_vars_s*, int, int, float*, float*, float*, int, float*, int, int*, float*);
+static void ssaitr(struct ARNAUD_state_s*, int, int, float*, float*, float*, int, float*, int, int*, float*);
 static void ssapps(int, int*, int, float*, float*, int, float*, int, float*, float* , int, float*);
-static void ssgets(struct ARPACK_arnoldi_update_vars_s*, int*, int*, float*, float*, float*);
-static void sgetv0(struct ARPACK_arnoldi_update_vars_s *, int, int, int, float*, int, float*, float*, int*, float*);
-static void ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float* x2);
-static void ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a, const int lda);
+static void ssgets(struct ARNAUD_state_s*, int*, int*, float*, float*, float*);
+static void sgetv0(struct ARNAUD_state_s *, int, int, int, float*, int, float*, float*, int*, float*);
+static void ssortr(const enum ARNAUD_which w, const int apply, const int n, float* x1, float* x2);
+static void ssesrt(const enum ARNAUD_which w, const int apply, const int n, float* x, int na, float* a, const int lda);
 static void sstqrb(int n, float* d, float* e, float* z, float* work, int* info);
 
-enum ARPACK_seupd_type {
+enum ARNAUD_seupd_type {
     REGULAR,
     SHIFTI,
     BUCKLE,
@@ -30,7 +31,7 @@ enum ARPACK_seupd_type {
 
 
 void
-ARPACK_sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
+ARNAUD_sseupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
        float* d, float* z, int ldz, float sigma, float* resid, float* v,
        int ldv, int* ipntr, float* workd, float* workl)
 {
@@ -43,7 +44,7 @@ ARPACK_sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
     if (V->nconv == 0) { return; }
 
     ierr = 0;
-    enum ARPACK_seupd_type TYP = REGULAR;
+    enum ARNAUD_seupd_type TYP = REGULAR;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -171,7 +172,7 @@ ARPACK_sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
         for (j = 0; j < V->ncv; j++)
         {
-            workl[bounds + j] = j;
+            workl[bounds + j] = j*1.0f;
             select[j] = 0;
         }
         // 10
@@ -483,7 +484,7 @@ ARPACK_sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
 
 void
-ARPACK_ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
+ARNAUD_ssaupd(struct ARNAUD_state_s *V, float* resid, float* v, int ldv,
        int* ipntr, float* workd, float* workl)
 {
 
@@ -577,7 +578,7 @@ ARPACK_ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, in
 
 
 void
-ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
+ssaup2(struct ARNAUD_state_s *V, float* resid, float* v, int ldv,
        float* h, int ldh, float* ritz, float* bounds,
        float* q, int ldq, float* workl, int* ipntr, float* workd)
 {
@@ -585,7 +586,7 @@ ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
     const float eps23 = powf(ulp, 2.0f / 3.0f);
     float temp = 0.0f;
     // Initialize to silence the compiler warning
-    enum ARPACK_which temp_which = which_LM;
+    enum ARNAUD_which temp_which = which_LM;
 
     if (V->ido == ido_FIRST)
     {
@@ -1021,7 +1022,7 @@ sseigt(float rnorm, int n, float* h, int ldh, float* eig, float* bounds,
 
 
 void
-ssaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, float* rnorm,
+ssaitr(struct ARNAUD_state_s *V, int k, int np, float* resid, float* rnorm,
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
@@ -1589,7 +1590,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
 
 
 void
-ssgets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np, float* ritz,
+ssgets(struct ARNAUD_state_s *V, int* kev, int* np, float* ritz,
        float* bounds, float* shifts)
 {
     int kevd2, tmp1, tmp2, int1 = 1;
@@ -1638,7 +1639,7 @@ ssgets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np, float* ritz,
 
 
 void
-sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
+sgetv0(struct ARNAUD_state_s *V, int initv, int n, int j,
        float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd)
 {
     int jj, int1 = 1;
@@ -1801,11 +1802,11 @@ LINE40:
 
 
 void
-ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float* x2)
+ssortr(const enum ARNAUD_which w, const int apply, const int n, float* x1, float* x2)
 {
-    int i, igap, j;
+    int i, gap, pos;
     float temp;
-    ARPACK_compare_rfunc *f;
+    ARNAUD_compare_rfunc *f;
 
     switch (w)
     {
@@ -1826,41 +1827,39 @@ ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x1[j], x1[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x1[pos], x1[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x1[j];
-                x1[j] = x1[j+igap];
-                x1[j+igap] = temp;
+                temp = x1[pos];
+                x1[pos] = x1[pos+gap];
+                x1[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = x2[j];
-                    x2[j] = x2[j+igap];
-                    x2[j+igap] = temp;
+                    temp = x2[pos];
+                    x2[pos] = x2[pos+gap];
+                    x2[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
 
-void
-ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a, const int lda)
+static void
+ssesrt(const enum ARNAUD_which w, const int apply, const int n, float* x, int na, float* a, const int lda)
 {
-    int i, igap, j, int1 = 1;
+    int i, gap, pos, int1 = 1;
     float temp;
-    ARPACK_compare_rfunc *f;
+    ARNAUD_compare_rfunc *f;
 
     switch (w)
     {
@@ -1881,31 +1880,28 @@ ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j + igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos + gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    sswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
+                    sswap_(&na, &a[lda*pos], &int1, &a[lda*(pos+gap)], &int1);
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
-    // 10, 40, 70, 120
 }
 
 

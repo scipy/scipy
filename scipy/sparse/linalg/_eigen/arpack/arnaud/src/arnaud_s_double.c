@@ -1,27 +1,28 @@
-#include "_arpack_s_double.h"
+#include "arnaud_s_double.h"
+#include <float.h>
 
-typedef int ARPACK_compare_rfunc(const double, const double);
+typedef int ARNAUD_compare_rfunc(const double, const double);
 
 static int sortr_LM(const double, const double);
 static int sortr_SM(const double, const double);
 static int sortr_LA(const double, const double);
 static int sortr_SA(const double, const double);
 
-static const double unfl = 2.2250738585072014e-308;
-static const double ulp = 2.220446049250313e-16;
+static const double unfl = DBL_MIN;    // 2.2250738585072014e-308;
+static const double ulp = DBL_EPSILON; // 2.220446049250313e-16;
 
-static void dsaup2(struct ARPACK_arnoldi_update_vars_d*, double*, double*, int, double*, int, double*, double*, double*, int, double*, int*, double*);
+static void dsaup2(struct ARNAUD_state_d*, double*, double*, int, double*, int, double*, double*, double*, int, double*, int*, double*);
 static void dsconv(int, double*, double*, double, int*);
 static void dseigt(double, int, double*, int, double*, double*, double*, int*);
-static void dsaitr(struct ARPACK_arnoldi_update_vars_d*, int, int, double*, double*, double*, int, double*, int, int*, double*);
+static void dsaitr(struct ARNAUD_state_d*, int, int, double*, double*, double*, int, double*, int, int*, double*);
 static void dsapps(int, int*, int, double*, double*, int, double*, int, double*, double* , int, double*);
-static void dsgets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, double*, double*, double*);
-static void dgetv0(struct ARPACK_arnoldi_update_vars_d *, int, int, int, double*, int, double*, double*, int*, double*);
-static void dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, double* x2);
-static void dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a, const int lda);
+static void dsgets(struct ARNAUD_state_d*, int*, int*, double*, double*, double*);
+static void dgetv0(struct ARNAUD_state_d *, int, int, int, double*, int, double*, double*, int*, double*);
+static void dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, double* x2);
+static void dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int na, double* a, const int lda);
 static void dstqrb(int n, double* d, double* e, double* z, double* work, int* info);
 
-enum ARPACK_seupd_type {
+enum ARNAUD_seupd_type {
     REGULAR,
     SHIFTI,
     BUCKLE,
@@ -30,7 +31,7 @@ enum ARPACK_seupd_type {
 
 
 void
-ARPACK_dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
+ARNAUD_dseupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
        double* d, double* z, int ldz, double sigma, double* resid, double* v,
        int ldv, int* ipntr, double* workd, double* workl)
 {
@@ -43,7 +44,7 @@ ARPACK_dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
     if (V->nconv == 0) { return; }
 
     ierr = 0;
-    enum ARPACK_seupd_type TYP = REGULAR;
+    enum ARNAUD_seupd_type TYP = REGULAR;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -483,7 +484,7 @@ ARPACK_dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
 
 
 void
-ARPACK_dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv,
+ARNAUD_dsaupd(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
        int* ipntr, double* workd, double* workl)
 {
 
@@ -577,7 +578,7 @@ ARPACK_dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, 
 
 
 void
-dsaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv,
+dsaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
        double* h, int ldh, double* ritz, double* bounds,
        double* q, int ldq, double* workl, int* ipntr, double* workd)
 {
@@ -585,7 +586,7 @@ dsaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0;
     // Initialize to silence the compiler warning
-    enum ARPACK_which temp_which = which_LM;
+    enum ARNAUD_which temp_which = which_LM;
 
     if (V->ido == ido_FIRST)
     {
@@ -1021,7 +1022,7 @@ dseigt(double rnorm, int n, double* h, int ldh, double* eig, double* bounds,
 
 
 void
-dsaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, double* resid, double* rnorm,
+dsaitr(struct ARNAUD_state_d *V, int k, int np, double* resid, double* rnorm,
        double* v, int ldv, double* h, int ldh, int* ipntr, double* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
@@ -1589,7 +1590,7 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
 
 
 void
-dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz,
+dsgets(struct ARNAUD_state_d *V, int* kev, int* np, double* ritz,
        double* bounds, double* shifts)
 {
     int kevd2, tmp1, tmp2, int1 = 1;
@@ -1638,7 +1639,7 @@ dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz,
 
 
 void
-dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
+dgetv0(struct ARNAUD_state_d *V, int initv, int n, int j,
        double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd)
 {
     int jj, int1 = 1;
@@ -1800,12 +1801,12 @@ LINE40:
 }
 
 
-void
-dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, double* x2)
+static void
+dsortr(const enum ARNAUD_which w, const int apply, const int n, double* x1, double* x2)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
-    ARPACK_compare_rfunc *f;
+    ARNAUD_compare_rfunc *f;
 
     switch (w)
     {
@@ -1826,41 +1827,39 @@ dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, doub
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x1[j], x1[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x1[pos], x1[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x1[j];
-                x1[j] = x1[j+igap];
-                x1[j+igap] = temp;
+                temp = x1[pos];
+                x1[pos] = x1[pos+gap];
+                x1[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = x2[j];
-                    x2[j] = x2[j+igap];
-                    x2[j+igap] = temp;
+                    temp = x2[pos];
+                    x2[pos] = x2[pos+gap];
+                    x2[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
 
-void
-dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a, const int lda)
+static void
+dsesrt(const enum ARNAUD_which w, const int apply, const int n, double* x, int na, double* a, const int lda)
 {
-    int i, igap, j, int1 = 1;
+    int i, gap, pos, int1 = 1;
     double temp;
-    ARPACK_compare_rfunc *f;
+    ARNAUD_compare_rfunc *f;
 
     switch (w)
     {
@@ -1881,31 +1880,28 @@ dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int n
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j + igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos + gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    dswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
+                    dswap_(&na, &a[lda*pos], &int1, &a[lda*(pos+gap)], &int1);
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
-    // 10, 40, 70, 120
 }
 
 

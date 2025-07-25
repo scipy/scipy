@@ -98,6 +98,23 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
+if ff.get_id() == 'llvm-flang'
+  add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['fortran'])
+  # -Wall warnings are visible because Meson's warning_level defaults to 1 (-Wall)
+  # LLVM tracking issue: https://github.com/llvm/llvm-project/issues/89888
+endif
+
+if cc.get_id() == 'clang-cl'
+  add_global_arguments('-D_CRT_SECURE_NO_WARNINGS', language: ['c', 'cpp'])
+  # Some arguments like -Wl,--version-script may otherwise generate a
+  # large number of warnings. clang-cl accepts but ignores them.
+  add_project_arguments('-Qunused-arguments', language: ['c', 'cpp'])
+endif
+
+if cpp.get_id() == 'msvc'
+  add_project_arguments('/bigobj', language: 'cpp')
+endif
+
 if host_machine.system() == 'darwin'
   if cc.has_link_argument('-Wl,-dead_strip')
     # Allow linker to strip unused symbols
@@ -140,13 +157,16 @@ add_global_arguments(_intel_fflags, language: 'fortran')
 # use a linker script to avoid exporting those symbols (this is in addition to
 # Meson using `-fvisibility=hidden` for C and `-fvisibility-inlines-hidden` for
 # C++ code. See gh-15996 for details.
-_linker_script = meson.project_source_root() / 'scipy/_build_utils/link-version-pyinit.map'
-version_link_args = ['-Wl,--version-script=' + _linker_script]
-# Note that FreeBSD only accepts version scripts when -shared is passed,
-# hence we need to pass that to `cc.links` explicitly (flag is already
-# present for `extension_module` invocations).
-if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link_args])
-  version_link_args = []
+version_link_args = []
+if cc.get_id() != 'clang-cl'
+  _linker_script = meson.project_source_root() / 'scipy/_build_utils/link-version-pyinit.map'
+  vscript_link_args = ['-Wl,--version-script=' + _linker_script]
+  # Note that FreeBSD only accepts version scripts when -shared is passed,
+  # hence we need to pass that to `cc.links` explicitly (flag is already
+  # present for `extension_module` invocations).
+  if cc.links('', name: '-Wl,--version-script', args: ['-shared', vscript_link_args])
+    version_link_args = vscript_link_args
+  endif
 endif
 
 generate_f2pymod = find_program('tools/generate_f2pymod.py')

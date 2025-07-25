@@ -1,28 +1,29 @@
-#include "_arpack_n_single_complex.h"
+#include "arnaud_n_single_complex.h"
+#include <float.h>
 
-typedef int ARPACK_compare_cfunc(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-typedef int ARPACK_compare_rfunc(const float, const float);
+typedef int ARNAUD_compare_cfunc(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+typedef int ARNAUD_compare_rfunc(const float, const float);
 
-static const float unfl = 1.1754943508222875e-38;
-// static const float ovfl = 1.0 / 1.1754943508222875e-38;
-static const float ulp = 1.1920928955078125e-07;
+static const float unfl = FLT_MIN;    // 1.1754943508222875e-38;
+// static const float ovfl = FLT_MAX; // 1.0 / 1.1754943508222875e-38;
+static const float ulp = FLT_EPSILON; // 1.1920928955078125e-07;
 
-static ARPACK_CPLXF_TYPE cdotc_(const int* n, const ARPACK_CPLXF_TYPE* restrict x, const int* incx, const ARPACK_CPLXF_TYPE* restrict y, const int* incy);
-static void cgetv0(struct ARPACK_arnoldi_update_vars_s*, int, int, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, float*, int*, ARPACK_CPLXF_TYPE*);
-static void cnaup2(struct ARPACK_arnoldi_update_vars_s*, ARPACK_CPLXF_TYPE* , ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int*, ARPACK_CPLXF_TYPE*, float*);
-static void cnaitr(struct ARPACK_arnoldi_update_vars_s*, int, int, ARPACK_CPLXF_TYPE*,float*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int, int*, ARPACK_CPLXF_TYPE*);
-static void cnapps(int, int*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*);
-static void cneigh(float*, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, float*, int*);
-static void cngets(struct ARPACK_arnoldi_update_vars_s*, int*, int*, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*);
-static void csortc(const enum ARPACK_which w, const int, const int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*);
-static int sortc_LM(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-static int sortc_SM(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-static int sortc_LR(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-static int sortc_SR(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-static int sortc_LI(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
-static int sortc_SI(const ARPACK_CPLXF_TYPE, const ARPACK_CPLXF_TYPE);
+static ARNAUD_CPLXF_TYPE cdotc_(const int* n, const ARNAUD_CPLXF_TYPE* restrict x, const int* incx, const ARNAUD_CPLXF_TYPE* restrict y, const int* incy);
+static void cgetv0(struct ARNAUD_state_s*, int, int, int, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, float*, int*, ARNAUD_CPLXF_TYPE*);
+static void cnaup2(struct ARNAUD_state_s*, ARNAUD_CPLXF_TYPE* , ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, int*, ARNAUD_CPLXF_TYPE*, float*);
+static void cnaitr(struct ARNAUD_state_s*, int, int, ARNAUD_CPLXF_TYPE*,float*, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, int, int*, ARNAUD_CPLXF_TYPE*);
+static void cnapps(int, int*, int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*);
+static void cneigh(float*, int, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*, int, ARNAUD_CPLXF_TYPE*, float*, int*);
+static void cngets(struct ARNAUD_state_s*, int*, int*, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*);
+static void csortc(const enum ARNAUD_which w, const int, const int, ARNAUD_CPLXF_TYPE*, ARNAUD_CPLXF_TYPE*);
+static int sortc_LM(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+static int sortc_SM(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+static int sortc_LR(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+static int sortc_SR(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+static int sortc_LI(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
+static int sortc_SI(const ARNAUD_CPLXF_TYPE, const ARNAUD_CPLXF_TYPE);
 
-enum ARPACK_neupd_type {
+enum ARNAUD_neupd_type {
     REGULAR,
     SHIFTI,
     REALPART,
@@ -31,22 +32,22 @@ enum ARPACK_neupd_type {
 
 
 void
-ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
-       ARPACK_CPLXF_TYPE* d, ARPACK_CPLXF_TYPE* z, int ldz, ARPACK_CPLXF_TYPE sigma,
-       ARPACK_CPLXF_TYPE* workev, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv,
-       int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork)
+ARNAUD_cneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
+       ARNAUD_CPLXF_TYPE* d, ARNAUD_CPLXF_TYPE* z, int ldz, ARNAUD_CPLXF_TYPE sigma,
+       ARNAUD_CPLXF_TYPE* workev, ARNAUD_CPLXF_TYPE* resid, ARNAUD_CPLXF_TYPE* v, int ldv,
+       int* ipntr, ARNAUD_CPLXF_TYPE* workd, ARNAUD_CPLXF_TYPE* workl, float* rwork)
 {
-    const float eps23 = pow(ulp, 2.0 / 3.0);
-    int ibd, ih, iheig, ihbds, iuptri, invsub, irz, iwev, j, jj;
-    int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz, wr;
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
+    int ibd, ih, iheig, ihbds, iuptri, invsub, irz, j, jj;
+    int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz;
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0;
     float conds, sep, temp1, rtemp;
-    ARPACK_CPLXF_TYPE rnorm, temp;
-    ARPACK_CPLXF_TYPE cdbl0 = ARPACK_cplxf(0.0, 0.0);
-    ARPACK_CPLXF_TYPE cdbl1 = ARPACK_cplxf(1.0, 0.0);
-    ARPACK_CPLXF_TYPE cdblm1 = ARPACK_cplxf(-1.0, 0.0);
-    ARPACK_CPLXF_TYPE vl[1] = { cdbl0 };
-    enum ARPACK_neupd_type TYP;
+    ARNAUD_CPLXF_TYPE rnorm, temp;
+    ARNAUD_CPLXF_TYPE cdbl0 = ARNAUD_cplxf(0.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cdbl1 = ARNAUD_cplxf(1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cdblm1 = ARNAUD_cplxf(-1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE vl[1] = { cdbl0 };
+    enum ARNAUD_neupd_type TYP;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -118,8 +119,6 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
     ipntr[10] = ihbds;
     ipntr[11] = iuptri;
     ipntr[12] = invsub;
-    wr = 0;
-    iwev = wr + V->ncv;
 
     //  irz points to the Ritz values computed
     //      by _neigh before exiting _naup2.
@@ -133,7 +132,7 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
     //  RNORM is B-norm of the RESID(1:N).
 
     rnorm = workl[ih+2];
-    workl[ih+2] = ARPACK_cplxf(0.0, 0.0);
+    workl[ih+2] = ARNAUD_cplxf(0.0f, 0.0f);
 
     if (rvec) {
         reord = 0;
@@ -143,7 +142,7 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
         for (j = 0; j < V->ncv; j++)
         {
-            workl[bounds + j] = ARPACK_cplxf(j, 0.0);
+            workl[bounds + j] = ARNAUD_cplxf(j*1.0f, 0.0f);
             select[j] = 0;
         }
         // 10
@@ -165,7 +164,7 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
         numcnv = 0;
         for (j = 1; j <= V->ncv; j++)
         {
-            temp1 = fmax(eps23, cabsf(workl[irz + V->ncv - j]));
+            temp1 = fmaxf(eps23, cabsf(workl[irz + V->ncv - j]));
             jj = (int)crealf(workl[bounds + V->ncv - j]);
 
             if ((numcnv < V->nconv) && (cabsf(workl[ibd + jj]) <= V->tol*temp1))
@@ -265,7 +264,7 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
             //  Note that since Q is orthogonal, R is a diagonal
             //  matrix consisting of plus or minus ones.
 
-            if (crealf(workl[invsub + j*ldq + j]) < 0.0)
+            if (crealf(workl[invsub + j*ldq + j]) < 0.0f)
             {
                 cscal_(&V->nconv, &cdblm1, &workl[iuptri + j], &ldq);
                 cscal_(&V->nconv, &cdblm1, &workl[iuptri + j*ldq], &int1);
@@ -306,7 +305,7 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
             for (j = 0; j < V->nconv; j++)
             {
-                rtemp = 1.0 / scnrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
+                rtemp = 1.0f / scnrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
                 csscal_(&V->ncv, &rtemp, &workl[invsub + j*ldq], &int1);
 
                 //  Ritz estimates can be obtained by taking
@@ -365,7 +364,8 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC, multiply with reciprocal
-            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / cabsf(workl[iheig + k]));
+            float mag_sq = powf(cabsf(workl[iheig + k]), 2.0);
+            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0f / mag_sq);
             workl[ihbds + k] = _FCmulcc(_FCmulcc(workl[ihbds + k], temp), temp);
 #else
             temp = workl[iheig + k];
@@ -387,10 +387,11 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
         {
 #if defined(_MSC_VER)
             // Complex division is not supported in MSVC
-            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0 / cabsf(workl[iheig + k]));
-            d[k] = ARPACK_cplxf(crealf(temp) + crealf(sigma), cimagf(temp) + cimagf(sigma));
+            float mag_sq = powf(cabsf(workl[iheig + k]), 2.0);
+            temp = _FCmulcr(conjf(workl[iheig + k]), 1.0f / mag_sq);
+            d[k] = ARNAUD_cplxf(crealf(temp) + crealf(sigma), cimagf(temp) + cimagf(sigma));
 #else
-            d[k] = 1.0 / workl[iheig + k] + sigma;
+            d[k] = 1.0f / workl[iheig + k] + sigma;
 #endif
         }
         // 60
@@ -412,14 +413,15 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
         for (j = 0; j < V->nconv; j++)
         {
-            if ((crealf(workl[iheig+j]) != 0.0) || (cimagf(workl[iheig+j]) != 0.0))
+            if ((crealf(workl[iheig+j]) != 0.0f) || (cimagf(workl[iheig+j]) != 0.0f))
             {
 #if defined(_MSC_VER)
                 // Complex division is not supported in MSVC
-                temp = _FCmulcr(conjf(workl[iheig + j]), 1.0 / cabsf(workl[iheig + j]));
-                workev[j] = _FCmulcc(workl[invsub + j*ldq + V->ncv], temp);
+                float mag_sq = powf(cabsf(workl[iheig + j]), 2.0);
+                temp = _FCmulcr(conjf(workl[iheig + j]), 1.0f / mag_sq);
+                workev[j] = _FCmulcc(workl[invsub + j*ldq + V->ncv - 1], temp);
 #else
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheig+j];
 #endif
             }
         }
@@ -436,9 +438,9 @@ ARPACK_cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 
 
 void
-ARPACK_cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
-       ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd,
-       ARPACK_CPLXF_TYPE* workl, float* rwork)
+ARNAUD_cnaupd(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid,
+       ARNAUD_CPLXF_TYPE* v, int ldv, int* ipntr, ARNAUD_CPLXF_TYPE* workd,
+       ARNAUD_CPLXF_TYPE* workl, float* rwork)
 {
     int bounds, ierr = 0, ih, iq, iw, ldh, ldq, next, iritz;
 
@@ -470,7 +472,7 @@ ARPACK_cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
             return;
         }
 
-        if (V->tol <= 0.0) {
+        if (V->tol <= 0.0f) {
             V-> tol = ulp;
         }
 
@@ -488,7 +490,7 @@ ARPACK_cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
 
         for (int j = 0; j < 3 * (V->ncv*V->ncv) + 6*V->ncv; j++)
         {
-            workl[j] = ARPACK_cplxf(0.0, 0.0);
+            workl[j] = ARNAUD_cplxf(0.0f, 0.0f);
         }
     }
     //  Pointer into WORKL for address of H, RITZ, BOUNDS, Q
@@ -538,17 +540,17 @@ ARPACK_cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
 }
 
 
-void
-cnaup2(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
-       ARPACK_CPLXF_TYPE* v, int ldv, ARPACK_CPLXF_TYPE* h, int ldh,
-       ARPACK_CPLXF_TYPE* ritz, ARPACK_CPLXF_TYPE* bounds,
-       ARPACK_CPLXF_TYPE* q, int ldq, ARPACK_CPLXF_TYPE* workl, int* ipntr,
-       ARPACK_CPLXF_TYPE* workd, float* rwork)
+static void
+cnaup2(struct ARNAUD_state_s *V, ARNAUD_CPLXF_TYPE* resid,
+       ARNAUD_CPLXF_TYPE* v, int ldv, ARNAUD_CPLXF_TYPE* h, int ldh,
+       ARNAUD_CPLXF_TYPE* ritz, ARNAUD_CPLXF_TYPE* bounds,
+       ARNAUD_CPLXF_TYPE* q, int ldq, ARNAUD_CPLXF_TYPE* workl, int* ipntr,
+       ARNAUD_CPLXF_TYPE* workd, float* rwork)
 {
-    enum ARPACK_which temp_which;
+    enum ARNAUD_which temp_which;
     int i, int1 = 1, j, tmp_int;
-    const float eps23 = pow(ulp, 2.0 / 3.0);
-    float temp = 0.0, rtemp;
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
+    float temp = 0.0f, rtemp;
 
     if (V->ido == ido_FIRST)
     {
@@ -594,7 +596,7 @@ cnaup2(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
         V->getv0_itry = 1;
         cgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
         if (V->ido != ido_DONE) { return; }
-        if (V->aup2_rnorm == 0.0)
+        if (V->aup2_rnorm == 0.0f)
         {
             V->info = -9;
             V->ido = ido_DONE;
@@ -716,7 +718,7 @@ LINE20:
     V->nconv = 0;
     for (i = 0; i < V->nev; i++)
     {
-        rtemp = fmax(eps23, cabsf(ritz[V->np + i]));
+        rtemp = fmaxf(eps23, cabsf(ritz[V->np + i]));
         if (cabsf(bounds[V->np + i]) <= V->tol*rtemp)
         {
             V->nconv += 1;
@@ -737,7 +739,7 @@ LINE20:
 
     for (j = 0; j < nptemp; j++)
     {
-        if ((crealf(bounds[j]) == 0.0) && (cimagf(bounds[j]) == 0.0))
+        if ((crealf(bounds[j]) == 0.0f) && (cimagf(bounds[j]) == 0.0f))
         {
             V->np -= 1;
             V->nev += 1;
@@ -756,14 +758,14 @@ LINE20:
         //   Use h( 3,1 ) as storage to communicate
         //   rnorm to _neupd if needed
 
-         h[2] = ARPACK_cplxf(V->aup2_rnorm, 0.0);
+         h[2] = ARNAUD_cplxf(V->aup2_rnorm, 0.0f);
 
         // Sort Ritz values so that converged Ritz
         // values appear within the first NEV locations
         // of ritz and bounds, and the most desired one
         // appears at the front.
 
-        // Translation note: Is this all because ARPACK did not have complex sort?
+        // Translation note: Is this all because ARNAUD did not have complex sort?
 
         if (V->which == which_LM) { temp_which = which_SM; }
         if (V->which == which_SM) { temp_which = which_LM; }
@@ -779,8 +781,8 @@ LINE20:
 
         for (j = 0; j < V->aup2_nev0; j++)
         {
-            temp = fmax(eps23, cabsf(ritz[j]));
-            bounds[j] = ARPACK_cplxf(crealf(bounds[j]) / temp, cimagf(bounds[j]) / temp);
+            temp = fmaxf(eps23, cabsf(ritz[j]));
+            bounds[j] = ARNAUD_cplxf(crealf(bounds[j]) / temp, cimagf(bounds[j]) / temp);
         }
         // 35
 
@@ -797,8 +799,8 @@ LINE20:
 
         for (j = 0; j < V->aup2_nev0; j++)
         {
-            temp = fmax(eps23, cabsf(ritz[j]));
-            bounds[j] = ARPACK_cplxf(crealf(bounds[j]) * temp, cimagf(bounds[j]) * temp);
+            temp = fmaxf(eps23, cabsf(ritz[j]));
+            bounds[j] = ARNAUD_cplxf(crealf(bounds[j]) * temp, cimagf(bounds[j]) * temp);
         }
         // 40
 
@@ -932,19 +934,19 @@ LINE100:
 
 
 static void
-cnaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, ARPACK_CPLXF_TYPE* resid,
-       float* rnorm, ARPACK_CPLXF_TYPE* v, int ldv, ARPACK_CPLXF_TYPE* h, int ldh,
-       int* ipntr, ARPACK_CPLXF_TYPE* workd)
+cnaitr(struct ARNAUD_state_s *V, int k, int np, ARNAUD_CPLXF_TYPE* resid,
+       float* rnorm, ARNAUD_CPLXF_TYPE* v, int ldv, ARNAUD_CPLXF_TYPE* h, int ldh,
+       int* ipntr, ARNAUD_CPLXF_TYPE* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     float smlnum = unfl * ( V->n / ulp);
     const float sq2o2 = sqrt(2.0) / 2.0;
 
     int int1 = 1;
-    float dbl1 = 1.0, temp1, tst1;
-    ARPACK_CPLXF_TYPE cdbl1 = ARPACK_cplxf(1.0, 0.0);
-    ARPACK_CPLXF_TYPE cdblm1 = ARPACK_cplxf(-1.0, 0.0);
-    ARPACK_CPLXF_TYPE cdbl0 = ARPACK_cplxf(0.0, 0.0);
+    float dbl1 = 1.0f, temp1, tst1;
+    ARNAUD_CPLXF_TYPE cdbl1 = ARNAUD_cplxf(1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cdblm1 = ARNAUD_cplxf(-1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cdbl0 = ARNAUD_cplxf(0.0f, 0.0f);
 
     n = V->n;  // n is constant, this is just for typing convenience
     ipj = 0;
@@ -995,13 +997,13 @@ LINE1000:
     //  an exact j-step Arnoldi factorization is present.
 
     V->aitr_betaj = *rnorm;
-    if (*rnorm > 0.0) { goto LINE40; }
+    if (*rnorm > 0.0f) { goto LINE40; }
 
     //  Invariant subspace found, generate a new starting
     //  vector which is orthogonal to the current Arnoldi
     //  basis and continue the iteration.
 
-    V->aitr_betaj = 0.0;
+    V->aitr_betaj = 0.0f;
     V->getv0_itry = 1;
 
 LINE20:
@@ -1041,7 +1043,7 @@ LINE40:
 
     if (*rnorm >= unfl)
     {
-        temp1 = 1.0 / *rnorm;
+        temp1 = 1.0f / *rnorm;
         csscal_(&n, &temp1, &v[ldv*V->aitr_j], &int1);
         csscal_(&n, &temp1, &workd[ipj], &int1);
     } else {
@@ -1126,7 +1128,7 @@ LINE60:
 
     cgemv_("N", &n, &tmp_int, &cdblm1, v, &ldv, &h[ldh*(V->aitr_j)], &int1, &cdbl1, resid, &int1);
 
-    if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = ARPACK_cplxf(V->aitr_betaj, 0.0); }
+    if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = ARNAUD_cplxf(V->aitr_betaj, 0.0f); }
 
     V->aitr_orth1 = 1;
     if (V->bmat)
@@ -1256,9 +1258,9 @@ LINE90:
 
         for (jj = 0; jj < n; jj++)
         {
-            resid[jj] = ARPACK_cplxf(0.0, 0.0);
+            resid[jj] = ARNAUD_cplxf(0.0f, 0.0f);
         }
-        *rnorm = 0.0;
+        *rnorm = 0.0f;
     }
 
 LINE100:
@@ -1281,16 +1283,16 @@ LINE100:
             //  REFERENCE: LAPACK subroutine dlahqr
 
             tst1 = cabsf(h[i + ldh*i]) + cabsf(h[i+1 + ldh*(i+1)]);
-            if (tst1 == 0.0)
+            if (tst1 == 0.0f)
             {
                 tmp_int = k + np;
                 // clanhs(norm, n, a, lda, work) with "work" being float type
                 // Recasting complex workspace to float for scratch space.
                 tst1 = clanhs_("1", &tmp_int, h, &ldh, (float*)&workd[n]);
             }
-            if (cabsf(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
+            if (cabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
             {
-                h[i+1 + ldh*i] = ARPACK_cplxf(0.0, 0.0);
+                h[i+1 + ldh*i] = ARNAUD_cplxf(0.0f, 0.0f);
             }
         }
         // 110
@@ -1302,23 +1304,19 @@ LINE100:
 
 
 static void
-cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
-       int ldv, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* resid,
-       ARPACK_CPLXF_TYPE* q, int ldq, ARPACK_CPLXF_TYPE* workl,
-       ARPACK_CPLXF_TYPE* workd)
+cnapps(int n, int* kev, int np, ARNAUD_CPLXF_TYPE* shift, ARNAUD_CPLXF_TYPE* v,
+       int ldv, ARNAUD_CPLXF_TYPE* h, int ldh, ARNAUD_CPLXF_TYPE* resid,
+       ARNAUD_CPLXF_TYPE* q, int ldq, ARNAUD_CPLXF_TYPE* workl,
+       ARNAUD_CPLXF_TYPE* workd)
 {
     int i, j, jj, int1 = 1, istart, iend = 0, tmp_int;
     float smlnum = unfl * ( n / ulp);
     float c, tst1;
     float tmp_dbl;
-    ARPACK_CPLXF_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
+    ARNAUD_CPLXF_TYPE f, g, h11, h21, sigma, s, s2, r, t, tmp_cplx;
 
-    #if defined(_MSC_VER)
-    ARPACK_CPLXF_TYPE tmp_cplx2;
-    #endif
-
-    ARPACK_CPLXF_TYPE cdbl1 = ARPACK_cplxf(1.0, 0.0);
-    ARPACK_CPLXF_TYPE cdbl0 = ARPACK_cplxf(0.0, 0.0);
+    ARNAUD_CPLXF_TYPE cdbl1 = ARNAUD_cplxf(1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cdbl0 = ARNAUD_cplxf(0.0f, 0.0f);
 
     int kplusp = *kev + np;
 
@@ -1343,14 +1341,14 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
         {
             for  (iend = istart; iend < kplusp - 1; iend++)
             {
-                tst1 = fabs(crealf(h[iend + ldh*iend])) + fabs(cimagf(h[iend + ldh*iend])) +
-                       fabs(crealf(h[iend+1 + ldh*(iend+1)])) + fabs(cimagf(h[iend+1 + ldh*(iend+1)]));
-                if (tst1 == 0.0)
+                tst1 = fabsf(crealf(h[iend + ldh*iend])) + fabsf(cimagf(h[iend + ldh*iend])) +
+                       fabsf(crealf(h[iend+1 + ldh*(iend+1)])) + fabsf(cimagf(h[iend+1 + ldh*(iend+1)]));
+                if (tst1 == 0.0f)
                 {
                    tmp_int = kplusp - jj;
                     clanhs_("1", &tmp_int, h, &ldh, (float*)workl);
                 }
-                if (fabs(crealf(h[iend+1 + ldh*iend])) <= fmax(ulp*tst1, smlnum))
+                if (fabsf(crealf(h[iend+1 + ldh*iend])) <= fmaxf(ulp*tst1, smlnum))
                 {
                     break;
                 }
@@ -1370,13 +1368,13 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
                 // Valid block found and it's not the entire remaining array
                 // Clean up the noise
 
-                h[iend+1 + ldh*iend] = ARPACK_cplxf(0.0, 0.0);
+                h[iend+1 + ldh*iend] = ARNAUD_cplxf(0.0f, 0.0f);
             }
 
             h11 = h[istart + ldh*istart];
             h21 = h[istart + 1 + ldh*istart];
             // f = h11 - sigma;
-            f = ARPACK_cplxf(crealf(h11)-crealf(sigma), cimagf(h11)-cimagf(sigma));
+            f = ARNAUD_cplxf(crealf(h11)-crealf(sigma), cimagf(h11)-cimagf(sigma));
             g = h21;
 
             for (i = istart; i < iend; i++)
@@ -1388,7 +1386,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
                 if (i > istart)
                 {
                     h[i + ldh*(i-1)] = r;
-                    h[i + 1 + ldh*(i-1)] = ARPACK_cplxf(0.0, 0.0);
+                    h[i + 1 + ldh*(i-1)] = ARNAUD_cplxf(0.0f, 0.0f);
                 }
                 tmp_int = kplusp - i;
                 crot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
@@ -1414,10 +1412,10 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
 
     for (j = 0; j < *kev; j++)
     {
-        if ((crealf(h[j+1 + ldh*j]) < 0.0) || (cimagf(h[j+1 + ldh*j]) != 0.0))
+        if ((crealf(h[j+1 + ldh*j]) < 0.0f) || (cimagf(h[j+1 + ldh*j]) != 0.0f))
         {
             tmp_dbl = cabsf(h[j+1 + ldh*j]);
-            t = ARPACK_cplxf(crealf(h[j+1 + ldh*j]) / tmp_dbl,
+            t = ARNAUD_cplxf(crealf(h[j+1 + ldh*j]) / tmp_dbl,
             cimagf(h[j+1 + ldh*j]) / tmp_dbl);
 
             tmp_cplx = conjf(t);
@@ -1430,7 +1428,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
             tmp_int = (j+np+2 > kplusp ? kplusp : j+np+2);
             cscal_(&tmp_int, &t, &q[ldq*(j+1)], &int1);
 
-            h[j+1 + ldh*j] = ARPACK_cplxf(crealf(h[j+1 + ldh*j]), 0.0);
+            h[j+1 + ldh*j] = ARNAUD_cplxf(crealf(h[j+1 + ldh*j]), 0.0f);
         }
     }
     // 120
@@ -1445,15 +1443,15 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
         //  compressed H are nonnegative real numbers,
         //  we take advantage of this.
 
-        tst1 = fabs(crealf(h[i + ldh*i])) + fabs(crealf(h[i+1 + ldh*(i+1)])) +
-               fabs(cimagf(h[i + ldh*i])) + fabs(cimagf(h[i+1 + ldh*(i+1)]));
-        if (tst1 == 0.0)
+        tst1 = fabsf(crealf(h[i + ldh*i])) + fabsf(crealf(h[i+1 + ldh*(i+1)])) +
+               fabsf(cimagf(h[i + ldh*i])) + fabsf(cimagf(h[i+1 + ldh*(i+1)]));
+        if (tst1 == 0.0f)
         {
             tst1 = clanhs_("1", kev, h, &ldh, (float*)workl);
         }
-        if (crealf(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
+        if (crealf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
         {
-            h[i+1 + ldh*i] = ARPACK_cplxf(0.0, 0.0);
+            h[i+1 + ldh*i] = ARNAUD_cplxf(0.0f, 0.0f);
         }
     }
     // 130
@@ -1464,7 +1462,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
     //  cannot GUARANTEE that the corresponding entry
     //  of H would be zero as in exact arithmetic.
 
-    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0)
+    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0f)
     {
         cgemv_("N", &n, &kplusp, &cdbl1, v, &ldv, &q[(*kev)*ldq], &int1, &cdbl0, &workd[n], &int1);
     }
@@ -1485,7 +1483,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
-    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0) {
+    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0f) {
         ccopy_(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
     }
 
@@ -1497,7 +1495,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
 
     cscal_(&n, &q[kplusp-1 + ldq*(*kev-1)], resid, &int1);
 
-    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0)
+    if (crealf(h[*kev + ldh*(*kev-1)]) > 0.0f)
     {
         caxpy_(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
     }
@@ -1507,15 +1505,16 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
 
 
 static void
-cneigh(float* rnorm, int n, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* ritz,
-       ARPACK_CPLXF_TYPE* bounds, ARPACK_CPLXF_TYPE* q, int ldq, ARPACK_CPLXF_TYPE* workl,
+cneigh(float* rnorm, int n, ARNAUD_CPLXF_TYPE* h, int ldh, ARNAUD_CPLXF_TYPE* ritz,
+       ARNAUD_CPLXF_TYPE* bounds, ARNAUD_CPLXF_TYPE* q, int ldq, ARNAUD_CPLXF_TYPE* workl,
        float* rwork, int* ierr)
 {
     int select[1] = { 0 };
     int int1 = 1, j;
     float temp;
-    ARPACK_CPLXF_TYPE vl[1] = { 0.0 };
-    ARPACK_CPLXF_TYPE c1 = ARPACK_cplxf(1.0, 0.0), c0 = ARPACK_cplxf(0.0, 0.0);
+    ARNAUD_CPLXF_TYPE vl[1];
+    vl[0] = ARNAUD_cplxf(0.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE c1 = ARNAUD_cplxf(1.0f, 0.0f), c0 = ARNAUD_cplxf(0.0f, 0.0f);
 
     //  1. Compute the eigenvalues, the last components of the
     //     corresponding Schur vectors and the full Schur form T
@@ -1548,7 +1547,7 @@ cneigh(float* rnorm, int n, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* ri
 
     for (j = 0; j < n; j++)
     {
-        temp = 1.0 / scnrm2_(&n, &q[j*ldq], &int1);
+        temp = 1.0f / scnrm2_(&n, &q[j*ldq], &int1);
         csscal_(&n, &temp, &q[j*ldq], &int1);
     }
 
@@ -1561,9 +1560,9 @@ cneigh(float* rnorm, int n, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* ri
 }
 
 
-void
-cngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
-       ARPACK_CPLXF_TYPE* ritz, ARPACK_CPLXF_TYPE* bounds)
+static void
+cngets(struct ARNAUD_state_s *V, int* kev, int* np,
+       ARNAUD_CPLXF_TYPE* ritz, ARNAUD_CPLXF_TYPE* bounds)
 {
 
     csortc(V->which, 1, *kev + *np, ritz, bounds);
@@ -1586,15 +1585,15 @@ cngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
 
 
 static void
-cgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
-       ARPACK_CPLXF_TYPE* v, int ldv, ARPACK_CPLXF_TYPE* resid, float* rnorm,
-       int* ipntr, ARPACK_CPLXF_TYPE* workd)
+cgetv0(struct ARNAUD_state_s *V, int initv, int n, int j,
+       ARNAUD_CPLXF_TYPE* v, int ldv, ARNAUD_CPLXF_TYPE* resid, float* rnorm,
+       int* ipntr, ARNAUD_CPLXF_TYPE* workd)
 {
     int jj, int1 = 1;
     const float sq2o2 = sqrt(2.0) / 2.0;
-    ARPACK_CPLXF_TYPE c0 = ARPACK_cplxf(0.0, 0.0);
-    ARPACK_CPLXF_TYPE c1 = ARPACK_cplxf(1.0, 0.0);
-    ARPACK_CPLXF_TYPE cm1 = ARPACK_cplxf(-1.0, 0.0);
+    ARNAUD_CPLXF_TYPE c0 = ARNAUD_cplxf(0.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE c1 = ARNAUD_cplxf(1.0f, 0.0f);
+    ARNAUD_CPLXF_TYPE cm1 = ARNAUD_cplxf(-1.0f, 0.0f);
 
     if (V->ido == ido_FIRST)
     {
@@ -1742,8 +1741,8 @@ LINE40:
 
         //  Iterative refinement step "failed"
 
-        for (jj = 0; jj < n; jj++) { resid[jj] = ARPACK_cplxf(0.0, 0.0); }
-        *rnorm = 0.0;
+        for (jj = 0; jj < n; jj++) { resid[jj] = ARNAUD_cplxf(0.0f, 0.0f); }
+        *rnorm = 0.0f;
         V->info = -1;
     }
 
@@ -1752,12 +1751,12 @@ LINE40:
 }
 
 
-void
-csortc(const enum ARPACK_which w, const int apply, const int n,  ARPACK_CPLXF_TYPE *x,  ARPACK_CPLXF_TYPE *y)
+static void
+csortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLXF_TYPE *x, ARNAUD_CPLXF_TYPE *y)
 {
-    int i, igap, j;
-    ARPACK_CPLXF_TYPE temp;
-    ARPACK_compare_cfunc *f;
+    int i, gap, pos;
+    ARNAUD_CPLXF_TYPE temp;
+    ARNAUD_compare_cfunc *f;
 
     switch (w)
     {
@@ -1784,76 +1783,81 @@ csortc(const enum ARPACK_which w, const int apply, const int n,  ARPACK_CPLXF_TY
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
 
-static int sortc_LM(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cabsf(x) > cabsf(y)); }
-static int sortc_SM(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cabsf(x) < cabsf(y)); }
-static int sortc_LR(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (crealf(x) > crealf(y)); }
-static int sortc_SR(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (crealf(x) < crealf(y)); }
-static int sortc_LI(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cimagf(x) > cimagf(y)); }
-static int sortc_SI(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cimagf(x) < cimagf(y)); }
+static int sortc_LM(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (cabsf(x) > cabsf(y)); }
+static int sortc_SM(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (cabsf(x) < cabsf(y)); }
+static int sortc_LR(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (crealf(x) > crealf(y)); }
+static int sortc_SR(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (crealf(x) < crealf(y)); }
+static int sortc_LI(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (cimagf(x) > cimagf(y)); }
+static int sortc_SI(const ARNAUD_CPLXF_TYPE x, const ARNAUD_CPLXF_TYPE y) { return (cimagf(x) < cimagf(y)); }
 
 
 // cdotc is the complex conjugate dot product of two complex vectors.
 // Due some historical reasons, this function can cause segfaults on some
 // platforms. Hence implemented here instead of using the BLAS version.
-static ARPACK_CPLXF_TYPE
-cdotc_(const int* n, const ARPACK_CPLXF_TYPE* restrict x, const int* incx, const ARPACK_CPLXF_TYPE* restrict y, const int* incy)
+static ARNAUD_CPLXF_TYPE
+cdotc_(const int* n, const ARNAUD_CPLXF_TYPE* restrict x, const int* incx, const ARNAUD_CPLXF_TYPE* restrict y, const int* incy)
 {
-    ARPACK_CPLXF_TYPE result = ARPACK_cplxf(0.0, 0.0);
+    ARNAUD_CPLXF_TYPE result = ARNAUD_cplxf(0.0f, 0.0f);
 #ifdef _MSC_VER
-    ARPACK_CPLXF_TYPE temp = ARPACK_cplxf(0.0, 0.0);
+    ARNAUD_CPLXF_TYPE temp = ARNAUD_cplxf(0.0f, 0.0f);
 #endif
     if (*n <= 0) { return result; }
+
+    int ix, iy;
     if ((*incx == 1) && (*incy == 1))
     {
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
             temp = _FCmulcc(x[i], conjf(y[i]));
-            result = ARPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
+            result = ARNAUD_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
 #else
             result = result + (x[i] * conjf(y[i]));
 #endif
         }
 
     } else {
+        // Handle negative increments correctly
+        ix = (*incx >= 0) ? 0 : (-(*n-1) * (*incx));
+        iy = (*incy >= 0) ? 0 : (-(*n-1) * (*incy));
 
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _FCmulcc(x[i * (*incx)], conjf(y[i * (*incy)]));
-            result = ARPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
+            temp = _FCmulcc(x[ix], conjf(y[iy]));
+            result = ARNAUD_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
 #else
-            result = result + (x[i * (*incx)] * conjf(y[i * (*incy)]));
+            result = result + (x[ix] * conjf(y[iy]));
 #endif
+            ix += *incx;
+            iy += *incy;
         }
     }
 

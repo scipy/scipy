@@ -527,7 +527,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
                 and n_fft > 0):  # TODO: review threshold acc. to benchmark?
- 
+
             if (xp.isdtype(b.dtype, "real floating") and
                 xp.isdtype(a.dtype, "real floating")
             ):
@@ -891,9 +891,9 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     Notes
     -----
     This function used to be called ``sosfreqz`` in older versions (≥ 0.19.0)
-    
+
     .. versionadded:: 1.15.0
-        
+
     Examples
     --------
     Design a 15th-order bandpass filter in SOS format.
@@ -971,11 +971,11 @@ def sosfreqz(*args, **kwargs):
     Compute the frequency response of a digital filter in SOS format (legacy).
 
    .. legacy:: function
-        
-        This function is an alias, provided for backward compatibility. 
+
+        This function is an alias, provided for backward compatibility.
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
-        
+
     """
     return freqz_sos(*args, **kwargs)
 
@@ -1288,12 +1288,13 @@ def zpk2tf(z, p, k):
         k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
-        temp = _pu.poly(z[0], xp=xp)
+        temp = _pu.poly(z[0, ...], xp=xp)
         b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            b[i] = k[i] * _pu.poly(z[i], xp=xp)
+            k_i = xp.asarray(k[i], dtype=xp.int64)
+            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
     else:
         b = k * _pu.poly(z, xp=xp)
 
@@ -2508,7 +2509,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
-        inside stopband or vice versa. Also note that the cutoff at the band edges 
+        inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
         like for `scipy.signal.fiwin`.
     gpass : float
@@ -2796,9 +2797,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     """
     xp = array_namespace(Wn)
-    Wn = xp.asarray(Wn)
-    if xp.isdtype(Wn.dtype, 'integral'):
-        Wn = xp.astype(Wn, xp_default_dtype(xp))
+    Wn = xp_promote(Wn, force_floating=True, xp=xp)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -2881,7 +2880,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
-            wo =xp.sqrt(warped[0] * warped[1])
+            wo = xp.sqrt(warped[0] * warped[1])
         except IndexError as e:
             raise ValueError('Wn must specify start and stop frequencies for '
                              'bandpass or bandstop filter') from e
@@ -4055,7 +4054,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     to pass through. The order of a filter often determines its complexity and
     accuracy. Determining the right order can be a challenge. This function
     aims to provide an appropriate order for an analog band stop filter.
-    
+
     Examples
     --------
 
@@ -5319,7 +5318,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
 
     z = xp.asarray([], device=device)
     cdtype = xp.complex128 if z.dtype == xp.float64 else xp.complex64
-    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device), 
+    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device),
             float(k))
 
 

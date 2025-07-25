@@ -1,8 +1,7 @@
 import warnings
 
+
 import numpy as np
-from numpy.testing import suppress_warnings
-import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close
@@ -187,7 +186,6 @@ class TestPlacePoles:
         assert fsf.rtol == 0
         assert fsf.nb_iter == 0
 
-    @pytest.mark.thread_unsafe
     def test_errors(self):
         # Test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
@@ -417,8 +415,8 @@ class TestLsim:
     digits_accuracy = 7
 
     def lti_nowarn(self, *args):
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
             system = lti(*args)
         return system
 
@@ -1140,8 +1138,8 @@ class Test_bode:
         B = np.array([[0.0], [0.0], [1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
             w, mag, phase = bode(system, n=100)
 
@@ -1205,8 +1203,8 @@ class Test_freqresp:
         B = np.array([[0.0],[0.0],[1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
             w, H = freqresp(system, n=100)
         s = w * 1j

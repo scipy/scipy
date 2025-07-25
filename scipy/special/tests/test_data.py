@@ -1,7 +1,7 @@
 import importlib.resources
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (
@@ -621,7 +621,6 @@ BOOST_TESTS = [
 ]
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
      _test_factory(test)
@@ -673,7 +672,8 @@ def test_local(test):
 
 def _test_factory(test, dtype=np.float64):
     """Boost test"""
-    with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
+    with warnings.catch_warnings():
+        msg = "The occurrence of roundoff error is detected"
+        warnings.filterwarnings("ignore", msg, IntegrationWarning)
         with np.errstate(all='ignore'):
             test.check(dtype=dtype)

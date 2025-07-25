@@ -1,6 +1,7 @@
-#include "_arpack_n_double.h"
+#include "arnaud_n_double.h"
+#include <float.h>
 
-typedef int ARPACK_compare_cfunc(const double, const double, const double, const double);
+typedef int ARNAUD_compare_cfunc(const double, const double, const double, const double);
 
 static int sortc_LM(const double, const double, const double, const double);
 static int sortc_SM(const double, const double, const double, const double);
@@ -9,20 +10,20 @@ static int sortc_SR(const double, const double, const double, const double);
 static int sortc_LI(const double, const double, const double, const double);
 static int sortc_SI(const double, const double, const double, const double);
 
-static const double unfl = 2.2250738585072014e-308;
-// static const double ovfl = 1.0 / 2.2250738585072014e-308;
-static const double ulp = 2.220446049250313e-16;
+static const double unfl = DBL_MIN;    // 2.2250738585072014e-308
+// static const double ovfl = DBL_MAX; // 1.0 / 2.2250738585072014e-308;
+static const double ulp = DBL_EPSILON; // 2.220446049250313e-16;
 
-static void dnaup2(struct ARPACK_arnoldi_update_vars_d*, double*, double*, int, double*, int, double*, double*, double*, double*, int, double*, int*, double*);
+static void dnaup2(struct ARNAUD_state_d*, double*, double*, int, double*, int, double*, double*, double*, double*, int, double*, int*, double*);
 static void dnconv(int n, double* ritzr, double* ritzi, double* bounds, const double tol, int* nconv);
 static void dneigh(double*,int,double*,int,double*,double*,double*,double*,int,double*,int*);
-static void dnaitr(struct ARPACK_arnoldi_update_vars_d*,int,int,double*,double*,double*,int,double*,int,int*,double*);
+static void dnaitr(struct ARNAUD_state_d*,int,int,double*,double*,double*,int,double*,int,int*,double*);
 static void dnapps(int,int*,int,double*,double*,double*,int,double*,int,double*,double*,int,double*,double*);
-static void dngets(struct ARPACK_arnoldi_update_vars_d*,int*,int*,double*,double*,double*);
-static void dsortc(const enum ARPACK_which w, const int apply, const int n, double* xreal, double* ximag, double* y);
-static void dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j, double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd);
+static void dngets(struct ARNAUD_state_d*,int*,int*,double*,double*,double*);
+static void dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, double* ximag, double* y);
+static void dgetv0(struct ARNAUD_state_d *V, int initv, int n, int j, double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd);
 
-enum ARPACK_neupd_type {
+enum ARNAUD_neupd_type {
     REGULAR = 0,
     SHIFTI,
     REALPART,
@@ -31,7 +32,7 @@ enum ARPACK_neupd_type {
 
 
 void
-ARPACK_dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
+ARNAUD_dneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
        double* dr, double* di, double* z, int ldz, double sigmar, double sigmai,
        double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd,
        double* workl)
@@ -43,7 +44,7 @@ ARPACK_dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0, outncv;
     double conds, rnorm, sep, temp, temp1, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
     double vl[1] = { 0.0 };
-    enum ARPACK_neupd_type TYP;
+    enum ARNAUD_neupd_type TYP;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -476,17 +477,17 @@ ARPACK_dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
         {
             if ((workl[iheigi+j] == 0.0) && (workl[iheigr+j] != 0.0))
             {
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheigr+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheigr+j];
             } else if (iconj == 0) {
 
                 temp = hypot(workl[iheigr+j], workl[iheigi+j]);
                 if (temp != 0.0)
                 {
-                    workev[j] = (workl[invsub + j*ldq + V->ncv]*workl[iheigr+j] +
-                                 workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j] = (workl[invsub + j*ldq + V->ncv - 1]*workl[iheigr+j] +
+                                 workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
-                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigr+j] -
-                                 workl[invsub + j*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigr+j] -
+                                 workl[invsub + j*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
                 }
                 iconj = 1;
@@ -506,7 +507,7 @@ ARPACK_dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int*
 }
 
 void
-ARPACK_dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v,
+ARNAUD_dnaupd(struct ARNAUD_state_d *V, double* resid, double* v,
               int ldv, int* ipntr, double* workd, double* workl)
 {
     int bounds, ih, iq, iw, j, ldh, ldq, next, iritzi, iritzr;
@@ -605,11 +606,11 @@ ARPACK_dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v,
 }
 
 void
-dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv,
+dnaup2(struct ARNAUD_state_d *V, double* resid, double* v, int ldv,
        double* h, int ldh, double* ritzr, double* ritzi, double* bounds,
        double* q, int ldq, double* workl, int* ipntr, double* workd)
 {
-    enum ARPACK_which temp_which;
+    enum ARNAUD_which temp_which;
     int int1 = 1, j, tmp_int;
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0;
@@ -825,7 +826,7 @@ LINE20:
         //  except that the sort is done in the opposite
         //  order.
 
-        // Translation note: Is this all because ARPACK did not have complex sort?
+        // Translation note: Is this all because ARNAUD did not have complex sort?
 
         if (V->which == which_LM) { temp_which = which_SR; }
         if (V->which == which_SM) { temp_which = which_LR; }
@@ -1146,7 +1147,7 @@ dneigh(double* rnorm, int n, double* h, int ldh, double* ritzr, double* ritzi,
 }
 
 void
-dnaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, double* resid, double* rnorm,
+dnaitr(struct ARNAUD_state_d *V, int k, int np, double* resid, double* rnorm,
        double* v, int ldv, double* h, int ldh, int* ipntr, double* workd)
 {
     int i = 0, infol, ipj, irj, ivj, jj, n, tmp_int;
@@ -1769,7 +1770,7 @@ dnapps(int n, int* kev, int np, double* shiftr, double* shifti, double* v,
 
 
 void
-dngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
+dngets(struct ARNAUD_state_d *V, int* kev, int* np,
        double* ritzr, double* ritzi, double* bounds)
 {
 
@@ -1835,7 +1836,7 @@ dngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
 }
 
 void
-dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
+dgetv0(struct ARNAUD_state_d *V, int initv, int n, int j,
        double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd)
 {
     int jj, int1 = 1;
@@ -1996,12 +1997,13 @@ LINE40:
     return;
 }
 
-void
-dsortc(const enum ARPACK_which w, const int apply, const int n, double* xreal, double* ximag, double* y)
+
+static void
+dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, double* ximag, double* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
-    ARPACK_compare_cfunc *f;
+    ARNAUD_compare_cfunc *f;
 
     switch (w)
     {
@@ -2028,36 +2030,35 @@ dsortc(const enum ARPACK_which w, const int apply, const int n, double* xreal, d
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(xreal[j], ximag[j], xreal[j+igap], ximag[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(xreal[pos], ximag[pos], xreal[pos+gap], ximag[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = xreal[j];
-                xreal[j] = xreal[j+igap];
-                xreal[j+igap] = temp;
-                temp = ximag[j];
-                ximag[j] = ximag[j+igap];
-                ximag[j+igap] = temp;
+                temp = xreal[pos];
+                xreal[pos] = xreal[pos+gap];
+                xreal[pos+gap] = temp;
+                temp = ximag[pos];
+                ximag[pos] = ximag[pos+gap];
+                ximag[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
+
 
 // The void casts are to avoid compiler warnings for unused parameters
 int
