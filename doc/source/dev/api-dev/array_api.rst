@@ -416,6 +416,13 @@ consider in-scope are evolving, and something which is now considered out-of-sco
 may be decided to be in-scope in the future if sufficient user interest and
 feasability are demonstrated.
 
+.. note::
+    The coverage percentages shown below may be below the
+    true values due to alternative backend support being added for some functions
+    before the infrastructure for registering this support was developed. This
+    situation is denoted by placing asterisks next to the percentages.
+    Documentation of alternative backend support is currently a work in progress.
+
 
 .. toctree::
    :hidden:

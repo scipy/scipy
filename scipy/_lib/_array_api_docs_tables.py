@@ -191,22 +191,20 @@ def make_flat_capabilities_table(
     -------
     output : list[dict[str, str]]
         `output` is a table in dict format
-        (keys corresponding to column names). If `modules` is a list, then the
-        first column will be "module" If `modules` is a string, then the
-        "module" column will be omitted. The other columns correspond to
-        supported backends for the given `backend_type`,
-        e.g. jax, torch, and dask on cpu. numpy is excluded because it should
-         always be supported. See the helper function
+        (keys corresponding to column names). The first column is "module".
+        The other columns correspond to supported backends for the given
+        `backend_type`, e.g. jax.numpy, torch, and dask on cpu.
+         numpy is excluded because it should always be supported.
+         See the helper function
         `_process_capabilities_table_entry` above).
 
     """
     if backend_type not in {"cpu", "gpu", "jit", "lazy"}:
         raise ValueError(f"Received unhandled backend type {backend_type}")
 
-    multiple_modules = True
     if isinstance(modules, str):
         modules = [modules]
-        multiple_modules = False
+
     if capabilities_table is None:
         capabilities_table = xp_capabilities_table
 
@@ -234,9 +232,7 @@ def make_flat_capabilities_table(
             if callable(thing) and hasattr(thing, "__name__"):
                 entry = xp_capabilities_table.get(thing, None)
                 capabilities = _process_capabilities_table_entry(entry)[backend_type]
-                # If a list of multiple modules is passed in, add the module
-                # as an entry of the table.
-                row = {"module": module_name} if multiple_modules else {}
+                row = {"module": module_name}
                 row.update({"function": name})
                 row.update(capabilities)
                 output.append(row)
@@ -250,7 +246,7 @@ def make_flat_capabilities_table(
 
 def calculate_table_statistics(
     flat_table: list[dict[str, str]]
-) -> dict[str, str] | dict[str, dict[str, str]]:
+) -> dict[str, tuple[dict[str, str], bool]]:
     """Get counts of what is supported per module.
 
     Parameters
@@ -260,36 +256,32 @@ def calculate_table_statistics(
 
     Returns
     -------
-    dict[str, str] | dict[str, dict[str, str]]
-        If `flat_table` is only for one module (and has no module column)
-        then the output is a dictionary with a key "total" and a key for
-        each backend column of the flat capabilities table. The value
+    dict[str, tuple[dict[str, str], bool]]
+        dict mapping module names to 2-tuples containing an inner dict and a
+        bool. The inner dicts have a key "total" along with keys for each
+        backend column of the supplied flat capabilities table. The value
         corresponding to total is the total count of functions in the given
         module, and the value associated to the other keys is the count of
-        functions that support that particular backend/details.
-
-        If `flat_table` has a module column, then the output will be a
-        dictionary with keys for each included module and values of type
-        dict[str, str] of the kind returned by this function when `flat_table`
-        has no module column.
+        functions that support that particular backend. The bool is False if
+        the calculation may be innacurate due to missing xp_capabilities
+        decorators, and True if all functions for that particular module have
+        been decorated with xp_capabilities.
     """
     if not flat_table:
         return []
-    table_contains_modules = "module" in flat_table[0]
-    if table_contains_modules:
-        counter = defaultdict(lambda: defaultdict(int))
-    else:
-        counter = defaultdict(int)
+
+    counter = defaultdict(lambda: defaultdict(int))
 
     S = BackendSupportStatus
+    # Keep track of which modules have functions with missing xp_capabilities
+    # decorators so this information can be passed back to the caller.
+    missing_xp_capabilities = set()
     for entry in flat_table:
         entry = entry.copy()
         entry.pop("function")
-        if table_contains_modules:
-            module = entry.pop("module")
-            current_counter = counter[module]
-        else:
-            current_counter = counter
+        module = entry.pop("module")
+        current_counter = counter[module]
+
         # By design, all backends and options must be considered out-of-scope
         # if one is, so just pick an arbitrary entry here to test if function is
         # in-scope.
@@ -298,11 +290,14 @@ def calculate_table_statistics(
             for key, value in entry.items():
                 # Functions missing xp_capabilities will be tabulated as
                 # unsupported, but may actually be supported. There is a
-                # note about this in the documentation.
+                # note about this in the documentation and this function is
+                # set up to return information needed to put asterisks next
+                # to percentages impacted by missing xp_capabilities decorators.
                 current_counter[key] += 1 if value == S.YES else 0
-    # Strip away dangerous defaultdictness
-    if table_contains_modules:
-        counter = {key: dict(value) for key, value in counter.items()}
-    else:
-        counter = dict(counter)
-    return counter
+                if value == S.UNKNOWN:
+                    missing_xp_capabilities.add(module)
+    return {
+        key: (dict(value), key not in missing_xp_capabilities)
+        for key, value in counter.items()
+    }
+
