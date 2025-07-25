@@ -1295,6 +1295,7 @@ def test_inital_maxstep():
             assert_equal(max_step, step_with_max)
 
 
+@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_tcrit_lsoda():
     """Verify that tcrit behavior is correct."""
     def fun(t, y):
