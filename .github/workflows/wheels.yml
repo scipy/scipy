@@ -231,8 +231,7 @@ jobs:
         run: |
           $CIBW_COMMAND = "bash {project}/tools/wheels/cibw_before_build_win.sh {project} && " +
                           "vcpkg install pkgconf && " +
-                          "copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe && " +
-                          "copy `"C:\Program Files\LLVM\lib\FortranRuntime.static.lib`" `"C:\Program Files\LLVM\lib\FortranRuntime.lib`""
+                          "copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe && "
           echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW_COMMAND" >> $env:GITHUB_ENV
 
       - name: Build wheels
