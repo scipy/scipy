@@ -87,7 +87,7 @@ jobs:
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2022, win, AMD64, ""]
+        - [windows-2022, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314-dev"], ["cp314t", "cp314-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -109,7 +109,7 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install rtools for win_amd64
+      - name: win_amd64 - install rtools
         if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
         run: |
           # mingw-w64
@@ -124,7 +124,6 @@ jobs:
           # passed through, so convert it to '/'
           $env:CIBW=$env:CIBW.replace("\","/")
           echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
-
 
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
