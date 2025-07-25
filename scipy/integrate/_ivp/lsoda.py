@@ -250,14 +250,10 @@ class LSODA(OdeSolver):
         self.tcrit = np.append(tcrit, t_bound)
 
     def _find_next_tcrit(self):
-        if self.tcrit.size == 0:
-            # System has reached t_bound
-            return self.t_bound
-        if self._lsoda_solver.t >= self.tcrit[0]:
-            # critical point reached, remove from the list
+        # if critical point reached, remove from the list
+        # don't remove last point, t_bound
+        if self._lsoda_solver.t >= self.tcrit[0] and self.tcrit.size>1:
             self.tcrit = self.tcrit[1:]
-        if self.tcrit.size == 0:
-            return self.t_bound
         return self.tcrit[0]
 
 class LsodaDenseOutput(DenseOutput):
