@@ -2,6 +2,7 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import check_random_state, _transition_to_rng
 
 
@@ -313,6 +314,7 @@ class FitResult:
         return ax
 
 
+@xp_capabilities(out_of_scope=True)
 def fit(dist, data, bounds=None, *, guess=None, method='mle',
         optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
@@ -738,6 +740,7 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
+@xp_capabilities(out_of_scope=True)
 @_transition_to_rng('random_state')
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', n_mc_samples=9999,

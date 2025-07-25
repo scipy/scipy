@@ -1,5 +1,6 @@
 from math import sqrt
 import numpy as np
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
@@ -199,6 +200,7 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     return lo, hi
 
 
+@xp_capabilities(np_only=True)
 def binomtest(k, n, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
