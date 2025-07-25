@@ -110,6 +110,23 @@ jobs:
         with:
           python-version: 3.11
 
+      - name: Install rtools for win_amd64
+        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
+        run: |
+          # mingw-w64
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+
+      - name: windows - set PKG_CONFIG_PATH
+        if: ${{ matrix.buildplat[1] == 'win' }}
+        run: |
+          $env:CIBW = "${{ github.workspace }}"
+          # It seems somewhere in the env passing, `\` is not
+          # passed through, so convert it to '/'
+          $env:CIBW=$env:CIBW.replace("\","/")
+          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+
+
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         run: |
@@ -193,29 +210,14 @@ jobs:
           CIBW="build; args: --no-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
-      - name: Windows - set environment variables
-        if: matrix.buildplat[1] == 'win'
+      - name: Set environment variables for ARM64
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: pwsh
         run: |
-          # Common Windows settings
-          $workspacePath = "${{ github.workspace }}".Replace("\","/")
-          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$workspacePath" >> $env:GITHUB_ENV
-
-          # ARM64 specific settings
-          if ('${{ matrix.buildplat[1] }}' -eq 'win' -and '${{ matrix.buildplat[2] }}' -eq 'ARM64') {
             echo "CC=clang-cl" >> $env:GITHUB_ENV
             echo "CXX=clang-cl" >> $env:GITHUB_ENV
             echo "FC=flang" >> $env:GITHUB_ENV
             echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
-            echo "PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;$($env:PATH)" >> $env:GITHUB_ENV
-          }
-
-      - name: Install rtools for win_amd64
-        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
-        run: |
-          # mingw-w64
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
    
       - name: Set up Flang and pkgconf for ARM64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
