@@ -74,11 +74,13 @@ def linear(r, xp):
     return -r
 
 
+# NB: changed w.r.t. pythran
 def thin_plate_spline(r, xp):
-    if r == 0:
-        return 0.0
-    else:
-        return r**2 * xp.log(r)
+ #   if r == 0:
+ #       return 0.0
+ #   else:
+ #       return r**2 * xp.log(r)
+    return xp.where(r == 0, 0, r**2 * xp.log(r))
 
 
 def cubic(r, xp):
@@ -240,8 +242,12 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
 #                          int[:, :],
 #                          float[:],
 #                          float[:])
-def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
-                                   shift, scale, xp):
+import torch
+
+torch._dynamo.config.cache_size_limit = 160
+
+@torch.compile(fullgraph=True, dynamic=True)
+def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, xp):
     """Construct the coefficients needed to evaluate
     the RBF.
 
@@ -276,10 +282,51 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
     xeps = x*epsilon
     xhat = (x - shift)/scale
 
+    # NB: changed w.r.t. pythran
+###    vec = _coeffs_inner(xeps, xhat, yeps, powers, kernel_func, xp)
     vec = xp.empty((q, p + r), dtype=xp.float64)
-    for i in range(q):
-        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p], xp)
-        polynomial_vector(xhat[i], powers, vec[i, p:], xp)
+    vec[:, :p] = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
+    vec[:, p:] = xp.prod(xhat[:, None, :] ** powers, axis=-1)
+
+#    for i in range(q):
+#        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p], xp)
+#        polynomial_vector(xhat[i], powers, vec[i, p:], xp)
+
+    '''
+    from numpy.testing import assert_allclose
+    assert_allclose(vec[:, p:], xp.prod(xhat[:, None, :] ** powers, axis=-1), atol=1e-15)
+    '''
+
+    '''
+    vec2 = xp.empty((q, p), dtype=xp.float64)
+    for i in range(x.shape[0]):
+        for j in range(y.shape[0]):
+            vec2[i, j] = kernel_func(xp.linalg.vector_norm(xeps[i] - yeps[j]), xp)
+
+
+    vec3 = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
+
+    from numpy.testing import assert_allclose
+    assert_allclose(vec[:, :p], vec2)
+
+    assert_allclose(vec2, vec3)
+    '''
 
     return vec
 
+
+import torch
+
+torch._dynamo.config.cache_size_limit = 160
+
+@torch.compile(fullgraph=True, dynamic=True)
+def _coeffs_inner(xeps, xhat, yeps, powers, kernel_func, xp):
+    q = xeps.shape[0]
+    p = yeps.shape[0]
+    r = powers.shape[0]
+
+    vec = xp.empty((q, p + r), dtype=xp.float64)
+    vec[:, :p] = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
+    vec[:, p:] = xp.prod(xhat[:, None, :] ** powers, axis=-1)
+
+    return vec
