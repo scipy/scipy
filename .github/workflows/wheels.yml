@@ -37,7 +37,7 @@ jobs:
   get_commit_message:
     name: Get commit message
     runs-on: ubuntu-latest
-#    if: github.repository == 'scipy/scipy'
+    if: github.repository == 'scipy/scipy'
     outputs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
@@ -79,18 +79,17 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2022, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        # - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        # - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        # - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
-        # - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        # - [macos-13, macosx, x86_64, openblas, "10.14"]
-        # - [macos-13, macosx, x86_64, accelerate, "14.0"]
-        # - [macos-14, macosx, arm64, openblas, "12.3"]
-        # - [macos-14, macosx, arm64, accelerate, "14.0"]
-        # - [windows-2022, win, AMD64, ""]
+        - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        - [macos-13, macosx, x86_64, openblas, "10.14"]
+        - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        - [macos-14, macosx, arm64, openblas, "12.3"]
+        - [macos-14, macosx, arm64, accelerate, "14.0"]
+        - [windows-2022, win, AMD64, ""]
         - [windows-11-arm, win, ARM64, "", ""]
-        python: [["cp311", "3.11"]]
-        # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314-dev"], ["cp314t", "cp314-dev"]]
+        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314-dev"], ["cp314t", "cp314-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
