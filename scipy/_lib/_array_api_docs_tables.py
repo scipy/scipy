@@ -8,6 +8,7 @@ columns correspond to library/device/option combinations.
 import types
 
 from collections import defaultdict
+from enum import auto, Enum
 from importlib import import_module
 
 from scipy._lib._array_api import xp_capabilities_table
@@ -69,6 +70,13 @@ BACKEND_NAMES_MAP = {
 }
 
 
+class BackendSupportStatus(Enum):
+    YES = auto()
+    NO = auto()
+    OUT_OF_SCOPE = auto()
+    UNKNOWN = auto()
+
+
 def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str, bool]]:
     """Returns dict showing alternative backend support in easy to consume form.
 
@@ -93,22 +101,30 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
         included since NumPY support should be guaranteed.
 
     """
+    # This is a template for the output format. If more backends and
+    # backend options are added, it will need to be updated manually.
+    # Entries start as boolean, but upon returning, will take values
+    # from the BackendSupportStatus Enum.
     output = {
         "cpu": {"torch": False, "jax": False, "dask": False},
         "gpu": {"cupy": False, "torch": False, "jax": False},
         "jit": {"jax": False},
         "lazy": {"dask": False},
     }
+    S = BackendSupportStatus
     if entry is None:
         # If there is no entry, assume no alternative backends are supported.
         # If the list of supported backends will grows, this hard-coded dict
         # will need to be updated.
-        return output
+        return {
+            outer_key: {inner_key: S.UNKNOWN for inner_key in outer_value}
+            for outer_key, outer_value in output.items()
+        }
 
     if entry["out_of_scope"]:
         # None is used to signify out-of-scope functions.
         return {
-            outer_key: {inner_key: None for inner_key in outer_value}
+            outer_key: {inner_key: S.OUT_OF_SCOPE for inner_key in outer_value}
             for outer_key, outer_value in output.items()
         }
 
@@ -140,7 +156,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
         if backend == "dask.array":
             support_lazy = not entry["allow_dask_compute"] and output["dask"]
             output["lazy"]["dask"] = support_lazy
-    return output
+        return {
+            outer_key: {
+                inner_key: S.YES if inner_value else S.NO
+                for inner_key, inner_value in outer_value.items()
+            }
+            for outer_key, outer_value in output.items()
+        }
 
 
 def make_flat_capabilities_table(
@@ -259,6 +281,7 @@ def calculate_table_statistics(
     else:
         counter = defaultdict(int)
 
+    S = BackendSupportStatus
     for entry in flat_table:
         entry = entry.copy()
         entry.pop("function")
@@ -267,13 +290,16 @@ def calculate_table_statistics(
             current_counter = counter[module]
         else:
             current_counter = counter
-        # All values in dict will be None for out-of-scope functions.
-        # There should be no other situations where a value will be None.
-        # Just pick an arbitrary entry here to test if function is in-scope.
-        if next(iter(entry.values())) is not None:
+        # By design, all backends and options must be considered out-of-scope
+        # if one is, so just pick an arbitrary entry here to test if function is
+        # in-scope.
+        if next(iter(entry.values())) != S.OUT_OF_SCOPE:
             current_counter["total"] += 1
             for key, value in entry.items():
-                current_counter[key] += value
+                # Functions missing xp_capabilities will be tabulated as
+                # unsupported, but may actually be supported. There is a
+                # note about this in the documentation.
+                current_counter[key] += 1 if value == S.YES else 0
     # Strip away dangerous defaultdictness
     if table_contains_modules:
         counter = {key: dict(value) for key, value in counter.items()}

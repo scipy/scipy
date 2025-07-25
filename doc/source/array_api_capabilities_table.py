@@ -11,6 +11,7 @@ from sphinx.util.typing import ExtensionMetadata
 
 from tabulate import tabulate
 
+from scipy._lib._array_api_docs_tables import BackendSupportStatus
 from scipy._lib._array_api_docs_tables import calculate_table_statistics
 from scipy._lib._array_api_docs_tables import make_flat_capabilities_table
 from scipy._lib._public_api import PUBLIC_MODULES
@@ -118,12 +119,19 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         headers += backends
 
         new_rows = []
+        S = BackendSupportStatus
         for row in relevant_rows:
             func = row["function"]
             new_row = [self._get_generated_doc_link_for_function(module, func)]
             for backend in backends:
                 supported = row[backend]
-                cell_text = "N/A" if supported is None else "✔️" if supported else "-"
+                cell_text = ""
+                if supported == S.OUT_OF_SCOPE:
+                    cell_text = "N/A"
+                elif supported == S.YES:
+                    cell_text = "✔️"
+                elif supported == S.NO:
+                    cell_text = "-"
                 new_row.append(cell_text)
             new_rows.append(new_row)
         return _make_reST_table(new_rows, headers, self.state)
