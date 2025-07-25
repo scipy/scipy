@@ -131,11 +131,18 @@ class ArrayAPISupportPerFunction(SphinxDirective):
                 elif supported == S.YES:
                     cell_text = "✔️"
                 elif supported == S.NO:
-                    cell_text = "-"
+                    cell_text = "✖"
                 new_row.append(cell_text)
             new_rows.append(new_row)
-        return _make_reST_table(new_rows, headers, self.state)
+        table_nodes = _make_reST_table(new_rows, headers, self.state)
 
+        legend = nodes.admonition()
+        legend += nodes.title(text="Legend")
+        legend += nodes.paragraph(text="✔️ = supported")
+        legend += nodes.paragraph(text="✖ = unsupported")
+        legend += nodes.paragraph(text="N/A = out-of-scope")
+        legend += nodes.paragraph(text="blank = not currently documented")
+        return [legend] + table_nodes
 
 def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive(
