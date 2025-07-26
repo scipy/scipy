@@ -143,26 +143,26 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
                     "Input capabilities table entry contains unhandled"
                     f" backend {backend} on cpu."
                 )
-            output["cpu"][backend] = capabilities.cpu
+            output["cpu"][backend] = cpu
         if gpu is not None:
             if backend not in output["gpu"]:
                 raise ValueError(
                     "Input capabilities table entry contains unhandled"
                     f" backend {backend} on gpu."
                 )
-            output["gpu"][backend] = capabilities.gpu
+            output["gpu"][backend] = gpu
         if backend == "jax":
             output["jit"]["jax"] = entry["jax_jit"] and output["cpu"]["jax"]
         if backend == "dask.array":
             support_lazy = not entry["allow_dask_compute"] and output["dask"]
             output["lazy"]["dask"] = support_lazy
-        return {
-            outer_key: {
-                inner_key: S.YES if inner_value else S.NO
-                for inner_key, inner_value in outer_value.items()
-            }
-            for outer_key, outer_value in output.items()
+    return {
+        outer_key: {
+            inner_key: S.YES if inner_value else S.NO
+            for inner_key, inner_value in outer_value.items()
         }
+        for outer_key, outer_value in output.items()
+    }
 
 
 def make_flat_capabilities_table(
