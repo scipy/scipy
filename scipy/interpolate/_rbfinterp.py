@@ -8,7 +8,7 @@ from scipy.spatial import KDTree
 from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
-from scipy._lib._array_api import _asarray, array_namespace, xp_size, is_numpy
+from scipy._lib._array_api import _asarray, array_namespace, xp_size, is_numpy, is_torch
 
 __all__ = ["RBFInterpolator"]
 
@@ -44,11 +44,20 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
+
+# sort out the backends  XXX: make decisions at import time
+import os
+USE_JIT = os.environ.get("SCIPY_JIT", 0) == "1"
+
 def _get_backend(xp):
     if is_numpy(xp):
         return _rbfinterp_np
     else:
-        return _rbfinterp_xp
+        if is_torch(xp) and USE_JIT:
+            from . import _rbfinterp_dynamo
+            return _rbfinterp_dynamo
+        else:
+            return _rbfinterp_xp
 
 
 class RBFInterpolator:

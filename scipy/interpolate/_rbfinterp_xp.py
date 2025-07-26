@@ -242,11 +242,9 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
 #                          int[:, :],
 #                          float[:],
 #                          float[:])
-import torch
-
-torch._dynamo.config.cache_size_limit = 160
-
-@torch.compile(fullgraph=True, dynamic=True)
+#import torch
+#torch._dynamo.config.cache_size_limit = 160
+#@torch.compile(fullgraph=True, dynamic=True)
 def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, xp):
     """Construct the coefficients needed to evaluate
     the RBF.
@@ -311,22 +309,5 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, 
 
     assert_allclose(vec2, vec3)
     '''
-
-    return vec
-
-
-import torch
-
-torch._dynamo.config.cache_size_limit = 160
-
-@torch.compile(fullgraph=True, dynamic=True)
-def _coeffs_inner(xeps, xhat, yeps, powers, kernel_func, xp):
-    q = xeps.shape[0]
-    p = yeps.shape[0]
-    r = powers.shape[0]
-
-    vec = xp.empty((q, p + r), dtype=xp.float64)
-    vec[:, :p] = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
-    vec[:, p:] = xp.prod(xhat[:, None, :] ** powers, axis=-1)
 
     return vec
