@@ -89,26 +89,6 @@ More strict array input validation will reject ``np.matrix`` and
     TypeError: object arrays are not supported
 
 
-Currently supported functionality
-`````````````````````````````````
-
-The following modules provide array API standard support when the environment
-variable is set:
-
-- `scipy.cluster`
-- `scipy.constants`
-- `scipy.datasets`
-- `scipy.fft`
-- `scipy.io`
-- `scipy.ndimage`
-- `scipy.special`
-- `scipy.stats`
-
-Individual functions in the above modules provide a capability table in the
-documentation like the one below. If the table is absent, the function does not
-yet support backends other than NumPy.
-
-
 Example capabilities table
 --------------------------
 
