@@ -51,6 +51,7 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'myst_nb',
     'jupyterlite_sphinx',
+    'array_api_capabilities_table',
 ]
 
 

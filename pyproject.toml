@@ -100,7 +100,8 @@ doc = [
     "pooch",
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
-    "linkify-it-py"
+    "linkify-it-py",
+    "tabulate"
 ]
 dev = [
     "spin",
