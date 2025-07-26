@@ -125,6 +125,18 @@ jobs:
           $env:CIBW=$env:CIBW.replace("\","/")
           echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
 
+      - name: Set environment variables for ARM64
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        run: |
+            echo "CC=clang-cl" >> $env:GITHUB_ENV
+            echo "CXX=clang-cl" >> $env:GITHUB_ENV
+            echo "FC=flang" >> $env:GITHUB_ENV
+            echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
+   
+      - name: Set up Flang and pkgconf for ARM64
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        uses: ./.github/windows_arm64_steps
+
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         run: |
@@ -208,19 +220,6 @@ jobs:
 
       #     CIBW="build; args: --no-isolation"
       #     echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
-
-      - name: Set environment variables for ARM64
-        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        shell: pwsh
-        run: |
-            echo "CC=clang-cl" >> $env:GITHUB_ENV
-            echo "CXX=clang-cl" >> $env:GITHUB_ENV
-            echo "FC=flang" >> $env:GITHUB_ENV
-            echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
-   
-      - name: Set up Flang and pkgconf for ARM64
-        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        uses: ./.github/windows_arm64_steps
 
       - name: Build wheels
         uses: pypa/cibuildwheel@ffd835cef18fa11522f608fc0fa973b89f5ddc87 # v3.1.0
