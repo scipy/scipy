@@ -4,8 +4,8 @@ SciPy 1.16.1 Release Notes
 
 .. contents::
 
-SciPy 1.16.1 is a bug-fix release with no new features
-compared to 1.16.0.
+SciPy 1.16.1 is a bug-fix release that adds support for
+Python 3.14.0rc1, including PyPI wheels.
 
 
 
