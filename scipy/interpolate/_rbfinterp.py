@@ -387,25 +387,29 @@ class RBFInterpolator:
         if chunksize <= nx:
             out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
             for i in range(0, nx, chunksize):
-                vec = _backend._build_evaluation_coefficients(
+                out[i:i + chunksize, :] = _backend.compute_interpolation(
                     x[i:i + chunksize, :],
                     y,
                     self.kernel,
                     self.epsilon,
                     self.powers,
                     shift,
-                    scale, self._xp)
-                out[i:i + chunksize, :] = vec @ coeffs
+                    scale,
+                    coeffs,
+                    self._xp
+                )
         else:
-            vec = _backend._build_evaluation_coefficients(
+            out = _backend.compute_interpolation(
                 x,
                 y,
                 self.kernel,
                 self.epsilon,
                 self.powers,
                 shift,
-                scale, self._xp)
-            out = vec @ coeffs
+                scale,
+                coeffs,
+                self._xp
+            )
         return out
 
     def __call__(self, x):
