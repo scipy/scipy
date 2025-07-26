@@ -51,7 +51,11 @@ USE_JIT = os.environ.get("SCIPY_JIT", 0) == "1"
 
 def _get_backend(xp):
     if is_numpy(xp):
-        return _rbfinterp_np
+        if USE_JIT:
+            from . import _rbfinterp_numba
+            return _rbfinterp_numba
+        else:
+            return _rbfinterp_np
     else:
         if is_torch(xp) and USE_JIT:
             from . import _rbfinterp_dynamo

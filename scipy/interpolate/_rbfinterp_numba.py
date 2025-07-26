@@ -1,0 +1,172 @@
+"""RBF backend with numba JIT compiled evaluations.
+"""
+import numba
+
+from ._rbfinterp_np import *
+
+# bring the _undersored names, too
+from ._rbfinterp_np import (
+    _build_and_solve_system, _build_evaluation_coefficients, _build_system, 
+    _monomial_powers, _monomial_powers_impl, _polynomial_matrix
+)
+
+#import torch
+#compute_interpolation = torch.compile(fullgraph=True, dynamic=True)(compute_interpolation)
+
+# needed for tests
+#torch._dynamo.config.cache_size_limit = 160
+
+
+### Copy-paste from _rbfinterp_pythran.py
+
+
+import numpy as np
+
+
+@numba.njit
+def linear(r):
+    return -r
+
+
+@numba.njit
+def thin_plate_spline(r):
+    if r == 0:
+        return 0.0
+    else:
+        return r**2*np.log(r)
+
+
+@numba.njit
+def cubic(r):
+    return r**3
+
+
+@numba.njit
+def quintic(r):
+    return -r**5
+
+
+@numba.njit
+def multiquadric(r):
+    return -np.sqrt(r**2 + 1)
+
+
+@numba.njit
+def inverse_multiquadric(r):
+    return 1/np.sqrt(r**2 + 1)
+
+
+@numba.njit
+def inverse_quadratic(r):
+    return 1/(r**2 + 1)
+
+
+@numba.njit
+def gaussian(r):
+    return np.exp(-r**2)
+
+
+NAME_TO_FUNC = {
+   "linear": linear,
+   "thin_plate_spline": thin_plate_spline,
+   "cubic": cubic,
+   "quintic": quintic,
+   "multiquadric": multiquadric,
+   "inverse_multiquadric": inverse_multiquadric,
+   "inverse_quadratic": inverse_quadratic,
+   "gaussian": gaussian
+   }
+
+
+# copy-paste from _rbfinterp_xp.py
+
+def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale):
+    """Construct the coefficients needed to evaluate
+    the RBF.
+
+    Parameters
+    ----------
+    x : (Q, N) float ndarray
+        Evaluation point coordinates.
+    y : (P, N) float ndarray
+        Data point coordinates.
+    kernel : str
+        Name of the RBF.
+    epsilon : float
+        Shape parameter.
+    powers : (R, N) int ndarray
+        The exponents for each monomial in the polynomial.
+    shift : (N,) float ndarray
+        Shifts the polynomial domain for numerical stability.
+    scale : (N,) float ndarray
+        Scales the polynomial domain for numerical stability.
+
+    Returns
+    -------
+    (Q, P + R) float ndarray
+
+    """
+    kernel_func = NAME_TO_FUNC[kernel]
+    return _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shift, scale)
+
+
+@numba.njit
+def _norm(x):
+    # numba 0.61.2 fails to compile np.linalg.vector_norm or np.linalg.norm(x, axis=-1)
+    # Thus inline from https://github.com/numpy/numpy/blob/v2.2.0/numpy/linalg/_linalg.py#L2779C1-L2781C69
+    s = (x * x)
+    return np.sqrt(np.sum(s, axis=-1))
+
+
+
+@numba.njit
+def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shift, scale):
+    q = x.shape[0]
+    p = y.shape[0]
+    r = powers.shape[0]
+
+    yeps = y*epsilon
+    xeps = x*epsilon
+    xhat = (x - shift)/scale
+
+    vec = np.empty((q, p + r), dtype=float)
+    xxx = xeps[:, None, :] - yeps[None, :, :]
+    yyy = _norm(xxx)
+    vec[:, :p] = kernel_func(yyy)
+    vec[:, p:] = np.prod(xhat[:, None, :] ** powers, axis=-1)
+
+#    for i in range(q):
+#        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p], xp)
+#        polynomial_vector(xhat[i], powers, vec[i, p:], xp)
+
+    '''
+    from numpy.testing import assert_allclose
+    assert_allclose(vec[:, p:], xp.prod(xhat[:, None, :] ** powers, axis=-1), atol=1e-15)
+    '''
+
+    '''
+    vec2 = xp.empty((q, p), dtype=xp.float64)
+    for i in range(x.shape[0]):
+        for j in range(y.shape[0]):
+            vec2[i, j] = kernel_func(xp.linalg.vector_norm(xeps[i] - yeps[j]), xp)
+
+
+    vec3 = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
+
+    from numpy.testing import assert_allclose
+    assert_allclose(vec[:, :p], vec2)
+
+    assert_allclose(vec2, vec3)
+    '''
+    return vec
+
+
+@numba.njit
+def compute_interpolation_impl(x, y, kernel_func, epsilon, powers, shift, scale, coeffs):
+    vec = _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shift, scale)
+    return vec @ coeffs
+
+
+def compute_interpolation(x, y, kernel, epsilon, powers, shift, scale, coeffs, xp):
+    kernel_func = NAME_TO_FUNC[kernel]
+    return compute_interpolation_impl(x, y, kernel_func, epsilon, powers, shift, scale, coeffs)
