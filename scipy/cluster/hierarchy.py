@@ -3051,6 +3051,7 @@ _link_line_colors_default = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9
 _link_line_colors = list(_link_line_colors_default)
 
 
+@xp_capabilities(out_of_scope=True)
 def set_link_color_palette(palette):
     """
     Set list of matplotlib color codes for use by dendrogram.
