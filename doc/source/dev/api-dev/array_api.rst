@@ -500,7 +500,6 @@ Support with JIT
    :cluster.vq: array_api_support_cluster_vq_jit
    :cluster.hierarchy: array_api_support_cluster_hierarchy_jit
    :constants: array_api_support_constants_jit
-   :datasets: array_api_support_datasets_jit
    :differentiate: array_api_support_differentiate_jit
    :fft: array_api_support_fft_jit
    :integrate: array_api_support_integrate_jit
