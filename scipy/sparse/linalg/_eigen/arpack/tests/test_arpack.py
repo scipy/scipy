@@ -393,16 +393,13 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-@pytest.mark.iterations(1)
 @pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
                                          (0.5, 'buckling'), (0.5, 'cayley')])
 @pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
 @pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
 @pytest.mark.parametrize("typ", ['f', 'd'])
 @pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
-def test_symmetric_modes(num_parallel_threads, D, typ, which, mattype,
-                         sigma, mode):
-    assert num_parallel_threads == 1
+def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
     rng = np.random.default_rng(1749531508689996)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)

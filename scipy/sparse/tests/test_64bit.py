@@ -84,7 +84,7 @@ def cases_64bit(sp_api):
                 yield pytest.param(cls, method_name, marks=marks)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 class RunAll64Bit:
     def _check_resiliency(self, cls, method_name, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
@@ -208,7 +208,7 @@ class Test64BitMatrixExtra(RunAll64Bit):
         self._check_resiliency(cls, method_name)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="Fails in parallel for unknown reasons")
 class Test64BitTools:
     # classes that use get_index_dtype
     MAT_CLASSES = [

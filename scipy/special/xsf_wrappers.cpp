@@ -586,12 +586,6 @@ double xsf_chdtrc(double df, double x) { return xsf::chdtrc(df, x); }
 
 double xsf_chdtri(double df, double y) { return xsf::chdtri(df, y); }
 
-double xsf_fdtr(double a, double b, double x) { return xsf::fdtr(a, b, x); }
-
-double xsf_fdtrc(double a, double b, double x) { return xsf::fdtrc(a, b, x); }
-
-double xsf_fdtri(double a, double b, double y) { return xsf::fdtri(a, b, y); }
-
 double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }

@@ -1639,6 +1639,9 @@ class _TestCommon:
         B = array([[0,7,0],[0,-4,0]])
         Asp = self.spcreator(A)
         Bsp = self.spcreator(B)
+        # check output format
+        out_fmt = Asp.format if Asp.format in ('csc', 'dia', 'bsr') else 'csr'
+        assert (Asp.multiply(Bsp)).format == out_fmt
         assert_almost_equal(Asp.multiply(Bsp).toarray(), A*B)  # sparse/sparse
         assert_almost_equal(Asp.multiply(B).toarray(), A*B)  # sparse/dense
 
@@ -2609,7 +2612,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
