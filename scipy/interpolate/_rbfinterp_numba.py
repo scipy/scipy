@@ -166,7 +166,6 @@ def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shif
     return vec
 
 
-@numba.njit
 def compute_interpolation_impl(x, y, kernel_func, epsilon, powers, shift, scale, coeffs):
     vec = _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shift, scale)
     return vec @ coeffs
