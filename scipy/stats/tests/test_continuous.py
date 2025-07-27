@@ -1237,6 +1237,12 @@ class TestMakeDistribution:
 
         X = LogUniform(a=np.exp(1), b=np.exp(3))
         Y = stats.exp(Uniform(a=1., b=3.))
+
+        # pre-2.0 support is not needed for much longer, so let's just test with 2.0+
+        if np.__version__ >= "2.0":
+            assert str(Y) == "exp(Uniform(a=1.0, b=3.0))"
+            assert repr(Y) == "exp(Uniform(a=np.float64(1.0), b=np.float64(3.0)))"
+
         x = X.sample(shape=10, rng=rng)
         p = X.cdf(x)
 
