@@ -79,17 +79,17 @@ def laplacian(
 
         * 'standard': No modification of edge weights when computing D or A.
           This is called "repelling" in [2].
-          - :math:`D_i = \\sum_j G_{ij}`
-          - :math:`A_{ij} = G_{ij}`
+            - :math:`D_i = \\sum_j G_{ij}`
+            - :math:`A_{ij} = G_{ij}`
         * 'opposing': Absolute value only for the degree computation,
           so that positive and negative weights cannot cancel out.
           see [3] for a discussion of this variant.
-          - :math:`D_i = \\sum_j |G_{ij}|`
-          - :math:`A_{ij} = G_{ij}`
+            - :math:`D_i = \\sum_j |G_{ij}|`
+            - :math:`A_{ij} = G_{ij}`
         * 'unsigned': Absolute value for both degree and adjacency,
           discarding all sign information.
-          - :math:`D_i = \\sum_j |G_{ij}|`
-          - :math:`A_{ij} = |G_{ij}|`
+            - :math:`D_i = \\sum_j |G_{ij}|`
+            - :math:`A_{ij} = |G_{ij}|`
 
         Default: 'standard'.
 
@@ -316,7 +316,7 @@ def laplacian(
            [ 1,  0,  1],
            [-1,  1,  0]])
 
-    Setting signed_graph_variant="standard" (default),
+    Setting `signed_graph_variant="standard"` (default),
     positive and negative edge weights cancel during degree computation:
 
     >>> L_standard, d_standard = csgraph.laplacian(G, return_diag=True)
@@ -327,7 +327,7 @@ def laplacian(
     >>> d_standard
     array([0, 2, 0])
 
-    Setting signed_graph_variant="opposing" prevents cancellation
+    Setting `signed_graph_variant="opposing"` prevents cancellation
     for the degree computation by summing absolute edge weights:
 
     >>> L_opposing, d_opposing = csgraph.laplacian(
@@ -342,10 +342,10 @@ def laplacian(
     >>> d_opposing
     array([2, 2, 2])
 
-    Setting signed_graph_variant="unsigned" uses absolute value
+    Setting `signed_graph_variant="unsigned"` uses absolute value
     for both degree and adjacency, discarding all sign information.
     This is same as
-    csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard"):
+    `csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard")`:
 
     >>> L_unsigned, d_unsigned = csgraph.laplacian(
     ...     G,
