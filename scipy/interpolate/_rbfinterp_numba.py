@@ -78,7 +78,7 @@ NAME_TO_FUNC = {
    }
 
 
-# copy-paste from _rbfinterp_xp.py
+# copy-paste from _rbfinterp_np.py / _rbfinterp_pythran.py
 
 def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale):
     """Construct the coefficients needed to evaluate
@@ -111,12 +111,17 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale):
 
 
 @numba.njit
-def _norm(x):
-    # numba 0.61.2 fails to compile np.linalg.vector_norm or np.linalg.norm(x, axis=-1)
-    # Thus inline from https://github.com/numpy/numpy/blob/v2.2.0/numpy/linalg/_linalg.py#L2779C1-L2781C69
-    s = (x * x)
-    return np.sqrt(np.sum(s, axis=-1))
+def kernel_vector(x, y, kernel_func, out):
+    """Evaluate RBFs, with centers at `y`, at the point `x`."""
+    for i in range(y.shape[0]):
+        out[i] = kernel_func(np.linalg.norm(x - y[i]))
 
+
+@numba.njit
+def polynomial_vector(x, powers, out):
+    """Evaluate monomials, with exponents from `powers`, at the point `x`."""
+    for i in range(powers.shape[0]):
+        out[i] = np.prod(x**powers[i])
 
 
 @numba.njit
@@ -130,14 +135,14 @@ def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shif
     xhat = (x - shift)/scale
 
     vec = np.empty((q, p + r), dtype=float)
-    xxx = xeps[:, None, :] - yeps[None, :, :]
-    yyy = _norm(xxx)
-    vec[:, :p] = kernel_func(yyy)
-    vec[:, p:] = np.prod(xhat[:, None, :] ** powers, axis=-1)
+ #   xxx = xeps[:, None, :] - yeps[None, :, :]
+ #   yyy = _norm(xxx)
+ #   vec[:, :p] = kernel_func(yyy)
+ #   vec[:, p:] = np.prod(xhat[:, None, :] ** powers, axis=-1)
 
-#    for i in range(q):
-#        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p], xp)
-#        polynomial_vector(xhat[i], powers, vec[i, p:], xp)
+    for i in range(q):
+        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
+        polynomial_vector(xhat[i], powers, vec[i, p:])
 
     '''
     from numpy.testing import assert_allclose
@@ -170,3 +175,14 @@ def compute_interpolation_impl(x, y, kernel_func, epsilon, powers, shift, scale,
 def compute_interpolation(x, y, kernel, epsilon, powers, shift, scale, coeffs, xp):
     kernel_func = NAME_TO_FUNC[kernel]
     return compute_interpolation_impl(x, y, kernel_func, epsilon, powers, shift, scale, coeffs)
+
+
+# XXX: apparently not used. Was added to try working around numba failing to
+#      jit compile np.linal.norm
+
+@numba.njit
+def _norm(x):
+    # numba 0.61.2 fails to compile np.linalg.vector_norm or np.linalg.norm(x, axis=-1)
+    # Thus inline from https://github.com/numpy/numpy/blob/v2.2.0/numpy/linalg/_linalg.py#L2779C1-L2781C69
+    s = (x * x)
+    return np.sqrt(np.sum(s, axis=-1))
