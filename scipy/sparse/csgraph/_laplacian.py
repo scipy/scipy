@@ -72,8 +72,9 @@ def laplacian(
         Default: False, for backward compatibility.
     signed_graph_variant : 'standard', 'opposing' or 'unsigned'
         This option only has an effect when the graph contains negative edge weights;
-        it does nothing for graphs with all non-negative weights.  The Laplacian is
-        always assembled as :math:`L = D - A`, but D and A are replaced as described below.
+        it does nothing for graphs with all non-negative weights.
+        The Laplacian is always assembled as :math:`L = D - A`,
+        but D and A are replaced as described below.
         See [2] for a detailed discussion of each variant:
 
         * 'standard': No modification of edge weights when computing D or A.
