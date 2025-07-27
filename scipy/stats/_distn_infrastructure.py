@@ -3809,7 +3809,7 @@ class rv_discrete(rv_generic):
         For discrete distributions, the `sf` is not strictly invertible. By convention,
         this method returns the minimum value `k` for which the `sf` at `k` is
         no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
-        where ``a`` is the right endpoint of the support.
+        where ``a`` is the left endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
