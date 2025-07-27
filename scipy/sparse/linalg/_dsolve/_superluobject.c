@@ -12,6 +12,7 @@
 
 #include "_superluobject.h"
 #include <ctype.h>
+#include <stdbool.h>
 
 
 /***********************************************************************
@@ -105,10 +106,159 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     return NULL;
 }
 
+
+static bool is_empty_matrix(const SuperMatrix * A)
+{
+    return (A->nrow == 0 && A->ncol == 0);
+}
+
+
+static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
+                               PyObject * kwds)
+{
+    static char *kwlist[] = { "ord", NULL };
+    PyObject* volatile ord_obj = NULL;  /* hold the "ord" argument */
+
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
+
+    if (!CHECK_SLU_TYPE(self->type)) {
+        PyErr_SetString(PyExc_ValueError, "unsupported data type");
+        return NULL;
+    }
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &ord_obj))
+        return NULL;
+
+    /* Parse the "ord" argument, which specifies the norm to use.
+     * If not given, we default to '1' (the 1-norm).
+     */
+    char norm_c;
+
+    if (ord_obj == NULL || ord_obj == Py_None) {
+        norm_c = '1';
+    } else if (PyLong_Check(ord_obj)) {  /* check if it's an integer */
+        long ord = PyLong_AsLong(ord_obj);
+        if (ord == -1 && PyErr_Occurred()) {
+            return NULL;  /* conversion error */
+        }
+        if (ord == 1) {
+            norm_c = '1';
+        } else {
+            PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
+            return NULL;
+        }
+    } else if (PyFloat_Check(ord_obj)) {  /* check if it's a float (np.inf) */
+        double ord = PyFloat_AsDouble(ord_obj);
+        if (ord == -1.0 && PyErr_Occurred()) {
+            return NULL;  /* conversion error */
+        }
+        if (ord == NPY_INFINITY) {
+            norm_c = 'I';  /* infinity norm */
+        } else {
+            PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
+            return NULL;
+        }
+    } else {
+        PyErr_SetString(PyExc_TypeError, "ord must be 1 or np.inf");
+        return NULL;
+    }
+
+    const bool return_float = (self->type == NPY_FLOAT || self->type == NPY_CFLOAT);
+
+    /* Check for empty matrix */
+    if (is_empty_matrix(&self->L) && is_empty_matrix(&self->U)) {
+        /* Empty matrix, return 0.0 */
+        if (return_float) {
+            float condf = 0.0f;
+            return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+        } else {
+            double condd = 0.0;
+            return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+        }
+    }
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        goto fail;
+    }
+
+    /* Output from gscon */
+    volatile SuperLUStat_t stat = { 0 };
+    StatInit((SuperLUStat_t *)&stat);
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+
+    SLU_BEGIN_THREADS;
+
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        SLU_END_THREADS;
+        goto fail;
+    }
+
+    /* Outputs from gscon */
+    volatile float rcondf;
+    volatile double rcondd;
+    volatile int info;
+
+    switch (self->type) {
+        case NPY_FLOAT:
+            sgscon(
+                (char *)&norm_c, &self->L, &self->U, self->anorm.f,
+                (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_DOUBLE:
+            dgscon(
+                (char *)&norm_c, &self->L, &self->U, self->anorm.d,
+                (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_CFLOAT:
+            cgscon(
+                (char *)&norm_c, &self->L, &self->U, self->anorm.f,
+                (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_CDOUBLE:
+            zgscon(
+                (char *)&norm_c, &self->L, &self->U, self->anorm.d,
+                (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        default: 
+            PyErr_SetString(PyExc_ValueError, "unsupported data type");
+            return NULL;
+    }
+
+    SLU_END_THREADS;
+
+    if (info) {
+        PyErr_SetString(PyExc_SystemError,
+                        "gscon was called with invalid arguments");
+        goto fail;
+    }
+
+    StatFree((SuperLUStat_t *)&stat);
+
+    /* The norm is always a real float or double, depending on the type
+     * of the matrix. Return a numpy scalar with the appropriate type.
+     */
+    if (return_float) {
+        float condf = 1.0 / rcondf;
+        return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+    } else {
+        double condd = 1.0 / rcondd;
+        return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+    }
+
+  fail:
+    XStatFree((SuperLUStat_t *)&stat);
+    return NULL;
+}
+
+
 /** table of object methods
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"cond1est", (PyCFunction) SuperLU_cond1est, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
@@ -720,6 +870,26 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     self->cached_L = NULL;
     self->py_csc_construct_func = NULL;
     self->type = intype;
+
+    /* Call the appropriate function to compute the 1-norm of the matrix */
+    char norm_c = '1';  /* default to 1-norm */
+    switch (self->type) {
+        case NPY_FLOAT:
+            self->anorm.f = slangs(&norm_c, A);
+            break;
+        case NPY_DOUBLE:
+            self->anorm.d = dlangs(&norm_c, A);
+            break;
+        case NPY_CFLOAT:
+            self->anorm.f = clangs(&norm_c, A);
+            break;
+        case NPY_CDOUBLE:
+            self->anorm.d = zlangs(&norm_c, A);
+            break;
+        default: 
+            PyErr_SetString(PyExc_ValueError, "unsupported data type");
+            return NULL;
+    }
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
