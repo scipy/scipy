@@ -375,8 +375,8 @@ relevant public classes. Functions which are deemed out-of-scope are excluded
 from consideration. If a module or submodule contains no in-scope functions, it
 is excluded from the tables. For example, `scipy.spatial.transform` is currently
 excluded because it's API contains no functions, but may be included in the future
-when the scope expands to include classes. `scipy.odr` is excluded because its
-contents are considered out-of-scope.
+when the scope expands to include classes. `scipy.odr` and `scipy.datasets` is excluded
+because its contents are considered out-of-scope.
 
 There is not yet a formal policy for which functions should be considered
 out-of-scope for alternative backend support. Some general rules of thumb
@@ -410,7 +410,6 @@ feasability are demonstrated.
    array_api_modules_tables/cluster_vq
    array_api_modules_tables/cluster_hierarchy
    array_api_modules_tables/constants
-   array_api_modules_tables/datasets
    array_api_modules_tables/differentiate
    array_api_modules_tables/fft
    array_api_modules_tables/integrate
@@ -441,7 +440,6 @@ Support on CPU
    :cluster.vq: array_api_support_cluster_vq_cpu
    :cluster.hierarchy: array_api_support_cluster_hierarchy_cpu
    :constants: array_api_support_constants_cpu
-   :datasets: array_api_support_datasets_cpu
    :differentiate: array_api_support_differentiate_cpu
    :fft: array_api_support_fft_cpu
    :integrate: array_api_support_integrate_cpu
@@ -472,7 +470,6 @@ Support on GPU
    :cluster.vq: array_api_support_cluster_vq_gpu
    :cluster.hierarchy: array_api_support_cluster_hierarchy_gpu
    :constants: array_api_support_constants_gpu
-   :datasets: array_api_support_datasets_gpu
    :differentiate: array_api_support_differentiate_gpu
    :fft: array_api_support_fft_gpu
    :integrate: array_api_support_integrate_gpu
