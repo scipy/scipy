@@ -1764,6 +1764,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
+@skip_xp_backends(cpu_only=True)
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -1791,10 +1792,10 @@ class TestLSQ:
         xp_assert_close(b.c, c1)
 
     @parametrize_lsq_methods
-    def test_weights(self, method):
+    def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = self.x, self.y, self.t, self.k
-        w = np.ones_like(x)
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
         b_w = make_lsq_spline(x, y, t, k, w=w, method=method)
@@ -1803,79 +1804,84 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
 
-    def test_weights_same(self):
+    def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = self.x, self.y, self.t, self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
+        w = xp.asarray(w)
 
         b_ne = make_lsq_spline(x, y, t, k, w=w, method="norm-eq")
         b_qr = make_lsq_spline(x, y, t, k, w=w, method="qr")
         b_no_w = make_lsq_spline(x, y, t, k, method="qr")
 
         xp_assert_close(b_ne.c, b_qr.c, atol=1e-14)
-        assert not np.allclose(b_no_w.c, b_qr.c, atol=1e-14)
+        assert not xp.all(xp.abs(b_no_w.c - b_qr.c) < 1e-14)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
+        y = xp.asarray(y)
+
         b = make_lsq_spline(x, y, t, k, method=method)
-        assert b.c.shape == (t.size-k-1, 5, 6, 7)
+        assert b.c.shape == (t.shape[0] - k - 1, 5, 6, 7)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs_2(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_2(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b = make_lsq_spline(x, y, t, k, method=method)
 
         bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
               for i in range(nrhs)]
-        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+        coefs = xp.stack([bb[i].c for i in range(nrhs)]).T
 
         xp_assert_close(coefs, b.c, atol=1e-15)
 
-    def test_multiple_rhs_3(self):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_3(self, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b_qr = make_lsq_spline(x, y, t, k, method="qr")
         b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
         xp_assert_close(b_qr.c, b_neq.c, atol=1e-15)
 
     @parametrize_lsq_methods
-    def test_complex(self, method):
+    def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
-        b_re = make_lsq_spline(x, yc.real, t, k, method=method)
-        b_im = make_lsq_spline(x, yc.imag, t, k, method=method)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k, method=method)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k, method=method)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
-    def test_complex_2(self):
+    def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
-        yc = np.stack((yc, yc), axis=1)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
         # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
-        yc = np.stack((yc, yc), axis=1)
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
@@ -2167,6 +2173,7 @@ def data_file(basename):
                         'data', basename)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestSmoothingSpline:
     #
     # test make_smoothing_spline
@@ -2258,7 +2265,7 @@ class TestSmoothingSpline:
         # result in conflicting dtypes on big endian systems.
         xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
-    def test_non_regularized_case(self):
+    def test_non_regularized_case(self, xp):
         """
         In case the regularization parameter is 0, the resulting spline
         is an interpolation spline with natural boundary conditions.
@@ -2269,29 +2276,33 @@ class TestSmoothingSpline:
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = xp.asarray(x), xp.asarray(y)
+
         spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
 
-        grid = np.linspace(x[0], x[-1], 2 * n)
+        grid = xp.linspace(x[0], x[-1], 2 * n)
         xp_assert_close(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
 
     @pytest.mark.fail_slow(2)
-    def test_weighted_smoothing_spline(self):
+    def test_weighted_smoothing_spline(self, xp):
         # create data sample
         rng = np.random.RandomState(1234)
         n = 100
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = map(xp.asarray, (x, y))
+
         spl = make_smoothing_spline(x, y)
 
         # in order not to iterate over all of the indices, we select 10 of
         # them randomly
         for ind in rng.choice(range(100), size=10):
-            w = np.ones(n)
-            w[ind] = 30.
+            w = xp.ones(n)
+            xpx.at(w, int(ind)).set(30.)    # w[int(ind)] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
             # original point than the one without weights
@@ -3225,6 +3236,7 @@ def _add_knot(x, t, k, residuals):
     return t_new
 
 
+@skip_xp_backends(cpu_only=True)
 class TestGenerateKnots:
     def test_split_add_knot(self):
         # smoke test implementation details: insert a new knot given residuals
@@ -3251,28 +3263,31 @@ class TestGenerateKnots:
         xp_assert_close(new_t2, new_t2_py, atol=1e-15)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
-    def test_s0(self, k):
-        x = np.arange(8, dtype=np.float64)
-        y = np.sin(x*np.pi/8)
+    def test_s0(self, k, xp):
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         t = list(generate_knots(x, y, k=k, s=0))[-1]
 
         tt = splrep(x, y, k=k, s=0)[0]
+        tt = xp.asarray(tt, dtype=xp.float64)
         xp_assert_close(t, tt, atol=1e-15)
 
-    def test_s0_1(self):
+    def test_s0_1(self, xp):
         # with these data, naive algorithm tries to insert >= nmax knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
-    def test_s0_n20(self):
+    def test_s0_n20(self, xp):
         n = 20
-        x = np.arange(n)
+        x = xp.arange(n)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
     def test_s0_nest(self):
         # s=0 and non-default nest: not implemented, errors out
@@ -3281,7 +3296,7 @@ class TestGenerateKnots:
         with assert_raises(ValueError):
             list(generate_knots(x, y, k=3, s=0, nest=10))
 
-    def test_s_switch(self):
+    def test_s_switch(self, xp):
         # test the process switching to interpolating knots when len(t) == m + k + 1
         """
         To generate the `wanted` list below apply the following diff and rerun
@@ -3304,8 +3319,8 @@ index 1afb1900f1..d817e51ad8 100644
            if(n.eq.nmax) go to 10
  c  test whether we cannot further increase the number of knots.
         """  # NOQA: E501
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*np.pi/8)
         k = 3
 
         knots = list(generate_knots(x, y, k=k, s=1e-7))
@@ -3315,6 +3330,7 @@ index 1afb1900f1..d817e51ad8 100644
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
+        wanted = [xp.asarray(want, dtype=xp.float64) for want in wanted]
 
         assert len(knots) == len(wanted)
         for t, tt in zip(knots, wanted):
@@ -3322,7 +3338,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         # also check that the last knot vector matches FITPACK
         t, _, _ = splrep(x, y, k=k, s=1e-7)
-        xp_assert_close(knots[-1], t, atol=1e-15)
+        xp_assert_close(knots[-1], xp.asarray(t), atol=1e-15)
 
     def test_list_input(self):
         # test that list inputs are accepted
@@ -3330,15 +3346,18 @@ index 1afb1900f1..d817e51ad8 100644
         gen = generate_knots(x, x, s=0.1, k=1)
         next(gen)
 
-    def test_nest(self):
+    def test_nest(self, xp):
         # test that nest < nmax stops the process early (and we get 10 knots not 12)
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         s = 1e-7
 
         knots = list(generate_knots(x, y, k=3, s=s, nest=10))
-        xp_assert_close(knots[-1],
-                        [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
+        xp_assert_close(
+            knots[-1],
+            xp.asarray([0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], dtype=xp.float64),
+            atol=1e-15
+        )
 
         with assert_raises(ValueError):
             # nest < 2*(k+1)
@@ -3458,6 +3477,7 @@ class F_dense:
         return fp - self.s
 
 
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplrep:
     def test_input_errors(self):
         x = np.linspace(0, 10, 11)
@@ -3514,12 +3534,12 @@ class TestMakeSplrep:
             # len(x) != len(y)
             make_splrep(np.arange(8), np.arange(9), s=0.1)
 
-    def _get_xykt(self):
-        x = np.linspace(0, 5, 11)
-        y  = np.sin(x*3.14 / 5)**2
+    def _get_xykt(self, xp=np):
+        x = xp.linspace(0, 5, 11)
+        y  = xp.sin(x*3.14 / 5)**2
         k = 3
         s = 1.7e-4
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
         return x, y, k, s, tt
 
@@ -3562,18 +3582,19 @@ class TestMakeSplrep:
         assert D.shape[0] == n - 2*k - 2   # number of internal knots
         xp_assert_close(D, D_dense, atol=1e-15)
 
-    def test_simple_vs_splrep(self):
-        x, y, k, s, tt = self._get_xykt()
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+    def test_simple_vs_splrep(self, xp):
+        x, y, k, s, tt = self._get_xykt(xp)
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
-        t,c,k = splrep(x, y, k=k, s=s)
+        t, c, k = splrep(x, y, k=k, s=s)
+        t, c = xp.asarray(t), xp.asarray(c)
         assert all(t == tt)
 
         spl = make_splrep(x, y, k=k, s=s)
-        xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
+        xp_assert_close(c[:spl.c.shape[0]], spl.c, atol=1e-15)
 
-    def test_with_knots(self):
-        x, y, k, s, _ = self._get_xykt()
+    def test_with_knots(self, xp):
+        x, y, k, s, _ = self._get_xykt(xp)
 
         t = list(generate_knots(x, y, k=k, s=s))[-1]
 
@@ -3584,18 +3605,18 @@ class TestMakeSplrep:
         xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
         assert spl_auto.k == spl_t.k
 
-    def test_no_internal_knots(self):
+    def test_no_internal_knots(self, xp):
         # should not fail if there are no internal knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         k = 3
         spl = make_splrep(x, y, k=k, s=1)
         assert spl.t.shape[0] == 2*(k+1)
 
-    def test_default_s(self):
+    def test_default_s(self, xp):
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         spl = make_splrep(x, y, k=3)
         spl_i = make_interp_spline(x, y, k=3)
@@ -3630,10 +3651,10 @@ class TestMakeSplrep:
         with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
 
-    def test_shape(self):
+    def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl = make_splrep(x, y, k=k)
@@ -3646,10 +3667,10 @@ class TestMakeSplrep:
         spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5)
         assert spl_2.c.ndim == 1
 
-    def test_s0_vs_not(self):
+    def test_s0_vs_not(self, xp):
         # check that the shapes are consistent
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl_0 = make_splrep(x, y, k=3, s=0)
@@ -3662,10 +3683,11 @@ class TestMakeSplrep:
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplprep:
-    def _get_xyk(self, m=10, k=3):
-        x = np.arange(m) * np.pi / m
-        y = [np.sin(x), np.cos(x)]
+    def _get_xyk(self, m=10, k=3, xp=np):
+        x = xp.arange(m, dtype=xp.float64) * xp.pi / m
+        y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
@@ -3733,22 +3755,22 @@ class TestMakeSplprep:
         with assert_raises(ValueError):
             make_splprep(np.asarray(y).T, s=s)
 
-    def test_default_s_is_zero(self):
-        x, y, k = self._get_xyk(m=10)
+    def test_default_s_is_zero(self, xp):
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl, u = make_splprep(y)
-        xp_assert_close(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
 
-    def test_s_zero_vs_near_zero(self):
+    def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
-        x, y, k = self._get_xyk(m=10)
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl_i, u_i = make_splprep(y, s=0)
         spl_n, u_n = make_splprep(y, s=1e-15)
 
         xp_assert_close(u_i, u_n, atol=1e-15)
-        xp_assert_close(spl_i(u_i), y, atol=1e-15)
-        xp_assert_close(spl_n(u_n), y, atol=1e-7)
+        xp_assert_close(spl_i(u_i), xp.stack(y), atol=1e-15)
+        xp_assert_close(spl_n(u_n), xp.stack(y), atol=1e-7)
         assert spl_i.axis == spl_n.axis
         assert spl_i.c.shape == spl_n.c.shape
 
