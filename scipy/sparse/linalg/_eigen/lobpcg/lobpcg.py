@@ -323,8 +323,7 @@ def lobpcg(
     the sparse diagonal matrix `A`
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
-    >>> A = diags_array(vals, offsets=0, shape=(n, n))
-    >>> A = A.astype(np.int16)
+    >>> A = diags_array(vals, offsets=0, shape=(n, n), dtype=None)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
            [  0,   2,   0, ...,   0,   0,   0],

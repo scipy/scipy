@@ -551,7 +551,7 @@ def test_parallel_threads(num_parallel_threads):
     v0 = rng.random(50)
 
     def worker():
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
@@ -574,7 +574,7 @@ def test_parallel_threads(num_parallel_threads):
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
         return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
@@ -610,7 +610,7 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = rng.random((4, 4))
     M_sparse = generate_matrix(4, sparse=True, rng=rng)
@@ -637,7 +637,7 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
     M_sparse = generate_matrix_symmetric(
