@@ -3,10 +3,8 @@ import numpy as np
 from numpy.testing import (assert_equal, 
                            assert_array_equal,
 )
-
-from scipy._lib._array_api import (
-    assert_almost_equal, assert_array_almost_equal, xp_assert_close
-)
+from scipy._lib._array_api import assert_almost_equal, assert_array_almost_equal
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
 
@@ -61,19 +59,19 @@ def alt_sg_coeffs(window_length, polyorder, pos):
 def test_sg_coeffs_trivial():
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
     h = savgol_coeffs(1, 0)
-    xp_assert_close(h, [1.0])
+    xp_assert_close(h, np.array([1.0]))
 
     h = savgol_coeffs(3, 2)
-    xp_assert_close(h, [0.0, 1, 0], atol=1e-10)
+    xp_assert_close(h, np.array([0.0, 1, 0]), atol=1e-10)
 
     h = savgol_coeffs(5, 4)
-    xp_assert_close(h, [0.0, 0, 1, 0, 0], atol=1e-10)
+    xp_assert_close(h, np.array([0.0, 0, 1, 0, 0]), atol=1e-10)
 
     h = savgol_coeffs(5, 4, pos=1)
-    xp_assert_close(h, [0.0, 0, 0, 1, 0], atol=1e-10)
+    xp_assert_close(h, np.array([0.0, 0, 0, 1, 0]), atol=1e-10)
 
     h = savgol_coeffs(5, 4, pos=1, use='dot')
-    xp_assert_close(h, [0.0, 1, 0, 0, 0], atol=1e-10)
+    xp_assert_close(h, np.array([0.0, 1, 0, 0, 0]), atol=1e-10)
 
 
 def compare_coeffs_to_alt(window_length, order):
@@ -188,15 +186,15 @@ def test_sg_coeffs_even_window_length():
 
     for length in window_lengths:
         m = length//2
-        expected_output = [h_p_d_closed_form_1(k, m)
-                           for k in range(-m + 1, m + 1)][::-1]
+        expected_output = np.array([h_p_d_closed_form_1(k, m)
+                           for k in range(-m + 1, m + 1)])[::-1]
         actual_output = savgol_coeffs(length, 1, 1)
         xp_assert_close(expected_output, actual_output)
         actual_output = savgol_coeffs(length, 2, 1)
         xp_assert_close(expected_output, actual_output)
 
-        expected_output = [h_p_d_closed_form_2(k, m)
-                           for k in range(-m + 1, m + 1)][::-1]
+        expected_output = np.array([h_p_d_closed_form_2(k, m)
+                           for k in range(-m + 1, m + 1)])[::-1]
         actual_output = savgol_coeffs(length, 2, 2)
         xp_assert_close(expected_output, actual_output)
         actual_output = savgol_coeffs(length, 3, 2)
@@ -211,35 +209,35 @@ def test_sg_filter_trivial():
     """ Test some trivial edge cases for savgol_filter()."""
     x = np.array([1.0])
     y = savgol_filter(x, 1, 0)
-    assert_equal(y, [1.0])
+    assert_equal(y, np.array([1.0]))
 
     # Input is a single value. With a window length of 3 and polyorder 1,
     # the value in y is from the straight-line fit of (-1,0), (0,3) and
     # (1, 0) at 0. This is just the average of the three values, hence 1.0.
     x = np.array([3.0])
     y = savgol_filter(x, 3, 1, mode='constant')
-    assert_almost_equal(y, [1.0], decimal=15)
+    assert_almost_equal(y, np.array([1.0]), decimal=15)
 
     x = np.array([3.0])
     y = savgol_filter(x, 3, 1, mode='nearest')
-    assert_almost_equal(y, [3.0], decimal=15)
+    assert_almost_equal(y, np.array([3.0]), decimal=15)
 
     x = np.array([1.0] * 3)
     y = savgol_filter(x, 3, 1, mode='wrap')
-    assert_almost_equal(y, [1.0, 1.0, 1.0], decimal=15)
+    assert_almost_equal(y, np.array([1.0, 1.0, 1.0]), decimal=15)
 
 
 def test_sg_filter_basic():
     # Some basic test cases for savgol_filter().
     x = np.array([1.0, 2.0, 1.0])
     y = savgol_filter(x, 3, 1, mode='constant')
-    xp_assert_close(y, [1.0, 4.0 / 3, 1.0])
+    xp_assert_close(y, np.array([1.0, 4.0 / 3, 1.0]))
 
     y = savgol_filter(x, 3, 1, mode='mirror')
-    xp_assert_close(y, [5.0 / 3, 4.0 / 3, 5.0 / 3])
+    xp_assert_close(y, np.array([5.0 / 3, 4.0 / 3, 5.0 / 3]))
 
     y = savgol_filter(x, 3, 1, mode='wrap')
-    xp_assert_close(y, [4.0 / 3, 4.0 / 3, 4.0 / 3])
+    xp_assert_close(y, np.array([4.0 / 3, 4.0 / 3, 4.0 / 3]))
 
 
 def test_sg_filter_2d():
