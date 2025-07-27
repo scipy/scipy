@@ -375,8 +375,8 @@ relevant public classes. Functions which are deemed out-of-scope are excluded
 from consideration. If a module or submodule contains no in-scope functions, it
 is excluded from the tables. For example, `scipy.spatial.transform` is currently
 excluded because it's API contains no functions, but may be included in the future
-when the scope expands to include classes. `scipy.odr` and `scipy.datasets` is excluded
-because its contents are considered out-of-scope.
+when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
+because their contents are considered out-of-scope.
 
 There is not yet a formal policy for which functions should be considered
 out-of-scope for alternative backend support. Some general rules of thumb
