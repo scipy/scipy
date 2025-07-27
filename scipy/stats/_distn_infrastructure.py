@@ -3761,8 +3761,8 @@ class rv_discrete(rv_generic):
         -----
         For discrete distributions, the `cdf` is not strictly invertible. By convention,
         this method returns the minimum value `k` for which the `cdf` at `k` is at
-        least `q`. There is one exception: if ``a`` is the left endpoint of the support,
-        then the `ppf` of ``0`` is ``a-1``.
+        least `q`. There is one exception:  the `ppf` of ``0`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
@@ -3808,8 +3808,8 @@ class rv_discrete(rv_generic):
         -----
         For discrete distributions, the `sf` is not strictly invertible. By convention,
         this method returns the minimum value `k` for which the `sf` at `k` is
-        no greater than `q`. There is one exception: if ``a`` is the right endpoint of
-        the support, then the `isf` of ``1`` is ``a-1``.
+        no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
+        where ``a`` is the right endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)
