@@ -6,7 +6,7 @@ pytest-timeout
 pytest-xdist
 asv
 mpmath
-gmpy2;
+gmpy2
 threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch
