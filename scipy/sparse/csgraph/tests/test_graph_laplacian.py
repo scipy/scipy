@@ -526,3 +526,6 @@ def test_format(
 def test_format_error_message():
     with pytest.raises(ValueError, match="Invalid form: 'toto'"):
         _ = csgraph.laplacian(np.eye(1), form='toto')
+
+    with pytest.raises(ValueError, match=f"Invalid signed_graph_variant: 'piyo'"):
+        _ = csgraph.laplacian(np.eye(1), signed_graph_variant='piyo')
