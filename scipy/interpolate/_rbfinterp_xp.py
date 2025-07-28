@@ -1,6 +1,3 @@
-import numpy as np
-
-
 from ._rbfinterp_common import _monomial_powers_impl
 
 def _monomial_powers(ndim, degree, xp):
@@ -131,35 +128,30 @@ def polynomial_vector(x, powers, out, xp):
         out[i] = xp.prod(x**powers[i])
 
 
-def kernel_matrix(x, kernel_func, out, xp):
+def kernel_matrix(x, kernel_func, xp):
     """Evaluate RBFs, with centers at `x`, at `x`."""
-    for i in range(x.shape[0]):
-        for j in range(i+1):
-            out[i, j] = kernel_func(xp.linalg.norm(x[i] - x[j]), xp)
-            out[j, i] = out[i, j]
+    return kernel_func(xp.linalg.norm(x[None, :, :] - x[:, None, :], axis=-1), xp)
 
 
-def polynomial_matrix(x, powers, out, xp):
+
+def polynomial_matrix(x, powers, xp):
     """Evaluate monomials, with exponents from `powers`, at `x`."""
-    for i in range(x.shape[0]):
-        for j in range(powers.shape[0]):
-            out[i, j] = xp.prod(x[i]**powers[j])
+    return xp.prod(x[:, None, :] ** powers, axis=-1)
+
 
 
 # pythran export _kernel_matrix(float[:, :], str)
 def _kernel_matrix(x, kernel, xp):
     """Return RBFs, with centers at `x`, evaluated at `x`."""
-    out = xp.empty((x.shape[0], x.shape[0]), dtype=xp.float64)
     kernel_func = NAME_TO_FUNC[kernel]
-    kernel_matrix(x, kernel_func, out, xp)
+    out = kernel_matrix(x, kernel_func, xp)
     return out
 
 
 # pythran export _polynomial_matrix(float[:, :], int[:, :])
 def _polynomial_matrix(x, powers, xp):
     """Return monomials, with exponents from `powers`, evaluated at `x`."""
-    out = xp.empty((x.shape[0], powers.shape[0]), dtype=xp.float64)
-    polynomial_matrix(x, powers, out, xp)
+    out = polynomial_matrix(x, powers, xp)
     return out
 
 
@@ -212,7 +204,7 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     # The scale may be zero if there is a single point or all the points have
     # the same value for some dimension. Avoid division by zero by replacing
     # zeros with ones.
-    scale[scale == 0.0] = 1.0
+    scale = xp.where(scale == 0.0, 1.0, scale)
 
     yeps = y*epsilon
     yhat = (y - shift)/scale
@@ -220,17 +212,18 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     # Transpose to make the array fortran contiguous. This is required for
     # dgesv to not make a copy of lhs.
     lhs = xp.empty((p + r, p + r), dtype=xp.float64).T
-    kernel_matrix(yeps, kernel_func, lhs[:p, :p], xp)
-    polynomial_matrix(yhat, powers, lhs[:p, p:], xp)
-    lhs[p:, :p] = lhs[:p, p:].T
-    lhs[p:, p:] = 0.0
-    for i in range(p):
-        lhs[i, i] += smoothing[i]
+    out_kernels  = kernel_matrix(yeps, kernel_func, xp)
+    out_poly = polynomial_matrix(yhat, powers, xp)
+
+    lhs = xp.concat(
+        [
+         xp.concat((out_kernels, out_poly), axis=1),
+         xp.concat((out_poly.T, xp.zeros((r, r))), axis=1)
+        ]
+    , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r)]))
 
     # Transpose to make the array fortran contiguous.
-    rhs = xp.empty((s, p + r), dtype=xp.float64).T
-    rhs[:p] = d
-    rhs[p:] = 0.0
+    rhs = xp.concat([d, xp.zeros((r, s))], axis=0)
 
     return lhs, rhs, shift, scale
 
@@ -281,14 +274,12 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, 
     xhat = (x - shift)/scale
 
     # NB: changed w.r.t. pythran
-###    vec = _coeffs_inner(xeps, xhat, yeps, powers, kernel_func, xp)
-    vec = xp.empty((q, p + r), dtype=xp.float64)
-    vec[:, :p] = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
-    vec[:, p:] = xp.prod(xhat[:, None, :] ** powers, axis=-1)
-
-#    for i in range(q):
-#        kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p], xp)
-#        polynomial_vector(xhat[i], powers, vec[i, p:], xp)
+    vec = xp.concat(
+        [
+            kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp),
+            xp.prod(xhat[:, None, :] ** powers, axis=-1)
+        ], axis=-1
+    )
 
     '''
     from numpy.testing import assert_allclose

@@ -9,6 +9,7 @@ from . import _rbfinterp_np
 from . import _rbfinterp_xp
 
 from scipy._lib._array_api import _asarray, array_namespace, xp_size, is_numpy, is_torch
+import scipy._lib.array_api_extra as xpx
 
 __all__ = ["RBFInterpolator"]
 
@@ -391,7 +392,7 @@ class RBFInterpolator:
         if chunksize <= nx:
             out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
             for i in range(0, nx, chunksize):
-                out[i:i + chunksize, :] = _backend.compute_interpolation(
+                chunk = _backend.compute_interpolation(
                     x[i:i + chunksize, :],
                     y,
                     self.kernel,
@@ -402,6 +403,7 @@ class RBFInterpolator:
                     coeffs,
                     self._xp
                 )
+                out = xpx.at(out, (slice(i, i + chunksize), slice(None,))).set(chunk)
         else:
             out = _backend.compute_interpolation(
                 x,

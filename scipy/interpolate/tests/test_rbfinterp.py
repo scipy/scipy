@@ -328,12 +328,14 @@ class _TestRBFInterpolator:
         poly_coeffs = rng.normal(0.0, 1.0, P.shape[1])
         y = P @ poly_coeffs  # y = P.dot(poly_coeffs)
 
-        x, P, poly_coeffs, y = map(xp.asarray, (x, P, poly_coeffs, y))
-
-        y_with_outlier = xp.asarray(y, copy=True)
+        y_with_outlier = np.asarray(y, copy=True)
         y_with_outlier[10] += 1.0
-        smoothing = xp.zeros((50,))
+        smoothing = np.zeros((50,))
         smoothing[10] = 1000.0
+
+        x, P, poly_coeffs, y = map(xp.asarray, (x, P, poly_coeffs, y))
+        y_with_outlier, smoothing = map(xp.asarray, (y_with_outlier, smoothing))
+
         yitp = self.build(x, y_with_outlier, smoothing=smoothing)(x)
         # Should be able to reproduce the uncorrupted data almost exactly.
         xp_assert_close(yitp, y, atol=1e-4)
