@@ -68,12 +68,12 @@ static propack_callback_info_t* _active_callback_info = NULL;
  * a PyCapsule. See PyArray_SetBaseObject documentation for details.
  *
  * Parameters:
- * - data: pointer to external memory (PROPACK workspace)
+ * - data: pointer to external memory (a pointer to the PROPACK workspace)
  * - size: number of elements in the array
- * - typenum: NumPy data type (NPY_FLOAT64, NPY_FLOAT32, etc.)
+ * - typenum: NumPy data type (NPY_FLOAT64, NPY_FLOAT32, etc. and not C type)
  *
  * Returns:
- * - PyArrayObject* on success, NULL on failure (with Python exception set)
+ * - PyArrayObject* on success, NULL on failure (also setting the exception)
  */
 static PyArrayObject*
 create_propack_array_view(const void* data, npy_intp size, int typenum)
@@ -175,7 +175,7 @@ static void cleanup_propack_context(propack_callback_info_t* info) {
     Py_XDECREF(info->error_value);
     Py_XDECREF(info->error_traceback);
 
-    /* Clear structure fields explicitly */
+    /* Reset structure to avoid leftovers */
     info->py_callback = NULL;
     info->py_dparm = NULL;
     info->py_iparm = NULL;
@@ -193,31 +193,46 @@ static void cleanup_propack_context(propack_callback_info_t* info) {
 /* =================================================== */
 
 
-// Single precision IRL SVD wrapper function slansvd_irl
-static PyObject*
-propack_slansvd(PyObject* self, PyObject* args) {
+// jobu, jobv, m, n, k, aprod, u, v, tol, *works, doption, ioption, dparm, iparm
 
-    int jobu, jobv, k, kmax, m, n, shifts, neig, maxiter, propack_info;
+/*
+    slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s aprod,
+            float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
+            float tolin, float* work, int lwork, int* iwork,
+            float* doption, int* ioption, int* info, float* dparm, int* iparm,
+            uint64_t* rng_state)
+*/
+
+
+// Single precision IRL SVD wrapper function slansvd
+static PyObject*
+propack_slansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
+
+    int jobu, jobv, k, kmax, m, n, propack_info;
     float tol;
     PyObject* py_callback;
     PyArrayObject *U, *V, *work, *iwork, *doption, *ioption, *sparm, *iparm, *ap_rng_state;
 
     if (!PyArg_ParseTuple(args, "iiiiiiifOO!O!O!O!O!O!O!O!O!",
-                         &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
-                         &py_callback,
-                         &PyArray_Type, &U,
-                         &PyArray_Type, &V,
-                         &PyArray_Type, &work,
-                         &PyArray_Type, &iwork,
-                         &PyArray_Type, &doption,
-                         &PyArray_Type, &ioption,
-                         &PyArray_Type, &sparm,
-                         &PyArray_Type, &iparm,
-                         &PyArray_Type, &ap_rng_state)) {
+                          &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
+                          &tol,                                                  // f
+                          &py_callback,                                          // O
+                          &PyArray_Type, &U,                                     // O!
+                          &PyArray_Type, &V,                                     // O!
+                          &PyArray_Type, &work,                                  // O!
+                          &PyArray_Type, &iwork,                                 // O!
+                          &PyArray_Type, &doption,                               // O! 
+                          &PyArray_Type, &ioption,                               // O!
+                          &PyArray_Type, &sparm,                                 // O!
+                          &PyArray_Type, &iparm,                                 // O!    
+                          &PyArray_Type, &ap_rng_state                           // O!
+                        ))
+    {
         return NULL;
     }
 
-    if (!PyCallable_Check(py_callback)) {PyErr_SetString(PyExc_TypeError, "Callback must be callable"); return NULL; }
+    if (!PyCallable_Check(py_callback)) { PyErr_SetString(PyExc_TypeError, "Callback must be callable"); return NULL; }
 
     // 0-Initialize callback context structure
     propack_callback_info_t info = {0};
@@ -240,8 +255,6 @@ propack_slansvd(PyObject* self, PyObject* args) {
     // Set module-level callback context
     _active_callback_info = &info;
 
-    int dim = shifts + neig;
-
     // Create result arrays for singular values and bounds
     npy_intp result_size = neig;
     PyArrayObject* sigma = (PyArrayObject*)PyArray_SimpleNew(1, &result_size, NPY_FLOAT32);
@@ -260,8 +273,6 @@ propack_slansvd(PyObject* self, PyObject* args) {
     slansvd(
         jobu, jobv,                                       // whether to compute U, V
         m, n, k, kmax,                                    // matrix and algorithm dimensions
-        &neig,                                            // number of converged values (input/output)
-        maxiter,                                          // maximum iterations
         propack_callback_s,                               // Py callback function
         (float*)PyArray_DATA(U), PyArray_DIM(U, 1),       // U matrix and leading dimension
         (float*)PyArray_DATA(sigma),                      // singular values output
@@ -322,7 +333,8 @@ propack_slansvd(PyObject* self, PyObject* args) {
 
 // Single precision IRL SVD wrapper function slansvd_irl
 static PyObject*
-propack_slansvd_irl(PyObject* self, PyObject* args) {
+propack_slansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
 
     int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
     float tol;
@@ -447,7 +459,8 @@ propack_slansvd_irl(PyObject* self, PyObject* args) {
 
 // Double precision IRL SVD wrapper function dlansvd_irl
 static PyObject*
-propack_dlansvd_irl(PyObject* self, PyObject* args) {
+propack_dlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
 
     int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
     double tol;
@@ -572,7 +585,7 @@ propack_dlansvd_irl(PyObject* self, PyObject* args) {
 
 // Single precision complex IRL SVD wrapper function clansvd_irl
 static PyObject*
-propack_clansvd_irl(PyObject* self, PyObject* args) {
+propack_clansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
     float tol;
@@ -699,7 +712,7 @@ propack_clansvd_irl(PyObject* self, PyObject* args) {
 
 // Double precision complex IRL SVD wrapper function zlansvd_irl
 static PyObject*
-propack_zlansvd_irl(PyObject* self, PyObject* args) {
+propack_zlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int which, jobu, jobv, m, n, shifts, neig, maxiter, propack_info;
     double tol;
