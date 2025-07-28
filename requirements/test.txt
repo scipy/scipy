@@ -6,7 +6,7 @@ pytest-timeout
 pytest-xdist
 asv
 mpmath
-gmpy2
+gmpy2; sys_platform != "win32" or platform_machine != "ARM64"
 threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch
