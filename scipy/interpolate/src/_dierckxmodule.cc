@@ -313,7 +313,7 @@ py_qr_reduce_periodic(PyObject* self, PyObject *args, PyObject *kwargs)
     Py_ssize_t k_;
     Py_ssize_t len_t;
     int init_p = false; // Default
-    double p = 0.0;
+    double p = 0.0, fp = 0.0;
     int k;
 
     // XXX: if the overhead is large, flip back to positional only arguments
@@ -376,14 +376,14 @@ py_qr_reduce_periodic(PyObject* self, PyObject *args, PyObject *kwargs)
             k, len_t,
             static_cast<double *>(PyArray_DATA(a_A1)), static_cast<double *>(PyArray_DATA(a_A2)),
             static_cast<double *>(PyArray_DATA(a_Z)),
-            init_p, p
+            fp, init_p, p
         );
 
         if( init_p ) {
-            return Py_BuildValue("(NNNN)", PyArray_Return(a_A1), PyArray_Return(a_A2),
-                                           PyArray_Return(a_Z), PyFloat_FromDouble(p));
+            return Py_BuildValue("(NNNNN)", PyArray_Return(a_A1), PyArray_Return(a_A2),
+                                           PyArray_Return(a_Z), PyFloat_FromDouble(p), PyFloat_FromDouble(fp));
         } else {
-            return Py_BuildValue("(NNN)", PyArray_Return(a_A1), PyArray_Return(a_A2), PyArray_Return(a_Z));
+            return Py_BuildValue("(NNNN)", PyArray_Return(a_A1), PyArray_Return(a_A2), PyArray_Return(a_Z), PyFloat_FromDouble(fp));
         }
     }
     catch (const std::exception& e) {

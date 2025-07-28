@@ -186,6 +186,7 @@ qr_reduce_periodic(double *aptr, double *h1, double *h2,   // a(m, nz), h1(m, nz
           double *a1ptr,                                   // A1(len_t - k - 1, k + 1)
           double *a2ptr,                                   // A2(len_t - 2*k - 1, k)
           double *z,                                       // z(len_t - k - 1),
+          double &fp,
           bool init_p,
           double &p
 );

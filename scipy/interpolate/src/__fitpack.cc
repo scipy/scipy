@@ -458,6 +458,7 @@ void qr_reduce_periodic(
     double *a1ptr,
     double *a2ptr,
     double *zptr,
+    double& fp,
     bool init_p,
     double& p
 ) {
@@ -469,6 +470,7 @@ void qr_reduce_periodic(
     auto A2 = RealArray2D(a2ptr, len_t - 2*k - 1, k);        // For enforcing periodicity
     auto z  = RealArray2D(zptr, len_t - k - 1, ydim1);              // Transformed RHS
     auto y  = RealArray2D(yptr, m + 1, ydim1);               // Input/output Y vector
+    fp = 0.0;
 
     std::vector<double> yi(ydim1, 0.0);
 
@@ -616,6 +618,9 @@ void qr_reduce_periodic(
                         c, s, A1(j - 1, i2 - 1), H(it - 1, i1 - 1));
                 }
             }
+        }
+        for( int64_t ydimi = 0; ydimi < ydim1; ydimi++ ) {
+            fp += yi[ydimi] * yi[ydimi];
         }
     }
 
