@@ -246,21 +246,24 @@ class NdBSpline:
 
         return csr_array((data, indices, indptr))
 
-    def _bspline_derivative_along_axis(self, c, t, k, axis):
+    def _bspline_derivative_along_axis(self, c, t, k, axis, nu=1):
         # Move the selected axis to front
         c = np.moveaxis(c, axis, 0)
-        shape = c.shape
-        n = shape[0]
-        trailing_shape = shape[1:]
+        n = c.shape[0]
+        trailing_shape = c.shape[1:]
         c_flat = c.reshape(n, -1)
 
         new_c_list = []
         new_t = None
 
         for i in range(c_flat.shape[1]):
-            b = BSpline(t, c_flat[:, i], k)
-            db = b.derivative(1)
-            db.c = db.c[:len(db.t) - db.k - 1]
+            if k >= nu:
+                b = BSpline.construct_fast(t, c_flat[:, i], k)
+                db = b.derivative(nu)
+                # truncate coefficients to match new knot/degree size
+                db.c = db.c[:len(db.t) - db.k - 1]
+            else:
+                db = BSpline.construct_fast(t, np.zeros(len(t) - 1), 0)
 
             if new_t is None:
                 new_t = db.t
@@ -308,18 +311,10 @@ class NdBSpline:
             if n == 0:
                 continue
 
-            for _ in range(n):
-                k_current = k_new[axis]
-                if k_current < 1:
-                    # No degree left -> derivative is identically zero
-                    c_new[...] = 0.0
-                    k_new[axis] = 0
-                    break  # No need to continue differentiating this axis
-
-                c_new, t_new[axis] = self._bspline_derivative_along_axis(
-                    c_new, t_new[axis], k_current, axis
-                )
-                k_new[axis] = k_current - 1
+            c_new, t_new[axis] = self._bspline_derivative_along_axis(
+                c_new, t_new[axis], k_new[axis], axis, nu=n
+            )
+            k_new[axis] = max(k_new[axis] - n, 0)
 
         return NdBSpline(tuple(t_new), c_new,
                          tuple(k_new), extrapolate=self.extrapolate)
