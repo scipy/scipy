@@ -75,15 +75,15 @@ def laplacian(
         it does nothing for graphs with all non-negative weights.
         The Laplacian is always assembled as :math:`L = D - A`,
         but D and A are replaced as described below.
-        See [2] for a detailed discussion of each variant:
+        See [2]_ for a detailed discussion of each variant:
 
         * 'standard': No modification of edge weights when computing D or A.
-          This is called "repelling" in [2].
+          This is called "repelling" in [2]_.
             - :math:`D_i = \\sum_j G_{ij}`
             - :math:`A_{ij} = G_{ij}`
         * 'opposing': Absolute value only for the degree computation,
           so that positive and negative weights cannot cancel out.
-          see [3] for a discussion of this variant.
+          see [3]_ for a discussion of this variant.
             - :math:`D_i = \\sum_j |G_{ij}|`
             - :math:`A_{ij} = G_{ij}`
         * 'unsigned': Absolute value for both degree and adjacency,
@@ -141,7 +141,7 @@ def laplacian(
     .. [2] Shi, Guodong and Altafini, Claudio and Baras, John S. (2019).
            Dynamics over Signed Networks,
            SIAM Review 61(2), 229-257
-           https://doi.org/10.1137/17M1134172
+           :doi:`10.1137/17M1134172`
     .. [3] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch
            and Jürgen Lerner and Ernesto W. De Luca
            and Sahin Albayrak. (2010).
@@ -149,7 +149,7 @@ def laplacian(
            Prediction and Visualization.
            In Proceedings of the 2010 SIAM International Conference
            on Data Mining (SDM), 559-570.
-           https://doi.org/10.1137/1.9781611972801.49
+           :doi:`10.1137/1.9781611972801.49`
 
     Examples
     --------
@@ -316,7 +316,7 @@ def laplacian(
            [ 1,  0,  1],
            [-1,  1,  0]])
 
-    Setting `signed_graph_variant="standard"` (default),
+    Setting ``signed_graph_variant="standard"`` (default),
     positive and negative edge weights cancel during degree computation:
 
     >>> L_standard, d_standard = csgraph.laplacian(G, return_diag=True)
@@ -327,7 +327,7 @@ def laplacian(
     >>> d_standard
     array([0, 2, 0])
 
-    Setting `signed_graph_variant="opposing"` prevents cancellation
+    Setting ``signed_graph_variant="opposing"`` prevents cancellation
     for the degree computation by summing absolute edge weights:
 
     >>> L_opposing, d_opposing = csgraph.laplacian(
@@ -342,10 +342,10 @@ def laplacian(
     >>> d_opposing
     array([2, 2, 2])
 
-    Setting `signed_graph_variant="unsigned"` uses absolute value
+    Setting ``signed_graph_variant="unsigned"`` uses absolute value
     for both degree and adjacency, discarding all sign information.
     This is same as
-    `csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard")`:
+    ``csgraph.laplacian(np.abs(G), return_diag=True, signed_graph_variant="standard")``:
 
     >>> L_unsigned, d_unsigned = csgraph.laplacian(
     ...     G,
