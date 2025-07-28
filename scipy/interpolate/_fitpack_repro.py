@@ -303,6 +303,9 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
         if fp - s < acc or nmax == nmin:
             yield t
             return
+    else:
+        fp = 0.0
+        fpold = 0.0
 
     # start from no internal knots
     if not periodic:
@@ -324,8 +327,6 @@ def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, periodic, xp=np):
         t[k + 1] = x[(m + 1)//2 - 1]
         nplus = 1
     n = t.shape[0]
-    fp = 0.0
-    fpold = 0.0
 
     # c  main loop for the different sets of knots. m is a safe upper bound
     # c  for the number of trials.
