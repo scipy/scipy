@@ -216,6 +216,7 @@ py3.install_sources([
     '_rbfinterp_xp.py',
     '_rbfinterp_dynamo.py',
     '_rbfinterp_numba.py',
+    '_rbfinterp_jaxjit.py',
     '_rgi.py',
     '_ndbspline.py',
     'dfitpack.py',
