@@ -2314,8 +2314,8 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     this function does **not** check the triangle inequality, which is required
     for a true metric distance matrix.
 
-    The triangle inequality states that for any three points i, j, and k:
-    D[i,k] <= D[i,j] + D[j,k]
+    The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
+    ``D[i,k] <= D[i,j] + D[j,k]``
     
     Parameters
     ----------
