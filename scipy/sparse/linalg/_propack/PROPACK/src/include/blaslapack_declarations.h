@@ -1,7 +1,7 @@
 #ifndef BLASLAPACK_DECLARATIONS_H
 #define BLASLAPACK_DECLARATIONS_H
 
-#include "propack/types.h"
+#include "../include/propack/types.h"
 
 // BLAS
 void saxpy_(int* n, float* alpha, float* x, int* incx, float* y, int* incy);
