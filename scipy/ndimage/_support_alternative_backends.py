@@ -84,6 +84,9 @@ capabilities_dict = {
     "geometric_transform": xp_capabilities(
         cpu_only=True, exceptions=['jax.numpy']
     ),
+    "find_objects": xp_capabilities(
+        cpu_only=True, exceptions=['jax.numpy']
+    ),
 }
 
 # ### decorate ###
