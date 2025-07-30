@@ -1,8 +1,10 @@
 # pylint: disable=missing-docstring
 import math
+
 import numpy as np
 import pytest
-from scipy._lib._array_api import is_cupy, xp_assert_close, xp_default_dtype, concat_1d
+from scipy._lib._array_api import is_cupy, xp_default_dtype, concat_1d
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)

@@ -1,8 +1,10 @@
 import pytest
 import numpy as np
+
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
+from scipy._lib._array_api import _length_nonmasked
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close, xp_assert_equal
 from scipy.stats._stats_py import _xp_mean, _xp_var
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 

@@ -9,7 +9,6 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
@@ -20,6 +19,7 @@ from scipy.signal._spectral_py import _spectral_helper
 # Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy._lib.array_api_extra._lib._testing import xp_assert_close
 
 
 class TestPeriodogram:
