@@ -205,7 +205,7 @@ py3.extension_module('_superlu',
   link_with: [superlu_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )

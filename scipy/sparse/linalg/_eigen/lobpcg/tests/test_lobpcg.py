@@ -75,6 +75,7 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.filterwarnings("ignore:An ill-conditioned matrix")
 @pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
 @pytest.mark.parametrize("BVdtype", INEXACTDTYPES)
@@ -136,6 +137,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = B @ X
     BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
+    # XXX: internally, _b_orthonormalize tries to invert an ill-conditioned matrix
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns
     Xo1 =  sign_align(Xo1, Xo)
@@ -144,7 +146,6 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
@@ -304,7 +305,6 @@ def _check_fiedler(n, p):
     assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
 
 
-@pytest.mark.thread_unsafe
 def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
@@ -335,7 +335,6 @@ def test_failure_to_run_iterations():
     assert np.max(eigenvalues) > 0
 
 
-@pytest.mark.thread_unsafe
 def test_failure_to_run_iterations_nonsymmetric():
     """Check that the code exists gracefully without breaking
     if the matrix in not symmetric.
@@ -349,6 +348,8 @@ def test_failure_to_run_iterations_nonsymmetric():
     assert np.max(eigenvalues) > 0
 
 
+@pytest.mark.skipif(_IS_32BIT and np.lib.NumpyVersion(np.__version__) < "2.0.0",
+                  reason="Was failing in CI, see gh-23077")
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.
@@ -412,7 +413,6 @@ def test_eigsh_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
-@pytest.mark.thread_unsafe
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
@@ -465,7 +465,6 @@ def test_dtypes(vdtype, mdtype, arr_type):
     assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_inplace_warning():
@@ -483,7 +482,6 @@ def test_inplace_warning():
         eigvals, _ = lobpcg(A, X, maxiter=2, verbosityLevel=1)
 
 
-@pytest.mark.thread_unsafe
 def test_maxit():
     """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)

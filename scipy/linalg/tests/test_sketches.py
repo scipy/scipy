@@ -45,6 +45,7 @@ class TestClarksonWoodruffTransform:
 
     # Test vector with norm ~1
     x = rng.random((n_rows, 1)) / np.sqrt(n_rows)
+    del rng  # Not deterministic in pytest-run-parallel
 
     def test_sketch_dimensions(self):
         for A in self.test_matrices:

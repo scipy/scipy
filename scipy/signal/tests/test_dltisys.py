@@ -1,8 +1,8 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal, xp_assert_close, xp_assert_equal,
@@ -444,9 +444,10 @@ class Test_dfreqresp:
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="divide by zero")
-            sup.filter(RuntimeWarning, message="invalid value encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "divide by zero", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
             w, H = dfreqresp(system, n=2)
         assert w[0] == 0.   # a fail would give not-a-number
 
@@ -469,8 +470,8 @@ class Test_dfreqresp:
 
         system_SS = dlti(A, B, C, D)
         w = 10.0**np.arange(-3,0,.5)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
             w1, H1 = dfreqresp(system_TF, w=w)
             w2, H2 = dfreqresp(system_SS, w=w)
 
@@ -540,9 +541,10 @@ class Test_bode:
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="divide by zero")
-            sup.filter(RuntimeWarning, message="invalid value encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "divide by zero", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
             w, mag, phase = dbode(system, n=2)
         assert w[0] == 0.  # a fail would give not-a-number
 

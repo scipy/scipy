@@ -92,7 +92,6 @@ class TestAAA:
         with pytest.raises(ValueError, match="greater"):
             AAA([1], [1], max_terms=-1)
 
-    @pytest.mark.thread_unsafe
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
@@ -246,7 +245,6 @@ class TestAAA:
         r = AAA(z, np.tan(np.pi*z/2))
         assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3], rtol=9e-7)
 
-    @pytest.mark.thread_unsafe
     def test_spiral_cleanup(self):
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         # here we set `rtol=0` to force froissart doublets, without cleanup there

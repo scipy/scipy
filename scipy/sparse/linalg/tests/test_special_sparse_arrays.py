@@ -107,6 +107,11 @@ class TestLaplacianNd:
             ev = lap.eigenvectors(m)
             r = lap.toarray() @ ev - ev @ np.diag(e)
             assert_allclose(r, np.zeros_like(r), atol=atol)
+        # test orthogonality
+        assert_allclose(eigenvectors @ eigenvectors.T, np.eye(n), atol=atol)
+        # test full eigendecomposition
+        L = eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
+        assert_allclose(L, lap.toarray(), atol=atol)
 
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
@@ -167,7 +172,7 @@ class TestLaplacianNd:
         with pytest.raises(ValueError, match="Unknown value 'robin'"):
             LaplacianNd(grid_shape=(6, ), boundary_conditions='robin')
 
-            
+
 class TestSakurai:
     """
     Sakurai tests

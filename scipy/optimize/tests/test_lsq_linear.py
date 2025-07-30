@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 import numpy as np
@@ -92,8 +94,8 @@ class BaseMixin:
 
     def test_np_matrix(self):
         # gh-10711
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(PendingDeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
             A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
         k = np.array([20, 15])
         lsq_linear(A, k)
@@ -239,7 +241,7 @@ class SparseMixin:
 
         # Default lsmr arguments should not fully converge the solution
         default_lsmr_sol = lsq_linear(A, b, lsq_solver='lsmr')
-        with pytest.raises(AssertionError, match=""):
+        with pytest.raises(AssertionError):
             assert_allclose(exact_sol.x, default_lsmr_sol.x)
 
         # By increasing the maximum lsmr iters, it will converge

@@ -221,9 +221,9 @@ class TestCDFlib:
         _assert_inverts(
             sp.btdtria,
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
-            0, [ProbArg(), Arg(0, 1e2, inclusive_a=False),
+            0, [ProbArg(), Arg(0, 3e2, inclusive_a=False),
                 Arg(0, 1, inclusive_a=False, inclusive_b=False)],
-            rtol=1e-6)
+            rtol=1e-12)
 
     def test_btdtrib(self):
         # Use small values of a or mpmath doesn't converge
