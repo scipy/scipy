@@ -76,11 +76,23 @@ def delegate_xp(delegator, module_name, capabilities=None):
         return capabilities(wrapper)
     return inner
 
+default_capabilities = xp_capabilities(
+    cpu_only=True, exceptions=['cupy', 'jax.numpy']
+)
+
+capabilities_dict = {
+    "geometric_transform": xp_capabilities(
+        cpu_only=True, exceptions=['jax.numpy']
+    ),
+}
+
 # ### decorate ###
 for func_name in _ndimage_api.__all__:
     bare_func = getattr(_ndimage_api, func_name)
     delegator = getattr(_delegators, func_name + "_signature")
 
-    f = delegate_xp(delegator, MODULE_NAME)(bare_func)
+    capabilities = capabilities_dict.get(func_name, default_capabilities)
+
+    f = delegate_xp(delegator, MODULE_NAME, capabilities)(bare_func)
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[func_name] = f
