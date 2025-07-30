@@ -87,6 +87,13 @@ capabilities_dict = {
     "find_objects": xp_capabilities(
         cpu_only=True, exceptions=['jax.numpy']
     ),
+    "distance_transform_bf": xp_capabilities(
+        cpu_only=True, exceptions=['jax.numpy']
+    ),
+    "distance_transform_cdt": xp_capabilities(
+        cpu_only=True, exceptions=['jax.numpy']
+    ),
+    "generate_binary_structure": xp_capabilities(out_of_scope=True),
 }
 
 # ### decorate ###
