@@ -1,4 +1,4 @@
-#include "propack/propack.h"
+#include "../include/propack/propack.h"
 #include <float.h>
 #include <math.h>
 
