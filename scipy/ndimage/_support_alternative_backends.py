@@ -25,7 +25,13 @@ def _maybe_convert_arg(arg, xp):
 
 # Some cupyx.scipy.ndimage functions don't exist or are incompatible with
 # their SciPy counterparts
-CUPY_BLOCKLIST = ['vectorized_filter']
+CUPY_BLOCKLIST = [
+    'distance_transform_bf',
+    'distance_transform_cdt',
+    'find_objects',
+    'geometric_transform',
+    'vectorized_filter',
+]
 
 
 def delegate_xp(delegator, module_name, capabilities=None):
