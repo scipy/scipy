@@ -103,7 +103,7 @@ capabilities_dict = {
         cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "generate_binary_structure": xp_capabilities(out_of_scope=True),
-    "map_coodinates": xp_capabilities(
+    "map_coordinates": xp_capabilities(
         cpu_only=True, exceptions=["cupy", "jax.numpy"],
         allow_dask_compute=True, jax_jit=True
     )
