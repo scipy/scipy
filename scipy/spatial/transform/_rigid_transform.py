@@ -14,6 +14,7 @@ from scipy._lib._array_api import (
 )
 from scipy.spatial.transform import Rotation
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
+import scipy.spatial.transform._rigid_transform_xp as xp_backend
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_compat import device
 from scipy._lib._array_api import xp_promote
@@ -27,7 +28,7 @@ backend_registry = {array_namespace(np.empty(0)): cython_backend}
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
-    return backend_registry[xp].normalize_dual_quaternion(dual_quat)
+    return backend_registry.get(xp, xp_backend).normalize_dual_quaternion(dual_quat)
 
 
 class RigidTransform:
@@ -380,7 +381,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = backend_registry[xp]
+        self._backend = backend_registry.get(xp, xp_backend)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -529,7 +530,7 @@ class RigidTransform:
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        backend = backend_registry[xp]
+        backend = backend_registry.get(xp, xp_backend)
         matrix = backend.from_rotation(quat)
         return cls._from_raw_matrix(matrix, xp, backend)
 
@@ -597,7 +598,7 @@ class RigidTransform:
         2
         """
         xp = array_namespace(translation)
-        backend = backend_registry[xp]
+        backend = backend_registry.get(xp, xp_backend)
         matrix = backend.from_translation(translation)
         return cls._from_raw_matrix(matrix, xp, backend)
 
@@ -758,7 +759,7 @@ class RigidTransform:
                 "Expected `exp_coords` to have shape (6,), or (N, 6), "
                 f"got {exp_coords.shape}."
             )
-        backend = backend_registry[xp]
+        backend = backend_registry.get(xp, xp_backend)
         matrix = backend.from_exp_coords(exp_coords)
         return cls._from_raw_matrix(matrix, xp, backend)
 
@@ -812,7 +813,7 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        backend = backend_registry[xp]
+        backend = backend_registry.get(xp, xp_backend)
         matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
         return cls._from_raw_matrix(matrix, xp, backend)
 
@@ -1723,6 +1724,6 @@ class RigidTransform:
         tf._matrix = matrix
         tf._xp = xp
         if backend is None:
-            backend = backend_registry[xp]
+            backend = backend_registry.get(xp, xp_backend)
         tf._backend = backend
         return tf
