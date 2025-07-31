@@ -66,7 +66,8 @@ def delegate_xp(delegator, module_name, capabilities=None):
                     elif isinstance(result, int):
                         return result
                     elif isinstance(result, dict):
-                        # value_indices: result is {np.int64(1): (array(0), array(1))} etc
+                        # value_indices:
+                        # result is {np.int64(1): (array(0), array(1))} etc
                         return {
                             k.item(): tuple(xp.asarray(vv) for vv in v)
                             for k,v in result.items()

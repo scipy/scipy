@@ -2820,7 +2820,6 @@ class TestNdimageMorphology:
     )
     def test_grey_axes(self, xp, func, expand_axis, origin, footprint_mode,
                        mode):
-        func_name = func.__name__
         data = xp.asarray([[0, 0, 0, 1, 0, 0, 0],
                            [0, 0, 0, 4, 0, 0, 0],
                            [0, 0, 2, 1, 0, 2, 0],
