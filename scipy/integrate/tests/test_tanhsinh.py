@@ -44,6 +44,7 @@ def _vectorize(xp):
     return decorator
 
 
+@make_xp_test_case(_tanhsinh)
 class TestTanhSinh:
 
     # Test problems from [1] Section 6

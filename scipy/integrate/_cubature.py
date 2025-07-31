@@ -57,7 +57,7 @@ class CubatureResult:
     rtol: float
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True, jax_jit=False)
 def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
              args=(), workers=1, points=None):
     r"""
