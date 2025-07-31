@@ -109,7 +109,7 @@ from functools import partial
 
 import numpy as np
 
-from scipy._lib._array_api import _asarray
+from scipy._lib._array_api import xp_asarray
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._lib import array_api_extra as xpx
 from scipy.linalg import norm
@@ -2090,7 +2090,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
-    X = _asarray(X)
+    X = xp_asarray(X)
     if X.ndim != 2:
         raise ValueError('A 2-dimensional array must be passed. '
                          f'(Shape was {X.shape}).')
@@ -2478,7 +2478,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = _asarray(y)
+    y = xp_asarray(y)
     name_str = f"'{name}' " if name else ""
     try:
         if len(y.shape) != 1:
@@ -2554,7 +2554,7 @@ def num_obs_y(Y):
     >>> num_obs_y(Y)
     4
     """
-    Y = _asarray(Y)
+    Y = xp_asarray(Y)
     is_valid_y(Y, throw=True, name='Y')
     k = Y.shape[0]
     if k == 0:

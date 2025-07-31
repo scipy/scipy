@@ -49,7 +49,7 @@ from scipy._lib import array_api_extra as xpx
 
 
 __all__ = [
-    '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
+    'xp_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
     'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'np_compat', 'get_native_namespace_name',
@@ -72,7 +72,35 @@ def _check_finite(array: Array, xp: ModuleType) -> None:
         msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
-def _asarray(
+
+def _resolve_device(array, xp_out, device=None):
+    if device is not None:
+        return device
+
+    xp_in = array_namespace(array)
+
+    # Here is what the logic is intended to be
+    # if is_numpy(xp_out) or is_array_api_strict(xp_out) or is_cupy(xp_out):
+    #     # These libraries only support one type of device
+    #     return xp_out.__array_namespace_info__().default_device()
+    # else:
+    #     return xp_in.device(array)
+
+    # but there are many issues with device support right now. For example:
+    # - NumPy `from_dlpack` only understands device='cpu' (not a device object)
+    # - CuPy `from_dlpack` doesn't work
+    # - the format of the return of `device` seems different in different libraries
+
+    # So in the meantime:
+    if is_numpy(xp_out):
+        return "cpu"
+    elif is_array_api_strict(xp_out):
+        return xp_out.__array_namespace_info__().default_device()
+    else:
+        return None
+
+
+def xp_asarray(
         array: ArrayLike,
         dtype: Any = None,
         order: Literal['K', 'A', 'C', 'F'] | None = None,
@@ -82,36 +110,54 @@ def _asarray(
         check_finite: bool = False,
         subok: bool = False,
     ) -> Array:
-    """SciPy-specific replacement for `np.asarray` with `order`, `check_finite`, and
-    `subok`.
-
+    """SciPy-specific replacement for `xp.asarray` with `order`, `check_finite`,
+    `subok`, and automatic array type conversion and device transfer.
     Memory layout parameter `order` is not exposed in the Array API standard.
     `order` is only enforced if the input array implementation
     is NumPy based, otherwise `order` is just silently ignored.
-
     `check_finite` is also not a keyword in the array API standard; included
     here for convenience rather than that having to be a separate function
     call inside SciPy functions.
-
     `subok` is included to allow this function to preserve the behaviour of
     `np.asanyarray` for NumPy based inputs.
     """
+    xp_in = array_namespace(array)
     if xp is None:
-        xp = array_namespace(array)
-    if is_numpy(xp):
-        # Use NumPy API to support order
-        if copy is True:
-            array = np.array(array, order=order, dtype=dtype, subok=subok)
-        elif subok:
-            array = np.asanyarray(array, order=order, dtype=dtype)
-        else:
-            array = np.asarray(array, order=order, dtype=dtype)
+        xp = xp_in
+
+    if is_numpy(xp_in):
+        # If object is array-like (but not array), make it an ndarray; otherwise, no-op.
+        array = np.asanyarray(array)
+
+    if is_numpy(xp_in) and type(array) is not np.ndarray and subok:
+        # If it's a (strict) subclass of ndarray and we must preserve the subclass...
+        if not is_numpy(xp):
+            message = f"Array library {xp} cannot respect `subok=True`."
+            raise TypeError(message)
+        # This will do the right thing for NumPy 2.0+; for earlier versions of NumPy,
+        # it will not respect copy=False.
+        array = np.array(array, order=order, dtype=dtype, copy=copy, subok=True)
+    elif is_numpy(xp):
+        try:
+            array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
+        except:
+            # Convert to NumPy array. Raise if copy is necessary and copy=False;
+            # otherwise, don't copy yet.
+            array = np_compat.from_dlpack(array, copy=None if copy is True else copy)
+            # Now apply all the options
+            array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
     else:
         try:
             array = xp.asarray(array, dtype=dtype, copy=copy)
-        except TypeError:
-            coerced_xp = array_namespace(xp.asarray(3))
-            array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
+        # data-apis/array-api-compat#204
+        except:
+            array = xp.from_dlpack(array) # data-apis/array-api-compat#204
+            # xp.from_dlpack(array, copy=None if copy is True else copy)
+            array = xp.asarray(array, dtype=dtype, copy=copy)
+        # except TypeError:
+        #     xp = array_namespace(xp.empty(0))
+        #     array = xp.from_dlpack(array, copy=None if copy is True else copy)
+        #     array = xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
         _check_finite(array, xp)
@@ -140,11 +186,11 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     `subok` and `order` keywords are not used.
     """
     # Note: for older NumPy versions, `np.asarray` did not support the `copy` kwarg,
-    # so this uses our other helper `_asarray`.
+    # so this uses our other helper `xp_asarray`.
     if xp is None:
         xp = array_namespace(x)
 
-    return _asarray(x, copy=True, xp=xp)
+    return xp_asarray(x, copy=True, xp=xp)
 
 
 _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
@@ -254,7 +300,9 @@ def xp_assert_equal(actual, desired, *, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -285,7 +333,9 @@ def xp_assert_close(actual, desired, *, rtol=None, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
-    # JAX uses `np.testing`
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -308,7 +358,9 @@ def xp_assert_less(actual, desired, *, check_namespace=True, check_dtype=True,
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
-    # JAX uses `np.testing`
+    # JAX uses `np.testing` natively; array-api-strict must be converted
+    actual = xp_asarray(actual, xp=np) if is_array_api_strict(xp) else actual
+    desired = xp_asarray(desired, xp=np) if is_array_api_strict(xp) else desired
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
@@ -432,7 +484,7 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+    args = [(xp_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
@@ -480,12 +532,13 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     --------
     xp_result_type
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+    args = [(xp_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]  # solely to prevent double conversion of iterable to array
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
+    args = [(xp_asarray(arg, dtype=dtype, subok=True, xp=xp)
+             if arg is not None else arg)
             for arg in args]
 
     if not broadcast:

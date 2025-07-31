@@ -320,14 +320,14 @@ class TestFcluster:
     def test_fcluster_maxclust_gh_12651(self, xp):
         y = xp.asarray([[1], [4], [5]])
         Z = single(y)
-        assert_array_equal(fcluster(Z, t=1, criterion="maxclust"),
-                           xp.asarray([1, 1, 1]))
-        assert_array_equal(fcluster(Z, t=2, criterion="maxclust"),
-                           xp.asarray([2, 1, 1]))
-        assert_array_equal(fcluster(Z, t=3, criterion="maxclust"),
-                           xp.asarray([1, 2, 3]))
-        assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
-                           xp.asarray([1, 2, 3]))
+        xp_assert_equal(fcluster(Z, t=1, criterion="maxclust"),
+                        xp.asarray([1, 1, 1], dtype=xp.int32))
+        xp_assert_equal(fcluster(Z, t=2, criterion="maxclust"),
+                        xp.asarray([2, 1, 1], dtype=xp.int32))
+        xp_assert_equal(fcluster(Z, t=3, criterion="maxclust"),
+                        xp.asarray([1, 2, 3], dtype=xp.int32))
+        xp_assert_equal(fcluster(Z, t=5, criterion="maxclust"),
+                        xp.asarray([1, 2, 3], dtype=xp.int32))
 
 
 @make_xp_test_case(leaders)
@@ -636,14 +636,15 @@ class TestLeavesList:
         # Tests leaves_list(Z) on a 1x4 linkage.
         Z = xp.asarray([[0, 1, 3.0, 2]], dtype=xp.float64)
         to_tree(Z)
-        assert_allclose(leaves_list(Z), [0, 1], rtol=1e-15)
+        xp_assert_close(leaves_list(Z), xp.asarray([0, 1], dtype=xp.int32), rtol=1e-15)
 
     def test_leaves_list_2x4(self, xp):
         # Tests leaves_list(Z) on a 2x4 linkage.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.float64)
         to_tree(Z)
-        assert_allclose(leaves_list(Z), [0, 1, 2], rtol=1e-15)
+        xp_assert_close(leaves_list(Z), xp.asarray([0, 1, 2], dtype=xp.int32),
+                        rtol=1e-15)
 
     @pytest.mark.parametrize("method",
         ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward'])
@@ -652,7 +653,8 @@ class TestLeavesList:
         X = hierarchy_test_data.Q_X
         Z = xp.asarray(linkage(X, method))
         node = to_tree(Z)
-        assert_allclose(node.pre_order(), leaves_list(Z), rtol=1e-15)
+        xp_assert_close(leaves_list(Z), xp.asarray(node.pre_order(), dtype=xp.int32),
+                        rtol=1e-15)
 
     def test_Q_subtree_pre_order(self, xp):
         # Tests that pre_order() works when called on sub-trees.
