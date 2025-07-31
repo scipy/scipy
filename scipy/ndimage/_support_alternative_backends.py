@@ -77,23 +77,30 @@ def delegate_xp(delegator, module_name, capabilities=None):
     return inner
 
 default_capabilities = xp_capabilities(
-    cpu_only=True, exceptions=['cupy', 'jax.numpy']
+    cpu_only=True, exceptions=["cupy"], allow_dask_compute=True, jax_jit=False
 )
 
 capabilities_dict = {
     "geometric_transform": xp_capabilities(
-        cpu_only=True, exceptions=['jax.numpy']
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "find_objects": xp_capabilities(
-        cpu_only=True, exceptions=['jax.numpy']
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "distance_transform_bf": xp_capabilities(
-        cpu_only=True, exceptions=['jax.numpy']
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "distance_transform_cdt": xp_capabilities(
-        cpu_only=True, exceptions=['jax.numpy']
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "vectorized_filter": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
     ),
     "generate_binary_structure": xp_capabilities(out_of_scope=True),
+    "map_coodinates": xp_capabilities(
+        cpu_only=True, exceptions=["cupy", "jax.numpy"],
+        allow_dask_compute=True, jax_jit=True
+    )
 }
 
 # ### decorate ###

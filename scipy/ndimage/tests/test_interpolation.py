@@ -17,6 +17,7 @@ from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
+# lazy_xp_modules = [ndimage]
 
 
 eps = 1e-12
