@@ -1,6 +1,6 @@
 import functools
 from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API, xp_capabilities
 )
 
 import numpy as np
@@ -25,7 +25,13 @@ def _maybe_convert_arg(arg, xp):
 
 # Some cupyx.scipy.ndimage functions don't exist or are incompatible with
 # their SciPy counterparts
-CUPY_BLOCKLIST = ['vectorized_filter']
+CUPY_BLOCKLIST = [
+    'distance_transform_bf',
+    'distance_transform_cdt',
+    'find_objects',
+    'geometric_transform',
+    'vectorized_filter',
+]
 
 
 def delegate_xp(delegator, module_name):
@@ -57,7 +63,8 @@ def delegate_xp(delegator, module_name):
                 elif isinstance(result, int):
                     return result
                 elif isinstance(result, dict):
-                    # value_indices: result is {np.int64(1): (array(0), array(1))} etc
+                    # value_indices:
+                    # result is {np.int64(1): (array(0), array(1))} etc
                     return {
                         k.item(): tuple(xp.asarray(vv) for vv in v)
                         for k,v in result.items()
@@ -71,14 +78,43 @@ def delegate_xp(delegator, module_name):
         return wrapper
     return inner
 
+default_capabilities = xp_capabilities(
+    cpu_only=True, exceptions=["cupy"], allow_dask_compute=True, jax_jit=False
+)
+
+capabilities_dict = {
+    "geometric_transform": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "find_objects": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "distance_transform_bf": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "distance_transform_cdt": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "vectorized_filter": xp_capabilities(
+        cpu_only=True, allow_dask_compute=True, jax_jit=False
+    ),
+    "generate_binary_structure": xp_capabilities(out_of_scope=True),
+    "map_coordinates": xp_capabilities(
+        cpu_only=True, exceptions=["cupy", "jax.numpy"],
+        allow_dask_compute=True, jax_jit=True
+    )
+}
+
 # ### decorate ###
 for func_name in _ndimage_api.__all__:
     bare_func = getattr(_ndimage_api, func_name)
     delegator = getattr(_delegators, func_name + "_signature")
 
-    f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API
-         else bare_func)
+    capabilities = capabilities_dict.get(func_name, default_capabilities)
 
+    f = capabilities(
+        delegate_xp(delegator, MODULE_NAME)(bare_func)
+        if SCIPY_ARRAY_API else bare_func
+    )
     # add the decorated function to the namespace, to be imported in __init__.py
     vars()[func_name] = f
