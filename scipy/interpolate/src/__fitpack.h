@@ -143,6 +143,22 @@ data_matrix(/* inputs */
             double *wrk                         // work, shape (2k+2)
 );
 
+void
+data_matrix_periodic( /* inputs */
+    const double *xptr, int64_t m,      // x, shape (m,)
+    const double *tptr, int64_t len_t,  // t, shape (len_t,)
+    int k,
+    const double *wptr,                 // weights, shape (m,) // NB: len(w) == len(x), not checked
+    int extrapolate,
+    /* outputs */
+    double *Aptr,                       // A, shape(m, k+1)
+    double *H1ptr,                      // H1, shape(m, k+1)
+    double *H2ptr,                      // H2, shape(m, k+1)
+    int64_t *offset_ptr,                // offset, shape (m,)
+    int64_t *nc,                        // the number of coefficient
+    /* work array*/
+    double *wrk                        // work, shape (2k+2)
+);
 
 /*
     Solve the LSQ problem ||y - A@c||^2 via QR factorization.
@@ -156,6 +172,39 @@ qr_reduce(double *aptr, const int64_t m, const int64_t nz, // a(m, nz), packed
           const int64_t startrow=1
 );
 
+/*
+    Solve the LSQ problem ||y - A@c||^2 via QR factorization
+    for periodic splines.
+*/
+void
+qr_reduce_periodic(double *aptr, double *h1, double *h2,   // a(m, nz), h1(m, nz), h2(m, nz) packed
+          const int64_t m, const int64_t nz,
+          int64_t *offset,                                 // offset(m)
+          const int64_t nc,                                // dense would be a(m, nc)
+          double *yptr, const int64_t ydim1,               // y(m, ydim2)
+          const int k, const int64_t len_t,
+          double *a1ptr,                                   // A1(len_t - k - 1, k + 1)
+          double *a2ptr,                                   // A2(len_t - 2*k - 1, k)
+          double *z,                                       // z(len_t - k - 1),
+          double &fp,
+          bool init_p,
+          double &p
+);
+
+void qr_reduce_augmented_matrices(
+    double* g1ptr, double* g2ptr,
+    double* h1ptr, double* h2ptr,
+    double* cptr, double* offsetptr,
+    int k, int64_t len_t, int64_t ydim2);
+
+void init_augmented_matrices(
+    double *a1ptr, double *a2ptr, double *bptr,
+    int k, int64_t len_t,
+    double *g1ptr, double *g2ptr,
+    double *h1ptr, double *h2ptr,
+    double *offsetptr
+);
+
 
 /*
  * Back substitution solve of `R @ c = y` with an upper triangular R.
@@ -164,9 +213,36 @@ void
 fpback( /* inputs*/
        const double *Rptr, int64_t m, int64_t nz,    // R(m, nz), packed
        int64_t nc,                                   // dense R would be (m, nc)
+       const double *xptr, int64_t m_,      // x, shape (m,)
+       const double *tptr, int64_t len_t,  // t, shape (len_t,)
+       int k,
+       const double *wptr,                 // weights, shape (m,) // NB: len(w) == len(x), not checked
+       int extrapolate,
+       const double* ywptr,
        const double *yptr, int64_t ydim2,            // y(m, ydim2)
         /* output */
-       double *cptr                                 // c(nc, ydim2)
+       double *cptr,                                 // c(nc, ydim2)
+       double *fp,
+       double *residualsptr
+);
+
+void
+fpbacp( /* inputs*/
+       const double *A1ptr,
+       int64_t a1_rows,
+       const double *A2ptr,
+       int64_t a2_rows,
+       const double *Zptr,
+       int k, int kp,
+       const double *xptr, int64_t m,      // x, shape (m,)
+       const double *yptr, int64_t ydim2,            // y(m, ydim2)
+       const double *tptr, int64_t len_t,  // t, shape (len_t,)
+       const double *wptr,                 // weights, shape (m,) // NB: len(w) == len(x), not checked
+       int extrapolate,
+       /* output */
+       double *cptr,
+       double *fp,
+       double *residualsptr
 );
 
 
@@ -241,7 +317,7 @@ norm_eq_lsq(const double *xptr, int64_t m,      // x, shape (m,)
  */
 void
 _evaluate_ndbspline(/* inputs */
-                    const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim) 
+                    const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
                     const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
                     const int64_t *len_t_ptr,                          // len_t, shape (ndim,)
                     const int64_t *k_ptr,                              // k, shape (ndim,)
