@@ -7,7 +7,7 @@ from ._base import sparray, issparse
 INT_TYPES = (int, np.integer)
 
 
-def _broadcast_arrays(a, b):
+def _broadcast_arrays(*arrays):
     """
     Same as np.broadcast_arrays(a, b) but old writeability rules.
 
@@ -16,10 +16,10 @@ def _broadcast_arrays(a, b):
     Retain the old writeability rules, as our Cython code assumes
     the old behavior.
     """
-    x, y = np.broadcast_arrays(a, b)
-    x.flags.writeable = a.flags.writeable
-    y.flags.writeable = b.flags.writeable
-    return x, y
+    broadcast_arrays = np.broadcast_arrays(*arrays)
+    for x, a in zip(broadcast_arrays, arrays):
+        x.flags.writeable = a.flags.writeable
+    return broadcast_arrays
 
 
 class IndexMixin:
@@ -27,7 +27,10 @@ class IndexMixin:
     This class provides common dispatching and validation logic for indexing.
     """
     def __getitem__(self, key):
-        index, new_shape = _validate_indices(key, self.shape, self.format)
+        index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
+        if len(new_shape) > 2:
+            raise IndexError("Indexing that leads to >2D is not supported by "
+                             f"{self.format} format. Try converting to COO format")
 
         # 1D array
         if len(index) == 1:
@@ -122,7 +125,7 @@ class IndexMixin:
         return res
 
     def __setitem__(self, key, x):
-        index, _ = _validate_indices(key, self.shape, self.format)
+        index, new_shape, _, _ = _validate_indices(key, self.shape, self.format)
 
         # 1D array
         if len(index) == 1:
@@ -290,15 +293,27 @@ class IndexMixin:
 
 
 def _validate_indices(key, self_shape, self_format):
-    """Returns two tuples: (index tuple, requested shape tuple)"""
+    """Returns four sequences: (index, requested shape, arrays, nones)
+
+    index : tuple of validated idx objects. bool arrays->nonzero(),
+            arrays broadcast, ints and slices as they are, Nones removed
+    requested shape : the shape of the indexed space, including Nones
+    arr_pos : position within index of all arrays or ints (for array fancy indexing)
+    none_pos : insert positions to put newaxis coords in indexed space.
+    """
     self_ndim = len(self_shape)
     # single ellipsis
     if key is Ellipsis:
-        return (slice(None),) * self_ndim, self_shape
+        return (slice(None),) * self_ndim, self_shape, [], []
 
     if not isinstance(key, tuple):
         key = [key]
 
+    # pass 1:
+    # - expand ellipsis to allow matching to self_shape
+    # - preprocess boolean array index
+    # - error on sparse array as an index
+    # - count the ndim of the index and check if too long
     ellps_pos = None
     index_1st = []
     prelim_ndim = 0
@@ -313,10 +328,11 @@ def _validate_indices(key, self_shape, self_format):
             index_1st.append(idx)
             prelim_ndim += 1
         elif (ix := _compatible_boolean_index(idx, self_ndim)) is not None:
+            # can't check the shape of ix until we resolve ellipsis (pass 2)
             index_1st.append(ix)
             prelim_ndim += ix.ndim
         elif issparse(idx):
-            # TODO: make sparse matrix indexing work for sparray
+            # TODO: make sparse indexing work for sparray
             raise IndexError(
                 'Indexing with sparse matrices is not supported '
                 'except boolean indexing where matrix and index '
@@ -324,6 +340,11 @@ def _validate_indices(key, self_shape, self_format):
         else:  # dense array
             index_1st.append(np.asarray(idx))
             prelim_ndim += 1
+    if prelim_ndim > self_ndim:
+        raise IndexError(
+            'Too many indices for array or tuple index out of range. '
+            f'Key {key} needs {prelim_ndim}D. Array is {self_ndim}D'
+        )
     ellip_slices = (self_ndim - prelim_ndim) * [slice(None)]
     if ellip_slices:
         if ellps_pos is None:
@@ -332,12 +353,25 @@ def _validate_indices(key, self_shape, self_format):
             index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
 
     # second pass (have processed ellipsis and preprocessed arrays)
+    # pass 2:
+    # note: integer arrays provide info for one axis even if >1D array.
+    #       The shape of array affects outgoing(get)/incoming(set) shape only
+    # - form `new_shape` (shape of outgo/incom-ing result of key
+    # - form `index` (validated form of each slice/int/array index)
+    # - validate and make canonical: slice and int
+    # - turn bool arrays to int arrays via `.nonzero()`
+    # - collect positions of Newaxis/None in `none_positions`
+    # - collect positions of "array or int" in `arr_int_pos`
     idx_shape = []
     index_ndim = 0
     index = []
     array_indices = []
+    none_positions = []
+    arr_int_pos = []  # track positions of arrays and integers
+
     for i, idx in enumerate(index_1st):
         if idx is None:
+            none_positions.append(len(idx_shape))
             idx_shape.append(1)
         elif isinstance(idx, slice):
             index.append(idx)
@@ -351,29 +385,27 @@ def _validate_indices(key, self_shape, self_format):
                 raise IndexError(f'index ({idx}) out of range')
             idx = int(idx + N if idx < 0 else idx)
             index.append(idx)
+            arr_int_pos.append(index_ndim)
             index_ndim += 1
         # bool array (checked in first pass)
         elif idx.dtype.kind == 'b':
-            ix = idx
-            tmp_ndim = index_ndim + ix.ndim
+            tmp_ndim = index_ndim + idx.ndim
             mid_shape = self_shape[index_ndim:tmp_ndim]
-            if ix.shape != mid_shape:
+            if idx.shape != mid_shape:
                 raise IndexError(
-                    f"bool index {i} has shape {mid_shape} instead of {ix.shape}"
+                    f"bool index {i} has shape {mid_shape} instead of {idx.shape}"
                 )
-            index.extend(ix.nonzero())
+            index.extend(idx.nonzero())
             array_indices.extend(range(index_ndim, tmp_ndim))
+            arr_int_pos.extend(range(index_ndim, tmp_ndim))
             index_ndim = tmp_ndim
         else:  # dense array
             N = self_shape[index_ndim]
             idx = _asindices(idx, N, self_format)
             index.append(idx)
+            arr_int_pos.append(index_ndim)
             array_indices.append(index_ndim)
             index_ndim += 1
-    if index_ndim > self_ndim:
-        raise IndexError(
-            f'invalid index ndim. Array is {self_ndim}D. Index needs {index_ndim}D'
-        )
     if len(array_indices) > 1:
         idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
         if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
@@ -381,15 +413,22 @@ def _validate_indices(key, self_shape, self_format):
             msg = (f'shape mismatch: indexing arrays could not be broadcast '
                    f'together with shapes {shapes}')
             raise IndexError(msg)
-        # TODO: handle this for nD (adjacent arrays stay, separated move to start)
-        idx_shape = list(idx_arrays[0].shape) + idx_shape
+        # replace array indices with broadcast versions
+        for i, arr in zip(array_indices, idx_arrays):
+            index[i] = arr
+        arr_shape = idx_arrays[0].shape
+        # len(array_indices) implies arr_int_pos has at least one element
+        # if arrays and ints not adjacent, move to front of shape
+        if len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1):
+            idx_shape = list(arr_shape) + idx_shape
+        else:
+            arr_pos = arr_int_pos[0]
+            idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
     elif len(array_indices) == 1:
-        arr_index = array_indices[0]
-        arr_shape = list(index[arr_index].shape)
-        idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
-    if (ndim := len(idx_shape)) > 2:
-        raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
-    return tuple(index), tuple(idx_shape)
+        arr_shape = index[array_indices[0]].shape
+        arr_pos = arr_int_pos[0]
+        idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
+    return tuple(index), tuple(idx_shape), arr_int_pos, none_positions
 
 
 def _asindices(idx, length, format):
@@ -403,7 +442,7 @@ def _asindices(idx, length, format):
         raise IndexError('invalid index') from e
 
     if format != "coo" and ix.ndim not in (1, 2):
-        raise IndexError('Index dimension must be 1 or 2')
+        raise IndexError(f'Index dimension must be 1 or 2. Got {ix.ndim}')
 
     # LIL routines handle bounds-checking for us, so don't do it here.
     if format == "lil":
