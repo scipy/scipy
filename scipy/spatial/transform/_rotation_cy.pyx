@@ -185,24 +185,14 @@ cdef inline int _get_angles(
         return 1
     return 0
 
-# Class to return a set of angles as well as a count of gimbal locks.
-# As we still support Cython 0.29, we can't return ctuple with
-# ```
-# cdef (double[:,:], int) or tuple[double[:,:], int)
-# ```
-# so we create a dummy class with two attributes.
-cdef class AnglesAndLockNumber:
-    cdef int n
-    cdef double[:,:] arr
-
-    def __init__(self, arr, n):
-        self.arr = arr
-        self.n = n
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef AnglesAndLockNumber _compute_euler_from_quat(
-    np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic
+cdef double[:, :] _compute_euler_from_quat(
+    np.ndarray[double, ndim=2] quat,
+    const uchar[:] seq,
+    bint extrinsic,
+    bint suppress_warnings
 ) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -251,14 +241,20 @@ cdef AnglesAndLockNumber _compute_euler_from_quat(
             angles[ind], extrinsic, symmetric, sign, pi / 2, a, b, c, d
         )
 
-    return AnglesAndLockNumber(angles, n_gimbal_warnings)
+    if n_gimbal_warnings > 0 and not suppress_warnings:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
+
+    return angles
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef AnglesAndLockNumber _compute_davenport_from_quat(
+cdef double[:, :] _compute_davenport_from_quat(
     np.ndarray[double, ndim=2] quat, np.ndarray[double, ndim=1] n1,
     np.ndarray[double, ndim=1] n2, np.ndarray[double, ndim=1] n3,
-    bint extrinsic
+    bint extrinsic,
+    bint suppress_warnings
 ):
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -312,7 +308,12 @@ cdef AnglesAndLockNumber _compute_davenport_from_quat(
         if correct_set:
             angles[ind, 1] = -angles[ind, 1]
 
-    return AnglesAndLockNumber(angles, n_gimbal_warnings)
+    if n_gimbal_warnings > 0 and not suppress_warnings:
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
+
+    return angles
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -841,9 +842,9 @@ def as_euler(
         )
 
     if n_gimbal_warnings > 0 and not suppress_warnings:
-        warnings.warn("Gimbal lock detected %s time(s). Setting third "
-                      "angle to zero since it is not possible to uniquely "
-                      "determine all angles." % n_gimbal_warnings)
+        warnings.warn("Gimbal lock detected. Setting third angle to zero "
+                      "since it is not possible to uniquely determine "
+                      "all angles.", stacklevel=2)
 
     if degrees:
         angles = np.rad2deg(angles)
@@ -891,16 +892,9 @@ def as_davenport(
     if np.dot(n2, n3) >= 1e-7:
         raise ValueError("Consecutive axes must be orthogonal.")
 
-    arr_n = _compute_davenport_from_quat(q, n1, n2, n3, extrinsic)
-    data = arr_n.arr
-    n_gimbal_warnings = arr_n.n
-
-    if n_gimbal_warnings > 0 and not suppress_warnings:
-        warnings.warn("Gimbal lock detected %s time(s). Setting third "
-                      "angle to zero since it is not possible to uniquely "
-                      "determine all angles." % n_gimbal_warnings)
-
-    angles = np.asarray(data)
+    angles = np.asarray(_compute_davenport_from_quat(
+        q, n1, n2, n3, extrinsic, suppress_warnings
+    ))
 
     if degrees:
         angles = np.rad2deg(angles)

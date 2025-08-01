@@ -1080,7 +1080,7 @@ def _get_angles(
     case1 = xp.abs(angles[..., 1]) <= eps
     case2 = xp.abs(angles[..., 1] - xp.pi) <= eps
     case0 = ~(case1 | case2)
-    if not is_lazy_array(case0) and xp.any(~case0) and not suppress_warnings:
+    if not suppress_warnings and not is_lazy_array(case0) and xp.any(~case0):
         warnings.warn(
             "Gimbal lock detected. Setting third angle to zero "
             "since it is not possible to uniquely determine "
