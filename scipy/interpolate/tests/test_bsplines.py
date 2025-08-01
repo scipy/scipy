@@ -3749,8 +3749,8 @@ class TestMakeSplrep(TestMakeSplrepBase):
     def test_simple_vs_splrep(self, xp):
         # XX: Non-periodic splines do not work for all supported degrees
         k = 3
-        x, y, s = self._get_xykt()
-        tt = xp.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+        x, y, s = self._get_xykt(xp)
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
         t, c, k = splrep(x, y, k=k, s=s)
         t, c = xp.asarray(t), xp.asarray(c)
@@ -3759,9 +3759,9 @@ class TestMakeSplrep(TestMakeSplrepBase):
         spl = make_splrep(x, y, k=k, s=s)
         xp_assert_close(c[:spl.c.shape[0]], spl.c, atol=1e-15)
 
-    def test_with_knots(self, xp):
+    def test_with_knots(self):
         k = 3
-        x, y, s = self._get_xykt(xp)
+        x, y, s = self._get_xykt()
 
         t = list(generate_knots(x, y, k=k, s=s))[-1]
 
