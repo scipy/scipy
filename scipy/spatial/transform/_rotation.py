@@ -2143,6 +2143,10 @@ class Rotation:
         if is_array and indexer.dtype == self._xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
         if is_array and self._xp.isdtype(indexer.dtype, "integral"):
+            # xp.take is implementation-defined for zero-dim arrays, hence we raise
+            # pre-emptively to have consistent behavior across frameworks.
+            if self._quat.shape[0] == 0:
+                raise IndexError("cannot do a non-empty take from an empty axes.")
             return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
@@ -2579,7 +2583,7 @@ class Rotation:
         rot._quat = quat
         rot._xp = xp
         if backend is None:
-            backend = backend_registry[xp]
+            backend = backend_registry.get(xp, xp_backend)
         rot._backend = backend
         return rot
 
