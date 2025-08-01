@@ -1937,11 +1937,11 @@ def _lsq_solve_qr(x, y, t, k, w, periodic=False):
         # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
         R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
         # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L239-L314
-        A1, A2, Z, _ = _dierckx.qr_reduce_periodic(
+        A1, A2, Z, fp = _dierckx.qr_reduce_periodic(
             R, H1, H2, offset, nc, y_w, k,
             len(t), False)         # modifies arguments in-place
         # Ref: https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpbacp.f
-        c, residuals, fp = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
+        c, residuals, _ = _dierckx.fpbacp(A1, A2, Z, k, k, x, y, t, w)
         return R, y_w, c, fp, residuals
 
 

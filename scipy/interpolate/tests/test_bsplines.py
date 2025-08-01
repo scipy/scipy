@@ -3691,6 +3691,25 @@ class TestMakeSplrep:
         xp_assert_close(spl.t[:k+1], np.asarray([xb] * (k + 1)))
         xp_assert_close(spl.t[-(k+1):], np.asarray([xe] * (k + 1)))
 
+    @pytest.mark.parametrize("n", [100, 51, 15, 11])
+    @pytest.mark.parametrize("s", [10, 8, 5, 1, 1e-2])
+    def test_make_splrep_matches_scipy_splrep_periodic(self, n, s):
+        rng = np.random.default_rng(123)
+        x = np.r_[0, np.sort(rng.uniform(0, 2 * np.pi, size=n - 2)), 2 * np.pi]
+        y = np.sin(x) + np.cos(x)
+
+        t, c, k = splrep(x, y, s=s, per=(self.bc_type == "periodic"))
+        spl = make_splrep(x, y, s=s, t=t, bc_type=self.bc_type)
+        xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
+
+        if not (n == 11 and s == 1 and self.bc_type == "periodic"):
+            t, c, k = splrep(x, y, s=s, per=(self.bc_type == "periodic"))
+            spl = make_splrep(x, y, s=s, bc_type=self.bc_type)
+
+            assert len(t) == len(spl.t), f"Length mismatch: {len(t)} != {len(spl.t)}"
+            xp_assert_close(spl.t, t, atol=1e-15)
+            xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
+
 class TestMakeSplrep(TestMakeSplrepBase):
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])

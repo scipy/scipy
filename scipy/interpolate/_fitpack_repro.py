@@ -903,19 +903,6 @@ def root_rati(f, p0, bracket, acc):
 
     return Bunch(converged=converged, root=p, iterations=it, ier=ier)
 
-def _compute_fp_limit(x, y, t, k, w, periodic=False):
-    if not periodic:
-        _, fp = _get_residuals(x, y, t, k, w, periodic=periodic)
-    else:
-        y_w = y * w[:, None]
-        # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L221-L238
-        R, H1, H2, offset, nc = _dierckx.data_matrix_periodic(x, t, k, w, False)
-        # Ref: https://github.com/scipy/scipy/blob/maintenance/1.16.x/scipy/interpolate/fitpack/fpperi.f#L239-L314
-        _, _, _, fp = _dierckx.qr_reduce_periodic(
-            R, H1, H2, offset, nc, y_w, k,
-            len(t), False)         # modifies arguments in-place
-    return fp
-
 def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     """Shared infra for make_splrep and make_splprep.
     """
@@ -968,7 +955,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     # N.B. - Check _lsq_solve_qr which is called
     # via _get_residuals for logic behind
     # computation of fp for periodic splines
-    fp = _compute_fp_limit(x, y, t, k, w, periodic=periodic)
+    _, fp = _get_residuals(x, y, t, k, w, periodic=periodic)
     fpinf = fp - s
 
     # f(p=0): LSQ spline without internal knots
@@ -983,7 +970,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
         for i in range(0, k + 1):
             tc[i] = x[0] - (k - i) * per
             tc[i + k + 1] = x[m - 1] + i * per
-        fp0 = _compute_fp_limit(x, y, tc, k, w, periodic=periodic)
+        _, fp0 = _get_residuals(x, y, tc, k, w, periodic=periodic)
         fp0 = fp0 - s
 
     # solve
