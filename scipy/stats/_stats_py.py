@@ -5552,6 +5552,9 @@ def kendalltau(x, y, *, nan_policy='propagate',
     tau-a is not implemented separately because both tau-b and tau-c reduce
     to tau-a in the absence of ties.
 
+    Although a naive implementation has O(n^2) complexity, this implementation
+    uses a Fenwick tree to do the computation in O(n log(n)) complexity.
+
     Parameters
     ----------
     x, y : array_like
