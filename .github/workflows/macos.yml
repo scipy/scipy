@@ -28,8 +28,6 @@ jobs:
   test_meson:
     name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
@@ -143,8 +141,6 @@ jobs:
   test_scipy_openblas:
     name: M1 & OpenBLAS, fast, py3.11/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
@@ -184,19 +180,17 @@ jobs:
         spin test
 
 
-  test_meson_accelerate:
-    name: Accelerate, fast, py3.11/npAny, spin
+  test_accelerate:
+    name: Accelerate, full, py3.13/npAny, spin
     needs: get_commit_message
-    # If using act to run CI locally the github object does not exist and
-    # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-15
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.11"]
-
+        blas-interface: ["LP64", "ILP64"]
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -205,24 +199,34 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+        python-version: "3.13"
 
-    - name: Build and Install SciPy
+    - name: Make gfortran-13 on runner image usable
       run: |
-        sudo xcode-select -s /Applications/Xcode_16.app
+        # Ensure we use gfortran-13 and that its runtime is on the library search path
+        FC=$(which gfortran-13)
+        GFORTRAN_LIB=$(dirname `$FC --print-file-name libgfortran.dylib`)
+        echo DYLD_LIBRARY_PATH=$GFORTRAN_LIB >> "$GITHUB_ENV"
+        echo FC=$FC >> "$GITHUB_ENV"
 
-        git submodule update --init
-        GFORTRAN_LOC=$(which gfortran-13)
-        ln -s $GFORTRAN_LOC gfortran
-        export PATH=$PWD:$PATH
+    - name: Install dependencies from PyPI
+      run: |
+        pip install meson cython pythran pybind11 ninja numpy spin pooch pytest hypothesis
 
-        # Ensure we have gfortran dylib
-        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
-        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+    - name: Build SciPy with Accelerate (LP64)
+      if: matrix.blas-interface == 'LP64'
+      run: |
+        # The b_ndebug flag is a workaround for `_LIBCPP_ENABLE_ASSERTIONS` warnings, can
+        # be removed once Meson 1.8.3 is out with the fix (see meson#14440).
+        spin build --with-accelerate -S-Db_ndebug=true
 
-        pip install meson cython pythran pybind11 ninja numpy spin
-        spin build --with-accelerate
+    - name: Build SciPy with Accelerate (ILP64)
+      if: matrix.blas-interface == 'ILP64'
+      run: |
+        # Once Meson has full BLAS support (xref meson#14773), the
+        # `blas-symbol-suffix` flag can be dropped.
+        spin build -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64' -S-Db_ndebug=true
 
-        pip install pooch pytest hypothesis
-        spin test
+    - name: Run the test suite
+      run: |
+        spin test -m full

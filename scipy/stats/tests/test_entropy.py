@@ -6,12 +6,14 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-
+@make_xp_test_case(stats.entropy)
 class TestEntropy:
     def test_entropy_positive(self, xp):
         # See ticket #497
@@ -117,6 +119,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
+@make_xp_test_case(stats.differential_entropy)
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.

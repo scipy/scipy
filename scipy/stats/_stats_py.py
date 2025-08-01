@@ -473,6 +473,7 @@ def _mode_result(mode, count):
     return ModeResult(mode, count)
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -1954,6 +1955,7 @@ def jarque_bera(x, *, axis=None):
 #####################################
 
 
+@xp_capabilities(np_only=True)
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
     """Calculate the score at a given percentile of the input sequence.
@@ -2078,6 +2080,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
+@xp_capabilities(np_only=True)
 def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     """Compute the percentile rank of a score relative to a list of scores.
 
@@ -2315,6 +2318,7 @@ CumfreqResult = namedtuple('CumfreqResult',
                             'extrapoints'))
 
 
+@xp_capabilities(np_only=True)
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a cumulative frequency histogram, using the histogram function.
 
@@ -2397,6 +2401,7 @@ RelfreqResult = namedtuple('RelfreqResult',
                             'extrapoints'))
 
 
+@xp_capabilities(np_only=True)
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """Return a relative frequency histogram, using the histogram function.
 
@@ -2477,6 +2482,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
+@xp_capabilities(np_only=True)
 def obrientransform(*samples):
     """Compute the O'Brien transform on input data (any number of arrays).
 
@@ -3035,6 +3041,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 _scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3208,6 +3215,7 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
+@xp_capabilities(np_only=True)
 def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
                          nan_policy='propagate'):
     r"""
@@ -3370,6 +3378,7 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
+@xp_capabilities(np_only=True)
 def sigmaclip(a, low=4., high=4.):
     """Perform iterative sigma-clipping of array elements.
 
@@ -3439,6 +3448,7 @@ def sigmaclip(a, low=4., high=4.):
     return SigmaclipResult(c, critlower, critupper)
 
 
+@xp_capabilities(np_only=True)
 def trimboth(a, proportiontocut, axis=0):
     """Slice off a proportion of items from both ends of an array.
 
@@ -3525,6 +3535,7 @@ def trimboth(a, proportiontocut, axis=0):
     return atmp[tuple(sl)]
 
 
+@xp_capabilities(np_only=True)
 def trim1(a, proportiontocut, tail='right', axis=0):
     """Slice off a proportion from ONE end of the passed array distribution.
 
@@ -3612,6 +3623,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
+@xp_capabilities(np_only=True)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
 
@@ -3737,6 +3749,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -4032,6 +4045,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
@@ -4779,6 +4793,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                           alternative=alternative, x=x, y=y, axis=axis)
 
 
+@xp_capabilities(np_only=True)
 def fisher_exact(table, alternative=None, *, method=None):
     """Perform a Fisher exact test on a contingency table.
 
@@ -5158,6 +5173,7 @@ def _untabulate(table):
     return np.concatenate(x), np.concatenate(y)
 
 
+@xp_capabilities(np_only=True)
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
               alternative='two-sided'):
     r"""Calculate a Spearman correlation coefficient with associated p-value.
@@ -5420,6 +5436,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
@@ -5518,6 +5535,7 @@ def pointbiserialr(x, y):
     return res
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
@@ -5732,6 +5750,7 @@ def _weightedtau_n_samples(kwargs):
     return 2 if (isinstance(rank, bool) or rank is None) else 3
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None,
                           n_samples=_weightedtau_n_samples,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
@@ -7415,6 +7434,7 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -7760,6 +7780,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8043,6 +8064,7 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
+@xp_capabilities(out_of_scope=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8239,6 +8261,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
                     _no_deco=True)
 
 
+@xp_capabilities(np_only=True)
 def tiecorrect(rankvals):
     """Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
@@ -8287,6 +8310,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
@@ -8372,6 +8396,7 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8473,6 +8498,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples):
     """Compute the Friedman test for repeated samples.
@@ -8566,6 +8592,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
@@ -8997,6 +9024,7 @@ def quantile_test_iv(x, q, p, alternative):
     return x, q, p, alternative
 
 
+@xp_capabilities(np_only=True)
 def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
@@ -9335,6 +9363,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 #####################################
 
 
+@xp_capabilities(np_only=True)
 def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the Wasserstein-1 distance between two N-D discrete distributions.
@@ -9541,6 +9570,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     return -opt_res.fun
 
 
+@xp_capabilities(np_only=True)
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the Wasserstein-1 distance between two 1D discrete distributions.
@@ -9633,6 +9663,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
 
+@xp_capabilities(np_only=True)
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""Compute the energy distance between two 1D distributions.
 
@@ -10106,6 +10137,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
     return ranks
 
 
+@xp_capabilities(np_only=True)
 def expectile(a, alpha=0.5, *, weights=None):
     r"""Compute the expectile at the specified level.
 
@@ -10286,6 +10318,7 @@ def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
@@ -10388,6 +10421,7 @@ def _unpack_LinregressResult(res, _):
     return tuple(res) + (res.intercept_stderr,)
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)

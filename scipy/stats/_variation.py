@@ -1,12 +1,18 @@
 import warnings
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, xp_device, _length_nonmasked
+from scipy._lib._array_api import (
+    array_namespace,
+    xp_capabilities,
+    xp_device,
+    _length_nonmasked,
+)
 import scipy._lib.array_api_extra as xpx
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
