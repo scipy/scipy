@@ -3479,27 +3479,25 @@ class F_dense:
 
         return fp - self.s
 
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplrepBase:
 
     bc_type = None
 
-    def _get_xykt(self):
+    def _get_xykt(self, xp=np):
         if self.bc_type == 'periodic':
-            x = np.linspace(0, 2*np.pi, 10)    # nodes
-            y  = np.sin(x)
+            x = xp.linspace(0, 2*np.pi, 10)    # nodes
+            y  = xp.sin(x)
             s = 1.7e-4
 
             return x, y, s
         else:
-            x = np.linspace(0, 5, 11)
-            y  = np.sin(x*3.14 / 5)**2
+            x = xp.linspace(0, 5, 11)
+            y  = xp.sin(x*3.14 / 5)**2
             s = 1.7e-4
 
             return x, y, s
 
-
-@skip_xp_backends(cpu_only=True)
-class TestMakeSplrep:
     def test_input_errors(self):
         x = np.linspace(0, 10, 11)
         y = np.linspace(0, 10, 12)
@@ -3554,13 +3552,6 @@ class TestMakeSplrep:
         with assert_raises(ValueError):
             # len(x) != len(y)
             make_splrep(np.arange(8), np.arange(9), s=0.1, bc_type=self.bc_type)
-
-    def _get_xykt(self, xp=np):
-        x = xp.linspace(0, 5, 11)
-        y  = xp.sin(x*3.14 / 5)**2
-        k = 3
-        s = 1.7e-4
-        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
     def _test_with_knots(self, x, y, k, s):
         t = list(generate_knots(x, y, k=k, s=s, bc_type=self.bc_type))[-1]
@@ -3755,7 +3746,7 @@ class TestMakeSplrep(TestMakeSplrepBase):
         assert D.shape[0] == n - 2*k - 2   # number of internal knots
         xp_assert_close(D, D_dense, atol=1e-15)
 
-    def test_simple_vs_splrep(self):
+    def test_simple_vs_splrep(self, xp):
         # XX: Non-periodic splines do not work for all supported degrees
         k = 3
         x, y, s = self._get_xykt()
@@ -3769,7 +3760,8 @@ class TestMakeSplrep(TestMakeSplrepBase):
         xp_assert_close(c[:spl.c.shape[0]], spl.c, atol=1e-15)
 
     def test_with_knots(self, xp):
-        x, y, k, s, _ = self._get_xykt(xp)
+        k = 3
+        x, y, s = self._get_xykt(xp)
 
         t = list(generate_knots(x, y, k=k, s=s))[-1]
 
