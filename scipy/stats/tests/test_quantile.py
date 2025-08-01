@@ -2,7 +2,13 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy._lib._array_api import xp_default_dtype, is_numpy, is_torch, SCIPY_ARRAY_API
+from scipy._lib._array_api import (
+    xp_default_dtype,
+    is_numpy,
+    is_torch,
+    make_xp_test_case,
+    SCIPY_ARRAY_API,
+)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -37,8 +43,7 @@ def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
     return res
 
 
-@skip_xp_backends('dask.array', reason="No take_along_axis yet.")
-@skip_xp_backends('jax.numpy', reason="No mutation.")
+@make_xp_test_case(stats.quantile)
 class TestQuantile:
 
     def test_input_validation(self, xp):
