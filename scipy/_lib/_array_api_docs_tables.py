@@ -5,11 +5,10 @@ a wide number of functions at once. Rows correspond to functions and
 columns correspond to library/device/option combinations.
 """
 
-import types
-
 from collections import defaultdict
 from enum import auto, Enum
 from importlib import import_module
+from types import ModuleType
 
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._array_api import _make_sphinx_capabilities
@@ -165,6 +164,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     }
 
 
+def is_named_function_like_object(obj):
+    return (
+        not isinstance(obj, ModuleType | type)
+        and callable(obj) and hasattr(obj, "__name__")
+    )
+
+
 def make_flat_capabilities_table(
         modules: str | list[str],
         backend_type: str,
@@ -219,28 +225,14 @@ def make_flat_capabilities_table(
                 # for backwards compatibility reasons.
                 continue
             thing = getattr(module, name)
-            if isinstance(thing, type) and issubclass(thing, Exception):
-                # Skip exception types
+            if not is_named_function_like_object(thing):
                 continue
-            if isinstance(thing, types.ModuleType):
-                # Skip modules
-                continue
-            if isinstance(thing, type):
-                # Skip classes for now, but we may want to handle these in some
-                # way later, so giving them their own branch.
-                continue
-            if callable(thing) and hasattr(thing, "__name__"):
-                entry = xp_capabilities_table.get(thing, None)
-                capabilities = _process_capabilities_table_entry(entry)[backend_type]
-                row = {"module": module_name}
-                row.update({"function": name})
-                row.update(capabilities)
-                output.append(row)
-            else:
-                # Skip anything else which isn't a callable. Also skip unnamed
-                # callables. Currently the only unnamed callables are distributions
-                # from the old distribution infrastructure.
-                continue
+            entry = xp_capabilities_table.get(thing, None)
+            capabilities = _process_capabilities_table_entry(entry)[backend_type]
+            row = {"module": module_name}
+            row.update({"function": name})
+            row.update(capabilities)
+            output.append(row)
     return output
 
 
@@ -300,4 +292,3 @@ def calculate_table_statistics(
         key: (dict(value), key not in missing_xp_capabilities)
         for key, value in counter.items()
     }
-

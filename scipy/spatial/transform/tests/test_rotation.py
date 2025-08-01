@@ -1644,7 +1644,7 @@ def test_align_vectors_noise(xp):
     xp_assert_close(error_vector[2], xp.asarray(0.0)[()], atol=tolerance)
 
     # Check error bounds using covariance matrix
-    cov *= sigma
+    cov *= xp.asarray(sigma)
     xp_assert_close(cov[0, 0], xp.asarray(0.0)[()], atol=tolerance)
     xp_assert_close(cov[1, 1], xp.asarray(0.0)[()], atol=tolerance)
     xp_assert_close(cov[2, 2], xp.asarray(0.0)[()], atol=tolerance)
