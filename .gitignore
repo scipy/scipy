@@ -170,10 +170,8 @@ scipy/fftpack/convolvemodule.c
 scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/integrate/_dopmodule.c
 scipy/integrate/_lsodamodule.c
 scipy/integrate/_vodemodule.c
-scipy/integrate/_dop-f2pywrappers.f
 scipy/integrate/_lsoda-f2pywrappers.f
 scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
@@ -222,7 +220,6 @@ scipy/linalg/cython_blas.pxd
 scipy/linalg/cython_blas.pyx
 scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
-scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/linalg/_matfuncs_sqrtm_triu.cpp
 scipy/ndimage/src/_ni_label.c
@@ -230,10 +227,6 @@ scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/_group_columns.cpp
-scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
-scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
-scipy/optimize/__nnls/__nnlsmodule.c
-scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
@@ -309,4 +302,3 @@ scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
-scipy/optimize/lbfgsb/_lbfgsbmodule.c
