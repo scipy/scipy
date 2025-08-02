@@ -528,8 +528,7 @@ def _laplacian_sparse_flo(
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
         if symmetrized:
-            diag += np.asarray(graph_abs.sum(axis=1 - axis)).ravel() \
-                    - graph_diagonal_abs
+            diag += np.ravel(graph_abs.sum(axis=1 - axis)) - graph_diagonal_abs
     else:
         raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
 
@@ -598,8 +597,7 @@ def _laplacian_sparse(
         w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
         if symmetrized:
             # m_abs.T == np.abs(m.T.conj())
-            w += np.asarray(m_abs.T.sum(axis=axis)).ravel() \
-                 - m_diagonal_abs
+            w += np.ravel(m_abs.T.sum(axis=axis)) - m_diagonal_abs
             m += m.T.conj()
     else:
         raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
@@ -656,8 +654,7 @@ def _laplacian_dense_flo(
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
         if symmetrized:
-            diag += np.asarray(graph_abs.sum(axis=1 - axis)).ravel() \
-                    - graph_diagonal_abs
+            diag += np.ravel(graph_abs.sum(axis=1 - axis)) - graph_diagonal_abs
     else:
         raise ValueError(f"Invalid signed_graph_variant: {signed_graph_variant!r}")
 
