@@ -1184,17 +1184,15 @@ class dopri5(IntegratorBase):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), type=np.int32)
-        iwork[0] = self.nsteps
-        iwork[2] = self.verbosity
-        self.iwork = iwork
+        self.iwork = zeros((21,), dtype=np.int32)
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.iout, self.work, self.iwork]
+                          self.iout, self.work, self.iwork,
+                          self.nsteps, self.verbosity]
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        x, y, iwork, istate = self.runner(*((f, t0, y0, t1) +
-                                          tuple(self.call_args) + (f_params,)))
+        x, y, istate = self.runner(*((f, t0, y0, t1) +
+                                   tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
@@ -1204,7 +1202,7 @@ class dopri5(IntegratorBase):
             self.success = 0
         return y, x
 
-    def _solout(self, nr, xold, x, y, nd, icomp, con):
+    def _solout(self, x, y):
         if self.solout is not None:
             if self.solout_cmplx:
                 y = y[::2] + 1j * y[1::2]
@@ -1218,8 +1216,8 @@ if dopri5.runner is not None:
 
 
 class dop853(dopri5):
-    runner = getattr(_dop, 'dop853', None)
-    name = 'dop853'
+    runner = getattr(_dop, 'dopri853', None)
+    name = 'dopri853'
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
@@ -1245,12 +1243,10 @@ class dop853(dopri5):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), dtype=np.int32)
-        iwork[0] = self.nsteps
-        iwork[2] = self.verbosity
-        self.iwork = iwork
+        self.iwork = zeros((21,), dtype=np.int32)
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.iout, self.work, self.iwork]
+                          self.iout, self.work, self.iwork,
+                          self.nsteps, self.verbosity]
         self.success = 1
 
 

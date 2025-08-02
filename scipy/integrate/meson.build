@@ -50,6 +50,11 @@ vode_lib = static_library('vode_lib',
   gnu_symbol_visibility: 'hidden',
 )
 
+dop_lib = static_library('dop_lib',
+  'src/dop.c',
+  c_args: ['-Wall', '-Wextra', '-Wpedantic'],
+)
+
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
   dependencies: [np_dep, ccallback_dep],
@@ -91,8 +96,9 @@ py3.extension_module('_lsoda',
 )
 
 py3.extension_module('_dop',
-  ['__dop.h', '__dop.c'],
-  dependencies: np_dep,
+  ['_dopmodule.c'],
+  link_with: [dop_lib],
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )

@@ -1,98 +1,123 @@
-#ifndef __DOP_H
-#define __DOP_H
+#ifndef DOP_H
+#define DOP_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
-#define PY_SSIZE_T_CLEAN
-#include "Python.h"
-#include "numpy/arrayobject.h"
-#include "ccallback.h"
 #include <math.h>
 
-
-#define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
-#define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-
-// dopri_fcn(n, x, y, f)
-// dopri_solout(nr, xold, x, y, n, con, icomp, nd)
-typedef void dopri_fcn(int, double, double*, double*);
-typedef int dopri_solout(int, double, double, double*, int, double*, int*, int);
-
-
-static PyObject* dop_error;
-
-static char doc_dopri853[] = "[result,abserr,infodict,ier] = _qagse(fun, a, b, | args, full_output, epsabs, epsrel, limit)";
-static char doc_dopri5[] = "x,y,iwork,idid = dopri5(fcn,x,y,xend,rtol,atol,solout,iout,work,iwork,[fcn_extra_args,overwrite_y,solout_extra_args])";
-
-void dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
-              double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
-              int* iwork, double* rpar, int* ipar, int* ierr);
-void dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
-            double* atol, const int itol, dopri_solout* solout, const int iout,
-            double* work, int* iwork, int* ierr);
-
-
-/*
+/**
+ * @brief Callback function type definition for computing the right-hand side of the ODE system.
  *
- * Handle the callback handler here for Python - C bridge.
+ * This function evaluates the derivatives for a system of first-order ordinary differential equations
+ * at a given point (x, y).
  *
+ * @param n   Dimension of the system (number of equations).
+ * @param x   Current value of the independent variable.
+ * @param y   Array of current values of the dependent variables.
+ * @param f   Output array for the computed derivatives (dy/dx).
+ * @param rpar User-supplied real parameter array (optional, can be NULL).
+ * @param ipar User-supplied integer parameter array (optional, can be NULL).
+ * 
+ * @return None. The computed derivatives should be stored in the array f.
+ *
+ * @note
+ * - The function should fill the array f with the values of the derivatives at (x, y).
+ * - Used as a callback by the integrator routines.
  */
+typedef void dopri_fcn(int n, double x, double* y, double* f, double* rpar, int* ipar);
 
-static struct PyMethodDef dop_module_methods[] = {
-  {"_dop853", dop_dopri853, METH_VARARGS, doc_dopri853},
-  {"_dopri5", dop_dopri5, METH_VARARGS, doc_dopri5},
-  {NULL    , NULL          , 0           , NULL     }
-};
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_dop",
-    NULL,
-    -1,
-    dop_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
+/**
+ * @brief Callback function type definition for solution output during ODE integration.
+ *
+ * This function is called by the integrator at each accepted step or for dense output,
+ * allowing the user to process or store intermediate results.
+ *
+ * @param nr      Step number.
+ * @param xold    Previous value of the independent variable.
+ * @param x       Current value of the independent variable.
+ * @param y       Array of current values of the dependent variables.
+ * @param n       Dimension of the system (number of equations).
+ * @param con     Workspace array for dense output coefficients (if applicable).
+ * @param icomp   Array of indices for components to output (if applicable).
+ * @param nd      Number of components for dense output.
+ * @param rpar    User-supplied real parameter array (optional, can be NULL).
+ * @param ipar    User-supplied integer parameter array (optional, can be NULL).
+ * @param irtrn   Pointer to integer return flag; set negative to terminate integration.
+ *
+ * @return Integer status code. Negative value requests termination of integration.
+ *
+ * @note
+ * - This function can be used to store, print, or process the solution at each step.
+ * - For dense output, additional information is provided via con and icomp.
+ * - Setting *irtrn < 0 will terminate the integration early.
+ */
+typedef void dopri_solout(int nr, double xold, double x, double* y, int n, double* con, int* icomp, int nd, double* rpar, int* ipar, int*irtrn);
 
-PyMODINIT_FUNC
-PyInit__dop(void)
-{
-    PyObject *module, *mdict;
 
-    import_array();
+/**
+ * @brief Integrates a system of first-order ODEs using the explicit Runge-Kutta DOP853 method.
+ *
+ * This function numerically solves the initial value problem for a system of ordinary differential equations
+ * using the Dormand-Prince 8(5,3) method with adaptive step size control and optional dense output.
+ *
+ * @param n         Dimension of the system (number of equations).
+ * @param fcn       Pointer to the function computing the right-hand side: fcn(n, x, y, f).
+ * @param x         Initial value of the independent variable.
+ * @param y         Array of initial values for the dependent variables (input/output).
+ * @param xend      Pointer to the final value of the independent variable.
+ * @param rtol      Array of relative error tolerances.
+ * @param atol      Array of absolute error tolerances.
+ * @param itol      Tolerance type: 0 for scalar, 1 for vector.
+ * @param solout    Pointer to the solution output function (optional, can be NULL).
+ * @param iout      Output control flag: 0 (no output), 1 (output at each step), 2 (dense output).
+ * @param work      Workspace array for method parameters and internal storage.
+ * @param iwork     Integer workspace array for method parameters and internal storage.
+ * @param rpar      User-supplied real parameter array (passed to fcn and solout).
+ * @param ipar      User-supplied integer parameter array (passed to fcn and solout).
+ * @param ierr      Pointer to error code (output).
+ *
+ * @return None. Results are returned via the y array and ierr.
+ *
+ * @note
+ * - The function supports both scalar and vector error tolerances.
+ * - Dense output is available if iout == 2.
+ * - The workspace arrays must be properly sized according to the documentation.
+ * - Error codes are set in *ierr: 1 (success), negative values (various errors).
+ */
+void
+dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+         double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
+         int* iwork, double* rpar, int* ipar, int* ierr);
 
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
+/**
+ * @brief Integrates a system of first-order ODEs using the explicit Runge-Kutta DOPRI5 method.
+ *
+ * This function numerically solves the initial value problem for a system of ordinary differential equations
+ * using the Dormand-Prince 5th order method with adaptive step size control.
+ *
+ * @param n         Dimension of the system (number of equations).
+ * @param fcn       Pointer to the function computing the right-hand side: fcn(n, x, y, f).
+ * @param x         Initial value of the independent variable.
+ * @param y         Array of initial values for the dependent variables (input/output).
+ * @param xend      Pointer to the final value of the independent variable.
+ * @param rtol      Array of relative error tolerances.
+ * @param atol      Array of absolute error tolerances.
+ * @param itol      Tolerance type: 0 for scalar, 1 for vector.
+ * @param solout    Pointer to the solution output function (optional, can be NULL).
+ * @param iout      Output control flag: 0 (no output), 1 (output at each step), 2 (dense output).
+ * @param work      Workspace array for method parameters and internal storage.
+ * @param iwork     Integer workspace array for method parameters and internal storage.
+ * @param ierr      Pointer to error code (output).
+ *
+ * @return None. Results are returned via the y array and ierr.
+ *
+ * @note
+ * - The function supports both scalar and vector error tolerances.
+ * - The workspace arrays must be properly sized according to the documentation.
+ * - Error codes are set in *ierr: 1 (success), negative values (various errors).
+ */
+void dopri5(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+       double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
+       int* iwork, double* rpar, int* ipar, int* ierr);
 
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-
-    dop_error = PyErr_NewException ("_dop.error", NULL, NULL);
-    if (dop_error == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(mdict, "error", dop_error)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-    return module;
-}
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif /* __cplusplus */
 
 #endif

@@ -1,7 +1,34 @@
-#include "__dop.h"
+#include "dop.h"
+
+static void
+dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hmax,
+       double h, double* rtol, double* atol, const int itol, dopri_solout* solout, const int iout,
+       int* ierr, const int nmax, const double uround, const int meth, const int nstiff,
+       const double safe, const double beta, const double fac1, const double fac2,
+       double* work, int* iwork, int* nrd, double* rpar, int* ipar, int* nfcn,
+       int* nstep, int* naccept, int* nreject);
+
+static double
+hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
+         double* f0, double* f1, double* y1, int iord, double hmax, double* atol,
+         double* rtol, int itol, double* rpar, int* ipar);
+
+static void
+dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
+       double hmax, double h, double* rtol, double* atol, const int itol,
+       dopri_solout* solout, const int iout, int* ierr, const int nmax,
+       const double uround, const int meth, int nstiff, const double safe,
+       const double beta, const double fac1, const double fac2, double* work,
+       int* iwork, int* nrd, double* rpar, int* ipar, int* nfcn, int* nstep,
+       int* naccept, int* nreject);
+
+static double
+hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
+      double* f1, double* y1, int iord, double hmax, double* atol, double* rtol,
+      int itol, double* rpar, int* ipar);
 
 void
-dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
+dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
          double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
          int* iwork, double* rpar, int* ipar, int* ierr)
 {
@@ -19,7 +46,7 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double*
     {
         nmax = 100000;
     } else {
-        nmax = iwork[1];
+        nmax = iwork[0];
         if (nmax <= 0)
         {
             arret = 11;
@@ -94,7 +121,7 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double*
     // -------- maximal step size
     if (work[5] == 0.0)
     {
-        hmax = *xend - x;
+        hmax = xend - x;
     } else {
         hmax = work[5];
     }
@@ -107,8 +134,8 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double*
 
     // -------- call to core integrator ------------
     dp86co(n, fcn, x, y, xend, hmax, h, rtol, atol, itol, solout, iout, ierr, nmax,
-           uround, meth, nstiff, safe, beta, fac1, fac2, work, iwork, nrdens, nfcn, nstep,
-           naccept, nreject);
+           uround, meth, nstiff, safe, beta, fac1, fac2, work, iwork, &nrdens, rpar,
+           ipar, &nfcn, &nstep, &naccept, &nreject);
 
     work[6] = h;
     iwork[16] = nfcn;
@@ -119,31 +146,32 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double*
     return;
 }
 
-void
-dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hmax,
+static void
+dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hmax,
        double h, double* rtol, double* atol, const int itol, dopri_solout* solout, const int iout,
        int* ierr, const int nmax, const double uround, const int meth, const int nstiff,
        const double safe, const double beta, const double fac1, const double fac2,
-       double* work, int* iwork, int* nrd, int* nfcn, int* nstep, int* naccept, int* nreject)
+       double* work, int* iwork, int* nrd, double* rpar, int* ipar, int* nfcn,
+       int* nstep, int* naccept, int* nreject)
 {
 
     double atoli, rtoli, bspl, facold, expo1, facc1, facc2, posneg, hlamb, hnew, fac;
     double err, err2, fac11, deno, hout, xold, xph, ydiff, sk, erri, stnum, stden;
-    int irtrn, iasti, iord, i, j, last = 0, nonsti, reject = 0;
-
+    int irtrn, iasti, iord, i, j, last = 0, nonsti = 0, reject = 0;
+    (void)meth;
     // Pointers into work
-    double* k1   = &work[20];
-    double* k2   = &work[20 + n];
-    double* k3   = &work[20 + n*2];
-    double* k4   = &work[20 + n*3];
-    double* k5   = &work[20 + n*4];
-    double* k6   = &work[20 + n*5];
-    double* k7   = &work[20 + n*6];
-    double* k8   = &work[20 + n*7];
-    double* k9   = &work[20 + n*8];
-    double* k10  = &work[20 + n*9];
-    double* y1   = &work[20 + n*10];
-    double* cont = &work[20 + n*11];
+    double* restrict k1   = &work[20];
+    double* restrict k2   = &work[20 + n];
+    double* restrict k3   = &work[20 + n*2];
+    double* restrict k4   = &work[20 + n*3];
+    double* restrict k5   = &work[20 + n*4];
+    double* restrict k6   = &work[20 + n*5];
+    double* restrict k7   = &work[20 + n*6];
+    double* restrict k8   = &work[20 + n*7];
+    double* restrict k9   = &work[20 + n*8];
+    double* restrict k10  = &work[20 + n*9];
+    double* restrict y1   = &work[20 + n*10];
+    double* restrict cont = &work[20 + n*11];
     int* icomp   = &iwork[20];
 
     // Integration parameters
@@ -304,31 +332,30 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
 
     // Initializations
     facold = 1.0e-4;
-    expo1 = 1.0 / 8.0 - beta * 0.2;
+    expo1 = 1.25e-1 - beta * 0.2;
     facc1 = 1.0 / fac1;
     facc2 = 1.0 / fac2;
-    posneg = copysign(1.0, *xend - x);
+    posneg = copysign(1.0, xend - x);
     // Initial preparations
     atoli = atol[0];
     rtoli = rtol[0];
     hlamb = 0.0;
     iasti = 0;
 
-    fcn(n, x, y, k1);
+    fcn(n, x, y, k1, rpar, ipar);
     hmax = fabs(hmax);
     iord = 8;
     if (h == 0.0) {
-        h = hinit853(n, fcn, x, y, posneg, k1, k2, k3, iord, hmax, atol, rtol, itol);
+        h = hinit853(n, fcn, x, y, posneg, k1, k2, k3, iord, hmax, atol, rtol, itol, rpar, ipar);
     }
 
     *nfcn += 2;
-    reject = 0;
     xold = x;
 
     if (iout >= 1) {
         irtrn = 1;
         hout = 1.0;
-        irtrn = solout(*naccept + 1, xold, x, y, n, cont, icomp, nrd);
+        solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
         if (irtrn < 0) { *ierr = -3; return; }
     }
 
@@ -336,49 +363,49 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
     while (1) {
         if (*nstep > nmax) { *ierr = -2; return; }
         if (0.1 * fabs(h) <= fabs(x) * uround) { *ierr = -3; return; }
-        if ((x + 1.01 * h - *xend) * posneg > 0.0) {
-            h = *xend - x;
+        if ((x + 1.01 * h - xend) * posneg > 0.0) {
+            h = xend - x;
             last = 1;
         }
 
         *nstep += 1;
 
         // the twelve stages
-        if (irtrn >= 2) { fcn(n, x, y, k1); }
+        if (irtrn >= 2) { fcn(n, x, y, k1, rpar, ipar); }
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*a21*k1[i]; }  // 22
-        fcn(n, x + c2*h, y1, k2);
+        fcn(n, x + c2*h, y1, k2, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a31*k1[i] + a32*k2[i]); }  // 23
-        fcn(n, x + c3*h, y1, k3);
+        fcn(n, x + c3*h, y1, k3, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a41*k1[i] + a43*k3[i]); }  // 24
-        fcn(n, x + c4*h, y1, k4);
+        fcn(n, x + c4*h, y1, k4, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a51*k1[i] + a53*k3[i] + a54*k4[i]); }  // 25
-        fcn(n, x + c5*h, y1, k5);
+        fcn(n, x + c5*h, y1, k5, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a61*k1[i] + a64*k4[i] + a65*k5[i]); }  // 26
-        fcn(n, x + c6*h, y1, k6);
+        fcn(n, x + c6*h, y1, k6, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a71*k1[i] + a74*k4[i] + a75*k5[i] + a76*k6[i]); }  // 27
-        fcn(n, x + c7*h, y1, k7);
+        fcn(n, x + c7*h, y1, k7, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a81*k1[i] + a84*k4[i] + a85*k5[i] + a86*k6[i] + a87*k7[i]); }  // 28
-        fcn(n, x + c8*h, y1, k8);
+        fcn(n, x + c8*h, y1, k8, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a91*k1[i] + a94*k4[i] + a95*k5[i] + a96*k6[i] + a97*k7[i] + a98*k8[i]); }  // 29
-        fcn(n, x + c9*h, y1, k9);
+        fcn(n, x + c9*h, y1, k9, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a101*k1[i] + a104*k4[i] + a105*k5[i] + a106*k6[i] + a107*k7[i] + a108*k8[i] + a109*k9[i]); }  // 30
-        fcn(n, x + c10*h, y1, k10);
+        fcn(n, x + c10*h, y1, k10, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a111*k1[i] + a114*k4[i] + a115*k5[i] + a116*k6[i] + a117*k7[i] + a118*k8[i] + a119*k9[i] + a1110*k10[i]); }  // 31
-        fcn(n, x + c11*h, y1, k2);
+        fcn(n, x + c11*h, y1, k2, rpar, ipar);
 
         xph = x + h;
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a121*k1[i] + a124*k4[i] + a125*k5[i] + a126*k6[i] + a127*k7[i] + a128*k8[i] + a129*k9[i] + a1210*k10[i] + a1211*k2[i]); }  // 32
-        fcn(n, xph, y1, k3);
+        fcn(n, xph, y1, k3, rpar, ipar);
 
         *nfcn += 11;
 
@@ -398,7 +425,9 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
             {
                 sk = atoli + rtoli * fmax(fabs(y[i]), fabs(k5[i]));
                 erri = k4[i] - bhh1 * k1[i] - bhh2 * k9[i] - bhh3 * k3[i];
-                err2 += pow(erri / sk, 2);
+                err2 = err2 + pow(erri / sk, 2);
+                erri = er1 * k1[i] + er6 * k6[i] + er7 * k7[i] + er8 * k8[i] + er9 * k9[i] + er10 * k10[i] + er11 * k2[i] + er12 * k3[i];
+                err = err + pow(erri / sk, 2.0);
             }
             // 41
         } else {
@@ -407,7 +436,9 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
             {
                 sk = atol[i] + rtol[i] * fmax(fabs(y[i]), fabs(k5[i]));
                 erri = k4[i] - bhh1 * k1[i] - bhh2 * k9[i] - bhh3 * k3[i];
-                err2 += pow(erri / sk, 2);
+                err2 = err2 + pow(erri / sk, 2.0);
+                erri = er1 * k1[i] + er6 * k6[i] + er7 * k7[i] + er8 * k8[i] + er9 * k9[i] + er10 * k10[i] + er11 * k2[i] + er12 * k3[i];
+                err = err + pow(erri / sk, 2.0);
             }
             // 42
 
@@ -430,7 +461,7 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
             // --- step is accepted
             facold = fmax(err, 1.0e-4);
             *naccept += 1;
-            fcn(n, xph, k5, k4);
+            fcn(n, xph, k5, k4, rpar, ipar);
             *nfcn += 1;
 
             // ------- stiffness detection
@@ -478,18 +509,18 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
                 {
                     y1[i] = y[i] + h*(a141*k1[i] + a147*k7[i] + a148*k8[i] + a149*k9[i] + a1410*k10[i] + a1411*k2[i] + a1412*k3[i] + a1413*k4[i]);
                 }
-                fcn(n, x+c14*h, y1, k10);
+                fcn(n, x+c14*h, y1, k10, rpar, ipar);
 
                 for (i = 0;i<n;i++)
                 {
                     y1[i] = y[i] + h*(a151*k1[i] + a156*k6[i] + a157*k7[i] + a158*k8[i] + a1511*k2[i]+ a1512*k3[i] + a1513*k4[i] + a1514*k10[i]);
                 }
-                fcn(n, x+c15*h, y1, k2);
+                fcn(n, x+c15*h, y1, k2, rpar, ipar);
                 for (i = 0; i < n; i++)
                 {
                     y1[i] = y[i] + h*(a161*k1[i] + a166*k6[i] + a167*k7[i] + a168*k8[i] + a169*k9[i] + a1613*k4[i] + a1614*k10[i] + a1615*k2[i]);
                 }
-                fcn(n, x+c16*h, y1, k3);
+                fcn(n, x+c16*h, y1, k3, rpar, ipar);
                 nfcn += 3;
                 // final preparation
                 for (j = 0; j < (*nrd); j++)
@@ -500,6 +531,7 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
                     cont[j + (*nrd)*6] = h*(cont[j + (*nrd)*6] + d613*k4[i] + d614*k10[i] + d615*k2[i] + d616*k3[i]);
                     cont[j + (*nrd)*7] = h*(cont[j + (*nrd)*7] + d713*k4[i] + d714*k10[i] + d715*k2[i] + d716*k3[i]);
                 }
+                // 63
                 hout = h;
             }
             for (i = 0; i < n; i++)
@@ -507,14 +539,15 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
                 k1[i] = k4[i];
                 y[i] = k5[i];
             }
+            // 67
             xold = x;
             x = xph;
             if (iout >= 1)
             {
-                irtrn = solout(naccept+1,xold,x,y,n,cont,icomp,nrd);
+                solout(*naccept+1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
                 if (irtrn < 0) { *ierr = 2; return; }
             }
-
+            // Normal exit
             if (last)
             {
                 h = hnew;
@@ -525,6 +558,7 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
             if (reject) { hnew = posneg*fmin(fabs(hnew), fabs(h)); }
             reject = 0;
         } else {
+            // step is rejected
             hnew = h / fmin(facc1, facc1 / safe);
             reject = 1;
             if (*naccept >= 1) { *nreject += 1; }
@@ -538,7 +572,7 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double* xend, double hm
 static double
 hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
          double* f0, double* f1, double* y1, int iord, double hmax, double* atol,
-         double* rtol, int itol)
+         double* rtol, int itol, double* rpar, int* ipar)
 {
     double dnf = 0.0, dny = 0.0, atoli = atol[0], rtoli = rtol[0];
     double h, sk, der2, der12, h1;
@@ -561,8 +595,8 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
         for (i = 0; i < n; i++)
         {
             sk = atol[i] + rtol[i] * fabs(y[i]);
-            dnf += pow(f0[i] / sk, 2);
-            dny += pow(y[i] / sk, 2);
+            dnf = dnf + pow(f0[i] / sk, 2);
+            dny = dny + pow(y[i] / sk, 2);
         }
         // 11
     }
@@ -581,7 +615,7 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
     {
         y1[i] = y[i] + h * f0[i];
     }
-    fcn(n, x + h, y1, f1);
+    fcn(n, x + h, y1, f1, rpar, ipar);
 
     // estimate the second derivative of the solution
     der2 = 0.0;
@@ -590,14 +624,14 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
         for (i = 0; i < n; i++)
         {
             sk = atoli + rtoli * fabs(y[i]);
-            der2 += pow((f1[i] - f0[i]) / sk, 2);
+            der2 = der2 + pow((f1[i] - f0[i]) / sk, 2.0);
         }
         // 15
     } else {
         for (i = 0; i < n; i++)
         {
             sk = atol[i] + rtol[i] * fabs(y[i]);
-            der2 += pow((f1[i] - f0[i]) / sk, 2);
+            der2 = der2 + pow((f1[i] - f0[i]) / sk, 2.0);
         }
         // 16
     }
@@ -619,16 +653,16 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
 
 
 static double
-contd8(const int ii, double x, double* con, int* icomp, int nd, double* xold, double* h)
+contd8(const int ii, double x, double* con, int* icomp, int nd, const double xold, const double h)
 {
-    int i = 0, j;
+    int i = 0;
     double s, s1, conpar, res;
     // compute the index of the ii-th component
-    for (j = 0; j < nd; j++) { if (icomp[j] == ii) { i = j; } }
+    for (int j = 0; j < nd; j++) { if (icomp[j] == ii) { i = j; } }
 
     if (i == 0) { return -1; }
     // calculate the dense output
-    s = (x - *xold) / *h;
+    s = (x - xold) / h;
     s1 = 1.0 - s;
     conpar = con[i + nd*4] + s*(con[i + nd*5] + s1*(con[i + nd*6] + s*con[i + nd*7]));
     res = con[i] + s*(con[i + nd] + s1*(con[i + nd*2] + s*(con[i + nd*3] + s1*conpar)));
@@ -636,9 +670,9 @@ contd8(const int ii, double x, double* con, int* icomp, int nd, double* xold, do
 }
 
 void
-dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
+dopri5(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
        double* atol, const int itol, dopri_solout* solout, const int iout,
-       double* work, int* iwork, int* ierr)
+       double* work, int* iwork, double* rpar, int* ipar, int* ierr)
 {
     int i, meth, nfcn, nmax, nrdens, nstep, nstiff, naccept, nreject, arret;
     double beta, h, hmax, fac1, fac2, safe, uround;
@@ -654,7 +688,7 @@ dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
     {
         nmax = 100000;
     } else {
-        nmax = iwork[1];
+        nmax = iwork[0];
         if (nmax <= 0)
         {
             arret = 11;
@@ -726,7 +760,7 @@ dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
         }
     }
     // -------- maximal step size
-    if (work[5] == 0.0) { hmax = *xend - x; } else { hmax = work[5]; }
+    if (work[5] == 0.0) { hmax = xend - x; } else { hmax = work[5]; }
     // -------- initial step size
     h = work[6];
     // -------- when a fail has occurred, we return with wrong input error code
@@ -735,7 +769,7 @@ dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
     // -------- call to core integrator ------------
     dopcor(n, fcn, x, y, xend, hmax, h, rtol, atol, itol, solout, iout, ierr,
            nmax, uround, meth, nstiff, safe, beta, fac1, fac2, work, iwork,
-           nrdens, nfcn, nstep, naccept, nreject);
+           &nrdens, rpar, ipar, &nfcn, &nstep, &naccept, &nreject);
 
     work[6] = h;
     iwork[16] = nfcn;
@@ -747,29 +781,30 @@ dopri5(int n, dopri_fcn* fcn, double x, double* y, double* xend, double* rtol,
 }
 
 static void
-dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
+dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
        double hmax, double h, double* rtol, double* atol, const int itol,
        dopri_solout* solout, const int iout, int* ierr, const int nmax,
        const double uround, const int meth, int nstiff, const double safe,
        const double beta, const double fac1, const double fac2, double* work,
-       int* iwork, int* nrd, int* nfcn, int* nstep, int* naccept, int* nreject)
+       int* iwork, int* nrd, double* rpar, int* ipar, int* nfcn, int* nstep,
+       int* naccept, int* nreject)
 {
 
     // core integrator for DOPRI5
     // parameters same as in DOPRI5 with workspace added
 
     // Pointers into work
-    double* y1   = &work[20];
-    double* k1   = &work[20 + n];
-    double* k2   = &work[20 + n*2];
-    double* k3   = &work[20 + n*3];
-    double* k4   = &work[20 + n*4];
-    double* k5   = &work[20 + n*5];
-    double* k6   = &work[20 + n*6];
-    double* ysti = &work[20 + n*7];
-    double* cont = &work[20 + n*8];
-    int* icomp   = &iwork[20];
-
+    double* restrict y1   = &work[20];
+    double* restrict k1   = &work[20 + n];
+    double* restrict k2   = &work[20 + n*2];
+    double* restrict k3   = &work[20 + n*3];
+    double* restrict k4   = &work[20 + n*4];
+    double* restrict k5   = &work[20 + n*5];
+    double* restrict k6   = &work[20 + n*6];
+    double* restrict ysti = &work[20 + n*7];
+    double* restrict cont = &work[20 + n*8];
+    int* restrict icomp = &iwork[20];
+    (void)meth;
     const double C2  = 0.2;
     const double C3  = 0.3;
     const double C4  = 0.8;
@@ -808,7 +843,7 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
     const double D6  = -1453857185.0 / 822651844.0;
     const double D7  = 69997945.0 / 29380423.0;
 
-    int i, j, last, iasti, iord, reject, irtrn, nonsti;
+    int i, j, last, iasti, iord, reject, irtrn, nonsti = 0;
     double err, facold, expo1, facc1, facc2, posneg, atoli, rtoli, xold, hlamb, hout;
     double fac11, fac, hnew, stnum, stden, yd0, ydiff, bspl;
 
@@ -816,20 +851,20 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
     expo1 = 0.2 - beta * 0.75;
     facc1 = 1.0 / fac1;
     facc2 = 1.0 / fac2;
-    posneg = copysign(1.0, *xend - x);
+    posneg = copysign(1.0, xend - x);
 
     atoli = atol[0];
     rtoli = rtol[0];
     last = 0;
     hlamb = 0.0;
     iasti = 0;
-    fcn(n, x, y, k1);
+    fcn(n, x, y, k1, rpar, ipar);
     hmax = fabs(hmax);
     iord = 5;
 
     if (h == 0.0)
     {
-        h = hinit(n, fcn, x, y, posneg, k1, k2, k3, iord, hmax, atol, rtol, itol);
+        h = hinit(n, fcn, x, y, posneg, k1, k2, k3, iord, hmax, atol, rtol, itol, rpar, ipar);
     }
     *nfcn += 2;
     reject = 0;
@@ -838,48 +873,47 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
     if (iout != 0) {
         irtrn = 1;
         hout = h;
-        solout(*naccept + 1, xold, x, y, n, cont, icomp, nrd, &irtrn);
+        solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
         if (irtrn < 0) { *ierr = 2; return; }
     } else {
         irtrn = 0;
     }
 
-
     // basic integration step
     while (1) {
         if (*nstep > nmax) { *ierr = -2; return; }
         if (0.1 * fabs(h) <= fabs(x)*uround) { *ierr = -3; return; }
-        if ((x + 1.01*h - *xend) * posneg > 0.0) {
-            h = *xend - x;
+        if ((x + 1.01*h - xend) * posneg > 0.0) {
+            h = xend - x;
             last = 1;
         }
         *nstep += 1;
 
         // the first 6 stages
-        if (irtrn >= 2) { fcn(n, x, y, k1); }
+        if (irtrn >= 2) { fcn(n, x, y, k1, rpar, ipar); }
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*A21*k1[i]; }  // 22
-        fcn(n, x + C2*h, y1, k2);
+        fcn(n, x + C2*h, y1, k2, rpar, ipar);
 
-        for (i = 0; i < n; i++) { y1[i] += h*(A31*k1[i] + A32*k2[i]); }  // 23
-        fcn(n, x + C3*h, y1, k3);
+        for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A31*k1[i] + A32*k2[i]); }  // 23
+        fcn(n, x + C3*h, y1, k3, rpar, ipar);
 
-        for (i = 0; i < n; i++) { y1[i] += h*(A41*k1[i] + A42*k2[i] + A43*k3[i]); }  // 24
-        fcn(n, x + C4*h, y1, k4);
+        for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A41*k1[i] + A42*k2[i] + A43*k3[i]); }  // 24
+        fcn(n, x + C4*h, y1, k4, rpar, ipar);
 
-        for (i = 0; i < n; i++) { y1[i] += h*(A51*k1[i] + A52*k2[i] + A53*k3[i] + A54*k4[i]); }  // 25
-        fcn(n, x + C5*h, y1, k5);
+        for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A51*k1[i] + A52*k2[i] + A53*k3[i] + A54*k4[i]); }  // 25
+        fcn(n, x + C5*h, y1, k5, rpar, ipar);
 
         for (i = 0; i < n; i++) { ysti[i] = y[i] + h*(A61*k1[i] + A62*k2[i] + A63*k3[i] + A64*k4[i] + A65*k5[i]); }  // 26
 
         double xph = x + h;
-        fcn(n, xph, ysti, k6);
-        for (i = 0; i < n; i++) { y1[i] += h*(A71*k1[i] + A73*k3[i] + A74*k4[i] + A75*k5[i] + A76*k6[i]); }  // 27
-        fcn(n, xph, y1, k2);
+        fcn(n, xph, ysti, k6, rpar, ipar);
+        for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A71*k1[i] + A73*k3[i] + A74*k4[i] + A75*k5[i] + A76*k6[i]); }  // 27
+        fcn(n, xph, y1, k2, rpar, ipar);
 
         if (iout >= 2)
         {
-            for (j = 0; j < nrd; j++)
+            for (j = 0; j < *nrd; j++)
             {
                 i = icomp[j];
                 cont[4*(*nrd) + j] = h*(D1*k1[i] + D3*k3[i] + D4*k4[i] + D5*k5[i] + D6*k6[i] + D7*k2[i]);
@@ -973,7 +1007,7 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
             if (iout != 0)
             {
                 hout = h;
-                solout(*naccept + 1, xold, x, y, n, cont, icomp, nrd, &irtrn);
+                solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
                 if (irtrn < 0) { *ierr = 2; return; }
             }
 
@@ -1005,7 +1039,7 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double* xend,
 static double
 hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
       double* f1, double* y1, int iord, double hmax, double* atol, double* rtol,
-      int itol)
+      int itol, double* rpar, int* ipar)
 {
 
     double dnf = 0.0, dny = 0.0;
@@ -1019,16 +1053,16 @@ hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
         for (int i = 0; i < n; i++)
         {
             sk = atoli + rtoli * fabs(y[i]);
-            dnf += pow(f0[i] / sk, 2);
-            dny += pow(y[i] / sk, 2);
+            dnf = dnf + pow(f0[i] / sk, 2);
+            dny = dny + pow(y[i] / sk, 2);
         }
         // 10
     } else {
         for (int i = 0; i < n; i++)
         {
             sk = atol[i] + rtol[i] * fabs(y[i]);
-            dnf += pow(f0[i] / sk, 2);
-            dny += pow(y[i] / sk, 2);
+            dnf = dnf + pow(f0[i] / sk, 2);
+            dny = dny + pow(y[i] / sk, 2);
         }
         // 11
     }
@@ -1049,7 +1083,7 @@ hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
         y1[i] = y[i] + h * f0[i];
     }
     // 12
-    fcn(n, x + h, y1, f1);
+    fcn(n, x + h, y1, f1, rpar, ipar);
 
     // estimate the second derivative of the solution
     der2 = 0.0;
@@ -1081,6 +1115,6 @@ hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
         h1 = pow(0.01 / der12, 1.0 / iord);
     }
 
-    h = fmin(100.0 * fabs(h), h1, hmax);
+    h = fmin(100.0 * fabs(h), fmin(h1, hmax));
     return copysign(h, posneg);
 }
