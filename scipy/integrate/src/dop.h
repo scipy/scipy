@@ -3,6 +3,7 @@
 
 #include <math.h>
 
+
 /**
  * @brief Callback function type definition for computing the right-hand side of the ODE system.
  *
@@ -15,7 +16,7 @@
  * @param f   Output array for the computed derivatives (dy/dx).
  * @param rpar User-supplied real parameter array (optional, can be NULL).
  * @param ipar User-supplied integer parameter array (optional, can be NULL).
- * 
+ *
  * @return None. The computed derivatives should be stored in the array f.
  *
  * @note
@@ -87,6 +88,7 @@ void
 dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
          double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
          int* iwork, double* rpar, int* ipar, int* ierr);
+
 
 /**
  * @brief Integrates a system of first-order ODEs using the explicit Runge-Kutta DOPRI5 method.

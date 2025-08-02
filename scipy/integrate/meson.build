@@ -52,7 +52,6 @@ vode_lib = static_library('vode_lib',
 
 dop_lib = static_library('dop_lib',
   'src/dop.c',
-  c_args: ['-Wall', '-Wextra', '-Wpedantic'],
 )
 
 py3.extension_module('_quadpack',

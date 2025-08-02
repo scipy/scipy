@@ -5,11 +5,6 @@
 #include "src/dop.h"
 #include <math.h>
 
-
-#define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
-#define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
-#define ISCONTIGUOUS(m) ((m)->flags & CONTIGUOUS)
-
 static PyObject* dop_error;
 
 static char doc_dopri853[] = "x,y,iwork,idid = dop853(fcn,x,y,xend,rtol,atol,solout,iout,work,iwork,nsteps,verbosity,[fcn_extra_args])";
@@ -110,7 +105,8 @@ solout_thunk(int nr, double xold, double x, double* y, int n, double* con, int* 
         {
             *irtrn = 0;
         } else {
-            PyErr_SetString(PyExc_TypeError, "solout function must return -1 for stopping, and otherwise 0 or None.");
+            PyErr_SetString(PyExc_TypeError, "scipy.integrate: solout function must return -1"
+                                             " for stopping, and otherwise 0, 1 or None.");
         }
         Py_DECREF(result);
     }
