@@ -523,9 +523,18 @@ def test_format(
         pass
 
 
-def test_format_error_message():
+@pytest.mark.parametrize("normed", [True, False])
+def test_format_error_message(normed):
     with pytest.raises(ValueError, match="Invalid form: 'toto'"):
-        _ = csgraph.laplacian(np.eye(1), form='toto')
+        csgraph.laplacian(np.eye(1), form='toto', normed=normed)
+    with pytest.raises(ValueError, match="Invalid form: 'toto'"):
+        csgraph.laplacian(sparse.eye(1, 1), form='toto', normed=normed)
 
+
+@pytest.mark.parametrize("form", ["array", "function", "lo"])
+def test_signed_graph_variant_error_message(form):
     with pytest.raises(ValueError, match="Invalid signed_graph_variant: 'piyo'"):
-        _ = csgraph.laplacian(np.eye(1), signed_graph_variant='piyo')
+        csgraph.laplacian(np.eye(1), signed_graph_variant='piyo', form=form)
+    with pytest.raises(ValueError, match="Invalid signed_graph_variant: 'piyo'"):
+        csgraph.laplacian(sparse.eye_array(1, 1), signed_graph_variant='piyo',
+                          form=form)
