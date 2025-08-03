@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
     xp_assert_close,
     make_xp_pytest_marks,
     make_xp_test_case,
+    xp_assert_equal
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1332,3 +1333,13 @@ def test_pickling(xp):
     pkl = pickle.dumps(tf)
     unpickled = pickle.loads(pkl)
     xp_assert_close(tf.as_matrix(), unpickled.as_matrix(), atol=1e-15)
+
+
+@make_xp_test_case(RigidTransform.__iter__)
+def test_rigid_transform_iter(xp):
+    r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
+    for i, r_i in enumerate(r):
+        assert isinstance(r_i, RigidTransform)
+        xp_assert_equal(r_i.as_matrix(), r[i].as_matrix())
+        if i > len(r):
+            raise RuntimeError("Iteration exceeded length of transforms")

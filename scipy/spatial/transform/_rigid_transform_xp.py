@@ -195,19 +195,22 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     if inverse:
         matrix = inv(matrix)
 
-    # TODO: We raise a ValueError manually here because letting the function run its course would
-    # raise heterogeneous error types and messages for different frameworks. However, the error only
-    # mimics numpy's error message and does not provide the same amount of context.
+    # TODO: We raise a ValueError manually here because letting the function run its
+    # course would raise heterogeneous error types and messages for different
+    # frameworks. However, the error only mimics numpy's error message and does not
+    # provide the same amount of context.
     if not broadcastable(matrix.shape, vec.shape):
         raise ValueError("operands could not be broadcast together")
 
-    # This einsum performs matrix multiplication of each of the (..., 4, 4) matrices in `matrix`
-    # with the (..., 4) vectors in `vec`, with proper broadcasting for different dimensions.
+    # This einsum performs matrix multiplication of each of the (..., 4, 4) matrices in
+    # `matrix` with the (..., 4) vectors in `vec`, with proper broadcasting for
+    # different dimensions.
     return (matrix @ vec)[..., :3, 0]
 
 
 def pow(matrix: Array, n: float) -> Array:
-    # Check if execution is eager. If so, we can branch and avoid computing all special cases
+    # Check if execution is eager. If so, we can branch and avoid computing all special
+    # cases
     xp = array_namespace(matrix)
     device = xp_device(matrix)
     if not is_lazy_array(matrix):
@@ -220,8 +223,8 @@ def pow(matrix: Array, n: float) -> Array:
         elif n == 1:
             return matrix
         return from_exp_coords(as_exp_coords(matrix) * n)
-    # Lazy execution. We compute all special cases and the general case and combine them using
-    # xp.where.
+    # Lazy execution. We compute all special cases and the general case and combine them
+    # using xp.where.
     result = from_exp_coords(as_exp_coords(matrix) * n)
     identity = xp.eye(4, dtype=matrix.dtype, device=device)
     result = xp.where(n == 0, identity, result)
@@ -280,8 +283,8 @@ def _compute_se3_exp_translation_transform(rot_vec: Array) -> Array:
     small_scale = angle < 1e-3
 
     k1_small = 0.5 - angle**2 / 24 + angle**4 / 720
-    # Avoid division by zero for non-branching computations. The value will get discarded in the
-    # xp.where selection.
+    # Avoid division by zero for non-branching computations. The value will get
+    # discarded in the xp.where selection.
     safe_angle = angle + xp.asarray(small_scale, dtype=dtype, device=device)
     k1 = (1.0 - xp.cos(angle)) / safe_angle**2
     k1 = xp.where(small_scale, k1_small, k1)

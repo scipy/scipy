@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from types import EllipsisType, ModuleType, NotImplementedType
 from collections.abc import Callable
 
@@ -1771,6 +1771,19 @@ class RigidTransform:
         if self._single:
             matrix = matrix[0, ...]
         return (self.__class__.from_matrix, (matrix,))
+
+    @xp_capabilities(jax_jit=False)
+    def __iter__(self) -> Iterator[RigidTransform]:
+        """Iterate over transforms."""
+        if self._single or self._matrix.ndim == 2:
+            raise TypeError("Single transform is not iterable.")
+        # We return a generator that yields a new RigidTransform object for each
+        # transform in the current object. We cannot rely on the default implementation
+        # because jax will not raise an IndexError for out-of-bounds indices.
+        for i in range(self._matrix.shape[0]):
+            yield RigidTransform._from_raw_matrix(
+                self._matrix[i, ...], self._xp, self._backend
+            )
 
     @staticmethod
     def _from_raw_matrix(
