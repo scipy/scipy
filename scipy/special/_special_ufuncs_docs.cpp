@@ -983,8 +983,8 @@ const char *ellipeinc_doc = R"(
     >>> from scipy.special import ellipeinc
     >>> a, b = 3.5, 2.1
     >>> e = np.sqrt(1.0 - b**2/a**2)  # eccentricity
-    >>> ellipeinc(np.pi/2, e**2)
-    np.float64(1.2763499431699064)
+    >>> 4*a*ellipeinc(np.pi/2, e**2)
+    np.float64(17.86889920437869)
     )";
 
 const char *ellipj_doc = R"(
