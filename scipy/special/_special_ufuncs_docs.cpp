@@ -990,9 +990,9 @@ const char *ellipeinc_doc = R"(
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobian elliptic functions
+    Jacobi elliptic functions
 
-    Calculates the Jacobian elliptic functions of parameter `m` between
+    Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
 
     Parameters
