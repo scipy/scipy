@@ -978,7 +978,7 @@ const char *ellipeinc_doc = R"(
     --------
     The elliptic integral of the second kind can be used to find the circumference of an
     ellipse with semi-major axis ``a`` and semi-minor axis ``b``.
-    ```
+
     >>> import numpy as np
     >>> from scipy.special import ellipeinc
     >>> a, b = 3.5, 2.1
