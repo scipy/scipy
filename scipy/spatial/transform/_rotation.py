@@ -2183,8 +2183,8 @@ class Rotation:
 
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
-    @classmethod
-    def identity(cls, num: int | None = None) -> Rotation:
+    @staticmethod
+    def identity(num: int | None = None) -> Rotation:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -2200,7 +2200,8 @@ class Rotation:
         identity : Rotation object
             The identity rotation.
         """
-        return cls(cython_backend.identity(num), normalize=True)
+        quat = cython_backend.identity(num)
+        return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
     @classmethod
     @_transition_to_rng("random_state", position_num=2)
