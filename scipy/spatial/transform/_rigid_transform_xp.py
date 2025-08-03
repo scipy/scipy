@@ -6,6 +6,8 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
+    xp_promote,
+    is_array_api_obj,
 )
 import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
@@ -208,29 +210,36 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     return (matrix @ vec)[..., :3, 0]
 
 
-def pow(matrix: Array, n: float) -> Array:
-    # Check if execution is eager. If so, we can branch and avoid computing all special
-    # cases
+def pow(matrix: Array, n: float | Array) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    if not is_lazy_array(matrix):
-        if n == 0:
-            identity = xp.eye(4, dtype=matrix.dtype, device=device)
-            identity = xpx.atleast_nd(identity, ndim=matrix.ndim, xp=xp)
-            return xp.tile(identity, (*matrix.shape[:-2], 1, 1))
-        elif n == -1:
-            return inv(matrix)
-        elif n == 1:
-            return matrix
-        return from_exp_coords(as_exp_coords(matrix) * n)
-    # Lazy execution. We compute all special cases and the general case and combine them
-    # using xp.where.
-    result = from_exp_coords(as_exp_coords(matrix) * n)
-    identity = xp.eye(4, dtype=matrix.dtype, device=device)
-    result = xp.where(n == 0, identity, result)
-    result = xp.where(n == -1, inv(matrix), result)
-    result = xp.where(n == 1, matrix, result)
-    return result
+    # If n is an array, we sanitize it to a scalar and promote quat and n to
+    # the same dtype.
+    if is_array_api_obj(n):
+        if n.shape == (1,):
+            n = n[0]
+        elif n.ndim != 0:
+            raise ValueError("Array exponent must be a scalar")
+        matrix, n = xp_promote(matrix, n, force_floating=True, xp=xp)
+
+    # If n is a lazy array, we cannot take fast paths for special cases.
+    if is_lazy_array(n):
+        # Lazy execution. We compute all special cases and the general case
+        result = from_exp_coords(as_exp_coords(matrix) * n)
+        identity = xp.eye(4, dtype=matrix.dtype, device=device)
+        result = xp.where(n == 0, identity, result)
+        result = xp.where(n == -1, inv(matrix), result)
+        result = xp.where(n == 1, matrix, result)
+        return result
+    if n == 0:
+        identity = xp.eye(4, dtype=matrix.dtype, device=device)
+        identity = xpx.atleast_nd(identity, ndim=matrix.ndim, xp=xp)
+        return xp.tile(identity, (*matrix.shape[:-2], 1, 1))
+    elif n == -1:
+        return inv(matrix)
+    elif n == 1:
+        return matrix
+    return from_exp_coords(as_exp_coords(matrix) * n)
 
 
 def setitem(
