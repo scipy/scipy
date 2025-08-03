@@ -510,6 +510,8 @@ def _laplacian_sparse_flo(
 
     if signed_graph_variant == "unsigned":
         # Discard the sign of edge weights.
+        if graph.format in ('lil', 'dok'):
+            graph = graph.tocoo()
         np.abs(graph.data, out=graph.data)
 
     graph_sum = np.asarray(graph.sum(axis=axis)).ravel()
