@@ -6,7 +6,7 @@ from ._rbfinterp_np import *
 
 # bring the _undersored names, too
 from ._rbfinterp_np import (
-    _build_and_solve_system, _build_evaluation_coefficients, _build_system, 
+    _build_and_solve_system, _build_evaluation_coefficients, _build_system,
     _monomial_powers, _monomial_powers_impl, _polynomial_matrix
 )
 
@@ -113,18 +113,18 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale):
 @numba.njit
 def kernel_vector(x, y, kernel_func, out):
     """Evaluate RBFs, with centers at `y`, at the point `x`."""
-    for i in range(y.shape[0]):
+    for i in numba.prange(y.shape[0]):
         out[i] = kernel_func(np.linalg.norm(x - y[i]))
 
 
 @numba.njit
 def polynomial_vector(x, powers, out):
     """Evaluate monomials, with exponents from `powers`, at the point `x`."""
-    for i in range(powers.shape[0]):
+    for i in numba.prange(powers.shape[0]):
         out[i] = np.prod(x**powers[i])
 
 
-@numba.njit
+@numba.jit(nopython=True, parallel=True)
 def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shift, scale):
     q = x.shape[0]
     p = y.shape[0]
@@ -140,7 +140,7 @@ def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shif
  #   vec[:, :p] = kernel_func(yyy)
  #   vec[:, p:] = np.prod(xhat[:, None, :] ** powers, axis=-1)
 
-    for i in range(q):
+    for i in numba.prange(q):
         kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
         polynomial_vector(xhat[i], powers, vec[i, p:])
 
