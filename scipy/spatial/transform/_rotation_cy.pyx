@@ -890,8 +890,8 @@ def random(num=None, rng=None):
 @cython.embedsignature(True)
 def identity(num: int | None = None) -> double[:, :]:
     if num is None:
-        return np.array([0, 0, 0, 1])
-    q = np.zeros((num, 4))
+        return np.array([0, 0, 0, 1], dtype=np.float64)
+    q = np.zeros((num, 4), dtype=np.float64)
     q[:, 3] = 1
     return q
 
