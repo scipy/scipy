@@ -171,6 +171,7 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
+    # lazy import to prevent to prevent linalg dependency for whole module (gh-23420)
     from scipy import linalg
     k = np.arange(n, dtype='d')
     c = np.zeros((2, n))
