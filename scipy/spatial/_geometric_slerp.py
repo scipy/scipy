@@ -52,10 +52,13 @@ def geometric_slerp(
         object. `n` must be greater than 1.
     t : float or (n_points,) 1D array-like
         A float or 1D array-like of doubles representing interpolation
-        parameters, with values required in the inclusive interval
-        between 0 and 1. A common approach is to generate the array
+        parameters. A common approach is to generate the array
         with ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
         Ascending, descending, and scrambled orders are permitted.
+
+        .. versionchanged:: 1.17.0
+            Extrapolation is permitted, allowing values below `0`
+            and above `1`.
     tol : float
         The absolute tolerance for determining if the start and end
         coordinates are antipodes.
@@ -73,7 +76,7 @@ def geometric_slerp(
     Raises
     ------
     ValueError
-        If ``start`` and ``end`` are antipodes, not on the
+        If ``start`` or ``end`` are not on the
         unit n-sphere, or for a variety of degenerate conditions.
 
     See Also
@@ -225,9 +228,6 @@ def geometric_slerp(
 
     if t.size == 0:
         return np.empty((0, start.size))
-
-    if t.min() < 0 or t.max() > 1:
-        raise ValueError("interpolation parameter must be in [0, 1]")
 
     if t.ndim == 0:
         return _geometric_slerp(start,
