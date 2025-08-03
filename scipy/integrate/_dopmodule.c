@@ -207,7 +207,7 @@ dopri853_wrap(PyObject* Py_UNUSED(self), PyObject* args)
         func_callback.func_args = args_tuple;
     }
 
-    dopri853(n, func_thunk, x, y, xend, &rtol, &atol, itol, solout_thunk, iout, work, iwork, NULL, NULL, &ierr);
+    dopri853(n, func_thunk, &x, y, &xend, &rtol, &atol, itol, solout_thunk, iout, work, iwork, NULL, NULL, &ierr);
 
     if (func_callback.func_args) { Py_DECREF(func_callback.func_args); }
     current_func_callback = NULL;
@@ -310,7 +310,7 @@ dopri5_wrap(PyObject* Py_UNUSED(self), PyObject* args)
         func_callback.func_args = args_tuple;
     }
 
-    dopri5(n, func_thunk, x, y, xend, &rtol, &atol, itol, solout_thunk, iout, work, iwork, NULL, NULL, &ierr);
+    dopri5(n, func_thunk, &x, y, &xend, &rtol, &atol, itol, solout_thunk, iout, work, iwork, NULL, NULL, &ierr);
 
     if (func_callback.func_args) { Py_DECREF(func_callback.func_args); }
     current_func_callback = NULL;

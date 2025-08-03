@@ -1,7 +1,7 @@
 #include "dop.h"
 
 static void
-dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hmax,
+dp86co(const int n, dopri_fcn* fcn, double* x, double* y, double *xend, double hmax,
        double h, double* rtol, double* atol, const int itol, dopri_solout* solout, const int iout,
        int* ierr, const int nmax, const double uround, const int meth, const int nstiff,
        const double safe, const double beta, const double fac1, const double fac2,
@@ -9,12 +9,12 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
        int* nstep, int* naccept, int* nreject);
 
 static double
-hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
+hinit853(int n, dopri_fcn* fcn, double* x, double* y, double posneg,
          double* f0, double* f1, double* y1, int iord, double hmax, double* atol,
          double* rtol, int itol, double* rpar, int* ipar);
 
 static void
-dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
+dopcor(const int n, dopri_fcn* fcn, double* x, double* y, double *xend,
        double hmax, double h, double* rtol, double* atol, const int itol,
        dopri_solout* solout, const int iout, int* ierr, const int nmax,
        const double uround, const int meth, int nstiff, const double safe,
@@ -23,12 +23,12 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
        int* naccept, int* nreject);
 
 static double
-hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
+hinit(int n, dopri_fcn* fcn, double* x, double* y, double posneg, double* f0,
       double* f1, double* y1, int iord, double hmax, double* atol, double* rtol,
       int itol, double* rpar, int* ipar);
 
 void
-dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+dopri853(const int n, dopri_fcn* fcn, double* x, double* y, double *xend, double* rtol,
          double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
          int* iwork, double* rpar, int* ipar, int* ierr)
 {
@@ -121,7 +121,7 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* 
     // -------- maximal step size
     if (work[5] == 0.0)
     {
-        hmax = xend - x;
+        hmax = *xend - *x;
     } else {
         hmax = work[5];
     }
@@ -147,7 +147,7 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* 
 }
 
 static void
-dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hmax,
+dp86co(const int n, dopri_fcn* fcn, double *x, double* y, double *xend, double hmax,
        double h, double* rtol, double* atol, const int itol, dopri_solout* solout, const int iout,
        int* ierr, const int nmax, const double uround, const int meth, const int nstiff,
        const double safe, const double beta, const double fac1, const double fac2,
@@ -335,14 +335,14 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
     expo1 = 1.25e-1 - beta * 0.2;
     facc1 = 1.0 / fac1;
     facc2 = 1.0 / fac2;
-    posneg = copysign(1.0, xend - x);
+    posneg = copysign(1.0, *xend - *x);
     // Initial preparations
     atoli = atol[0];
     rtoli = rtol[0];
     hlamb = 0.0;
     iasti = 0;
 
-    fcn(n, x, y, k1, rpar, ipar);
+    fcn(n, *x, y, k1, rpar, ipar);
     hmax = fabs(hmax);
     iord = 8;
     if (h == 0.0) {
@@ -350,60 +350,60 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
     }
 
     *nfcn += 2;
-    xold = x;
+    xold = *x;
 
     if (iout >= 1) {
         irtrn = 1;
         hout = 1.0;
-        solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
+        solout(*naccept + 1, xold, *x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
         if (irtrn < 0) { *ierr = -3; return; }
     }
 
     // basic integration step
     while (1) {
         if (*nstep > nmax) { *ierr = -2; return; }
-        if (0.1 * fabs(h) <= fabs(x) * uround) { *ierr = -3; return; }
-        if ((x + 1.01 * h - xend) * posneg > 0.0) {
-            h = xend - x;
+        if (0.1 * fabs(h) <= fabs(*x) * uround) { *ierr = -3; return; }
+        if ((*x + (1.01 * h) - *xend) * posneg > 0.0) {
+            h = *xend - *x;
             last = 1;
         }
 
         *nstep += 1;
 
         // the twelve stages
-        if (irtrn >= 2) { fcn(n, x, y, k1, rpar, ipar); }
+        if (irtrn >= 2) { fcn(n, *x, y, k1, rpar, ipar); }
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*a21*k1[i]; }  // 22
-        fcn(n, x + c2*h, y1, k2, rpar, ipar);
+        fcn(n, *x + c2*h, y1, k2, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a31*k1[i] + a32*k2[i]); }  // 23
-        fcn(n, x + c3*h, y1, k3, rpar, ipar);
+        fcn(n, *x + c3*h, y1, k3, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a41*k1[i] + a43*k3[i]); }  // 24
-        fcn(n, x + c4*h, y1, k4, rpar, ipar);
+        fcn(n, *x + c4*h, y1, k4, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a51*k1[i] + a53*k3[i] + a54*k4[i]); }  // 25
-        fcn(n, x + c5*h, y1, k5, rpar, ipar);
+        fcn(n, *x + c5*h, y1, k5, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a61*k1[i] + a64*k4[i] + a65*k5[i]); }  // 26
-        fcn(n, x + c6*h, y1, k6, rpar, ipar);
+        fcn(n, *x + c6*h, y1, k6, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a71*k1[i] + a74*k4[i] + a75*k5[i] + a76*k6[i]); }  // 27
-        fcn(n, x + c7*h, y1, k7, rpar, ipar);
+        fcn(n, *x + c7*h, y1, k7, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a81*k1[i] + a84*k4[i] + a85*k5[i] + a86*k6[i] + a87*k7[i]); }  // 28
-        fcn(n, x + c8*h, y1, k8, rpar, ipar);
+        fcn(n, *x + c8*h, y1, k8, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a91*k1[i] + a94*k4[i] + a95*k5[i] + a96*k6[i] + a97*k7[i] + a98*k8[i]); }  // 29
-        fcn(n, x + c9*h, y1, k9, rpar, ipar);
+        fcn(n, *x + c9*h, y1, k9, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a101*k1[i] + a104*k4[i] + a105*k5[i] + a106*k6[i] + a107*k7[i] + a108*k8[i] + a109*k9[i]); }  // 30
-        fcn(n, x + c10*h, y1, k10, rpar, ipar);
+        fcn(n, *x + c10*h, y1, k10, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a111*k1[i] + a114*k4[i] + a115*k5[i] + a116*k6[i] + a117*k7[i] + a118*k8[i] + a119*k9[i] + a1110*k10[i]); }  // 31
-        fcn(n, x + c11*h, y1, k2, rpar, ipar);
+        fcn(n, *x + c11*h, y1, k2, rpar, ipar);
 
-        xph = x + h;
+        xph = *x + h;
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(a121*k1[i] + a124*k4[i] + a125*k5[i] + a126*k6[i] + a127*k7[i] + a128*k8[i] + a129*k9[i] + a1210*k10[i] + a1211*k2[i]); }  // 32
         fcn(n, xph, y1, k3, rpar, ipar);
 
@@ -509,18 +509,18 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
                 {
                     y1[i] = y[i] + h*(a141*k1[i] + a147*k7[i] + a148*k8[i] + a149*k9[i] + a1410*k10[i] + a1411*k2[i] + a1412*k3[i] + a1413*k4[i]);
                 }
-                fcn(n, x+c14*h, y1, k10, rpar, ipar);
+                fcn(n, *x+c14*h, y1, k10, rpar, ipar);
 
                 for (i = 0;i<n;i++)
                 {
                     y1[i] = y[i] + h*(a151*k1[i] + a156*k6[i] + a157*k7[i] + a158*k8[i] + a1511*k2[i]+ a1512*k3[i] + a1513*k4[i] + a1514*k10[i]);
                 }
-                fcn(n, x+c15*h, y1, k2, rpar, ipar);
+                fcn(n, *x+c15*h, y1, k2, rpar, ipar);
                 for (i = 0; i < n; i++)
                 {
                     y1[i] = y[i] + h*(a161*k1[i] + a166*k6[i] + a167*k7[i] + a168*k8[i] + a169*k9[i] + a1613*k4[i] + a1614*k10[i] + a1615*k2[i]);
                 }
-                fcn(n, x+c16*h, y1, k3, rpar, ipar);
+                fcn(n, *x+c16*h, y1, k3, rpar, ipar);
                 nfcn += 3;
                 // final preparation
                 for (j = 0; j < (*nrd); j++)
@@ -540,11 +540,11 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
                 y[i] = k5[i];
             }
             // 67
-            xold = x;
-            x = xph;
+            xold = *x;
+            *x = xph;
             if (iout >= 1)
             {
-                solout(*naccept+1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
+                solout(*naccept+1, xold, *x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
                 if (irtrn < 0) { *ierr = 2; return; }
             }
             // Normal exit
@@ -570,7 +570,7 @@ dp86co(const int n, dopri_fcn* fcn, double x, double* y, double xend, double hma
 
 
 static double
-hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
+hinit853(int n, dopri_fcn* fcn, double *x, double* y, double posneg,
          double* f0, double* f1, double* y1, int iord, double hmax, double* atol,
          double* rtol, int itol, double* rpar, int* ipar)
 {
@@ -615,7 +615,7 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
     {
         y1[i] = y[i] + h * f0[i];
     }
-    fcn(n, x + h, y1, f1, rpar, ipar);
+    fcn(n, *x + h, y1, f1, rpar, ipar);
 
     // estimate the second derivative of the solution
     der2 = 0.0;
@@ -653,7 +653,7 @@ hinit853(int n, dopri_fcn* fcn, double x, double* y, double posneg,
 
 
 static double
-contd8(const int ii, double x, double* con, int* icomp, int nd, const double xold, const double h)
+contd8(const int ii, double *x, double* con, int* icomp, int nd, const double xold, const double h)
 {
     int i = 0;
     double s, s1, conpar, res;
@@ -662,7 +662,7 @@ contd8(const int ii, double x, double* con, int* icomp, int nd, const double xol
 
     if (i == 0) { return -1; }
     // calculate the dense output
-    s = (x - xold) / h;
+    s = (*x - xold) / h;
     s1 = 1.0 - s;
     conpar = con[i + nd*4] + s*(con[i + nd*5] + s1*(con[i + nd*6] + s*con[i + nd*7]));
     res = con[i] + s*(con[i + nd] + s1*(con[i + nd*2] + s*(con[i + nd*3] + s1*conpar)));
@@ -670,7 +670,7 @@ contd8(const int ii, double x, double* con, int* icomp, int nd, const double xol
 }
 
 void
-dopri5(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+dopri5(const int n, dopri_fcn* fcn, double *x, double* y, double *xend, double* rtol,
        double* atol, const int itol, dopri_solout* solout, const int iout,
        double* work, int* iwork, double* rpar, int* ipar, int* ierr)
 {
@@ -781,7 +781,7 @@ dopri5(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rt
 }
 
 static void
-dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
+dopcor(const int n, dopri_fcn* fcn, double *x, double* y, double *xend,
        double hmax, double h, double* rtol, double* atol, const int itol,
        dopri_solout* solout, const int iout, int* ierr, const int nmax,
        const double uround, const int meth, int nstiff, const double safe,
@@ -851,14 +851,14 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
     expo1 = 0.2 - beta * 0.75;
     facc1 = 1.0 / fac1;
     facc2 = 1.0 / fac2;
-    posneg = copysign(1.0, xend - x);
+    posneg = copysign(1.0, *xend - *x);
 
     atoli = atol[0];
     rtoli = rtol[0];
     last = 0;
     hlamb = 0.0;
     iasti = 0;
-    fcn(n, x, y, k1, rpar, ipar);
+    fcn(n, *x, y, k1, rpar, ipar);
     hmax = fabs(hmax);
     iord = 5;
 
@@ -868,12 +868,12 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
     }
     *nfcn += 2;
     reject = 0;
-    xold = x;
+    xold = *x;
 
     if (iout != 0) {
         irtrn = 1;
         hout = h;
-        solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
+        solout(*naccept + 1, xold, *x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
         if (irtrn < 0) { *ierr = 2; return; }
     } else {
         irtrn = 0;
@@ -882,31 +882,31 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
     // basic integration step
     while (1) {
         if (*nstep > nmax) { *ierr = -2; return; }
-        if (0.1 * fabs(h) <= fabs(x)*uround) { *ierr = -3; return; }
-        if ((x + 1.01*h - xend) * posneg > 0.0) {
-            h = xend - x;
+        if (0.1 * fabs(h) <= fabs(*x)*uround) { *ierr = -3; return; }
+        if ((*x + 1.01*h - *xend) * posneg > 0.0) {
+            h = *xend - *x;
             last = 1;
         }
         *nstep += 1;
 
         // the first 6 stages
-        if (irtrn >= 2) { fcn(n, x, y, k1, rpar, ipar); }
+        if (irtrn >= 2) { fcn(n, *x, y, k1, rpar, ipar); }
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*A21*k1[i]; }  // 22
-        fcn(n, x + C2*h, y1, k2, rpar, ipar);
+        fcn(n, *x + C2*h, y1, k2, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A31*k1[i] + A32*k2[i]); }  // 23
-        fcn(n, x + C3*h, y1, k3, rpar, ipar);
+        fcn(n, *x + C3*h, y1, k3, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A41*k1[i] + A42*k2[i] + A43*k3[i]); }  // 24
-        fcn(n, x + C4*h, y1, k4, rpar, ipar);
+        fcn(n, *x + C4*h, y1, k4, rpar, ipar);
 
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A51*k1[i] + A52*k2[i] + A53*k3[i] + A54*k4[i]); }  // 25
-        fcn(n, x + C5*h, y1, k5, rpar, ipar);
+        fcn(n, *x + C5*h, y1, k5, rpar, ipar);
 
         for (i = 0; i < n; i++) { ysti[i] = y[i] + h*(A61*k1[i] + A62*k2[i] + A63*k3[i] + A64*k4[i] + A65*k5[i]); }  // 26
 
-        double xph = x + h;
+        double xph = *x + h;
         fcn(n, xph, ysti, k6, rpar, ipar);
         for (i = 0; i < n; i++) { y1[i] = y[i] + h*(A71*k1[i] + A73*k3[i] + A74*k4[i] + A75*k5[i] + A76*k6[i]); }  // 27
         fcn(n, xph, y1, k2, rpar, ipar);
@@ -1001,13 +1001,13 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
                 y[i] = y1[i];
             }
             // 44
-            xold = x;
-            x = xph;
+            xold = *x;
+            *x = xph;
 
             if (iout != 0)
             {
                 hout = h;
-                solout(*naccept + 1, xold, x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
+                solout(*naccept + 1, xold, *x, y, n, cont, icomp, *nrd, rpar, ipar, &irtrn);
                 if (irtrn < 0) { *ierr = 2; return; }
             }
 
@@ -1037,7 +1037,7 @@ dopcor(const int n, dopri_fcn* fcn, double x, double* y, double xend,
 
 
 static double
-hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
+hinit(int n, dopri_fcn* fcn, double *x, double* y, double posneg, double* f0,
       double* f1, double* y1, int iord, double hmax, double* atol, double* rtol,
       int itol, double* rpar, int* ipar)
 {
@@ -1083,7 +1083,7 @@ hinit(int n, dopri_fcn* fcn, double x, double* y, double posneg, double* f0,
         y1[i] = y[i] + h * f0[i];
     }
     // 12
-    fcn(n, x + h, y1, f1, rpar, ipar);
+    fcn(n, *x + h, y1, f1, rpar, ipar);
 
     // estimate the second derivative of the solution
     der2 = 0.0;

@@ -85,7 +85,7 @@ typedef void dopri_solout(int nr, double xold, double x, double* y, int n, doubl
  * - Error codes are set in *ierr: 1 (success), negative values (various errors).
  */
 void
-dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+dopri853(const int n, dopri_fcn* fcn, double* x, double* y, double* xend, double* rtol,
          double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
          int* iwork, double* rpar, int* ipar, int* ierr);
 
@@ -117,7 +117,7 @@ dopri853(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* 
  * - The workspace arrays must be properly sized according to the documentation.
  * - Error codes are set in *ierr: 1 (success), negative values (various errors).
  */
-void dopri5(const int n, dopri_fcn* fcn, double x, double* y, double xend, double* rtol,
+void dopri5(const int n, dopri_fcn* fcn, double* x, double* y, double* xend, double* rtol,
        double* atol, const int itol, dopri_solout* solout, const int iout, double* work,
        int* iwork, double* rpar, int* ipar, int* ierr);
 

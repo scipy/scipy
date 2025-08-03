@@ -1217,7 +1217,7 @@ if dopri5.runner is not None:
 
 class dop853(dopri5):
     runner = getattr(_dop, 'dopri853', None)
-    name = 'dopri853'
+    name = 'dop853'
 
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
