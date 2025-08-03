@@ -1,6 +1,12 @@
 from types import EllipsisType
 
-from scipy._lib._array_api import array_namespace, Array, is_lazy_array, xp_vector_norm
+from scipy._lib._array_api import (
+    array_namespace,
+    Array,
+    is_lazy_array,
+    xp_vector_norm,
+    xp_result_type,
+)
 import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
     as_matrix as quat_as_matrix,
@@ -11,7 +17,7 @@ from scipy.spatial.transform._rotation_xp import (
     from_quat,
     inv as quat_inv,
 )
-from scipy._lib.array_api_compat import device
+from scipy._lib.array_api_compat import device as xp_device
 from scipy._lib._util import broadcastable
 
 
@@ -22,7 +28,8 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
         matrix = xp.asarray(matrix, copy=True)
 
     last_row_ok = xp.all(
-        matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0], device=device(matrix)), axis=-1
+        matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0], device=xp_device(matrix)),
+        axis=-1,
     )
     if is_lazy_array(matrix):
         matrix = xp.where(last_row_ok[..., None, None], matrix, xp.nan)
@@ -48,7 +55,9 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
 def from_rotation(quat: Array) -> Array:
     xp = array_namespace(quat)
     rotmat = quat_as_matrix(quat)
-    matrix = xp.zeros((*rotmat.shape[:-2], 4, 4), dtype=quat.dtype, device=device(quat))
+    matrix = xp.zeros(
+        (*rotmat.shape[:-2], 4, 4), dtype=quat.dtype, device=xp_device(quat)
+    )
     matrix = xpx.at(matrix)[..., :3, :3].set(rotmat)
     matrix = xpx.at(matrix)[..., 3, 3].set(1)
     return matrix
@@ -62,16 +71,17 @@ def from_translation(translation: Array) -> Array:
             "Expected `translation` to have shape (3,), or (N, 3), "
             f"got {translation.shape}."
         )
-    _device = device(translation)
-    eye = xp.eye(4, dtype=translation.dtype, device=_device)
+    device = xp_device(translation)
+    dtype = xp_result_type(translation, force_floating=True, xp=xp)
+    eye = xp.eye(4, dtype=dtype, device=device)
 
     matrix = xpx.atleast_nd(eye, ndim=translation.ndim + 1, xp=xp)
     matrix = xp.zeros(
         (*translation.shape[:-1], 4, 4),
-        dtype=translation.dtype,
-        device=_device,
+        dtype=dtype,
+        device=device,
     )
-    matrix = xpx.at(matrix)[...].set(xp.eye(4, dtype=translation.dtype, device=_device))
+    matrix = xpx.at(matrix)[...].set(xp.eye(4, dtype=dtype, device=device))
     matrix = xpx.at(matrix)[..., :3, 3].set(translation)
     return matrix
 
@@ -127,7 +137,7 @@ def as_dual_quat(matrix: Array, *, scalar_first: bool = False) -> Array:
     real_parts = quat_from_matrix(matrix[..., :3, :3])
 
     pure_translation_quats = xp.empty(
-        (*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device(matrix)
+        (*matrix.shape[:-2], 4), dtype=matrix.dtype, device=xp_device(matrix)
     )
     pure_translation_quats = xpx.at(pure_translation_quats)[..., :3].set(
         matrix[..., :3, 3]
@@ -175,7 +185,9 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
         raise ValueError(
             f"Expected vector to have shape (N, 3), or (3,), got {vector.shape}."
         )
-    vec = xp.empty((*vector.shape[:-1], 4), dtype=vector.dtype, device=device(vector))
+    vec = xp.empty(
+        (*vector.shape[:-1], 4), dtype=vector.dtype, device=xp_device(vector)
+    )
     vec = xpx.at(vec)[..., :3].set(vector)
     vec = xpx.at(vec)[..., 3].set(1)
     vec = vec[..., None]
@@ -197,10 +209,10 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
 def pow(matrix: Array, n: float) -> Array:
     # Check if execution is eager. If so, we can branch and avoid computing all special cases
     xp = array_namespace(matrix)
-    _device = device(matrix)
+    device = xp_device(matrix)
     if not is_lazy_array(matrix):
         if n == 0:
-            identity = xp.eye(4, dtype=matrix.dtype, device=_device)
+            identity = xp.eye(4, dtype=matrix.dtype, device=device)
             identity = xpx.atleast_nd(identity, ndim=matrix.ndim, xp=xp)
             return xp.tile(identity, (*matrix.shape[:-2], 1, 1))
         elif n == -1:
@@ -211,7 +223,7 @@ def pow(matrix: Array, n: float) -> Array:
     # Lazy execution. We compute all special cases and the general case and combine them using
     # xp.where.
     result = from_exp_coords(as_exp_coords(matrix) * n)
-    identity = xp.eye(4, dtype=matrix.dtype, device=_device)
+    identity = xp.eye(4, dtype=matrix.dtype, device=device)
     result = xp.where(n == 0, identity, result)
     result = xp.where(n == -1, inv(matrix), result)
     result = xp.where(n == 1, matrix, result)
@@ -219,9 +231,12 @@ def pow(matrix: Array, n: float) -> Array:
 
 
 def setitem(
-    matrix: Array, indexer: int | slice | EllipsisType | None, value: Array
+    matrix: Array, indexer: Array | int | slice | EllipsisType | None, value: Array
 ) -> Array:
-    return xpx.at(matrix)[indexer].set(value)
+    # TODO: Fix for array API integer indexing
+    if isinstance(indexer, EllipsisType):
+        return xpx.at(matrix)[indexer].set(value)
+    return xpx.at(matrix)[indexer, ...].set(value)
 
 
 def normalize_dual_quaternion(dual_quat: Array) -> Array:
@@ -243,7 +258,7 @@ def _create_transformation_matrix(
     matrix = xp.empty(
         (*translations.shape[:-1], 4, 4),
         dtype=translations.dtype,
-        device=device(translations),
+        device=xp_device(translations),
     )
     matrix = xpx.at(matrix)[..., :3, :3].set(rotation_matrices)
     matrix = xpx.at(matrix)[..., :3, 3].set(translations)
@@ -259,26 +274,26 @@ def _compute_se3_exp_translation_transform(rot_vec: Array) -> Array:
     The transformation matrix depends on the rotation vector.
     """
     xp = array_namespace(rot_vec)
-    _device = device(rot_vec)
-    _dtype = rot_vec.dtype
+    device = xp_device(rot_vec)
+    dtype = rot_vec.dtype
     angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
     small_scale = angle < 1e-3
 
     k1_small = 0.5 - angle**2 / 24 + angle**4 / 720
     # Avoid division by zero for non-branching computations. The value will get discarded in the
     # xp.where selection.
-    safe_angle = angle + xp.asarray(small_scale, dtype=_dtype, device=_device)
+    safe_angle = angle + xp.asarray(small_scale, dtype=dtype, device=device)
     k1 = (1.0 - xp.cos(angle)) / safe_angle**2
     k1 = xp.where(small_scale, k1_small, k1)
 
     k2_small = 1 / 6 - angle**2 / 120 + angle**4 / 5040
     # Again, avoid division by zero by adding one to all near-zero angles.
-    safe_angle = angle + xp.asarray(small_scale, dtype=_dtype, device=_device)
+    safe_angle = angle + xp.asarray(small_scale, dtype=dtype, device=device)
     k2 = (angle - xp.sin(angle)) / safe_angle**3
     k2 = xp.where(small_scale, k2_small, k2)
 
     s = _create_skew_matrix(rot_vec)
-    eye = xp.eye(3, dtype=_dtype, device=_device)
+    eye = xp.eye(3, dtype=dtype, device=device)
 
     return eye + k1[..., None] * s + k2[..., None] * s @ s
 
@@ -291,25 +306,25 @@ def _compute_se3_log_translation_transform(rot_vec: Array) -> Array:
     analytical form.
     """
     xp = array_namespace(rot_vec)
-    _dtype = rot_vec.dtype
-    _device = device(rot_vec)
+    dtype = rot_vec.dtype
+    device = xp_device(rot_vec)
     angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
     mask = angle < 1e-3
 
     k_small = 1 / 12 + angle**2 / 720 + angle**4 / 30240
-    safe_angle = angle + xp.asarray(mask, dtype=_dtype, device=_device)
+    safe_angle = angle + xp.asarray(mask, dtype=dtype, device=device)
     k = (1 - 0.5 * angle / xp.tan(0.5 * safe_angle)) / safe_angle**2
     k = xp.where(mask, k_small, k)
 
     s = _create_skew_matrix(rot_vec)
 
-    return xp.eye(3, dtype=_dtype, device=_device) - 0.5 * s + k[..., None] * s @ s
+    return xp.eye(3, dtype=dtype, device=device) - 0.5 * s + k[..., None] * s @ s
 
 
 def _create_skew_matrix(vec: Array) -> Array:
     """Create skew-symmetric (aka cross-product) matrix for stack of vectors."""
     xp = array_namespace(vec)
-    result = xp.zeros((*vec.shape[:-1], 3, 3), dtype=vec.dtype, device=device(vec))
+    result = xp.zeros((*vec.shape[:-1], 3, 3), dtype=vec.dtype, device=xp_device(vec))
     result = xpx.at(result)[..., 0, 1].set(-vec[..., 2])
     result = xpx.at(result)[..., 0, 2].set(vec[..., 1])
     result = xpx.at(result)[..., 1, 0].set(vec[..., 2])
@@ -335,7 +350,7 @@ def _normalize_dual_quaternion(
     # special case: real quaternion is 0, we set it to identity
     zero_real_mask = real_norm == 0.0
     unit_quat = xp.asarray(
-        [0.0, 0.0, 0.0, 1.0], dtype=real_part.dtype, device=device(real_part)
+        [0.0, 0.0, 0.0, 1.0], dtype=real_part.dtype, device=xp_device(real_part)
     )
     real_part = xp.where(zero_real_mask, unit_quat, real_part)
     real_norm = xp.where(zero_real_mask, 1.0, real_norm)

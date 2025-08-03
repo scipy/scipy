@@ -26,6 +26,7 @@ __all__ = ["RigidTransform"]
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
+@xp_capabilities()
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
@@ -392,7 +393,9 @@ class RigidTransform:
         return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_matrix(matrix: ArrayLike) -> RigidTransform:
         """Initialize from a 4x4 transformation matrix.
 
@@ -471,7 +474,9 @@ class RigidTransform:
         return RigidTransform(matrix, normalize=True, copy=True)
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_rotation(rotation: Rotation) -> RigidTransform:
         """Initialize from a rotation, without a translation.
 
@@ -538,7 +543,9 @@ class RigidTransform:
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_translation(translation: ArrayLike) -> RigidTransform:
         """Initialize from a translation numpy array, without a rotation.
 
@@ -607,7 +614,9 @@ class RigidTransform:
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_components(translation: ArrayLike, rotation: Rotation) -> RigidTransform:
         """Initialize a rigid transform from translation and rotation
         components.
@@ -671,11 +680,13 @@ class RigidTransform:
         >>> tf.apply([1, 0, 0])
         array([2.       , 3.8660254,  3.5     ])
         """
-        rotation = RigidTransform.from_rotation(rotation)
-        return RigidTransform.from_translation(translation) * rotation
+        rotation_tf = RigidTransform.from_rotation(rotation)
+        return RigidTransform.from_translation(translation) * rotation_tf
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_exp_coords(exp_coords: ArrayLike) -> RigidTransform:
         r"""Initialize from exponential coordinates of transform.
 
@@ -769,7 +780,9 @@ class RigidTransform:
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_dual_quat(
         dual_quat: ArrayLike, *, scalar_first: bool = False
     ) -> RigidTransform:
@@ -824,7 +837,9 @@ class RigidTransform:
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def identity(num: int | None = None) -> RigidTransform:
         """Initialize an identity transform.
 
@@ -901,7 +916,9 @@ class RigidTransform:
         return RigidTransform._from_raw_matrix(matrix, array_namespace(matrix))
 
     @staticmethod
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def concatenate(
         transforms: RigidTransform | Iterable[RigidTransform],
     ) -> RigidTransform:
@@ -941,7 +958,9 @@ class RigidTransform:
         )
         return RigidTransform._from_raw_matrix(matrix, xp, None)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
@@ -996,7 +1015,9 @@ class RigidTransform:
             return matrix[0, ...]
         return matrix
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_components(self) -> tuple[Array, Rotation]:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
@@ -1058,7 +1079,9 @@ class RigidTransform:
         """
         return self.translation, self.rotation
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_exp_coords(self) -> Array:
         """Return the exponential coordinates of the transform.
 
@@ -1090,7 +1113,9 @@ class RigidTransform:
             exp_coords = exp_coords[0, ...]
         return exp_coords
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_dual_quat(self, *, scalar_first: bool = False) -> Array:
         """Return the dual quaternion representation of the transform.
 
@@ -1132,7 +1157,6 @@ class RigidTransform:
             dual_quat = dual_quat[0]
         return dual_quat
 
-    @xp_capabilities()
     def __len__(self) -> int:
         """Return the number of transforms in this object.
 
@@ -1167,7 +1191,10 @@ class RigidTransform:
             raise TypeError("Single transform has no len")
         return self._matrix.shape[0]
 
-    @xp_capabilities()
+    @xp_capabilities(
+        jax_jit=False,
+        skip_backends=[("dask.array", "cannot handle zero-length rotations")],
+    )
     def __getitem__(
         self, indexer: int | slice | EllipsisType | None | ArrayLike
     ) -> RigidTransform:
@@ -1235,12 +1262,17 @@ class RigidTransform:
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
         if is_array and xp.isdtype(indexer.dtype, "integral"):
+            if self._matrix.shape[0] == 0:
+                raise IndexError("cannot take from an empty array")
             return RigidTransform(
                 xp.take(self._matrix, indexer, axis=0), normalize=False
             )
         return RigidTransform(self._matrix[indexer, ...], normalize=False)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        jax_jit=False,
+        skip_backends=[("dask.array", "cannot handle zero-length rotations")],
+    )
     def __setitem__(
         self,
         indexer: int | slice | EllipsisType | None | ArrayLike,
@@ -1284,7 +1316,9 @@ class RigidTransform:
 
         self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def __mul__(self, other: RigidTransform) -> RigidTransform | NotImplementedType:
         """Compose this transform with the other.
 
@@ -1373,7 +1407,9 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=True, copy=False)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def __pow__(self, n: float) -> RigidTransform:
         """Compose this transform with itself `n` times.
 
@@ -1477,7 +1513,9 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def inv(self) -> RigidTransform:
         """Invert this transform.
 
@@ -1541,7 +1579,12 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
-    @xp_capabilities()
+    @xp_capabilities(
+        skip_backends=[
+            ("dask.array", "missing linalg.cross/det functions"),
+            ("cupy", "missing .mT attribute in cupy<14.*"),
+        ]
+    )
     def apply(self, vector: ArrayLike, inverse: bool = False) -> Array:
         """Apply the transform to a vector.
 
