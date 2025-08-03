@@ -1,7 +1,7 @@
 import numpy as np
 import scipy as sp
 
-__all__ = ['save_npz', 'load_npz']
+__all__ = ['save_npz', 'load_npz', 'from_binsparse']
 
 
 # Make loading safe vs. malicious input
@@ -165,3 +165,111 @@ def load_npz(file):
         else:
             raise NotImplementedError(f'Load is not implemented for '
                                       f'sparse matrix of format {sparse_format}.')
+
+def from_binsparse(arr, /, *, device=None, copy: bool | None = None):
+    from scipy.sparse import csr_array, csc_array
+    desc = arr.__binsparse_descriptor__()
+    arrs = arr.__binsparse__()
+
+    desc = desc["binsparse"]
+    version_tuple: tuple[int, ...] = tuple(int(v) for v in desc["version"].split("."))
+    if version_tuple != (0, 1):
+        raise RuntimeError("Unsupported `__binsparse__` protocol version.")
+
+    format = desc["format"]
+    format_err_str = f"Unsupported format: `{format!r}`."
+
+    if isinstance(format, str):
+        match format:
+            case "CSC" | "CSR":
+                desc["format"] = {
+                    "custom": {
+                        "transpose": [0, 1] if format == "CSR" else [0, 1],
+                        "level": {
+                            "level_desc": "dense",
+                            "level": {
+                                "level_desc": "sparse",
+                                "level": {
+                                    "level_desc": "element",
+                                },
+                            },
+                        },
+                    },
+                }
+            case _:
+                raise RuntimeError(format_err_str)
+
+    format = desc["format"]["custom"]
+    rank = 0
+    level = format
+    while "level" in level:
+        if "rank" not in level:
+            level["rank"] = 1
+        rank += level["rank"]
+        level = level["level"]
+    if "transpose" not in format:
+        format["transpose"] = list(range(rank))
+
+    match desc:
+        case {
+            "format": {
+                "custom": {
+                    "transpose": transpose,
+                    "level": {
+                        "level_desc": "dense",
+                        "rank": 1,
+                        "level": {
+                            "level_desc": "sparse",
+                            "rank": 1,
+                            "level": {
+                                "level_desc": "element",
+                            },
+                        },
+                    },
+                },
+            },
+            "shape": shape,
+            "data_types": {
+                "pointers_to_1": ptr_dtype,
+                "indices_1": crd_dtype,
+                "values": val_dtype,
+            },
+            **_kwargs,
+        }:
+            crd_arr = np.from_dlpack(arrs["pointers_to_1"])
+            _check_binsparse_dt(crd_arr, crd_dtype)
+            ptr_arr = np.from_dlpack(arrs["indices_1"])
+            _check_binsparse_dt(ptr_arr, ptr_dtype)
+            val_arr = np.from_dlpack(arrs["values"])
+            _check_binsparse_dt(val_arr, val_dtype)
+
+            match transpose:
+                case [0, 1]:
+                    sparse_type = csr_array
+                case [1, 0]:
+                    sparse_type = csc_array
+                case _:
+                    raise RuntimeError(format_err_str)
+
+            return sparse_type((val_arr, ptr_arr, crd_arr), shape=shape)
+        case _:
+            raise RuntimeError(format_err_str)
+
+def _convert_binsparse_dtype(dt: str) -> np.dtype:
+    if dt.startswith("complex[float") and dt.endswith("]"):
+        complex_bits = 2 * int(dt[len("complex[float") : -len("]")])
+        dt: str = f"complex{complex_bits}"
+
+    return np.dtype(dt)
+
+
+def _check_binsparse_dt(arr: np.ndarray, dt: str) -> None:
+    invalid_dtype_str = "Invalid dtype: `{dtype!s}`, expected `{expected!s}`."
+    dt = _convert_binsparse_dtype(dt)
+    if dt != arr.dtype:
+        raise BufferError(
+            invalid_dtype_str.format(
+                dtype=arr.dtype,
+                expected=dt,
+            )
+        )
