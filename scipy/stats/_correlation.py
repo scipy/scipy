@@ -139,7 +139,10 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     Notes
     -----
     There is currently no special handling of ties in `x`; they are broken arbitrarily
-    by the implementation.
+    by the implementation. [1]_ recommends: "if there are ties among the Xi’s, then
+    choose an increasing rearrangement as above by breaking ties uniformly at random."
+    This is easily accomplished by adding a small amount of random noise to `x`; see
+    examples.
 
     [1]_ notes that the statistic is not symmetric in `x` and `y` *by design*:
     "...we may want to understand if :math:`Y` is a function :math:`X`, and not just
@@ -184,6 +187,29 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 
     >>> stats.chatterjeexi(x, y + noise, y_continuous=True, axis=-1).statistic
     array([0.79507951, 0.41824182, 0.16651665])
+
+    Consider a case in which there are ties in `x`.
+
+    >>> x = rng.integers(10, size=1000)
+    >>> y = rng.integers(10, size=1000)
+
+    [1]_ recommends breaking the ties uniformly at random.
+
+    >>> d = rng.uniform(1e-5, size=x.size)
+    >>> res = stats.chatterjeexi(x + d, y)
+    >>> res.statistic
+    -0.029919991638798438
+
+    Since this gives a randomized estimate of the statistic, [1]_ also suggests
+    considering the average over all possibilities of breaking ties. This is
+    computationally infeasible when there are many ties, but a randomized estimate of
+    *this* quantity can be obtained by considering many random possibilities of breaking
+    ties.
+
+    >>> d = rng.uniform(1e-5, size=(9999, x.size))
+    >>> res = stats.chatterjeexi(x + d, y, axis=1)
+    >>> np.mean(res.statistic)
+    0.001186895213756626
 
     """
     # x, y, `axis` input validation taken care of by decorator
