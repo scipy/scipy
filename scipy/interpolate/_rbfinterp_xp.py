@@ -139,8 +139,6 @@ def polynomial_matrix(x, powers, xp):
     return xp.prod(x[:, None, :] ** powers, axis=-1)
 
 
-
-# pythran export _kernel_matrix(float[:, :], str)
 def _kernel_matrix(x, kernel, xp):
     """Return RBFs, with centers at `x`, evaluated at `x`."""
     kernel_func = NAME_TO_FUNC[kernel]
@@ -148,19 +146,12 @@ def _kernel_matrix(x, kernel, xp):
     return out
 
 
-# pythran export _polynomial_matrix(float[:, :], int[:, :])
 def _polynomial_matrix(x, powers, xp):
     """Return monomials, with exponents from `powers`, evaluated at `x`."""
     out = polynomial_matrix(x, powers, xp)
     return out
 
 
-# pythran export _build_system(float[:, :],
-#                              float[:, :],
-#                              float[:],
-#                              str,
-#                              float,
-#                              int[:, :])
 def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     """Build the system used to solve for the RBF interpolant coefficients.
 
@@ -228,16 +219,6 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     return lhs, rhs, shift, scale
 
 
-# pythran export _build_evaluation_coefficients(float[:, :],
-#                          float[:, :],
-#                          str,
-#                          float,
-#                          int[:, :],
-#                          float[:],
-#                          float[:])
-#import torch
-#torch._dynamo.config.cache_size_limit = 160
-#@torch.compile(fullgraph=True, dynamic=True)
 def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, xp):
     """Construct the coefficients needed to evaluate
     the RBF.
@@ -264,9 +245,6 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, 
     (Q, P + R) float ndarray
 
     """
-    q = x.shape[0]
-    p = y.shape[0]
-    r = powers.shape[0]
     kernel_func = NAME_TO_FUNC[kernel]
 
     yeps = y*epsilon
@@ -280,26 +258,6 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale, 
             xp.prod(xhat[:, None, :] ** powers, axis=-1)
         ], axis=-1
     )
-
-    '''
-    from numpy.testing import assert_allclose
-    assert_allclose(vec[:, p:], xp.prod(xhat[:, None, :] ** powers, axis=-1), atol=1e-15)
-    '''
-
-    '''
-    vec2 = xp.empty((q, p), dtype=xp.float64)
-    for i in range(x.shape[0]):
-        for j in range(y.shape[0]):
-            vec2[i, j] = kernel_func(xp.linalg.vector_norm(xeps[i] - yeps[j]), xp)
-
-
-    vec3 = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
-
-    from numpy.testing import assert_allclose
-    assert_allclose(vec[:, :p], vec2)
-
-    assert_allclose(vec2, vec3)
-    '''
 
     return vec
 

@@ -28,6 +28,5 @@ def _monomial_powers_impl(ndim, degree):
             # multiplicity indicating power (e.g., (0, 1, 1) represents x*y**2)
             for var in mono:
                 out[count][var] += 1
-
             count += 1
     return out

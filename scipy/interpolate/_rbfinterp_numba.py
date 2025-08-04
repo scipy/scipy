@@ -1,6 +1,8 @@
 """RBF backend with numba JIT compiled evaluations.
 """
 import numba
+import numpy as np
+
 
 from ._rbfinterp_np import *
 
@@ -10,18 +12,8 @@ from ._rbfinterp_np import (
     _monomial_powers, _monomial_powers_impl, _polynomial_matrix
 )
 
-#import torch
-#compute_interpolation = torch.compile(fullgraph=True, dynamic=True)(compute_interpolation)
-
-# needed for tests
-#torch._dynamo.config.cache_size_limit = 160
-
 
 ### Copy-paste from _rbfinterp_pythran.py
-
-
-import numpy as np
-
 
 @numba.njit
 def linear(r):
@@ -113,6 +105,7 @@ def _build_evaluation_coefficients(x, y, kernel, epsilon, powers, shift, scale):
 @numba.njit
 def kernel_vector(x, y, kernel_func, out):
     """Evaluate RBFs, with centers at `y`, at the point `x`."""
+    # NB: explicit prange
     for i in numba.prange(y.shape[0]):
         out[i] = kernel_func(np.linalg.norm(x - y[i]))
 
@@ -120,6 +113,7 @@ def kernel_vector(x, y, kernel_func, out):
 @numba.njit
 def polynomial_vector(x, powers, out):
     """Evaluate monomials, with exponents from `powers`, at the point `x`."""
+    # NB: explicit prange
     for i in numba.prange(powers.shape[0]):
         out[i] = np.prod(x**powers[i])
 
@@ -135,34 +129,12 @@ def _build_evaluation_coefficients_impl(x, y, kernel_func, epsilon, powers, shif
     xhat = (x - shift)/scale
 
     vec = np.empty((q, p + r), dtype=float)
- #   xxx = xeps[:, None, :] - yeps[None, :, :]
- #   yyy = _norm(xxx)
- #   vec[:, :p] = kernel_func(yyy)
- #   vec[:, p:] = np.prod(xhat[:, None, :] ** powers, axis=-1)
 
+    # NB: explicit prange
     for i in numba.prange(q):
         kernel_vector(xeps[i], yeps, kernel_func, vec[i, :p])
         polynomial_vector(xhat[i], powers, vec[i, p:])
 
-    '''
-    from numpy.testing import assert_allclose
-    assert_allclose(vec[:, p:], xp.prod(xhat[:, None, :] ** powers, axis=-1), atol=1e-15)
-    '''
-
-    '''
-    vec2 = xp.empty((q, p), dtype=xp.float64)
-    for i in range(x.shape[0]):
-        for j in range(y.shape[0]):
-            vec2[i, j] = kernel_func(xp.linalg.vector_norm(xeps[i] - yeps[j]), xp)
-
-
-    vec3 = kernel_func(xp.linalg.vector_norm(xeps[:, None, :] - yeps[None, :, :], axis=-1), xp)
-
-    from numpy.testing import assert_allclose
-    assert_allclose(vec[:, :p], vec2)
-
-    assert_allclose(vec2, vec3)
-    '''
     return vec
 
 

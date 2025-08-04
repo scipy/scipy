@@ -1,4 +1,5 @@
 """Module for RBF interpolation."""
+import os
 import warnings
 from types import GenericAlias
 
@@ -12,6 +13,7 @@ from scipy._lib._array_api import (
     _asarray, array_namespace, xp_size, is_numpy, is_torch, is_jax
 )
 import scipy._lib.array_api_extra as xpx
+
 
 __all__ = ["RBFInterpolator"]
 
@@ -47,9 +49,7 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-
 # sort out the backends  XXX: make decisions at import time
-import os
 USE_JIT = os.environ.get("SCIPY_JIT", 0) == "1"
 
 def _get_backend(xp):
