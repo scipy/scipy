@@ -5,7 +5,7 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_size
 from scipy._lib.array_api_compat import numpy as np_compat
 
 from . import PPoly
@@ -23,8 +23,6 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     axis. The value of `axis` is converted to lie in
     [0, number of dimensions of `y`).
     """
-    if xp is None:
-        xp = array_namespace(x, y, dydx)
 
     x, y = map(xp.asarray, (x, y))
     if xp.isdtype(x.dtype, "complex floating"):
@@ -147,7 +145,7 @@ class CubicHermiteSpline(PPoly):
         if extrapolate is None:
             extrapolate = True
 
-        x, dx, y, axis, dydx = prepare_input(x, y, axis, dydx)
+        x, dx, y, axis, dydx = prepare_input(x, y, axis, dydx, xp=xp)
 
         dxr = xp.reshape(dx, (dx.shape[0], ) + (1, ) * (y.ndim - 1))
         slope = xp.diff(y, axis=0) / dxr
@@ -566,7 +564,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
             f12 = f1 + f2
 
             # These are the mask of where the slope at breakpoint is defined:
-            mmax = xp.asarray(np.max(np.asarray(f12), initial=-np.inf))
+            mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
             ind = xp.nonzero(f12 > break_mult * mmax)
 
             x_ind, y_ind = ind[0], ind[1:]
