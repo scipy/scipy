@@ -115,7 +115,7 @@ cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
 
 
 cdef class VarHeader5:
-    cdef readonly object name
+    cdef readonly object name 
     cdef readonly int mclass
     cdef readonly object dims
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
@@ -596,8 +596,9 @@ cdef class VarReader5:
         # all miMATRIX types except the mxOPAQUE_CLASS have dims and a
         # name.
         if mc == mxOPAQUE_CLASS:
-            header.name = None
-            header.dims = None
+            # Only extract variable name for mxOPAQUE_CLASS
+            # Remaining metadata is used in read_opaque()
+            header.name = self.read_int8_string()
             return header
         header.n_dims = self.read_into_int32s(header.dims_ptr, sizeof(header.dims_ptr))
         if header.n_dims > _MAT_MAXDIMS:
@@ -631,7 +632,7 @@ cdef class VarReader5:
             size *= header.dims_ptr[i]
         return size
 
-    cdef read_mi_matrix(self, int process=1):
+    cdef read_mi_matrix(self, int process=1, SubsystemReader5 subsystem=None, is_opaque=0):
         ''' Read header with matrix at sub-levels
 
         Combines ``read_header`` and functionality of
@@ -660,9 +661,9 @@ cdef class VarReader5:
             else:
                 return np.array([[]])
         header = self.read_header(False)
-        return self.array_from_header(header, process)
+        return self.array_from_header(header, process, subsystem, is_opaque)
 
-    cpdef array_from_header(self, VarHeader5 header, int process=1):
+    cpdef array_from_header(self, VarHeader5 header, int process=1, SubsystemReader5 subsystem=None, is_opaque=0):
         ''' Read array of any class, given matrix `header`
 
         Parameters
@@ -691,7 +692,7 @@ cdef class VarReader5:
             or mc == mxUINT32_CLASS
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
-            arr = self.read_real_complex(header)
+            arr = self.read_real_complex(header, subsystem, is_opaque)
             if process and self.mat_dtype: # might need to recast
                 if header.is_logical:
                     mat_dtype = BOOL_DTYPE
@@ -707,21 +708,20 @@ cdef class VarReader5:
             if process and self.chars_as_strings:
                 arr = chars_to_strings(arr)
         elif mc == mxCELL_CLASS:
-            arr = self.read_cells(header)
+            arr = self.read_cells(header, subsystem, is_opaque)
         elif mc == mxSTRUCT_CLASS:
-            arr = self.read_struct(header)
+            arr = self.read_struct(header, subsystem, is_opaque)
         elif mc == mxOBJECT_CLASS: # like structs, but with classname
             classname = self.read_int8_string().decode('latin1')
-            arr = self.read_struct(header)
+            arr = self.read_struct(header, subsystem, is_opaque)
             arr = mio5p.MatlabObject(arr, classname)
         elif mc == mxFUNCTION_CLASS: # just a matrix of struct type
-            arr = self.read_mi_matrix()
-            arr = mio5p.MatlabFunction(arr)
+            arr = self.read_mi_matrix(process, subsystem)
+            # arr = mio5p.MatlabFunction(arr)
             # to make them more re-writeable - don't squeeze
             process = 0
         elif mc == mxOPAQUE_CLASS:
-            arr = self.read_opaque(header)
-            arr = mio5p.MatlabOpaque(arr)
+            arr = self.read_opaque(header, subsystem)
             # to make them more re-writeable - don't squeeze
             process = 0
         # ensure we have read checksum.
@@ -749,10 +749,48 @@ cdef class VarReader5:
             shape = tuple([x for x in shape if x != 1])
         return shape
 
-    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
+    cpdef int is_mcos_reference(self, arr):
+        ''' Check if array is a reference to an object
+        Object references are uint32 arrays with a specific structure.
+        1. The first value is the magic value 0xDD000000
+        2. The second value is ndims, followed by size of each dimension
+        3. The next prod(dims) values are object IDs 
+        4. The last value is always the class ID
+        '''
+        cdef:
+            cnp.uint32_t n_dims
+            cnp.uint32_t total_objs
+        
+        if arr.dtype != np.uint32:
+            return 0
+        if arr.size < 6:
+            return 0
+        if arr[0] != 0xdd000000:
+            # First value of object references are zeros
+            return 0
+        n_dims = arr[1]
+        if n_dims < 2:
+            # Object is min 2D
+            return 0
+        total_objs = np.prod(arr[2 : 2 + n_dims])
+        if total_objs <= 0:
+            # At least 1 object should be present
+            return 0
+        if np.any(arr[2 + n_dims : 2 + n_dims + total_objs] <= 0):
+            # All objects should have object_id > 0
+            return 0
+        if arr.size != 3 + n_dims + total_objs:
+            return 0
+        
+        # print('Reference Found!')
+        return 1
+
+    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header, SubsystemReader5 subsystem, int is_opaque=0):
         ''' Read real / complex matrices from stream '''
         cdef:
             cnp.ndarray res, res_j
+            cdef cnp.uint32_t class_id, ndims
+            cnp.ndarray object_ids, dims
         if header.is_complex:
             # avoid array copy to save memory
             res = self.read_numeric(False)
@@ -766,6 +804,15 @@ cdef class VarReader5:
             res.imag = res_j
         else:
             res = self.read_numeric()
+        
+        if is_opaque and self.is_mcos_reference(res):
+            # Read object array if reference
+            ndims = res[1]
+            dims = res[2 : 2 + ndims]
+            total_objs = np.prod(dims)
+            object_ids = res[2 + ndims : 2 + ndims + total_objs]
+            class_id = res[-1]
+            return subsystem.read_mcos_arrays(object_ids, class_id, dims)
         return res.reshape(header.dims[::-1]).T
 
     cdef object read_sparse(self, VarHeader5 header):
@@ -870,7 +917,7 @@ cdef class VarReader5:
                           buffer=arr,
                           order='F')
 
-    cpdef cnp.ndarray read_cells(self, VarHeader5 header):
+    cpdef cnp.ndarray read_cells(self, VarHeader5 header, SubsystemReader5 subsystem, int is_opaque):
         ''' Read cell array from stream '''
         cdef:
             size_t i
@@ -880,7 +927,7 @@ cdef class VarReader5:
         cdef size_t length = self.size_from_header(header)
         result = np.empty(length, dtype=object)
         for i in range(length):
-            result[i] = self.read_mi_matrix()
+            result[i] = self.read_mi_matrix(process=1, subsystem=subsystem, is_opaque=is_opaque)
         return result.reshape(tupdims).T
 
     def read_fieldnames(self):
@@ -926,7 +973,7 @@ cdef class VarReader5:
         n_names_ptr[0] = n_names
         return field_names
 
-    cpdef cnp.ndarray read_struct(self, VarHeader5 header):
+    cpdef cnp.ndarray read_struct(self, VarHeader5 header, SubsystemReader5 subsystem, int is_opaque):
         ''' Read struct or object array from stream
 
         Objects are just structs with an extra field *classname*,
@@ -951,7 +998,7 @@ cdef class VarReader5:
             rec_res = np.empty(length, dtype=dt)
             for i in range(length):
                 for field_name in field_names:
-                    rec_res[i][field_name] = self.read_mi_matrix()
+                    rec_res[i][field_name] = self.read_mi_matrix(process=1, subsystem=subsystem, is_opaque=is_opaque)
             return rec_res.reshape(tupdims).T
         # Backward compatibility with previous format
         obj_template = mio5p.mat_struct()
@@ -960,34 +1007,383 @@ cdef class VarReader5:
         for i in range(length):
             item = pycopy(obj_template)
             for name in field_names:
-                item.__dict__[name] = self.read_mi_matrix()
+                item.__dict__[name] = self.read_mi_matrix(process=1, subsystem=subsystem, is_opaque=is_opaque)
             with cython.boundscheck(False):
                 result[i] = item
         return result.reshape(tupdims).T
 
-    cpdef object read_opaque(self, VarHeader5 hdr):
-        ''' Read opaque (function workspace) type
-
-        Looking at some mat files, the structure of this type seems to
-        be:
-
-        * array flags as usual (already read into `hdr`)
-        * 3 int8 strings
-        * a matrix
-
-        Then there's a matrix at the end of the mat file that seems have
-        the anonymous founction workspaces - we load it as
-        ``__function_workspace__``
-
-        See the comments at the beginning of ``mio5.py``
+    cpdef object read_opaque(self, VarHeader5 hdr, SubsystemReader5 subsystem):
+        ''' Read mxOPAQUE_CLASS arrays
+        mxOPAQUE Class has the format:
+        1. Array Flag
+        2. Variable Name
+        3. Type System (e.g. MCOS or java)
+        4. Class Name (e.g. string)
+        5. Object Reference: A metadata array that points to object contents in subsystem
         '''
-        # Neither res nor the return value of this function are cdef'd as
-        # cnp.ndarray, because that only adds useless checks with current
-        # Cython (0.23.4).
-        res = np.empty((1,), dtype=OPAQUE_DTYPE)
-        res0 = res[0]
-        res0['s0'] = self.read_int8_string()
-        res0['s1'] = self.read_int8_string()
-        res0['s2'] = self.read_int8_string()
-        res0['arr'] = self.read_mi_matrix()
+        cdef:
+            object type_system
+            object class_name
+            int is_opaque = 1 # Flag used to check for object references in mxOPAQUE_CLASS arrays
+        
+        type_system = PyUnicode_FromString(self.read_int8_string())
+        class_name = PyUnicode_FromString(self.read_int8_string())
+        # print(type_system, class_name)
+        
+        if type_system == "MCOS":
+            if class_name == "FileWrapper__":
+                is_opaque = 0 
+                #! Needs to be fixed as subsystem can also contain reference within struct/cell fields
+                #! Not checking object reference for FileWrapper__ class currently as it is not built yet
+                
+        res = self.read_mi_matrix(process=0, subsystem=subsystem, is_opaque=is_opaque)
+        # If an object reference is detected during read_mi_matrix(), then the corresponding object extracted from subsystem is returned
+        # The check is implemented within read_real_complex()
         return res
+
+cdef class SubsystemReader5:
+    ''' Read subsystem data'''
+    cdef:
+        object byte_order
+        int raw_data
+        cnp.ndarray mcos_metadata
+        cnp.ndarray mcos_field_contents
+        list mcos_names
+        
+    def __cinit__(self, byte_order, int raw_data=0):
+        self.byte_order = '<u4' if byte_order == '<' else '>u4' # Subsystem MCOS metadata uses uint32 integers
+        self.raw_data = raw_data
+        self.mcos_metadata = None
+        self.mcos_field_contents = None
+        self.mcos_names = None
+    
+    def set_fields(self,  arr):
+        '''Caches the field contents within subsystem
+        For MCOS arrays, the field contents is a cell array
+        Ignore first two cells as it is metadata/padding
+        '''
+        if "MCOS" in arr.dtype.names:
+            # Assumes struct dimensions are not squeezed
+            self.mcos_field_contents = arr["MCOS"][0,0][2:]
+            self.mcos_metadata = arr["MCOS"][0,0][0,0][:,0]
+            version = self.mcos_metadata[0]
+            if version > 4 or version < 1:
+                # As far as I am aware, the only difference between version 2 to 4 is the introduction of additional offsets for parsing other type of data
+                # Can change logic here
+                # Use version number to determine num_offsets
+                raise TypeError("Only compatible with Version 4 MCOS objects")
+            
+            self.set_mcos_names()
+
+    cdef set_mcos_names(self):
+        '''Extracts list of all field names and class names from MCOS FileWrapper metadata
+        1. Field names and class names are stored as a list of null terminated strings
+        2, Second uint32 number gives the number of strings
+        3. Names start immediately after offsets
+        '''
+        cdef:
+            cnp.uint32_t i, start, end, count
+            list names
+    
+        end = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=8)
+        num_strings = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=4)
+        names = []
+        count = 0
+        i = 40
+        
+        while i < end and count < num_strings:
+            start = i
+            while i < end and self.mcos_metadata[i] != 0:
+                i += 1
+            names.append(PyUnicode_FromString(self.mcos_metadata[start:i].tobytes()))
+            i += 1
+            count += 1
+        
+        self.mcos_names = names
+    
+    cdef cnp.ndarray get_object_dependencies(self, cnp.uint32_t object_id):
+        ''' Get object dependencies for the current subsystem
+        Format: (class_id, 0, 0, type1_id, type2_id, dep_id)
+        Start of object deps region is determined by offset 3
+        '''
+        cdef:
+            cnp.uint32_t byte_offset
+            cnp.ndarray[cnp.uint32_t, ndim=1] object_ids
+        
+        byte_offset = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=16)
+        byte_offset = byte_offset + object_id * 24
+
+        object_ids = np.frombuffer(self.mcos_metadata, 
+        dtype=self.byte_order, 
+        count=6, 
+        offset=byte_offset)
+        
+        return object_ids
+
+    cdef object get_class_name(self, cnp.uint32_t class_id):
+        ''' Get class name for the current subsystem
+        Format: (handle_class_idx, class_idx, 0, 0)
+        1. idx points to index of class name in mcos_names (indexed from 1)
+        2. Start of class name region is determined by offset 1
+        '''
+        cdef:
+            cnp.uint32_t byte_offset, handle_idx, class_idx
+            object class_name
+            object handle_name
+        
+        byte_offset = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=8)
+        byte_offset = byte_offset + class_id * 16
+
+        handle_idx, class_idx = np.frombuffer(
+            self.mcos_metadata,
+            dtype=self.byte_order,
+            count=2,
+            offset=byte_offset
+        )
+
+        class_name = self.mcos_names[class_idx - 1]
+        if handle_idx > 0:
+            handle_name = self.names[class_idx - 1]
+            class_name = f"{handle_name}.{class_name}"
+
+        return class_name
+
+    cdef cnp.ndarray get_ids(self, cnp.uint32_t type_id, cnp.uint32_t byte_offset, cnp.uint32_t nbytes):
+        ''' Get object ids for the current subsystem
+        Helper method to get IDs for metadata regions in the format (nblocks, subblock1, subblock2, subblock3 ...)
+        Input Parameters:
+            1. type_id: ID indicating object number
+            2. byte_offset: Offset to start of metadata region
+            3. nbytes: Number of bytes for each subblock 
+        
+        Output:
+            nump.ndarray containing all subblock data for the given type_id
+        '''
+        cdef cnp.uint32_t nblocks
+        
+        while type_id > 0:
+            nblocks = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=byte_offset)
+            byte_offset = byte_offset + 4 + nblocks * nbytes
+            if ((nblocks * nbytes) + 4) % 8 != 0:
+                byte_offset += 4 # Padding bytes
+            type_id -= 1
+        
+        nblocks = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=byte_offset)
+        byte_offset += 4
+        content_ids = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=nblocks * (nbytes//4), offset=byte_offset)
+        return content_ids.reshape(nblocks, nbytes//4)
+
+    cdef get_handle_class_instance(self, cnp.uint32_t type2_id):
+        ''' Searches for the object ID of the handle class instance
+        Input:
+            1. Type 2 ID: Type 2 ID of the handle class instance
+        Output:
+            1. Class ID: Class ID of the handle class instance
+            2. Object ID: Object ID of the handle class instance
+        
+        '''
+        cdef:
+            cnp.uint32_t start,end, class_id, object_id
+            cnp.ndarray object_deps
+            int i = 0
+            int nblocks
+
+        start, end = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=2, offset=16)
+        object_deps = np.frombuffer(self.mcos_metadata[start:end]).reshape(-1, 6)
+
+        # Find block with type2_id
+        nblocks = object_deps.shape[0]
+        while i < nblocks:
+            if object_deps[i, 4] == type2_id:
+                class_id = object_deps[i, 0]
+                object_id = <cnp.uint32_t> i
+                return class_id, object_id
+            i += 1
+
+        raise ValueError("Could not find handle class instance for object")
+        
+    cdef cnp.ndarray extract_properties(self, cnp.ndarray[cnp.uint32_t, ndim=1] object_deps):
+        '''Extract properties for a given object ID and its dependency IDs
+        '''
+        cdef:
+            cnp.uint32_t byte_offset, obj_type_id
+            object field_names
+            object field_dtype
+            cnp.ndarray field_ids
+            cnp.ndarray handle_ids
+            cnp.uint32_t class_id, object_id
+            int i, j
+
+        # Determine object type (1 or 2)
+        if object_deps[3] == 0 and object_deps[4] != 0:
+            obj_type_id = object_deps[4]
+            byte_offset = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=20)
+        elif object_deps[3] != 0 and object_deps[4] == 0:
+            obj_type_id = object_deps[3]
+            byte_offset = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=12)
+        else:
+            # Possible type 3 exists but has not been spotted in the wild yet
+            raise ValueError("Could not determine object type. Got dependencies: {object_deps}")
+        
+        # Get Field Content metadata for type 1 or type 2 objects
+        # Field content metadata format: (field_name_idx, field_type, field_value)
+        # If field_type == 1, then field_value is the index of the field value in mcos_field_contents
+        # If field_type == 2, then field_value is the boolean value
+        field_ids = self.get_ids(obj_type_id, byte_offset, 12)
+        field_names = [self.mcos_names[i-1] for i in field_ids[:, 0]]
+        field_dtype = [(name, object) for name in field_names]
+        # print("Field Names: ", field_names)
+
+        # Add Handle Class instances (if any)
+        byte_offset = np.frombuffer(self.mcos_metadata, dtype=self.byte_order, count=1, offset=24)
+        handle_ids = self.get_ids(object_deps[5], byte_offset, 4)[:,0] # Gets object IDs of handle instances
+        if handle_ids.size != 0:
+            i = 0
+            while i < handle_ids.size:
+                field_dtype.append((f"handle_{i+1}", object)) # Appending handle instances as properties to class
+                i += 1
+        
+        # Extract fields
+        # TODO: Check object representation
+        obj_props = np.empty((1, ), dtype=field_dtype)
+        i = 0
+        
+        while i < field_ids.shape[0]:
+            if field_ids[i, 1] == 1:
+                obj_props[0][field_names[i-1]] = self.mcos_field_contents[field_ids[i, 2], 0]
+            elif field_ids[i, 1] == 2:
+                obj_props[0, i] = np.array(field_ids[2], dtype=np.bool_)
+            else:
+                raise ValueError("Could not determine property type. Got type: {field_ids[i, 1]}")
+            i += 1
+
+        # Extract Handles
+        j = 0
+        while j < handle_ids.size:
+            class_id, object_id = self.get_handle_class_instance(handle_ids[j])
+            obj_props[0, i] = self.read_mcos_arrays(object_id, class_id, dims = np.array([1, 1]))
+
+        return obj_props
+
+    cdef cnp.ndarray read_mcos_arrays(self, cnp.ndarray object_ids, int class_id, cnp.ndarray dims):
+        ''' Read MCOS arrays from subsystem
+        '''
+        cdef:
+            int i = 0
+            cnp.ndarray[cnp.uint32_t, ndim=1] object_deps
+            object class_name 
+
+        # Extract props for all objects in object array
+        props_list = []
+        while i < object_ids.size:
+            object_deps = self.get_object_dependencies(object_ids[i])
+            obj_props = self.extract_properties(object_deps)
+            props_list.append(obj_props)
+            i += 1
+        
+        obj_props = np.array(props_list).reshape(dims)
+        obj_default_props = self.mcos_field_contents[-1, 0][class_id, 0]
+        class_name = self.get_class_name(class_id)
+        obj_props = convert_object(obj_props, obj_default_props, class_name, self.byte_order)
+
+        # Purpose of these fields are unknown
+        _u3 = self.mcos_field_contents[-3, 0][class_id, 0]
+        _u2 = self.mcos_field_contents[-2, 0][class_id, 0]
+
+        # TODO: Build object representation
+        # print("Class Name: ", class_name)
+        # print("Default Properties: ", obj_default_props)
+        # print("U3: ", _u3)
+        # print("U2: ", _u2)
+        return obj_props
+
+
+#* Below functions just placeholders for now, just for readability
+def mat_datetime(props):
+    
+    data = props["data"][0,0]
+    if data.size == 0:
+        return props
+    
+    # if "tz" in props.dtype.names:
+    #     tz = props["tz"].item()
+    #     py_tz = pytz.timezone(tz)
+    #     now_utc = datetime.now(timezone.utc)
+    #     now_local = now_utc.astimezone(py_tz)
+    #     offset = int(now_local.utcoffset().total_seconds()) * 1000
+    # else:
+    #     offset = 0
+
+    millis = data.real + data.imag * 1e3
+    millis = np.array(millis, dtype="float64")
+    props["data"][0,0] = millis.astype("datetime64[ms]")
+    return props
+
+def mat_duration(props, defaults):
+    """Initialize the MatDuration object"""
+
+    millis = props["millis"][0]
+    if millis.size == 0:
+        return props
+
+    if "fmt" in props.dtype.names:
+        fmt = props["fmt"]
+    else:
+        fmt = defaults["fmt"]
+
+    if fmt == "s":
+        count = millis / 1000  # Seconds
+        dur = count.astype("timedelta64[s]")
+    elif fmt == "m":
+        count = millis / 60000  # Minutes
+        dur = count.astype("timedelta64[m]")
+    elif fmt == "h":
+        count = millis / 3600000  # Hours
+        dur = count.astype("timedelta64[h]")
+    elif fmt == "d":
+        count = millis / 86400000  # Days
+        dur = count.astype("timedelta64[D]")
+    else:
+        count = millis
+        dur = count.astype("timedelta64[ms]")
+        # Default case
+
+    props["millis"] = dur
+    return props
+
+def parse_string(data, byte_order):
+    """Parse string data from MATLAB file"""
+
+    data = data["any"][0]
+    version = data[0, 0]
+    if version != 1:
+        print("Unsupported version for string data")
+
+    ndims = data[0, 1]
+    shape = data[0, 2 : 2 + ndims]
+    num_strings = np.prod(shape)
+    char_counts = data[0, 2 + ndims : 2 + ndims + num_strings]
+    offset = 2 + ndims + num_strings  # start of string data
+    byte_data = data[0, offset:].tobytes()
+
+    strings = []
+    pos = 0
+    encoding = "utf-16-le" if byte_order[0] == "<" else "utf-16-be"
+    for char_count in char_counts:
+        byte_length = char_count * 2  # UTF-16 encoding
+        extracted_string = byte_data[pos : pos + byte_length].decode(encoding)
+        strings.append(extracted_string)
+        pos += byte_length
+
+    return np.reshape(strings, shape, order="F")
+
+def convert_object(props, defaults, class_name, byte_order):
+    if class_name == "datetime":
+        return mat_datetime(props)
+    elif class_name == "duration":
+        return mat_duration(props, defaults)
+    elif class_name == "string":
+        if "any" in props.dtype.names:
+            props = parse_string(props, byte_order)
+    
+    return props
