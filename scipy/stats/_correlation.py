@@ -139,7 +139,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
     Notes
     -----
     There is currently no special handling of ties in `x`; they are broken arbitrarily
-    by the implementation. [1]_ recommends: "if there are ties among the Xi’s, then
+    by the implementation. [1]_ recommends: "if there are ties among the Xi's, then
     choose an increasing rearrangement as above by breaking ties uniformly at random."
     This is easily accomplished by adding a small amount of random noise to `x`; see
     examples.
