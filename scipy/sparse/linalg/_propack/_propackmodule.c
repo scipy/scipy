@@ -10,182 +10,87 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "PROPACK/include/propack/propack.h"
+#include "ccallback.h"
 #include <stdint.h>
 
 /* Module-level error object */
 static PyObject* PropackError;
 
-/*
- * Callback context structure for user-supplied (r)matvec functions.
- *
- * This structure holds the information needed for Python callbacks.
- * Following the pattern is similar to SciPy callback.h strategy, we store this
- * in a thread-local variable that can be accessed by the callback function.
- */
+
+// Define the callback signature for PROPACK
+static ccallback_signature_t propack_signatures[] = {
+    {"void (int, int, int, float *, float *, float *, int *)", 0},
+    {NULL, 0}  // Sentinel
+};
+
+
 typedef struct {
-    PyObject* py_callback;          // Python callback function (_AProd instance)
-    PyObject* py_dparm;             // Python dparm array (for compatibility)
-    PyObject* py_iparm;             // Python iparm array (for compatibility)
-    int m, n;                       // Matrix dimensions for validation
-    int error_occurred;             // Flag to signal Python errors
-    PyObject* error_type;           // Stored exception type if error occurred
-    PyObject* error_value;          // Stored exception value if error occurred
-    PyObject* error_traceback;      // Stored exception traceback if error occurred
-} propack_callback_info_t;
+    ccallback_t callback;   // Callback struct
+    PyObject *py_dparm;     // Unused, but kept for compatibility
+    PyObject *py_iparm;     // Unused, but kept for compatibility
+    PyObject *args_tuple;   // Pre-allocated args tuple for efficiency
+    int m, n;               // Matrix dimensions
+} propack_ccallback_info_t;
 
 
 // Thread-local storage for callback context
-static propack_callback_info_t* _active_callback_info = NULL;
+static SCIPY_TLS propack_ccallback_info_t* current_propack_callback = NULL;
 
-/* ===== CALLBACK INFRA ===== */
 
-// Error handling macros
-#define HANDLE_ERROR_AND_CLEANUP(info, x_view, y_view, gstate, msg) do { \
-    (info)->error_occurred = 1; \
-    PyErr_SetString(PyExc_RuntimeError, (msg)); \
-    PyErr_Fetch(&(info)->error_type, &(info)->error_value, &(info)->error_traceback); \
-    Py_XDECREF((PyObject*)(x_view)); \
-    Py_XDECREF((PyObject*)(y_view)); \
-    PyGILState_Release(gstate); \
-} while(0)
-
-#define STORE_PYTHON_ERROR(info) do { \
-    (info)->error_occurred = 1; \
-    PyErr_Fetch(&(info)->error_type, &(info)->error_value, &(info)->error_traceback); \
-} while(0)
-
-#define CLEANUP_AND_RETURN(x_view, y_view, gstate) do { \
-    Py_XDECREF((PyObject*)(x_view)); \
-    Py_XDECREF((PyObject*)(y_view)); \
-    PyGILState_Release(gstate); \
-} while(0)
-
-/*
- * Helper function to create a zero-copy NumPy array view
- *
- * Creating NumPy array views with non-owning data is discouraged by NumPy C API
- * guidelines. Instead the array is created by setting up the base object using
- * a PyCapsule. See PyArray_SetBaseObject documentation for details.
- *
- * Parameters:
- * - data: pointer to external memory (a pointer to the PROPACK workspace)
- * - size: number of elements in the array
- * - typenum: NumPy data type (NPY_FLOAT64, NPY_FLOAT32, etc. and not C type)
- *
- * Returns:
- * - PyArrayObject* on success, NULL on failure (also setting the exception)
- */
-static PyArrayObject*
-create_propack_array_view(const void* data, npy_intp size, int typenum)
+static void
+propack_callback_s_thunk(int transa, int m, int n, float* x, float* y, float* dparm, int* iparm)
 {
-    npy_intp dims[1] = {size};
+    // Silence unused parameter warnings for dparm/iparm
+    (void)dparm; (void)iparm;
 
-    // Create NumPy array view on external memory
-    PyArrayObject* array = (PyArrayObject*)PyArray_SimpleNewFromData(1, dims, typenum, (void*)data);
-    // PyArray_SimpleNewFromData already set exception
-    if (array == NULL) { return NULL; }
+    if ((!current_propack_callback) || (!current_propack_callback->callback.py_function)) { return; }
 
-    // Create PyCapsule to tell NumPy that someone else owns the memory
-    PyObject* capsule = PyCapsule_New((void*)data, NULL, NULL);
-    if (capsule == NULL) { Py_DECREF((PyObject*)array); return NULL; }
+    npy_intp x_dims[1] = {n};
+    npy_intp y_dims[1] = {m};
 
-    // PyArray_SetBaseObject steals a reference to the capsule
-    if (PyArray_SetBaseObject(array, capsule) < 0) {
-        /* capsule reference was stolen even on failure, so don't DECREF it */
-        Py_DECREF((PyObject*)array);
-        return NULL;
+    // Create PyCapsules for memory management
+    PyObject *x_capsule = PyCapsule_New((void*)x, NULL, NULL);
+    PyObject *y_capsule = PyCapsule_New((void*)y, NULL, NULL);
+    if (!x_capsule || !y_capsule) {
+        Py_XDECREF(x_capsule);
+        Py_XDECREF(y_capsule);
+        return;
     }
-    return array;
+
+    // Create array views
+    PyObject* py_x = PyArray_SimpleNewFromData(1, x_dims, NPY_FLOAT32, (void*)x);
+    PyObject* py_y = PyArray_SimpleNewFromData(1, y_dims, NPY_FLOAT32, (void*)y);
+
+    if (!py_x || !py_y) {
+        Py_XDECREF(x_capsule);
+        Py_XDECREF(y_capsule);
+        Py_XDECREF(py_x);
+        Py_XDECREF(py_y);
+        return;
+    }
+
+    // Set base objects
+    if (PyArray_SetBaseObject((PyArrayObject*)py_x, x_capsule) < 0 ||
+        PyArray_SetBaseObject((PyArrayObject*)py_y, y_capsule) < 0) {
+        // capsule references stolen even on failure
+        Py_XDECREF(py_x);
+        Py_XDECREF(py_y);
+        return;
+    }
+
+    // Update the pre-allocated tuple with changing values
+    // Only transa, py_x, py_y change between calls
+    PyTuple_SetItem(current_propack_callback->args_tuple, 0, PyLong_FromLong(transa));
+    PyTuple_SetItem(current_propack_callback->args_tuple, 3, py_x);
+    PyTuple_SetItem(current_propack_callback->args_tuple, 4, py_y);
+
+    // Call Python function
+    PyObject *result = PyObject_CallObject(current_propack_callback->callback.py_function,
+                                           current_propack_callback->args_tuple);
+
+    Py_XDECREF(result);
 }
 
-/*
- * Macro to generate PROPACK callback functions for different data types
- *
- * This macro generates the complete callback function with:
- * - Proper GIL handling
- * - Zero-copy array view creation using the helper function
- * - Consistent error handling and cleanup
- * - Python callback invocation
- *
- * Parameters:
- * - suffix: function name suffix (d, s, c, z)
- * - ctype: C data type (double, float, npy_cfloat, npy_cdouble)
- * - numpy_type: NumPy type constant (NPY_FLOAT64, NPY_FLOAT32, etc.)
- */
-#define DEFINE_PROPACK_CALLBACK(suffix, ctype, numpy_type) \
-static void \
-propack_callback_##suffix(int transa, int m, int n, const ctype* x, ctype* y, ctype* dparm, int* iparm) \
-{ \
-    /* Retrieve callback context from module-level variable */ \
-    propack_callback_info_t* info = _active_callback_info; \
-    \
-    /* This should never happen in normal operation */ \
-    if (info == NULL) { return; } \
-    \
-    /* Early return if previous error occurred */ \
-    if (info->error_occurred) { return; } \
-    \
-    /* Acquire Python GIL for callback execution */ \
-    PyGILState_STATE gstate = PyGILState_Ensure(); \
-    \
-    /* Create zero-copy array views using helper function */ \
-    PyArrayObject* x_view = create_propack_array_view(x, n, numpy_type); \
-    PyArrayObject* y_view = create_propack_array_view(y, m, numpy_type); \
-    \
-    if (x_view == NULL || y_view == NULL) { \
-        HANDLE_ERROR_AND_CLEANUP(info, x_view, y_view, gstate, "Failed to create NumPy array views"); \
-        return; \
-    } \
-    \
-    /* \
-     * Call Python callback: callback(transa, m, n, x_view, y_view, dparm, iparm) \
-     * The Python callback fills y_view based on x_view input. \
-     * Since these are views, changes are directly reflected in PROPACK workspace. \
-     */ \
-    PyObject* result = PyObject_CallFunction(info->py_callback, "iiiOOOO", \
-          transa, m, n, x_view, y_view,  info->py_dparm, info->py_iparm ); \
-    \
-    /* Check for Python exceptions */ \
-    if (result == NULL) { STORE_PYTHON_ERROR(info); } \
-    Py_DECREF(result); \
-    \
-    /* Clean up array views (but not the underlying data!) */ \
-    CLEANUP_AND_RETURN(x_view, y_view, gstate); \
-}
-
-DEFINE_PROPACK_CALLBACK(s, float, NPY_FLOAT32)
-DEFINE_PROPACK_CALLBACK(d, double, NPY_FLOAT64)
-DEFINE_PROPACK_CALLBACK(c, PROPACK_CPLXF_TYPE, NPY_COMPLEX64)
-DEFINE_PROPACK_CALLBACK(z, PROPACK_CPLX_TYPE, NPY_COMPLEX128)
-
-/*
- * Cleanup callback context
- *
- * Releases all Python object references and resets the context structure.
- */
-static void cleanup_propack_context(propack_callback_info_t* info) {
-    if (info == NULL) return;
-
-    Py_XDECREF(info->py_callback);
-    Py_XDECREF(info->py_dparm);
-    Py_XDECREF(info->py_iparm);
-
-    /* Clean up stored exception information */
-    Py_XDECREF(info->error_type);
-    Py_XDECREF(info->error_value);
-    Py_XDECREF(info->error_traceback);
-
-    /* Reset structure to avoid leftovers */
-    info->py_callback = NULL;
-    info->py_dparm = NULL;
-    info->py_iparm = NULL;
-    info->error_type = NULL;
-    info->error_value = NULL;
-    info->error_traceback = NULL;
-    info->m = 0;
-    info->n = 0;
-    info->error_occurred = 0;
-}
 
 
 /* =================================================== */
@@ -222,20 +127,23 @@ propack_slansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
                           &PyArray_Type, &V,                                     // O!
                           &PyArray_Type, &work,                                  // O!
                           &PyArray_Type, &iwork,                                 // O!
-                          &PyArray_Type, &doption,                               // O! 
+                          &PyArray_Type, &doption,                               // O!
                           &PyArray_Type, &ioption,                               // O!
                           &PyArray_Type, &sparm,                                 // O!
-                          &PyArray_Type, &iparm,                                 // O!    
+                          &PyArray_Type, &iparm,                                 // O!
                           &PyArray_Type, &ap_rng_state                           // O!
                         ))
     {
         return NULL;
     }
 
-    if (!PyCallable_Check(py_callback)) { PyErr_SetString(PyExc_TypeError, "Callback must be callable"); return NULL; }
-
     // 0-Initialize callback context structure
     propack_callback_info_t info = {0};
+
+    // Prepare ccallback with signatures and PARSE flag for legacy support
+    if (ccallback_prepare(&info.callback, propack_signatures, py_callback, CCALLBACK_PARSE) != 0) { return NULL; }
+
+
 
     // Store Python objects in context and increment refcount
     info.py_callback = py_callback;
