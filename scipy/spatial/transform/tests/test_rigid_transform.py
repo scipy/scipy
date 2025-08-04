@@ -12,7 +12,8 @@ from scipy._lib._array_api import (
     xp_assert_close,
     make_xp_pytest_marks,
     make_xp_test_case,
-    xp_assert_equal
+    xp_assert_equal,
+    xp_promote
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -93,7 +94,8 @@ def test_from_translation(xp):
     t = xp.asarray([1, 2, 3])
     tf = RigidTransform.from_translation(t)
     expected = xp.eye(4)
-    expected = xpx.at(expected)[..., :3, 3].set(t)
+    t_float = xp_promote(t, force_floating=True, xp=xp)
+    expected = xpx.at(expected)[..., :3, 3].set(t_float)
     xp_assert_close(tf.as_matrix(), expected)
     assert tf.single
 
@@ -102,7 +104,8 @@ def test_from_translation(xp):
     tf = RigidTransform.from_translation(t)
     for i in range(t.shape[0]):
         expected = xp.eye(4)
-        expected = xpx.at(expected)[..., :3, 3].set(t[i, ...])
+        t_float = xp_promote(t[i, ...], force_floating=True, xp=xp)
+        expected = xpx.at(expected)[..., :3, 3].set(t_float)
         xp_assert_close(tf.as_matrix()[i, ...], expected)
     assert not tf.single
 
@@ -129,15 +132,15 @@ def test_from_matrix(xp):
 
     # Test single transform matrix
     matrix = xp.eye(4)
-    matrix = xpx.at(matrix)[..., :3, 3].set(xp.asarray([1, 2, 3]))
+    matrix = xpx.at(matrix)[..., :3, 3].set(xp.asarray([1.0, 2, 3]))
     tf = RigidTransform.from_matrix(matrix)
     xp_assert_close(tf.as_matrix(), matrix, atol=atol)
     assert tf.single
 
     # Test multiple transform matrices
     matrices = xp.repeat(xp.eye(4)[None, ...], 2, axis=0)
-    matrices = xpx.at(matrices)[0, :3, 3].set(xp.asarray([1, 2, 3]))
-    matrices = xpx.at(matrices)[1, :3, 3].set(xp.asarray([4, 5, 6]))
+    matrices = xpx.at(matrices)[0, :3, 3].set(xp.asarray([1.0, 2, 3]))
+    matrices = xpx.at(matrices)[1, :3, 3].set(xp.asarray([4.0, 5, 6]))
     tf = RigidTransform.from_matrix(matrices)
     xp_assert_close(tf.as_matrix(), matrices, atol=atol)
     assert not tf.single
@@ -201,7 +204,8 @@ def test_from_components(xp):
 
     expected = xp.zeros((4, 4))
     expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix())
-    expected = xpx.at(expected)[..., :3, 3].set(t)
+    t_float = xp_promote(t, force_floating=True, xp=xp)
+    expected = xpx.at(expected)[..., :3, 3].set(t_float)
     expected = xpx.at(expected)[..., 3, 3].set(1)
     xp_assert_close(tf.as_matrix(), expected, atol=atol)
     assert tf.single
@@ -215,7 +219,8 @@ def test_from_components(xp):
     for i in range(t.shape[0]):
         expected = xp.zeros((4, 4))
         expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix())
-        expected = xpx.at(expected)[..., :3, 3].set(t[i, ...])
+        t_float = xp_promote(t[i, ...], force_floating=True, xp=xp)
+        expected = xpx.at(expected)[..., :3, 3].set(t_float)
         expected = xpx.at(expected)[..., 3, 3].set(1)
         xp_assert_close(tf.as_matrix()[i, ...], expected, atol=atol)
 
@@ -228,7 +233,8 @@ def test_from_components(xp):
     for i in range(t.shape[0]):
         expected = xp.zeros((4, 4))
         expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix()[i, ...])
-        expected = xpx.at(expected)[..., :3, 3].set(t[i, ...])
+        t_float = xp_promote(t[i, ...], force_floating=True, xp=xp)
+        expected = xpx.at(expected)[..., :3, 3].set(t_float)
         expected = xpx.at(expected)[..., 3, 3].set(1)
         xp_assert_close(tf.as_matrix()[i, ...], expected, atol=atol)
 
@@ -1013,7 +1019,7 @@ def test_input_validation(xp):
 
     # Test invalid last row
     matrix = xp.eye(4)
-    matrix = xpx.at(matrix)[3, :].set(xp.asarray([1, 0, 0, 1]))
+    matrix = xpx.at(matrix)[3, :].set(xp.asarray([1.0, 0, 0, 1]))
     if is_lazy_array(matrix):
         matrix = RigidTransform.from_matrix(matrix).as_matrix()
         assert xp.all(xp.isnan(matrix))
@@ -1024,7 +1030,7 @@ def test_input_validation(xp):
     # Test invalid last row for multiple transforms
     matrix = xp.zeros((2, 4, 4))
     matrix = xpx.at(matrix)[...].set(xp.eye(4))
-    matrix = xpx.at(matrix)[1, 3, :].set(xp.asarray([1, 0, 0, 1]))
+    matrix = xpx.at(matrix)[1, 3, :].set(xp.asarray([1.0, 0, 0, 1]))
     if is_lazy_array(matrix):
         matrix = RigidTransform.from_matrix(matrix).as_matrix()
         assert not xp.any(xp.isnan(matrix[0, ...]))

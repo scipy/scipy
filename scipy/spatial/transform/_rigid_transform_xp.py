@@ -33,9 +33,10 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
         matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0], device=xp_device(matrix)),
         axis=-1,
     )
-    if is_lazy_array(matrix):
-        matrix = xp.where(last_row_ok[..., None, None], matrix, xp.nan)
-    elif xp.any(~last_row_ok):
+    lazy = is_lazy_array(matrix)
+    # We delay lazy branch checks until after normalization to avoid overwriting nans
+    # with the rotation matrix
+    if not lazy and xp.any(~last_row_ok):
         last_row_ok = xpx.atleast_nd(last_row_ok, ndim=1, xp=xp)
         matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
         ind = int(xp.nonzero(~last_row_ok)[0][0])
@@ -51,6 +52,9 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     if normalize:
         rotmat = quat_as_matrix(quat_from_matrix(matrix[..., :3, :3]))
         matrix = xpx.at(matrix)[..., :3, :3].set(rotmat)
+    # Lazy branch matrix invalidation
+    if lazy:
+        matrix = xp.where(last_row_ok[..., None, None], matrix, xp.nan)
     return matrix
 
 
@@ -84,7 +88,9 @@ def from_translation(translation: Array) -> Array:
         device=device,
     )
     matrix = xpx.at(matrix)[...].set(xp.eye(4, dtype=dtype, device=device))
-    matrix = xpx.at(matrix)[..., :3, 3].set(translation)
+    matrix = xpx.at(matrix)[..., :3, 3].set(
+        xp_promote(translation, force_floating=True, xp=xp)
+    )
     return matrix
 
 
