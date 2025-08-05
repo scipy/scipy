@@ -1,0 +1,107 @@
+Copyright (C) 2024 SciPy developers
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  a. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+  b. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+  c. Names of the SciPy Developers may not be used to endorse or promote
+     products derived from this software without specific prior written
+     permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+
+
+MINPACK library is a C translation of the Fortran77 code written by Jorge J. Moré,
+Burton S. Garbow, and Kenneth E. Hillstrom, with the original description below.
+Original Fortran docstrings are included at the top of each function.
+
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+* Minpack includes software for solving nonlinear equations and nonlinear
+* least squares problems.  Five algorithmic paths each include a core
+* subroutine and an easy-to-use driver.  The algorithms proceed either from
+* an analytic specification of the Jacobian matrix or directly from the
+* problem functions.  The paths include facilities forsystems of equations
+* with a banded Jacobian matrix, for least squares problems with a large
+* amount of data, and for checking the consistency of the Jacobian matrix
+* with the functions.
+*
+*
+* Disclaimer:
+* Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
+*
+* Redistribution and use in source and binary forms, with or
+* without modification, are permitted provided that the
+* following conditions are met:
+*
+* 1. Redistributions of source code must retain the above
+* copyright notice, this list of conditions and the following
+* disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above
+* copyright notice, this list of conditions and the following
+* disclaimer in the documentation and/or other materials
+* provided with the distribution.
+*
+* 3. The end-user documentation included with the
+* redistribution, if any, must include the following
+* acknowledgment:
+*
+*   "This product includes software developed by the
+*    University of Chicago, as Operator of Argonne National
+*    Laboratory.
+*
+* Alternately, this acknowledgment may appear in the software
+* itself, if and wherever such third-party acknowledgments
+* normally appear.
+*
+* 4. WARRANTY DISCLAIMER. THE SOFTWARE IS SUPPLIED "AS IS"
+* WITHOUT WARRANTY OF ANY KIND. THE COPYRIGHT HOLDER, THE
+* UNITED STATES, THE UNITED STATES DEPARTMENT OF ENERGY, AND
+* THEIR EMPLOYEES: (1) DISCLAIM ANY WARRANTIES, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO ANY IMPLIED WARRANTIES
+* OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE
+* OR NON-INFRINGEMENT, (2) DO NOT ASSUME ANY LEGAL LIABILITY
+* OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR
+* USEFULNESS OF THE SOFTWARE, (3) DO NOT REPRESENT THAT USE OF
+* THE SOFTWARE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS, (4)
+* DO NOT WARRANT THAT THE SOFTWARE WILL FUNCTION
+* UNINTERRUPTED, THAT IT IS ERROR-FREE OR THAT ANY ERRORS WILL
+* BE CORRECTED.
+*
+* 5. LIMITATION OF LIABILITY. IN NO EVENT WILL THE COPYRIGHT
+* HOLDER, THE UNITED STATES, THE UNITED STATES DEPARTMENT OF
+* ENERGY, OR THEIR EMPLOYEES: BE LIABLE FOR ANY INDIRECT,
+* INCIDENTAL, CONSEQUENTIAL, SPECIAL OR PUNITIVE DAMAGES OF
+* ANY KIND OR NATURE, INCLUDING BUT NOT LIMITED TO LOSS OF
+* PROFITS OR LOSS OF DATA, FOR ANY REASON WHATSOEVER, WHETHER
+* SUCH LIABILITY IS ASSERTED ON THE BASIS OF CONTRACT, TORT
+* (INCLUDING NEGLIGENCE OR STRICT LIABILITY), OR OTHERWISE,
+* EVEN IF ANY OF SAID PARTIES HAS BEEN WARNED OF THE
+* POSSIBILITY OF SUCH LOSS OR DAMAGES.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*
+* The original Fortran code can be found at https://www.netlib.org/minpack/
+*
+* References:
+*
+* [1]: J. J. Moré, B. S. Garbow, and K. E. Hillstrom, User Guide for
+*      MINPACK-1, Argonne National Laboratory Report ANL-80-74, Argonne,
+*      Illinois, 1980.
+*
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
