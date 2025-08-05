@@ -448,6 +448,8 @@ def test_splprep_segfault():
     tck, u = splprep([x, y], task=-1, t=uknots)  # here is the crash
 
 
+@pytest.mark.skipif(dfitpack_int == np.int64,
+        reason='Will crash (see gh-23396), test only meant for 32-bit overflow')
 def test_bisplev_integer_overflow():
     np.random.seed(1)
 
@@ -502,7 +504,7 @@ def test_spalde_scalar_input():
 
 def test_spalde_nc():
     # regression test for https://github.com/scipy/scipy/issues/19002
-    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1) 
+    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1)
     x = np.asarray([-10., -9., -8., -7., -6., -5., -4., -3., -2.5, -2., -1.5,
                     -1., -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 4., 5., 6.],
                     dtype="float")

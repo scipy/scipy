@@ -207,7 +207,6 @@ class TestNewToOldSLSQP:
 
             assert_array_almost_equal(result.x, prob.x_opt, decimal=3)
 
-    @pytest.mark.thread_unsafe
     def test_warn_mixed_constraints(self):
         # warns about inefficiency of mixed equality/inequality constraints
         def fun(x):
@@ -221,7 +220,6 @@ class TestNewToOldSLSQP:
                  minimize(fun, (2, 0, 1),
                           method=self.method, bounds=bnds, constraints=cons)
 
-    @pytest.mark.thread_unsafe
     def test_warn_ignored_options(self):
         # warns about constraint options being ignored
         def fun(x):

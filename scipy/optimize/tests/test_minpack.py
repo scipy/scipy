@@ -564,7 +564,6 @@ class TestCurveFit:
         y = [3, 5, 7, 9]
         assert_allclose(curve_fit(f_linear, x, y)[0], [2, 1], atol=1e-10)
 
-    @pytest.mark.thread_unsafe
     def test_indeterminate_covariance(self):
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])

@@ -105,9 +105,9 @@ def run_cython_lint(files):
 
 
 def run_cython_lint_all():
-    pyx_files = glob.glob("**/*.pyx", recursive=True)
-    pxd_files = glob.glob("**/*.pxd", recursive=True)
-    pxi_files = glob.glob("**/*.pxi", recursive=True)
+    pyx_files = glob.glob("scipy/**/*.pyx", recursive=True)
+    pxd_files = glob.glob("scipy/**/*.pxd", recursive=True)
+    pxi_files = glob.glob("scipy/**/*.pxi", recursive=True)
     files = pyx_files + pxd_files + pxi_files
 
     res = subprocess.run(
@@ -168,7 +168,7 @@ def main():
         if rc == 0 and rc_cy != 0:
             rc = rc_cy
         sys.exit(rc)
-    
+
     if not ((args.files is None) ^ (args.branch is None)):
         print('Specify either `--diff-against` or `--files`. Aborting.')
         sys.exit(1)

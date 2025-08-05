@@ -829,8 +829,8 @@ class PPoly(_PPolyBase):
 
     Parameters
     ----------
-    c : ndarray, shape (k, m, ...)
-        Polynomial coefficients, order `k` and `m` intervals.
+    c : ndarray, shape (k+1, m, ...)
+        Polynomial coefficients, degree `k` and `m` intervals.
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.

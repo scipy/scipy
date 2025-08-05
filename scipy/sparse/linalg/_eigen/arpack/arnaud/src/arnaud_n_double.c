@@ -477,17 +477,17 @@ ARNAUD_dneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
         {
             if ((workl[iheigi+j] == 0.0) && (workl[iheigr+j] != 0.0))
             {
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheigr+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheigr+j];
             } else if (iconj == 0) {
 
                 temp = hypot(workl[iheigr+j], workl[iheigi+j]);
                 if (temp != 0.0)
                 {
-                    workev[j] = (workl[invsub + j*ldq + V->ncv]*workl[iheigr+j] +
-                                 workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j] = (workl[invsub + j*ldq + V->ncv - 1]*workl[iheigr+j] +
+                                 workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
-                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv]*workl[iheigr+j] -
-                                 workl[invsub + j*ldq + V->ncv]*workl[iheigi+j]
+                    workev[j+1] = (workl[invsub + (j+1)*ldq + V->ncv - 1]*workl[iheigr+j] -
+                                 workl[invsub + j*ldq + V->ncv - 1]*workl[iheigi+j]
                                 ) / temp / temp;
                 }
                 iconj = 1;
@@ -1997,10 +1997,11 @@ LINE40:
     return;
 }
 
-void
+
+static void
 dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, double* ximag, double* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     double temp;
     ARNAUD_compare_cfunc *f;
 
@@ -2029,36 +2030,35 @@ dsortc(const enum ARNAUD_which w, const int apply, const int n, double* xreal, d
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(xreal[j], ximag[j], xreal[j+igap], ximag[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(xreal[pos], ximag[pos], xreal[pos+gap], ximag[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = xreal[j];
-                xreal[j] = xreal[j+igap];
-                xreal[j+igap] = temp;
-                temp = ximag[j];
-                ximag[j] = ximag[j+igap];
-                ximag[j+igap] = temp;
+                temp = xreal[pos];
+                xreal[pos] = xreal[pos+gap];
+                xreal[pos+gap] = temp;
+                temp = ximag[pos];
+                ximag[pos] = ximag[pos+gap];
+                ximag[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
+
 
 // The void casts are to avoid compiler warnings for unused parameters
 int

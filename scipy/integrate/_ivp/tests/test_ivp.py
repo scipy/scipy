@@ -174,7 +174,8 @@ def test_duplicate_timestamps():
     assert sol.success
     assert_equal(sol.status, 1)
 
-@pytest.mark.thread_unsafe
+
+@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -241,7 +242,6 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
-@pytest.mark.thread_unsafe
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -771,7 +771,7 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
@@ -1138,7 +1138,6 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
-@pytest.mark.thread_unsafe
 def test_array_rtol():
     # solve_ivp had a bug with array_like `rtol`; see gh-15482
     # check that it's fixed

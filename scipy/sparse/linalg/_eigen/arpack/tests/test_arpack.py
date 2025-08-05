@@ -393,16 +393,13 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-@pytest.mark.iterations(1)
 @pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
                                          (0.5, 'buckling'), (0.5, 'cayley')])
 @pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
 @pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
 @pytest.mark.parametrize("typ", ['f', 'd'])
 @pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
-def test_symmetric_modes(num_parallel_threads, D, typ, which, mattype,
-                         sigma, mode):
-    assert num_parallel_threads == 1
+def test_symmetric_modes(D, typ, which, mattype, sigma, mode):
     rng = np.random.default_rng(1749531508689996)
     k = 2
     eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)
@@ -550,10 +547,11 @@ def test_linearoperator_deallocation():
 
 def test_parallel_threads(num_parallel_threads):
     results = []
-    v0 = np.random.rand(50)
+    rng = np.random.default_rng(1234)
+    v0 = rng.random(50)
 
     def worker():
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=3, v0=v0)
         results.append(w)
 
@@ -576,7 +574,7 @@ def test_parallel_threads(num_parallel_threads):
 def test_reentering():
     # Just some linear operator that calls eigs recursively
     def A_matvec(x):
-        x = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(50, 50))
+        x = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(50, 50))
         w, v = eigs(x, k=1)
         return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
@@ -612,7 +610,7 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = rng.random((4, 4))
     M_sparse = generate_matrix(4, sparse=True, rng=rng)
@@ -639,7 +637,7 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     rng = np.random.RandomState(1234)
-    A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags_array([1.0, -2.0, 1.0], offsets=[-1, 0, 1], shape=(4, 4))
     A = generate_matrix(4, sparse=False, rng=rng)
     M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
     M_sparse = generate_matrix_symmetric(

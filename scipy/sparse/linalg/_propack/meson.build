@@ -94,7 +94,7 @@ foreach ele: elements
       fortran_ignore_warnings,
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
-      _fflag_fpp,
+      _fflag_preprocess,
     ],
     gnu_symbol_visibility: 'hidden',
   )
@@ -104,7 +104,7 @@ foreach ele: elements
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+    dependencies: [lapack_lp64_dep, fortranobject_dep],
     link_args: version_link_args,
     install: true,
     link_language: 'fortran',

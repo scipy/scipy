@@ -26,7 +26,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy, is_torch
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -365,7 +365,6 @@ class TestAnderson:
         with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
-    @pytest.mark.thread_unsafe
     def test_weibull_warning_error(self):
         # Check for warning message when there are too few observations
         # This is also an example in which an error occurs during fitting
@@ -503,7 +502,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
 
-    @pytest.mark.thread_unsafe
     def test_R_kSamples(self):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
@@ -743,6 +741,7 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@make_xp_test_case(stats.bartlett)
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -1424,7 +1423,6 @@ class TestProbplot:
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         fig = plt.figure()
@@ -1805,6 +1803,7 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@make_xp_test_case(stats.kstat)
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
@@ -1863,6 +1862,7 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
+@make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -2001,6 +2001,7 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@make_xp_test_case(stats.boxcox_llf)
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2031,7 +2032,6 @@ class TestBoxcox_llf:
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
-    @pytest.mark.thread_unsafe
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
         context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
@@ -2678,6 +2678,7 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
+@make_xp_test_case(stats.circmean, stats.circvar, stats.circstd)
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -3066,6 +3067,8 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
+
+@make_xp_test_case(stats.directional_stats)
 class TestDirectionalStats:
     # Reference implementations are not available
     def test_directional_stats_correctness(self, xp):
