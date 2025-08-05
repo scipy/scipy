@@ -1,11 +1,10 @@
-#include "__slsqp.h"
+#include "slsqp.h"
 
-void __nnls(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, int* restrict indices, const int maxiter, double* rnorm, int* info);
-static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
-static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-static void lsq(int m, int meq, int n, int augment, double aug_weight, double* Lf, double* gradx, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
-static void ldl_update(int n, double* a, double* z, double sigma, double* w);
+static void ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* indices, double* xnorm, int* mode);
+static void lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* jw, double* xnorm, int* mode);
+static void lsei(int ma, int me, int mg, int n, double* restrict a, double* restrict b, double* restrict e, double* restrict f, double* restrict g, double* restrict h, double* restrict x, double* restrict buffer, int* jw, double* xnorm, int* mode);
+static void lsq(int m, int meq, int n, int augment, double aug_weight, double* restrict Lf, double* restrict gradx, double* restrict C, double* restrict d, double* restrict xl, double* restrict xu, double* restrict x, double* restrict y, double* buffer, int* jw, int* mode);
+static void ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* restrict w);
 
 /*
  * The main SLSQP function. The function argument naming in the Fortran code is
@@ -423,7 +422,7 @@ MODEM1:
  *  + 2*meq + ld + (ld + 2*(m-meq)*(n + 1))*(n - meq)
  *
  */
-void lsq(
+static void lsq(
     int m, int meq, int n, int augment, double aug_weight, double* restrict Lf,
     double* restrict gradx, double* restrict C, double* restrict d,
     double* restrict xl, double* restrict xu, double* restrict x,
@@ -637,7 +636,7 @@ void lsq(
  *  buffer[mg + 2*me + ma]   : Scratch space
  *
  */
-void
+static void
 lsei(int ma, int me, int mg, int n,
      double* restrict a, double* restrict b, double* restrict e,
      double* restrict f, double* restrict g, double* restrict h,
@@ -797,7 +796,7 @@ ORIGINAL_BASIS:
  *  5: matrix A is not rank n
  *
 */
-void
+static void
 lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restrict g,
     double* restrict h, double* restrict x, double* restrict buffer, int* jw,
     double* xnorm, int* mode)
@@ -864,7 +863,7 @@ lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restr
  *  4  : inequality constraints incompatible
  *
 */
-void
+static void
 ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
     double* restrict buffer, int* indices, double* xnorm, int* mode)
 {
