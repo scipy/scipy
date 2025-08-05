@@ -143,6 +143,7 @@ py3.install_sources([
     'odepack.py',
     'quadpack.py',
     'vode.py',
+    'src/LICENSE_DOP'
   ],
   subdir: 'scipy/integrate'
 )
