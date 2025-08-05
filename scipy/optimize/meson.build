@@ -14,12 +14,15 @@ py3.extension_module('_direct',
   subdir: 'scipy/optimize'
 )
 
+minpack_lib = static_library('minpack_lib',
+  ['src/minpack.c'],
+)
+
 py3.extension_module('_minpack',
-  [
-    '__minpack.h',
-    '__minpack.c',
-  ],
+  '_minpackmodule.c',
   dependencies: [np_dep, ccallback_dep],
+  link_with: minpack_lib,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
 )
@@ -62,13 +65,17 @@ py3.extension_module('_zeros',
   subdir: 'scipy/optimize'
 )
 
+lbfgsb_lib = static_library('lbfgsb_lib',
+  [
+    'src/lbfgsb.c',
+    'src/nnls.c'
+  ]
+)
 
 # TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
-  [
-    '__lbfgsb.h',
-    '__lbfgsb.c',
-  ],
+  '_lbfgsbmodule.c',
+  link_with: lbfgsb_lib,
   dependencies: [lapack_lp64_dep, np_dep],
   link_args: version_link_args,
   install: true,
@@ -137,14 +144,18 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_slsqplib',
+
+slsqp_lib = static_library('slsqp_lib',
   [
-    '__slsqp.h',
-    '__slsqp.c',
-    '__nnls.h',
-    '__nnls.c'
+    'src/slsqp.c',
+    'src/nnls.c'
   ],
+)
+
+py3.extension_module('_slsqplib',
+  '_slsqpmodule.c',
   dependencies: [lapack_lp64_dep, np_dep],
+  link_with: slsqp_lib,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -157,7 +168,6 @@ subdir('cython_optimize')
 subdir('_shgo_lib')
 subdir('_highspy')
 subdir('tests')
-
 
 py3.install_sources([
   '__init__.py',
@@ -219,7 +229,11 @@ py3.install_sources([
   'optimize.py',
   'slsqp.py',
   'tnc.py',
-  'zeros.py'
+  'zeros.py',
+  'src/LICENSE_LBFGSB',
+  'src/LICENSE_MINPACK',
+  'src/LICENSE_NNLS',
+  'src/LICENSE_SLSQP',
 ],
   subdir: 'scipy/optimize'
 )
