@@ -973,14 +973,26 @@ const char *ellipeinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The elliptic integral of the second kind can be used to find the circumference of an
+    ellipse with semi-major axis ``a`` and semi-minor axis ``b``.
+
+    >>> import numpy as np
+    >>> from scipy.special import ellipeinc
+    >>> a, b = 3.5, 2.1
+    >>> e = np.sqrt(1.0 - b**2/a**2)  # eccentricity
+    >>> 4*a*ellipeinc(np.pi/2, e**2)
+    np.float64(17.86889920437869)
     )";
 
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobian elliptic functions
+    Jacobi elliptic functions
 
-    Calculates the Jacobian elliptic functions of parameter `m` between
+    Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
 
     Parameters
