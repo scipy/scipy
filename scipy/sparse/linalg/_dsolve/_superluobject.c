@@ -196,7 +196,7 @@ static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
 
     SLU_END_THREADS;
 
-    if (info) {
+    if (info < 0) {
         PyErr_SetString(PyExc_SystemError,
                         "gscon was called with invalid arguments");
         goto fail;
