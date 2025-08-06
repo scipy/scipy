@@ -32,12 +32,12 @@
  * It is either a float or a double, depending on the type of the matrix.
  * This union allows us to use the same variable for both types.
  */
-typedef union _SuperLUAnorm_t {
+typedef struct _SuperLUAnorm_t {
     float f;
     double d;
 } __SuperLUAnorm_t;
 
-typedef union _SuperLUAnorm_t SuperLUAnorm_t;
+typedef struct _SuperLUAnorm_t SuperLUAnorm_t;
 
 
 /*
