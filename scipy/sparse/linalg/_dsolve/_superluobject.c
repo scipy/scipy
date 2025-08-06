@@ -131,17 +131,17 @@ static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
 
     char norm_c = '1';  /* use the 1-norm */
 
-    const bool return_float = (self->type == NPY_FLOAT || self->type == NPY_CFLOAT);
+    const bool return_float = (self->type == NPY_FLOAT32 || self->type == NPY_COMPLEX64);
 
     /* Check for empty matrix */
     if (is_empty_matrix(&self->L) && is_empty_matrix(&self->U)) {
         /* Empty matrix, return 0.0 */
         if (return_float) {
             float condf = 0.0f;
-            return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+            return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT32), NULL);
         } else {
             double condd = 0.0;
-            return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+            return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_FLOAT64), NULL);
         }
     }
 
@@ -169,22 +169,22 @@ static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
     volatile int info;
 
     switch (self->type) {
-        case NPY_FLOAT:
+        case NPY_FLOAT32:
             sgscon(
                 (char *)&norm_c, &self->L, &self->U, self->anorm.f,
                 (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
-        case NPY_DOUBLE:
+        case NPY_FLOAT64:
             dgscon(
                 (char *)&norm_c, &self->L, &self->U, self->anorm.d,
                 (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
             break;
-        case NPY_CFLOAT:
+        case NPY_COMPLEX64:
             cgscon(
                 (char *)&norm_c, &self->L, &self->U, self->anorm.f,
                 (float *)&rcondf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
-        case NPY_CDOUBLE:
+        case NPY_COMPLEX128:
             zgscon(
                 (char *)&norm_c, &self->L, &self->U, self->anorm.d,
                 (double *)&rcondd, (SuperLUStat_t *)&stat, (int *)&info);
@@ -209,10 +209,10 @@ static PyObject *SuperLU_cond1est(SuperLUObject * self, PyObject * args,
      */
     if (return_float) {
         float condf = 1.0 / rcondf;
-        return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT), NULL);
+        return PyArray_Scalar(&condf, PyArray_DescrFromType(NPY_FLOAT32), NULL);
     } else {
         double condd = 1.0 / rcondd;
-        return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+        return PyArray_Scalar(&condd, PyArray_DescrFromType(NPY_FLOAT64), NULL);
     }
 
   fail:
@@ -847,16 +847,16 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     /* Call the appropriate function to compute the 1-norm of the matrix */
     char norm_c = '1';  /* default to 1-norm */
     switch (self->type) {
-        case NPY_FLOAT:
+        case NPY_FLOAT32:
             self->anorm.f = slangs(&norm_c, A);
             break;
-        case NPY_DOUBLE:
+        case NPY_FLOAT64:
             self->anorm.d = dlangs(&norm_c, A);
             break;
-        case NPY_CFLOAT:
+        case NPY_COMPLEX64:
             self->anorm.f = clangs(&norm_c, A);
             break;
-        case NPY_CDOUBLE:
+        case NPY_COMPLEX128:
             self->anorm.d = zlangs(&norm_c, A);
             break;
         default: 
