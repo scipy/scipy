@@ -234,9 +234,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
-    maxiter : int
-        Maximum number of iterations. All inputs are passed through ``int()``.
-        Default value is 100.
+    maxiter : int, optional
+        Maximum number of iterations. Default value is 100.
     finite_diff_rel_step : None or array_like, optional
         If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
