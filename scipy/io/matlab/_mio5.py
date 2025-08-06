@@ -97,7 +97,8 @@ from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
                           miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info, mat_struct)
+                          mxDOUBLE_CLASS, mclass_info, mat_struct,
+                          mxOPAQUE_CLASS, MatlabOpaque)
 
 from ._streams import ZlibInputStream
 
@@ -598,7 +599,8 @@ class VarWriter5:
         af['nzmax'] = nzmax
         self.write_bytes(af)
         # shape
-        self.write_element(np.array(shape, dtype='i4'))
+        if shape is not None:
+            self.write_element(np.array(shape, dtype='i4'))
         # write name
         name = np.asarray(name)
         if name == '':  # empty string zero-terminated
@@ -659,7 +661,9 @@ class VarWriter5:
         narr = to_writeable(arr)
         if narr is None:
             raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
-        if isinstance(narr, MatlabObject):
+        if isinstance(narr, MatlabOpaque):
+            self.write_opaque(narr)
+        elif isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
             raise MatWriteError('Cannot write matlab functions')
@@ -813,6 +817,17 @@ class VarWriter5:
                            mdtype=miINT8)
         self._write_items(arr)
 
+    def write_opaque(self, arr):
+        '''Array Flags, Var Name, Type System, Class Name, Metadata'''
+        self.write_header(None, mxOPAQUE_CLASS)
+        # Write Type System
+        self.write_element(np.array(arr['_TypeSystem'].item(), dtype='S'),
+                           mdtype=miINT8)
+        # Write Classname
+        self.write_element(np.array(arr['_Class'].item(), dtype='S'),
+                           mdtype=miINT8)
+        self.write(arr['_ObjectMetadata'].item())
+
 
 class MatFile5Writer:
     ''' Class for writing mat5 files '''
@@ -881,7 +896,9 @@ class MatFile5Writer:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
-            if name[0] == '_':
+            if name == '__subsystem__':
+                name = ''
+            elif name[0] == '_':
                 msg = (f"Starting field name with a "
                        f"underscore ({name}) is ignored")
                 warnings.warn(msg, MatWriteWarning, stacklevel=2)
