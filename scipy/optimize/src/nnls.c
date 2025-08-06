@@ -1,20 +1,5 @@
-#include "__nnls.h"
-#include <stdio.h>
+#include "nnls.h"
 
-/* Algorithm NNLS: NONNEGATIVE LEAST SQUARES
-*
-* Given an m by n matrix A, an m-vector B, and an n-vector X, compute an
-* n-vector X which solves the least squares problem
-*
-*            a * x = b  subject to x >= 0
-*
-* This is a C translation of the original Fortran code, which was developed by
-* Charles L. Lawson and Richard J. Hanson at Jet Propulsion Laboratory
-* 1973 JUN 15, and published in the book "SOLVING LEAST SQUARES PROBLEMS",
-* Prentice-HalL, 1974. Revised FEB 1995 to accompany reprinting of the book
-* (DOI: 10.1137/1.9781611971217) by SIAM.
-*
-*/
 void
 __nnls(const int m, const int n, double* restrict a, double* restrict b,
        double* restrict x, double* restrict w, double* restrict zz,

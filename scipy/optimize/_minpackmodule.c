@@ -1,16 +1,10 @@
-/* This file is used to make _multipackmodule.c */
-/* $Revision$ */
-/* module_methods:
-  {"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
-  {"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
-  {"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},
-  {"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
-  {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
- */
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
+#include "src/minpack.h"
+
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
@@ -154,12 +148,6 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   return NULL;
 }
 
-void CHKDER(const int,const int,double*,const double*,const double*,const int,double*,const double*,const int,double*);
-void HYBRD(int(*)(int*,double*,double*,int*),const int,double*,double*,const double,const int,const int,const int,const double,double*,const int,const double,const int,int*,int*,double*,const int,double*,const int,double*,double*,double*,double*,double*);
-void HYBRJ(int(*)(int*,double*,double*,double*,int*,int*),const int,double*,double*,double*,const int,const double,const int,double*,const int,const double,const int,int*,int*,int*,double*,const int,double*,double*,double*,double*,double*);
-void LMDIF(int(*)(int*,int*,double*,double*,int*),const int,const int,double*,double*,const double,const double,const double,const int,const double,double*,const int,const double,const int,int*,int*,double*,const int,int*,double*,double*,double*,double*,double*);
-void LMDER(int(*)(int*,int*,double*,double*,double*,int*,int*),const int,const int,double*,double*,double*,const int,const double,const double,const double,const int,double*,const int,const double,const int,int*,int*,int*,int*,double*,double*,double*,double*,double*);
-void LMSTR(int(*)(int*,int*,double*,double*,double*,int*),const int,const int,double*,double*,double*,const int,const double,const double,const double,const int,double*,const int,const double,const int,int*,int*,int*,int*,double*,double*,double*,double*,double*);
 
 /* We only use ccallback with Python functions right now */
 static ccallback_signature_t call_signatures[] = {
@@ -825,47 +813,49 @@ static struct PyMethodDef minpack_module_methods[] = {
 {NULL,		NULL, 0, NULL}
 };
 
+
+static int module_exec(PyObject *module) {
+
+    if (_import_array() < 0) { return -1; }
+
+    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
+    if (minpack_error == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", minpack_error) < 0) {
+        Py_DECREF(minpack_error);
+        return -1;
+    }
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot minpack_slots[] = {
+    {Py_mod_exec, module_exec},
+#if PY_VERSION_HEX >= 0x030c00f0  // Python 3.12+
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#endif
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_minpack",
-    NULL,
-    -1,
-    minpack_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_minpack",
+    .m_size = 0,
+    .m_methods = minpack_module_methods,
+    .m_slots = minpack_slots
 };
 
 PyMODINIT_FUNC
 PyInit__minpack(void)
 {
-    PyObject *module, *mdict;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
-    if (minpack_error == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(mdict, "error", minpack_error)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-

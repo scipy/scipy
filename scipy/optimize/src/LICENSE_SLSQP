@@ -1,0 +1,63 @@
+Copyright (C) 2024 SciPy developers
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+  a. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+  b. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+  c. Names of the SciPy Developers may not be used to endorse or promote
+     products derived from this software without specific prior written
+     permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+
+
+SLSQP library is a C translation of the Fortran77 code of the SLSQP algorithm.
+The original Fortran code is available at  http://www.netlib.org/toms/733 written
+by Dieter Kraft, see:
+
+  ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
+  TRANSACTIONS ON MATHEMATICAL SOFTWARE,
+  VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
+  https://doi.org/10.1145/192115.192124
+
+
+The original Fortran code is released for use under BSD license for SciPy, with the
+following statement from the original license holder, ACM publications:
+
+    https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+    ------
+    From: Deborah Cotton <cotton@hq.acm.org>
+    Date: Fri, 14 Sep 2007 12:35:55 -0500
+    Subject: RE: Algorithm License requested
+    To: Alan Isaac
+
+    Prof. Issac,
+
+    In that case, then because the author consents to [the ACM] releasing
+    the code currently archived at http://www.netlib.org/toms/733 under the
+    BSD license, the ACM hereby releases this code under the BSD license.
+
+    Regards,
+
+    Deborah Cotton, Copyright & Permissions
+    ACM Publications
+    2 Penn Plaza, Suite 701**
+    New York, NY 10121-0701
+    permissions@acm.org
+    212.869.7440 ext. 652
+    Fax. 212.869.0481
+    ------
