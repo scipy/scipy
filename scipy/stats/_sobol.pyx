@@ -157,7 +157,7 @@ def _initialize_direction_numbers(poly, vinit, dtype):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int bit_length(uint_32_64 n) noexcept:
+cdef int bit_length(uint_32_64 n) noexcept nogil:
     cdef int bits = 0
     cdef uint_32_64 nloc = n
     while nloc != 0:
