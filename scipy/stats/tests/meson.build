@@ -35,6 +35,7 @@ py3.install_sources([
     'test_resampling.py',
     'test_sampling.py',
     'test_sensitivity_analysis.py',
+    'test_sobol.py',
     'test_stats.py',
     'test_survival.py',
     'test_tukeylambda_stats.py',

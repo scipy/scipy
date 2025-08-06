@@ -168,7 +168,7 @@ cdef int bit_length(uint_32_64 n) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) noexcept nogil:
+cpdef int low_0_bit(uint_32_64 x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
