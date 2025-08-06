@@ -194,10 +194,12 @@ cpdef int low_0_bit(uint_32_64 x) noexcept nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 0
-    while i < 64 and x & (1L << i) != 0:
-        i += 1
-    return i + 1
+    cdef int position = 1
+    cdef uint_32_64 xshifted = x
+    while (xshifted & 0x1) != 0:
+        xshifted >>= 1
+        position += 1
+    return position
 
 
 @cython.boundscheck(False)
