@@ -13,9 +13,6 @@ rng = np.random.default_rng(565656)
 DTYPE_PARAMS = [np.single, np.double, np.csingle, np.cdouble]
 DTYPE_IDS = ['single', 'double', 'csingle', 'cdouble']
 
-ORD_PARAMS = [1, np.inf]
-ORD_IDS = ['ord_1', 'ord_inf']
-
 N = 5  # arbitrary size for the matrices in tests
 
 
@@ -32,23 +29,6 @@ def dtype(request):
     -------
     dtype : data-type
         The data type to be used in the tests.
-    """
-    return request.param
-
-
-@pytest.fixture(params=ORD_PARAMS, ids=ORD_IDS, scope='class')
-def norm_ord(request):
-    """Fixture to provide the norm order for tests.
-
-    Parameters
-    ----------
-    request : pytest.FixtureRequest
-        The request object for the fixture.
-
-    Returns
-    -------
-    norm_ord : int or np.inf
-        The norm order to be used in the tests.
     """
     return request.param
 
