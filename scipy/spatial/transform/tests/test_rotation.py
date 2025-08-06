@@ -234,23 +234,10 @@ def test_quat_double_cover(xp):
 
 
 def test_from_quat_wrong_shape(xp):
-    # Wrong shape 1d array
-    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
-        Rotation.from_quat(xp.asarray([1, 2, 3]))
-
-    # Wrong shape 2d array
-    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
-        Rotation.from_quat(xp.asarray([
-            [1, 2, 3, 4, 5],
-            [4, 5, 6, 7, 8]
-            ]))
-
-    # 3d array
-    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
-        Rotation.from_quat(xp.asarray([
-            [[1, 2, 3, 4]],
-            [[4, 5, 6, 7]]
-            ]))
+    for ndim in range(1, 8):  # Test for up to 7 dimensions
+        quat = xp.zeros((*((1,) * ndim), 5))
+        with pytest.raises(ValueError, match="Expected `quat` to have shape"):
+            Rotation.from_quat(quat)
 
 
 def test_zero_norms_from_quat(xp):

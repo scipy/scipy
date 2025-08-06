@@ -13,22 +13,37 @@ from scipy._lib._array_api import (
     Array,
     is_numpy,
     ArrayLike,
-    xp_result_type,
     is_lazy_array,
     xp_capabilities,
+    xp_promote,
 )
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._util import _transition_to_rng
+from scipy._lib._util import _transition_to_rng, broadcastable
 
-backend_registry = {array_namespace(np.empty(0)): cython_backend}
+backend_registry = {
+    (array_namespace(np.empty(0)), 1): cython_backend,
+    (array_namespace(np.empty(0)), 2): cython_backend,
+}
 
 
-def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
-    """Check if two shapes are broadcastable."""
-    return all(
-        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
-    )
+@xp_capabilities()
+def _promote(x: ArrayLike, xp: ModuleType) -> Array:
+    """Promote arrays to float64 for numpy, else according to the Array API spec.
+
+    The return array dtype follows the following rules:
+    - If quat is an ArrayLike or NumPy array, we always promote to float64
+    - If quat is an Array from frameworks other than NumPy, we preserve the precision
+      of the input array dtype.
+
+    The first rule is required by the cython backend signatures that expect
+    cython.double views. The second rule is necessary to promote non-floating arrays
+    to the correct type in frameworks that may not support double precision (e.g.
+    jax by default).
+    """
+    if is_numpy(xp):
+        return xp.asarray(x, dtype=np.float64)
+    return xp_promote(x, force_floating=True, xp=xp)
 
 
 class Rotation:
@@ -320,7 +335,11 @@ class Rotation:
         scalar_first: bool = False,
     ):
         xp = array_namespace(quat)
-        quat = self._to_array(quat, xp)
+        quat = _promote(quat, xp)
+        if quat.shape[-1] != 4:
+            raise ValueError(
+                f"Expected `quat` to have shape (..., 4), got {quat.shape}."
+            )
         # Legacy behavior for cython backend: Differentiate between single quat and
         # batched quats. We only use this for the cython backend. The Array API backend
         # uses broadcasting by default and hence returns the correct shape without
@@ -328,7 +347,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = backend_registry.get(xp, xp_backend)
+        self._backend = backend_registry.get((xp, quat.ndim), xp_backend)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -542,7 +561,10 @@ class Rotation:
 
         .. versionadded:: 1.4.0
         """
-        backend = backend_registry.get(array_namespace(matrix), xp_backend)
+        xp = array_namespace(matrix)
+        matrix = _promote(matrix, xp)
+        # Resulting quat will have 1 less dimension than matrix
+        backend = backend_registry.get((xp, matrix.ndim - 1), xp_backend)
         quat = backend.from_matrix(matrix)
         return Rotation(quat, normalize=False, copy=False)
 
@@ -614,7 +636,9 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(rotvec), xp_backend)
+        xp = array_namespace(rotvec)
+        rotvec = _promote(rotvec, xp)
+        backend = backend_registry.get((xp, rotvec.ndim), xp_backend)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
         return Rotation(quat, normalize=False, copy=False)
 
@@ -715,7 +739,9 @@ class Rotation:
         (2, 4)
 
         """
-        backend = backend_registry.get(array_namespace(angles), xp_backend)
+        xp = array_namespace(angles)
+        angles = _promote(angles, xp)
+        backend = backend_registry.get((xp, angles.ndim), xp_backend)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return Rotation(quat, normalize=False, copy=False)
 
@@ -842,7 +868,9 @@ class Rotation:
         >>> r.as_quat()
         [ 0.701057,  0.430459, -0.092296,  0.560986]
         """  # noqa: E501
-        backend = backend_registry.get(array_namespace(axes), xp_backend)
+        xp = array_namespace(axes)
+        axes = _promote(axes, xp)
+        backend = backend_registry.get((xp, axes.ndim), xp_backend)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation(quat, normalize=False, copy=False)
 
@@ -914,7 +942,9 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(mrp), xp_backend)
+        xp = array_namespace(mrp)
+        mrp = _promote(mrp, xp)
+        backend = backend_registry.get((xp, mrp.ndim), xp_backend)
         quat = backend.from_mrp(mrp)
         return Rotation(quat, normalize=False, copy=False)
 
@@ -2476,7 +2506,9 @@ class Rotation:
         array([[0., 1., 0.],
                [0., 1., 2.]])
         """
-        backend = backend_registry.get(array_namespace(a), xp_backend)
+        xp = array_namespace(a)
+        a = xp_promote(a, force_floating=True, xp=xp)
+        backend = backend_registry.get((xp, a.ndim), xp_backend)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
             return Rotation(q, normalize=False, copy=False), rssd, sensitivity
@@ -2488,8 +2520,8 @@ class Rotation:
     def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
-        self._backend = backend_registry.get(xp, xp_backend)
         self._quat = xp.asarray(quat, copy=True)
+        self._backend = backend_registry.get((xp, self._quat.ndim), xp_backend)
         self._single = single
 
     @property
@@ -2530,33 +2562,6 @@ class Rotation:
         # bump indent (+21 characters)
         m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
         return "Rotation.from_matrix(" + "\n".join(m) + ")"
-
-    @xp_capabilities()
-    def _to_array(self, quat: ArrayLike, xp: ModuleType) -> Array:
-        """Convert the quaternion to an array.
-
-        The return array dtype follows the following rules:
-        - If quat is an ArrayLike or NumPy array, we always promote to float64
-        - If quat is an Array from frameworks other than NumPy, we preserve the dtype if
-          it is float32. Otherwise, we promote to the result type of combining float32
-          and float64
-
-        The first rule is required by the cython backend signatures that expect
-        cython.double views. The second rule is necessary to promote non-floating arrays
-        to the correct type in frameworks that may not support double precision (e.g.
-        jax by default).
-        """
-        # Legacy behavior: NumPy rotations always use float64. The cython backend uses
-        # float64 views and will raise on Buffer dtype mismatches.
-        if is_numpy(xp):
-            dtype = np.float64
-        else:
-            dtype = xp_result_type(quat, xp=xp, force_floating=True)
-        quat = xp.asarray(quat, dtype=dtype)
-        # TODO: Remove this once we properly support broadcasting
-        if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
-            raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
-        return quat
 
     @xp_capabilities(jax_jit=False)
     def __iter__(self) -> Iterator[Rotation]:
