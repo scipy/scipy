@@ -1229,6 +1229,7 @@ keys = [
 ]
 
 @pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
+@pytest.mark.thread_unsafe
 def test_2d_coo_set(A, D, idx):
     D[idx] = A[idx] = -D[idx]
     assert_equal(A.toarray(), D)
@@ -1259,6 +1260,7 @@ keys = [
 ]
 
 @pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
+@pytest.mark.thread_unsafe
 def test_3d_coo_set(A, D, idx):
     D[idx] = A[idx] = -99
     assert_equal(A.toarray(), D)
@@ -1314,6 +1316,7 @@ keys = [
     ]
 
 @pytest.mark.parametrize(["A", "D", "ix", "msg"], [(A, D, ix, msg) for msg, ix in keys])
+@pytest.mark.thread_unsafe
 def test_5d_coo_set(A, D, ix, msg):
     D[ix] = A[ix] = -99
     assert_equal(A.toarray(), D, err_msg=f"\nTest of: {msg}\n")
