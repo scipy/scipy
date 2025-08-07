@@ -8,8 +8,8 @@ endif
 if not fs.exists('array_api_extra/README.md')
   error('Missing the `array_api_extra` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('pocketfft/README.md')
-  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+if not fs.exists('ducc/README.md')
+  error('Missing the `ducc` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')

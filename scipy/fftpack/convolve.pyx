@@ -1,4 +1,4 @@
-from scipy.fft._pocketfft.pypocketfft import r2r_fftpack
+from scipy.fft._duccfft.pyduccfft import r2r_fftpack
 import numpy as np
 cimport numpy as np
 cimport cython

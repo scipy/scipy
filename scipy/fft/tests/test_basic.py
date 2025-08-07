@@ -390,7 +390,7 @@ def test_fft_with_order(dtype, order, fft, xp):
         for ax in axes:
             X_res = fft(X, axes=ax)
             Y_res = fft(Y, axes=ax)
-            assert_array_almost_equal(X_res, Y_res)
+            assert_allclose(X_res, Y_res, rtol=3e-6, atol=3e-6)
     else:
         raise ValueError
 

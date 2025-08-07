@@ -5,9 +5,9 @@ from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
-from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
-                                  rfft, irfft, rfftn, irfftn,
-                                  hfft, ihfft, hfftn, ihfftn)
+from scipy.fft._duccfft import (ifft, fft, fftn, ifftn,
+                                rfft, irfft, rfftn, irfftn,
+                                hfft, ihfft, hfftn, ihfftn)
 
 from numpy import (arange, array, asarray, zeros, dot, exp, pi,
                    swapaxes, cdouble)
@@ -15,7 +15,7 @@ import numpy as np
 import numpy.fft
 from numpy.random import rand
 
-# "large" composite numbers supported by FFT._PYPOCKETFFT
+# "large" composite numbers supported by FFT._PYDUCCFFT
 LARGE_COMPOSITE_SIZES = [
     2**13,
     2**5 * 3**5,
@@ -292,7 +292,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.cdt = np.complex64
         self.rdt = np.float32
         self.rtol = 1e-5
-        self.atol = 1e-4
+        self.atol = 1.5e-4
 
 
 class _TestRFFTBase:

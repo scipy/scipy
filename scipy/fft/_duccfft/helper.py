@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import copy_if_needed
 
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size, prev_good_size
+from .pyduccfft import good_size, prev_good_size
 
 
 __all__ = ['good_size', 'prev_good_size', 'set_workers', 'get_workers']
@@ -181,7 +181,7 @@ _NORM_MAP = {None: 0, 'backward': 0, 'ortho': 1, 'forward': 2}
 
 
 def _normalization(norm, forward):
-    """Returns the pypocketfft normalization mode from the norm argument"""
+    """Returns the pyduccfft normalization mode from the norm argument"""
     try:
         inorm = _NORM_MAP[norm]
         return inorm if forward else (2 - inorm)

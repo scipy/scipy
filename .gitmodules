@@ -12,9 +12,6 @@
 [submodule "scipy/_lib/array_api_compat"]
 	path = scipy/_lib/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
-[submodule "scipy/_lib/pocketfft"]
-	path = scipy/_lib/pocketfft
-	url = https://github.com/scipy/pocketfft
 [submodule "scipy/_lib/cobyqa"]
 	path = scipy/_lib/cobyqa
 	url = https://github.com/cobyqa/cobyqa.git
@@ -37,3 +34,6 @@
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
+[submodule "scipy/_lib/ducc"]
+	path = scipy/_lib/ducc
+	url = https://gitlab.mpcdf.mpg.de/mtr/ducc.git
