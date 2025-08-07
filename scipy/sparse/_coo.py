@@ -605,9 +605,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
             else:
                 coord_like = np.zeros(len(new_data), dtype=self.coords[0].dtype)
             new_coords.insert(none_pos[0], coord_like)
-            if len(none_pos) > 1:
-                for i in none_pos[1:]:
-                    new_coords.insert(i, coord_like.copy())
+            for i in none_pos[1:]:
+                new_coords.insert(i, coord_like.copy())
         return coo_array((new_data, new_coords), shape=new_shape, dtype=self.dtype)
 
     def __setitem__(self, key, x):
@@ -615,7 +614,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         index, new_shape, arr_int_pos, none_pos = _validate_indices(
             key, self.shape, self.format
         )
-        print(f"{key=} {index=} {new_shape=}")
 
         # remove None's at beginning of index. Should not impact indexing coords
         # and will mistakenly align with x_coord columns if not removed.
@@ -628,71 +626,18 @@ class _coo_base(_data_matrix, _minmax_mixin):
         # get coords and data from x
         if issparse(x):
             if 0 in x.shape:
-                return
-            x = x.tocoo()
-            x.sum_duplicates()
-
-            x_coords = list(x.coords)
-            x_data = x.data.astype(self.dtype, copy=False)
-            x_shape = x.shape
-            if new_shape != x_shape:
-                len_diff = len(new_shape) - len(x_shape)
-                if len_diff > 0:
-                    # prepend ones to shape of x to match ndim
-                    x_shape = [1] * len_diff + list(x_shape)
-                    coord_zeros = np.zeroslike(x_coords[0])
-                    x_coords = tuple([coord_zeros] * len_diff + x_coords)
-                # taking away axes (squeezing) is not part of broadcasting, but long
-                # spmatrix history of using 2d vectors in 1d space, so we manually
-                # squeeze the front and back axes here to be compatible
-                if len_diff < 0:
-                    for _ in range(-len_diff):
-                        if x_shape[0] == 1:
-                            x_shape = x_shape[1:]
-                            x_coords = x_coords[1:]
-                        elif x_shape[-1] == 1:
-                            x_shape = x_shape[:-1]
-                            x_coords = x_coords[:-1]
-                        else:
-                            raise ValueError("shape mismatch in assignment")
-                # broadcast with copy (will need to copy eventually anyway)
-                tot_expand = 1
-                for i, (nn, nx) in enumerate(zip(new_shape, x_shape)):
-                    if nn == nx:
-                        continue
-                    if nx != 1:
-                        raise ValueError("shape mismatch in assignment")
-                    x_nnz = len(x_coords[0])
-                    x_coords[i] = np.repeat(np.arange(nn), x_nnz)
-                    for j, co in enumerate(x_coords):
-                        if j == i:
-                            continue
-                        x_coords[j] = np.tile(co, nn)
-                    tot_expand *= nn
-                x_data = np.tile(x_data.ravel(), tot_expand)
-        else:  # handle arraylike x
+                return  # Nothing to set.
+            x_data, x_coords = _get_sparse_data_and_coords(x, new_shape, self.dtype)
+        else:
             x = np.asarray(x, dtype=self.dtype)
             if x.size == 0:
-                return
-            if x.shape != new_shape:
-                x = np.broadcast_to(x.squeeze(), new_shape)
-            # shift scalar input to 1d so has coords
-            if new_shape == ():
-                x_coords = tuple([np.array([0])] * len(new_shape))
-                x_data = x.ravel()
-            else:
-                x_coords = x.nonzero()
-                x_data = x[x_coords]
+                return  # Nothing to set.
+            x_data, x_coords = _get_dense_data_and_coords(x, new_shape)
 
         # Approach:
         # Set indexed values to zero (drop from `self.coords` and `self.data`)
         # create new coords and data arrays for setting nonzeros
         # concatenate old (undropped) values with new coords and data
-
-        ## Possible alternative: Create a mask for existing nonzeros that match
-        ## the key. Overwrite those values using the mask. Create another mask
-        ## for the new nonzeros that match the key. Create coords and data for
-        ## those and concatenate with the old ones.
 
         old_data, old_coords = self._zero_many(index)
 
@@ -1541,6 +1486,68 @@ def _extract_block_diag(self, shape):
 
     # Create the new COO array with the original n-D shape
     return coo_array((data, tuple(new_coords)), shape=shape)
+
+
+def _get_sparse_data_and_coords(x, new_shape, dtype):
+    x = x.tocoo()
+    x.sum_duplicates()
+
+    x_coords = list(x.coords)
+    x_data = x.data.astype(dtype, copy=False)
+    x_shape = x.shape
+
+    if new_shape == x_shape:
+        return x_data, x_coords
+
+    # broadcasting needed
+    len_diff = len(new_shape) - len(x_shape)
+    if len_diff > 0:
+        # prepend ones to shape of x to match ndim
+        x_shape = [1] * len_diff + list(x_shape)
+        coord_zeros = np.zeroslike(x_coords[0])
+        x_coords = tuple([coord_zeros] * len_diff + x_coords)
+    # taking away axes (squeezing) is not part of broadcasting, but long
+    # spmatrix history of using 2d vectors in 1d space, so we manually
+    # squeeze the front and back axes here to be compatible
+    if len_diff < 0:
+        for _ in range(-len_diff):
+            if x_shape[0] == 1:
+                x_shape = x_shape[1:]
+                x_coords = x_coords[1:]
+            elif x_shape[-1] == 1:
+                x_shape = x_shape[:-1]
+                x_coords = x_coords[:-1]
+            else:
+                raise ValueError("shape mismatch in assignment")
+    # broadcast with copy (will need to copy eventually anyway)
+    tot_expand = 1
+    for i, (nn, nx) in enumerate(zip(new_shape, x_shape)):
+        if nn == nx:
+            continue
+        if nx != 1:
+            raise ValueError("shape mismatch in assignment")
+        x_nnz = len(x_coords[0])
+        x_coords[i] = np.repeat(np.arange(nn), x_nnz)
+        for j, co in enumerate(x_coords):
+            if j == i:
+                continue
+            x_coords[j] = np.tile(co, nn)
+        tot_expand *= nn
+    x_data = np.tile(x_data.ravel(), tot_expand)
+    return x_data, x_coords
+
+
+def _get_dense_data_and_coords(x, new_shape):
+    if x.shape != new_shape:
+        x = np.broadcast_to(x.squeeze(), new_shape)
+    # shift scalar input to 1d so has coords
+    if new_shape == ():
+        x_coords = tuple([np.array([0])] * len(new_shape))
+        x_data = x.ravel()
+    else:
+        x_coords = x.nonzero()
+        x_data = x[x_coords]
+    return x_data, x_coords
 
 
 def _process_axes(ndim_a, ndim_b, axes):

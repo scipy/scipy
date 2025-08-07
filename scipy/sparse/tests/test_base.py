@@ -3548,8 +3548,8 @@ class _TestFancyMultidim:
             assert_raises(IndexError, S.__getitem__, (I, J_bad))
 
             if S.format != 'coo':
-                    assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
-                    assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+                assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
+                assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
             else:
                 assert_equal(S[[I, I], :].toarray(), D[[I, I], :])
                 assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
