@@ -2171,6 +2171,18 @@ add_newdoc("entr",
            Cambridge University Press, 2004.
            :doi:`https://doi.org/10.1017/CBO9780511804441`
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import entr
+
+    >>> p = np.array([0.2, 0.5, 0.95])
+    >>> entr(p)
+    array([0.32188758, 0.34657359, 0.04872863])
+
+    >>> entr(0)
+    0.0
+
     """)
 
 add_newdoc(
