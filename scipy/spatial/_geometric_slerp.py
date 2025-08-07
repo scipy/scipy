@@ -175,6 +175,26 @@ def geometric_slerp(
     ...         result[...,2],
     ...         c='k')
     >>> plt.show()
+
+    It is also possible to perform extrapolations outside
+    the interpolation interval by using interpolation parameter
+    values below 0 or above 1. For example, the above example
+    may be adjusted to extrapolate to an antipodal position:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.plot_surface(x, y, z, color='y', alpha=0.1)
+    >>> start = np.array([1, 0, 0])
+    >>> end = np.array([0, 0, 1])
+    >>> t_vals = np.linspace(0, 2, 400)
+    >>> result = geometric_slerp(start,
+    ...                          end,
+    ...                          t_vals)
+    >>> ax.plot(result[...,0],
+    ...         result[...,1],
+    ...         result[...,2],
+    ...         c='k')
+    >>> plt.show()
     """
 
     start = np.asarray(start, dtype=np.float64)
