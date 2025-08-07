@@ -195,9 +195,8 @@ cpdef int low_0_bit(uint_32_64 x) noexcept nogil:
 
     """
     cdef int position = 1
-    cdef uint_32_64 xshifted = x
-    while (xshifted & 0x1) != 0:
-        xshifted >>= 1
+    while (x & 0x1) != 0:
+        x >>= 1
         position += 1
     return position
 
