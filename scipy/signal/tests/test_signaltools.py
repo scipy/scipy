@@ -3398,7 +3398,8 @@ class TestHilbert2:
         assert xp.real(signal.hilbert2(in_typed)).dtype == dtype
     
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    def test_hilbert2_old_implementation(self, xp, shape):
+    @pytest.mark.parametrize('axes', [(-2, -1), (0, 1)])
+    def test_hilbert2_old_implementation(self, xp, shape, axes):
 
         def _hilbert2(x, N=None):
             """
@@ -3461,21 +3462,24 @@ class TestHilbert2:
 
         x = xp.reshape(xp.arange(shape[0] * shape[1]), shape)
         xh_old = _hilbert2(x)
-        xh = hilbert2(x)
+        if axes == (0, 1):
+            x = x[..., None]
+        elif axes == (-2, -1):
+            x = x[None]
+        xh = xp.squeeze(hilbert2(x, axes=axes))
         xp_assert_close(xh_old, xh)
     
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
     def test_quadrant_power(self, xp, shape):
         sh0, sh1 = shape
-        freq0 = sp_fft.fftfreq(sh0)[:, None]
-        freq1 = sp_fft.fftfreq(sh1)[None]
+        freq0 = xp.asarray(sp_fft.fftfreq(sh0)[:, None])
+        freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None])
         x = xp.reshape(xp.arange(sh0 * sh1), shape)
         x_as = hilbert2(x)
         x_as_f = sp_fft.fft2(x_as)
         n_quads = xp.logical_and(freq0 < 0, freq1 < 0)
         zero_quad = x_as_f[n_quads]
         xp_assert_close(zero_quad, xp.zeros_like(zero_quad), atol=1e-13)
-
 
 
 class TestEnvelope:
