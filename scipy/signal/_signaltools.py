@@ -2587,9 +2587,9 @@ def hilbert(x, N=None, axis=-1):
     return x
 
 
-def hilbert2(x, N=None, axes=(0, 1)):
+def hilbert2(x, N=None, axes=(-2, -1)):
     """
-    Compute the '2-D' analytic signal of `x` as a single-quadrant transform [2]_.
+    Compute the '2-D' analytic signal of `x`.
 
     For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
     workers used for the FFTs.
@@ -2602,7 +2602,7 @@ def hilbert2(x, N=None, axes=(0, 1)):
         Number of output samples. `x` is initially cropped or zero-padded to length
         `N` along `axis`.  Default: ``x.shape[i] for i in axes``
     axes : tuple of two ints, optional
-        Axes along which to do the transformation.  Default: (0, 1).
+        Axes along which to do the transformation.  Default: (-2, -1).
 
         .. versionadded:: 1.16.1
 
@@ -2615,11 +2615,6 @@ def hilbert2(x, N=None, axes=(0, 1)):
     ----------
     .. [1] Wikipedia, "Analytic signal",
         https://en.wikipedia.org/wiki/Analytic_signal
-    .. [2] Hahn, Stefan L. "Multidimensional complex signals with
-        single-orthant spectra." Proceedings of the IEEE 80.8
-        (1992): 1287-1300.
-        `PDF <https://ieeexplore.ieee.org/iel1/5/4083/00158601.pdf>`__
-
     """
     xp = array_namespace(x)
     x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
