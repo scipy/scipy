@@ -3579,9 +3579,11 @@ class TestHilbert2:
         xh_old = _hilbert2(x)
         if axes == (0, 1):
             x = x[..., None]
+            squeeze_axis = 2
         elif axes == (-2, -1):
             x = x[None]
-        xh = xp.squeeze(hilbert2(x, axes=axes))
+            squeeze_axis = 0
+        xh = xp.squeeze(hilbert2(x, axes=axes), axis=squeeze_axis)
         xp_assert_close(xh_old, xh)
     
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
