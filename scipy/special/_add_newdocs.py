@@ -2176,12 +2176,13 @@ add_newdoc("entr",
     >>> import numpy as np
     >>> from scipy.special import entr
 
-    >>> p = np.array([0.2, 0.5, 0.95])
-    >>> entr(p)
-    array([0.32188758, 0.34657359, 0.04872863])
+    Calculate the entropy (in nats) of a 3-outcome probability distribution
 
-    >>> entr(0)
-    0.0
+    >>> p = np.array([0.2, 0.5, 0.3])
+    >>> entr(p)
+    array([0.32188758, 0.34657359, 0.36119184])
+    >>> entr(p).sum()
+    1.0296530140645737
 
     """)
 
