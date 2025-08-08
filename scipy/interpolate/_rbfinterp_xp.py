@@ -200,9 +200,6 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
     yeps = y*epsilon
     yhat = (y - shift)/scale
 
-    # Transpose to make the array fortran contiguous. This is required for
-    # dgesv to not make a copy of lhs.
-    lhs = xp.empty((p + r, p + r), dtype=xp.float64).T
     out_kernels  = kernel_matrix(yeps, kernel_func, xp)
     out_poly = polynomial_matrix(yhat, powers, xp)
 
@@ -213,7 +210,6 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers, xp):
         ]
     , axis=0) + xp.diag(xp.concat([smoothing, xp.zeros(r)]))
 
-    # Transpose to make the array fortran contiguous.
     rhs = xp.concat([d, xp.zeros((r, s))], axis=0)
 
     return lhs, rhs, shift, scale
