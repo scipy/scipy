@@ -2,6 +2,7 @@ project(
   'scipy',
   'c', 'cpp', 'cython',
   version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
+  license: 'BSD-3',
   meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
