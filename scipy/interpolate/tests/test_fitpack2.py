@@ -32,7 +32,13 @@ class TestUnivariateSpline:
         assert abs(lut.get_residual()) < 1e-10
         assert_array_almost_equal(lut([1, 1.5, 2]), [3, 3, 3])
 
-        spl = make_splrep(x, y, k=1, s=len(x))
+    @pytest.mark.parametrize("bc_type", [None, 'periodic'])
+    def test_linear_constant_periodic(self, bc_type):
+        x = [1,2,3]
+        y = [3,3,3]
+        lut = UnivariateSpline(x,y,k=1)
+
+        spl = make_splrep(x, y, k=1, s=len(x), bc_type=bc_type)
         xp_assert_close(spl.t[1:-1], lut.get_knots(), atol=1e-15)
         xp_assert_close(spl.c, lut.get_coeffs(), atol=1e-15)
 
