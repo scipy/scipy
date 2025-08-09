@@ -35,10 +35,7 @@ requires = [
 name = "scipy"
 version = "1.17.0.dev0"
 license = "BSD-3-Clause"
-license-files = [
-    "LICENSE.txt",
-    "LICENSES_bundled.txt",
-]
+license-files = ["LICENSE.txt"]
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
     { name = "SciPy Developers", email = "scipy-dev@python.org" },
