@@ -258,6 +258,15 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    If you provide points only on the boundary of a shape rather
+    than the interior, the default tolerance will cause issues
+    assigning a simplex to certain points in the interior with
+    enough points on each side, resulting in missing values in the
+    output.  This is easiest to reproduce by providing 300
+    evenly-spaced points on the positive x and y axes and
+    requesting points to fill the grid: all points with `x+y<300`
+    should have values.
+
     .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
