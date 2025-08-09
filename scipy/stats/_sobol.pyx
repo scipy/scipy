@@ -157,7 +157,7 @@ def _initialize_direction_numbers(poly, vinit, dtype):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int bit_length(uint_32_64 n) noexcept:
+cdef int bit_length(uint_32_64 n) noexcept nogil:
     cdef int bits = 0
     cdef uint_32_64 nloc = n
     while nloc != 0:
@@ -168,7 +168,7 @@ cdef int bit_length(uint_32_64 n) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) noexcept nogil:
+cpdef int low_0_bit(uint_32_64 x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -194,10 +194,11 @@ cdef int low_0_bit(uint_32_64 x) noexcept nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 0
-    while x & (1 << i) != 0:
-        i += 1
-    return i + 1
+    cdef int position = 1
+    while (x & 0x1) != 0:
+        x >>= 1
+        position += 1
+    return position
 
 
 @cython.boundscheck(False)
