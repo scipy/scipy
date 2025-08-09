@@ -40,7 +40,6 @@ python_sources = [
   '__init__.py',
   'basic.py',
   'helper.py',
-  'LICENSE.md',
   'realtransforms.py'
 ]
 

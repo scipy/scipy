@@ -66,6 +66,10 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
+dynamic = [
+    "license",
+    "license-files",
+]
 
 [project.optional-dependencies]
 test = [
