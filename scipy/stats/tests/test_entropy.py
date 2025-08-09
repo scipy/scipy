@@ -117,6 +117,26 @@ class TestEntropy:
         message = "`base` must be a positive number."
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, base=-2)
+    
+    def test_entropy_normalize_false_expected_value(self, xp):
+        pk = xp.asarray([2.0, 8.0, 3.0, 1.0, 6.0, 2.0, 7.0, 4.0, 5.0, 2.0])
+        qk = xp.asarray([1.0, 9.0, 2.0, 2.0, 5.0, 3.0, 6.0, 4.0, 5.0, 3.0])
+        result = stats.entropy(pk, qk, base=2, normalize=False)
+
+        expected = xp.asarray(2.190590872098243)
+        xp_assert_close(result, expected)
+
+    def test_entropy_normalize_true_equals_false_when_inputs_normalized(self, xp):
+        pk = xp.asarray([0.05, 0.2, 0.1, 0.05, 0.15, 0.05, 0.2, 0.1, 0.05, 0.05])
+        qk = xp.asarray([0.05, 0.15, 0.1, 0.1, 0.15, 0.1, 0.15, 0.1, 0.05, 0.05])
+
+        res1 = stats.entropy(pk, qk, base=2)
+        res2 = stats.entropy(pk, qk, base=2, normalize=False)
+
+        expected = xp.asarray(0.0660149997115376) 
+        xp_assert_close(res1, expected)
+        xp_assert_close(res2, expected)
+
 
 
 @make_xp_test_case(stats.differential_entropy)
