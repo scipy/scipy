@@ -109,6 +109,46 @@ inline CBLAS_INT invert_slice_triangular(
 }
 
 
+// Diagonal array inversion
+template<typename T>
+inline CBLAS_INT invert_slice_diagonal(
+    CBLAS_INT N, T *data, int* isIllconditioned, int* isSingular
+) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+    value_type *pdata = reinterpret_cast<value_type *>(data);
+
+    value_type zero(0.), one(1.);
+    real_type maxa(0.), maxinva(0.);
+    *isIllconditioned = false;
+
+    for (CBLAS_INT j=0; j<N; j++) {
+        value_type ajj = pdata[j*N + j];
+
+        if (ajj == zero) {
+            *isSingular = 1;
+            return j;
+        }
+
+        value_type inv_ajj = one / ajj;
+        pdata[j*N + j] = inv_ajj;
+
+        // condition number
+        real_type absa = std::abs(ajj), absinva = std::abs(inv_ajj);
+
+        if(absa != absa) {
+            *isIllconditioned = true;
+        } else {
+            if(absa > maxa) {maxa = absa;}
+            if(absinva > maxinva) {maxinva = absinva;}
+        }
+    }
+    *isIllconditioned = *isIllconditioned || (maxa * maxinva > 1./ numeric_limits<real_type>::eps);
+
+    return 0;
+}
+
+
 template<typename T>
 void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, CBLAS_INT* info)
 {
@@ -221,7 +261,10 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             // Get the bandwidth of the slice
             bandwidth(data, n, n, &lower_band, &upper_band);
 
-            if(lower_band == 0) {
+            if ((upper_band == 0) && (lower_band == 0)) {
+                slice_structure = St::DIAGONAL;
+            }
+            else if(lower_band == 0) {
                 slice_structure = St::UPPER_TRIANGULAR;
                 uplo = 'U';
             } else if (upper_band == 0) {
@@ -242,6 +285,11 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
         }
 
         switch(slice_structure) {
+            case St::DIAGONAL:
+            {
+                *info = invert_slice_diagonal(intn, data, isIllconditioned, isSingular);
+                break;
+            }
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
