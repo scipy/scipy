@@ -4488,6 +4488,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     ----------
     ps : 1D array_like
         The p-values to adjust. Elements must be real numbers between 0 and 1.
+        Inputs do not need to be sorted.
     axis : int
         The axis along which to perform the adjustment. The adjustment is
         performed independently along each axis-slice. If `axis` is None, `ps`
@@ -4504,7 +4505,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     ps_adusted : array_like
         The adjusted p-values. If the null hypothesis is rejected where these
         fall below a specified level, the false discovery rate is controlled
-        at that level.
+        at that level. Will be in same order as `ps`.
 
     See Also
     --------
