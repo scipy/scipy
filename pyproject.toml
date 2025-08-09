@@ -34,8 +34,6 @@ requires = [
 [project]
 name = "scipy"
 version = "1.17.0.dev0"
-license = "BSD-3-Clause"
-license-files = ["LICENSE.txt"]
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
     { name = "SciPy Developers", email = "scipy-dev@python.org" },
@@ -66,6 +64,10 @@ classifiers = [
     "Operating System :: POSIX",
     "Operating System :: Unix",
     "Operating System :: MacOS",
+]
+dynamic = [
+    "license",
+    "license-files",
 ]
 
 [project.optional-dependencies]

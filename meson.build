@@ -2,7 +2,34 @@ project(
   'scipy',
   'c', 'cpp', 'cython',
   version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
-  license: 'BSD-3',
+  license: 'BSD-3-Clause AND BSD-2-Clause AND BSL-1.0 AND MIT AND Qhull',
+  license_files = [
+    'LICENSE.txt',
+    'scipy/_build_utils/tempita/LICENSE.txt',  # MIT
+    'scipy/_lib/array_api_compat/LICENCE',  # MIT  # git submodule
+    'scipy/_lib/_uarray/LICENSE',  # BSD-3-Clause
+    # 'scipy/_lib/decorator.py',  # BSD-2-Clause
+    'scipy/_lib/pyprima/LICENCE.txt',  # BSD-3-Clause
+    'scipy/_lib/unuran/license.txt',  # BSD-3-Clause  # git submodule
+    'scipy/fft/_pocketfft/LICENSE.md',  # BSD-3-Clause
+    # 'scipy/integrate/_lebedev.py',  # BSD-2-Clause
+    # 'scipy/interpolate/_aaa.py',  # BSD-2-Clause
+    'scipy/io/_fast_matrix_market/LICENSE.txt',  # BSD-2-Clause
+    # 'scipy/io/_fast_matrix_market/src/pystreambuf.h',  # BSD-3-Clause
+    'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT',  # MIT
+    'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost',  # BSL-1.0
+    'scipy/optimize/_direct/COPYING',  # MIT
+    # 'scipy/optimize/_lbfgsb_py.py',  # MIT
+    'scipy/optimize/tnc/LICENSE',  # MIT
+    'scipy/ndimage/LICENSE.txt',  # BSD-3-Clause
+    'scipy/sparse/linalg/_dsolve/SuperLU/License.txt',  # BSD-3-Clause
+    'scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING',  # BSD-3-Clause
+    'scipy/spatial/COPYING_QHULL.txt',  # Qhull
+    # 'scipy/stats/libnpyrandom/logfactorial.c',  # BSD-3-Clause
+    # 'scipy/stats/libnpyrandom/logfactorial.h',  # BSD-3-Clause
+    'scipy/stats/biasedurn/license.txt',  # BSD-3-Clause
+    'scipy/_lib/array_api_compat/LICENSE',  # MIT  # git submodule
+  ],
   meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
