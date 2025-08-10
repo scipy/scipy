@@ -25,6 +25,11 @@ Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/*
 License: BSL-1.0
   For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost
 
+Name: L-BFGS-B
+Files: scipy/optimize/lbfgsb/[__lbfgsb.h,__lbfgsb.c]
+License: BSD license
+  For details, see scipy/optimize/__lbfgsb.c
+
 Name: LAPJVsp
 Files: scipy/sparse/csgraph/_matching.pyx
 License: BSD-3-Clause
