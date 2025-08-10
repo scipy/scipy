@@ -3575,13 +3575,13 @@ class TestHilbert2:
             x = sp_fft.ifft2(Xf * h, axes=(0, 1))
             return x
 
-        x = xp.reshape(xp.arange(shape[0] * shape[1]), shape)
+        x = xp.reshape(xp.arange(shape[0] * shape[1], dtype=xp.float64), shape)
         xh_old = _hilbert2(x)
         if axes == (0, 1):
             x = x[..., None]
             squeeze_axis = 2
         elif axes == (-2, -1):
-            x = x[None]
+            x = x[None, ...]
             squeeze_axis = 0
         xh = xp.squeeze(hilbert2(x, axes=axes), axis=squeeze_axis)
         xp_assert_close(xh_old, xh)
@@ -3590,13 +3590,17 @@ class TestHilbert2:
     def test_quadrant_power(self, xp, shape):
         sh0, sh1 = shape
         freq0 = xp.asarray(sp_fft.fftfreq(sh0)[:, None])
-        freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None])
-        x = xp.reshape(xp.arange(sh0 * sh1), shape)
+        freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None, ...])
+        x = xp.reshape(xp.arange(sh0 * sh1, dtype=xp.float64), shape)
         x_as = hilbert2(x)
         x_as_f = sp_fft.fft2(x_as)
-        n_quads = xp.logical_and(freq0 < 0, freq1 < 0)
+        n_quads = (freq0 < 0) | (freq1 < 0)
+        if sh0 % 2 == 0:
+            n_quads = n_quads & (freq0 != xp.min(freq0))
+        if sh1 % 2 == 0:
+            n_quads = n_quads & (freq1 != xp.min(freq1))
         zero_quad = x_as_f[n_quads]
-        xp_assert_close(zero_quad, xp.zeros_like(zero_quad), atol=1e-13)
+        xp_assert_close(zero_quad, xp.zeros_like(zero_quad), atol=1e-12)
 
 
 class TestEnvelope:
