@@ -311,9 +311,8 @@ class SphericalVoronoi:
         areas = self.radius * theta
 
         # Correct arcs which go the wrong way (single-hemisphere inputs)
-        signs = np.sign(np.einsum('ij,ij->i', arcs[:, 0],
-                                              self.vertices - self.center))
-        indices = np.where(signs < 0)
+        indices = np.einsum('ij,ij->i', arcs[:, 0],
+                            self.vertices - self.center) < 0
         areas[indices] = 2 * np.pi * self.radius - areas[indices]
         return areas
 
