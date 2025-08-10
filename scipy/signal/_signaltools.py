@@ -2629,9 +2629,9 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         single-orthant spectra." Proceedings of the IEEE 80.8
         (1992): 1287-1300.
         `PDF <https://ieeexplore.ieee.org/iel1/5/4083/00158601.pdf>`__
-    .. [3] Bülow, Thomas, and Gerald Sommer. "A novel approach to the 2D analytic signal."
-        In International Conference on Computer Analysis of Images and Patterns, pp. 25-32.
-        Berlin, Heidelberg: Springer Berlin Heidelberg, 1999.
+    .. [3] Bülow, Thomas, and Gerald Sommer. "A novel approach to the 2D analytic
+        signal." In International Conference on Computer Analysis of Images and
+        Patterns, pp. 25-32. Berlin, Heidelberg: Springer Berlin Heidelberg, 1999.
         `PDF <https://www.informatik.uni-kiel.de/inf/Sommer/doc/Publications/tbl/caip99.pdf>`__
     """
     xp = array_namespace(x)
