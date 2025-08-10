@@ -3485,7 +3485,6 @@ class TestHilbert:
         assert xp.real(hilbert(in_typed)).dtype == dtype
 
 
-
 @skip_xp_backends("jax.numpy",
    reason="jax arrays do not support item assignment")
 class TestHilbert2:
