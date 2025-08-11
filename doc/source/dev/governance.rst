@@ -337,7 +337,7 @@ Acknowledgements
 
 Substantial portions of this document were adapted from the
 `Jupyter/IPython project's governance document
-<https://github.com/jupyter/governance/blob/master/governance.md>`_ and
+<https://jupyter.org/governance/index.html>`_ and
 `NumPy's governance document
 <https://github.com/numpy/numpy/blob/main/doc/source/dev/governance/governance.rst>`_.
 
