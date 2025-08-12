@@ -21,10 +21,19 @@ from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng, broadcastable
 
-backend_registry = {
-    (array_namespace(np.empty(0)), 1): cython_backend,
-    (array_namespace(np.empty(0)), 2): cython_backend,
-}
+backend_registry = {array_namespace(np.empty(0)): cython_backend}
+
+
+def _select_backend(xp: ModuleType, requires_broadcasting: bool) -> ModuleType:
+    """Select the backend for the given array library.
+
+    We need this selection function because the Cython backend for numpy does not
+    support broadcasting. We therefore only use the Array API backend for numpy if
+    broadcasting is required, i.e. quat has more than 2 dimensions.
+    """
+    if is_numpy(xp) and requires_broadcasting:
+        return xp_backend
+    return backend_registry.get(xp, xp_backend)
 
 
 @xp_capabilities()
@@ -335,19 +344,20 @@ class Rotation:
         scalar_first: bool = False,
     ):
         xp = array_namespace(quat)
+        self._xp = xp
         quat = _promote(quat, xp)
         if quat.shape[-1] != 4:
             raise ValueError(
                 f"Expected `quat` to have shape (..., 4), got {quat.shape}."
             )
-        # Legacy behavior for cython backend: Differentiate between single quat and
-        # batched quats. We only use this for the cython backend. The Array API backend
-        # uses broadcasting by default and hence returns the correct shape without
-        # additional logic
+        # Single NumPy quats of list of quats are accelerated by the cython backend.
+        # This backend needs inputs with fixed ndim, so we always expand to 2D and
+        # select the 0th element if quat was single to get the correct shape. For other
+        # frameworks and quaternion tensors we use the generic array API backend.
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = backend_registry.get((xp, quat.ndim), xp_backend)
+        self._backend = _select_backend(xp, requires_broadcasting=quat.ndim > 2)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -564,9 +574,9 @@ class Rotation:
         xp = array_namespace(matrix)
         matrix = _promote(matrix, xp)
         # Resulting quat will have 1 less dimension than matrix
-        backend = backend_registry.get((xp, matrix.ndim - 1), xp_backend)
+        backend = _select_backend(xp, requires_broadcasting=matrix.ndim > 3)
         quat = backend.from_matrix(matrix)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -638,9 +648,9 @@ class Rotation:
         """
         xp = array_namespace(rotvec)
         rotvec = _promote(rotvec, xp)
-        backend = backend_registry.get((xp, rotvec.ndim), xp_backend)
+        backend = _select_backend(xp, requires_broadcasting=rotvec.ndim > 2)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -741,9 +751,9 @@ class Rotation:
         """
         xp = array_namespace(angles)
         angles = _promote(angles, xp)
-        backend = backend_registry.get((xp, angles.ndim), xp_backend)
+        backend = _select_backend(xp, requires_broadcasting=angles.ndim > 2)
         quat = backend.from_euler(seq, angles, degrees=degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -870,9 +880,9 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes = _promote(axes, xp)
-        backend = backend_registry.get((xp, axes.ndim), xp_backend)
+        backend = _select_backend(xp, requires_broadcasting=axes.ndim > 2)
         quat = backend.from_davenport(axes, order, angles, degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -944,9 +954,9 @@ class Rotation:
         """
         xp = array_namespace(mrp)
         mrp = _promote(mrp, xp)
-        backend = backend_registry.get((xp, mrp.ndim), xp_backend)
+        backend = _select_backend(xp, requires_broadcasting=mrp.ndim > 2)
         quat = backend.from_mrp(mrp)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -1382,8 +1392,9 @@ class Rotation:
         >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (2, 3)
         """
-        xp = array_namespace(self._quat)
-        axes = xp.asarray(axes, dtype=self._quat.dtype, device=xp_device(self._quat))
+        axes = self._xp.asarray(
+            axes, dtype=self._quat.dtype, device=xp_device(self._quat)
+        )
         davenport = self._backend.as_davenport(self._quat, axes, order, degrees)
         if self._single:
             return davenport[0, ...]
@@ -1516,7 +1527,7 @@ class Rotation:
         quats = xp.concat(
             [xpx.atleast_nd(x.as_quat(), ndim=2, xp=xp) for x in rotations]
         )
-        return Rotation(quats, normalize=False)
+        return Rotation._from_raw_quat(quats, xp=xp)
 
     @xp_capabilities(
         skip_backends=[
@@ -1642,8 +1653,7 @@ class Rotation:
                [ 1.09533535, -0.8365163 ,  0.3169873 ]])
 
         """
-        xp = array_namespace(self._quat)
-        vectors = xp.asarray(
+        vectors = self._xp.asarray(
             vectors, device=xp_device(self._quat), dtype=self._quat.dtype
         )
         single_vector = vectors.ndim == 1
@@ -1653,8 +1663,8 @@ class Rotation:
             raise ValueError(
                 f"Expected input of shape (3,) or (P, 3), got {vectors.shape}."
             )
-        if is_numpy(xp):
-            vectors = xpx.atleast_nd(vectors, ndim=2, xp=xp)
+        if is_numpy(self._xp):
+            vectors = xpx.atleast_nd(vectors, ndim=2, xp=self._xp)
         result = self._backend.apply(self._quat, vectors, inverse=inverse)
         if self._single and single_vector:
             return result[0, ...]
@@ -1743,7 +1753,9 @@ class Rotation:
                 f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
                 f"first and {other._quat.shape[:-1]} rotations in second object."
             )
-        quat = self._backend.compose_quat(self._quat, other._quat)
+        requires_broadcasting = self._quat.ndim > 2 or other._quat.ndim > 2
+        backend = _select_backend(self._xp, requires_broadcasting)
+        quat = backend.compose_quat(self._quat, other._quat)
         if self._single and other._single:
             quat = quat[0]
         return Rotation(quat, normalize=True, copy=False)
@@ -1821,7 +1833,7 @@ class Rotation:
         quat = self._backend.pow(self._quat, n)
         if self._single:
             quat = quat[0]
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "cannot handle zero-length rotations")]
@@ -1861,7 +1873,7 @@ class Rotation:
         q_inv = self._backend.inv(self._quat)
         if self._single:
             q_inv = q_inv[0, ...]
-        return Rotation(q_inv, normalize=False, copy=False)
+        return Rotation._from_raw_quat(q_inv, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -2001,7 +2013,7 @@ class Rotation:
         array([0.24945696, 0.25054542, 0.24945696])
         """
         mean = self._backend.mean(self._quat, weights=weights)
-        return Rotation(mean, normalize=False)
+        return Rotation._from_raw_quat(mean, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -2049,7 +2061,7 @@ class Rotation:
         )
         if self._single:
             reduced = reduced[0, ...]
-        rot = Rotation(reduced, normalize=False, copy=False)
+        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=self._backend)
         if return_indices:
             left_idx = left_idx if left is not None else None
             right_idx = right_idx if right is not None else None
@@ -2168,20 +2180,17 @@ class Rotation:
             raise TypeError("Single rotation is not subscriptable.")
         is_array = isinstance(indexer, type(self._quat))
         # Masking is only specified in the Array API when the array is the sole index
-        # TODO: Getting xp on every call may be expensive. Check if we can make access
-        # to xp more efficient. Should we store a self._xp attribute?
         # TODO: This special case handling is mainly a result of Array API limitations.
         # Ideally we would get rid of them altogether and converge to [indexer, ...]
         # indexing.
-        xp = array_namespace(self._quat)
-        if is_array and indexer.dtype == xp.bool:
+        if is_array and indexer.dtype == self._xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
-        if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
-            # Array API limitation: Integer index arrays are only allowed with integer
-            # indices
-            all_ind = xp.arange(4)
-            indexer = xp.reshape(indexer, (indexer.shape[0], 1))
-            return Rotation(self._quat[indexer, all_ind], normalize=False)
+        if is_array and self._xp.isdtype(indexer.dtype, "integral"):
+            # xp.take is implementation-defined for zero-dim arrays, hence we raise
+            # pre-emptively to have consistent behavior across frameworks.
+            if self._quat.shape[0] == 0:
+                raise IndexError("cannot do a non-empty take from an empty axes.")
+            return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
     @xp_capabilities(
@@ -2217,8 +2226,8 @@ class Rotation:
 
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
-    @classmethod
-    def identity(cls, num: int | None = None) -> Rotation:
+    @staticmethod
+    def identity(num: int | None = None) -> Rotation:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -2234,7 +2243,8 @@ class Rotation:
         identity : Rotation object
             The identity rotation.
         """
-        return cls(cython_backend.identity(num), normalize=False, copy=False)
+        quat = cython_backend.identity(num)
+        return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
     @classmethod
     @_transition_to_rng("random_state", position_num=2)
@@ -2289,7 +2299,6 @@ class Rotation:
         scipy.stats.special_ortho_group
 
         """
-        # DECISION: How do we handle random numbers in other frameworks?
         # TODO: The array API does not have a unified random interface. This method only
         # creates numpy arrays. If we do want to support other frameworks, we need a way
         # to handle other rng implementations.
@@ -2507,12 +2516,15 @@ class Rotation:
                [0., 1., 2.]])
         """
         xp = array_namespace(a)
-        a = xp_promote(a, force_floating=True, xp=xp)
-        backend = backend_registry.get((xp, a.ndim), xp_backend)
+        a, b, weights = xp_promote(a, b, weights, force_floating=True, xp=xp)
+        requires_broadcasting = (
+            (a.ndim > 2) | (b.ndim > 2) | (weights is not None and weights.ndim > 1)
+        )
+        backend = _select_backend(xp, requires_broadcasting)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
-            return Rotation(q, normalize=False, copy=False), rssd, sensitivity
-        return Rotation(q, normalize=False, copy=False), rssd
+            return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd, sensitivity
+        return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd
 
     def __getstate__(self) -> tuple[Array, bool]:
         return (self._quat, self._single)
@@ -2520,8 +2532,10 @@ class Rotation:
     def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
+        self._xp = xp
+        self._backend = backend_registry.get(xp, xp_backend)
         self._quat = xp.asarray(quat, copy=True)
-        self._backend = backend_registry.get((xp, self._quat.ndim), xp_backend)
+        self._backend = _select_backend(xp, requires_broadcasting=self._quat.ndim > 2)
         self._single = single
 
     @property
@@ -2574,6 +2588,26 @@ class Rotation:
         # indices.
         for i in range(self._quat.shape[0]):
             yield Rotation(self._quat[i, ...], normalize=False, copy=False)
+
+    @staticmethod
+    def _from_raw_quat(
+        quat: Array, xp: ModuleType, backend: ModuleType | None = None
+    ) -> Rotation:
+        """Create a Rotation skipping all sanitization steps.
+
+        This method is intended for internal, performant creation of Rotations with
+        quaternions that are guaranteed to be valid.
+        """
+        rot = Rotation.__new__(Rotation)
+        rot._single = quat.ndim == 1 and is_numpy(xp)
+        if rot._single:
+            quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        rot._quat = quat
+        rot._xp = xp
+        if backend is None:
+            backend = backend_registry.get(xp, xp_backend)
+        rot._backend = backend
+        return rot
 
 
 class Slerp:
