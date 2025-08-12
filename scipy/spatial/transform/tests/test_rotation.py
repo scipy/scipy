@@ -5,6 +5,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal
 from scipy.spatial.transform import Rotation, Slerp
+import scipy.spatial.transform._rotation_cy as cython_backend
+import scipy.spatial.transform._rotation_xp as xp_backend
 from scipy.stats import special_ortho_group
 from itertools import permutations, product
 from scipy._lib._array_api import (
@@ -48,6 +50,16 @@ def rotation_to_xp(r: Rotation, xp):
 def test_init_non_array():
     Rotation((0, 0, 0, 1))
     Rotation([0, 0, 0, 1])
+    Rotation([[[0, 0, 0, 1]]])
+
+
+def test_cython_backend_selection():
+    r = Rotation.from_quat(np.array([0, 0, 0, 1]))
+    assert r._backend is cython_backend
+    r = Rotation.from_quat(np.array([[0, 0, 0, 1]]))
+    assert r._backend is cython_backend
+    r = Rotation.from_quat(np.array([[[0, 0, 0, 1]]]))
+    assert r._backend is xp_backend
 
 
 def test_numpy_float32_inputs():
@@ -61,15 +73,10 @@ def test_generic_quat_matrix(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-def test_from_single_1d_quaternion(xp):
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_from_single_nd_quaternion(xp, ndim: int):
     x = xp.asarray([3.0, 4, 0, 0])
-    r = Rotation.from_quat(x)
-    expected_quat = x / 5
-    xp_assert_close(r.as_quat(), expected_quat)
-
-
-def test_from_single_2d_quaternion(xp):
-    x = xp.asarray([[3.0, 4, 0, 0]])
+    x = xp.reshape(x, (1,) * (ndim - 1) + (4,))
     r = Rotation.from_quat(x)
     expected_quat = x / 5
     xp_assert_close(r.as_quat(), expected_quat)
@@ -109,6 +116,13 @@ def test_from_quat_array_like():
     # Multiple rotations
     r_expected = Rotation.random(3, rng=rng)
     r = Rotation.from_quat(r_expected.as_quat().tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
+
+    # Tensor of rotations
+    q = rng.normal(size=(3, 4, 5, 4))
+    q /= xp_vector_norm(q, axis=-1)[..., None]
+    r_expected = Rotation.from_quat(q)
+    r = Rotation.from_quat(q)
     assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
 
@@ -233,11 +247,11 @@ def test_quat_double_cover(xp):
                     xp.asarray([0.0, 0, 0, -1]), atol=2e-16)
 
 
-def test_from_quat_wrong_shape(xp):
-    for ndim in range(1, 8):  # Test for up to 7 dimensions
-        quat = xp.zeros((*((1,) * ndim), 5))
-        with pytest.raises(ValueError, match="Expected `quat` to have shape"):
-            Rotation.from_quat(quat)
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_from_quat_wrong_shape(xp, ndim: int):
+    quat = xp.zeros((*((1,) * ndim), 5))
+    with pytest.raises(ValueError, match="Expected `quat` to have shape"):
+        Rotation.from_quat(quat)
 
 
 def test_zero_norms_from_quat(xp):
@@ -254,24 +268,18 @@ def test_zero_norms_from_quat(xp):
 
 
 @make_xp_test_case(Rotation.as_matrix)
-def test_as_matrix_single_1d_quaternion(xp):
-    quat = xp.asarray([0, 0, 0, 1])
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_as_matrix_single_nd_quaternion(xp, ndim: int):
+    quat = xp.asarray([0, 0, 1, 1])
+    quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
     mat = Rotation.from_quat(quat).as_matrix()
-    # mat.shape == (3,3) due to 1d input
-    xp_assert_close(mat, xp.eye(3))
-
-
-@make_xp_test_case(Rotation.as_matrix)
-def test_as_matrix_single_2d_quaternion(xp):
-    quat = xp.asarray([[0, 0, 1, 1]])
-    mat = Rotation.from_quat(quat).as_matrix()
-    assert_equal(mat.shape, (1, 3, 3))
     expected_mat = xp.asarray([
         [0.0, -1, 0],
         [1, 0, 0],
         [0, 0, 1]
         ])
-    xp_assert_close(mat[0, ...], expected_mat, atol=1e-16)
+    expected_mat = xp.reshape(expected_mat, (1,) * (ndim - 1) + (3, 3))
+    xp_assert_close(mat, expected_mat, atol=1e-16)
 
 
 @make_xp_test_case(Rotation.as_matrix)
@@ -298,7 +306,6 @@ def test_as_matrix_from_square_input(xp):
         [-1, 0, 0]
         ])
     xp_assert_close(mat[1, ...], expected1, atol=1e-16)
-
     xp_assert_close(mat[2, ...], xp.eye(3))
     xp_assert_close(mat[3, ...], xp.eye(3))
 
@@ -336,24 +343,16 @@ def test_as_matrix_from_generic_input(xp):
 
 
 @make_xp_test_case(Rotation.from_matrix)
-def test_from_single_2d_matrix(xp):
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_from_single_nd_matrix(xp, ndim: int):
     mat = xp.asarray([
             [0, 0, 1],
             [1, 0, 0],
             [0, 1, 0]
             ])
+    mat = xp.reshape(mat, (1,) * (ndim - 1) + (3, 3))
     expected_quat = xp.asarray([0.5, 0.5, 0.5, 0.5])
-    xp_assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
-
-
-@make_xp_test_case(Rotation.from_matrix)
-def test_from_single_3d_matrix(xp):
-    mat = xp.asarray([[
-        [0, 0, 1],
-        [1, 0, 0],
-        [0, 1, 0],
-        ]])
-    expected_quat = xp.asarray([[0.5, 0.5, 0.5, 0.5]])
+    expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     xp_assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
@@ -457,19 +456,13 @@ def test_from_matrix_int_dtype(xp):
 
 
 @make_xp_test_case(Rotation.from_rotvec)
-def test_from_1d_single_rotvec(xp):
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_from_nd_single_rotvec(xp, ndim: int):
     atol = 1e-7
     rotvec = xp.asarray([1, 0, 0])
+    rotvec = xp.reshape(rotvec, (1,) * (ndim - 1) + (3,))
     expected_quat = xp.asarray([0.4794255, 0, 0, 0.8775826])
-    result = Rotation.from_rotvec(rotvec)
-    xp_assert_close(result.as_quat(), expected_quat, atol=atol)
-
-
-@make_xp_test_case(Rotation.from_rotvec)
-def test_from_2d_single_rotvec(xp):
-    atol = 1e-7
-    rotvec = xp.asarray([[1, 0, 0]])
-    expected_quat = xp.asarray([[0.4794255, 0, 0, 0.8775826]])
+    expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     result = Rotation.from_rotvec(rotvec)
     xp_assert_close(result.as_quat(), expected_quat, atol=atol)
 
@@ -555,12 +548,11 @@ def test_malformed_1d_from_rotvec(xp):
 
 
 @make_xp_test_case(Rotation.from_rotvec)
-def test_malformed_2d_from_rotvec(xp):
+@pytest.mark.parametrize("ndim", range(1, 6))
+def test_malformed_nd_from_rotvec(xp, ndim: int):
+    shape = (1,) * (ndim - 1) + (2,)
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
-        Rotation.from_rotvec(xp.asarray([
-            [1, 2, 3, 4],
-            [5, 6, 7, 8]
-            ]))
+        Rotation.from_rotvec(xp.ones(shape))
 
 
 @make_xp_test_case(Rotation.as_rotvec)
@@ -584,24 +576,15 @@ def test_as_generic_rotvec(xp):
 
 
 @make_xp_test_case(Rotation.as_rotvec)
-def test_as_rotvec_single_1d_input(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_as_rotvec_single_nd_input(xp, ndim: int):
     quat = xp.asarray([1, 2, -3, 2])
+    quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
     expected_rotvec = xp.asarray([0.5772381, 1.1544763, -1.7317144])
-
+    expected_rotvec = xp.reshape(expected_rotvec, (1,) * (ndim - 1) + (3,))
     actual_rotvec = Rotation.from_quat(quat).as_rotvec()
 
-    assert_equal(actual_rotvec.shape, (3,))
-    xp_assert_close(actual_rotvec, expected_rotvec)
-
-
-@make_xp_test_case(Rotation.as_rotvec)
-def test_as_rotvec_single_2d_input(xp):
-    quat = xp.asarray([[1, 2, -3, 2]])
-    expected_rotvec = xp.asarray([[0.5772381, 1.1544763, -1.7317144]])
-
-    actual_rotvec = Rotation.from_quat(quat).as_rotvec()
-
-    assert_equal(actual_rotvec.shape, (1, 3))
+    assert_equal(actual_rotvec.shape, expected_rotvec.shape)
     xp_assert_close(actual_rotvec, expected_rotvec)
 
 
@@ -631,19 +614,14 @@ def test_rotvec_calc_pipeline(xp):
 
 
 @make_xp_test_case(Rotation.from_mrp)
-def test_from_1d_single_mrp(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_from_mrp_single_nd_input(xp, ndim: int):
     mrp = xp.asarray([0, 0, 1.0])
+    mrp = xp.reshape(mrp, (1,) * (ndim - 1) + (3,))
     expected_quat = xp.asarray([0.0, 0, 1, 0])
+    expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     result = Rotation.from_mrp(mrp)
     xp_assert_close(result.as_quat(), expected_quat, atol=1e-12)
-
-
-@make_xp_test_case(Rotation.from_mrp)
-def test_from_2d_single_mrp(xp):
-    mrp = xp.asarray([[0, 0, 1.0]])
-    expected_quat = xp.asarray([[0.0, 0, 1, 0]])
-    result = Rotation.from_mrp(mrp)
-    xp_assert_close(result.as_quat(), expected_quat)
 
 
 def test_from_mrp_array_like():
@@ -680,18 +658,11 @@ def test_from_generic_mrp(xp):
 
 
 @make_xp_test_case(Rotation.from_mrp)
-def test_malformed_1d_from_mrp(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_malformed_nd_from_mrp(xp, ndim: int):
+    shape = (1,) * (ndim - 1) + (2,)
     with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
-        Rotation.from_mrp(xp.asarray([1, 2]))
-
-
-@make_xp_test_case(Rotation.from_mrp)
-def test_malformed_2d_from_mrp(xp):
-    with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
-        Rotation.from_mrp(xp.asarray([
-            [1, 2, 3, 4],
-            [5, 6, 7, 8]
-            ]))
+        Rotation.from_mrp(xp.ones(shape))
 
 
 @make_xp_test_case(Rotation.as_mrp)
@@ -721,24 +692,15 @@ def test_past_180_degree_rotation(xp):
 
 
 @make_xp_test_case(Rotation.as_mrp)
-def test_as_mrp_single_1d_input(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_as_mrp_single_nd_input(xp, ndim: int):
     quat = xp.asarray([1, 2, -3, 2])
+    quat = xp.reshape(quat, (1,) * (ndim - 1) + (4,))
     expected_mrp = xp.asarray([0.16018862, 0.32037724, -0.48056586])
-
+    expected_mrp = xp.reshape(expected_mrp, (1,) * (ndim - 1) + (3,))
     actual_mrp = Rotation.from_quat(quat).as_mrp()
 
-    assert_equal(actual_mrp.shape, (3,))
-    xp_assert_close(actual_mrp, expected_mrp)
-
-
-@make_xp_test_case(Rotation.as_mrp)
-def test_as_mrp_single_2d_input(xp):
-    quat = xp.asarray([[1, 2, -3, 2]])
-    expected_mrp = xp.asarray([[0.16018862, 0.32037724, -0.48056586]])
-
-    actual_mrp = Rotation.from_quat(quat).as_mrp()
-
-    assert_equal(actual_mrp.shape, (1, 3))
+    assert_equal(actual_mrp.shape, expected_mrp.shape)
     xp_assert_close(actual_mrp, expected_mrp)
 
 
@@ -761,6 +723,16 @@ def test_mrp_calc_pipeline(xp):
 def test_from_euler_single_rotation(xp):
     quat = Rotation.from_euler("z", xp.asarray(90), degrees=True).as_quat()
     expected_quat = xp.asarray([0.0, 0, 1, 1]) / math.sqrt(2)
+    xp_assert_close(quat, expected_quat)
+
+
+@make_xp_test_case(Rotation.from_euler)
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_from_euler_nd_rotation(xp, ndim: int):
+    angles = xp.reshape(xp.asarray([0, 0, 90]), (1,) * (ndim - 1) + (3,))
+    quat = Rotation.from_euler("xyz", angles, degrees=True).as_quat()
+    expected_quat = xp.asarray([0.0, 0, 1, 1]) / math.sqrt(2)
+    expected_quat = xp.reshape(expected_quat, (1,) * (ndim - 1) + (4,))
     xp_assert_close(quat, expected_quat)
 
 
@@ -1051,6 +1023,21 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
+
+
+@make_xp_test_case(Rotation.from_euler, Rotation.as_euler)
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_as_euler_nd_rotation(xp, ndim: int):
+    mat = xp.asarray([
+        [0.0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    mat = xp.reshape(mat, (1,) * (ndim - 1) + (3, 3))
+    angles = Rotation.from_matrix(mat).as_euler("xyz", degrees=True)
+    expected_angles = xp.asarray([0, 0, 90.0])
+    expected_angles = xp.reshape(expected_angles, (1,) * (ndim - 1) + (3,))
+    xp_assert_close(angles, expected_angles, atol=1e-12)
 
 
 @make_xp_test_case(Rotation.as_matrix, Rotation.inv)
@@ -2686,7 +2673,7 @@ def test_zero_rotation_approx_equal(xp):
     r2 = rotation_to_xp(Rotation.random(), xp)
     assert r2.approx_equal(r).shape == (0,)
 
-    approx_msg = "Expected equal number of rotations"
+    approx_msg = "Expected broadcastable shapes in both rotations"
     r3 = rotation_to_xp(Rotation.random(2), xp)
     with pytest.raises(ValueError, match=approx_msg):
         r.approx_equal(r3)

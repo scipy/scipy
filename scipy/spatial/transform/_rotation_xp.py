@@ -139,11 +139,9 @@ def from_matrix(matrix: Array) -> Array:
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     xp = array_namespace(rotvec)
-    rotvec = xp_promote(rotvec, force_floating=True, xp=xp)
-    # TODO: Relax the shape check once we support proper broadcasting
-    if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
+    if rotvec.shape[-1] != 3:
         raise ValueError(
-            f"Expected `rot_vec` to have shape (3,) or (N, 3), got {rotvec.shape}"
+            f"Expected `rot_vec` to have shape (..., 3), got {rotvec.shape}"
         )
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
@@ -164,10 +162,9 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
 
 def from_mrp(mrp: Array) -> Array:
     xp = array_namespace(mrp)
-    mrp = xp_promote(mrp, force_floating=True, xp=xp)
-    if mrp.ndim not in [1, 2] or mrp.shape[len(mrp.shape) - 1] != 3:
+    if mrp.shape[-1] != 3:
         raise ValueError(
-            f"Expected `mrp` to have shape (3,) or (N, 3), got {mrp.shape}"
+            f"Expected `mrp` to have shape (..., 3), got {mrp.shape}"
         )
     mrp2_plus_1 = xp.linalg.vecdot(mrp, mrp, axis=-1)[..., None] + 1
     q_no_norm = xp.concat([2 * mrp[..., :3], (2 - mrp2_plus_1)], axis=-1)
@@ -436,10 +433,8 @@ def approx_equal(
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
-            "Expected equal number of rotations in both "
-            "or a single rotation in either object, "
-            f"got {quat.shape[0]} rotations in first and {other.shape[0]} rotations in "
-            "second object."
+            f"Expected broadcastable shapes in both rotations, got {quat.shape[:-1]} "
+            f"rotations in first and {other.shape[:-1]} rotations in second object."
         )
 
     quat_result = compose_quat(other, inv(quat))

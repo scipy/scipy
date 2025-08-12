@@ -24,14 +24,15 @@ from scipy._lib._util import _transition_to_rng, broadcastable
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def _select_backend(xp: ModuleType, requires_broadcasting: bool) -> ModuleType:
+def _select_backend(xp: ModuleType, cython_compatible: bool) -> ModuleType:
     """Select the backend for the given array library.
 
     We need this selection function because the Cython backend for numpy does not
-    support broadcasting. We therefore only use the Array API backend for numpy if
-    broadcasting is required, i.e. quat has more than 2 dimensions.
+    support quaternions of arbitrary dimensions. We therefore only use the Array API
+    backend for numpy if we are dealing with rotations of more than one leading
+    dimension.
     """
-    if is_numpy(xp) and requires_broadcasting:
+    if is_numpy(xp) and not cython_compatible:
         return xp_backend
     return backend_registry.get(xp, xp_backend)
 
@@ -357,7 +358,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = _select_backend(xp, requires_broadcasting=quat.ndim > 2)
+        self._backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -574,7 +575,7 @@ class Rotation:
         xp = array_namespace(matrix)
         matrix = _promote(matrix, xp)
         # Resulting quat will have 1 less dimension than matrix
-        backend = _select_backend(xp, requires_broadcasting=matrix.ndim > 3)
+        backend = _select_backend(xp, cython_compatible=matrix.ndim < 4)
         quat = backend.from_matrix(matrix)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -648,7 +649,7 @@ class Rotation:
         """
         xp = array_namespace(rotvec)
         rotvec = _promote(rotvec, xp)
-        backend = _select_backend(xp, requires_broadcasting=rotvec.ndim > 2)
+        backend = _select_backend(xp, cython_compatible=rotvec.ndim < 3)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -751,7 +752,7 @@ class Rotation:
         """
         xp = array_namespace(angles)
         angles = _promote(angles, xp)
-        backend = _select_backend(xp, requires_broadcasting=angles.ndim > 2)
+        backend = _select_backend(xp, cython_compatible=angles.ndim < 3)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -880,7 +881,7 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes = _promote(axes, xp)
-        backend = _select_backend(xp, requires_broadcasting=axes.ndim > 2)
+        backend = _select_backend(xp, cython_compatible=axes.ndim < 3)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -954,7 +955,7 @@ class Rotation:
         """
         xp = array_namespace(mrp)
         mrp = _promote(mrp, xp)
-        backend = _select_backend(xp, requires_broadcasting=mrp.ndim > 2)
+        backend = _select_backend(xp, cython_compatible=mrp.ndim < 3)
         quat = backend.from_mrp(mrp)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -1753,8 +1754,8 @@ class Rotation:
                 f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
                 f"first and {other._quat.shape[:-1]} rotations in second object."
             )
-        requires_broadcasting = self._quat.ndim > 2 or other._quat.ndim > 2
-        backend = _select_backend(self._xp, requires_broadcasting)
+        cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
         quat = backend.compose_quat(self._quat, other._quat)
         if self._single and other._single:
             quat = quat[0]
@@ -1961,7 +1962,9 @@ class Rotation:
         >>> p.approx_equal(q[0])
         False
         """
-        return self._backend.approx_equal(
+        cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        return backend.approx_equal(
             self._quat, other._quat, atol=atol, degrees=degrees
         )
 
@@ -2517,10 +2520,10 @@ class Rotation:
         """
         xp = array_namespace(a)
         a, b, weights = xp_promote(a, b, weights, force_floating=True, xp=xp)
-        requires_broadcasting = (
-            (a.ndim > 2) | (b.ndim > 2) | (weights is not None and weights.ndim > 1)
+        cython_compatible = (
+            (a.ndim < 3) | (b.ndim < 3) | (weights is not None and weights.ndim < 2)
         )
-        backend = _select_backend(xp, requires_broadcasting)
+        backend = _select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
             return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd, sensitivity
@@ -2535,7 +2538,7 @@ class Rotation:
         self._xp = xp
         self._backend = backend_registry.get(xp, xp_backend)
         self._quat = xp.asarray(quat, copy=True)
-        self._backend = _select_backend(xp, requires_broadcasting=self._quat.ndim > 2)
+        self._backend = _select_backend(xp, cython_compatible=self._quat.ndim < 3)
         self._single = single
 
     @property
