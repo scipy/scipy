@@ -1964,9 +1964,7 @@ class Rotation:
         """
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
         backend = _select_backend(self._xp, cython_compatible=cython_compatible)
-        return backend.approx_equal(
-            self._quat, other._quat, atol=atol, degrees=degrees
-        )
+        return backend.approx_equal(self._quat, other._quat, atol=atol, degrees=degrees)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -2702,6 +2700,11 @@ class Slerp:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         q = rotations.as_quat()
+        if q.ndim > 2:
+            raise ValueError(
+                "Rotations with more than 1 leading dimension are not supported for now."
+            )
+
         xp = array_namespace(q)
         times = xp.asarray(times, device=xp_device(q), dtype=q.dtype)
         if times.ndim != 1:
