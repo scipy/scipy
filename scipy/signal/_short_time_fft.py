@@ -419,6 +419,15 @@ class ShortTimeFFT:
     _fac_mag: float | None = None
     _fac_psd: float | None = None
     _lower_border_end: tuple[int, int] | None = None
+    # The following tuples store parameter(s) and return value(s) of methods for caching
+    # (initialized with invalid parameters; should only be accessed by atomic
+    # read/writes to alleviate potential multithreading issues):
+    _cache_post_padding: tuple[int, tuple[int, int]] = -1, (0, 0)
+    _cache_upper_border_begin: tuple[int, tuple[int, int]] = -1, (0, 0)
+    _cache_t: tuple[tuple[int, int | None, int | None, int, float], np.ndarray] = \
+        (-1, None, None, 0, 0.), np.ndarray([])
+    _cache_f: tuple[tuple[FFT_MODE_TYPE, int, float], np.ndarray] = \
+        ('onesided', -1, 1.), np.ndarray([])
 
     def __init__(self, win: np.ndarray, hop: int, fs: float, *,
                  fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -1836,6 +1845,12 @@ class ShortTimeFFT:
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
+<<<<<<< HEAD
+=======
+        last_arg, last_return_value = self._cache_upper_border_begin
+        if n == last_arg:  # use cached value:
+            return last_return_value
+>>>>>>> cad5e3b66b (In `signal.shortTimeFFT`: remove typo in attribute name.)
         w2 = self.win.real**2 + self.win.imag**2
         q2 = n // self.hop + 1  # first t[q] >= t[n]
         q1 = max((n-self.m_num) // self.hop - 1, -1)
@@ -1843,8 +1858,16 @@ class ShortTimeFFT:
         for q_ in range(q2, q1, -1):
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
             if k_ <= n or all(w2[n-k_:] == 0):
+<<<<<<< HEAD
                 return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
         return 0, 0  # border starts at first slice
+=======
+                return_value = (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
+                self. _cache_upper_border_begin = n, return_value
+                return return_value
+        # make linter happy:
+        raise RuntimeError("This code line should never run! Please file a bug.")
+>>>>>>> cad5e3b66b (In `signal.shortTimeFFT`: remove typo in attribute name.)
 
     @property
     def delta_t(self) -> float:
