@@ -1,36 +1,9 @@
-
-/* MULTIPACK module by Travis Oliphant
-
-Copyright (c) 2002 Travis Oliphant all rights reserved
-oliphant.travis@ieee.org
-Permission to use, modify, and distribute this software is given under the
-terms of the SciPy (BSD style) license. See LICENSE.txt that came with
-this distribution for specifics.
-
-NO WARRANTY IS EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
-*/
-
-
-/* This extension module is a collection of wrapper functions around
-common FORTRAN code in the package ODEPACK.
-
-The wrappers are meant to be nearly direct translations between the
-FORTRAN code and Python. Some parameters like sizes do not need to be
-passed since they are available from the objects.
-
-It is anticipated that a pure Python module be written to call these lower
-level routines and make a simpler user interface. All of the routines define
-default values for little-used parameters so that even the raw routines are
-quite useful without a separate wrapper.
-
-FORTRAN Outputs that are not either an error indicator or the sought-after
-results are placed in a dictionary and returned as an optional member of
-the result tuple when the full_output argument is non-zero.
-*/
-
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-
 #include "numpy/arrayobject.h"
+#include "ccallback.h"
+#include "src/lsoda.h"
+#include <math.h>
 
 #define PyArray_MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -53,167 +26,13 @@ the result tuple when the full_output argument is non-zero.
     goto fail; \
 }
 
-typedef struct _odepack_globals {
-    PyObject *python_function;
-    PyObject *python_jacobian;
-    PyObject *extra_arguments;  /* a tuple */
-    int jac_transpose;
-    int jac_type;
-    int tfirst;
-} odepack_params;
-
-static odepack_params global_params = {NULL, NULL, NULL, 0, 0, 0};
-
-static
-PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
-                                    double t, int tfirst,
-                                    PyObject *args, PyObject *error_obj)
-{
-    /*
-    This function is the C wrapper of the user's Python functions that
-    define the differential equations (and also the Jacobian function).
-    The Fortran code calls ode_function() and ode_jacobian_function(),
-    and those functions call this function to call the Python functions
-    provided to odeint by the user.
-
-    If an error occurs, NULL is returned. Otherwise, a NumPy array
-    is returned.
-    */
-
-    PyObject *sequence = NULL;
-    PyObject *tfloat = NULL;
-    PyObject *firstargs = NULL;
-    PyObject *arglist = NULL;
-    PyObject *result = NULL;
-    PyObject *result_array = NULL;
-
-    /* Build sequence argument from inputs */
-    sequence = PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *) x);
-    if (sequence == NULL) {
-        return NULL;
-    }
-
-    /* The array doesn't own the memory, so ensure it doesn't get cleaned up.*/
-    PyArray_CLEARFLAGS((PyArrayObject *)sequence, NPY_ARRAY_OWNDATA);
-
-    tfloat = PyFloat_FromDouble(t);
-    if (tfloat == NULL) {
-        Py_DECREF(sequence);
-        return NULL;
-    }
-
-    /* firstargs is a tuple that will hold the first two arguments. */
-    if (tfirst == 0) {
-        firstargs = PyTuple_Pack(2, sequence, tfloat);
-    } else {
-        firstargs = PyTuple_Pack(2, tfloat, sequence);
-    }
-    Py_DECREF(sequence);
-    Py_DECREF(tfloat);
-    if (firstargs == NULL) {
-        return NULL;
-    }
-
-    arglist = PySequence_Concat(firstargs, args);
-    Py_DECREF(firstargs);
-    if (arglist == NULL) {
-        return NULL;
-    }
-
-    /* Call the Python function. */
-    result = PyObject_CallObject(func, arglist);
-    Py_DECREF(arglist);
-    if (result == NULL) {
-        return NULL;
-    }
-
-    result_array = PyArray_ContiguousFromObject(result, NPY_DOUBLE, 0, 0);
-    Py_DECREF(result);
-    return result_array;
-}
-
-
 static PyObject *odepack_error;
 
-#if defined(UPPERCASE_FORTRAN)
-    #if defined(NO_APPEND_FORTRAN)
-        /* nothing to do here */
-    #else
-        #define LSODA  LSODA_
-    #endif
-#else
-    #if defined(NO_APPEND_FORTRAN)
-        #define LSODA  lsoda
-    #else
-        #define LSODA  lsoda_
-    #endif
-#endif
-
-typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
-typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
-                        double *pd, F_INT *nrowpd);
-
-void LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
-           double *rtol, double *atol, F_INT *itask, F_INT *istate, F_INT *iopt,
-           double *rwork, F_INT *lrw, F_INT *iwork, F_INT *liw, lsoda_jac_t *jac,
-           F_INT *jt);
-
-/*
-void ode_function(int *n, double *t, double *y, double *ydot)
-{
-  ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
-  ydot[2] = 3e7*y[1]*y[1];
-  ydot[1] = -ydot[0] - ydot[2];
-  return;
-}
-*/
-
-void
-ode_function(F_INT *n, double *t, double *y, double *ydot)
-{
-    /*
-    This is the function called from the Fortran code. It should
-        -- use call_odeint_user_function to get a multiarrayobject result
-        -- check for errors and set *n to -1 if any
-        -- otherwise place result of calculation in ydot
-    */
-
-    PyArrayObject *result_array = NULL;
-
-    result_array = (PyArrayObject *)
-                   call_odeint_user_function(global_params.python_function,
-                                             *n, y, *t, global_params.tfirst,
-                                             global_params.extra_arguments,
-                                             odepack_error);
-    if (result_array == NULL) {
-        *n = -1;
-        return;
-    }
-
-    if (PyArray_NDIM(result_array) > 1) {
-        *n = -1;
-        PyErr_Format(PyExc_RuntimeError,
-                "The array return by func must be one-dimensional, but got ndim=%d.",
-                PyArray_NDIM(result_array));
-        Py_DECREF(result_array);
-        return;
-    }
-
-    if (PyArray_Size((PyObject *)result_array) != *n) {
-        PyErr_Format(PyExc_RuntimeError,
-            "The size of the array returned by func (%ld) does not match "
-            "the size of y0 (%d).",
-            PyArray_Size((PyObject *)result_array), *n);
-        *n = -1;
-        Py_DECREF(result_array);
-        return;
-    }
-
-    memcpy(ydot, PyArray_DATA(result_array), (*n)*sizeof(double));
-    Py_DECREF(result_array);
-    return;
-}
-
+static char doc_odeint[] =
+    "[y,{infodict,}istate] = odeint(fun, y0, t, args=(), Dfun=None, "
+    "col_deriv=0, ml=, mu=, full_output=0, rtol=, atol=, tcrit=, h0=0.0, "
+    "hmax=0.0, hmin=0.0, ixpr=0.0, mxstep=0.0, mxhnil=0, mxordn=0, "
+    "mxords=0)\n  yprime = fun(y,t,...)";
 
 /*
  *  Copy a contiguous matrix at `c` to a Fortran-ordered matrix at `f`.
@@ -223,13 +42,12 @@ ode_function(F_INT *n, double *t, double *y, double *ydot)
  *  If `transposed` is nonzero, c[i, j] is *(c + i + nrows*j)  (i.e. `c` is
  *  stored in F-contiguous order).
  */
-
 static void
-copy_array_to_fortran(double *f, F_INT ldf, F_INT nrows, F_INT ncols,
-                      double *c, F_INT transposed)
+copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
+                      double *c, int transposed)
 {
-    F_INT i, j;
-    F_INT row_stride, col_stride;
+    int i, j;
+    int row_stride, col_stride;
 
     /* The strides count multiples of sizeof(double), not bytes. */
     if (transposed) {
@@ -252,122 +70,401 @@ copy_array_to_fortran(double *f, F_INT ldf, F_INT nrows, F_INT ncols,
 }
 
 
-int
-ode_jacobian_function(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
-                      double *pd, F_INT *nrowpd)
+// Callback Infrastructure
+
+typedef struct {
+    PyObject *ode_function;
+    PyObject *jac_function;
+    PyObject *func_args;
+    int jac_transpose;
+    int jac_type;
+    int tfirst;               // Controls argument order: 0=(y,t,...), 1=(t,y,...) but why?
+} odepack_callback_t;
+
+// Thread-local storage for callbacks
+static SCIPY_TLS odepack_callback_t* current_odepack_callback = NULL;
+
+
+/*
+ * Modern ODE function thunk - replaces the global variable approach
+ * Called from C/Fortran code, interfaces with Python function
+ */
+static void
+ode_function_thunk(int *n, double *t, double *y, double *ydot)
 {
-    /*
-        This is the function called from the Fortran code. It should
-            -- use call_odeint_user_function to get a multiarrayobject result
-            -- check for errors and return -1 if any (though this is ignored
-                           by calling program).
-            -- otherwise place result of calculation in pd
-    */
+    if (!current_odepack_callback || !current_odepack_callback->ode_function) { *n = -1; return; }
+    npy_intp dims[1] = {*n};
 
-    PyArrayObject *result_array;
-    npy_intp ndim, nrows, ncols, dim_error;
-    npy_intp *dims;
+    PyObject *capsule = PyCapsule_New((void*)y, NULL, NULL);
+    if (!capsule) { *n = -1; return; }
 
-    result_array = (PyArrayObject *)
-                   call_odeint_user_function(global_params.python_jacobian,
-                                             *n, y, *t, global_params.tfirst,
-                                             global_params.extra_arguments,
-                                             odepack_error);
-    if (result_array == NULL) {
+    PyObject* py_y = PyArray_SimpleNewFromData(1, dims, NPY_FLOAT64, (void*)y);
+    if (!py_y) {
+        Py_DECREF(capsule);
         *n = -1;
-        return -1;
+        return;
     }
 
-    ncols = *n;
-    if (global_params.jac_type == 4) {
-        nrows = *ml + *mu + 1;
-    }
-    else {
-        nrows = *n;
+    if (PyArray_SetBaseObject((PyArrayObject*)py_y, capsule) < 0) {
+        Py_DECREF(py_y);
+        *n = -1;
+        return;
     }
 
-    if (!global_params.jac_transpose) {
-        npy_intp tmp;
-        tmp = nrows;
-        nrows = ncols;
-        ncols = tmp;
+    PyObject *args_tuple;
+    if (current_odepack_callback->tfirst == 0) {
+        // Order: (y, t, *extra_args)
+        if (current_odepack_callback->func_args) {
+            Py_ssize_t extra_size = PyTuple_Size(current_odepack_callback->func_args);
+            args_tuple = PyTuple_New(2 + extra_size);
+            if (!args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(args_tuple, 0, py_y);
+            PyTuple_SetItem(args_tuple, 1, PyFloat_FromDouble(*t));
+            // Copy extra arguments
+            for (Py_ssize_t i = 0; i < extra_size; i++) {
+                PyObject *item = PyTuple_GetItem(current_odepack_callback->func_args, i);
+                Py_INCREF(item);
+                PyTuple_SetItem(args_tuple, 2 + i, item);
+            }
+        } else {
+            // No extra arguments
+            args_tuple = PyTuple_New(2);
+            if (!args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(args_tuple, 0, py_y);
+            PyTuple_SetItem(args_tuple, 1, PyFloat_FromDouble(*t));
+        }
+    } else {
+        // Alternative order: (t, y, *extra_args)
+        if (current_odepack_callback->func_args) {
+            Py_ssize_t extra_size = PyTuple_Size(current_odepack_callback->func_args);
+            args_tuple = PyTuple_New(2 + extra_size);
+            if (!args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(args_tuple, 0, PyFloat_FromDouble(*t));
+            PyTuple_SetItem(args_tuple, 1, py_y);
+            // Copy extra arguments
+            for (Py_ssize_t i = 0; i < extra_size; i++) {
+                PyObject *item = PyTuple_GetItem(current_odepack_callback->func_args, i);
+                Py_INCREF(item);
+                PyTuple_SetItem(args_tuple, 2 + i, item);
+            }
+        } else {
+            // No extra arguments
+            args_tuple = PyTuple_New(2);
+            if (!args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(args_tuple, 0, PyFloat_FromDouble(*t));
+            PyTuple_SetItem(args_tuple, 1, py_y);
+        }
     }
 
-    ndim = PyArray_NDIM(result_array);
-    if (ndim > 2) {
+    // Call Python function
+    PyObject *result = PyObject_CallObject(current_odepack_callback->ode_function, args_tuple);
+    Py_DECREF(args_tuple);
+    if (!result) { *n = -1; return; }
+
+    // Process result and validate dimensions
+    PyArrayObject *result_array = (PyArrayObject*)PyArray_FROM_OTF(result, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+    if (!result_array) {
+        Py_DECREF(result);
+        *n = -1;
+        return;
+    }
+
+    if (PyArray_NDIM(result_array) > 1) {
         PyErr_Format(PyExc_RuntimeError,
-            "The Jacobian array must be two dimensional, but got ndim=%d.",
-            ndim);
-        *n = -1;
+                "The array returned by func must be one-dimensional, but got ndim=%d.",
+                PyArray_NDIM(result_array));
         Py_DECREF(result_array);
-        return -1;
+        Py_DECREF(result);
+        *n = -1;
+        return;
     }
 
-    dims = PyArray_DIMS(result_array);
-    dim_error = 0;
-    if (ndim == 0) {
-        if ((nrows != 1) || (ncols != 1)) {
-            dim_error = 1;
-        }
-    }
-    if (ndim == 1) {
-        if ((nrows != 1) || (dims[0] != ncols)) {
-            dim_error = 1;
-        }
-    }
-    if (ndim == 2) {
-        if ((dims[0] != nrows) || (dims[1] != ncols)) {
-            dim_error = 1;
-        }
-    }
-    if (dim_error) {
-        char *b = "";
-        if (global_params.jac_type == 4) {
-            b = "banded ";
-        }
+    if (PyArray_Size((PyObject *)result_array) != *n) {
         PyErr_Format(PyExc_RuntimeError,
-            "Expected a %sJacobian array with shape (%d, %d)",
-            b, nrows, ncols);
-        *n = -1;
+            "The size of the array returned by func (%ld) does not match "
+            "the size of y0 (%d).",
+            PyArray_Size((PyObject *)result_array), *n);
         Py_DECREF(result_array);
-        return -1;
+        Py_DECREF(result);
+        *n = -1;
+        return;
     }
 
-    /*
-     *  global_params.jac_type is either 1 (full Jacobian) or 4 (banded Jacobian).
-     *  global_params.jac_transpose is !col_deriv, so if global_params.jac_transpose
-     *  is 0, the array created by the user is already in Fortran order, and
-     *  a transpose is not needed when it is copied to pd.
-     */
-
-    if ((global_params.jac_type == 1) && !global_params.jac_transpose) {
-        /* Full Jacobian, no transpose needed, so we can use memcpy. */
-        memcpy(pd, PyArray_DATA(result_array), (*n)*(*nrowpd)*sizeof(double));
-    }
-    else {
-        /*
-         *  global_params.jac_type == 4 (banded Jacobian), or
-         *  global_params.jac_type == 1 and global_params.jac_transpose == 1.
-         *
-         *  We can't use memcpy when global_params.jac_type is 4 because the leading
-         *  dimension of pd doesn't necessarily equal the number of rows of the
-         *  matrix.
-         */
-        npy_intp m;  /* Number of rows in the (full or packed banded) Jacobian. */
-        if (global_params.jac_type == 4) {
-            m = *ml + *mu + 1;
-        }
-        else {
-            m = *n;
-        }
-        copy_array_to_fortran(pd, *nrowpd, m, *n,
-            (double *) PyArray_DATA(result_array),
-            !global_params.jac_transpose);
+    // Copy result to output array - manual loop instead of memcpy
+    double *result_data = (double*)PyArray_DATA(result_array);
+    for (int i = 0; i < *n; i++) {
+        ydot[i] = result_data[i];
     }
 
     Py_DECREF(result_array);
+    Py_DECREF(result);
+}
+
+
+static void
+ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, int *nrowpd)
+{
+    if (!current_odepack_callback || !current_odepack_callback->jac_function) {
+        *n = -1;
+        return;
+    }
+
+    npy_intp dims[1] = {*n};
+
+    // Create a PyCapsule to manage the data lifetime
+    PyObject *capsule = PyCapsule_New((void*)y, NULL, NULL);
+    if (!capsule) {
+        *n = -1;
+        return;
+    }
+
+    PyObject* py_y = PyArray_SimpleNewFromData(1, dims, NPY_FLOAT64, (void*)y);
+    if (!py_y) {
+        Py_DECREF(capsule);
+        *n = -1;
+        return;
+    }
+
+    if (PyArray_SetBaseObject((PyArrayObject*)py_y, capsule) < 0) {
+        Py_DECREF(py_y);
+        *n = -1;
+        return;
+    }
+
+    PyObject *jac_args_tuple;
+    if (current_odepack_callback->tfirst == 0) {
+        // Standard ODEPACK order: (y, t, *extra_args)
+        if (current_odepack_callback->func_args) {
+            // There are extra arguments
+            Py_ssize_t extra_size = PyTuple_Size(current_odepack_callback->func_args);
+            jac_args_tuple = PyTuple_New(2 + extra_size);
+            if (!jac_args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(jac_args_tuple, 0, py_y);
+            PyTuple_SetItem(jac_args_tuple, 1, PyFloat_FromDouble(*t));
+            // Copy extra arguments
+            for (Py_ssize_t i = 0; i < extra_size; i++) {
+                PyObject *item = PyTuple_GetItem(current_odepack_callback->func_args, i);
+                Py_INCREF(item);
+                PyTuple_SetItem(jac_args_tuple, 2 + i, item);
+            }
+        } else {
+            // No extra arguments
+            jac_args_tuple = PyTuple_New(2);
+            if (!jac_args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(jac_args_tuple, 0, py_y);
+            PyTuple_SetItem(jac_args_tuple, 1, PyFloat_FromDouble(*t));
+        }
+    } else {
+        // Alternative order: (t, y, *extra_args)
+        if (current_odepack_callback->func_args) {
+            // There are extra arguments
+            Py_ssize_t extra_size = PyTuple_Size(current_odepack_callback->func_args);
+            jac_args_tuple = PyTuple_New(2 + extra_size);
+            if (!jac_args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(jac_args_tuple, 0, PyFloat_FromDouble(*t));
+            PyTuple_SetItem(jac_args_tuple, 1, py_y);
+            // Copy extra arguments
+            for (Py_ssize_t i = 0; i < extra_size; i++) {
+                PyObject *item = PyTuple_GetItem(current_odepack_callback->func_args, i);
+                Py_INCREF(item);
+                PyTuple_SetItem(jac_args_tuple, 2 + i, item);
+            }
+        } else {
+            // No extra arguments
+            jac_args_tuple = PyTuple_New(2);
+            if (!jac_args_tuple) {
+                *n = -1;
+                return;
+            }
+            PyTuple_SetItem(jac_args_tuple, 0, PyFloat_FromDouble(*t));
+            PyTuple_SetItem(jac_args_tuple, 1, py_y);
+        }
+    }
+
+    // Call Python Jacobian function
+    PyObject *result = PyObject_CallObject(current_odepack_callback->jac_function, jac_args_tuple);
+    Py_DECREF(jac_args_tuple);
+    if (!result) {
+        *n = -1;
+        return;
+    }
+
+    PyArrayObject *result_array = (PyArrayObject*)PyArray_FROM_OTF(result, NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
+    if (!result_array) {
+        Py_DECREF(result);
+        *n = -1;
+        return;
+    }
+
+    // Calculate expected dimensions based on Jacobian type
+    npy_intp expected_nrows, expected_ncols;
+    expected_ncols = *n;
+    if (current_odepack_callback->jac_type == 4) {
+        // Banded Jacobian
+        expected_nrows = *ml + *mu + 1;
+    } else {
+        // Full Jacobian
+        expected_nrows = *n;
+    }
+
+    // Handle transpose case
+    if (!current_odepack_callback->jac_transpose) {
+        npy_intp tmp = expected_nrows;
+        expected_nrows = expected_ncols;
+        expected_ncols = tmp;
+    }
+
+    // Validate result dimensions
+    npy_intp ndim = PyArray_NDIM(result_array);
+    if (ndim > 2) {
+        PyErr_Format(PyExc_RuntimeError,
+            "The Jacobian array must be two dimensional, but got ndim=%ld.", ndim);
+        Py_DECREF(result_array);
+        Py_DECREF(result);
+        *n = -1;
+        return;
+    }
+
+    npy_intp *dims_result = PyArray_DIMS(result_array);
+    int dim_error = 0;
+    if (ndim == 0) {
+        if ((expected_nrows != 1) || (expected_ncols != 1)) {
+            dim_error = 1;
+        }
+    } else if (ndim == 1) {
+        if ((expected_nrows != 1) || (dims_result[0] != expected_ncols)) {
+            dim_error = 1;
+        }
+    } else if (ndim == 2) {
+        if ((dims_result[0] != expected_nrows) || (dims_result[1] != expected_ncols)) {
+            dim_error = 1;
+        }
+    }
+
+    if (dim_error) {
+        const char *jac_type_str = (current_odepack_callback->jac_type == 4) ? "banded " : "";
+        PyErr_Format(PyExc_RuntimeError,
+            "Expected a %sJacobian array with shape (%ld, %ld), but got (%ld, %ld)",
+            jac_type_str, expected_nrows, expected_ncols,
+            (ndim >= 1) ? dims_result[0] : 1,
+            (ndim >= 2) ? dims_result[1] : ((ndim == 1) ? dims_result[0] : 1));
+        Py_DECREF(result_array);
+        Py_DECREF(result);
+        *n = -1;
+        return;
+    }
+
+    // Copy result to output array with proper layout handling
+    if ((current_odepack_callback->jac_type == 1) && !current_odepack_callback->jac_transpose) {
+        // Full Jacobian, no transpose needed, use manual loop
+        double *src_data = (double*)PyArray_DATA(result_array);
+        for (ssize_t i = 0; i < (*n) * (*nrowpd); i++) {
+            pd[i] = src_data[i];
+        }
+    } else {
+        // Need to copy with proper Fortran layout
+        npy_intp m = (current_odepack_callback->jac_type == 4) ? (*ml + *mu + 1) : *n;
+        copy_array_to_fortran(pd, *nrowpd, m, *n,
+                             (double*)PyArray_DATA(result_array),
+                             !current_odepack_callback->jac_transpose);
+    }
+
+    Py_DECREF(result_array);
+    Py_DECREF(result);
+}
+
+// ================================================================================
+
+
+static int
+setup_odepack_callback(odepack_callback_t *callback,
+                       PyObject *ode_func, PyObject *jac_func, PyObject *extra_args,
+                       int jac_transpose, int jac_type, int tfirst)
+{
+    // Initialize callback structure
+    callback->ode_function = ode_func;
+    callback->jac_function = jac_func;
+    callback->jac_transpose = jac_transpose;
+    callback->jac_type = jac_type;
+    callback->tfirst = tfirst;
+    callback->func_args = NULL;
+
+    // Increment reference counts for Python objects
+    if (ode_func) {
+        Py_INCREF(ode_func);
+    }
+    if (jac_func && jac_func != Py_None) {
+        Py_INCREF(jac_func);
+    }
+
+    /*
+     *
+     * Both ode_function and jac_function will be called with:
+     *   - tfirst=0: f = func(y, t, *extra_args)
+     *   - tfirst=1: f = func(t, y, *extra_args)
+     *
+     */
+    if (extra_args && PyTuple_Check(extra_args)) {
+        Py_INCREF(extra_args);
+        callback->func_args = extra_args;
+    } else {
+        // No extra arguments - leave as NULL
+        callback->func_args = NULL;
+    }
+
     return 0;
 }
+
+// Clean up callback
+static void
+cleanup_odepack_callback(odepack_callback_t *callback)
+{
+    if (callback->func_args) {
+        Py_DECREF(callback->func_args);
+        callback->func_args = NULL;
+    }
+
+    if (callback->ode_function) {
+        Py_DECREF(callback->ode_function);
+        callback->ode_function = NULL;
+    }
+
+    if (callback->jac_function && callback->jac_function != Py_None) {
+        Py_DECREF(callback->jac_function);
+        callback->jac_function = NULL;
+    }
+}
+
+// Activate callback for use in thunks - sets thread-local storage
+static void
+activate_odepack_callback(odepack_callback_t *callback) { current_odepack_callback = callback; }
+
+
+static void
+deactivate_odepack_callback(void) { current_odepack_callback = NULL; }
+
+// ================================================================================
 
 
 int
@@ -443,10 +540,10 @@ fail:       /* Needed for use of PYERR */
 
 
 int
-compute_lrw_liw(F_INT *lrw, F_INT *liw, F_INT neq, F_INT jt, F_INT ml, F_INT mu,
-                F_INT mxordn, F_INT mxords)
+compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
+                int mxordn, int mxords)
 {
-    F_INT lrn, lrs, nyh, lmat;
+    int lrn, lrs, nyh, lmat;
 
     if (jt == 1 || jt == 2) {
         lmat = neq*neq + 2;
@@ -477,11 +574,6 @@ fail:
     return -1;
 }
 
-static char doc_odeint[] =
-    "[y,{infodict,}istate] = odeint(fun, y0, t, args=(), Dfun=None, "
-    "col_deriv=0, ml=, mu=, full_output=0, rtol=, atol=, tcrit=, h0=0.0, "
-    "hmax=0.0, hmin=0.0, ixpr=0.0, mxstep=0.0, mxhnil=0, mxordn=0, "
-    "mxords=0)\n  yprime = fun(y,t,...)";
 
 
 static PyObject *
@@ -493,7 +585,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     PyArrayObject *ap_tout = NULL;
     PyObject *extra_args = NULL;
     PyObject *Dfun = Py_None;
-    F_INT neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
+    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     long ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
@@ -510,11 +602,12 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     long t0count;
     double *yout, *yout_ptr, *tout_ptr, *tcrit = NULL;
     double *wa;
+    odepack_callback_t callback;  /* Stack-allocated callback structure */
     static char *kwlist[] = {"fun", "y0", "t", "args", "Dfun", "col_deriv",
                              "ml", "mu", "full_output", "rtol", "atol", "tcrit",
                              "h0", "hmax", "hmin", "ixpr", "mxstep", "mxhnil",
                              "mxordn", "mxords", "tfirst", NULL};
-    odepack_params save_params;
+
 
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOllllOOOdddllllll", kwlist,
                                      &fcn, &y0, &p_tout, &extra_args, &Dfun,
@@ -551,8 +644,8 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         mu = 0;
     }
 
-    /* Stash the current global_params in save_params. */
-    memcpy(&save_params, &global_params, sizeof(save_params));
+    /* Setup modern callback infrastructure to replace global variables */
+    memset(&callback, 0, sizeof(odepack_callback_t));
 
     if (extra_args == NULL) {
         if ((extra_args = PyTuple_New(0)) == NULL) {
@@ -569,13 +662,11 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         PYERR(odepack_error, "The function and its Jacobian must be callable functions.");
     }
 
-    /* Set global_params from the function arguments. */
-    global_params.python_function = fcn;
-    global_params.extra_arguments = extra_args;
-    global_params.python_jacobian = Dfun;
-    global_params.jac_transpose = !(col_deriv);
-    global_params.jac_type = jt;
-    global_params.tfirst = tfirst;
+    /* Initialize modern callback structure */
+    if (setup_odepack_callback(&callback, fcn, Dfun, extra_args,
+                               !(col_deriv), jt, tfirst) < 0) {
+        PYERR(odepack_error, "Failed to setup callback infrastructure.");
+    }
 
     /* Initial input vector */
     ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
@@ -623,7 +714,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     /* Copy initial vector into first row(s) of output */
     yout_ptr = yout;
     for (k = 0; k < t0count; ++k) {
-        memcpy(yout_ptr, y, neq*sizeof(double));
+        for (int i = 0; i < neq; i++) {
+            yout_ptr[i] = y[i];
+        }
         yout_ptr += neq;
     }
 
@@ -640,13 +733,13 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         goto fail;
     }
 
-    if ((wa = (double *)malloc(lrw*sizeof(double) + liw*sizeof(F_INT)))==NULL) {
+    if ((wa = (double *)calloc(lrw*sizeof(double) + liw*sizeof(int), 1))==NULL) {
         PyErr_NoMemory();
         goto fail;
     }
     allocated = 1;
     rwork = wa;
-    iwork = (F_INT *)(wa + lrw);
+    iwork = (int *)(wa + lrw);
 
     iwork[0] = ml;
     iwork[1] = mu;
@@ -673,11 +766,11 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         ap_tcur = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
         ap_tolsf = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
         ap_tsw = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_DOUBLE);
-        ap_nst = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, F_INT_NPY);
-        ap_nfe = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, F_INT_NPY);
-        ap_nje = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, F_INT_NPY);
-        ap_nqu = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, F_INT_NPY);
-        ap_mused = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, F_INT_NPY);
+        ap_nst = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
+        ap_nfe = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
+        ap_nje = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
+        ap_nqu = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
+        ap_mused = (PyArrayObject *) PyArray_SimpleNew(1, &out_sz, NPY_INT);
         if (ap_hu == NULL || ap_tcur == NULL || ap_tolsf == NULL ||
                 ap_tsw == NULL || ap_nst == NULL || ap_nfe == NULL ||
                 ap_nje == NULL || ap_nqu == NULL || ap_mused == NULL) {
@@ -691,6 +784,10 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         tcrit = (double *)(PyArray_DATA(ap_tcrit));
         rwork[0] = *tcrit;
     }
+
+    /* Activate modern callback infrastructure for thread-safe operation */
+    activate_odepack_callback(&callback);
+
     while (k < ntimes && istate > 0) {    /* loop over desired times */
 
         tout_ptr = tout + k;
@@ -708,18 +805,18 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             itask = 1;  /* No more critical values */
         }
 
-        LSODA(ode_function, &neq, y, &t, tout_ptr, &itol, rtol, atol, &itask,
-              &istate, &iopt, rwork, &lrw, iwork, &liw,
-              ode_jacobian_function, &jt);
+        lsoda(ode_function_thunk, neq, y, &t, tout_ptr, itol, rtol, atol, &itask,
+              &istate, &iopt, rwork, lrw, iwork, liw,
+              ode_jacobian_thunk, (const int)jt);
         if (full_output) {
             *((double *)PyArray_DATA(ap_hu) + (k-1)) = rwork[10];
             *((double *)PyArray_DATA(ap_tcur) + (k-1)) = rwork[12];
             *((double *)PyArray_DATA(ap_tolsf) + (k-1)) = rwork[13];
             *((double *)PyArray_DATA(ap_tsw) + (k-1)) = rwork[14];
-            *((F_INT *)PyArray_DATA(ap_nst) + (k-1)) = iwork[10];
-            *((F_INT *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
-            *((F_INT *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
-            *((F_INT *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
+            *((int *)PyArray_DATA(ap_nst) + (k-1)) = iwork[10];
+            *((int *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
+            *((int *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
+            *((int *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
             if (istate == -5 || istate == -4) {
                 imxer = iwork[15];
             }
@@ -728,18 +825,22 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             }
             lenrw = iwork[16];
             leniw = iwork[17];
-            *((F_INT *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
+            *((int *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
         }
         if (PyErr_Occurred()) {
             goto fail;
         }
-        memcpy(yout_ptr, y, neq*sizeof(double));  /* copy integration result to output*/
+        /* copy integration result to output - manual loop instead of memcpy */
+        for (int i = 0; i < neq; i++) {
+            yout_ptr[i] = y[i];
+        }
         yout_ptr += neq;
         k++;
     }
 
-    /* Restore global_params from the previously stashed save_params. */
-    memcpy(&global_params, &save_params, sizeof(save_params));
+    /* Deactivate callback infrastructure and clean up */
+    deactivate_odepack_callback();
+    cleanup_odepack_callback(&callback);
 
     Py_DECREF(extra_args);
     Py_DECREF(ap_atol);
@@ -772,8 +873,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     }
 
 fail:
-    /* Restore global_params from the previously stashed save_params. */
-    memcpy(&global_params, &save_params, sizeof(save_params));
+    /* Clean up modern callback infrastructure */
+    deactivate_odepack_callback();
+    cleanup_odepack_callback(&callback);
 
     Py_XDECREF(extra_args);
     Py_XDECREF(ap_y);
@@ -800,50 +902,55 @@ fail:
 }
 
 
-static struct PyMethodDef odepack_module_methods[] = {
+static struct PyMethodDef odepacklib_module_methods[] = {
     {"odeint", (PyCFunction) odepack_odeint, METH_VARARGS|METH_KEYWORDS, doc_odeint},
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_odepack",
-    NULL,
-    -1,
-    odepack_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+
+static int
+odepacklib_module_exec(PyObject *module)
+{
+    if (_import_array() < 0) { return -1; }
+
+    odepack_error = PyErr_NewException("_odepack.error", NULL, NULL);
+    if (odepack_error == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", odepack_error) < 0) {
+        Py_DECREF(odepack_error);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot odepacklib_module_slots[] = {
+    {Py_mod_exec, odepacklib_module_exec},
+#if PY_VERSION_HEX >= 0x030c00f0  // Python 3.12+
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#endif
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct
+PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_odepack",
+    .m_size = 0,
+    .m_methods = odepacklib_module_methods,
+    .m_slots = odepacklib_module_slots,
+};
+
 
 PyMODINIT_FUNC
 PyInit__odepack(void)
 {
-    PyObject *module, *mdict;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-    odepack_error = PyErr_NewException("_odepack.error", NULL, NULL);
-    if (odepack_error == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(mdict, "error", odepack_error)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
