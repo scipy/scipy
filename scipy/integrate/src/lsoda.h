@@ -1,6 +1,8 @@
 #ifndef __LSODA_H
 #define __LSODA_H
 
+#include <math.h>
+#include "blaslapack_declarations.h"
 
 typedef struct {
     /*
@@ -25,5 +27,25 @@ typedef struct {
 typedef void (*lsoda_func_t)(int* neq, double* t, double* y, double* ydot);
 typedef void (*lsoda_jac_t)(int* neq, double* t, double* y, int* ml, int* mu, double* pd, int* nrowpd);
 
+
+void lsoda(
+    lsoda_func_t f,
+    int neq,
+    double* restrict y,
+    double* t,
+    double* tout,
+    int itol,
+    double* rtol,
+    double* atol,
+    int* itask,
+    int* istate,
+    int* iopt,
+    double* restrict rwork,
+    int lrw,
+    int* restrict iwork,
+    int liw,
+    lsoda_jac_t jac,
+    const int jt
+);
 
 #endif
