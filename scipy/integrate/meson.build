@@ -36,6 +36,11 @@ mach_lib = static_library('mach_lib',
   gnu_symbol_visibility: 'hidden',
 )
 
+clsoda_lib = static_library('clsoda_lib',
+  'src/lsoda.c',
+  c_args: ['-Wall', '-Wextra', '-Wpedantic']
+)
+
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
   fortran_args: fortran_ignore_warnings,
@@ -63,12 +68,10 @@ py3.extension_module('_quadpack',
 
 py3.extension_module('_odepack',
   '_odepackmodule.c',
-  fortran_args: fortran_ignore_warnings,
-  link_with: [lsoda_lib, mach_lib],
+  link_with: [clsoda_lib],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
