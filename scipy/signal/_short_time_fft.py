@@ -419,7 +419,7 @@ class ShortTimeFFT:
     # (initialized with invalid parameters; should only be accessed by atomic
     # read/writes to alleviate potential multithreading issues):
     _cache_post_padding: tuple[int, tuple[int, int]] = -1, (0, 0)
-    _cache_upper_borde_begin: tuple[int, tuple[int, int]] = -1, (0, 0)
+    _cache_upper_border_begin: tuple[int, tuple[int, int]] = -1, (0, 0)
     _cache_t: tuple[tuple[int, int | None, int | None, int, float], np.ndarray] = \
         (-1, None, None, 0, 0.), np.ndarray([])
     _cache_f: tuple[tuple[FFT_MODE_TYPE, int, float], np.ndarray] = \
@@ -1855,7 +1855,7 @@ class ShortTimeFFT:
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
-        last_arg, last_return_value = self._cache_upper_borde_begin
+        last_arg, last_return_value = self._cache_upper_border_begin
         if n == last_arg:  # use cached value:
             return last_return_value
         w2 = self.win.real**2 + self.win.imag**2
@@ -1866,7 +1866,7 @@ class ShortTimeFFT:
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
             if k_ <= n or all(w2[n-k_:] == 0):
                 return_value = (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
-                self. _cache_upper_borde_begin = n, return_value
+                self. _cache_upper_border_begin = n, return_value
                 return return_value
         # make linter happy:
         raise RuntimeError("This code line should never run! Please file a bug.")
