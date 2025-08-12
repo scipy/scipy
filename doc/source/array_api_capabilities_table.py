@@ -120,6 +120,7 @@ class ArrayAPISupportPerFunction(SphinxDirective):
 
         new_rows = []
         S = BackendSupportStatus
+        missing_xp_capabilities = False
         for row in relevant_rows:
             func = row["function"]
             new_row = [self._get_generated_doc_link_for_function(module, func)]
@@ -132,6 +133,8 @@ class ArrayAPISupportPerFunction(SphinxDirective):
                     cell_text = "✔️"
                 elif supported == S.NO:
                     cell_text = "✖"
+                else:
+                    missing_xp_capabilities = True
                 new_row.append(cell_text)
             new_rows.append(new_row)
         table_nodes = _make_reST_table(new_rows, headers, self.state)
@@ -141,7 +144,10 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         legend += nodes.paragraph(text="✔️ = supported")
         legend += nodes.paragraph(text="✖ = unsupported")
         legend += nodes.paragraph(text="N/A = out-of-scope")
-        legend += nodes.paragraph(text="blank = not currently documented")
+        if missing_xp_capabilities:
+            # Only include blank in the legend if there are actually functions
+            # missing the xp_capabilities decorator.
+            legend += nodes.paragraph(text="blank = not currently documented")
         return [legend] + table_nodes
 
 def setup(app: Sphinx) -> ExtensionMetadata:
