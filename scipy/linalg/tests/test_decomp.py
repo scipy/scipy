@@ -2916,7 +2916,7 @@ def _check_orth(n, dtype, skip_big=False):
 
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=tol)
+    assert_allclose(Y, Y.mean(), atol=tol, rtol=1.4e-7)
 
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))

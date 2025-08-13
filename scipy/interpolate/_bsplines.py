@@ -357,7 +357,7 @@ class BSpline:
         xp = array_namespace(t)
         t = np.asarray(t)
         k = t.shape[0] - 2
-        t = _as_float_array(t)
+        t = _as_float_array(t)  # TODO: use concat_1d instead of np.r_
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
         c[k] = 1.
@@ -1796,6 +1796,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     does not matter as long as the corresponding weight is zero.)
 
     """
+    xp = array_namespace(x, y, t, w)
+
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
@@ -1890,6 +1892,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
@@ -2319,6 +2322,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
+    xp = array_namespace(x, y)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -2418,6 +2422,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (t[-4] - t[-6]) + cm1,
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
+    t, c_ = xp.asarray(t), xp.asarray(c_)
     return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 

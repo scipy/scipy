@@ -973,14 +973,26 @@ const char *ellipeinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The elliptic integral of the second kind can be used to find the circumference of an
+    ellipse with semi-major axis ``a`` and semi-minor axis ``b``.
+
+    >>> import numpy as np
+    >>> from scipy.special import ellipeinc
+    >>> a, b = 3.5, 2.1
+    >>> e = np.sqrt(1.0 - b**2/a**2)  # eccentricity
+    >>> 4*a*ellipeinc(np.pi/2, e**2)
+    np.float64(17.86889920437869)
     )";
 
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobian elliptic functions
+    Jacobi elliptic functions
 
-    Calculates the Jacobian elliptic functions of parameter `m` between
+    Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
 
     Parameters
@@ -5025,6 +5037,29 @@ const char *loggamma_doc = R"(
     .. [hare1997] D.E.G. Hare,
       *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import loggamma, gamma
+
+    >>> z = 1.5 + 2j
+    >>> loggamma(z)
+    np.complex128(-1.4991963725850939+0.7332806816909994j)
+
+    Verify :math:`\exp(\log \Gamma(z)) = \Gamma(z)`:
+
+    >>> np.exp(loggamma(z))
+    np.complex128(0.165915108938991+0.14946347326641998j)
+    >>> gamma(z)
+    np.complex128(0.165915108938991+0.14946347326641998j)
+
+    Verify the recurrence :math:`\log \Gamma(z+1) = \log(z) + \log \Gamma(z)`:
+
+    >>> loggamma(z + 1)
+    np.complex128(-0.5829056407109388+1.6605758996926108j)
+    >>> np.log(z) + loggamma(z)
+    np.complex128(-0.5829056407109388+1.6605758996926117j)
     )";
 
 const char *logit_doc = R"(

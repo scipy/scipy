@@ -63,7 +63,7 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
-def solve(a, b,lower=False, overwrite_a=False,
+def solve(a, b, lower=None, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
@@ -178,6 +178,8 @@ def solve(a, b,lower=False, overwrite_a=False,
         'sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded'
     ]:
         # TODO: handle these structures in this function
+        if lower is None:
+            lower = False
         return solve0(
             a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
             check_finite=check_finite, assume_a=assume_a, transposed=transposed
@@ -196,6 +198,15 @@ def solve(a, b,lower=False, overwrite_a=False,
     }.get(assume_a, 'unknown')
     if structure == 'unknown':
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
+
+    if (
+        (assume_a == 'pos upper' and lower is True) or
+        (assume_a == 'pos lower' and lower is False)
+    ):
+        raise ValueError(f"Conflicting {assume_a = } and {lower = }.")
+
+    if lower is None:
+        lower = False
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
@@ -248,7 +259,7 @@ def solve(a, b,lower=False, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    result = _batched_linalg._solve(a1, b1, structure, transposed)
+    result = _batched_linalg._solve(a1, b1, structure, lower, transposed)
     x, is_ill_cond, is_singular, info = result
 
     if info < 0:
