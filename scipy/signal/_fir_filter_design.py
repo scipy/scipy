@@ -16,8 +16,8 @@ from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
 import scipy._lib.array_api_extra as xpx
 
 
-__all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'firwin_2d', 'remez', 'firls', 'minimum_phase']
+__all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord', 'firwin', 'firwin2',
+           'firwin_2d', 'remez', 'remezord','firls', 'minimum_phase']
 
 
 # Some notes on function parameters:
@@ -271,13 +271,13 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         Nyquist frequency.
     cutoff : float or 1-D array_like
         Cutoff frequency of filter (expressed in the same units as `fs`)
-        OR an array of cutoff frequencies (that is, band edges). In the 
-        former case, as a float, the cutoff frequency should correspond 
-        with the half-amplitude point, where the attenuation will be -6dB. 
-        In the latter case, the frequencies in `cutoff` should be positive 
-        and monotonically increasing between 0 and `fs/2`. The values 0 
-        and `fs/2` must not be included in `cutoff`. It should be noted 
-        that this is different than the behavior of `scipy.signal.iirdesign`, 
+        OR an array of cutoff frequencies (that is, band edges). In the
+        former case, as a float, the cutoff frequency should correspond
+        with the half-amplitude point, where the attenuation will be -6dB.
+        In the latter case, the frequencies in `cutoff` should be positive
+        and monotonically increasing between 0 and `fs/2`. The values 0
+        and `fs/2` must not be included in `cutoff`. It should be noted
+        that this is different than the behavior of `scipy.signal.iirdesign`,
         where the cutoff is the half-power point (-3dB).
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
@@ -735,6 +735,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     firwin
     firwin2
     minimum_phase
+    remezord
 
     References
     ----------
@@ -855,6 +856,316 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     result = _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
                               maxiter, grid_density)
     return xp.asarray(result)
+
+
+def _remlplen_herrmann(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Herrmann et al.:
+    """
+
+    dF = fs - fp
+    a = [5.309e-3, 7.114e-2, -4.761e-1, -2.66e-3, -5.941e-1, -4.278e-1]
+    b = [11.01217, 0.51244]
+    Dinf = (
+        np.log10(ds) * (a[0] * np.log10(dp) ** 2 + a[1] * np.log10(dp) + a[2])
+        + a[3] * np.log10(dp) ** 2
+        + a[4] * np.log10(dp)
+        + a[5]
+    )
+    f = b[0] + b[1] * (np.log10(dp) - np.log10(ds))
+    N1 = Dinf / dF - f * dF + 1
+
+    # Return the nearest odd integer from N1.
+    return int(N1 - np.mod(N1, 2) + 1)
+
+
+def _remlplen_kaiser(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Kaiser:
+    """
+
+    dF = fs - fp
+    N2 = (-20 * np.log10(np.sqrt(dp * ds)) - 13.0) / (14.6 * dF) + 1.0
+
+    # Return the smallest odd integer not less than N2.
+    return int((N2+1) - np.mod((N2+1), 2) + 1)
+
+
+def _remlplen_ichige(fp, fs, dp, ds):
+    """
+    Determine the length of the low pass filter with passband frequency
+    fp, stopband frequency fs, passband ripple dp, and stopband ripple ds.
+    fp and fs must be normalized with respect to the sampling frequency.
+    Note that the filter order is one less than the filter length.
+
+    Uses approximation algorithm described by Ichige et al.
+    """
+    dF = fs - fp
+
+    def v(dF, dp):
+        return 2.325 * ((-np.log10(dp)) ** -0.445) * dF ** (-1.39)
+
+    def arctan_g(fp, dF, d):
+        return (2.0 / np.pi) * np.arctan(
+            v(dF, dp) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
+    def arctan_h(fp, dF, c):
+        return (2.0 / np.pi) * np.arctan(
+            (c / dF) * (1.0 / fp - 1.0 / (0.5 - dF))
+        )
+
+    Nc = ceil(1.0 + (1.101 / dF) * (-np.log10(2.0 * dp)) ** 1.1)
+    Nm = (0.52 / dF) * np.log10(dp / ds) * (-np.log10(dp)) ** 0.17
+    N3 = ceil(
+        Nc
+        * (arctan_g(fp, dF, dp) + arctan_g(0.5 - dF - fp, dF, dp) + 1.0)
+        / 3.0
+    )
+    DN = ceil(
+        Nm
+        * (
+            arctan_h(fp, dF, 1.1)
+            - (arctan_h(0.5 - dF - fp, dF, 0.29) - 1.0) / 2.0
+        )
+    )
+    N4 = N3 + DN
+
+    return int(N4)
+
+
+def remezord(band_edges, gains, tols, *, fs=1.0, alg="ichige"):
+    """Filter parameter selection for the Remez exchange algorithm.
+
+    Calculate the parameters required by the Remez exchange algorithm to construct a
+    finite impulse response (FIR) filter that approximately meets the specified design
+    of gains and tolerances for a given number of frequency bands.
+
+    Parameters
+    ----------
+    band_edges : array_like
+        A monotonic sequence of non-negative frequency band edges.
+        All elements must be less than half the sampling frequency `fs`.
+    gains : array_like
+        A sequence of non-negative numbers representing the desired gains for each
+        frequency band. For frequency bands to be valid, the condition
+        ``len(band_edges) == 2*(len(gains)-1)`` must hold.
+    tols : array_like
+        A sequence of non-negative numbers specifying the tolerance, i.e., the maximum
+        allowable deviation from each gain, in each frequency band. Note that
+        ``len(tols) == len(gains)`` must hold.
+    fs : float, optional
+        The sampling frequency of the signal. Defaults to 1.0
+    alg : {'herrmann', 'kaiser', 'ichige'}, optional
+        Filter length approximation algorithm. Possible algorithms are
+        Herrmann [1]_, Kaiser [2]_, or Ichige [3]_. (Default: ``'ichige'``)
+
+    Returns
+    -------
+    numtaps : int
+        The desired number of taps in the FIR filter.
+    bands : ndarray
+        A monotonic sequence containing the band edges.
+    desired : ndarray
+        A sequence half the size of bands containing the desired gain in each
+        of the specified bands.
+    weight : ndarray
+        A relative weighting to give to each band region.
+
+    Raises
+    ------
+    ValueError:
+        - If any element in `band_edges` is negative, greater than 0.5, or the
+          length is not valid.
+        - If the lengths of `gains` and `tols` are not equal or one more
+          than half the length of `band_edges`.
+        - If any element in `tols` is negative.
+        - If `alg` is not a valid string option.
+
+    See Also
+    --------
+    remez
+
+    Notes
+    -----
+    This function consumes a desired gain with an allowed tolerance (`tols`) for each
+    frequency band to estimate the according parameters for the `remez` function. On
+    the other hand, the `remez` function minimizes a weighted deviation from the
+    desired gain in each frequency band.
+
+    Since this function only provides an estimate of the optimal parameters, i.e.,
+    minimum number of taps, for the `remez` algorithm, varying the those parameters a
+    bit, especially `numtaps`, can improve the results. According to [3]_, Ichige's
+    algorithm typically offers a more accurate estimation than the classical methods
+    from Herrmann and Kaiser. On the other hand, using the 'herrmann' and 'kaiser'
+    methods may result in a lower number of taps than 'ichige', especially for low
+    order filters.
+
+    .. versionadded:: 1.17.0
+
+    References
+    ----------
+    .. [1] O. Herrmann, L.R. Raviner, and D.S.K. Chan, Practical Design Rules
+           for Optimum Finite Impulse Response Low-Pass Digital Filters, Bell
+           Syst. Tech. Jour., 52(6):769-799, Jul./Aug. 1973.
+    .. [2] J.F. Kaiser, Nonrecursive Digital Filter Design Using I_0-sinh
+           Window function, Proc. IEEE Int. Symp. Circuits and Systems, 20-23,
+           April 1974.
+    .. [3] K. Ichige, M. Iwaki, and R. Ishii, Accurate Estimation of Minimum
+           Filter Length for Optimum FIR Digital Filters, IEEE Transactions on
+           Circuits and Systems, 47(10):1008-1017, October 2000.
+
+    Examples
+    --------
+    The first example designs a low-pass filter where the transition region from
+    passband to stopband should be between 500 Hz and 600 Hz. The stopband should be
+    attenuated by at least 40 dB. The passband height should be no greater than 3 dB.
+    The first subplot shows the complete frequency response. The other two suplots are
+    maginfied regions of the first subplot. The white background depicts the allowed
+    tolerance region for the design.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from matplotlib.patches import Polygon
+    >>> from scipy.signal import freqz, remez, remezord
+    ...
+    >>> fs = 2000  # Sampling frequency in Hz
+    >>> rp, rs = 3, 40  # Passband ripple bandwidth and stopband ripple magnitude in dB
+    >>> band_edges, gains = [500, 600], [1, 0]  # Band edges in Hz and desired gain
+    >>> tols = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max. gain deviation
+    ...
+    >>> # design the filter:
+    >>> numtaps, bands, desired, weight = remezord(band_edges, gains, tols, fs=fs)
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)  # frequency response of filter
+    ...
+    >>> # Create polygon depicting the tolerance region of the filter design:
+    >>> f0, f1, f2, f3 = (0, *band_edges, 1000)
+    >>> y0, y1, y2, y3 = 20 * np.log10([1e-10, tols[1], 1 - tols[0], 1 + tols[0]])
+    >>> p_pts = [(f0, y3), (f2, y3), (f2, y1), (f3, y1),  # polygon corners
+    ...          (f3, y0), (f1, y0), (f1, y2), (f0, y2)]
+    ...
+    >>> fig, axx = plt.subplots(3, 1, tight_layout=True, figsize=(5, 5))
+    >>> axx[0].set_title(f"Frequency response of low-pass filter with {numtaps} taps")
+    >>> x_lims = [(f0, f3), (f0, f1+20), (f2-5, f2+70)]
+    >>> y_lims = [(-60, 5), (-3, 3), (-55, -35)]
+    >>> for ax, xl, yl in zip(axx, x_lims, y_lims):
+    ...     ax.set(ylabel="Gain in dB", xlabel="Frequency in Hz", xlim=xl, ylim=yl)
+    ...     ax.add_patch(Polygon(p_pts, color='white'))
+    ...     ax.plot(w, 20 * np.log10(abs(h)))
+    ...     ax.set_facecolor('lightblue')
+    ...     ax.grid()
+    >>> plt.show()
+
+    Note that varying parameters improves the result: Passing ``numtaps=24`` instead of
+    ``numtaps=27`` to `remez` will still produce a filter within specification.
+    Alternatively, passing ``alg='herrmann'`` would have produced a valid filter made up
+    of 25 taps.
+
+    The second example illstrates that the number of taps can also be underestimated by
+    this function: A band-pass filter with a passband from 2 kHz to 5 kHz should be
+    designed. The transition regions are 200 Hz wide and the maximum height of the
+    ripples should be no larger than 1/10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from matplotlib.patches import Polygon
+    >>> from scipy.signal import freqz, remez, remezord
+    ...
+    >>> fs = 22_000  # Sampling frequency in Hz
+    >>> band_edges = [1800, 2000, 5000, 5200]  # Band edges in kHz
+    >>> gains = [0, 1, 0]  # Desired band amplitudes
+    >>> tols = [0.1, 0.1, 0.1]  # Max. allowed gain deviations
+    ...
+    >>> # design the filter:
+    >>> numtaps, bands, desired, weight = remezord(band_edges, gains, tols, fs=fs)
+    >>> taps = remez(numtaps, bands, desired, weight=weight)
+    >>> w, h = freqz(taps, worN=2000, fs=fs)  # frequency response of filter
+    ...
+    >>> # Create polygon depicting the tolerance region of the filter design:
+    >>> f0, f1, f2, f3, f4, f5 = (0, *band_edges, 11_000)
+    >>> y0, y1, y2, y3 = 20 * np.log10([1e-10, 0.1, 0.9, 1.1])
+    >>> p_pts= [(f0, y1), (f1, y1), (f1, y3), (f4, y3), (f4, y1), (f5, y1),
+    ...         (f5, y0), (f3, y0), (f3, y2), (f2, y2), (f2, y0), (f0, y0)]
+    ...
+    >>> fig, axx = plt.subplots(3, 1, tight_layout=True, figsize=(5, 5))
+    >>> axx[0].set_title(f"Frequency response of band-pass filter with {numtaps} taps")
+    >>> x_lims = [(f0, f5), (f1, f4), (f0, f5)]
+    >>> y_lims = [(-25, 2), (-1.5, 1.2), (-22, -18)]
+    >>> for ax, xl, yl in zip(axx, x_lims, y_lims):
+    ...     ax.set(ylabel="Gain in dB", xlabel="Frequency in Hz", xlim=xl, ylim=yl)
+    ...     ax.add_patch(Polygon(p_pts, color='white'))
+    ...     ax.plot(w, 20*np.log10(abs(h)))
+    ...     ax.set_facecolor('lightblue')
+    ...     ax.grid()
+    >>> plt.show()
+
+    Note that `numtaps` can be increased to 87 to obtain a filter within the desired
+    specification.
+
+    """
+    # Make sure the parameters are floating point numpy arrays:
+    band_edges = np.asarray(band_edges, "d")
+    gains = np.asarray(gains, "d")
+    tols = np.asarray(tols, "d")
+
+    # Validate inputs shapes/types
+    if len(gains) != len(tols):
+        raise ValueError(f"{len(gains)=} does not equal {len(tols)=}!")
+    if len(band_edges) != 2 * (len(gains) - 1):
+        raise ValueError(f"{len(band_edges)=} must equal {2*(len(gains)-1)=}!")
+    if alg == "herrmann":
+        remlplen = _remlplen_herrmann
+    elif alg == "kaiser":
+        remlplen = _remlplen_kaiser
+    elif alg == "ichige":
+        remlplen = _remlplen_ichige
+    else:
+        raise ValueError(f"Parameter {alg=} not in ['herrmann' ,'kaiser', 'ichige'].")
+
+    # Scale ripples with respect to band amplitudes:
+    tols /= gains + (gains == 0.0)
+    # Normalize input frequencies with respect to sampling frequency:
+    band_edges /= fs
+
+    # Validate inputs values
+    if np.any(band_edges > 0.5):
+        raise ValueError("Frequency band edges must not exceed the Nyquist "
+                         "frequency.")
+    if np.any(band_edges < 0.0):
+        raise ValueError("Frequency band edges must be nonnegative.")
+    if np.any(tols < 0.0):
+        raise ValueError("Ripples must be nonnegative.")
+
+    # Find the longest filter length needed to implement any of the
+    # low-pass or high-pass filters with the specified edges:
+    f1 = band_edges[0:-1:2]
+    f2 = band_edges[1::2]
+    L = 0
+    for i in range(len(gains) - 1):
+        L = max((L,
+                 remlplen(f1[i], f2[i], tols[i], tols[i + 1]),
+                 remlplen(0.5 - f2[i], 0.5 - f1[i], tols[i + 1], tols[i]),
+                ))
+    # Cap the sequence of band edges with the limits of the digital frequency
+    # range:
+    bands = np.hstack((0.0, band_edges, 0.5))
+
+    # The filter design weights correspond to the ratios between the maximum
+    # ripple and all of the other ripples:
+    weight = max(tols) / tols
+
+    return L, bands, gains, weight
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
@@ -1322,7 +1633,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     filter. The filter is separable with linear phase; it will be designed
     as a product of two 1D filters with dimensions defined by `hsize`.
     Additionally, it can create approximately circularly symmetric 2-D windows.
-    
+
     Parameters
     ----------
     hsize : tuple or list of length 2
@@ -1330,7 +1641,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         number of coefficients in the row direction and `hsize[1]` specifies
         the number of coefficients in the column direction.
     window : tuple or list of length 2 or string
-        Desired window to use for each 1D filter or a single window type 
+        Desired window to use for each 1D filter or a single window type
         for creating circularly symmetric 2-D windows. Each element should be
         a string or tuple of string and parameter values. See
         `~scipy.signal.get_window` for a list of windows and required
@@ -1339,8 +1650,8 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         Cutoff frequency of the filter in the same units as `fs`. This defines
         the frequency at which the filter's gain drops to approximately -6 dB
         (half power) in a low-pass or high-pass filter. For multi-band filters,
-        `fc` can be an array of cutoff frequencies (i.e., band edges) in the 
-        range [0, fs/2], with each band specified in pairs. Required if 
+        `fc` can be an array of cutoff frequencies (i.e., band edges) in the
+        range [0, fs/2], with each band specified in pairs. Required if
         `circular` is False.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.
@@ -1349,17 +1660,17 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
-        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
+        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``.
         If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will
         have gain 0.
-        It can also be a string argument for the desired filter type 
+        It can also be a string argument for the desired filter type
         (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Set to ``True`` to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
-        
+
         - 0 (DC) if the first passband starts at 0 (i.e. pass_zero is ``True``)
         - `fs`/2 (the Nyquist frequency) if the first passband ends at `fs`/2
           (i.e., the filter is a single band highpass filter);
@@ -1438,9 +1749,9 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         if fc is None:
             raise ValueError("Cutoff frequency `fc` must be "
                              "provided when `circular` is True")
-        
+
         n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
-        
+
         win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))

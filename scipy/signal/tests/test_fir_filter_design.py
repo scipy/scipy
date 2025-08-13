@@ -10,8 +10,8 @@ from scipy._lib._array_api import (
     array_namespace, xp_default_dtype
 )
 from scipy.fft import fft, fft2
-from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
-    firwin, firwin2, freqz, remez, firls, minimum_phase, convolve2d, firwin_2d
+from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord, firwin, firwin2,
+    freqz, remez, remezord, firls, minimum_phase, convolve2d, firwin_2d
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -548,6 +548,72 @@ class TestRemez:
         desired = xp.asarray([1.0, 0.0])
         weight = xp.asarray([1.0, 2.0])
         remez(21, bands, desired, weight=weight)
+
+class TestRemezord:
+    """
+    Test examples taken from:
+    http://www.ece.northwestern.edu/local-apps/matlabhelp/toolbox/signal/remezord.html
+
+    with reference values computed in MATLAB.
+    https://github.com/scipy/scipy/pull/20983#discussion_r1649341010
+    """
+
+    def test_bad_args(self):
+        band_edges = np.array([0.1, 0.2, 0.3, 0.4])
+        gains = np.array([40, 50, 60])
+        tols = np.array([3, 4, 5])
+        # Nonexistent algorithm
+        with assert_raises(ValueError):
+            remezord(band_edges, gains, tols, alg="no_alg")
+        # Freq greater than 0.5
+        with assert_raises(ValueError):
+            remezord(band_edges+1, gains, tols)
+        # Negative band_edges
+        with assert_raises(ValueError):
+            remezord(band_edges-1, gains, tols)
+        # Negative tols
+        with assert_raises(ValueError):
+            remezord(band_edges, gains, -tols)
+        # gains length different than tols
+        with assert_raises(ValueError):
+            remezord(band_edges, gains, tols[:2])
+        # Band edges different than 2*len(gains)-1
+        with assert_raises(ValueError):
+            remezord(band_edges[:3], gains, tols)
+
+    @pytest.mark.parametrize('alg, numtaps_expected', [["ichige", 27],
+                                                       ["herrmann", 25],
+                                                       ["kaiser", 23]])
+    def test_remezord_example1(self, alg, numtaps_expected):
+        fs = 2000
+        band_edges = [500, 600]
+        gains = [1, 0]
+        rp, rs = 3, 40
+        tols = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+
+        numtaps, bands, desired, weights = remezord(band_edges, gains, tols, fs=fs,
+                                                    alg=alg)
+
+        assert numtaps == numtaps_expected
+        xp_assert_close(bands, [0, 0.25, 0.3, 0.5])
+        xp_assert_close(desired, [1., 0.])
+        xp_assert_close(weights, [1., 17.09973573])
+
+
+    def test_remezord_example2(self):
+        fs = 8000
+        band_edges = np.array([1500, 2000])
+        gains = np.array([1, 0])
+        tols = [0.01, 0.1]
+        numtaps, bands, desired, weights = remezord(band_edges, gains, tols, fs=fs)
+        assert numtaps == 24
+        xp_assert_close(bands, [0, 0.1875, 0.25, 0.5])
+        xp_assert_close(desired, [1., 0.])
+        xp_assert_close(weights, [10., 1.])
+
+
+
+
 
 
 @skip_xp_backends(cpu_only=True, reason="lstsq")

@@ -115,6 +115,7 @@ Filter design
    savgol_coeffs -- Compute the FIR filter coefficients for a Savitzky-Golay
                     -- filter.
    remez         -- Optimal FIR filter design.
+   remezord      -- Optimal FIR parameter selection.
 
    unique_roots  -- Unique roots and their multiplicities.
    residue       -- Partial fraction expansion of b(s) / a(s).
