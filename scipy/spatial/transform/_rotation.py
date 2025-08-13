@@ -24,7 +24,7 @@ from scipy._lib._util import _transition_to_rng, broadcastable
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def _select_backend(xp: ModuleType, cython_compatible: bool) -> ModuleType:
+def _select_backend(xp: ModuleType, cython_compatible: bool):
     """Select the backend for the given array library.
 
     We need this selection function because the Cython backend for numpy does not

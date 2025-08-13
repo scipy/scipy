@@ -191,10 +191,46 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
     angles = xp_promote(angles, force_floating=True, xp=xp)
-    angles, is_single = _format_angles(angles, degrees, num_axes)
+    if degrees:
+        angles = _deg2rad(angles)
+
+    # Angle formatting requires manual handling of cases because of legacy behavior that
+    # does not follow standard broadcasting rules.
+    #
+    # The broadcasting rule for from_euler could be:
+    # angles.shape[-1] must be num_axes  (maybe promote 0d to 1d)
+    # Resulting shape is angles.shape[:-1] + (4,)
+    #
+    # ----------------------------------------------------------------------------------
+    #
+    # The cases for euler angles are:               New behavior
+    # 0d case:
+    # seq "x", angles () -> q (4,)                  Correct
+    # seq "xyz", angles () -> error                 Correct
+    # 1d case:
+    # seq "x", angles (1,) -> q (1, 4)              Changed, q (4,)
+    # seq "xyz", angles (3,) -> q (4,)              Correct
+    # 2d case:
+    # seq "x", angles (2, 1) -> q (2, 4)            Correct
+    # seq "xyz", angles (2, 3) -> q (2, 4)          Correct
+    # After the 2d case, we follow standard broadcasting rules.
+    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should be
+    # changed to be consistent with broadcasting rules. This would be a breaking change.
+
+    # Handling of legacy behavior cases
+    if num_axes == 1:
+        if angles.ndim == 0:
+            angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+        elif angles.ndim == 1:
+            angles = xpx.atleast_nd(angles, ndim=2, xp=xp)
+    if angles.shape[-1] != num_axes:
+        raise ValueError(
+            "Expected last dimension of `angles` to match number of sequence axes "
+            f"specified, got {angles.shape[-1]}."
+        )
     axes = [_elementary_basis_index(x) for x in seq.lower()]
     q = _elementary_quat_compose(axes, angles, intrinsic)
-    return q[0, ...] if is_single else q
+    return q
 
 
 def from_davenport(
@@ -203,6 +239,7 @@ def from_davenport(
     xp = array_namespace(axes)
     device = xp_device(axes)
     axes = xp_promote(axes, force_floating=True, xp=xp)
+    angles = xp.asarray(angles, dtype=axes.dtype)  # could be a scalar
     if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
         extrinsic = True
     elif order in ["i", "intrinsic"]:
@@ -212,13 +249,16 @@ def from_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/"
             f"'intrinsic' for intrinsic sequences, got {order}"
         )
-    angles = xp.asarray(angles, dtype=axes.dtype)  # could be a scalar
 
-    axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     if axes.shape[-1] != 3:
         raise ValueError("Axes must be vectors of length 3.")
 
-    num_axes = axes.shape[0]
+    original_axes_shape = axes.shape
+    original_angles_shape = angles.shape
+    scalar_angle = angles.ndim == 0
+    axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    num_axes = axes.shape[-2]
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
 
@@ -238,21 +278,67 @@ def from_davenport(
                 axes_not_orthogonal[..., 0],
             )
         )
-    if not is_lazy_array(axes_not_orthogonal) and xp.any(axes_not_orthogonal):
-        raise ValueError("Consecutive axes must be orthogonal.")
+    if not is_lazy_array(axes_not_orthogonal):
+        if xp.any(axes_not_orthogonal):
+            raise ValueError("Consecutive axes must be orthogonal.")
+    else:
+        axes = xp.where(axes_not_orthogonal, xp.nan, axes)
 
-    axes = xp.where(axes_not_orthogonal, xp.nan, axes)
-    angles, single = _format_angles(angles, degrees, num_axes)
+    # angle formatting requires manual handling of cases because of legacy behavior that
+    # does not follow standard broadcasting rules.
+    #
+    # The broadcasting rule for from_davenport could be:
+    # axes atleast 2d, angles atleast 1d
+    # axes.shape[-2] == angles.shape[-1]
+    # np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
+    #
+    # This definition is the same as for euler if we interpret seq as 2D array of axes.
+    #
+    # ----------------------------------------------------------------------------------
+    #
+    # The cases for davenport are                   New behavior
+    #
+    # axes (3,), angles () -> q (4,)                Correct
+    # axes (3,), angles (1,) -> q (1, 4)            Changed, q (4,)
+    # axes (3,), angles (3,) -> q (3, 4)            Raise, 1 != 3
+    # axes (3,), angles (2, 1) -> q (2, 4)          Correct
+    # axes (2, 3), angles (2,) -> q (4,)            Correct
+    # axes (2, 3), angles (2, 1) -> q (2, 4)        Raise, 2 != 1
+    # axes (2, 3), angles (2, 3) -> raises          Correct
+    # axes (1, 3), angles (2, 3) -> q (2, 4)        Raise, 1 != 2
+    #
+    # ----------------------------------------------------------------------------------
+    #
+    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should be
+    # changed to be consistent with broadcasting rules. This would be a breaking change.
+    if degrees:
+        angles = _deg2rad(angles)
 
-    dim_q = (4) if single else (angles.shape[0], 4)
-    q = xp.zeros(dim_q, dtype=angles.dtype, device=xp_device(angles))
+    # Legacy behavior handling
+    if len(original_axes_shape) == 1 and len(original_angles_shape) == 1:
+        angles = angles[..., None]
+
+    if not broadcastable(axes.shape[:-1], angles.shape):
+        raise ValueError(
+            f"Expected number of axes to match number of angles, got {axes.shape[-2]} "
+            f"axes and {angles.shape[-1]} angles."
+        )
+
+    q_shape = angles.shape[:-1] + (4,)
+    q = xp.zeros(q_shape, dtype=angles.dtype, device=xp_device(angles))
     q = xpx.at(q)[..., 3].set(1)
 
-    if not single:
-        angles = angles[..., None]
     for i in range(num_axes):
-        qi = from_rotvec(angles[:, i, ...] * axes[i, :])
+        qi = from_rotvec(angles[..., i, None] * axes[..., i, None, :])
         q = compose_quat(qi, q) if extrinsic else compose_quat(q, qi)
+
+    # Undo shape expansion for 0D angles
+    if scalar_angle:
+        q = q[0, ...]
+    # elif len(original_axes_shape) == 2 and len(original_angles_shape) == 1:
+    #     q = q[0, ...]
+    # TODO: Remove this assert.
+    assert q.shape == q_shape, f"q.shape: {q.shape}, q_shape: {q_shape}"
     return q
 
 
@@ -917,53 +1003,6 @@ def _elementary_basis_index(axis: str) -> int:
     elif axis == "z":
         return 2
     raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
-
-
-def _format_angles(angles: Array, degrees: bool, num_axes: int) -> tuple[Array, bool]:
-    xp = array_namespace(angles)
-    if degrees:
-        angles = _deg2rad(angles)
-
-    is_single = False
-    # Prepare angles to have shape (num_rot, num_axes)
-    if num_axes == 1:
-        if angles.ndim == 0:
-            # (1, 1)
-            angles = xpx.atleast_nd(angles, ndim=2, xp=xp)
-            is_single = True
-        elif angles.ndim == 1:
-            # (N, 1)
-            angles = angles[:, None]
-        elif angles.ndim == 2 and angles.shape[-1] != 1:
-            raise ValueError(
-                f"Expected `angles` parameter to have shape (N, 1), got {angles.shape}."
-            )
-        elif angles.ndim > 2:
-            raise ValueError(
-                "Expected float, 1D array, or 2D array for parameter `angles` "
-                f"corresponding to `seq`, got shape {angles.shape}."
-            )
-    else:  # 2 or 3 axes
-        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-            raise ValueError(
-                "Expected `angles` to be at most 2-dimensional with width equal to "
-                f"number of axes specified, got {angles.shape} for shape"
-            )
-
-        if angles.ndim == 1:
-            # (1, num_axes)
-            angles = angles[None, :]
-            is_single = True
-
-    # By now angles should have shape (num_rot, num_axes)
-    # sanity check
-    if angles.ndim != 2 or angles.shape[-1] != num_axes:
-        raise ValueError(
-            "Expected angles to have shape (num_rotations, num_axes), got "
-            f"{angles.shape}."
-        )
-
-    return angles, is_single
 
 
 def _compute_davenport_from_quat(
