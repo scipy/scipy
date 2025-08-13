@@ -2004,6 +2004,13 @@ def test_slerp_rot_len1(xp):
 
 
 @make_xp_test_case(Slerp.__init__)
+def test_slerp_tensor_rot(xp):
+    r = Rotation.from_quat(xp.ones((2, 2, 4)))
+    with pytest.raises(ValueError, match="Rotations with more than 1 leading"):
+        Slerp([1, 2], r)
+
+
+@make_xp_test_case(Slerp.__init__)
 def test_slerp_time_dim_mismatch(xp):
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):

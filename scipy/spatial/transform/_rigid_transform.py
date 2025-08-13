@@ -529,12 +529,12 @@ class RigidTransform:
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        backend = backend_registry[xp]
-        matrix = backend.from_rotation(quat)
-        if matrix.ndim > 3:  # Rotations now can have arbitrary leading dimensions
+        if quat.ndim > 2:  # Rotations now can have arbitrary leading dimensions
             raise ValueError(
                 "Rotations with more than 1 leading dimension are not supported for now."
             )
+        backend = backend_registry[xp]
+        matrix = backend.from_rotation(quat)
         return cls._from_raw_matrix(matrix, xp, backend)
 
     @classmethod
