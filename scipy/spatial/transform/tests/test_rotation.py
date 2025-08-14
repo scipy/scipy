@@ -727,6 +727,15 @@ def test_from_euler_single_rotation(xp):
 
 
 @make_xp_test_case(Rotation.from_euler)
+def test_from_euler_single_seq_rotation(xp):
+    angles = xp.asarray([0, 90])
+    quat = Rotation.from_euler("X", angles, degrees=True).as_quat()
+    expected_quat = xp.asarray([[0.0, 0, 0, 1], 
+                                [1 / math.sqrt(2), 0, 0, 1 / math.sqrt(2)]])
+    xp_assert_close(quat, expected_quat)
+
+
+@make_xp_test_case(Rotation.from_euler)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_euler_nd_rotation(xp, ndim: int):
     angles = xp.reshape(xp.asarray([0, 0, 90]), (1,) * (ndim - 1) + (3,))

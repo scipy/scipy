@@ -194,35 +194,39 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if degrees:
         angles = _deg2rad(angles)
 
-    # Angle formatting requires manual handling of cases because of legacy behavior that
-    # does not follow standard broadcasting rules.
+    # Angle formatting requires manual handling of cases because of legacy behavior
+    # that does not follow standard broadcasting rules.
     #
-    # The broadcasting rule for from_euler could be:
-    # angles.shape[-1] must be num_axes  (maybe promote 0d to 1d)
+    # The shape rule for from_euler could be:
+    #
+    # promote 0d arrays, floats, ints to 1d (valid for single sequences)
+    # angles.shape[-1] must be num_axes
     # Resulting shape is angles.shape[:-1] + (4,)
     #
-    # ----------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------
     #
-    # The cases for euler angles are:               New behavior
+    # The cases for euler angles are:               Proposed behavior
     # 0d case:
-    # seq "x", angles () -> q (4,)                  Correct
-    # seq "xyz", angles () -> error                 Correct
+    # seq "x", angles () -> q (4,)                  Unchanged
+    # seq "xyz", angles () -> raise                 Unchanged
     # 1d case:
     # seq "x", angles (1,) -> q (1, 4)              Changed, q (4,)
-    # seq "xyz", angles (3,) -> q (4,)              Correct
+    # seq "xyz", angles (3,) -> q (4,)              Unchanged
     # 2d case:
-    # seq "x", angles (2, 1) -> q (2, 4)            Correct
-    # seq "xyz", angles (2, 3) -> q (2, 4)          Correct
+    # seq "x", angles (N, 1) -> q (N, 4)            Unchanged
+    # seq "xyz", angles (N, 3) -> q (N, 4)          Unchanged
     # After the 2d case, we follow standard broadcasting rules.
-    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should be
-    # changed to be consistent with broadcasting rules. This would be a breaking change.
+    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should
+    # be changed to be consistent with broadcasting rules. This would be a breaking
+    # change.
 
     # Handling of legacy behavior cases
     if num_axes == 1:
         if angles.ndim == 0:
             angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
-        elif angles.ndim == 1:
-            angles = xpx.atleast_nd(angles, ndim=2, xp=xp)
+        elif angles.ndim == 1:  # Prevent double promotion of 0d arrays
+            angles = angles[..., None]
+
     if angles.shape[-1] != num_axes:
         raise ValueError(
             "Expected last dimension of `angles` to match number of sequence axes "
@@ -284,44 +288,52 @@ def from_davenport(
     else:
         axes = xp.where(axes_not_orthogonal, xp.nan, axes)
 
-    # angle formatting requires manual handling of cases because of legacy behavior that
-    # does not follow standard broadcasting rules.
+    # angle formatting requires manual handling of cases because of legacy behavior
+    # that does not follow standard broadcasting rules.
     #
-    # The broadcasting rule for from_davenport could be:
-    # axes atleast 2d, angles atleast 1d
-    # axes.shape[-2] == angles.shape[-1]
-    # np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
+    # The shape rule for from_davenport could be:
+    #
+    # promote axes to 2d, promote angles to 1d
+    # axes.shape[-2] must be angles.shape[-1]
+    # Resulting shape is np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
+    #
     #
     # This definition is the same as for euler if we interpret seq as 2D array of axes.
     #
-    # ----------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------
     #
-    # The cases for davenport are                   New behavior
+    # The cases for davenport are                   Proposed behavior
     #
-    # axes (3,), angles () -> q (4,)                Correct
+    # axes (3,), angles () -> q (4,)                Unchanged
     # axes (3,), angles (1,) -> q (1, 4)            Changed, q (4,)
-    # axes (3,), angles (3,) -> q (3, 4)            Raise, 1 != 3
-    # axes (3,), angles (2, 1) -> q (2, 4)          Correct
-    # axes (2, 3), angles (2,) -> q (4,)            Correct
-    # axes (2, 3), angles (2, 1) -> q (2, 4)        Raise, 2 != 1
-    # axes (2, 3), angles (2, 3) -> raises          Correct
-    # axes (1, 3), angles (2, 3) -> q (2, 4)        Raise, 1 != 2
+    # axes (3,), angles (N,) -> q (N, 4)            Changed, raise N != 1
+    # axes (3,), angles (N, 1) -> q (N, 4)          Unchanged
+    # axes (2, 3), angles (2,) -> q (4,)            Unchanged
+    # axes (2, 3), angles (2, 1) -> q (2, 4)        Changed, raise 2 != 1
+    # axes (2, 3), angles (2, 3) -> raise           Unchanged
+    # axes (1, 3), angles (2, 3) -> q (2, 4)        Changed, raise 1 != 3
     #
-    # ----------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------
     #
-    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should be
-    # changed to be consistent with broadcasting rules. This would be a breaking change.
+    # TODO: Discuss with @lucascolley, @crusaderky and @scottshambaugh if this should
+    # be changed to be consistent with broadcasting rules. This would be a breaking
+    # change.
     if degrees:
         angles = _deg2rad(angles)
 
-    # Legacy behavior handling
-    if len(original_axes_shape) == 1 and len(original_angles_shape) == 1:
+    # Legacy behavior handling. TODO: Remove this if we want to change the shape rules.
+    if original_axes_shape == (3,) and len(original_angles_shape) == 1:
+        angles = angles[..., None]
+    elif original_axes_shape == (1, 3) and len(original_angles_shape) == 1:
         angles = angles[..., None]
 
-    if not broadcastable(axes.shape[:-1], angles.shape):
+    if (
+        not broadcastable(axes.shape[:-1], angles.shape)
+        or axes.shape[-2] != angles.shape[-1]
+    ):
         raise ValueError(
-            f"Expected number of axes to match number of angles, got {axes.shape[-2]} "
-            f"axes and {angles.shape[-1]} angles."
+            f"Expected `angles` to match number of axes, got {angles.shape} angles "
+            f"and {axes.shape} axes."
         )
 
     q_shape = angles.shape[:-1] + (4,)
@@ -329,16 +341,8 @@ def from_davenport(
     q = xpx.at(q)[..., 3].set(1)
 
     for i in range(num_axes):
-        qi = from_rotvec(angles[..., i, None] * axes[..., i, None, :])
+        qi = from_rotvec(angles[..., i, None] * axes[..., i, :])
         q = compose_quat(qi, q) if extrinsic else compose_quat(q, qi)
-
-    # Undo shape expansion for 0D angles
-    if scalar_angle:
-        q = q[0, ...]
-    # elif len(original_axes_shape) == 2 and len(original_angles_shape) == 1:
-    #     q = q[0, ...]
-    # TODO: Remove this assert.
-    assert q.shape == q_shape, f"q.shape: {q.shape}, q_shape: {q_shape}"
     return q
 
 
