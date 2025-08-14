@@ -550,7 +550,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
 
 def kron(A, B, format=None):
-    """kronecker product of sparse matrices A and B
+    """Kronecker product of sparse matrices `A` and `B`
 
     Parameters
     ----------
@@ -565,7 +565,7 @@ def kron(A, B, format=None):
     Returns
     -------
     kronecker product in a sparse format.
-    Returns a sparse matrix unless either A or B is a
+    Returns a sparse matrix unless either `A` or `B` is a
     sparse array in which case returns a sparse array.
 
     Examples
