@@ -1905,8 +1905,9 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
     }
     Real guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
     Real factor = 8;                                 // How big steps to take when searching.
-    const std::uintmax_t maxit = 500;            // Limit to maximum iterations.
-    std::uintmax_t it = 0;                // Root finding iteration counter.
+    const std::uintmax_t maxit = boost::math::policies::get_max_root_iterations<SpecialPolicy>();
+    std::uintmax_t it = maxit;                      // Root finding iteration counter.
+                                                    // Initially maxit but will be updated with actual.
     bool is_rising = false;                        // Function to be rooted is monotonically decreasing.
     int digits = std::numeric_limits<Real>::digits;  // Maximum possible binary digits accuracy for type T.
     // Some fraction of digits is used to control how accurate to try to make the result.
@@ -1919,7 +1920,8 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
     std::pair<Real, Real> result_bracket;
     try {
         result_bracket = boost::math::tools::bracket_and_solve_root(
-                            ncfdtrinc_target<Real>(x, dfn, dfd, p), guess, factor, is_rising, tol, it);
+                            ncfdtrinc_target<Real>(x, dfn, dfd, p), guess, factor,
+                            is_rising, tol, it, SpecialPolicy());
     }
     catch (const std::domain_error& e) {
         sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
