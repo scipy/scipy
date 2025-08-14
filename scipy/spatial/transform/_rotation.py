@@ -16,6 +16,7 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_capabilities,
     xp_promote,
+    is_array_api_obj,
 )
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
@@ -53,6 +54,8 @@ def _promote(x: ArrayLike, xp: ModuleType) -> Array:
     """
     if is_numpy(xp):
         return xp.asarray(x, dtype=np.float64)
+    if not is_array_api_obj(x):
+        x = xp.asarray(x)
     return xp_promote(x, force_floating=True, xp=xp)
 
 
@@ -881,7 +884,9 @@ class Rotation:
         """  # noqa: E501
         xp = array_namespace(axes)
         axes = _promote(axes, xp)
-        backend = _select_backend(xp, cython_compatible=axes.ndim < 3)
+        angles = _promote(angles, xp)
+        cython_compatible = axes.ndim < 3 and angles.ndim < 2
+        backend = _select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -1750,9 +1755,8 @@ class Rotation:
             return NotImplemented
         if not broadcastable(self._quat.shape, other._quat.shape):
             raise ValueError(
-                "Expected equal number of rotations in both or a single "
-                f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
-                f"first and {other._quat.shape[:-1]} rotations in second object."
+                f"Cannot broadcast {self._quat.shape[:-1]} rotations in "
+                f"first to {other._quat.shape[:-1]} rotations in second object."
             )
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
         backend = _select_backend(self._xp, cython_compatible=cython_compatible)
@@ -2534,7 +2538,6 @@ class Rotation:
         quat, single = state
         xp = array_namespace(quat)
         self._xp = xp
-        self._backend = backend_registry.get(xp, xp_backend)
         self._quat = xp.asarray(quat, copy=True)
         self._backend = _select_backend(xp, cython_compatible=self._quat.ndim < 3)
         self._single = single
@@ -2606,7 +2609,7 @@ class Rotation:
         rot._quat = quat
         rot._xp = xp
         if backend is None:
-            backend = backend_registry.get(xp, xp_backend)
+            backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
         rot._backend = backend
         return rot
 

@@ -541,23 +541,9 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = quat.T @ quat
+        K = xp.matrix_transpose(quat) @ quat  # TODO: Replace with .mT
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
-        if not lazy and xp.any(weights < 0):
-            raise ValueError("`weights` must be non-negative.")
-
-        # TODO: Missing full broadcasting support.
-        if weights.ndim != 1:
-            raise ValueError(
-                f"Expected `weights` to be 1 dimensional, got shape {weights.shape}."
-            )
-        n_rot = quat.shape[0] if quat.ndim > 1 else 1
-        if weights.shape[0] != n_rot:
-            raise ValueError(
-                "Expected `weights` to have number of values equal to number of "
-                f"rotations, got {weights.shape[0]} values and {n_rot} rotations."
-            )
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
             raise ValueError("`weights` must be non-negative.")
@@ -566,9 +552,15 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
             # non-branching. We return NaN instead
             weights = xp.where(neg_weights, xp.nan, weights)
 
+        if weights.shape != quat.shape[:-1]:
+            raise ValueError(
+                f"Expected `weights` to match rotation shape, got shape {weights.shape} "
+                f"for {quat.shape[:-1]} rotations."
+            )
+
         # Make sure we can transpose quat
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = (weights * quat.T) @ quat
+        K = xp.matrix_transpose(weights[..., None] * quat) @ quat
 
     _, v = xp.linalg.eigh(K)
     return v[..., -1]

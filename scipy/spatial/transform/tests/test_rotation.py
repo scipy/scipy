@@ -1069,6 +1069,19 @@ def test_inv(xp):
 
     xp_assert_close(result1, eye3d, atol=atol)
     xp_assert_close(result2, eye3d, atol=atol)
+    
+    # Batched version
+    batch_shape = (10, 3, 7)
+    quat = xp.asarray(rnd.normal(size=batch_shape + (4,)))
+    r = Rotation.from_quat(quat)
+    p_mat = r.as_matrix()
+    q_mat = r.inv().as_matrix()
+    result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat), dtype=dtype)
+    result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat), dtype=dtype)
+    eye_nd = xp.empty(batch_shape + (3, 3))
+    eye_nd = xpx.at(eye_nd)[..., :3, :3].set(xp.eye(3))
+    xp_assert_close(result1, eye_nd, atol=atol)
+    xp_assert_close(result2, eye_nd, atol=atol)
 
 
 @make_xp_test_case(Rotation.inv, Rotation.as_matrix)
@@ -1149,14 +1162,19 @@ def test_single_identity_invariance(xp):
 
 
 @make_xp_test_case(Rotation.magnitude)
-def test_magnitude(xp):
-    r = Rotation.from_quat(xp.eye(4))
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_magnitude(xp, ndim: int):
+    quat_shape = (1,) * (ndim - 1) + (4,)
+    quat = xp.reshape(xp.eye(4), quat_shape + (4,))
+    r = Rotation.from_quat(quat)
     result = r.magnitude()
-    xp_assert_close(result, xp.asarray([xp.pi, xp.pi, xp.pi, 0]))
+    expected_result = xp.asarray([xp.pi, xp.pi, xp.pi, 0])
+    expected_result = xp.reshape(expected_result, quat_shape)
+    xp_assert_close(result, expected_result)
 
-    r = Rotation.from_quat(-xp.eye(4))
+    r = Rotation.from_quat(-quat)
     result = r.magnitude()
-    xp_assert_close(result, xp.asarray([xp.pi, xp.pi, xp.pi, 0]))
+    xp_assert_close(result, expected_result)
 
 
 @make_xp_test_case(Rotation.magnitude)
@@ -1197,28 +1215,87 @@ def test_approx_equal_single_rotation(xp):
         assert p.approx_equal(q[3], degrees=True)
 
 
+@make_xp_test_case(Rotation.inv, Rotation.magnitude, Rotation.approx_equal)
+def test_approx_equal_batched(xp):
+    # Same shapes
+    batch_shape = (2, 10, 3)
+    rng = np.random.default_rng(0)
+    q1 = rng.normal(size=batch_shape + (4,))
+    q2 = rng.normal(size=batch_shape + (4,))
+    p = rotation_to_xp(Rotation.from_quat(q1), xp)
+    q = rotation_to_xp(Rotation.from_quat(q2), xp)
+    r_mag = (p * q.inv()).magnitude()
+    assert r_mag.shape == batch_shape
+    # ensure we get mix of Trues and Falses
+    atol = xp.asarray(np.median(r_mag))
+    xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
+
+    # Broadcastable shapes of same length
+    q2 = rng.normal(size=(1, 10, 1, 4))
+    q = rotation_to_xp(Rotation.from_quat(q2), xp)
+    r_mag = (p * q.inv()).magnitude()
+    assert r_mag.shape == batch_shape
+    xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
+
+    # Broadcastable shapes of different length
+    q2 = rng.normal(size=(1, 3, 4))
+    q = rotation_to_xp(Rotation.from_quat(q2), xp)
+    r_mag = (p * q.inv()).magnitude()
+    assert r_mag.shape == batch_shape
+    xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
+
+
+@make_xp_test_case(Rotation.approx_equal)
+def test_approx_equal_batched_input_validation(xp):
+    p = Rotation.from_quat(xp.ones((2, 3, 4)))
+    q = Rotation.from_quat(xp.ones((3, 2, 4)))
+    with pytest.raises(ValueError, match="broadcastable shapes"):
+        p.approx_equal(q)
+
+    p = Rotation.from_quat(xp.ones((2, 4)))
+    q = Rotation.from_quat(xp.ones((3, 4)))
+    with pytest.raises(ValueError, match="broadcastable shapes"):
+        p.approx_equal(q)
+
+
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.magnitude)
-def test_mean(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_mean(xp, ndim: int):
     axes = xp.concat((-xp.eye(3), xp.eye(3)))
+    axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
     thetas = xp.linspace(0, xp.pi / 2, 100)
+    desired = xp.zeros((1,) * (ndim - 1))
+    if desired.ndim == 0:
+        desired = desired[()]
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
-        xp_assert_close(r.mean().magnitude(), xp.asarray(0.0)[()], atol=1e-10)
+        xp_assert_close(r.mean().magnitude(), desired, atol=1e-10)
 
 
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
                    Rotation.magnitude)
-def test_weighted_mean(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_weighted_mean(xp, ndim: int):
     # test that doubling a weight is equivalent to including a rotation twice.
-    axes = xp.asarray([[0.0, 0, 0], [1, 0, 0], [1, 0, 0]])
     thetas = xp.linspace(0, xp.pi / 2, 100)
+
+    # Create batched copies of the same setup
+    batch_shape = (ndim,) * (ndim - 1)
+    axes = xp.asarray([[0.0, 0, 0], [1, 0, 0], [1, 0, 0]])
+    weights = xp.asarray([1, 2])
+    axes = xp.tile(axes, batch_shape + (1, 1))
+    weights = xp.tile(weights, batch_shape + (1,))
+
+    expected = xp.zeros(batch_shape)
+    if expected.ndim == 0:
+        expected = expected[()]
     for t in thetas:
-        rw = Rotation.from_rotvec(t * axes[:2, ...])
-        mw = rw.mean(weights=[1, 2])
+        rw = Rotation.from_rotvec(t * axes[..., :2, :])
+        mw = rw.mean(weights=weights)
 
         r = Rotation.from_rotvec(t * axes)
         m = r.mean()
-        xp_assert_close((m * mw.inv()).magnitude(), xp.asarray(0.0)[()], atol=1e-10)
+        xp_assert_close((m * mw.inv()).magnitude(), expected, atol=1e-10)
 
 
 @make_xp_test_case(Rotation.mean)
@@ -1230,6 +1307,14 @@ def test_mean_invalid_weights(xp):
     else:
         with pytest.raises(ValueError, match="non-negative"):
             r.mean(weights=-xp.ones(4))
+
+    # Test weight shape mismatch
+    r = Rotation.from_quat(xp.ones((4,)))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        r.mean(weights=xp.ones((2,)))
+    r = Rotation.from_quat(xp.ones((2, 3, 4)))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        r.mean(weights=xp.ones((2, 1)))
 
 
 @make_xp_test_case(Rotation.reduce)
@@ -1426,19 +1511,11 @@ def test_apply_array_like():
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix, Rotation.__getitem__)
-def test_getitem(xp):
-    mat = np.empty((2, 3, 3))
-    mat[0] = np.array([
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ])
-    mat[1] = np.array([
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0]
-    ])
-    mat = xp.asarray(mat)
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_getitem(xp, ndim: int):
+    rng = np.random.default_rng(0)
+    quat = rng.normal(size=(2, ) + (ndim,) * (ndim - 1) + (4,))
+    mat = xp.asarray(Rotation.from_quat(quat).as_matrix())
     r = Rotation.from_matrix(mat)
 
     xp_assert_close(r[0].as_matrix(), mat[0, ...], atol=1e-15)
@@ -1479,6 +1556,12 @@ def test_setitem_slice(xp):
     r2 = rotation_to_xp(Rotation.random(5, rng=rng), xp)
     r1[1:6] = r2
     xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
+    
+    # Multiple dimensions
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 5, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 5, 4))))
+    r1[1:3] = r2
+    xp_assert_equal(r1[1:3].as_quat(), r2.as_quat())
 
 
 @make_xp_test_case(Rotation.__setitem__)
@@ -1486,6 +1569,12 @@ def test_setitem_integer(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     r1 = rotation_to_xp(Rotation.random(10, rng=rng), xp)
     r2 = rotation_to_xp(Rotation.random(rng=rng), xp)
+    r1[1] = r2
+    xp_assert_equal(r1[1].as_quat(), r2.as_quat())
+
+    # Multiple dimensions
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 5, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(5, 4))))
     r1[1] = r2
     xp_assert_equal(r1[1].as_quat(), r2.as_quat())
 
@@ -1845,8 +1934,6 @@ def test_align_vectors_antiparallel(xp):
     # always run on the GPU regardless of SCIPY_DEVICE, hence the explicit check for
     # cupy. Note that the current implementation lets other frameworks, e.g. numpy, run
     # on the CPU regardless of SCIPY_DEVICE but with increased GPU tolerances.
-    # TODO: Add a better way to detect device usage.
-    # See https://github.com/scipy/scipy/pull/23249#discussion_r2208669155
     if xp_device_type(xp.asarray(0)) == "cuda":
         atol = 1e-7
 
@@ -2139,6 +2226,44 @@ def test_multiplication(xp):
 
 
 @make_xp_test_case(Rotation.__mul__)
+def test_multiplication_nd(xp):
+    # multiple dimensions
+    rng = np.random.default_rng(0)
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 3, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 3, 4))))
+    r3 = r1 * r2
+    assert r3.as_quat().shape == (2, 3, 4)
+    
+    # same shape len, different dimensions
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(1, 3, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 1, 4))))
+    r3 = r1 * r2
+    assert r3.as_quat().shape == (2, 3, 4)
+    
+    # different shape len, different dimensions
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 1, 4, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 4, 4))))
+    r3 = r1 * r2
+    assert r3.as_quat().shape == (3, 2, 4, 4)
+
+    # transition between 2D and 3D with 2D rotation as first argument. This needs to
+    # choose the xp_backend even though r1's backend is cython
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 2, 4))))
+    r3 = r1 * r2
+    assert r3.as_quat().shape == (2, 2, 4)
+
+
+@make_xp_test_case(Rotation.__mul__)
+def test_multiplication_errors(xp):
+    rng = np.random.default_rng(0)
+    r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 4))))
+    r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(1, 4, 4))))
+    with pytest.raises(ValueError, match="Cannot broadcast"):
+        r1 * r2
+
+
+@make_xp_test_case(Rotation.__mul__)
 def test_multiplication_stability(xp):
     qs = rotation_to_xp(Rotation.random(50, rng=0), xp)
     rs = rotation_to_xp(Rotation.random(1000, rng=1), xp)
@@ -2150,16 +2275,21 @@ def test_multiplication_stability(xp):
 
 @make_xp_test_case(Rotation.inv, Rotation.__pow__, Rotation.inv, Rotation.magnitude,
                    Rotation.from_rotvec, Rotation.as_rotvec)
-def test_pow(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_pow(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-14 if dtype == xp.float64 else 1e-6
-    p = rotation_to_xp(Rotation.random(10, rng=0), xp)
+    rng = np.random.default_rng(0)
+    batch_shape = (ndim,) * (ndim - 1)
+    quat = rng.normal(size=batch_shape + (4,))
+    p = Rotation.from_quat(xp.asarray(quat))
     p_inv = p.inv()
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         # Test accuracy
         q = p ** n
-        r = rotation_to_xp(Rotation.identity(10), xp)
+        q_identity = xp.asarray([0., 0, 0, 1])
+        r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
         for _ in range(abs(n)):
             if n > 0:
                 r = r * p
@@ -2169,10 +2299,8 @@ def test_pow(xp):
         assert xp.all(ang < atol)
 
         # Test shape preservation
-        r = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
-        assert (r**n).as_quat().shape == (4,)
-        r = Rotation.from_quat(xp.asarray([[0, 0, 0, 1]]))
-        assert (r**n).as_quat().shape == (1, 4)
+        r = Rotation.from_quat(xp.tile(q_identity, batch_shape + (1,)))
+        assert (r**n).as_quat().shape == batch_shape + (4,)
 
     # Large angle fractional
     for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:
@@ -2190,7 +2318,9 @@ def test_pow(xp):
         xp_assert_close(r.as_quat(), r_array.as_quat())
 
     # Small angle
-    p = Rotation.from_rotvec(xp.asarray([1e-12, 0, 0]))
+    rotvec = xp.zeros(batch_shape + (3,))
+    rotvec = xpx.at(rotvec)[..., 0].set(1e-12)
+    p = Rotation.from_rotvec(rotvec)
     n = 3
     q = p ** n
     r = Rotation.from_rotvec(n * p.as_rotvec())
@@ -2294,9 +2424,13 @@ def test_concatenate(xp):
     assert rotation is not result
 
     # Test Rotation input for single rotations
-    rot = rotation_to_xp(Rotation.identity(), xp)
-    result = Rotation.concatenate(rot)
-    xp_assert_equal(rot.as_quat(), result.as_quat())
+    rng = np.random.default_rng(0)
+    quat = xp.asarray(rng.normal(size=(5, 2, 4)))
+    rotation = Rotation.from_quat(quat)
+    r1 = Rotation.from_quat(quat[:3, ...])
+    r2 = Rotation.from_quat(quat[3:, ...])
+    result = Rotation.concatenate([r1, r2])
+    xp_assert_equal(rotation.as_quat(), result.as_quat())
 
 
 @make_xp_test_case(Rotation.concatenate)
@@ -2304,6 +2438,15 @@ def test_concatenate_wrong_type(xp):
     with pytest.raises(TypeError, match='Rotation objects only'):
         rot = Rotation(xp.asarray(Rotation.identity().as_quat()))
         Rotation.concatenate([rot, 1, None])
+
+
+@make_xp_test_case(Rotation.concatenate)
+def test_concatenate_wrong_shape(xp):
+    r1 = Rotation.from_quat(xp.ones((5, 2, 4)))
+    r2 = Rotation.from_quat(xp.ones((1, 4)))
+    # Frameworks throw inconsistent error types on concat failures
+    with pytest.raises((ValueError, RuntimeError, TypeError)):
+        Rotation.concatenate([r1, r2])
 
 
 # Regression test for gh-16663
@@ -2317,6 +2460,9 @@ def test_len_and_bool(xp):
     assert len(rotation_multi) == 2
     with pytest.raises(TypeError, match="Single rotation has no len()."):
         len(rotation_single)
+
+    rotation_batched = Rotation.from_quat(xp.ones((3, 2, 4)))
+    assert len(rotation_batched) == 3
 
     # Rotation should always be truthy. See gh-16663
     assert rotation_multi_one
@@ -2367,6 +2513,50 @@ def test_from_davenport_one_or_two_axes(xp):
     rot_dav = Rotation.from_davenport(axes_dav, 'e', [xp.pi/6, xp.pi/4])
     xp_assert_close(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
+
+
+@make_xp_test_case(Rotation.from_davenport)
+@pytest.mark.parametrize("ndim", range(2, 4))
+def test_from_davenport_nd_rotation(xp, ndim: int):
+    # The shape rules for ND rotations are as follows:
+    # axes.shape[-2] must be angles.shape[-1]
+    # Resulting shape is np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
+    rng = np.random.default_rng(0)
+    batch_shape = (ndim,) * (ndim - 1)
+    # Create random, orthogonal axes
+    r = Rotation.from_quat(xp.asarray(rng.normal(size=(4,))))
+    axes = r.as_matrix()
+    # axes = (3,)
+    angles = xp.asarray(rng.normal(size=batch_shape + (1,)))
+    rot = Rotation.from_davenport(axes[0], 'e', angles)
+    assert rot.as_quat().shape == batch_shape + (4,)
+    # axes = (1, 3)
+    angles = xp.asarray(rng.normal(size=batch_shape + (1,)))
+    rot = Rotation.from_davenport(axes[[0], ...], 'e', angles)
+    assert rot.as_quat().shape == batch_shape + (4,)
+    # axes = (2, 3)
+    angles = xp.asarray(rng.normal(size=batch_shape + (2,)))
+    rot = Rotation.from_davenport(axes[:2, ...], 'e', angles)
+    assert rot.as_quat().shape == batch_shape + (4,)
+
+    # axes = (..., 3)
+    r = Rotation.from_quat(xp.asarray(rng.normal(size=batch_shape + (3, 4))))
+    axes = r.as_matrix()
+    angles = xp.asarray(rng.normal(size=batch_shape + (3,)))
+    rot = Rotation.from_davenport(axes, 'e', angles)
+    assert rot.as_quat().shape == batch_shape + (4,)
+
+
+@make_xp_test_case(Rotation.from_davenport)
+@pytest.mark.parametrize("ndim", range(2, 4))
+def test_from_davenport_broadcast(xp, ndim: int):
+    rng = np.random.default_rng(0)
+    # Create random, orthogonal axes
+    r = Rotation.from_quat(xp.asarray(rng.normal(size=(4, 9, 1, 4))))
+    axes = r.as_matrix()
+    angles = xp.asarray(rng.normal(size=(1, 4)))
+    rot = Rotation.from_davenport(axes, 'e', angles)
+    assert rot.as_quat().shape == (4, 9, 4, 4)
 
 
 @make_xp_test_case(Rotation.from_davenport)
@@ -2620,12 +2810,11 @@ def test_zero_rotation_multiplication(xp):
     r_mult = r * r0
     assert len(r_mult) == 0
 
-    msg_rotation_error = "Expected equal number of rotations"
     r2 = rotation_to_xp(Rotation.random(2), xp)
-    with pytest.raises(ValueError, match=msg_rotation_error):
+    with pytest.raises(ValueError, match="Cannot broadcast"):
         r0 * r2
 
-    with pytest.raises(ValueError, match=msg_rotation_error):
+    with pytest.raises(ValueError, match="Cannot broadcast"):
         r2 * r0
 
 
@@ -2732,6 +2921,12 @@ def test_boolean_indexes(xp):
 
     r3 = r[xp.asarray([True, True, True])]
     assert len(r3) == 3
+    
+    # Multiple dimensions
+    r = Rotation.from_quat(xp.ones((3, 2, 4)))
+    r4 = r[xp.asarray([True, False, False])]
+    assert len(r4) == 1
+    assert r4.as_quat().shape == (1, 2, 4)
 
     with pytest.raises(IndexError):
         r[xp.asarray([True, True])]
