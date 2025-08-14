@@ -1,10 +1,10 @@
 #ifndef BOOST_SPECIAL_FUNCTIONS_H
 #define BOOST_SPECIAL_FUNCTIONS_H
 
-#include <iostream>
 #include <cmath>
 #include <stdexcept>
 #include "sf_error.h"
+
 
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
