@@ -50,6 +50,7 @@ dependencies:
   - linkify-it-py
   - jupyterlite-sphinx>=0.19.1
   - jupyterlite-pyodide-kernel
+  - tabulate
   # Some optional test dependencies
   - mpmath
   - gmpy2
@@ -57,5 +58,5 @@ dependencies:
   # For CLI
   - spin
   # For linting
-  - ruff>=0.0.292
+  - ruff>=0.12.0
   - cython-lint

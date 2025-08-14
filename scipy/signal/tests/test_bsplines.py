@@ -162,6 +162,12 @@ class TestBSplines:
         r = signal.cspline1d_eval(xp.asarray([1., 0, 1], dtype=xp.float64),
                                xp.asarray([], dtype=xp.float64))
         xp_assert_equal(r, xp.asarray([], dtype=xp.float64))
+        
+        # Test case for newx that gets filtered down to empty
+        r = signal.cspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+                                  xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_close(r, xp.asarray([0.33333333], dtype=xp.float64))
+
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
@@ -195,6 +201,12 @@ class TestBSplines:
         xp_assert_equal(signal.qspline1d_eval(xp.asarray([1., 0, 1]), xp.asarray([])),
                         xp.asarray([])
         )
+
+        # Test case for newx that gets filtered down to empty
+        r = signal.qspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+                                  xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_equal(r, xp.asarray([0.25], dtype=xp.float64))
+        
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,

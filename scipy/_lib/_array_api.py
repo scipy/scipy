@@ -24,6 +24,11 @@ import numpy.typing as npt
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
     is_lazy_array,
+    is_numpy_array,
+    is_cupy_array,
+    is_torch_array,
+    is_jax_array,
+    is_dask_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -621,7 +626,7 @@ def _make_sphinx_capabilities(
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
     # @pytest.mark.skip/xfail_xp_backends kwargs
-    cpu_only=False, np_only=False, exceptions=(),
+    cpu_only=False, np_only=False, out_of_scope=False, exceptions=(),
     # xpx.lazy_xp_backends kwargs
     allow_dask_compute=False, jax_jit=True,
     # list of tuples [(module name, reason), ...]
@@ -629,6 +634,9 @@ def _make_sphinx_capabilities(
     # unused in documentation
     reason=None,
 ):
+    if out_of_scope:
+        return {"out_of_scope": True}
+
     exceptions = set(exceptions)
 
     # Default capabilities
@@ -669,6 +677,18 @@ def _make_sphinx_capabilities(
 
 
 def _make_capabilities_note(fun_name, capabilities):
+    if "out_of_scope" in capabilities:
+        # It will be better to link to a section of the dev-arrayapi docs
+        # that explains what is and isn't in-scope, but such a section
+        # doesn't exist yet. Using :ref:`dev-arrayapi` as a placeholder.
+        note = f"""
+        `{fun_name}` is not in-scope for support of Python Array API Standard compatible
+        backends other than NumPy.
+
+        See :ref:`dev-arrayapi` for more information.
+        """
+        return textwrap.dedent(note)
+
     # Note: deliberately not documenting array-api-strict
     note = f"""
     `{fun_name}` has experimental support for Python Array API Standard compatible
@@ -701,7 +721,8 @@ def xp_capabilities(
     # See documentation in conftest.py.
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
-    cpu_only=False, np_only=False, reason=None, exceptions=(),
+    cpu_only=False, np_only=False, reason=None,
+    out_of_scope=False, exceptions=(),
     # lists of tuples [(module name, reason), ...]
     warnings=(),
     # xpx.testing.lazy_xp_function kwargs.
@@ -728,11 +749,15 @@ def xp_capabilities(
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
+    if out_of_scope:
+        np_only = True
+
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
         cpu_only=cpu_only,
         np_only=np_only,
+        out_of_scope=out_of_scope,
         reason=reason,
         exceptions=exceptions,
         allow_dask_compute=allow_dask_compute,
@@ -921,3 +946,20 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?
 xp_capabilities_table = {}  # type: ignore[var-annotated]
+
+
+def xp_device_type(a: Array) -> Literal["cpu", "cuda", None]:
+    if is_numpy_array(a):
+        return "cpu"
+    if is_cupy_array(a):
+        return "cuda"
+    if is_torch_array(a):
+        # TODO this can return other backends e.g. tpu but they're unsupported in scipy
+        return a.device.type
+    if is_jax_array(a):
+        # TODO this can return other backends e.g. tpu but they're unsupported in scipy
+        return "cuda" if (p := a.device.platform) == "gpu" else p
+    if is_dask_array(a):
+        return xp_device_type(a._meta)
+    # array-api-strict is a stand-in for unknown libraries; don't special-case it
+    return None
