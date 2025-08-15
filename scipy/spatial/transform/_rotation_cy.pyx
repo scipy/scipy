@@ -1018,10 +1018,9 @@ def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double
     cdef Py_ssize_t n_rotations = len(quat)
 
     if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
-        raise ValueError("Expected equal numbers of rotations and vectors "
-                            ", or a single rotation, or a single vector, got "
-                            "{} rotations and {} vectors.".format(
-                            n_rotations, n_vectors))
+        raise ValueError(
+            f"Cannot broadcast {n_rotations} rotations to {n_vectors} vectors."
+        )
 
     cdef np.ndarray matrix = as_matrix(quat)
 

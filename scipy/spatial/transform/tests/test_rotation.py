@@ -1398,7 +1398,8 @@ def test_apply_single_rotation_single_point(xp):
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.apply)
-def test_apply_single_rotation_multiple_points(xp):
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_apply_single_rotation_multiple_points(xp, ndim: int):
     mat = xp.asarray([
         [0, -1, 0],
         [1, 0, 0],
@@ -1407,20 +1408,23 @@ def test_apply_single_rotation_multiple_points(xp):
     r1 = Rotation.from_matrix(mat)
     r2 = Rotation.from_matrix(xp.expand_dims(mat, axis=0))
 
-    v = xp.asarray([[1, 2, 3], [4, 5, 6]])
-    v_rotated = xp.asarray([[-2.0, 1, 3], [-5, 4, 6]])
+    rng = np.random.default_rng(0)
+    batch_shape = (ndim,) * (ndim - 1)
+    v = xp.asarray(rng.normal(size=batch_shape + (2, 3)))
+    v_rotated = xp.stack([-v[..., 1], v[..., 0], v[..., 2]], axis=-1)
 
     xp_assert_close(r1.apply(v), v_rotated)
     xp_assert_close(r2.apply(v), v_rotated)
 
-    v_inverse = xp.asarray([[2.0, -1, 3], [5, -4, 6]])
+    v_inverse = xp.stack([v[..., 1], -v[..., 0], v[..., 2]], axis=-1)
 
     xp_assert_close(r1.apply(v, inverse=True), v_inverse)
     xp_assert_close(r2.apply(v, inverse=True), v_inverse)
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.apply)
-def test_apply_multiple_rotations_single_point(xp):
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_apply_multiple_rotations_single_point(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1434,24 +1438,29 @@ def test_apply_multiple_rotations_single_point(xp):
         [0, 1, 0]
     ])
     mat = xp.asarray(mat, dtype=dtype)
+    batch_shape = (ndim,) * (ndim - 1)
+    mat = xp.tile(mat, batch_shape + (1, 1, 1))
     r = Rotation.from_matrix(mat)
 
     v1 = xp.asarray([1, 2, 3])
     v2 = xp.expand_dims(v1, axis=0)
 
     v_rotated = xp.asarray([[-2.0, 1, 3], [1, -3, 2]])
+    v_rotated = xp.tile(v_rotated, batch_shape + (1, 1))
 
     xp_assert_close(r.apply(v1), v_rotated)
     xp_assert_close(r.apply(v2), v_rotated)
 
     v_inverse = xp.asarray([[2.0, -1, 3], [1, 3, -2]])
+    v_inverse = xp.tile(v_inverse, batch_shape + (1, 1))
 
     xp_assert_close(r.apply(v1, inverse=True), v_inverse)
     xp_assert_close(r.apply(v2, inverse=True), v_inverse)
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.apply)
-def test_apply_multiple_rotations_multiple_points(xp):
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_apply_multiple_rotations_multiple_points(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1465,30 +1474,32 @@ def test_apply_multiple_rotations_multiple_points(xp):
         [0, 1, 0]
     ])
     mat = xp.asarray(mat, dtype=dtype)
+    batch_shape = (ndim,) * (ndim - 1)
+    mat = xp.tile(mat, batch_shape + (1, 1, 1))
     r = Rotation.from_matrix(mat)
 
     v = xp.asarray([[1, 2, 3], [4, 5, 6]])
     v_rotated = xp.asarray([[-2.0, 1, 3], [4, -6, 5]])
+    v_rotated = xp.tile(v_rotated, batch_shape + (1, 1))
     xp_assert_close(r.apply(v), v_rotated)
 
     v_inverse = xp.asarray([[2.0, -1, 3], [4, 6, -5]])
+    v_inverse = xp.tile(v_inverse, batch_shape + (1, 1))
     xp_assert_close(r.apply(v, inverse=True), v_inverse)
 
 
-@make_xp_test_case(Rotation.from_matrix, Rotation.apply)
+@make_xp_test_case(Rotation.apply)
 def test_apply_shapes(xp):
-    vector0 = xp.asarray([1.0, 2.0, 3.0])
-    vector1 = xpx.atleast_nd(vector0, ndim=2)
-    vector2 = xp.stack([vector0, vector0])
-    matrix0 = xp.eye(3)
-    matrix1 = xpx.atleast_nd(matrix0, ndim=3)
-    matrix2 = xp.stack([matrix0, matrix0])
+    rng = np.random.default_rng(0)
+    # Broadcast shape: (6, 5, 4, 2) ( + (3,) for vectors, + (4,) for rotations)
+    vector_shapes = [(), (1,), (2,), (1, 2), (5, 1, 2)]
+    rot_shapes = [(), (1,), (2,), (1, 2), (4, 2), (1, 4, 2), (5, 4, 2), (6, 5, 4, 2)]
 
-    for m, v in product([matrix0, matrix1, matrix2], [vector0, vector1, vector2]):
-        r = Rotation.from_matrix(m)
-        shape = v.shape
-        if not r.single and (v.shape == (3,) or v.shape == (1, 3)):
-            shape = (len(r), 3)
+    for q_shape, v_shape in product(rot_shapes, vector_shapes):
+        v = xp.asarray(rng.normal(size=v_shape + (3,)))
+        q = xp.asarray(rng.normal(size=q_shape + (4,)))
+        r = Rotation.from_quat(q)
+        shape = np.broadcast_shapes(q_shape, v_shape) + (3,)
         x = r.apply(v)
         assert x.shape == shape
         x = r.apply(v, inverse=True)
@@ -1508,6 +1519,21 @@ def test_apply_array_like():
     v = r.apply(t.tolist())
     v_expected = r.apply(t)
     xp_assert_close(v, v_expected, atol=1e-12)
+
+
+@make_xp_test_case(Rotation.apply)
+def test_apply_input_validation(xp):
+    r = Rotation.from_quat(xp.ones(4))
+    with pytest.raises(ValueError, match="Expected input of shape"):
+        r.apply(xp.ones(2))
+    with pytest.raises(ValueError, match="Expected input of shape"):
+        r.apply(xp.ones((2, 2)))
+    r = Rotation.from_quat(xp.ones((2, 4)))
+    with pytest.raises(ValueError, match="Cannot broadcast"):
+        r.apply(xp.ones((3, 3)))
+    r = Rotation.from_quat(xp.ones((1, 7, 2, 4)))
+    with pytest.raises(ValueError, match="Cannot broadcast"):
+        r.apply(xp.ones((2, 2, 3)))
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix, Rotation.__getitem__)
@@ -1802,6 +1828,12 @@ def test_align_vectors_invalid_input(xp):
         with pytest.raises(ValueError,
                         match="Cannot return sensitivity matrix"):
                         Rotation.align_vectors(a, b, return_sensitivity=True)
+
+    # No broadcast support for align_vectors
+    a, b = xp.asarray([[[1, 2, 3]]]), xp.asarray([[[1, 2, 3]]])
+    with pytest.raises(ValueError,
+                       match="Expected inputs `a` and `b` to have shape"):
+        Rotation.align_vectors(a, b)
 
 
 @make_xp_test_case(Rotation.align_vectors, Rotation.as_matrix, Rotation.apply)
@@ -2517,7 +2549,7 @@ def test_from_davenport_one_or_two_axes(xp):
 
 @make_xp_test_case(Rotation.from_davenport)
 @pytest.mark.parametrize("ndim", range(2, 4))
-def test_from_davenport_nd_rotation(xp, ndim: int):
+def test_from_davenport_shapes(xp, ndim: int):
     # The shape rules for ND rotations are as follows:
     # axes.shape[-2] must be angles.shape[-1]
     # Resulting shape is np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
@@ -2528,19 +2560,19 @@ def test_from_davenport_nd_rotation(xp, ndim: int):
     axes = r.as_matrix()
     # axes = (3,)
     angles = xp.asarray(rng.normal(size=batch_shape + (1,)))
-    rot = Rotation.from_davenport(axes[0], 'e', angles)
+    rot = Rotation.from_davenport(axes[0, ...], 'e', angles)
     assert rot.as_quat().shape == batch_shape + (4,)
     # axes = (1, 3)
     angles = xp.asarray(rng.normal(size=batch_shape + (1,)))
-    rot = Rotation.from_davenport(axes[[0], ...], 'e', angles)
+    rot = Rotation.from_davenport(axes[0, None, ...], 'e', angles)
     assert rot.as_quat().shape == batch_shape + (4,)
     # axes = (2, 3)
     angles = xp.asarray(rng.normal(size=batch_shape + (2,)))
     rot = Rotation.from_davenport(axes[:2, ...], 'e', angles)
     assert rot.as_quat().shape == batch_shape + (4,)
 
-    # axes = (..., 3)
-    r = Rotation.from_quat(xp.asarray(rng.normal(size=batch_shape + (3, 4))))
+    # axes = (...,3, 3)
+    r = Rotation.from_quat(xp.asarray(rng.normal(size=batch_shape + (4,))))
     axes = r.as_matrix()
     angles = xp.asarray(rng.normal(size=batch_shape + (3,)))
     rot = Rotation.from_davenport(axes, 'e', angles)
@@ -2554,8 +2586,9 @@ def test_from_davenport_broadcast(xp, ndim: int):
     # Create random, orthogonal axes
     r = Rotation.from_quat(xp.asarray(rng.normal(size=(4, 9, 1, 4))))
     axes = r.as_matrix()
-    angles = xp.asarray(rng.normal(size=(1, 4)))
+    angles = xp.asarray(rng.normal(size=(1, 4, 3)))
     rot = Rotation.from_davenport(axes, 'e', angles)
+    # (4, 9, 1, 3) + (3,) axes, (1, 4, 3) angles -> (4, 9, 4) + (4,) for quaternion
     assert rot.as_quat().shape == (4, 9, 4, 4)
 
 
@@ -2626,6 +2659,22 @@ def test_as_davenport(xp):
             rot = Rotation.from_davenport(ax, order, xp.asarray(angles, dtype=dtype))
             angles_dav = rot.as_davenport(ax, order)
             xp_assert_close(angles_dav, xp.asarray(angles, dtype=dtype))
+
+
+@make_xp_test_case(Rotation.from_davenport, Rotation.as_davenport)
+def test_as_davenport_nd(xp):
+    rng = np.random.default_rng(0)
+    r = Rotation.from_quat(xp.asarray(rng.normal(size=(4, 9, 1, 4))))
+    axes = r.as_matrix()  # Get orthogonal axes
+    angles = xp.asarray(rng.uniform(low=-np.pi, high=np.pi, size=(4, 9, 1, 3)))
+    angles = xpx.at(angles)[..., 1].set(angles[..., 1] / 2)
+
+    for order in ['extrinsic', 'intrinsic']:
+        if order == "intrinsic":
+            axes = xp.flip(axes, axis=-2)
+        rot = Rotation.from_davenport(axes, order, angles)
+        angles_dav = rot.as_davenport(axes, order)
+        xp_assert_close(angles_dav, angles)
 
 
 @make_xp_test_case(Rotation.from_davenport, Rotation.as_davenport, Rotation.as_matrix)
@@ -2791,7 +2840,7 @@ def test_zero_rotation_array_rotation(xp):
 
     v2 = xp.ones((2, 3))
     with pytest.raises(
-        ValueError, match="Expected equal numbers of rotations and vectors"):
+        ValueError, match="Cannot broadcast"):
         r.apply(v2)
 
 

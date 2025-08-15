@@ -1665,13 +1665,13 @@ class Rotation:
         single_vector = vectors.ndim == 1
         # Numpy optimization: The Cython backend typing requires us to have fixed
         # dimensions, so for the Numpy case we always broadcast the vector to 2D.
-        if vectors.ndim > 2 or vectors.shape[-1] != 3:
-            raise ValueError(
-                f"Expected input of shape (3,) or (P, 3), got {vectors.shape}."
-            )
+        if vectors.shape[-1] != 3:
+            raise ValueError(f"Expected input of shape (..., 3), got {vectors.shape}.")
         if is_numpy(self._xp):
             vectors = xpx.atleast_nd(vectors, ndim=2, xp=self._xp)
-        result = self._backend.apply(self._quat, vectors, inverse=inverse)
+        cython_compatible = self._quat.ndim < 3 and vectors.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        result = backend.apply(self._quat, vectors, inverse=inverse)
         if self._single and single_vector:
             return result[0, ...]
         return result
@@ -2523,7 +2523,7 @@ class Rotation:
         xp = array_namespace(a)
         a, b, weights = xp_promote(a, b, weights, force_floating=True, xp=xp)
         cython_compatible = (
-            (a.ndim < 3) | (b.ndim < 3) | (weights is not None and weights.ndim < 2)
+            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
         )
         backend = _select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)

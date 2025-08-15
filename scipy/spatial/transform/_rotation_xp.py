@@ -259,7 +259,6 @@ def from_davenport(
 
     original_axes_shape = axes.shape
     original_angles_shape = angles.shape
-    scalar_angle = angles.ndim == 0
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     num_axes = axes.shape[-2]
@@ -269,24 +268,21 @@ def from_davenport(
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
 
     # Check if axes are orthogonal. Shape checks also work for lazy backends.
-    axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool, device=device)
+    axes_not_orthogonal = xp.zeros(axes.shape[:-2], dtype=xp.bool, device=device)
     if num_axes > 1:
         # Cannot be True yet, so we do not need to use xp.logical_or
-        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
+        axes_not_orthogonal = axes_not_orthogonal | (
             xp.abs(xp.vecdot(axes[..., 0, :], axes[..., 1, :])) > 1e-7
         )
     if num_axes > 2:
-        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
-            xp.logical_or(
-                xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7,
-                axes_not_orthogonal[..., 0],
-            )
+        axes_not_orthogonal = axes_not_orthogonal | (
+            xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7
         )
     if not is_lazy_array(axes_not_orthogonal):
         if xp.any(axes_not_orthogonal):
             raise ValueError("Consecutive axes must be orthogonal.")
     else:
-        axes = xp.where(axes_not_orthogonal, xp.nan, axes)
+        axes = xp.where(axes_not_orthogonal[..., None, None], xp.nan, axes)
 
     # angle formatting requires manual handling of cases because of legacy behavior
     # that does not follow standard broadcasting rules.
@@ -471,23 +467,28 @@ def as_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/'intrinsic'"
             f" for intrinsic sequences, got {order}"
         )
-    if axes.shape[0] != 3:
+    if axes.shape[-2] != 3:
         raise ValueError(f"Expected 3 axes, got {axes.shape}.")
-    if axes.shape[1] != 3:
+    if axes.shape[-1] != 3:
         raise ValueError("Axes must be vectors of length 3.")
+    if not broadcastable(axes.shape[:-2], quat.shape[:-1]):
+        raise ValueError(
+            f"Expected `axes` to match number of rotations, got {axes.shape} axes "
+            f"and {quat.shape} rotations."
+        )
 
     # normalize axes
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
-    vdot_ax0_ax1 = xp.vecdot(axes[0, ...], axes[1, ...])
-    vdot_ax1_ax2 = xp.vecdot(axes[1, ...], axes[2, ...])
+    vdot_ax0_ax1 = xp.vecdot(axes[..., 0, :], axes[..., 1, :])
+    vdot_ax1_ax2 = xp.vecdot(axes[..., 1, :], axes[..., 2, :])
     is_invalid = (vdot_ax0_ax1 >= 1e-7) | (vdot_ax1_ax2 >= 1e-7)
     if is_lazy_array(is_invalid):
-        axes = xp.where(is_invalid, xp.nan, axes)
-    elif is_invalid:
+        axes = xp.where(is_invalid[..., None, None], xp.nan, axes)
+    elif xp.any(is_invalid):
         raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = _compute_davenport_from_quat(
-        quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
+        quat, axes[..., 0, :], axes[..., 1, :], axes[..., 2, :], extrinsic
     )
     if degrees:
         angles = _rad2deg(angles)
@@ -642,24 +643,18 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    xp = array_namespace(quat)
     mat = as_matrix(quat)
-    inverse = xp.asarray(inverse, device=xp_device(quat))
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
-    # TODO: We currently evaluate both branches of the where statement. For eager
-    # execution models, this may significantly slow down the function. We should check
-    # that compilers can optimize the where statement (e.g. in jax) and check if we can
-    # have an eager version that only evaluates the branch that is needed.
     points = points[..., None]
     if not broadcastable(mat.shape, points.shape):
         raise ValueError(
-            "Expected equal numbers of rotations and vectors "
-            ", or a single rotation, or a single vector, got "
-            f"{mat.shape[0]} rotations and {points.shape[0]} vectors."
+            f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
+            "vectors."
         )
-
-    return xp.where(inverse, mat.mT @ points, mat @ points)[..., 0]
+    if inverse:
+        return (mat.mT @ points)[..., 0]
+    return (mat @ points)[..., 0]
 
 
 def setitem(
@@ -676,7 +671,6 @@ def align_vectors(
     dtype = xp_result_type(a, b, force_floating=True, xp=xp)
     a_original = xp.asarray(a, dtype=dtype)
     b_original = xp.asarray(b, dtype=dtype)
-    # TODO: This function does not support broadcasting yet.
     a = xpx.atleast_nd(a_original, ndim=2, xp=xp)
     b = xpx.atleast_nd(b_original, ndim=2, xp=xp)
     if a.shape[-1] != 3:
@@ -691,6 +685,11 @@ def align_vectors(
         raise ValueError(
             "Expected inputs `a` and `b` to have same shapes"
             f", got {a_original.shape} and {b_original.shape} respectively."
+        )
+    if a.ndim > 2 or b.ndim > 2:  # This function does not support broadcasting
+        raise ValueError(
+            "Expected inputs `a` and `b` to have shape (3,) or (N, 3), got "
+            f"{a_original.shape} and {b_original.shape} respectively."
         )
     N = a.shape[0]
 
@@ -1010,21 +1009,20 @@ def _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
-    device = xp_device(quat)
     n1, n3 = (n1, n3) if extrinsic else (n3, n1)
 
     n_cross = xp.linalg.cross(n1, n2)
     lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
 
     # alternative set of angles compatible with as_euler implementation
-    mask = xp.asarray(lamb < 0, device=device)
-    n2 = xp.where(mask, -n2, n2)
+    mask = lamb < 0
+    n2 = xp.where(mask[..., None], -n2, n2)
     lamb = xp.where(mask, -lamb, lamb)
-    n_cross = xp.where(mask, -n_cross, n_cross)
+    n_cross = xp.where(mask[..., None], -n_cross, n_cross)
     correct_set = mask
 
     quat_lamb = xp.concat(
-        (xp.sin(lamb / 2) * n2, xpx.atleast_nd(xp.cos(lamb / 2), ndim=1, xp=xp))
+        (xp.sin(lamb / 2)[..., None] * n2, xp.cos(lamb / 2)[..., None]), axis=-1
     )
 
     q_trans = compose_quat(quat_lamb, quat)
