@@ -1052,7 +1052,7 @@ def test_as_euler_nd_rotation(xp, ndim: int):
 @make_xp_test_case(Rotation.as_matrix, Rotation.inv)
 def test_inv(xp):
     dtype = xpx.default_dtype(xp)
-    atol = 1e-12
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     rnd = np.random.RandomState(0)
     n = 10
     # preserve use of old random_state during SPEC 7 transition
