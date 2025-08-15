@@ -27,7 +27,7 @@ License: BSL-1.0
 
 Name: L-BFGS-B
 Files: scipy/optimize/lbfgsb/[__lbfgsb.h,__lbfgsb.c]
-License: BSD license
+License: BSD-3-Clause
   For details, see scipy/optimize/__lbfgsb.c
 
 Name: LAPJVsp
@@ -78,12 +78,12 @@ License: BSD-3-Clause
 
 Name: Qhull
 Files: subprojects/qhull_r/libqhull_r/*
-License: Qhull license (BSD-like)
+License: Qhull
   For details, see subprojects/qhull_r/libqhull_r/COPYING.txt
 
 Name: xsf
 Files: subprojects/xsf/*
-License: 3-Clause BSD
+License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception
   For details, see subprojects/xsf/LICENSE and
   subprojects/xsf/LICENSES_bundled.txt
 
