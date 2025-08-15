@@ -369,7 +369,7 @@ class RotationSpline:
 
         if rotations.as_quat().ndim > 2:
             raise ValueError(
-                "Rotations with more than 1 leading dimension are not supported for now."
+                "Rotations with more than 1 leading dimension are not supported."
             )
 
         if len(rotations) == 1:

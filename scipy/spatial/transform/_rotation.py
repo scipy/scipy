@@ -2705,7 +2705,7 @@ class Slerp:
         q = rotations.as_quat()
         if q.ndim > 2:
             raise ValueError(
-                "Rotations with more than 1 leading dimension are not supported for now."
+                "Rotations with more than 1 leading dimension are not supported."
             )
 
         xp = array_namespace(q)

@@ -190,7 +190,6 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
-    angles = xp_promote(angles, force_floating=True, xp=xp)
     if degrees:
         angles = _deg2rad(angles)
 
@@ -242,8 +241,6 @@ def from_davenport(
 ) -> Array:
     xp = array_namespace(axes)
     device = xp_device(axes)
-    axes = xp_promote(axes, force_floating=True, xp=xp)
-    angles = xp.asarray(angles, dtype=axes.dtype)  # could be a scalar
     if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
         extrinsic = True
     elif order in ["i", "intrinsic"]:
@@ -278,9 +275,8 @@ def from_davenport(
         axes_not_orthogonal = axes_not_orthogonal | (
             xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7
         )
-    if not is_lazy_array(axes_not_orthogonal):
-        if xp.any(axes_not_orthogonal):
-            raise ValueError("Consecutive axes must be orthogonal.")
+    if not is_lazy_array(axes_not_orthogonal) and xp.any(axes_not_orthogonal):
+        raise ValueError("Consecutive axes must be orthogonal.")
     else:
         axes = xp.where(axes_not_orthogonal[..., None, None], xp.nan, axes)
 
@@ -293,8 +289,8 @@ def from_davenport(
     # axes.shape[-2] must be angles.shape[-1]
     # Resulting shape is np.broadcast_shapes(axes.shape[:-2], angles.shape[:-1]) + (4,)
     #
-    #
-    # This definition is the same as for euler if we interpret seq as 2D array of axes.
+    # This definition is the same as in from_euler if we interpret seq as 2D array of
+    # axes.
     #
     # ---------------------------------------------------------------------------------
     #
@@ -555,8 +551,8 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
 
         if weights.shape != quat.shape[:-1]:
             raise ValueError(
-                f"Expected `weights` to match rotation shape, got shape {weights.shape} "
-                f"for {quat.shape[:-1]} rotations."
+                f"Expected `weights` to match rotation shape, got shape {weights.shape}"
+                f" for {quat.shape[:-1]} rotations."
             )
 
         # Make sure we can transpose quat
