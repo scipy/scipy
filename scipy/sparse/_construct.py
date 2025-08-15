@@ -676,7 +676,6 @@ def kronsum(A, B, format=None):
 
     Examples
     --------
-
     `kronsum` can be used to construct a finite difference discretization of the 2D
     Laplacian from a 1D discretization.
 
