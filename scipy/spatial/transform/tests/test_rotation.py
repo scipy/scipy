@@ -1072,6 +1072,7 @@ def test_inv(xp):
     
     # Batched version
     batch_shape = (10, 3, 7)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     quat = xp.asarray(rnd.normal(size=batch_shape + (4,)), dtype=dtype)
     r = Rotation.from_quat(quat)
     p_mat = r.as_matrix()
