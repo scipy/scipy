@@ -550,7 +550,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
 
 def kron(A, B, format=None):
-    """kronecker product of sparse matrices A and B
+    """Kronecker product of sparse matrices `A` and `B`
 
     Parameters
     ----------
@@ -564,9 +564,9 @@ def kron(A, B, format=None):
 
     Returns
     -------
-    kronecker product in a sparse format.
-    Returns a sparse matrix unless either A or B is a
-    sparse array in which case returns a sparse array.
+    sparse matrix or array
+        kronecker product in a sparse format. Returns a sparse matrix unless either
+        `A` or `B` is a sparse array in which case returns a sparse array.
 
     Examples
     --------
@@ -652,25 +652,42 @@ def kron(A, B, format=None):
 
 
 def kronsum(A, B, format=None):
-    """kronecker sum of square sparse matrices A and B
+    """Kronecker sum of square sparse matrices `A` and `B`
 
     Kronecker sum of two sparse matrices is a sum of two Kronecker
-    products kron(I_n,A) + kron(B,I_m) where A has shape (m,m)
-    and B has shape (n,n) and I_m and I_n are identity matrices
-    of shape (m,m) and (n,n), respectively.
+    products ``kron(I_n,A) + kron(B,I_m)`` where `A` has shape ``(m, m)``
+    and `B` has shape ``(n, n)`` and ``I_m`` and ``I_n`` are identity matrices
+    of shape ``(m, m)`` and ``(n, n)``, respectively.
 
     Parameters
     ----------
-    A
-        square matrix
-    B
-        square matrix
+    A : sparse matrix or array
+        Square matrix
+    B : sparse array or array
+        Square matrix
     format : str
         format of the result (e.g. "csr")
 
     Returns
     -------
-    kronecker sum in a sparse matrix format
+    sparse matrix or array
+        kronecker sum in a sparse format. Returns a sparse matrix unless either
+        `A` or `B` is a sparse array in which case returns a sparse array.
+
+    Examples
+    --------
+    `kronsum` can be used to construct a finite difference discretization of the 2D
+    Laplacian from a 1D discretization.
+
+    >>> from scipy.sparse import diags_array, kronsum
+    >>> from matplotlib import pyplot as plt
+    >>> import numpy as np
+    >>> ex = np.ones(10)
+    >>> D_x = diags_array([ex, -ex[1:]], offsets=[0, -1])  # 1D first derivative
+    >>> D_xx = D_x.T @ D_x  # 1D second derivative
+    >>> L = kronsum(D_xx, D_xx)  # 2D Laplacian
+    >>> plt.spy(L.toarray())
+    >>> plt.show()
 
     """
     # TODO: delete next 8 lines and replace _sparse with _array when spmatrix removed
