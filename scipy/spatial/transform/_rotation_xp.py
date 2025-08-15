@@ -639,6 +639,7 @@ def reduce(
 
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
+    xp = array_namespace(quat)
     mat = as_matrix(quat)
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
@@ -649,7 +650,8 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
             "vectors."
         )
     if inverse:
-        return (mat.mT @ points)[..., 0]
+        # TODO: Replace with .mT once numpy 2.0 is the minimum supported version
+        return (xp.matrix_transpose(mat) @ points)[..., 0]
     return (mat @ points)[..., 0]
 
 

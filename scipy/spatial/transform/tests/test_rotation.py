@@ -1057,12 +1057,12 @@ def test_inv(xp):
     n = 10
     # preserve use of old random_state during SPEC 7 transition
     p = Rotation.random(num=n, random_state=rnd)
+    p = rotation_to_xp(p, xp)
     p_mat = p.as_matrix()
     q_mat = p.inv().as_matrix()
-    p = rotation_to_xp(p, xp)
 
-    result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat), dtype=dtype)
-    result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat), dtype=dtype)
+    result1 = p_mat @ q_mat
+    result2 = q_mat @ p_mat
 
     eye3d = xp.empty((n, 3, 3))
     eye3d = xpx.at(eye3d)[..., :3, :3].set(xp.eye(3))
@@ -1072,12 +1072,12 @@ def test_inv(xp):
     
     # Batched version
     batch_shape = (10, 3, 7)
-    quat = xp.asarray(rnd.normal(size=batch_shape + (4,)))
+    quat = xp.asarray(rnd.normal(size=batch_shape + (4,)), dtype=dtype)
     r = Rotation.from_quat(quat)
     p_mat = r.as_matrix()
     q_mat = r.inv().as_matrix()
-    result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat), dtype=dtype)
-    result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat), dtype=dtype)
+    result1 = p_mat @ q_mat
+    result2 = q_mat @ p_mat
     eye_nd = xp.empty(batch_shape + (3, 3))
     eye_nd = xpx.at(eye_nd)[..., :3, :3].set(xp.eye(3))
     xp_assert_close(result1, eye_nd, atol=atol)
@@ -1220,28 +1220,34 @@ def test_approx_equal_batched(xp):
     # Same shapes
     batch_shape = (2, 10, 3)
     rng = np.random.default_rng(0)
-    q1 = rng.normal(size=batch_shape + (4,))
-    q2 = rng.normal(size=batch_shape + (4,))
-    p = rotation_to_xp(Rotation.from_quat(q1), xp)
-    q = rotation_to_xp(Rotation.from_quat(q2), xp)
-    r_mag = (p * q.inv()).magnitude()
+    p = Rotation.from_quat(rng.normal(size=batch_shape + (4,)))
+    q = Rotation.from_quat(rng.normal(size=batch_shape + (4,)))
+    r_mag = (p * q.inv()).magnitude()  # Must be computed as numpy array for np.median
+    p = rotation_to_xp(p, xp)
+    q = rotation_to_xp(q, xp)
     assert r_mag.shape == batch_shape
     # ensure we get mix of Trues and Falses
     atol = xp.asarray(np.median(r_mag))
     xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
 
     # Broadcastable shapes of same length
-    q2 = rng.normal(size=(1, 10, 1, 4))
-    q = rotation_to_xp(Rotation.from_quat(q2), xp)
+    p = Rotation.from_quat(rng.normal(size=batch_shape + (4,)))
+    q = Rotation.from_quat(rng.normal(size=(1, 10, 1, 4)))
     r_mag = (p * q.inv()).magnitude()
+    p = rotation_to_xp(p, xp)
+    q = rotation_to_xp(q, xp)
     assert r_mag.shape == batch_shape
+    atol = xp.asarray(np.median(r_mag))
     xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
 
     # Broadcastable shapes of different length
-    q2 = rng.normal(size=(1, 3, 4))
-    q = rotation_to_xp(Rotation.from_quat(q2), xp)
+    p = Rotation.from_quat(rng.normal(size=batch_shape + (4,)))
+    q = Rotation.from_quat(rng.normal(size=(1, 3, 4)))
     r_mag = (p * q.inv()).magnitude()
+    p = rotation_to_xp(p, xp)
+    q = rotation_to_xp(q, xp)
     assert r_mag.shape == batch_shape
+    atol = xp.asarray(np.median(r_mag))
     xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
 
 
@@ -1370,6 +1376,7 @@ def test_reduction_scalar_calculation(xp):
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.apply)
 def test_apply_single_rotation_single_point(xp):
+    dtype = xpx.default_dtype(xp)
     mat = xp.asarray([
         [0, -1, 0],
         [1, 0, 0],
@@ -1378,9 +1385,9 @@ def test_apply_single_rotation_single_point(xp):
     r_1d = Rotation.from_matrix(mat)
     r_2d = Rotation.from_matrix(xp.expand_dims(mat, axis=0))
 
-    v_1d = xp.asarray([1.0, 2, 3])
+    v_1d = xp.asarray([1.0, 2, 3], dtype=dtype)
     v_2d = xp.expand_dims(v_1d, axis=0)
-    v1d_rotated = xp.asarray([-2.0, 1, 3])
+    v1d_rotated = xp.asarray([-2.0, 1, 3], dtype=dtype)
     v2d_rotated = xp.expand_dims(v1d_rotated, axis=0)
 
     xp_assert_close(r_1d.apply(v_1d), v1d_rotated)
@@ -1388,7 +1395,7 @@ def test_apply_single_rotation_single_point(xp):
     xp_assert_close(r_2d.apply(v_1d), v2d_rotated)
     xp_assert_close(r_2d.apply(v_2d), v2d_rotated)
 
-    v1d_inverse = xp.asarray([2.0, -1, 3])
+    v1d_inverse = xp.asarray([2.0, -1, 3], dtype=dtype)
     v2d_inverse = xp.expand_dims(v1d_inverse, axis=0)
 
     xp_assert_close(r_1d.apply(v_1d, inverse=True), v1d_inverse)
@@ -1400,6 +1407,7 @@ def test_apply_single_rotation_single_point(xp):
 @make_xp_test_case(Rotation.from_matrix, Rotation.apply)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_apply_single_rotation_multiple_points(xp, ndim: int):
+    dtype = xpx.default_dtype(xp)
     mat = xp.asarray([
         [0, -1, 0],
         [1, 0, 0],
@@ -1410,7 +1418,7 @@ def test_apply_single_rotation_multiple_points(xp, ndim: int):
 
     rng = np.random.default_rng(0)
     batch_shape = (ndim,) * (ndim - 1)
-    v = xp.asarray(rng.normal(size=batch_shape + (2, 3)))
+    v = xp.asarray(rng.normal(size=batch_shape + (2, 3)), dtype=dtype)
     v_rotated = xp.stack([-v[..., 1], v[..., 0], v[..., 2]], axis=-1)
 
     xp_assert_close(r1.apply(v), v_rotated)
@@ -1478,12 +1486,12 @@ def test_apply_multiple_rotations_multiple_points(xp, ndim: int):
     mat = xp.tile(mat, batch_shape + (1, 1, 1))
     r = Rotation.from_matrix(mat)
 
-    v = xp.asarray([[1, 2, 3], [4, 5, 6]])
-    v_rotated = xp.asarray([[-2.0, 1, 3], [4, -6, 5]])
+    v = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
+    v_rotated = xp.asarray([[-2.0, 1, 3], [4, -6, 5]], dtype=dtype)
     v_rotated = xp.tile(v_rotated, batch_shape + (1, 1))
     xp_assert_close(r.apply(v), v_rotated)
 
-    v_inverse = xp.asarray([[2.0, -1, 3], [4, 6, -5]])
+    v_inverse = xp.asarray([[2.0, -1, 3], [4, 6, -5]], dtype=dtype)
     v_inverse = xp.tile(v_inverse, batch_shape + (1, 1))
     xp_assert_close(r.apply(v, inverse=True), v_inverse)
 
