@@ -72,17 +72,15 @@ def test_sparray_vs_spmatrix():
     assert_(loaded_matrix.dtype == loaded_array.dtype)
     assert_equal(loaded_matrix.toarray(), loaded_array.toarray())
 
-def test_nd_coo_format():
+def test_nd_coo_format(tmpdir):
     A = coo_array([[[0]]])
 
     #save/load array
-    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
-    os.close(fd)
-    try:
+    with tmpdir.as_cwd():
+        tmpfile = "f.npz"
+
         save_npz(tmpfile, A)
         loaded_A = load_npz(tmpfile)
-    finally:
-        os.remove(tmpfile)
 
     assert isinstance(loaded_A, coo_array)
     assert_(loaded_A.shape == A.shape)
