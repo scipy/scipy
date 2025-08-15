@@ -94,7 +94,7 @@ from ._helper import (
     rfftfreq, fftshift, ifftshift)
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
-from ._pocketfft.helper import set_workers, get_workers
+from ._duccfft.helper import set_workers, get_workers
 
 __all__ = [
     'fft', 'ifft', 'fft2', 'ifft2', 'fftn', 'ifftn',

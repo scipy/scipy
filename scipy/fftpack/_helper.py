@@ -3,7 +3,7 @@ import operator
 import numpy as np
 from numpy.fft import fftshift, ifftshift, fftfreq
 
-import scipy.fft._pocketfft.helper as _helper
+import scipy.fft._duccfft.helper as _helper
 
 __all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
 

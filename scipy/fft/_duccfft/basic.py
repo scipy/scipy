@@ -3,7 +3,7 @@ Discrete Fourier Transforms - basic.py
 """
 import numpy as np
 import functools
-from . import pypocketfft as pfft
+from . import pyduccfft as pfft
 from .helper import (_asfarray, _init_nd_shape_and_axes, _datacopied,
                      _fix_shape, _fix_shape_1d, _normalization,
                      _workers)

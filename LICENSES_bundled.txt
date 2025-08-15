@@ -92,10 +92,10 @@ License: 3-Clause BSD
   For details, see scipy/subprojects/xsf/LICENSE and
   scipy/subprojects/xsf/LICENSES_bundled.txt
 
-Name: pypocketfft
-Files: scipy/fft/_pocketfft/[pocketfft.h, pypocketfft.cxx]
+Name: pyduccfft
+Files: scipy/fft/_duccfft/[pyduccfft.cxx]
 License: 3-Clause BSD
-  For details, see scipy/fft/_pocketfft/LICENSE.md
+  For details, see scipy/fft/_duccfft/LICENSE.md
 
 Name: uarray
 Files: scipy/_lib/uarray/*
