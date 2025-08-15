@@ -39,7 +39,7 @@ keyword - that can be adopted in many more functions.
 Making it easier for users to use Numba's ``@njit`` in their code that relies
 on SciPy functionality would unlock a lot of performance gain.  That needs a
 strategy though, all solutions are still maturing (see for example
-`this overview <https://fluiddyn.netlify.app/transonic-vision.html>`__).
+`this overview <https://transonic.readthedocs.io/en/latest/backends/numba.html>`__).
 
 Finally, many individual functions can be optimized for performance.
 ``scipy.optimize`` and ``scipy.interpolate`` functions are particularly often
