@@ -1,5 +1,6 @@
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal
+    xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal,
+    make_xp_test_case
 )
 from pytest import raises as assert_raises
 import pytest
@@ -836,10 +837,7 @@ class TestLagrange:
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
-@xfail_xp_backends("dask.array", reason="lacks nd fancy indexing")
-@xfail_xp_backends("jax.numpy", reason="immutable arrays")
-@xfail_xp_backends("array_api_strict", reason="fancy indexing __setitem__")
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(Akima1DInterpolator)
 class TestAkima1DInterpolator:
     def test_eval(self, xp):
         x = xp.arange(0., 11., dtype=xp.float64)
@@ -1045,7 +1043,7 @@ def test_complex(method):
         _run_concurrent_barrier(10, worker_fn, ak, x_ext)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(PPoly, BPoly)
 class TestPPolyCommon:
     # test basic functionality for PPoly and BPoly
     def test_sort_check(self, xp):
@@ -1256,7 +1254,7 @@ class TestPolySubclassing:
         assert bp.__class__ == self.B
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(PPoly)
 class TestPPoly:
     def test_simple(self, xp):
         c = xp.asarray([[1, 4], [2, 5], [3, 6]])
@@ -1769,7 +1767,7 @@ class TestPPoly:
                 xp_assert_close(pp.roots(), np.asarray([1.0, -1.0]))
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BPoly)
 class TestBPoly:
     def test_simple(self, xp):
         x = xp.asarray([0, 1])
@@ -1909,7 +1907,7 @@ class TestBPoly:
                 assert not np.isnan(bp_d([-0.1, 2.1])).any()
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BPoly)
 class TestBPolyCalculus:
     def test_derivative(self, xp):
         x = xp.asarray([0, 1, 3])
@@ -2072,7 +2070,7 @@ class TestBPolyCalculus:
                         atol=1e-12, rtol=1e-12)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BPoly, PPoly)
 class TestPolyConversions:
     def test_bp_from_pp(self, xp):
         x = xp.asarray([0, 1, 3])

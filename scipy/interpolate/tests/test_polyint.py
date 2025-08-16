@@ -3,7 +3,8 @@ import io
 import numpy as np
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_array_almost_equal, assert_almost_equal
+    xp_assert_equal, xp_assert_close, assert_array_almost_equal, assert_almost_equal,
+    make_xp_test_case
 )
 from pytest import raises as assert_raises
 import pytest
@@ -665,7 +666,7 @@ class TestPCHIP:
         xp_assert_close(r, np.asarray([0.5]))
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(CubicSpline)
 class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
@@ -892,7 +893,7 @@ class TestCubicSpline:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(CubicHermiteSpline)
 def test_CubicHermiteSpline_correctness(xp):
     x = xp.asarray([0, 2, 7])
     y = xp.asarray([-1, 2, 3])
