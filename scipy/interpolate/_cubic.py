@@ -389,7 +389,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     ("dask.array", "lacks nd fancy indexing"),
     ("jax.numpy", "immutable arrays"),
     ("array_api_strict", "fancy indexing __setitem__"),
-    jax_jit=False
 ])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
