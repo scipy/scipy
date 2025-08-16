@@ -4062,6 +4062,37 @@ add_newdoc("hankel1",
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    boundary conditions, the Green's function is given by
+
+    .. math::
+
+        G(\mathbf{x}, \mathbf{x'}) = \frac{1}{4i} H^{(1)}_0(k|\mathbf{x} - \mathbf{x'}|)
+
+    where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
+    of the first kind and of order zero. In the following example, we will solve the
+    Helmholtz equation with two dirac sources.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hankel1
+    >>> k = 10  # Wavenumber
+    >>> sources = [0.5, -0.5]  # Location of two point sources
+    >>> x, y = np.linspace(-3, 3, 300), np.linspace(-3, 3, 300)
+    >>> Z = np.add.outer(1j*y, x)
+    >>> U = np.zeros_like(Z)
+    >>> for sz in sources:
+    >>>     r = np.abs(Z - sz)
+    >>>     U += (1j/4)*hankel1(0, k*r)
+
+    Finally we will plot the real part of the solution
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(np.real(Z), np.imag(Z), np.real(U))
+    >>> plt.show()
     """)
 
 add_newdoc("hankel1e",
