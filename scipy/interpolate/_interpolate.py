@@ -10,7 +10,7 @@ import scipy.special as spec
 from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities
 
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
@@ -838,6 +838,7 @@ class _PPolyBase:
         return self._asarray(out)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
 class PPoly(_PPolyBase):
     """Piecewise polynomial in the power basis.
 
@@ -1305,6 +1306,7 @@ class PPoly(_PPolyBase):
         return cls.construct_fast(bp._asarray(c), bp.x, extrapolate, bp.axis)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False)
 class BPoly(_PPolyBase):
     """Piecewise polynomial in the Bernstein basis.
 

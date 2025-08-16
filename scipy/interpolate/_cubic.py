@@ -5,7 +5,7 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
-from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
 from scipy._lib.array_api_compat import numpy as np_compat
 
 from . import PPoly
@@ -71,6 +71,7 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     return x, dx, y, axis, dydx
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
@@ -384,6 +385,11 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
+@xp_capabilities(cpu_only=True, xfail_backends=[
+    ("dask.array", "lacks nd fancy indexing"),
+    ("jax.numpy", "immutable arrays"),
+    ("array_api_strict", "fancy indexing __setitem__"),
+])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
 
@@ -594,6 +600,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
                                   "an Akima interpolator.")
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
 
