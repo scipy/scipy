@@ -214,14 +214,14 @@ else
 endif
 
 if all_system_libraries or use_system_libraries.contains('qhull')
-  qhull_r_dep = dependency('qhull_r', version : '8.0.2')
+  qhull_r_dep = dependency('qhull_r', version : '>=8.0.2')
 elif auto_system_libraries
   qhull_r_dep = dependency(
-    'qhull_r', version : '8.0.2',
+    'qhull_r', version : '>=8.0.2',
     fallback : ['qhull_r', 'qhull_r_dep']
   )
 else
-  qhull_r = subproject('qhull_r', version : '8.0.2')
+  qhull_r = subproject('qhull_r', version : '>=8.0.2')
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
