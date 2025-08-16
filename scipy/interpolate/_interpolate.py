@@ -838,7 +838,7 @@ class _PPolyBase:
         return self._asarray(out)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False)
 class PPoly(_PPolyBase):
     """Piecewise polynomial in the power basis.
 
@@ -1306,7 +1306,7 @@ class PPoly(_PPolyBase):
         return cls.construct_fast(bp._asarray(c), bp.x, extrapolate, bp.axis)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False)
 class BPoly(_PPolyBase):
     """Piecewise polynomial in the Bernstein basis.
 

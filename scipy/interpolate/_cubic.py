@@ -71,7 +71,7 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     return x, dx, y, axis, dydx
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False)
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
@@ -388,7 +388,8 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 @xp_capabilities(cpu_only=True, xfail_backends=[
     ("dask.array", "lacks nd fancy indexing"),
     ("jax.numpy", "immutable arrays"),
-    ("array_api_strict", "fancy indexing __setitem__")
+    ("array_api_strict", "fancy indexing __setitem__"),
+    jax_jit=False
 ])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
@@ -600,7 +601,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
                                   "an Akima interpolator.")
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False)
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
 
