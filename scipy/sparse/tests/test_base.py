@@ -3093,6 +3093,8 @@ class _TestSlicingAssign:
     def test_assign_empty(self):
         A = self.spcreator(np.ones((2, 3)))
         B = self.spcreator((1, 2))
+        # Note: This is not like NumPy!! Incoming shape needs to be (2,) for NumPy
+        # we are more lenient to accommodate vectors in 2d format as input
         A[1, :2] = B
         assert_array_equal(A.toarray(), [[1, 1, 1], [0, 0, 1]])
 
@@ -3213,20 +3215,23 @@ class _TestFancyIndexing:
             B[[-1, -3], :][:, [2, -4]]
         )
 
-        # [1,[[1,2]]][[[1,2]],1]
         assert_equal(
             A[1, [[1, 3]]][[[0, 0]], 1].toarray(), B[1, [[1, 3]]][[[0, 0]], 1]
         )
         assert_equal(
             A[1, [[-1, -3]]][[[0, -1]], 1].toarray(), B[1, [[-1, -3]]][[[0, -1]], 1]
         )
-        # [:1,[[1,2]]][[[1,2]],:1]
-        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
-            A[:1, [[1, 3]]]
-        with pytest.raises(IndexError, match="Only 1D or 2D arrays allowed"):
-            A[[[0, 0]], :1]
+        # leads to 3D result
+        if A.format == "coo":
+            assert_equal(A[:1, [[1, 3]]].toarray(), B[:1, [[1, 3]]])
+            assert_equal(A[[[0, 0]], :1].toarray(), B[[[0, 0]], :1])
+        else:
+            with pytest.raises(IndexError, match="Only 1D or 2D|>2D is not supported"):
+                A[:1, [[1, 3]]]
+            with pytest.raises(IndexError, match="Only 1D or 2D|>2D is not supported"):
+                A[[[0, 0]], :1]
 
-        # [:,[1,2]][[1,2],:]
+
         assert_equal(
             A[:, [1, 3]][[2, 4], :].toarray(), B[:, [1, 3]][[2, 4], :]
         )
@@ -3515,37 +3520,42 @@ class _TestFancyIndexingAssign:
 
 class _TestFancyMultidim:
     def test_fancy_indexing_ndarray(self):
-        sets = [
+        IandJ = [
             (np.array([[1], [2], [3]]), np.array([3, 4, 2])),
             (np.array([[1], [2], [3]]), np.array([[3, 4, 2]])),
             (np.array([[1, 2, 3]]), np.array([[3], [4], [2]])),
             (np.array([1, 2, 3]), np.array([[3], [4], [2]])),
-            (np.array([[1, 2, 3], [3, 4, 2]]),
-             np.array([[5, 6, 3], [2, 3, 1]]))
-            ]
+            (np.array([[1, 2, 3], [3, 4, 2]]), np.array([[5, 6, 3], [2, 3, 1]])),
+        ]
+
+        np.random.seed(1234)
+        D = self.asdense(np.random.rand(5, 7))
+        S = self.spcreator(D)
+
         # These inputs generate 3-D outputs
-        #    (np.array([[[1], [2], [3]], [[3], [4], [2]]]),
-        #     np.array([[[5], [6], [3]], [[2], [3], [1]]])),
+        if S.format == 'coo':
+            IandJ.append(
+                (np.array([[[1], [2], [3]], [[3], [4], [2]]]),
+                 np.array([[[5], [6], [3]], [[2], [3], [1]]]))
+            )
 
-        for I, J in sets:
-            np.random.seed(1234)
-            D = self.asdense(np.random.rand(5, 7))
-            S = self.spcreator(D)
-
-            SIJ = S[I,J]
-            if issparse(SIJ):
-                SIJ = SIJ.toarray()
-            assert_equal(SIJ, D[I,J])
+        for I, J in IandJ:
+            SIJ = S[I, J]
+            DIJ = D[I, J]
+            assert_equal(toarray(SIJ), DIJ)
 
             I_bad = I + 5
             J_bad = J + 7
 
-            assert_raises(IndexError, S.__getitem__, (I_bad,J))
-            assert_raises(IndexError, S.__getitem__, (I,J_bad))
+            assert_raises(IndexError, S.__getitem__, (I_bad, J))
+            assert_raises(IndexError, S.__getitem__, (I, J_bad))
 
-            # This would generate 3-D arrays -- not supported
-            assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
-            assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+            if S.format != 'coo':
+                assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
+                assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
+            else:
+                assert_equal(S[[I, I], :].toarray(), D[[I, I], :])
+                assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
 
 
 class _TestFancyMultidimAssign:
@@ -4896,10 +4906,7 @@ TestLIL.init_class()
 TestLILMatrix.init_class()
 
 
-class TestCOO(sparse_test_class(getset=False,
-                                slicing=False, slicing_assign=False,
-                                fancy_indexing=False, fancy_assign=False)):
-    spcreator = coo_array
+class BaseTestCOO:
     math_dtypes = [np.int_, np.float64, np.complex128]
 
     def test_constructor1(self):
@@ -5077,8 +5084,18 @@ class TestCOO(sparse_test_class(getset=False,
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+    
+class TestCOO(BaseTestCOO,
+              sparse_test_class(getset=True,
+                                slicing=True, slicing_assign=True,
+                                fancy_indexing=True, fancy_assign=True)):
+    spcreator = coo_array
 
-class TestCOOMatrix(_MatrixMixin, TestCOO):
+class TestCOOMatrix(_MatrixMixin,
+                    BaseTestCOO,
+                    sparse_test_class(getset=False,
+                                      slicing=False, slicing_assign=False,
+                                      fancy_indexing=False, fancy_assign=False)):
     spcreator = coo_matrix
 
 
@@ -5807,7 +5824,7 @@ class TestBSRNonCanonicalMatrix(TestBSRNonCanonical, TestBSRMatrix):
     pass
 
 
-class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
+class COONonCanonicalMixin(_NonCanonicalMixin):
     def _arg1_for_noncanonical(self, M, sorted_indices=None):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
@@ -5827,7 +5844,11 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
-class TestCOONonCanonicalMatrix(TestCOONonCanonical, TestCOOMatrix):
+class TestCOONonCanonical(COONonCanonicalMixin, TestCOO):
+    pass
+
+
+class TestCOONonCanonicalMatrix(COONonCanonicalMixin, TestCOOMatrix):
     pass
 
 
