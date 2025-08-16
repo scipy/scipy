@@ -440,8 +440,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         raise ValueError('maxls must be positive.')
 
     x = array(x0, dtype=np.float64)
-    f = array(0.0, dtype=np.int32)
-    g = zeros((n,), dtype=np.int32)
+    f = array(0.0, dtype=np.float64)
+    g = zeros((n,), dtype=np.float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
     iwa = zeros(3*n, dtype=np.int32)
     task = zeros(2, dtype=np.int32)
