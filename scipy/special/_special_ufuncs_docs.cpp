@@ -2547,8 +2547,7 @@ const char *hankel1_doc = R"(
 
     See Also
     --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
+    hankel1e : This function with leading exponential behavior stripped off.
 
     Notes
     -----
