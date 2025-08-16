@@ -2583,7 +2583,7 @@ const char *hankel1_doc = R"(
 
     where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
     of the first kind and of order zero. In the following example, we will solve the
-    Helmholtz equation with two dirac sources.
+    Helmholtz equation with two Dirac sources.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -2594,8 +2594,8 @@ const char *hankel1_doc = R"(
     >>> Z = np.add.outer(1j*y, x)
     >>> U = np.zeros_like(Z)
     >>> for sz in sources:
-    >>>     r = np.abs(Z - sz)
-    >>>     U += (1j/4)*hankel1(0, k*r)
+    ...     r = np.abs(Z - sz)
+    ...     U += (1j/4)*hankel1(0, k*r)
 
     Finally, we will plot the real part of the solution.
 
