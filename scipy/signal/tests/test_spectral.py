@@ -1539,7 +1539,7 @@ class TestLombscargle:
         f_org = f.copy()
         weights_org = weights.copy()
 
-        pgram = lombscargle(t, y, f, precenter=True, weights=weights)
+        lombscargle(t, y, f, precenter=True, weights=weights)
 
         # check all 4 array inputs
         assert_array_equal(t_org, t)
