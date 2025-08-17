@@ -1507,7 +1507,7 @@ class TestLombscargle:
         freqs = [np.pi/2.0] * 2  # must have 2+ elements
 
         lombscargle(t, y, freqs)
-    
+
     def test_input_mutation(self):
         # this tests for mutation of the input arrays
         # https://github.com/scipy/scipy/issues/23474
@@ -1521,8 +1521,8 @@ class TestLombscargle:
         p = 0.7  # Fraction of points to select
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.RandomState(2353425)
-        r = rng.rand(nin)
+        rng = np.random.default_rng()
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
@@ -1542,10 +1542,10 @@ class TestLombscargle:
         lombscargle(t, y, f, precenter=True, weights=weights)
 
         # check all 4 array inputs
-        assert_array_equal(t_org, t)
-        assert_array_equal(y_org, y)
-        assert_array_equal(f_org, f)
-        assert_array_equal(weights_org, weights)
+        assert_array_equal(t, t_org)
+        assert_array_equal(y, y_org)
+        assert_array_equal(f, f_org)
+        assert_array_equal(weights, weights_org)
 
 
 class TestSTFT:
