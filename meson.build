@@ -2,7 +2,7 @@ project(
   'scipy',
   'c', 'cpp', 'cython',
   version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
-  license: 'BSD-3-Clause AND BSD-2-Clause AND BSL-1.0 AND MIT AND Qhull',
+  license: 'BSD-3-Clause AND BSD-2-Clause AND BSL-1.0 AND MIT AND Qhull AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception',
   license_files = [
     'LICENSE.txt',
     'scipy/_build_utils/tempita/LICENSE.txt',  # MIT
@@ -29,6 +29,10 @@ project(
     # 'scipy/stats/libnpyrandom/logfactorial.h',  # BSD-3-Clause
     'scipy/stats/biasedurn/license.txt',  # BSD-3-Clause
     'scipy/_lib/array_api_compat/LICENSE',  # MIT  # git submodule
+    'subprojects/boost_math/math/LICENSE',  # BSL-1.0  # git submodule
+    'subprojects/highs/LICENSE.txt',  # MIT  # git submodule
+    'subprojects/qhull_r/libqhull_r/COPYING.txt',  # Qhull
+    'subprojects/xsf/LICENSES_bundled.txt',  # BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception  # git submodule
   ],
   meson_version: '>= 1.5.0',
   default_options: [
