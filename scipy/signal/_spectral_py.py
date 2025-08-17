@@ -250,7 +250,7 @@ def lombscargle(
     # if requested, perform precenter
     if precenter:
         msg = ("Use of parameter 'precenter' is deprecated as of SciPy "
-               "X.X.X and will be removed in X.X.X. Please leave "
+               "1.17.0 and will be removed in X.X.X. Please leave "
                "'precenter' unspecified; the operation is no longer necessary when "
                "'floating_mean' is True. However, it can be exactly substituted by "
                "passing 'y = (y - y.mean())' into the input.")
