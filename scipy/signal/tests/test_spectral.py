@@ -1524,8 +1524,8 @@ class TestLombscargle:
         offset = 0.15  # Offset to be subtracted in pre-centering
 
         # Randomly select a fraction of an array with timesteps
-        rng = np.random.RandomState(2353425)
-        r = rng.rand(nin)
+        rng = np.random.default_rng()
+        r = rng.random(nin)
         t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
 
         # Plot a sine wave for the selected times
