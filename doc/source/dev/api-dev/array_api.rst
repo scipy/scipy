@@ -332,7 +332,7 @@ To properly test scipy with JAX, you need to wrap the tested scipy functions
 with `@jax.jit` before they are called by the unit tests.
 To achieve this, you should tag them as follows in your test module::
 
-  from scipy._lib._lazy_testing import lazy_xp_function
+  from scipy._lib.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import toto
 
   lazy_xp_function(toto)
@@ -343,7 +343,7 @@ To achieve this, you should tag them as follows in your test module::
       # When xp==jax.numpy, toto is wrapped with @jax.jit
       xp_assert_close(toto(a, b), a)
 
-See full documentation in `scipy/_lib/_lazy_testing.py`.
+See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
 
 Additional information
