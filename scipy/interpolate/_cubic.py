@@ -71,7 +71,7 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     return x, dx, y, axis, dydx
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False)
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
@@ -600,7 +600,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
                                   "an Akima interpolator.")
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False)
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
 
