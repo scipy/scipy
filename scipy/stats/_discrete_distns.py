@@ -1749,8 +1749,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          special.chndtr(2*mu2, -2*x, 2*mu1),
+                          scu._ncx2_sf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
