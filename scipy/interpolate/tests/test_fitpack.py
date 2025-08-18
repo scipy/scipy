@@ -88,6 +88,16 @@ class TestSmokeTests:
                     xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
                     assert k == 5   # knot length differ in some k=5 cases
+            else:
+                if np.allclose(v[0], v[-1], atol=1e-15):
+                    spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe, bc_type='periodic')
+                    if k != 1: # knots for k == 1 in some cases
+                        xp_assert_close(spl.t, tck[0], atol=1e-15)
+                        xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                else:
+                    with assert_raises(ValueError):
+                        spl = make_splrep(x, v, k=k, s=s,
+                                          xb=xb, xe=xe, bc_type='periodic')
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -117,7 +127,10 @@ class TestSmokeTests:
     def test_smoke_splrep_splev(self):
         self.check_1(s=1e-6)
         self.check_1(b=1.5*np.pi)
+
+    def test_smoke_splrep_splev_periodic(self):
         self.check_1(b=1.5*np.pi, xe=2*np.pi, per=1, s=1e-1)
+        self.check_1(b=2*np.pi, per=1, s=1e-1)
 
     @pytest.mark.parametrize('per', [0, 1])
     @pytest.mark.parametrize('at_nodes', [True, False])
