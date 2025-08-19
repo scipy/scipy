@@ -7826,12 +7826,12 @@ class ncx2_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (x, df, nc), scu._ncx2_cdf,
+            return xpx.apply_where(nc != 0, (x, df, nc), sc.chndtr,
                                    lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (q, df, nc), scu._ncx2_ppf,
+            return xpx.apply_where(nc != 0, (q, df, nc), sc.chndtrix,
                                    lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
