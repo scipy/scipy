@@ -195,7 +195,7 @@ from ._traversal import (
 )
 from ._min_spanning_tree import minimum_spanning_tree
 from ._flow import maximum_flow
-from lap_sparse._matching import (
+from ._matching import (
     maximum_bipartite_matching, min_weight_full_bipartite_matching
 )
 from ._reordering import reverse_cuthill_mckee, structural_rank
