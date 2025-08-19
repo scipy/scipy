@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    assert_almost_equal, array_namespace, xp_assert_equal, xp_assert_close
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
@@ -915,10 +915,12 @@ class TestZerosPolesGain:
 
 class Test_abcd_normalize:
     def setup_method(self):
-        self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
-        self.B = np.array([[-1.0], [5.0]])
-        self.C = np.array([[4.0, 5.0]])
-        self.D = np.array([[2.5]])
+        xp = array_namespace()
+        self.A = xp.array([[1.0, 2.0], [3.0, 4.0]])
+        self.B = xp.array([[-1.0], [5.0]])
+        self.C = xp.array([[4.0, 5.0]])
+        self.D = xp.array([[2.5]])
+        self.xp = xp
 
     def test_no_matrix_fails(self):
         assert_raises(ValueError, abcd_normalize)
@@ -959,8 +961,9 @@ class Test_abcd_normalize:
         xp_assert_equal(B.shape[1], D.shape[1])
 
     def test_zero_dimension_is_not_none1(self):
-        B_ = np.zeros((2, 0))
-        D_ = np.zeros((0, 0))
+        xp = self.xp  # shorthand
+        B_ = xp.zeros((2, 0))
+        D_ = xp.zeros((0, 0))
         A, B, C, D = abcd_normalize(A=self.A, B=B_, D=D_)
         xp_assert_equal(A, self.A)
         xp_assert_equal(B, B_)
@@ -969,8 +972,9 @@ class Test_abcd_normalize:
         assert C.shape[1] == self.A.shape[0]
 
     def test_zero_dimension_is_not_none2(self):
-        B_ = np.zeros((2, 0))
-        C_ = np.zeros((0, 2))
+        xp = self.xp  # shorthand
+        B_ = xp.zeros((2, 0))
+        C_ = xp.zeros((0, 2))
         A, B, C, D = abcd_normalize(A=self.A, B=B_, C=C_)
         xp_assert_equal(A, self.A)
         xp_assert_equal(B, B_)
