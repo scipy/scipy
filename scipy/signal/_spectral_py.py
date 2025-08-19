@@ -65,7 +65,7 @@ def lombscargle(
         output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
         also exist at ``+freq``.
     precenter : bool, optional
-        Parameter is deprecated and will be removed in version X.X.X.
+        Parameter is deprecated and will be removed in version 1.19.0.
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
     normalize : bool | str, optional
@@ -105,7 +105,7 @@ def lombscargle(
     The algorithm used will not automatically account for any unknown y offset, unless
     floating_mean is True. Therefore, for most use cases, if there is a possibility of
     a y offset, it is recommended to set floating_mean to True. Parameter precenter is
-    deprecated and will be removed in version X.X.X. Precenter is a legacy parameter,
+    deprecated and will be removed in version 1.19.0. Precenter is a legacy parameter,
     and unnecessary when floating_mean is True. Furthermore, the mean removed by
     precenter does not account for sample weights, nor will it correct for any bias due
     to consistently missing observations at peaks and/or troughs. The precenter
@@ -249,11 +249,10 @@ def lombscargle(
 
     # if requested, perform precenter
     if precenter:
-        msg = ("Use of parameter 'precenter' is deprecated as of SciPy "
-               "1.17.0 and will be removed in X.X.X. Please leave "
-               "'precenter' unspecified; the operation is no longer necessary when "
-               "'floating_mean' is True. However, it can be exactly substituted by "
-               "passing 'y = (y - y.mean())' into the input.")
+        msg = ("Use of parameter 'precenter' is deprecated as of SciPy 1.17.0 and "
+               "will be removed in 1.19.0. Please leave 'precenter' unspecified. "
+               "It can be exactly substituted by passing 'y = (y - y.mean())' into "
+               "the input. Consider setting `floating_mean` to True instead.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         y = y - y.mean()
 
