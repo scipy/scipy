@@ -1510,6 +1510,7 @@ class TestLombscargle:
 
         lombscargle(t, y, freqs)
 
+    @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     def test_input_mutation(self):
         # this tests for mutation of the input arrays
         # https://github.com/scipy/scipy/issues/23474
