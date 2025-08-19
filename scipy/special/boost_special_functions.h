@@ -820,12 +820,47 @@ template<typename Real>
 Real
 ncx2_cdf_wrap(const Real x, const Real k, const Real l)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1 - std::signbit(x);
+    if (k < 0 || x < 0 || l < 0) {
+	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    /* Special case handling for zero noncentrality
+    to get the same edge case behaviour as chdtr */
+    if (l == 0 && (k == 0 || std::isinf(x))) {
+    return 1;
+    }
+    if (l == 0 && std::isinf(k)) {
+    return 0;
+    }
+    /* Edge case handling including noncentrality*/
+    if (k == 0 || (!std::isinf(l) && std::isinf(k))) {
+    return NAN;
+    }
+    if (std::isinf(l)) {
+    return (std::isinf(x)) ? NAN : 0;
+    }
+    if (std::isinf(x) && !std::isinf(k)) {
+    return 1;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0 || y > 1) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
@@ -844,8 +879,35 @@ template<typename Real>
 Real
 ncx2_ppf_wrap(const Real x, const Real k, const Real l)
 {
-    return boost::math::quantile(
-        boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || l < 0 || x > 1) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrix", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrix", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
@@ -858,6 +920,98 @@ double
 ncx2_ppf_double(double x, double k, double l)
 {
     return ncx2_ppf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_find_noncentrality_wrap(const Real x, const Real k, const Real p)
+{
+    if (std::isnan(x) || std::isnan(k) || std::isnan(p)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || p < 0 || p > 1) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_non_centrality(k, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrinc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncx2_find_noncentrality_float(float x, float k, float p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+double
+ncx2_find_noncentrality_double(double x, double k, double p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+template<typename Real>
+Real
+ncx2_find_degrees_of_freedom_wrap(const Real x, const Real p, const Real l)
+{
+    if (std::isnan(x) || std::isnan(l) || std::isnan(p)) {
+        return NAN;
+    }
+    if (l < 0 || x < 0 || p < 0 || p > 1) {
+        sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(l, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtridf", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtridf", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtridf", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncx2_find_degrees_of_freedom_float(float x, float p, float l)
+{
+    return ncx2_find_degrees_of_freedom_wrap(x, p, l);
+}
+
+double
+ncx2_find_degrees_of_freedom_double(double x, double p, double l)
+{
+    return ncx2_find_degrees_of_freedom_wrap(x, p, l);
 }
 
 template<typename Real>

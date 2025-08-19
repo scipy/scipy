@@ -245,7 +245,7 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights *= 1.0 / weights.sum()
+    weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
     if precenter:
@@ -255,7 +255,7 @@ def lombscargle(
                "'floating_mean' is True. However, it can be exactly substituted by "
                "passing 'y = (y - y.mean())' into the input.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        y -= y.mean()
+        y = y - y.mean()
 
     # transform arrays
     # row vector
