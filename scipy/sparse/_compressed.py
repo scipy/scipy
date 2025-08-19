@@ -3,7 +3,6 @@ __all__ = []
 
 from warnings import warn
 import itertools
-import operator
 import math
 
 import numpy as np
