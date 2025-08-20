@@ -3,13 +3,6 @@
 
 #include "types.h"
 
-// Function pointer typedefs for aprod callbacks
-typedef void (*PROPACK_aprod_s)(int transa, int m, int n, const float* x, float* y, float* dparm, int* iparm);
-typedef void (*PROPACK_aprod_d)(int transa, int m, int n, const double* x, double* y, double* dparm, int* iparm);
-typedef void (*PROPACK_aprod_c)(int transa, int m, int n, const PROPACK_CPLXF_TYPE* x, PROPACK_CPLXF_TYPE* y, PROPACK_CPLXF_TYPE* cparm, int* iparm);
-typedef void (*PROPACK_aprod_z)(int transa, int m, int n, const PROPACK_CPLX_TYPE* x, PROPACK_CPLX_TYPE* y, PROPACK_CPLX_TYPE* zparm, int* iparm);
-
-
 void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s aprod,
              float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
              float tolin, float* work, int lwork, int* iwork,
@@ -25,7 +18,7 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
 void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c aprod,
              PROPACK_CPLXF_TYPE* U, int ldu, float* sigma, float* bnd, PROPACK_CPLXF_TYPE* V, int ldv,
              float tolin, float* work, int lwork, PROPACK_CPLXF_TYPE* cwork, int lcwork,
-             int* iwork, float* soption, int* ioption, int* info,
+             int* iwork, float* doption, int* ioption, int* info,
              PROPACK_CPLXF_TYPE* cparm, int* iparm, uint64_t* rng_state);
 
 void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z aprod,

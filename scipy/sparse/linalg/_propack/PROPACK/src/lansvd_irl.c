@@ -46,7 +46,7 @@ void slansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0f; }
@@ -282,7 +282,7 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0; }
@@ -519,7 +519,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0f; }
@@ -756,7 +756,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0; }
