@@ -944,12 +944,12 @@ class Test_abcd_normalize:
                       xp.asarray([-1, 5]), xp.asarray(self.C), xp.asarray(self.D))
 
     def test_normalized_matrices_unchanged(self, xp):
-        A, B, C, D = abcd_normalize(xp.asarray(self.A), xp.asarray(self.B),
-                                    xp.asarray(self.C), xp.asarray(self.D))
-        xp_assert_equal(A, self.A)
-        xp_assert_equal(B, self.B)
-        xp_assert_equal(C, self.C)
-        xp_assert_equal(D, self.D)
+        A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+        xp_assert_equal(A, A_)
+        xp_assert_equal(B, B_)
+        xp_assert_equal(C, C_)
+        xp_assert_equal(D, D_)
 
     def test_shapes(self, xp):
         A, B, C, D = abcd_normalize(xp.asarray(self.A), xp.asarray(self.B),
@@ -965,7 +965,7 @@ class Test_abcd_normalize:
         B_ = xp.zeros((2, 0))
         D_ = xp.zeros((0, 0))
         A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
-        xp_assert_equal(A, self.A)
+        xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
         assert C.shape[0] == D_.shape[0]
