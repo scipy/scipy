@@ -20,30 +20,26 @@ import numpy as np
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from ._propack import _spropack  # type: ignore[attr-defined]
-from ._propack import _dpropack  # type: ignore[attr-defined]
-from ._propack import _cpropack  # type: ignore[attr-defined]
-from ._propack import _zpropack  # type: ignore[attr-defined]
-
+from . import _propack  # type: ignore[attr-defined]
 
 _lansvd_dict = {
-    'f': _spropack.slansvd,
-    'd': _dpropack.dlansvd,
-    'F': _cpropack.clansvd,
-    'D': _zpropack.zlansvd,
+    'f': _propack.slansvd,
+    'd': _propack.dlansvd,
+    'F': _propack.clansvd,
+    'D': _propack.zlansvd,
 }
 
 
 _lansvd_irl_dict = {
-    'f': _spropack.slansvd_irl,
-    'd': _dpropack.dlansvd_irl,
-    'F': _cpropack.clansvd_irl,
-    'D': _zpropack.zlansvd_irl,
+    'f': _propack.slansvd_irl,
+    'd': _propack.dlansvd_irl,
+    'F': _propack.clansvd_irl,
+    'D': _propack.zlansvd_irl,
 }
 
 _which_converter = {
-    'LM': 'L',
-    'SM': 'S',
+    'LM': 1,
+    'SM': 0,
 }
 
 
@@ -60,8 +56,8 @@ class _AProd:
         except TypeError:
             self.A = aslinearoperator(np.asarray(A))
 
-    def __call__(self, transa, m, n, x, y, sparm, iparm):
-        if transa == 'n':
+    def __call__(self, transa, m, n, x, y):
+        if transa == 0:
             y[:] = self.A.matvec(x)
         else:
             y[:] = self.A.rmatvec(x)
@@ -208,12 +204,14 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
             f"but kmax ({kmax}) < k ({k})")
 
     # convert python args to fortran args
-    jobu = 'y' if compute_u else 'n'
-    jobv = 'y' if compute_v else 'n'
+    jobu = 1 if compute_u else 0
+    jobv = 1 if compute_v else 0
 
     # these will be the output arrays
     u = np.zeros((m, kmax + 1), order='F', dtype=typ)
     v = np.zeros((n, kmax), order='F', dtype=typ)
+    sigma = np.zeros(k, order='F', dtype=typ)
+    bnd = np.zeros(k, order='F', dtype=typ)
 
     # Specify the starting vector.  if v0 is all zero, PROPACK will generate
     # a random starting vector: the random seed cannot be controlled in that
@@ -286,14 +284,17 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     else:
         works = work, iwork
 
+    # Generate the seed for the PROPACK random float generator.
+    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64)
+
     if irl_mode:
-        u, sigma, bnd, v, info = lansvd_irl(_which_converter[which], jobu,
-                                            jobv, m, n, shifts, k, maxiter,
-                                            aprod, u, v, tol, *works, doption,
-                                            ioption, dparm, iparm)
+        info = lansvd_irl(_which_converter[which], jobu,
+                          jobv, m, n, shifts, k, maxiter, tol,
+                          aprod, u, sigma, bnd, v, *works, doption,
+                          ioption, dparm, iparm, rng_state)
     else:
-        u, sigma, bnd, v, info = lansvd(jobu, jobv, m, n, k, aprod, u, v, tol,
-                                        *works, doption, ioption, dparm, iparm)
+        info = lansvd(jobu, jobv, m, n, k, kmax, tol, aprod, u, sigma, bnd, v,
+                      *works, doption, ioption, dparm, iparm, rng_state)
 
     if info > 0:
         raise LinAlgError(
