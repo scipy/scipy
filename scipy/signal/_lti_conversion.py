@@ -8,7 +8,7 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_size
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -197,10 +197,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     p = B.shape[1] or D.shape[1] or 0
     q = C.shape[0] or D.shape[0] or 0
 
-    A = xp.zeros((n, n)) if A.size == 0 else A  # Create zero-matrices if needed
-    B = xp.zeros((n, p)) if B.size == 0 else B
-    C = xp.zeros((q, n)) if C.size == 0 else C
-    D = xp.zeros((q, p)) if D.size == 0 else D
+    A = xp.zeros((n, n)) if xp_size(A) == 0 else A  # Create zero-matrices if needed
+    B = xp.zeros((n, p)) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n)) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p)) if xp_size(D) == 0 else D
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A was converted to shape {A.shape} != ({n}, {n})!")
