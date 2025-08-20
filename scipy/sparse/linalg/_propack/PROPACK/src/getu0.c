@@ -37,10 +37,11 @@ void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm,
 
         // Orthogonalize against existing vectors if j >= 1
         if (j >= 1) {
-            int indices[3];
+            int indices[4];
             indices[0] = 0;      // start index (0-based)
             indices[1] = j - 1;  // end index (0-based, inclusive)
             indices[2] = j;      // terminator
+            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
 
             sreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
@@ -54,6 +55,7 @@ void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm,
     // Failed to generate valid vector
     *ierr = -1;
 }
+
 
 void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0norm, double* U, int ldu,
            PROPACK_aprod_d aprod, double* dparm, int* iparm, int* ierr, int icgs, double* anormest, double* work, uint64_t* rng_state) {
@@ -91,10 +93,11 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
 
         // Orthogonalize against existing vectors if j >= 1
         if (j >= 1) {
-            int indices[3];
+            int indices[4];
             indices[0] = 0;      // start index (0-based)
             indices[1] = j - 1;  // end index (0-based, inclusive)
             indices[2] = j;      // terminator
+            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
 
             dreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
@@ -108,6 +111,7 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
     // Failed to generate valid vector
     *ierr = -1;
 }
+
 
 void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, float* u0norm, PROPACK_CPLXF_TYPE* U, int ldu,
            PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* cparm, int* iparm, int* ierr, int icgs, float* anormest, PROPACK_CPLXF_TYPE* work,
@@ -146,10 +150,11 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
 
         // Orthogonalize against existing vectors if j >= 1
         if (j >= 1) {
-            int indices[3];
+            int indices[4];
             indices[0] = 0;      // start index (0-based)
             indices[1] = j - 1;  // end index (0-based, inclusive)
             indices[2] = j;      // terminator
+            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
 
             creorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
@@ -163,6 +168,7 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
     // Failed to generate valid vector
     *ierr = -1;
 }
+
 
 void zgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLX_TYPE* u0, double* u0norm, PROPACK_CPLX_TYPE* U, int ldu,
            PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* zparm, int* iparm, int* ierr, int icgs, double* anormest, PROPACK_CPLX_TYPE* work,
@@ -201,10 +207,11 @@ void zgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLX_TYPE* u0, do
 
         // Orthogonalize against existing vectors if j >= 1
         if (j >= 1) {
-            int indices[3];
+            int indices[4];
             indices[0] = 0;      // start index (0-based)
             indices[1] = j - 1;  // end index (0-based, inclusive)
             indices[2] = j;      // terminator
+            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
 
             zreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }

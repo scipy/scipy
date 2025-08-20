@@ -18,7 +18,7 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk;
+    lwrk = lwrk - iwrk + 1;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
@@ -61,7 +61,7 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk;
+    lwrk = lwrk - iwrk + 1;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
@@ -105,7 +105,7 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk;
+    lwrk = lwrk - iwrk + 1;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
@@ -150,7 +150,7 @@ void zritzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk;
+    lwrk = lwrk - iwrk + 1;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
