@@ -4238,6 +4238,9 @@ def lfilter_zi(b, a):
     assuming ``a[0]`` is 1.0; if ``a[0]`` is not 1, `a` and `b` are first
     divided by a[0].
 
+    This implementation uses an approach similar to GNU Octave for better
+    numerical stability in edge cases.
+
     Examples
     --------
     The following code creates a lowpass Butterworth filter. Then it
@@ -4269,14 +4272,7 @@ def lfilter_zi(b, a):
     """
     xp = array_namespace(b, a)
 
-    # FIXME: Can this function be replaced with an appropriate
-    # use of lfiltic?  For example, when b,a = butter(N,Wn),
-    #    lfiltic(b, a, y=numpy.ones_like(a), x=numpy.ones_like(b)).
-    #
-
-    # We could use scipy.signal.normalize, but it uses warnings in
-    # cases where a ValueError is more appropriate, and it allows
-    # b to be 2D.
+    # Convert to arrays
     b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
     if b.ndim != 1:
         raise ValueError("Numerator b must be 1-D.")
@@ -4284,42 +4280,26 @@ def lfilter_zi(b, a):
     if a.ndim != 1:
         raise ValueError("Denominator a must be 1-D.")
 
+    # Remove leading zeros from a
     while a.shape[0] > 1 and a[0] == 0.0:
         a = a[1:]
     if xp_size(a) < 1:
         raise ValueError("There must be at least one nonzero `a` coefficient.")
 
+    # Normalize coefficients if a[0] != 1.0
     if a[0] != 1.0:
-        # Normalize the coefficients so a[0] == 1.
         b = b / a[0]
         a = a / a[0]
 
-    n = max(a.shape[0], b.shape[0])
-
-    # Pad a or b with zeros so they are the same length.
-    if a.shape[0] < n:
-        a = xp.concat((a, xp.zeros(n - a.shape[0], dtype=a.dtype)))
-    elif b.shape[0] < n:
-        b = xp.concat((b, xp.zeros(n - b.shape[0], dtype=b.dtype)))
-
-    dt = xp.result_type(a, b)
-    IminusA = np.eye(n - 1) - linalg.companion(a).T
-    IminusA = xp.asarray(IminusA, dtype=dt)
-    B = b[1:] - a[1:] * b[0]
-    # Solve zi = A*zi + B
-    zi = xp.linalg.solve(IminusA, B)
-
-    # For future reference: we could also use the following
-    # explicit formulas to solve the linear system:
-    #
-    # zi = np.zeros(n - 1)
-    # zi[0] = B.sum() / IminusA[:,0].sum()
-    # asum = 1.0
-    # csum = 0.0
-    # for k in range(1,n-1):
-    #     asum += a[k]
-    #     csum += b[k] - a[k]*b[0]
-    #     zi[k] = asum*zi[0] - csum
+    # Use GNU Octave's approach for better numerical stability
+    # This approach directly computes the steady-state response
+    kdc = xp.sum(b) / xp.sum(a)
+    if xp.abs(kdc) < xp.inf:
+        # Compute si using the cumsum approach from GNU Octave
+        si = xp.flip(xp.cumsum(xp.flip(b - kdc * a)))
+        zi = si[1:]  # Remove first element
+    else:
+        zi = xp.zeros(len(a) - 1, dtype=b.dtype)
 
     return zi
 
