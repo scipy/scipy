@@ -42,7 +42,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     ip = ib1 + 2 * lanmax;
     iq = ip + (lanmax + 1) * (lanmax + 1);
     iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++)
@@ -186,7 +186,7 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
     ip = ib1 + 2 * lanmax;
     iq = ip + (lanmax + 1) * (lanmax + 1);
     iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++)
@@ -332,7 +332,7 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
     ip = ib1 + 2 * lanmax;
     iq = ip + (lanmax + 1) * (lanmax + 1);
     iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++) { work[i] = 0.0f; }
@@ -484,7 +484,7 @@ void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z 
     ip = ib1 + 2 * lanmax;
     iq = ip + (lanmax + 1) * (lanmax + 1);
     iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk;
+    lwrk = lwork - iwrk + 1;
 
     // Zero out work array sections
     for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++) { work[i] = 0.0; }

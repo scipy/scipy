@@ -2,7 +2,13 @@
 #include <float.h>
 #include "lanbpro.h"
 
-
+/**
+ * @brief Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
+ *
+ * @param n The number of elements in the vector x.
+ * @param alpha The scaling factor.
+ * @param x The vector to be scaled.
+ */
 static void ssafescal(int n, float alpha, float* x) {
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
@@ -20,6 +26,13 @@ static void ssafescal(int n, float alpha, float* x) {
 }
 
 
+/**
+ * @brief Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
+ *
+ * @param n The number of elements in the vector x.
+ * @param alpha The scaling factor.
+ * @param x The vector to be scaled.
+ */
 void dsafescal(int n, double alpha, double* x) {
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
@@ -37,6 +50,13 @@ void dsafescal(int n, double alpha, double* x) {
 }
 
 
+/**
+ * @brief Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
+ *
+ * @param n The number of elements in the vector x.
+ * @param alpha The scaling factor.
+ * @param x The complex vector to be scaled.
+ */
 void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x) {
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
@@ -54,6 +74,13 @@ void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x) {
 }
 
 
+/**
+ * @brief Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
+ *
+ * @param n The number of elements in the vector x.
+ * @param alpha The scaling factor.
+ * @param x The complex vector to be scaled.
+ */
 void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x) {
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
@@ -71,7 +98,34 @@ void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x) {
 }
 
 
-
+/**
+ * @brief Perform Lanczos bidiagonalization with partial reorthogonalization (single precision).
+ *
+ * This function computes a partial Lanczos bidiagonalization of a matrix A using
+ * single precision arithmetic. The bidiagonalization is performed with partial
+ * reorthogonalization to maintain numerical stability and efficiency.
+ *
+ * @param m         The number of rows in the matrix A.
+ * @param n         The number of columns in the matrix A.
+ * @param k0        The starting index for the bidiagonalization process.
+ * @param k         Pointer to the number of Lanczos steps to perform.
+ * @param aprod     Function pointer for matrix-vector multiplication with A or A^T.
+ * @param U         Pointer to the left singular vectors (output).
+ * @param ldu       The leading dimension of the array U.
+ * @param V         Pointer to the right singular vectors (output).
+ * @param ldv       The leading dimension of the array V.
+ * @param B         Pointer to the bidiagonal matrix (output).
+ * @param ldb       The leading dimension of the array B.
+ * @param rnorm     Pointer to the norm of the residual vector (output).
+ * @param doption   Array of double precision options for controlling the algorithm.
+ * @param ioption   Array of integer options for controlling the algorithm.
+ * @param work      Workspace array for intermediate computations.
+ * @param iwork     Integer workspace array for intermediate computations.
+ * @param dparm     Array of double precision parameters for the algorithm.
+ * @param iparm     Array of integer parameters for the algorithm.
+ * @param ierr      Pointer to the error flag (output).
+ * @param rng_state Pointer to the random number generator state.
+ */
 void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
               float* U, int ldu, float* V, int ldv, float* B, int ldb,
               float* rnorm, float* doption, int* ioption, float* work, int* iwork,
@@ -145,8 +199,8 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
     // Set pointers into work array
     // work layout: [mu(k+1), nu(k+1), workspace...]
     imu = 0;
-    inu = *k + 1;
-    is = 2 * (*k + 1);
+    inu = imu + *k + 1;
+    is = inu + 2 * (*k + 1);
     iidx = 0;
     for (i = 0; i < fmaxf(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0f; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
@@ -438,6 +492,34 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
 }
 
 
+/**
+ * @brief Perform Lanczos bidiagonalization with partial reorthogonalization (double precision).
+ *
+ * This function computes a partial Lanczos bidiagonalization of a matrix A using
+ * double precision arithmetic. The bidiagonalization is performed with partial
+ * reorthogonalization to maintain numerical stability and efficiency.
+ *
+ * @param m         The number of rows in the matrix A.
+ * @param n         The number of columns in the matrix A.
+ * @param k0        The starting index for the bidiagonalization process.
+ * @param k         Pointer to the number of Lanczos steps to perform.
+ * @param aprod     Function pointer for matrix-vector multiplication with A or A^T.
+ * @param U         Pointer to the left singular vectors (output).
+ * @param ldu       The leading dimension of the array U.
+ * @param V         Pointer to the right singular vectors (output).
+ * @param ldv       The leading dimension of the array V.
+ * @param B         Pointer to the bidiagonal matrix (output).
+ * @param ldb       The leading dimension of the array B.
+ * @param rnorm     Pointer to the norm of the residual vector (output).
+ * @param doption   Array of double precision options for controlling the algorithm.
+ * @param ioption   Array of integer options for controlling the algorithm.
+ * @param work      Workspace array for intermediate computations.
+ * @param iwork     Integer workspace array for intermediate computations.
+ * @param dparm     Array of double precision parameters for the algorithm.
+ * @param iparm     Array of integer parameters for the algorithm.
+ * @param ierr      Pointer to the error flag (output).
+ * @param rng_state Pointer to the random number generator state.
+ */
 void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
               double* U, int ldu, double* V, int ldv, double* B, int ldb,
               double* rnorm, double* doption, int* ioption, double* work, int* iwork,
@@ -510,8 +592,8 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     // Set pointers into work array
     // work layout: [mu(k+1), nu(k+1), workspace...]
     imu = 0;
-    inu = *k + 1;
-    is = 2 * (*k + 1);
+    inu = imu + *k + 1;
+    is = inu + 2 * (*k + 1);
     iidx = 0;
     for (i = 0; i < fmax(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
@@ -803,6 +885,34 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
 }
 
 
+/**
+ * @brief Perform Lanczos bidiagonalization with partial reorthogonalization (single precision complex).
+ *
+ * This function computes a partial Lanczos bidiagonalization of a matrix A using
+ * single precision complex arithmetic. The bidiagonalization is performed with partial
+ * reorthogonalization to maintain numerical stability and efficiency.
+ *
+ * @param m         The number of rows in the matrix A.
+ * @param n         The number of columns in the matrix A.
+ * @param k0        The starting index for the bidiagonalization process.
+ * @param k         Pointer to the number of Lanczos steps to perform.
+ * @param aprod     Function pointer for matrix-vector multiplication with A or A^T.
+ * @param U         Pointer to the left singular vectors (output).
+ * @param ldu       The leading dimension of the array U.
+ * @param V         Pointer to the right singular vectors (output).
+ * @param ldv       The leading dimension of the array V.
+ * @param B         Pointer to the bidiagonal matrix (output).
+ * @param ldb       The leading dimension of the array B.
+ * @param rnorm     Pointer to the norm of the residual vector (output).
+ * @param doption   Array of double precision options for controlling the algorithm.
+ * @param ioption   Array of integer options for controlling the algorithm.
+ * @param work      Workspace array for intermediate computations.
+ * @param iwork     Integer workspace array for intermediate computations.
+ * @param dparm     Array of double precision parameters for the algorithm.
+ * @param iparm     Array of integer parameters for the algorithm.
+ * @param ierr      Pointer to the error flag (output).
+ * @param rng_state Pointer to the random number generator state.
+ */
 void clanbpro(
     int m, int n, int k0, int* k, PROPACK_aprod_c aprod, PROPACK_CPLXF_TYPE* U, int ldu,
     PROPACK_CPLXF_TYPE* V, int ldv, float* B, int ldb, float* rnorm, float* soption,
@@ -1163,6 +1273,34 @@ void clanbpro(
 }
 
 
+/**
+ * @brief Perform Lanczos bidiagonalization with partial reorthogonalization (double precision complex).
+ *
+ * This function computes a partial Lanczos bidiagonalization of a matrix A using
+ * double precision complex arithmetic. The bidiagonalization is performed with partial
+ * reorthogonalization to maintain numerical stability and efficiency.
+ *
+ * @param m         The number of rows in the matrix A.
+ * @param n         The number of columns in the matrix A.
+ * @param k0        The starting index for the bidiagonalization process.
+ * @param k         Pointer to the number of Lanczos steps to perform.
+ * @param aprod     Function pointer for matrix-vector multiplication with A or A^T.
+ * @param U         Pointer to the left singular vectors (output).
+ * @param ldu       The leading dimension of the array U.
+ * @param V         Pointer to the right singular vectors (output).
+ * @param ldv       The leading dimension of the array V.
+ * @param B         Pointer to the bidiagonal matrix (output).
+ * @param ldb       The leading dimension of the array B.
+ * @param rnorm     Pointer to the norm of the residual vector (output).
+ * @param doption   Array of double precision options for controlling the algorithm.
+ * @param ioption   Array of integer options for controlling the algorithm.
+ * @param work      Workspace array for intermediate computations.
+ * @param iwork     Integer workspace array for intermediate computations.
+ * @param dparm     Array of double precision parameters for the algorithm.
+ * @param iparm     Array of integer parameters for the algorithm.
+ * @param ierr      Pointer to the error flag (output).
+ * @param rng_state Pointer to the random number generator state.
+ */
 void zlanbpro(
     int m, int n, int k0, int* k, PROPACK_aprod_z aprod, PROPACK_CPLX_TYPE* U, int ldu,
     PROPACK_CPLX_TYPE* V, int ldv, double* B, int ldb, double* rnorm, double* doption,
