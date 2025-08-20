@@ -190,8 +190,8 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
-    A, B, C, D = (xpx.atleast_nd(M_, ndim=2) if M_ is not None else xp.zeros((0, 0))
-                  for M_ in (A, B, C, D))
+    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2) if M_ is not None else
+                  xp.zeros((0, 0)) for M_ in (A, B, C, D))
 
     n = A.shape[0] or B.shape[0] or C.shape[1] or 0  # try finding non-zero dimensions
     p = B.shape[1] or D.shape[1] or 0
