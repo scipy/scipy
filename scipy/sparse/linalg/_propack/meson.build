@@ -12,24 +12,17 @@ propack_sources = [
 propack_incdir_public = include_directories('PROPACK/include')
 propack_incdir_private = include_directories('PROPACK/src/include')
 
-propack_lib = static_library('propack',
+propack_lib = static_library('propack_lib',
   propack_sources,
-  c_args: ['-Wall', '-Wextra', '-Wpedantic'],
   include_directories: [propack_incdir_public, propack_incdir_private],
   dependencies: [m_dep, lapack_dep, blas_dep],
 )
 
-py3.extension_module('_propacklib',
+py3.extension_module('_propack',
   '_propackmodule.c',
   link_with: propack_lib,
-  dependencies: [np_dep],
-  link_args: version_link_args,
+  dependencies: [np_dep, ccallback_dep],
+  link_args: [version_link_args],
   install: true,
-  subdir: 'scipy/sparse/linalg/_propack',
-)
-
-py3.install_sources([
-    '__init__.py',
-  ],
-  subdir: 'scipy/sparse/linalg/_eigen/_propack'
+  subdir: 'scipy/sparse/linalg/',
 )
