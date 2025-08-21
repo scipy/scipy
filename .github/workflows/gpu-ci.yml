@@ -57,7 +57,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:22.04
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:24.04
     steps:
       - name: Checkout scipy repo
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
