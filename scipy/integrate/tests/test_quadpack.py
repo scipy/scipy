@@ -3,7 +3,7 @@ import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
-        assert_allclose, assert_array_less, assert_almost_equal)
+        assert_allclose, assert_array_less, assert_almost_equal, assert_equal)
 import pytest
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
@@ -242,6 +242,21 @@ class TestQuad:
         res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0), full_output=True)
         err = max(res_1[1], res_2[1])
         assert_allclose(res_1[0], -res_2[0], atol=err)
+
+    def test_b_equals_a(self):
+        def f(x):
+            return 1/x
+
+        upper = lower = 0.
+        zero, err, infodict = quad(f, lower, upper, full_output=1)
+        limit = 50
+        assert (zero, err) == (0., 0.)
+        assert_equal(infodict, {"neval": 0, "last": 0,
+                                "alist": np.full(limit, np.nan, dtype=np.float64),
+                                "blist": np.full(limit, np.nan, dtype=np.float64),
+                                "rlist": np.zeros(limit, dtype=np.float64),
+                                "elist": np.zeros(limit, dtype=np.float64),
+                                "iord" : np.zeros(limit, dtype=np.int32)})
 
     def test_complex(self):
         def tfunc(x):
