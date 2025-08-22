@@ -4052,7 +4052,7 @@ def vectorstrength(events, period):
 
 def detrend(data: np.ndarray, axis: int = -1,
             type: Literal['linear', 'constant'] = 'linear',
-            bp: ArrayLike | int = 0, overwrite_data = False) -> np.ndarray:
+            bp: ArrayLike | int = 0, overwrite_data:bool = False) -> np.ndarray:
     r"""Remove linear or constant trend along axis from data.
 
     Parameters
