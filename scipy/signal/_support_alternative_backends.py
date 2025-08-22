@@ -25,16 +25,47 @@ CUPY_BLACKLIST = [
 CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
 
 
+def drop_xp_wrapper(func):
+    # We could do this only if there actually is an `xp=` argument.
+    def new_func(*args, **kwargs):
+        kwargs.pop("xp", None)
+        return func(*args, **kwargs)
+    return new_func
+
+
+class _JaxFunctions:
+    # Small hack to wrap functions to drop `xp=`, we need it to look like
+    # a module...
+    @classmethod
+    def __getattr__(cls, func_name):
+        import jax.scipy.signal
+        return drop_xp_wrapper(getattr(jax.scipy.signal, func_name))
+
+
 class JaxBackend:
     name = "jax"
     # A class, just for convenience (may need to change)
-    primary_types = ["jax:Array"]  # presumably needs more!
+    primary_types = ["~jax:Array"]  # allow subclasses otherwise need _jax.ArrayImpl?
     secondary_types = []
     requires_opt_in = False
-    # TODO: We are not dropping `xp=` argument here.  Would need a helper (or teach spatch)
+
     functions = {
-        f"scipy.signal:{func}": "jax.scipy.signal:{func}" for func in JAX_SIGNAL_FUNCS
+        f"scipy.signal:{func}": {
+            "function":
+                f"scipy.signal._support_alternative_backends:"
+                f"JaxBackend.JaxFunctions.{func}"}
+        for func in JAX_SIGNAL_FUNCS
     }
+    JaxFunctions = _JaxFunctions()
+
+
+class _CupyFunctions:
+    # Small hack to wrap functions to drop `xp=`, we need it to look like
+    # a module...
+    @classmethod
+    def __getattr__(cls, func_name):
+        import cupyx.signal
+        return drop_xp_wrapper(getattr(cupyx.signal, func_name))
 
 
 class CupyBackend:
@@ -43,11 +74,15 @@ class CupyBackend:
     primary_types = ["cupy:ndarray"]
     secondary_types = []
     requires_opt_in = False
-    # TODO: We are not dropping `xp=` argument here.  Would need a helper (or teach spatch)
+    # See JaxBackend about the `__getattr__` dance here.
     functions = {
-        f"scipy.signal:{func}": "cupyx.signal:{CUPY_RENAMES.get(func.__name__, func.__name__)}"
+        f"scipy.signal:{func}": {
+            "function":
+                f"scipy.signal._support_alternative_backends:"
+                f"CupyBackend.CupyFunctions.{CUPY_RENAMES.get(func, func)}"}
         for func in _signal_api.__all__ if func not in CUPY_BLACKLIST
     }
+    CupyFunctions = _CupyFunctions()
 
 
 if SCIPY_ARRAY_API:
@@ -67,7 +102,7 @@ for obj_name in _signal_api.__all__:
     delegator = getattr(_delegators, obj_name + "_signature", None)
 
     if SCIPY_ARRAY_API and delegator is not None:
-        f = _bs.dispatchable(delegator)(bare_obj)
+        f = _bs.dispatchable(delegator, module="scipy.signal")(bare_obj)
     else:
         f = bare_obj
 
