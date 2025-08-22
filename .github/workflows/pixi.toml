@@ -95,7 +95,7 @@ test-cupy = { cmd = "spin test -b cupy", cwd = "../.." }
 platforms = ["linux-64"]
 
 [feature.jax-cpu.dependencies]
-jax = "!=0.6.2"  # https://github.com/jax-ml/jax/issues/29537
+jax = "!=0.6.2"                                   # https://github.com/jax-ml/jax/issues/29537
 jaxlib = { version = "!=0.6.2", build = "*cpu*" }
 
 [feature.jax-cuda]
@@ -129,24 +129,24 @@ jax = ["jax-base", "jax-cpu"]
 jax-cuda = ["jax-base", "jax-cuda", "cuda"]
 array-api-strict = ["array_api_strict"]
 array-api = [
-    "cpu",
-    "array_api_strict",
-    "jax-base",
-    "jax-cpu",
-    "mkl",
-    "torch-base",
-    "torch-cpu",
-    "spatch",
+  "cpu",
+  "array_api_strict",
+  "jax-base",
+  "jax-cpu",
+  "mkl",
+  "torch-base",
+  "torch-cpu",
+  "spatch",
 ]
 array-api-cuda = [
-    "cuda",
-    "array_api_strict",
-    "cupy",
-    "jax-base",
-    "jax-cuda",
-    "mkl",
-    "torch-base",
-    "torch-cuda",
-    "test",
-    "spatch",
+  "cuda",
+  "array_api_strict",
+  "cupy",
+  "jax-base",
+  "jax-cuda",
+  "mkl",
+  "torch-base",
+  "torch-cuda",
+  "test",
+  "spatch",
 ]
