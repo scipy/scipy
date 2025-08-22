@@ -80,7 +80,6 @@ pytorch-gpu = "*"
 [feature.torch-cuda.tasks]
 test-torch-cuda = { cmd = "spin test -b torch", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
 
-
 [feature.cupy]
 platforms = ["linux-64"]
 
@@ -118,6 +117,8 @@ array-api-strict = "*"
 [feature.array_api_strict.tasks]
 test-strict = { cmd = "spin test -b array_api_strict", cwd = "../.." }
 
+[feature.spatch.pypi-dependencies]
+spatch = { git = "https://github.com/seberg/spatch.git", branch = "scipy-fixes" }
 
 [environments]
 default = ["build", "test", "openblas"]
@@ -135,6 +136,7 @@ array-api = [
     "mkl",
     "torch-base",
     "torch-cpu",
+    "spatch",
 ]
 array-api-cuda = [
     "cuda",
@@ -146,4 +148,5 @@ array-api-cuda = [
     "torch-base",
     "torch-cuda",
     "test",
+    "spatch",
 ]
