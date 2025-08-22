@@ -857,6 +857,9 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ======================================================
     -0.742561336672229  # may vary
 
+    >>> integrate.romb([[1, 2, 3], [4, 5, 6]], show=True)
+    *** Printing table only supported for integrals of a single data set.
+    array([ 4., 10.])
     """
     y = np.asarray(y)
     nd = len(y.shape)

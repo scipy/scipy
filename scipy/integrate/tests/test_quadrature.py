@@ -40,11 +40,11 @@ class TestFixedQuad:
 @make_xp_test_case(romb)
 class TestRomb:
     def test_romb(self, xp):
-        xp_assert_equal(romb(xp.arange(17)), 128.0)
+        xp_assert_equal(romb(xp.arange(17, dtype=xp.float64)), 128.0)
 
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
-        x = xp.arange(2**4+1)
+        x = xp.arange(2**4+1, dtype=xp.float64)
         y = xp.cos(0.2*x)
         val = romb(y)
         val2, err = quad(lambda x: xp.cos(0.2*x), x.min(), x.max())
