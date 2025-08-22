@@ -503,7 +503,9 @@ def test_bdtrik_nbdtrik_inf():
      [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
      [0.1, 0.1, 1.0, 1.0, 0.3136335813423239],
      [100.0, 100.0, 0.1, 10.0, 1.0],
-     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
+     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897],
+     [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+    ]
 )
 def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
