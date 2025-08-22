@@ -28,7 +28,10 @@ are arrays.
 
 """
 import numpy as np
-from scipy._lib._array_api import array_namespace, np_compat
+
+
+def array_namespace(*args):
+    return args  # Hack, spatch wants the arguments, but this did more logic.
 
 
 def _skip_if_lti(arg):
@@ -93,45 +96,45 @@ def ellip_signature(N, rp, rs, Wn, *args, **kwds):
 
 ########################## XXX: no arrays in, arrays out
 def besselap_signature(N, norm='phase', *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 
 def buttap_signature(N, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 
 def cheb1ap_signature(N, rp, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 
 def cheb2ap_signature(N, rs, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 def ellipap_signature(N, rp, rs, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 def correlation_lags_signature(in1_len, in2_len, mode='full'):
-    return np
+    return ()
 
 
 def czt_points_signature(m, w=None, a=(1+0j)):
-    return np
+    return ()
 
 
 def gammatone_signature(
     freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None
     ):
-    return np_compat if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 
 def iircomb_signature(
     w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None
 ):
-    return np_compat if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 
 def iirnotch_signature(w0, Q, fs=2.0, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 
 iirpeak_signature = iirnotch_signature
 
@@ -139,11 +142,11 @@ iirpeak_signature = iirnotch_signature
 def savgol_coeffs_signature(
     window_length, polyorder, deriv=0, delta=1.0, pos=None, use='conv'
 ):
-    return np
+    return ()
 
 
 def unit_impulse_signature(shape, idx=None, dtype=float):
-    return np
+    return ()
 ############################
 
 
@@ -157,16 +160,16 @@ ellipord_signature = buttord_signature
 
 ########### NB: scalars in, scalars out
 def kaiser_atten_signature(numtaps, width):
-    return np
+    return ()
 
 def kaiser_beta_signature(a):
-    return np
+    return ()
 
 def kaiserord_signature(ripple, width):
-    return np
+    return ()
 
 def get_window_signature(window, Nx, fftbins=True, *, xp=None, device=None):
-    return np if xp is None else xp
+    return () if xp is None else xp.empty(())
 #################################
 
 
@@ -331,11 +334,7 @@ def firls_signature(numtaps, bands, desired, *, weight=None, fs=None):
 
 
 def firwin_signature(numtaps, cutoff, *args, **kwds):
-    if isinstance(cutoff, int | float):
-        xp = np_compat
-    else:
-        xp = array_namespace(cutoff)
-    return xp
+    return (cutoff,)
 
 
 def firwin2_signature(numtaps, freq, gain, *args, **kwds):

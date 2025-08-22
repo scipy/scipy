@@ -1,7 +1,4 @@
-import functools
-from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
-)
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 from ._signal_api import *   # noqa: F403
 from . import _signal_api
@@ -28,39 +25,40 @@ CUPY_BLACKLIST = [
 CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
 
 
-def delegate_xp(delegator, module_name):
-    def inner(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            try:
-                xp = delegator(*args, **kwds)
-            except TypeError:
-                # object arrays
-                import numpy as np
-                xp = np
+class JaxBackend:
+    name = "jax"
+    # A class, just for convenience (may need to change)
+    primary_types = ["jax:Array"]  # presumably needs more!
+    secondary_types = []
+    requires_opt_in = False
+    # TODO: We are not dropping `xp=` argument here.  Would need a helper (or teach spatch)
+    functions = {
+        f"scipy.signal:{func}": "jax.scipy.signal:{func}" for func in JAX_SIGNAL_FUNCS
+    }
 
-            # try delegating to a cupyx/jax namesake
-            if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
-                func_name = CUPY_RENAMES.get(func.__name__, func.__name__)
 
-                # https://github.com/cupy/cupy/issues/8336
-                import importlib
-                cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
-                cupyx_func = getattr(cupyx_module, func_name)
-                kwds.pop('xp', None)
-                return cupyx_func(*args, **kwds)
-            elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
-                spx = scipy_namespace_for(xp)
-                jax_module = getattr(spx, module_name)
-                jax_func = getattr(jax_module, func.__name__)
-                kwds.pop('xp', None)
-                return jax_func(*args, **kwds)
-            else:
-                # the original function
-                return func(*args, **kwds)
-        return wrapper
-    return inner
+class CupyBackend:
+    name = "cupy"
+    # A class, just for convenience (may need to change)
+    primary_types = ["cupy:ndarray"]
+    secondary_types = []
+    requires_opt_in = False
+    # TODO: We are not dropping `xp=` argument here.  Would need a helper (or teach spatch)
+    functions = {
+        f"scipy.signal:{func}": "cupyx.signal:{CUPY_RENAMES.get(func.__name__, func.__name__)}"
+        for func in _signal_api.__all__ if func not in CUPY_BLACKLIST
+    }
 
+
+if SCIPY_ARRAY_API:
+    from spatch.backend_system import BackendSystem
+
+    _bs = BackendSystem(
+        None,  # don't load entry-points for now (no 3rd party backends)
+        "_SCIPY_INTERNAL_BACKENDS",  # spatch env-var prefix
+        default_primary_types=["numpy:ndarray"],
+        backends=[JaxBackend],
+    )
 
 
 # ### decorate ###
@@ -69,7 +67,7 @@ for obj_name in _signal_api.__all__:
     delegator = getattr(_delegators, obj_name + "_signature", None)
 
     if SCIPY_ARRAY_API and delegator is not None:
-        f = delegate_xp(delegator, MODULE_NAME)(bare_obj)
+        f = _bs.dispatchable(delegator)(bare_obj)
     else:
         f = bare_obj
 
