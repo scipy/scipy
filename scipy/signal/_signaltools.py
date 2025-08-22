@@ -32,7 +32,6 @@ from scipy._lib._array_api import (
 )
 from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
-from scipy._lib.deprecation import _NoValue
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
