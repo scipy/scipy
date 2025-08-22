@@ -377,7 +377,11 @@ class TestDblquad:
             (1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
             # Multiple integration of a function in n = 2 variables: f(x, y, z)
             # over domain D = [-inf, inf] for all n.
-            (-np.inf, np.inf, -np.inf, np.inf, np.pi)
+            (-np.inf, np.inf, -np.inf, np.inf, np.pi),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0.),
+            (0, np.inf, 0, 0, 0.),
         ]
     )
     def test_double_integral_improper(
@@ -550,6 +554,11 @@ class TestTplquad:
             # over domain D = [-inf, inf] for all n.
             (-np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf,
              np.pi ** (3 / 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0, np.inf, 0),
+            (0, np.inf, 0, 0, 0, np.inf, 0),
+            (0, np.inf, 0, np.inf, 0, 0, 0),
         ],
     )
     def test_triple_integral_improper(
