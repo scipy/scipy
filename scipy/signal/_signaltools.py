@@ -32,6 +32,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -4052,7 +4053,7 @@ def vectorstrength(events, period):
 
 def detrend(data: np.ndarray, axis: int = -1,
             type: Literal['linear', 'constant'] = 'linear',
-            bp: ArrayLike | int = 0, allow_overwrite: bool = False) -> np.ndarray:
+            bp: ArrayLike | int = 0, overwrite_data = False) -> np.ndarray:
     r"""Remove linear or constant trend along axis from data.
 
     Parameters
@@ -4072,7 +4073,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    allow_overwrite: bool, optional
+    overwrite_data: bool, optional
         If True, allow in place detrending and avoid a copy. Default is
         False. In place modification applies only if ``type == 'linear'``
         and also depends in the data type and memory layout of `data`.
