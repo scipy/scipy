@@ -40,8 +40,9 @@ class TestFixedQuad:
 @make_xp_test_case(romb)
 class TestRomb:
     def test_romb(self, xp):
-        xp_assert_equal(romb(xp.arange(17, dtype=xp.float64)), 128.0)
+        xp_assert_equal(romb(xp.arange(17, dtype=xp.float64)), xp.asarray(128.0))
 
+    @pytest.mark.skip_xp_backends(np_only=True, reason="`quad` not yet implemented using array API")
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
         x = xp.arange(2**4+1, dtype=xp.float64)

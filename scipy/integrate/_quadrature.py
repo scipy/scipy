@@ -800,7 +800,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     return res
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def romb(y, dx=1.0, axis=-1, show=False):
     """
     Romberg integration using samples of a function.
@@ -861,7 +861,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
     *** Printing table only supported for integrals of a single data set.
     array([ 4., 10.])
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
     nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
@@ -878,7 +879,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice_all = (slice(None),) * nd
     slice0 = tupleset(slice_all, axis, 0)
     slicem1 = tupleset(slice_all, axis, -1)
-    h = Ninterv * np.asarray(dx, dtype=float)
+    h = Ninterv * xp.asarray(dx, dtype=xp.float64)
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv
@@ -886,7 +887,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start, stop, step))
         step >>= 1
-        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*y[slice_R].sum(axis=axis))
+        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*xp.sum(y[slice_R], axis=axis))
         for j in range(1, i+1):
             prev = R[(i, j-1)]
             R[(i, j)] = prev + (prev-R[(i-1, j-1)]) / ((1 << (2*j))-1)
