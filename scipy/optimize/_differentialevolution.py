@@ -318,10 +318,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     or the original candidate is made with a binomial distribution (the 'bin'
     in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
-    ``b'``, otherwise it is loaded from the original candidate. A randomly selected parameter is always loaded from ``b'``. For binomial crossover, this is a single random parameter. For exponential crossover, this is the starting point of a consecutive sequence of parameters from ``b'``. Once the trial candidate is built
-    its fitness is assessed. If the trial is better than the original candidate
-    then it takes its place. If it is also better than the best overall
-    candidate it also replaces that.
+    ``b'``, otherwise it is loaded from the original candidate. A randomly 
+    selected parameter is always loaded from ``b'``. For binomial crossover, 
+    this is a single random parameter. For exponential crossover, this is the 
+    starting point of a consecutive sequence of parameters from ``b'``. Once 
+    the trial candidate is built its fitness is assessed. If the trial is
+    better than the original candidate then it takes its place. If it is
+    also better than the best overall candidate it also replaces that.
 
     The other strategies available are outlined in Qiang and
     Mitchell (2014) [3]_.
