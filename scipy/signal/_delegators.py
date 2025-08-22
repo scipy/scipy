@@ -96,22 +96,22 @@ def ellip_signature(N, rp, rs, Wn, *args, **kwds):
 
 ########################## XXX: no arrays in, arrays out
 def besselap_signature(N, norm='phase', *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 
 def buttap_signature(N, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 
 def cheb1ap_signature(N, rp, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 
 def cheb2ap_signature(N, rs, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 def ellipap_signature(N, rp, rs, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 def correlation_lags_signature(in1_len, in2_len, mode='full'):
     return ()
@@ -124,17 +124,17 @@ def czt_points_signature(m, w=None, a=(1+0j)):
 def gammatone_signature(
     freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None
     ):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 
 def iircomb_signature(
     w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None
 ):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 
 def iirnotch_signature(w0, Q, fs=2.0, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 
 iirpeak_signature = iirnotch_signature
 
@@ -169,7 +169,7 @@ def kaiserord_signature(ripple, width):
     return ()
 
 def get_window_signature(window, Nx, fftbins=True, *, xp=None, device=None):
-    return () if xp is None else xp.empty(())
+    return () if xp is None else (xp.empty(()),)
 #################################
 
 
@@ -341,13 +341,13 @@ def firwin2_signature(numtaps, freq, gain, *args, **kwds):
     return array_namespace(freq, gain)
 
 
-def freqs_zpk_signature(z, p, k, worN, *args, **kwds):
+def freqs_zpk_signature(z, p, k, worN=None, *args, **kwds):
     return array_namespace(z, p, worN)
 
 freqz_zpk_signature = freqs_zpk_signature
 
 
-def freqs_signature(b, a, worN=200, *args, **kwds):
+def freqs_signature(b, a=1, worN=200, *args, **kwds):
     return array_namespace(b, a, worN)
 
 freqz_signature = freqs_signature
