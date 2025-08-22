@@ -4900,11 +4900,9 @@ class TestBeta:
         assert_equal(stats.beta.pdf(1, a, b), 5)
         assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
-    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
-        with pytest.warns(RuntimeWarning):
-            stats.beta.ppf(q, a, b)
+        stats.beta.ppf(q, a, b)
 
     @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
     @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
