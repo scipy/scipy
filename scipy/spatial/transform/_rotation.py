@@ -1252,9 +1252,9 @@ class Rotation:
         rotations.
 
         For both Euler angles and Davenport angles, consecutive axes must
-        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
-        ``axis3``). For Euler angles, there is an additional relationship
-        between ``axis1`` or ``axis3``, with two possibilities:
+        be orthogonal (``axis2`` is orthogonal to both ``axis1`` and ``axis3``). 
+        For Euler angles, there is an additional relationship between ``axis1`` 
+        or ``axis3``, with two possibilities:
 
             - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
