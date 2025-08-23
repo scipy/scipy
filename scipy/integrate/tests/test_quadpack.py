@@ -243,20 +243,28 @@ class TestQuad:
         err = max(res_1[1], res_2[1])
         assert_allclose(res_1[0], -res_2[0], atol=err)
 
-    def test_b_equals_a(self):
+    @pytest.mark.parametrize("complex_func", [True, False])
+    def test_b_equals_a(self, complex_func):
         def f(x):
             return 1/x
 
         upper = lower = 0.
-        zero, err, infodict = quad(f, lower, upper, full_output=1)
         limit = 50
+        expected_infodict = {"neval": 0, "last": 0,
+                             "alist": np.full(limit, np.nan, dtype=np.float64),
+                             "blist": np.full(limit, np.nan, dtype=np.float64),
+                             "rlist": np.zeros(limit, dtype=np.float64),
+                             "elist": np.zeros(limit, dtype=np.float64),
+                             "iord" : np.zeros(limit, dtype=np.int32)}
+
+        zero, err, infodict = quad(f, lower, upper, full_output=1,
+                                   complex_func=complex_func)
         assert (zero, err) == (0., 0.)
-        assert_equal(infodict, {"neval": 0, "last": 0,
-                                "alist": np.full(limit, np.nan, dtype=np.float64),
-                                "blist": np.full(limit, np.nan, dtype=np.float64),
-                                "rlist": np.zeros(limit, dtype=np.float64),
-                                "elist": np.zeros(limit, dtype=np.float64),
-                                "iord" : np.zeros(limit, dtype=np.int32)})
+        if complex_func:
+            assert_equal(infodict, {"real": expected_infodict,
+                                    "imag": expected_infodict})
+        else:
+            assert_equal(infodict, expected_infodict)
 
     def test_complex(self):
         def tfunc(x):
@@ -369,7 +377,11 @@ class TestDblquad:
             (1, np.inf, -1, np.inf, np.pi / 4 * ((erf(1) + 1) * erfc(1))),
             # Multiple integration of a function in n = 2 variables: f(x, y, z)
             # over domain D = [-inf, inf] for all n.
-            (-np.inf, np.inf, -np.inf, np.inf, np.pi)
+            (-np.inf, np.inf, -np.inf, np.inf, np.pi),
+            # Multiple integration of a function in n = 2 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0.),
+            (0, np.inf, 0, 0, 0.),
         ]
     )
     def test_double_integral_improper(
@@ -542,6 +554,11 @@ class TestTplquad:
             # over domain D = [-inf, inf] for all n.
             (-np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf,
              np.pi ** (3 / 2)),
+            # Multiple integration of a function in n = 3 variables: f(x, y, z)
+            # over domain D = [0, 0] for each n (one at a time).
+            (0, 0, 0, np.inf, 0, np.inf, 0),
+            (0, np.inf, 0, 0, 0, np.inf, 0),
+            (0, np.inf, 0, np.inf, 0, 0, 0),
         ],
     )
     def test_triple_integral_improper(
