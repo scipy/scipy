@@ -123,10 +123,10 @@ spatch = { git = "https://github.com/seberg/spatch.git", branch = "scipy-fixes" 
 [environments]
 default = ["build", "test", "openblas"]
 torch = ["torch-base", "torch-cpu", "mkl"]
-torch-cuda = ["torch-base", "torch-cuda", "mkl", "cuda"]
-cupy = ["cupy"]
+torch-cuda = ["torch-base", "torch-cuda", "mkl", "cuda", "spatch"]
+cupy = ["cupy", "spatch"]
 jax = ["jax-base", "jax-cpu"]
-jax-cuda = ["jax-base", "jax-cuda", "cuda"]
+jax-cuda = ["jax-base", "jax-cuda", "cuda", "spatch"]
 array-api-strict = ["array_api_strict"]
 array-api = [
   "cpu",
