@@ -249,7 +249,7 @@ def csd_signature(x, y, fs=1.0, window='hann', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
-def periodogram_signature(x, fs=1.0, window='boxcar'):
+def periodogram_signature(x, fs=1.0, window='boxcar', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
