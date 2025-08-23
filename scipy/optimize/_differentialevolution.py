@@ -989,6 +989,11 @@ class DifferentialEvolutionSolver:
         self._random_population_index = np.arange(self.num_population_members)
         self.disp = disp
 
+        # Storage for population and energies throughout generations
+        self.population_history = []
+        self.energy_history = []
+
+
     def init_population_lhs(self):
         """
         Initializes the population with Latin Hypercube Sampling.
@@ -1180,6 +1185,10 @@ class DifferentialEvolutionSolver:
                     self.population[self.feasible]))
 
             self._promote_lowest_energy()
+        
+        # Store initial population and energies
+        self.population_history.append(self._scale_parameters(self.population.copy()))
+        self.energy_history.append(self.population_energies.copy())
 
         # do the optimization.
         for nit in range(1, self.maxiter + 1):
@@ -1194,6 +1203,10 @@ class DifferentialEvolutionSolver:
                     status_message = ('Maximum number of function evaluations'
                                       ' has been reached.')
                 break
+
+            # Store population and energies after each generation
+            self.population_history.append(self._scale_parameters(self.population.copy()))
+            self.energy_history.append(self.population_energies.copy())
 
             if self.disp:
                 print(f"differential_evolution step {nit}: f(x)="
@@ -1308,6 +1321,9 @@ class DifferentialEvolutionSolver:
             if result.maxcv > 0:
                 result.success = False
 
+        result.population_history = self.population_history
+        result.energy_history = self.energy_history
+        
         return result
 
     def _calculate_population_energies(self, population):
