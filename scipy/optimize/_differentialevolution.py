@@ -289,6 +289,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``population`` the solution vectors present in the population, and
         ``population_energies`` the value of the objective function for each
         entry in ``population``.
+        Additional attributes include ``population_history`` which contains
+        the population state at each generation, and ``energy_history`` which
+        contains the corresponding objective function values throughout the
+        optimization process.
         See `OptimizeResult` for a description of other attributes. If `polish`
         was employed, and a lower minimum was obtained by the polishing, then
         OptimizeResult also contains the ``jac`` attribute.
@@ -990,6 +994,7 @@ class DifferentialEvolutionSolver:
         self.disp = disp
 
         # Storage for population and energies throughout generations
+        # These lists track the complete evolution history for analysis
         self.population_history = []
         self.energy_history = []
 
@@ -1186,7 +1191,7 @@ class DifferentialEvolutionSolver:
 
             self._promote_lowest_energy()
         
-        # Store initial population and energies
+        # Store initial population and energies for evolution tracking
         self.population_history.append(self._scale_parameters(self.population.copy()))
         self.energy_history.append(self.population_energies.copy())
 
@@ -1321,9 +1326,10 @@ class DifferentialEvolutionSolver:
             if result.maxcv > 0:
                 result.success = False
 
+        # Add evolution history to result for analysis
         result.population_history = self.population_history
         result.energy_history = self.energy_history
-        
+
         return result
 
     def _calculate_population_energies(self, population):
