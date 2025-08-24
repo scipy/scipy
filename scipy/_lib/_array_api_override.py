@@ -38,7 +38,7 @@ class _ArrayClsInfo(enum.Enum):
 
 @lru_cache(100)
 def _validate_array_cls(cls: type) -> _ArrayClsInfo:
-    if issubclass(cls, list | tuple):
+    if issubclass(cls, (list,  tuple)):
         return _ArrayClsInfo.array_like
 
     # this comes from `_util._asarray_validated`
@@ -54,13 +54,13 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
     if issubclass(cls, np.matrix):
         raise TypeError("Inputs of type `numpy.matrix` are not supported.")
 
-    if issubclass(cls, np.ndarray | np.generic):
+    if issubclass(cls, (np.ndarray, np.generic)):
         return _ArrayClsInfo.numpy
 
     # Note: this must happen after the test for np.generic, because
     # np.float64 and np.complex128 are subclasses of float and complex respectively.
     # This matches the behavior of array_api_compat.
-    if issubclass(cls, int | float | complex | bool | type(None)):
+    if issubclass(cls, (int, float, complex, bool, type(None))):
         return _ArrayClsInfo.skip
 
     return _ArrayClsInfo.unknown
