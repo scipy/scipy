@@ -26,8 +26,6 @@ project(
     'scipy/sparse/linalg/_dsolve/SuperLU/License.txt',  # BSD-3-Clause
     'scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING',  # BSD-3-Clause
     'scipy/spatial/COPYING_QHULL.txt',  # Qhull
-    # 'scipy/stats/libnpyrandom/logfactorial.c',  # BSD-3-Clause
-    # 'scipy/stats/libnpyrandom/logfactorial.h',  # BSD-3-Clause
     'scipy/stats/biasedurn/license.txt',  # BSD-3-Clause
     'scipy/_lib/array_api_compat/LICENSE',  # MIT  # git submodule
     'subprojects/boost_math/math/LICENSE',  # BSL-1.0  # git submodule
