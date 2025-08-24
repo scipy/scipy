@@ -461,8 +461,8 @@ def from_euler(seq, angles, bint degrees=False):
     quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
@@ -549,8 +549,8 @@ def from_matrix(matrix):
         _normalize4(quat[ind])
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
@@ -595,8 +595,8 @@ def from_rotvec(rotvec, bint degrees=False):
         quat[ind, 3] = cos(angle / 2)
 
     if is_single:
-        return quat[0]
-    return quat
+        return np.asarray(quat, dtype=float)[0]
+    return np.asarray(quat, dtype=float)
 
 
 @cython.embedsignature(True)
@@ -735,6 +735,7 @@ def as_mrp(double[:, :] quat) -> double[:, :]:
     cdef int sign
     cdef double denominator
 
+    # TODO: Check if broadcasting is possible similar to the xp backend
     for ind in range(num_rotations):
 
         # Ensure we are calculating the set of MRPs that correspond
@@ -889,8 +890,8 @@ def random(num=None, rng=None):
 @cython.embedsignature(True)
 def identity(num: int | None = None) -> double[:, :]:
     if num is None:
-        return np.array([0, 0, 0, 1])
-    q = np.zeros((num, 4))
+        return np.array([0, 0, 0, 1], dtype=np.float64)
+    q = np.zeros((num, 4), dtype=np.float64)
     q[:, 3] = 1
     return q
 
@@ -1097,7 +1098,7 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
     # other secondary vectors
     if n_inf > 1:
         raise ValueError("Only one infinite weight is allowed")
-    elif n_inf == 1:
+    elif n_inf == 1:  # TODO: Refactor into _align_vectors_fixed as in the xp backend
         if return_sensitivity:
             raise ValueError("Cannot return sensitivity matrix with an "
                                 "infinite weight or one vector pair")
@@ -1226,6 +1227,8 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def pow(double[:, :] quat, n) -> double[:, :]:
+    if isinstance(n, np.ndarray) and n.ndim != 0 and n.shape != (1,):
+        raise ValueError("Array exponent must be a scalar")
     # Exact short-cuts
     if n == 0:
         return identity(quat.shape[0])
@@ -1240,7 +1243,7 @@ def pow(double[:, :] quat, n) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_davenport(axes, order: str, angles, bint degrees=False) -> double[:, :]:
+def from_davenport(axes, order: str, angles, bint degrees=False):
     if order in ['e', 'extrinsic']:
         extrinsic = True
     elif order in ['i', 'intrinsic']:
@@ -1280,4 +1283,6 @@ def from_davenport(axes, order: str, angles, bint degrees=False) -> double[:, :]
         else:
             q = compose_quat(q, qi)
 
-    return q[0] if is_single else q
+    if is_single:
+        return np.asarray(q, dtype=float)[0]
+    return np.asarray(q, dtype=float)

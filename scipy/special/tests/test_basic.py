@@ -192,42 +192,6 @@ class TestCephes:
     def test_chdtriv(self):
         assert_equal(cephes.chdtriv(0,0),5.0)
 
-    def test_chndtr(self):
-        assert_equal(cephes.chndtr(0,1,0),0.0)
-
-        # Each row holds (x, nu, lam, expected_value)
-        # These values were computed using Wolfram Alpha with
-        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
-        values = np.array([
-            [25.00, 20.0, 400, 4.1210655112396197139e-57],
-            [25.00, 8.00, 250, 2.3988026526832425878e-29],
-            [0.001, 8.00, 40., 5.3761806201366039084e-24],
-            [0.010, 8.00, 40., 5.45396231055999457039e-20],
-            [20.00, 2.00, 107, 1.39390743555819597802e-9],
-            [22.50, 2.00, 107, 7.11803307138105870671e-9],
-            [25.00, 2.00, 107, 3.11041244829864897313e-8],
-            [3.000, 2.00, 1.0, 0.62064365321954362734],
-            [350.0, 300., 10., 0.93880128006276407710],
-            [100.0, 13.5, 10., 0.99999999650104210949],
-            [700.0, 20.0, 400, 0.99999999925680650105],
-            [150.0, 13.5, 10., 0.99999999999999983046],
-            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
-        ])
-        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
-        assert_allclose(cdf, values[:, 3], rtol=1e-12)
-
-        assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
-        assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
-        assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
-        assert_(np.isnan(cephes.chndtr(5, np.nan, 2)))
-        assert_(np.isnan(cephes.chndtr(5, 1, np.nan)))
-
-    def test_chndtridf(self):
-        assert_equal(cephes.chndtridf(0,0,1),5.0)
-
-    def test_chndtrinc(self):
-        assert_equal(cephes.chndtrinc(0,1,0),5.0)
-
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
@@ -372,7 +336,11 @@ class TestCephes:
         p = 0.8756751669632105666874
         assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
 
-    @pytest.mark.xfail(reason='Returns nan on i686.')
+    def test_gh20835(self):
+        # gh-20835 reported fdtri failing for extreme inputs
+        dfd, dfn, x = 1, 50000, 29.72591544307521
+        assert_allclose(cephes.fdtri(dfd, dfn, cephes.fdtr(dfd, dfn, x)), x, rtol=1e-15)
+
     def test_fdtri_mysterious_failure(self):
         assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
@@ -1556,7 +1524,6 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
-    @pytest.mark.thread_unsafe
     def test_comb_exact_non_int_error(self):
         msg = "`exact=True`"
         with pytest.raises(ValueError, match=msg):
@@ -1577,7 +1544,6 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    @pytest.mark.thread_unsafe
     def test_perm_iv(self):
         # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
@@ -4582,7 +4548,6 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-@pytest.mark.thread_unsafe
 def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):

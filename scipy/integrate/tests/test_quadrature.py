@@ -14,11 +14,13 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_close
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@make_xp_test_case(fixed_quad)
 class TestFixedQuad:
     def test_scalar(self):
         n = 4
@@ -35,10 +37,8 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature:
-    def quad(self, x, a, b, args):
-        raise NotImplementedError
-
+@make_xp_test_case(romb)
+class TestRomb:
     def test_romb(self):
         assert_equal(romb(np.arange(17)), 128)
 
@@ -50,6 +50,9 @@ class TestQuadrature:
         val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
         assert_allclose(val, val2, rtol=1e-8, atol=0)
 
+
+@make_xp_test_case(newton_cotes)
+class TestNewtonCotes:
     def test_newton_cotes(self):
         """Test the first few degrees, for evenly spaced points."""
         n = 1
@@ -89,6 +92,9 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
+
+@make_xp_test_case(simpson)
+class TestSimpson:
     def test_simpson(self):
         y = np.arange(17)
         assert_equal(simpson(y), 128)
@@ -180,6 +186,7 @@ class TestQuadrature:
         assert_equal(result, expected)
 
 
+@make_xp_test_case(cumulative_trapezoid)
 class TestCumulative_trapezoid:
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
@@ -269,6 +276,7 @@ class TestCumulative_trapezoid:
             cumulative_trapezoid(y=[])
 
 
+@make_xp_test_case(trapezoid)
 class TestTrapezoid:
     def test_simple(self, xp):
         x = xp.arange(-10, 10, .1)
@@ -276,8 +284,6 @@ class TestTrapezoid:
         # check integral of normal equals 1
         xp_assert_close(r, xp.asarray(1.0))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_ndim(self, xp):
         x = xp.linspace(0, 1, 3)
         y = xp.linspace(0, 2, 8)
@@ -315,8 +321,6 @@ class TestTrapezoid:
         r = trapezoid(q, x=z, axis=2)
         xp_assert_close(r, qz)
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
         x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
@@ -358,20 +362,18 @@ class TestTrapezoid:
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
-    def test_array_like(self, xp):
+    def test_array_like(self):
         x = list(range(5))
         y = [t * t for t in x]
-        xarr = xp.asarray(x, dtype=xp.float64)
-        yarr = xp.asarray(y, dtype=xp.float64)
+        xarr = np.asarray(x, dtype=np.float64)
+        yarr = np.asarray(y, dtype=np.float64)
         res = trapezoid(y, x)
         resarr = trapezoid(yarr, xarr)
         xp_assert_close(res, resarr)
 
 
+@make_xp_test_case(qmc_quad)
 class TestQMCQuad:
-    @pytest.mark.thread_unsafe
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -448,7 +450,6 @@ class TestQMCQuad:
     def test_sign(self, signs):
         self.basic_test(signs=signs)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("log", [False, True])
     def test_zero(self, log):
         message = "A lower limit was equal to an upper limit, so"
@@ -505,6 +506,7 @@ def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1
     return res
 
 
+@make_xp_test_case(cumulative_simpson)
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
@@ -632,7 +634,6 @@ class TestCumulativeSimpson:
         return theoretical_difference
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
@@ -664,7 +665,6 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
@@ -700,6 +700,8 @@ class TestCumulativeSimpson:
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
 
+
+@make_xp_test_case(integrate.lebedev_rule)
 class TestLebedev:
     def test_input_validation(self):
         # only certain rules are available

@@ -27,6 +27,9 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
 
 # ------------------------------------------------------------------------------
 # expi

@@ -1288,12 +1288,13 @@ def zpk2tf(z, p, k):
         k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
-        temp = _pu.poly(z[0], xp=xp)
+        temp = _pu.poly(z[0, ...], xp=xp)
         b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            b[i] = k[i] * _pu.poly(z[i], xp=xp)
+            k_i = xp.asarray(k[i], dtype=xp.int64)
+            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
     else:
         b = k * _pu.poly(z, xp=xp)
 

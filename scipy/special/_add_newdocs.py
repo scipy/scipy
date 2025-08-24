@@ -1479,7 +1479,43 @@ add_newdoc("chndtr",
 
     See Also
     --------
-    chndtrix, chndtridf, chndtrinc
+    chndtrix: Noncentral Chi Squared distribution quantile
+    chndtridf: Inverse of `chndtr` with respect to `df`
+    chndtrinc: Inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2: Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.cdf`` is equivalent to `chndtr`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x = 4.0
+    >>> df = 1.0
+    >>> nc = 5.0
+    >>> sc.chndtr(x, df, nc)
+    0.40667858759710945
+
+    Plot the noncentral chi squared distribution CDF for different parameters.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 40, 1000)
+    >>> plt.plot(x, sc.chndtr(x, 1, 5), label=r"$df=1,\ nc=5$")
+    >>> plt.plot(x, sc.chndtr(x, 5, 10), label=r"$df=5,\ nc=10$")
+    >>> plt.legend()
+    >>> plt.show()
 
     """)
 
@@ -1512,7 +1548,34 @@ add_newdoc("chndtrix",
 
     See Also
     --------
-    chndtr, chndtridf, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.ppf`` is equivalent to `chndtrix`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrix, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrix` is the inverse of `chndtr` with respect to `x`:
+
+    >>> chndtrix(p, df, nc)
+    3.0
 
     """)
 
@@ -1543,7 +1606,35 @@ add_newdoc("chndtridf",
 
     See Also
     --------
-    chndtr, chndtrix, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtrix : inverse of `chndtr` with respect to `x`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtridf, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtridf` is the inverse of `chndtr` with respect to `df`:
+
+    >>> chndtridf(x, p, nc)
+    5.0
 
     """)
 
@@ -1574,7 +1665,35 @@ add_newdoc("chndtrinc",
 
     See Also
     --------
-    chndtr, chndtrix, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : inverse of `chndtr` with respect to `df`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrinc, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrinc` is the inverse of `chndtr` with respect to `nc`:
+
+    >>> chndtrinc(x, df, p)
+    10.0
 
     """)
 
@@ -3216,15 +3335,15 @@ add_newdoc("fdtr",
     .. math::
         F(d_n, d_d; x) = I_{xd_n/(d_d + xd_n)}(d_n/2, d_d/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtr`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtr` directly can improve
-    performance compared to the ``cdf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtr` directly can improve performance compared to the ``cdf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
 
     Examples
     --------
@@ -3317,15 +3436,14 @@ add_newdoc("fdtrc",
     .. math::
         F(d_n, d_d; x) = I_{d_d/(d_d + xd_n)}(d_d/2, d_n/2).
 
-    Wrapper for the Cephes [1]_ routine `fdtrc`. The F distribution is also
-    available as `scipy.stats.f`. Calling `fdtrc` directly can improve
-    performance compared to the ``sf`` method of `scipy.stats.f` (see last
-    example below).
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
+    `fdtrc` directly can improve performance compared to the ``sf``
+    method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -3411,30 +3529,14 @@ add_newdoc("fdtri",
 
     Notes
     -----
-    The computation is carried out using the relation to the inverse
-    regularized beta function, :math:`I^{-1}_x(a, b)`.  Let
-    :math:`z = I^{-1}_p(d_d/2, d_n/2).`  Then,
-
-    .. math::
-        x = \frac{d_d (1 - z)}{d_n z}.
-
-    If `p` is such that :math:`x < 0.5`, the following relation is used
-    instead for improved stability: let
-    :math:`z' = I^{-1}_{1 - p}(d_n/2, d_d/2).` Then,
-
-    .. math::
-        x = \frac{d_d z'}{d_n (1 - z')}.
-
-    Wrapper for the Cephes [1]_ routine `fdtri`.
-
-    The F distribution is also available as `scipy.stats.f`. Calling
+    Wrapper for a routine from the Boost Math C++ library [1]_. The
+    F distribution is also available as `scipy.stats.f`. Calling
     `fdtri` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.f` (see last example below).
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -4034,191 +4136,7 @@ add_newdoc("gdtrix",
     5.5999999999999996
     """)
 
-add_newdoc("hankel1",
-    r"""
-    hankel1(v, z, out=None)
 
-    Hankel function of the first kind
-
-    Parameters
-    ----------
-    v : array_like
-        Order (float).
-    z : array_like
-        Argument (float or complex).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Hankel function of the first kind.
-
-    See Also
-    --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
-
-    Notes
-    -----
-    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
-    computation using the relation,
-
-    .. math:: H^{(1)}_v(z) =
-              \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
-
-    where :math:`K_v` is the modified Bessel function of the second kind.
-    For negative orders, the relation
-
-    .. math:: H^{(1)}_{-v}(z) = H^{(1)}_v(z) \exp(\imath\pi v)
-
-    is used.
-
-    References
-    ----------
-    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
-           of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
-    """)
-
-add_newdoc("hankel1e",
-    r"""
-    hankel1e(v, z, out=None)
-
-    Exponentially scaled Hankel function of the first kind
-
-    Defined as::
-
-        hankel1e(v, z) = hankel1(v, z) * exp(-1j * z)
-
-    Parameters
-    ----------
-    v : array_like
-        Order (float).
-    z : array_like
-        Argument (float or complex).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the exponentially scaled Hankel function.
-
-    Notes
-    -----
-    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
-    computation using the relation,
-
-    .. math:: H^{(1)}_v(z) =
-              \frac{2}{\imath\pi} \exp(-\imath \pi v/2) K_v(z \exp(-\imath\pi/2))
-
-    where :math:`K_v` is the modified Bessel function of the second kind.
-    For negative orders, the relation
-
-    .. math:: H^{(1)}_{-v}(z) = H^{(1)}_v(z) \exp(\imath\pi v)
-
-    is used.
-
-    References
-    ----------
-    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
-           of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
-    """)
-
-add_newdoc("hankel2",
-    r"""
-    hankel2(v, z, out=None)
-
-    Hankel function of the second kind
-
-    Parameters
-    ----------
-    v : array_like
-        Order (float).
-    z : array_like
-        Argument (float or complex).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Hankel function of the second kind.
-
-    See Also
-    --------
-    hankel2e : this function with leading exponential behavior stripped off.
-
-    Notes
-    -----
-    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
-    computation using the relation,
-
-    .. math:: H^{(2)}_v(z) =
-              -\frac{2}{\imath\pi} \exp(\imath \pi v/2) K_v(z \exp(\imath\pi/2))
-
-    where :math:`K_v` is the modified Bessel function of the second kind.
-    For negative orders, the relation
-
-    .. math:: H^{(2)}_{-v}(z) = H^{(2)}_v(z) \exp(-\imath\pi v)
-
-    is used.
-
-    References
-    ----------
-    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
-           of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
-    """)
-
-add_newdoc("hankel2e",
-    r"""
-    hankel2e(v, z, out=None)
-
-    Exponentially scaled Hankel function of the second kind
-
-    Defined as::
-
-        hankel2e(v, z) = hankel2(v, z) * exp(1j * z)
-
-    Parameters
-    ----------
-    v : array_like
-        Order (float).
-    z : array_like
-        Argument (float or complex).
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the exponentially scaled Hankel function of the second kind.
-
-    Notes
-    -----
-    A wrapper for the AMOS [1]_ routine `zbesh`, which carries out the
-    computation using the relation,
-
-    .. math:: H^{(2)}_v(z) = -\frac{2}{\imath\pi}
-              \exp(\frac{\imath \pi v}{2}) K_v(z exp(\frac{\imath\pi}{2}))
-
-    where :math:`K_v` is the modified Bessel function of the second kind.
-    For negative orders, the relation
-
-    .. math:: H^{(2)}_{-v}(z) = H^{(2)}_v(z) \exp(-\imath\pi v)
-
-    is used.
-
-    References
-    ----------
-    .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
-           of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/
-
-    """)
 
 add_newdoc("huber",
     r"""

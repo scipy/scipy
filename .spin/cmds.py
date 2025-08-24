@@ -600,7 +600,7 @@ def authors(ctx_obj, revision_args):
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    cmd_prefix = [sys.executable] if sys.platform == "win32" else []
+    cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
         os.path.join('tools', 'lint.py'),

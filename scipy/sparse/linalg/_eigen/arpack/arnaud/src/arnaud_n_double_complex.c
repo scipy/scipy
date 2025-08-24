@@ -419,9 +419,9 @@ ARNAUD_zneupd(struct ARNAUD_state_d *V, int rvec, int howmny, int* select,
                 // Complex division is not supported in MSVC
                 double mag_sq = pow(cabs(workl[iheig + j]), 2.0);
                 temp = _Cmulcr(conj(workl[iheig + j]), 1.0 / mag_sq);
-                workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv], temp);
+                workev[j] = _Cmulcc(workl[invsub + j*ldq + V->ncv - 1], temp);
 #else
-                workev[j] = workl[invsub + j*ldq + V->ncv] / workl[iheig+j];
+                workev[j] = workl[invsub + j*ldq + V->ncv - 1] / workl[iheig+j];
 #endif
             }
         }
@@ -540,7 +540,7 @@ ARNAUD_znaupd(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
 }
 
 
-void
+static void
 znaup2(struct ARNAUD_state_d *V, ARNAUD_CPLX_TYPE* resid,
        ARNAUD_CPLX_TYPE* v, int ldv, ARNAUD_CPLX_TYPE* h, int ldh,
        ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds,
@@ -1560,7 +1560,7 @@ zneigh(double* rnorm, int n, ARNAUD_CPLX_TYPE* h, int ldh, ARNAUD_CPLX_TYPE* rit
 }
 
 
-void
+static void
 zngets(struct ARNAUD_state_d *V, int* kev, int* np,
        ARNAUD_CPLX_TYPE* ritz, ARNAUD_CPLX_TYPE* bounds)
 {
@@ -1754,7 +1754,7 @@ LINE40:
 static void
 zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE* x, ARNAUD_CPLX_TYPE* y)
 {
-    int i, igap, j;
+    int i, gap, pos;
     ARNAUD_CPLX_TYPE temp;
     ARNAUD_compare_cfunc *f;
 
@@ -1783,31 +1783,29 @@ zsortc(const enum ARNAUD_which w, const int apply, const int n, ARNAUD_CPLX_TYPE
             break;
     }
 
-    igap = n / 2;
+    gap = n / 2;
 
-    while (igap != 0)
+    while (gap != 0)
     {
-        j = 0;
-        for (i = igap; i < n; i++)
+        for (i = gap; i < n; i++)
         {
-            while (f(x[j], x[j+igap]))
+            pos = i - gap;
+            while ((pos >= 0) && (f(x[pos], x[pos+gap])))
             {
-                if (j < 0) { break; }
-                temp = x[j];
-                x[j] = x[j+igap];
-                x[j+igap] = temp;
+                temp = x[pos];
+                x[pos] = x[pos+gap];
+                x[pos+gap] = temp;
 
                 if (apply)
                 {
-                    temp = y[j];
-                    y[j] = y[j+igap];
-                    y[j+igap] = temp;
+                    temp = y[pos];
+                    y[pos] = y[pos+gap];
+                    y[pos+gap] = temp;
                 }
-                j -= igap;
+                pos -= gap;
             }
-            j = i - igap + 1;
         }
-        igap = igap / 2;
+        gap = gap / 2;
     }
 }
 
@@ -1831,6 +1829,8 @@ zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const 
     ARNAUD_CPLX_TYPE temp = ARNAUD_cplx(0.0, 0.0);
 #endif
     if (*n <= 0) { return result; }
+
+    int ix, iy;
     if ((*incx == 1) && (*incy == 1))
     {
         for (int i = 0; i < *n; i++)
@@ -1844,15 +1844,20 @@ zdotc_(const int* n, const ARNAUD_CPLX_TYPE* restrict x, const int* incx, const 
         }
 
     } else {
+        // Handle negative increments correctly
+        ix = (*incx >= 0) ? 0 : (-(*n-1) * (*incx));
+        iy = (*incy >= 0) ? 0 : (-(*n-1) * (*incy));
 
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[i * (*incx)], conj(y[i * (*incy)]));
+            temp = _Cmulcc(x[ix], conj(y[iy]));
             result = ARNAUD_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[i * (*incx)] * conj(y[i * (*incy)]));
+            result = result + (x[ix] * conj(y[iy]));
 #endif
+            ix += *incx;
+            iy += *incy;
         }
     }
 

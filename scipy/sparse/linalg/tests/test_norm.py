@@ -42,7 +42,6 @@ class TestNorm:
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_array(b)
 
-    @pytest.mark.thread_unsafe
     def test_matrix_norm(self):
 
         # Frobenius norm is the default

@@ -493,9 +493,10 @@ class _spbase(SparseABC):
             return self._mul_scalar(other)
 
         if self.ndim < 3:
-            if self.format in ('bsr', 'csc', 'csr'):  # DIA has its own multiply
+            try:
                 return self._multiply_2d_with_broadcasting(other)
-            return self.tocsr()._multiply_2d_with_broadcasting(other)
+            except AttributeError:
+                return self.tocsr()._multiply_2d_with_broadcasting(other)
 
         if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
