@@ -40,15 +40,15 @@ class TestFixedQuad:
 @make_xp_test_case(romb)
 class TestRomb:
     def test_romb(self, xp):
-        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0))
+        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0, dtype=xp.float64))
 
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
-        x = np.arange(2**4+1, dtype=np.float64)
+        x = np.arange(2**4+1)
         y = np.cos(0.2*x)
-        val = romb(xp.asarray(y, dtype=xp.float64))
-        expected, err = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
-        xp_assert_close(val, xp.asarray(expected), rtol=1e-8, atol=0)
+        val = romb(xp.asarray(y))
+        expected, _ = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
+        xp_assert_close(val, xp.asarray(expected, dtype=xp.float64), rtol=1e-8, atol=0)
 
 
 @make_xp_test_case(newton_cotes)
