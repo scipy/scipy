@@ -42,14 +42,13 @@ class TestRomb:
     def test_romb(self, xp):
         xp_assert_equal(romb(xp.arange(17, dtype=xp.float64)), xp.asarray(128.0))
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="`quad` not yet implemented using array API")
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
         x = xp.arange(2**4+1, dtype=xp.float64)
         y = xp.cos(0.2*x)
         val = romb(y)
-        val2, err = quad(lambda x: xp.cos(0.2*x), x.min(), x.max())
-        xp_assert_close(val, val2, rtol=1e-8, atol=0)
+        expected, err = quad(lambda x: np.cos(np.array(0.2*x)), xp.min(x), xp.max(x))
+        xp_assert_close(val, xp.asarray(expected), rtol=1e-8, atol=0)
 
 
 @make_xp_test_case(newton_cotes)
