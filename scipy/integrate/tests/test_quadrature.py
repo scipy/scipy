@@ -40,7 +40,7 @@ class TestFixedQuad:
 @make_xp_test_case(romb)
 class TestRomb:
     def test_romb(self, xp):
-        xp_assert_equal(romb(xp.arange(17, dtype=xp.float64)), xp.asarray(128.0))
+        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0))
 
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
