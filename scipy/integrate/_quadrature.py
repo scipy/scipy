@@ -252,7 +252,7 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
@@ -304,24 +304,27 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
+
     if y.shape[axis] == 0:
         raise ValueError("At least one point is required along `axis`.")
+
     if x is None:
         d = dx
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
         if x.ndim == 1:
-            d = np.diff(x)
+            d = xp.diff(x)
             # reshape to correct shape
             shape = [1] * y.ndim
             shape[axis] = -1
-            d = d.reshape(shape)
+            d = xp.reshape(d, tuple(shape))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         else:
-            d = np.diff(x, axis=axis)
+            d = xp.diff(x, axis=axis)
 
         if d.shape[axis] != y.shape[axis] - 1:
             raise ValueError("If given, length of x along axis must be the "
@@ -330,7 +333,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
-    res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
+    res = xp.cumulative_sum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
         if initial != 0:
@@ -340,8 +343,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
-                             axis=axis)
+        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype), res),
+                        axis=axis)
 
     return res
 
