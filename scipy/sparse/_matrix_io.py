@@ -60,8 +60,11 @@ def save_npz(file, matrix, compressed=True):
     elif matrix.format == 'dia':
         arrays_dict.update(offsets=matrix.offsets)
     elif matrix.format == 'coo':
-        arrays_dict.update(row=matrix.row, col=matrix.col)
-        arrays_dict.update(coords=matrix.coords)
+        if matrix.ndim == 2:
+            # TODO: After a few releases, switch 2D case to save with coords only.
+            arrays_dict.update(row=matrix.row, col=matrix.col)
+        else:
+            arrays_dict.update(coords=matrix.coords)
     else:
         msg = f'Save is not implemented for sparse matrix of format {matrix.format}.'
         raise NotImplementedError(msg)
