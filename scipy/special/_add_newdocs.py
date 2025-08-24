@@ -5599,6 +5599,15 @@ add_newdoc("ncfdtrinc",
     ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
     ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
 
+    Notes
+    -----
+    This function calculates the non-centrality parameter of the
+    non-central F distribution using the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     >>> from scipy.special import ncfdtr, ncfdtrinc

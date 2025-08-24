@@ -773,6 +773,7 @@ Available functions
 - :py:func:`~scipy.special.ncfdtrinc`::
 
         double ncfdtrinc(double, double, double, double)
+        float ncfdtrinc(float, float, float, float)
 
 - :py:func:`~scipy.special.nctdtr`::
 
@@ -1716,10 +1717,6 @@ cdef _proto_ncfdtridfd_t *_proto_ncfdtridfd_t_var = &_func_ncfdtridfd
 from ._cdflib_wrappers cimport ncfdtridfn as _func_ncfdtridfn
 ctypedef double _proto_ncfdtridfn_t(double, double, double, double) noexcept nogil
 cdef _proto_ncfdtridfn_t *_proto_ncfdtridfn_t_var = &_func_ncfdtridfn
-
-from ._cdflib_wrappers cimport ncfdtrinc as _func_ncfdtrinc
-ctypedef double _proto_ncfdtrinc_t(double, double, double, double) noexcept nogil
-cdef _proto_ncfdtrinc_t *_proto_ncfdtrinc_t_var = &_func_ncfdtrinc
 
 from ._cdflib_wrappers cimport nctdtridf as _func_nctdtridf
 ctypedef double _proto_nctdtridf_t(double, double, double) noexcept nogil
@@ -3114,6 +3111,15 @@ cpdef df_number_t ncfdtr(df_number_t x0, df_number_t x1, df_number_t x2, df_numb
         else:
             return NAN
 
+cpdef df_number_t ncfdtrinc(df_number_t x0, df_number_t x1, df_number_t x2, df_number_t x3) noexcept nogil:
+    """See the documentation for scipy.special.ncfdtr"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncfdtrinc_float)(x0, x1, x2, x3)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncfdtrinc_double)(x0, x1, x2, x3)
+    else:
+        return NAN
+        
 cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""
     if df_number_t is float:
@@ -3160,10 +3166,6 @@ cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nog
 cpdef double ncfdtridfn(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtridfn"""
     return _func_ncfdtridfn(x0, x1, x2, x3)
-
-cpdef double ncfdtrinc(double x0, double x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.ncfdtrinc"""
-    return _func_ncfdtrinc(x0, x1, x2, x3)
 
 cpdef df_number_t nctdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtr"""
