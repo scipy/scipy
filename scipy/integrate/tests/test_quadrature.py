@@ -44,10 +44,10 @@ class TestRomb:
 
     def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
-        x = xp.arange(2**4+1, dtype=xp.float64)
-        y = xp.cos(0.2*x)
-        val = romb(y)
-        expected, err = quad(lambda x: np.cos(np.array(0.2*x)), xp.min(x), xp.max(x))
+        x = np.arange(2**4+1, dtype=np.float64)
+        y = np.cos(0.2*x)
+        val = romb(xp.asarray(y, dtype=xp.float64))
+        expected, err = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
         xp_assert_close(val, xp.asarray(expected), rtol=1e-8, atol=0)
 
 
