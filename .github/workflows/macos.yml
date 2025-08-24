@@ -114,7 +114,7 @@ jobs:
         mamba install scikit-umfpack scikit-sparse
 
         # configure system boost
-        mamba install libboost-headers=1.88.0
+        mamba install libboost-headers=1.89.0
         export BOOST_INCLUDEDIR=${{ env.CONDA }}/envs/scipy-dev/include/boost
         export BOOST_LIBRARYDIR=${{ env.CONDA }}/envs/scipy-dev/lib
         rm -rf subprojects/boost_math  # so will fail if system boost doesn't work

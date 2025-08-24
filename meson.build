@@ -202,14 +202,14 @@ elif use_system_libraries.contains('auto')
 endif
 
 if all_system_libraries or use_system_libraries.contains('boost.math')
-  boost_math_dep = dependency('boost', version : '1.88.0')
+  boost_math_dep = dependency('boost', version : '1.89.0')
 elif auto_system_libraries
   boost_math_dep = dependency(
-    'boost', version : '1.88.0',
+    'boost', version : '1.89.0',
     fallback : ['boost_math', 'boost_math_dep']
   )
 else
-  boost_math = subproject('boost_math', version : '1.88.0')
+  boost_math = subproject('boost_math', version : '1.89.0')
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
