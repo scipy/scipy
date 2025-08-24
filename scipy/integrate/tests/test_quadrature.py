@@ -15,7 +15,7 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import make_xp_test_case
-from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -39,16 +39,16 @@ class TestFixedQuad:
 
 @make_xp_test_case(romb)
 class TestRomb:
-    def test_romb(self):
-        assert_equal(romb(np.arange(17)), 128)
+    def test_romb(self, xp):
+        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0, dtype=xp.float64))
 
-    def test_romb_gh_3731(self):
+    def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
         x = np.arange(2**4+1)
         y = np.cos(0.2*x)
-        val = romb(y)
-        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
-        assert_allclose(val, val2, rtol=1e-8, atol=0)
+        val = romb(xp.asarray(y))
+        expected, _ = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
+        xp_assert_close(val, xp.asarray(expected, dtype=xp.float64), rtol=1e-8, atol=0)
 
 
 @make_xp_test_case(newton_cotes)
