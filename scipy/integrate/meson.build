@@ -26,11 +26,6 @@ vode_src = [
   'odepack/zvode.f'
 ]
 
-dop_src = [
-  'dop/dop853.f',
-  'dop/dopri5.f'
-]
-
 quadpack_test_src = [
   'tests/_test_multivariate.c'
 ]
@@ -56,9 +51,7 @@ vode_lib = static_library('vode_lib',
 )
 
 dop_lib = static_library('dop_lib',
-  dop_src,
-  fortran_args: fortran_ignore_warnings,
-  gnu_symbol_visibility: 'hidden',
+  'src/dop.c',
 )
 
 py3.extension_module('_quadpack',
@@ -102,13 +95,11 @@ py3.extension_module('_lsoda',
 )
 
 py3.extension_module('_dop',
-  f2py_gen.process('dop.pyf'),
+  ['_dopmodule.c'],
   link_with: [dop_lib],
-  c_args: [Wno_unused_variable],
-  dependencies: [fortranobject_dep],
+  dependencies: [np_dep, ccallback_dep],
   link_args: version_link_args,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
@@ -152,6 +143,7 @@ py3.install_sources([
     'odepack.py',
     'quadpack.py',
     'vode.py',
+    'src/LICENSE_DOP'
   ],
   subdir: 'scipy/integrate'
 )

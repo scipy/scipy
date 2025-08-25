@@ -394,7 +394,10 @@ if use_ilp64
        '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
-
+elif uses_accelerate
+    blas_ilp64 = dependency('accelerate')
+    lapack_ilp64 = blas_ilp64
+    _args_blas_ilp64 += ['-DACCELERATE_NEW_LAPACK']
   elif blas_name == 'scipy-openblas'
       # scipy_openblas64, a separate library
       blas_ilp64 = dependency('scipy-openblas64')
@@ -433,7 +436,7 @@ if use_ilp64
     compile_args: _args_blas_ilp64,
     include_directories: _blas_incdir,
   )
-  lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
+  lapack_dep = declare_dependency(dependencies: [lapack_ilp64, blas_dep])
 
   g77_abi_wrappers_ilp64 = static_library(
     'g77_abi_wrappers_ilp64',

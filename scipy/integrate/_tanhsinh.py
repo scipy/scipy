@@ -5,7 +5,7 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_promote)
+                                   xp_promote, xp_capabilities)
 
 
 __all__ = ['nsum']
@@ -27,6 +27,10 @@ __all__ = ['nsum']
 #  make public?
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
              atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
@@ -955,6 +959,11 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol, xp
 
 
+@xp_capabilities(skip_backends=[('torch', 'data-apis/array-api-compat#271'),
+                                ('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent finite or infinite series.
 

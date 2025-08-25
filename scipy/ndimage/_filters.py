@@ -1989,7 +1989,14 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
         mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
-        if input.ndim == 1:
+        # Some corner cases are currently not allowed to use the
+        # "new"/fast 1D rank filter code, including when the
+        # footprint is large compared to the array size.
+        # See discussion in gh-23293; longer-term it may be possible
+        # to allow the fast path for these corner cases as well,
+        # if algorithmic fixes are found.
+        lim2 = input.size - ((footprint.size - 1) // 2 - origin)
+        if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
             if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
