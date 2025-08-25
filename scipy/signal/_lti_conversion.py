@@ -127,13 +127,13 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     Parameters
     ----------
     A: array_like, optional
-        Must be convertible to a two-dimensional array of shape (n, n).
+        Two-dimensional array of shape (n, n).
     B: array_like, optional
-        Must be convertible to a two-dimensional array of shape (n, p).
+        Two-dimensional array of shape (n, p).
     C: array_like, optional
-        Must be convertible to a two-dimensional array of shape (q, n).
+        Two-dimensional array of shape (q, n).
     D: array_like, optional
-        Must be convertible to a two-dimensional array of shape (q, p).
+        Two-dimensional array of shape (q, p).
 
     Returns
     -------
