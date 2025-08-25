@@ -693,7 +693,7 @@ def _make_capabilities_note(fun_name, capabilities):
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
-    **Array API Support**
+    **Array API Standard Support**
 
     `{fun_name}` has experimental support for Python Array API Standard compatible
     backends in addition to NumPy. Please consider testing these features
