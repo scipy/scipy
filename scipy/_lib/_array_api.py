@@ -682,7 +682,7 @@ def _make_capabilities_note(fun_name, capabilities):
         # that explains what is and isn't in-scope, but such a section
         # doesn't exist yet. Using :ref:`dev-arrayapi` as a placeholder.
         note = f"""
-        **Array API Support**
+        **Array API Standard Support**
 
         `{fun_name}` is not in-scope for support of Python Array API Standard compatible
         backends other than NumPy.
