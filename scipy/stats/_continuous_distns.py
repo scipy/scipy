@@ -10001,9 +10001,14 @@ class trapezoid_gen(rv_continuous):
         than the generic defaults, especially for trapezoidal distributions
         that are not close to triangular.
         """
-        # Set sensible default starting values for c and d if not provided
-        kwds.setdefault('c', 0.33)
-        kwds.setdefault('d', 0.66)
+        # Handle default starting values for c and d
+        if len(args) == 0:
+            # No positional args provided, use defaults
+            args = (0.33, 0.66)
+        elif len(args) == 1:
+            # Only c provided, set d to default
+            args = (args[0], 0.66)
+        
         return super().fit(data, *args, **kwds)
 
 
