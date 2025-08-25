@@ -2960,7 +2960,7 @@ add_newdoc("eval_laguerre",
 
         L_n(x) = {}_1F_1(-n, 1, x).
 
-    See 22.5.16 and 22.5.54 in [AS]_ (or equivalently [dlmf1]_ and [dlmf2]_)
+    See 22.5.16 and 22.5.54 in [AS]_ (or equivalently [DLMF1]_ and [DLMF2]_)
     for details. When :math:`n` is an integer the result is a polynomial
     of degree :math:`n`.
 
@@ -2993,9 +2993,9 @@ add_newdoc("eval_laguerre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [dlmf1] NIST Digital Library of Mathematical Functions,
+    .. [DLMF1] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.1#I1.ix7.p1
-    .. [dlmf2] NIST Digital Library of Mathematical Functions,
+    .. [DLMF2] NIST Digital Library of Mathematical Functions,
         https://dlmf.nist.gov/18.5.E12
 
      """)
