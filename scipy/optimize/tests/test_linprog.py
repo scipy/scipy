@@ -268,7 +268,6 @@ def generic_callback_test(self):
     assert_allclose(last_cb['slack'], res['slack'])
 
 
-@pytest.mark.thread_unsafe
 def test_unknown_solvers_and_options():
     c = np.array([-3, -2])
     A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -294,7 +293,6 @@ def test_choose_solver():
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
 
-@pytest.mark.thread_unsafe
 def test_deprecation():
     with pytest.warns(DeprecationWarning):
         linprog(1, method='interior-point')
@@ -447,7 +445,6 @@ class LinprogCommonTests:
                       method=self.method, options=self.options)
         _assert_success(res, desired_fun=2, desired_x=[2])
 
-    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -464,7 +461,6 @@ class LinprogCommonTests:
         with pytest.warns(OptimizeWarning):
             f(c, A_ub=A_ub, b_ub=b_ub, options=o)
 
-    @pytest.mark.thread_unsafe
     def test_integrality_without_highs(self):
         # ensure that using `integrality` parameter without `method='highs'`
         # raises warning and produces correct solution to relaxed problem
@@ -615,7 +611,6 @@ class LinprogCommonTests:
         if do_presolve:
             assert_equal(res.nit, 0)
 
-    @pytest.mark.thread_unsafe
     def test_bounds_infeasible_2(self):
 
         # Test ill-valued bounds (lower inf, upper -inf)
@@ -1732,6 +1727,9 @@ class LinprogCommonTests:
                 "ignore", "invalid value encountered...", RuntimeWarning)
             warnings.filterwarnings(
                 "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
@@ -1798,7 +1796,6 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, method=self.method)
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("options",
                              [{"maxiter": -1},
                               {"disp": -1},
@@ -1986,7 +1983,6 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate error is raised.
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
@@ -2003,7 +1999,6 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
     def test_bug_5400(self):
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate error is raised.
@@ -2039,7 +2034,6 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
     def test_bug_7237_low_tol(self):
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
@@ -2210,6 +2204,9 @@ class TestLinprogIPSpecific:
                 "ignore", "Solving system with option...", OptimizeWarning)
             warnings.filterwarnings(
                 "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense

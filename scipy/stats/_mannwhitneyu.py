@@ -1,6 +1,7 @@
 import threading
 import numpy as np
 from collections import namedtuple
+from scipy._lib._array_api import xp_capabilities
 from scipy import special
 from scipy import stats
 from scipy.stats._stats_py import _rankdata
@@ -224,6 +225,7 @@ def _mwu_choose_method(n1, n2, ties):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):

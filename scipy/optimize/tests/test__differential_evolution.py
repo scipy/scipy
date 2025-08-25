@@ -717,8 +717,7 @@ class TestDifferentialEvolutionSolver:
                 solver.solve()
         assert s._updating == 'deferred'
 
-    @pytest.mark.fail_slow(10)
-    def test_parallel(self):
+    def test_parallel_threads(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
         # use threads instead of Process to speed things up for this simple example
@@ -729,6 +728,9 @@ class TestDifferentialEvolutionSolver:
             assert solver._updating == 'deferred'
             solver.solve()
 
+    @pytest.mark.fail_slow(10)
+    def test_parallel_processes(self):
+        bounds = [(0., 2.), (0., 2.)]
         with DifferentialEvolutionSolver(
             rosen, bounds, updating='deferred', workers=2, popsize=3, tol=0.1
         ) as solver:
@@ -843,7 +845,6 @@ class TestDifferentialEvolutionSolver:
             assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
             assert cv.shape == (2, 3)
 
-    @pytest.mark.thread_unsafe
     def test_constraint_solve(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -861,7 +862,6 @@ class TestDifferentialEvolutionSolver:
         assert res.success
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     def test_impossible_constraint(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -1538,7 +1538,6 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(10)
     def test_vectorized(self):
         def quadratic(x):

@@ -287,7 +287,7 @@ def test_rvs_scalar(distname, arg):
     assert np.isscalar(distfn.rvs(*arg, size=None))
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe(reason="global rng")
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -1003,8 +1003,7 @@ def test_kappa4_array_gh13582():
     assert res2.shape == (4, 4, 3)
 
 
-@pytest.mark.parallel_threads(1)
-def test_frozen_attributes():
+def test_frozen_attributes(monkeypatch):
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
     message = "'rv_continuous_frozen' object has no attribute"
@@ -1012,10 +1011,10 @@ def test_frozen_attributes():
         stats.norm().pmf
     with pytest.raises(AttributeError, match=message):
         stats.norm().logpmf
-    stats.norm.pmf = "herring"
+    monkeypatch.setattr(stats.norm, "pmf", "herring", raising=False)
     frozen_norm = stats.norm()
     assert isinstance(frozen_norm, rv_continuous_frozen)
-    delattr(stats.norm, 'pmf')
+    assert not hasattr(frozen_norm, "pmf")
 
 
 def test_skewnorm_pdf_gh16038():

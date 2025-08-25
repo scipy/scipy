@@ -9,6 +9,7 @@ from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._resampling import BootstrapResult
 from scipy.stats import qmc, bootstrap
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib._util import _transition_to_rng
 
 
@@ -236,6 +237,8 @@ class SobolResult:
             first_order=first_order, total_order=total_order
         )
 
+
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,

@@ -6,6 +6,7 @@ from scipy._lib._array_api import (
     _asarray, assert_array_almost_equal,
     is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
+    make_xp_test_case,
 )
 
 import pytest
@@ -16,7 +17,7 @@ from . import types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
+# lazy_xp_modules = [ndimage]
 
 
 eps = 1e-12
@@ -33,7 +34,7 @@ ndimage_to_numpy_mode = {
 
 class TestBoundaries:
 
-    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+    @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1.5, 2.5, 3.5, 4, 4, 4, 4]),
@@ -54,7 +55,7 @@ class TestBoundaries:
                                         output_shape=(7,), order=1),
             xp.asarray(expected_value))
 
-    @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+    @make_xp_test_case(ndimage.geometric_transform)
     @pytest.mark.parametrize(
         'mode, expected_value',
         [('nearest', [1, 1, 2, 3]),
@@ -75,6 +76,7 @@ class TestBoundaries:
                                         output_shape=(4,)),
             xp.asarray(expected_value))
 
+    @make_xp_test_case(ndimage.map_coordinates)
     @pytest.mark.parametrize('mode', ['mirror', 'reflect', 'grid-mirror',
                                       'grid-wrap', 'grid-constant',
                                       'nearest'])
@@ -103,6 +105,7 @@ class TestBoundaries:
         xp_assert_close(y, expected, rtol=1e-7, atol=atol)
 
 
+@make_xp_test_case(ndimage.spline_filter)
 @pytest.mark.parametrize('order', range(2, 6))
 @pytest.mark.parametrize('dtype', types)
 class TestSpline:
@@ -144,7 +147,7 @@ class TestSpline:
         assert_array_almost_equal(out, expected)
 
 
-@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+@make_xp_test_case(ndimage.geometric_transform)
 @pytest.mark.parametrize('order', range(0, 6))
 class TestGeometricTransform:
 
@@ -423,7 +426,7 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, xp.asarray([5, 7]))
 
 
-@skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
+@make_xp_test_case(ndimage.geometric_transform)
 class TestGeometricTransformExtra:
 
     def test_geometric_transform_grid_constant_order1(self, xp):
@@ -501,6 +504,7 @@ class TestGeometricTransformExtra:
         assert_array_almost_equal(out, [1])
 
 
+@make_xp_test_case(ndimage.map_coordinates)
 class TestMapCoordinates:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -620,6 +624,7 @@ class TestMapCoordinates:
             raise pytest.skip('Not enough memory available') from e
 
 
+@make_xp_test_case(ndimage.affine_transform)
 class TestAffineTransform:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -1000,6 +1005,7 @@ class TestAffineTransform:
         )
 
 
+@make_xp_test_case(ndimage.shift)
 class TestShift:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -1199,6 +1205,7 @@ class TestShift:
         )
 
 
+@make_xp_test_case(ndimage.zoom)
 class TestZoom:
 
     @pytest.mark.parametrize('order', range(0, 6))
@@ -1301,7 +1308,6 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
-    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))
@@ -1342,6 +1348,7 @@ class TestZoom:
         xp_assert_equal(output, x)
 
 
+@make_xp_test_case(ndimage.rotate)
 class TestRotate:
 
     @pytest.mark.parametrize('order', range(0, 6))

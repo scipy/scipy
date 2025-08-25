@@ -204,7 +204,7 @@ class RBFInterpolator:
     linear equations
 
     .. math::
-        (K(y, y) + \\lambda I) a + P(y) b = d
+        (K(x, y) + \\lambda I) a + P(y) b = d
 
     and
 

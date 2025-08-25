@@ -46,6 +46,7 @@ import scipy._lib.array_api_extra as xpx
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -1514,7 +1515,7 @@ class TestCorrSpearmanr2:
 
 # I need to figure out how to do this one.
 
-
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 def test_kendalltau():
     # For the cases without ties, both variants should give the same
     # result.
@@ -1758,7 +1759,7 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="fails in parallel")
 def test_kendalltau_gh18139_overflow():
     # gh-18139 reported an overflow in `kendalltau` that appeared after
     # SciPy 0.15.1. Check that this particular overflow does not occur.
@@ -7050,6 +7051,7 @@ class TestGSTD:
         gstd_actual = stats.gstd(a, axis=1)
         xp_assert_close(gstd_actual, xp.asarray([4, np.nan]))
 
+    @xfail_xp_backends("jax.numpy", reason="returns subnormal instead of nan")
     def test_ddof_equal_to_number_of_observations(self, xp):
         x = xp.asarray(self.array_1d)
         res = stats.gstd(x, ddof=x.shape[0])

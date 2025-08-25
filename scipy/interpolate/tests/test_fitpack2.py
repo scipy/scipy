@@ -32,7 +32,13 @@ class TestUnivariateSpline:
         assert abs(lut.get_residual()) < 1e-10
         assert_array_almost_equal(lut([1, 1.5, 2]), [3, 3, 3])
 
-        spl = make_splrep(x, y, k=1, s=len(x))
+    @pytest.mark.parametrize("bc_type", [None, 'periodic'])
+    def test_linear_constant_periodic(self, bc_type):
+        x = [1,2,3]
+        y = [3,3,3]
+        lut = UnivariateSpline(x,y,k=1)
+
+        spl = make_splrep(x, y, k=1, s=len(x), bc_type=bc_type)
         xp_assert_close(spl.t[1:-1], lut.get_knots(), atol=1e-15)
         xp_assert_close(spl.c, lut.get_coeffs(), atol=1e-15)
 
@@ -372,7 +378,6 @@ class TestUnivariateSpline:
         xp_assert_close(spl1([0.1, 0.5, 0.9, 0.99]),
                         spl2([0.1, 0.5, 0.9, 0.99]))
 
-    @pytest.mark.thread_unsafe
     def test_fpknot_oob_crash(self):
         # https://github.com/scipy/scipy/issues/3691
         x = range(109)
@@ -388,15 +393,9 @@ class TestUnivariateSpline:
              0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
              0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
              10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
-        with pytest.warns(UserWarning) as r:
+        msg = r"does not satisfy the condition abs\(fp-s\)/s < tol"
+        with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
-            assert len(r) == 1
-            assert str(r[0].message) == r"""
-The maximal number of iterations maxit (set to 20 by the program)
-allowed for finding a smoothing spline with fp=s has been reached: s
-too small.
-There is an approximation returned but the corresponding weighted sum
-of squared residuals does not satisfy the condition abs(fp-s)/s < tol."""
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
@@ -415,7 +414,6 @@ of squared residuals does not satisfy the condition abs(fp-s)/s < tol."""
 
 class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient
-    @pytest.mark.thread_unsafe
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -453,7 +451,6 @@ class TestLSQBivariateSpline:
                               + lut(xb, yb)*t*s)
                         assert_almost_equal(lut(xp,yp), zp)
 
-    @pytest.mark.thread_unsafe
     def test_integral(self):
         x = [1,1,1,2,2,2,8,8,8]
         y = [1,2,3,1,2,3,1,2,3]
@@ -473,7 +470,6 @@ class TestLSQBivariateSpline:
         assert_almost_equal(np.asarray(lut.integral(tx[0], tx[-1], ty[0], ty[-1])),
                             np.asarray(trpz))
 
-    @pytest.mark.thread_unsafe
     def test_empty_input(self):
         # Test whether empty inputs returns an empty output. Ticket 1014
         x = [1,1,1,2,2,2,3,3,3]
@@ -532,7 +528,6 @@ class TestLSQBivariateSpline:
             LSQBivariateSpline(x, y, z, tx, ty, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
 
-    @pytest.mark.thread_unsafe
     def test_array_like_input(self):
         s = 0.1
         tx = np.array([1 + s, 3 - s])
@@ -553,7 +548,6 @@ class TestLSQBivariateSpline:
             xp_assert_close(spl1(2.0, 2.0), spl2(2.0, 2.0))
             assert len(r) == 2
 
-    @pytest.mark.thread_unsafe
     def test_unequal_length_of_knots(self):
         """Test for the case when the input knot-location arrays in x and y are
         of different lengths.
@@ -595,7 +589,6 @@ class TestSmoothBivariateSpline:
         assert abs(lut.get_residual()) < 1e-15
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-    @pytest.mark.thread_unsafe
     def test_integral(self):
         x = [1,1,1,2,2,2,4,4,4]
         y = [1,2,3,1,2,3,1,2,3]

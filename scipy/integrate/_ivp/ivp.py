@@ -8,6 +8,7 @@ from scipy.optimize import OptimizeResult
 from scipy._lib._util import _RichResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
+from scipy._lib._array_api import xp_capabilities
 
 
 METHODS = {'RK23': RK23,
@@ -198,6 +199,7 @@ def find_active_events(g, g_new, direction):
     return np.nonzero(mask)[0]
 
 
+@xp_capabilities(np_only=True)
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               events=None, vectorized=False, args=None, *, callback=None, **options):
     """Solve an initial value problem for a system of ODEs.

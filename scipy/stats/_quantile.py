@@ -1,7 +1,13 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import (xp_ravel, array_namespace, xp_promote,
-                                   xp_device, _length_nonmasked)
+from scipy._lib._array_api import (
+    xp_capabilities,
+    xp_ravel,
+    array_namespace,
+    xp_promote,
+    xp_device,
+    _length_nonmasked
+)
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
@@ -98,6 +104,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
 
 
+@xp_capabilities(skip_backends=(("dask.array", "No take_along_axis yet."),
+                                ("jax.numpy", "No mutation.")))
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the p-th quantile of the data along the specified axis.
