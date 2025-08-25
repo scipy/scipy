@@ -8,49 +8,51 @@ from pytest import raises as assert_raises
 from scipy.linalg import inv, eigh, norm, svd
 from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 
 
-def test_orthogonal_procrustes_ndim_too_small():
-    rng = np.random.RandomState(1234)
-    A = rng.randn(3)
-    B = rng.randn(3)
-    assert_raises(ValueError, orthogonal_procrustes, A, B)
-
-
-def test_orthogonal_procrustes_shape_mismatch():
-    rng = np.random.RandomState(1234)
-    shapes = ((3, 3), (3, 4), (4, 3), (4, 4))
-    for a, b in permutations(shapes, 2):
-        A = rng.randn(*a)
-        B = rng.randn(*b)
+@make_xp_test_case(orthogonal_procrustes)
+class TestOrthogonalProcrustes:
+    def test_orthogonal_procrustes_ndim_too_small(self, xp):
+        rng = np.random.RandomState(1234)
+        A = xp.asarray(rng.randn(3))
+        B = xp.asarray(rng.randn(3))
         assert_raises(ValueError, orthogonal_procrustes, A, B)
 
-
-def test_orthogonal_procrustes_checkfinite_exception():
-    rng = np.random.RandomState(1234)
-    m, n = 2, 3
-    A_good = rng.randn(m, n)
-    B_good = rng.randn(m, n)
-    for bad_value in np.inf, -np.inf, np.nan:
-        A_bad = A_good.copy()
-        A_bad[1, 2] = bad_value
-        B_bad = B_good.copy()
-        B_bad[1, 2] = bad_value
-        for A, B in ((A_good, B_bad), (A_bad, B_good), (A_bad, B_bad)):
+    def test_orthogonal_procrustes_shape_mismatch(self, xp):
+        rng = np.random.RandomState(1234)
+        shapes = ((3, 3), (3, 4), (4, 3), (4, 4))
+        for a, b in permutations(shapes, 2):
+            A = xp.asarray(rng.randn(*a))
+            B = xp.asarray(rng.randn(*b))
             assert_raises(ValueError, orthogonal_procrustes, A, B)
 
+    def test_orthogonal_procrustes_checkfinite_exception(self, xp):
+        rng = np.random.RandomState(1234)
+        m, n = 2, 3
+        A_good = rng.randn(m, n)
+        B_good = rng.randn(m, n)
+        for bad_value in np.inf, -np.inf, np.nan:
+            A_bad = A_good.copy()
+            A_bad[1, 2] = bad_value
+            B_bad = B_good.copy()
+            B_bad[1, 2] = bad_value
+            for A, B in ((A_good, B_bad), (A_bad, B_good), (A_bad, B_bad)):
+                assert_raises(ValueError, orthogonal_procrustes, xp.asarray(A),
+                              xp.asarray(B))
 
-def test_orthogonal_procrustes_scale_invariance():
-    rng = np.random.RandomState(1234)
-    m, n = 4, 3
-    for i in range(3):
-        A_orig = rng.randn(m, n)
-        B_orig = rng.randn(m, n)
-        R_orig, s = orthogonal_procrustes(A_orig, B_orig)
-        for A_scale in np.square(rng.randn(3)):
-            for B_scale in np.square(rng.randn(3)):
-                R, s = orthogonal_procrustes(A_orig * A_scale, B_orig * B_scale)
-                assert_allclose(R, R_orig)
+    def test_orthogonal_procrustes_scale_invariance(self, xp):
+        rng = np.random.RandomState(1234)
+        m, n = 4, 3
+        for i in range(3):
+            A_orig = xp.asarray(rng.randn(m, n))
+            B_orig = xp.asarray(rng.randn(m, n))
+            R_orig, s = orthogonal_procrustes(A_orig, B_orig)
+            for A_scale in np.square(rng.randn(3)):
+                for B_scale in np.square(rng.randn(3)):
+                    R, s = orthogonal_procrustes(A_orig * xp.asarray(A_scale),
+                                                 B_orig * xp.asarray(B_scale))
+                    xp_assert_close(R, R_orig)
 
 
 def test_orthogonal_procrustes_array_conversion():

@@ -4,12 +4,13 @@ Solve the orthogonal Procrustes problem.
 """
 import numpy as np
 from scipy._lib._util import _apply_over_batch
-from ._decomp_svd import svd
+from scipy._lib._array_api import array_namespace, xp_capabilities, _asarray
 
 
 __all__ = ['orthogonal_procrustes']
 
 
+@xp_capabilities()
 @_apply_over_batch(('A', 2), ('B', 2))
 def orthogonal_procrustes(A, B, check_finite=True):
     """
@@ -94,20 +95,20 @@ def orthogonal_procrustes(A, B, check_finite=True):
     True
 
     """
-    if check_finite:
-        A = np.asarray_chkfinite(A)
-        B = np.asarray_chkfinite(B)
-    else:
-        A = np.asanyarray(A)
-        B = np.asanyarray(B)
+    xp = array_namespace(A, B)
+
+    A = _asarray(A, xp=xp, check_finite=check_finite, subok=True)
+    B = _asarray(B, xp=xp, check_finite=check_finite, subok=True)
+
     if A.ndim != 2:
         raise ValueError(f'expected ndim to be 2, but observed {A.ndim}')
     if A.shape != B.shape:
         raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
+    breakpoint()
     # Be clever with transposes, with the intention to save memory.
     # The conjugate has no effect for real inputs, but gives the correct solution
     # for complex inputs.
-    u, w, vt = svd((B.T @ np.conjugate(A)).T)
+    u, w, vt = xp.linalg.svd((B.T @ xp.conj(A)).T)
     R = u @ vt
     scale = w.sum()
     return R, scale
