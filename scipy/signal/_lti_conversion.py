@@ -119,7 +119,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
 
     Converts input matrices into two-dimensional arrays as needed. Then the dimensions
     n, q, p are determined by investigating the non-zero entries of the array shapes.
-    If a parameter is ``None``, or has shape (0, 0), it is tried to set it to a
+    If a parameter is ``None``, or has shape (0, 0), it is set to a
     zero-array of compatible shape. Finally, it is verified that all parameter shapes
     are compatible to each other. If that fails, a ``ValueError`` is raised. Note that
     the dimensions n, q, p are allowed to be zero.
