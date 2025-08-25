@@ -2589,25 +2589,32 @@ class TestNdBSpline:
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
 
-        der = bspl2(xi, nu=(1, 0))
-        xp_assert_close(der,
-                        [3*x**2 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+        # Derivative orders and expected functions
+        test_cases = {
+            (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
+            (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
+            (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+        }
 
-        der = bspl2(xi, nu=(1, 1))
-        xp_assert_close(der,
-                        [3*x**2 * (2*y + 2) for x, y in xi], atol=1e-14)
+        for nu, expected_fn in test_cases.items():
+            expected_vals = [expected_fn(x, y) for x, y in xi]
 
-        der = bspl2(xi, nu=(0, 0))
-        xp_assert_close(der,
-                        [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+            # Evaluate via nu argument
+            direct = bspl2(xi, nu=nu)
+            xp_assert_close(direct, expected_vals, atol=1e-14)
 
-        with assert_raises(ValueError):
-            # all(nu >= 0)
-            der = bspl2(xi, nu=(-1, 0))
+            # Evaluate via .derivative() call
+            via_method = bspl2.derivative(nu)(xi)
+            xp_assert_close(via_method, expected_vals, atol=1e-14)
 
-        with assert_raises(ValueError):
-            # len(nu) == ndim
-            der = bspl2(xi, nu=(-1, 0, 1))
+        # Error cases
+        for bad_nu in [(-1, 0), # all(nu >= 0)
+                       (-1, 0, 1)]: # len(nu) == ndim
+            with assert_raises(ValueError):
+                bspl2(xi, nu=bad_nu)
+            with assert_raises(ValueError):
+                bspl2.derivative(bad_nu)
+
 
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
@@ -2684,20 +2691,20 @@ class TestNdBSpline:
         x, y, z = rng.uniform(size=(3, 11)) * 5
         xi = [_ for _ in zip(x, y, z)]
 
-        xp_assert_close(bspl3(xi, nu=(1, 0, 0)),
-                        3*x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+        # Derivative orders and their expected expressions
+        test_cases = {
+            (1, 0, 0): lambda x, y, z: 3 * x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1),
+            (2, 0, 0): lambda x, y, z: 6 * x * (y**3 + 2*y) * (z**3 + 3*z + 1),
+            (2, 1, 0): lambda x, y, z: 6 * x * (3*y**2 + 2) * (z**3 + 3*z + 1),
+            (2, 1, 3): lambda x, y, z: 6 * x * (3*y**2 + 2) * 6,
+            (2, 1, 4): lambda x, y, z: 0.0,
+        }
 
-        xp_assert_close(bspl3(xi, nu=(2, 0, 0)),
-                        6*x * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+        for nu, expected_fn in test_cases.items():
+            expected_vals = [expected_fn(xi_, yi_, zi_) for xi_, yi_, zi_ in xi]
+            xp_assert_close(bspl3(xi, nu=nu), expected_vals, atol=1e-14)
+            xp_assert_close(bspl3.derivative(nu)(xi), expected_vals, atol=1e-14)
 
-        xp_assert_close(bspl3(xi, nu=(2, 1, 0)),
-                        6*x * (3*y**2 + 2) * (z**3 + 3*z + 1), atol=1e-14)
-
-        xp_assert_close(bspl3(xi, nu=(2, 1, 3)),
-                        6*x * (3*y**2 + 2) * (6), atol=1e-14)
-
-        xp_assert_close(bspl3(xi, nu=(2, 1, 4)),
-                        np.zeros(len(xi)), atol=1e-14)
 
     def test_3D_random(self):
         rng = np.random.default_rng(12345)
