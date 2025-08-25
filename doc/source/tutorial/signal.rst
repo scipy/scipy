@@ -735,6 +735,8 @@ Although the sets of roots are stored as ordered NumPy arrays, their ordering
 does not matter: ``([-1, -2], [-3, -4], 1)`` is the same filter as
 ``([-2, -1], [-4, -3], 1)``.
 
+.. _tutorial_signal_state_space_representation:
+
 State-space system representation
 *********************************
 

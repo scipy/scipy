@@ -30,7 +30,7 @@ from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete, _atleast_2d_or_none)
+                              cont2discrete)
 
 import numpy as np
 from numpy import (real, atleast_1d, squeeze, asarray, zeros,
@@ -1527,7 +1527,7 @@ class StateSpace(LinearTimeInvariant):
 
     @A.setter
     def A(self, A):
-        self._A = _atleast_2d_or_none(A)
+        self._A = np.atleast_2d(A) if A is not None else None
 
     @property
     def B(self):
@@ -1536,7 +1536,7 @@ class StateSpace(LinearTimeInvariant):
 
     @B.setter
     def B(self, B):
-        self._B = _atleast_2d_or_none(B)
+        self._B = np.atleast_2d(B) if B is not None else None
         self.inputs = self.B.shape[-1]
 
     @property
@@ -1546,7 +1546,7 @@ class StateSpace(LinearTimeInvariant):
 
     @C.setter
     def C(self, C):
-        self._C = _atleast_2d_or_none(C)
+        self._C = np.atleast_2d(C) if C is not None else None
         self.outputs = self.C.shape[0]
 
     @property
@@ -1556,7 +1556,7 @@ class StateSpace(LinearTimeInvariant):
 
     @D.setter
     def D(self, D):
-        self._D = _atleast_2d_or_none(D)
+        self._D = np.atleast_2d(D) if D is not None else None
 
     def _copy(self, system):
         """
