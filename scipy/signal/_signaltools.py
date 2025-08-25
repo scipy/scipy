@@ -2527,37 +2527,64 @@ def hilbert(x, N=None, axis=-1):
     return x
 
 
-def hilbert2(x, N=None):
-    """
-    Compute the '2-D' analytic signal of `x`
+def hilbert2(x, N=None, axes=(-2, -1)):
+    """Compute the '2-D' analytic signal of `x`.
+
+    The 2-D analytic signal is calculated as a "single-orthant" transform
+    as in [2]_. This is done by zeroing out the Fourier amplitudes if
+    either axis has negative frequencies. The amplitudes are multiplied by
+    4 in the positive-positive quadrant. Amplitudes with zero frequency (or
+    nyquist if the axis has even length) in one axis and positive frequency
+    in the other axis are multiplied by 2. Amplitudes with zero frequency (or
+    nyquist if the axis has even length) in both axes are preserved.
+
+    See [3]_ for a description of properties that this 2-D transform does and
+    does not share with the 1-D transform.
+
+    For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
 
     Parameters
     ----------
     x : array_like
         2-D signal data.
     N : int or tuple of two ints, optional
-        Number of Fourier components. Default is ``x.shape``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axes`.  Default: ``x.shape[i] for i in axes``
+    axes : tuple of two ints, optional
+        Axes along which to do the transformation.  Default: (-2, -1).
+
+        .. versionadded:: 1.16.2
 
     Returns
     -------
     xa : ndarray
-        Analytic signal of `x` taken along axes (0,1).
+        Analytic signal of `x` taken along given axes.
 
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
         https://en.wikipedia.org/wiki/Analytic_signal
-
+    .. [2] Hahn, Stefan L. "Multidimensional complex signals with
+        single-orthant spectra." Proceedings of the IEEE 80.8
+        (1992): 1287-1300.
+        `PDF <https://ieeexplore.ieee.org/iel1/5/4083/00158601.pdf>`__
+    .. [3] Bülow, Thomas, and Gerald Sommer. "A novel approach to the 2D analytic
+        signal." In International Conference on Computer Analysis of Images and
+        Patterns, pp. 25-32. Berlin, Heidelberg: Springer Berlin Heidelberg, 1999.
+        `PDF <https://www.informatik.uni-kiel.de/inf/Sommer/doc/Publications/tbl/caip99.pdf>`__
     """
     xp = array_namespace(x)
     x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
-    if x.ndim > 2:
-        raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
         raise ValueError("x must be real.")
+    if len(axes) != 2:
+        raise ValueError("axes must be a tuple of length 2")
+    if axes[0] == axes[1]:
+        raise ValueError("axes must contain 2 distinct axes")
 
     if N is None:
-        N = x.shape
+        N = (x.shape[axes[0]], x.shape[axes[1]])
     elif isinstance(N, int):
         if N <= 0:
             raise ValueError("N must be positive.")
@@ -2566,24 +2593,18 @@ def hilbert2(x, N=None):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = xp.zeros(N[0], dtype=Xf.dtype)
-    h2 = xp.zeros(N[1], dtype=Xf.dtype)
-    for h in (h1, h2):
-        N1 = h.shape[0]
-        if N1 % 2 == 0:
-            h[0] = h[N1 // 2] = 1
-            h[1:N1 // 2] = 2
-        else:
-            h[0] = 1
-            h[1:(N1 + 1) // 2] = 2
+    Xf = sp_fft.fft2(x, N, axes=axes)
+    Xf = xp.moveaxis(Xf, axes, (-2, -1))
+    end = [N[i] // 2 if N[i] % 2 == 0 else (N[i] + 1) // 2 for i in [0, 1]]
+    start = [N[i] // 2 + 1 if N[i] % 2 == 0 else (N[i] + 1) // 2 for i in [0, 1]]
 
-    h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
-    k = x.ndim
-    while k > 2:
-        h = h[:, xp.newaxis]
-        k -= 1
-    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
+    Xf[..., 1:end[0], :] *= 2.0
+    Xf[..., 1:end[1]] *= 2.0
+    Xf[..., start[0]:N[0], :] = 0.0
+    Xf[..., start[1]:N[1]] = 0.0
+
+    Xf = xp.moveaxis(Xf, (-2, -1), axes)
+    x = sp_fft.ifft2(Xf, axes=axes)
     return x
 
 
