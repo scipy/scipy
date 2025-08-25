@@ -2,9 +2,10 @@
 Solve the orthogonal Procrustes problem.
 
 """
-import numpy as np
+
 from scipy._lib._util import _apply_over_batch
-from scipy._lib._array_api import array_namespace, xp_capabilities, _asarray
+from ._decomp_svd import svd
+from scipy._lib._array_api import array_namespace, xp_capabilities, _asarray, is_numpy
 
 
 __all__ = ['orthogonal_procrustes']
@@ -51,8 +52,6 @@ def orthogonal_procrustes(A, B, check_finite=True):
     Note that unlike higher level Procrustes analyses of spatial data, this
     function only uses orthogonal transformations like rotations and
     reflections, and it does not use scaling or translation.
-
-    .. versionadded:: 0.15.0
 
     References
     ----------
@@ -104,11 +103,14 @@ def orthogonal_procrustes(A, B, check_finite=True):
         raise ValueError(f'expected ndim to be 2, but observed {A.ndim}')
     if A.shape != B.shape:
         raise ValueError(f'the shapes of A and B differ ({A.shape} vs {B.shape})')
-    breakpoint()
+
     # Be clever with transposes, with the intention to save memory.
     # The conjugate has no effect for real inputs, but gives the correct solution
     # for complex inputs.
-    u, w, vt = xp.linalg.svd((B.T @ xp.conj(A)).T)
+    if is_numpy(xp):
+        u, w, vt = svd((B.T @ xp.conj(A)).T)
+    else:
+        u, w, vt = xp.linalg.svd((B.T @ xp.conj(A)).T)
     R = u @ vt
-    scale = w.sum()
+    scale = xp.sum(w)
     return R, scale
