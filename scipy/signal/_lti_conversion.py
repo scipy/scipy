@@ -203,13 +203,13 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     D = xp.zeros((q, p)) if xp_size(D) == 0 else D
 
     if A.shape != (n, n):
-        raise ValueError(f"Parameter A was converted to shape {A.shape} != ({n}, {n})!")
+        raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
     if B.shape != (n, p):
-        raise ValueError(f"Parameter B was converted to shape {B.shape} != ({n}, {p})!")
+        raise ValueError(f"Parameter B has shape {B.shape} but should be ({n}, {p})!")
     if C.shape != (q, n):
-        raise ValueError(f"Parameter C was converted to shape {C.shape} != ({q}, {n})!")
+        raise ValueError(f"Parameter C has shape {C.shape} but should be ({q}, {n})!")
     if D.shape != (q, p):
-        raise ValueError(f"Parameter D was converted to shape {D.shape} != ({q}, {p})!")
+        raise ValueError(f"Parameter D has shape {D.shape} but should be ({q}, {p})!")
 
     return A, B, C, D
 
