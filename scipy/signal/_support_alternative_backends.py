@@ -89,12 +89,15 @@ if SCIPY_ARRAY_API:
     from spatch.backend_system import BackendSystem
 
     _bs = BackendSystem(
-        None,  # don't load entry-points for now (no 3rd party backends)
+        "scipy_backends",
         "_SCIPY_INTERNAL_BACKENDS",  # spatch env-var prefix
         default_primary_types=["numpy:ndarray"],
         backends=[JaxBackend],
     )
 
+    # expose backend opts to scipy.signal to allow playing with it
+    vars()["backend_opts"] =  _bs.backend_opts
+    __all__ = __all__ + ["backend_opts"]
 
 # ### decorate ###
 for obj_name in _signal_api.__all__:

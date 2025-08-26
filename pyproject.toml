@@ -114,6 +114,11 @@ dev = [
     "cython-lint>=0.12.2",
 ]
 
+[project.entry-points.scipy_backends]
+# This could be installed from anywhere it would not have to be inside SciPy!
+# TODO: Clearly this can't stay!
+cupy = 'scipy.signal._support_alternative_backends:CupyBackend'
+
 [project.urls]
 homepage = "https://scipy.org/"
 documentation = "https://docs.scipy.org/doc/scipy/"
