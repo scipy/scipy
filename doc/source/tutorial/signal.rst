@@ -419,7 +419,7 @@ where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if :math:`K>M`
 and :math:`a_{K}=0` if :math:`K>N.` In this way, the output at time :math:`n`
 depends only on the input at time :math:`n` and the value of :math:`z_{0}` at
 the previous time. This can always be calculated as long as the :math:`K`
-values :math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are
+values :math:`z_{0}\left[n-1\right], \ldots, z_{K-1}\left[n-1\right]` are
 computed and stored at each time step.
 
 The difference-equation filter is called using the command :func:`lfilter` in
