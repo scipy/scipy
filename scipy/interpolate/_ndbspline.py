@@ -282,26 +282,24 @@ class NdBSpline:
 
         Parameters
         ----------
-        nu : int or array_like of shape (ndim,)
+        nu : array_like of shape (ndim,)
             Order(s) of the derivative to compute along each dimension.
-            A single integer means the same order for all dimensions.
 
         Returns
         -------
         NdBSpline
             A new NdBSpline representing the derivative.
         """
-        nu_arr = np.atleast_1d(nu)
+        nu_arr = np.asarray(nu, dtype=np.int64)
         ndim = len(self.t)
 
-        if nu_arr.ndim > 1 or (nu_arr.shape[0] != 1 and nu_arr.shape[0] != ndim):
-            raise ValueError(f"Invalid derivative orders {nu = } for ndim = {ndim}")
-
-        if nu_arr.shape[0] == 1:
-            nu_arr = np.repeat(nu_arr, ndim)
+        if nu_arr.ndim != 1 or nu_arr.shape[0] != ndim:
+            raise ValueError(
+                f"invalid number of derivative orders {nu = } for "
+                f"ndim = {len(self.t)}.")
 
         if any(n < 0 for n in nu_arr):
-            raise ValueError("Derivative orders must be non-negative")
+            raise ValueError(f"derivatives must be positive, got {nu = }")
 
         t_new = list(self.t)
         k_new = list(self.k)
