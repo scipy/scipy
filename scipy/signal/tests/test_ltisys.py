@@ -7,7 +7,7 @@ from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close
 )
 
-from scipy.signal import (ss2tf, tf2ss, lti,
+from scipy.signal import (ss2tf, tf2ss, zpk2sos, sos2ss, ss2zpk, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
@@ -409,6 +409,95 @@ class TestSS2TF:
         xp_assert_close(a1, a, rtol=1e-13)
         xp_assert_close(a2, a, rtol=1e-13)
         xp_assert_close(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
+
+
+class TestSOS2SS:
+
+    def test_basic_even(self):
+        # Test a round trip through zpk2sos, sos2ss and ss2zpk.
+        z = np.array([-1.0, -2.0, -3.2 + 0.5j, -3.2 - 0.5j])
+        p = np.array([-3.0, -4.0, -5.3 + 2.2j, -5.3 - 2.2j])
+        k = 5.0
+
+        sos = zpk2sos(z, p, k, analog=True)
+        xp_assert_close(sos, np.array([
+            [ 5.  , 15.  , 10.  ,  1.  , 10.6 , 32.93],
+            [ 1.  ,  6.4 , 10.49,  1.  ,  7.  , 12.  ]]))
+
+        A, B, C, D = sos2ss(sos)
+        xp_assert_close(A, np.array([
+            [ -7.  , -12.  ,   0.  ,   0.  ],
+            [  1.  ,   0.  ,   0.  ,   0.  ],
+            [ -0.6 ,  -1.51, -10.6 , -32.93],
+            [  0.  ,   0.  ,   1.  ,   0.  ]]))
+        xp_assert_close(B, np.array([[1.], [0.], [1.], [0.]]))
+        xp_assert_close(C, np.array([[  -3.  ,   -7.55,  -38.  , -154.65]]))
+        xp_assert_close(D, np.array([[5.]]))
+
+        z2, p2, k2 = ss2zpk(A, B, C, D)
+        xp_assert_close(np.sort(z2), np.sort(z), rtol=1e-13)
+        xp_assert_close(np.sort(p2), np.sort(p), rtol=1e-13)
+        xp_assert_close(k2, k, rtol=1e-13)
+
+    def test_basic_odd(self):
+        # Test a round trip through zpk2sos, sos2ss and ss2zpk.
+        z = np.array([-1.5, -3.2 + 0.5j, -3.2 - 0.5j])
+        p = np.array([-3.5, -5.3 + 2.2j, -5.3 - 2.2j])
+        k = 5.0
+
+        sos = zpk2sos(z, p, k, analog=True)
+        xp_assert_close(sos, np.array([
+            [ 5.  , 32.  , 52.45,  1.  , 10.6 , 32.93],
+            [ 0.  ,  1.  ,  1.5 ,  0.  ,  1.  ,  3.5 ]]))
+
+        A, B, C, D = sos2ss(sos)
+        xp_assert_close(A, np.array([
+            [ -3.5 ,   0.  ,   0.  ],
+            [ -2.  , -10.6 , -32.93],
+            [  0.  ,   1.  ,   0.  ]]))
+        xp_assert_close(B, np.array([[1.], [1.], [0.]]))
+        xp_assert_close(C, np.array([[ -10. ,  -21. , -112.2]]))
+        xp_assert_close(D, np.array([[5.]]))
+
+        z2, p2, k2 = ss2zpk(A, B, C, D)
+        xp_assert_close(np.sort(z2), np.sort(z), rtol=1e-13)
+        xp_assert_close(np.sort(p2), np.sort(p), rtol=1e-13)
+        xp_assert_close(k2, k, rtol=1e-13)
+
+    def test_basic_missingzeros(self):
+        # Test a round trip through zpk2sos, sos2ss and ss2zpk.
+        z = np.array([-1.2, -2.3], dtype=np.complex128)
+        p = np.array([-1.6, -2.7, -3.8, -5.3 + 2.2j, -5.3 - 2.2j])
+        k = 5.0
+
+        sos = zpk2sos(z, p, k, analog=True)
+        xp_assert_close(sos, np.array([
+            [ 0.  ,  0.  ,  5.  ,  1.  , 10.6 , 32.93],
+            [ 0.  ,  0.  ,  1.  ,  0.  ,  1.  ,  3.8 ],
+            [ 1.  ,  3.5 ,  2.76,  1.  ,  4.3 ,  4.32]]))
+
+        A, B, C, D = sos2ss(sos)
+        xp_assert_close(A, np.array([
+            [ -4.3 ,  -4.32,   0.  ,   0.  ,   0.  ],
+            [  1.  ,   0.  ,   0.  ,   0.  ,   0.  ],
+            [ -0.8 ,  -1.56,  -3.8 ,   0.  ,   0.  ],
+            [  0.  ,   0.  ,   1.  , -10.6 , -32.93],
+            [  0.  ,   0.  ,   0.  ,   1.  ,   0.  ]]))
+        xp_assert_close(B, np.array([[1.], [0.], [1.], [0.], [0.]]))
+        xp_assert_close(C, np.array([[0., 0., 0., 0., 5.]]))
+        xp_assert_close(D, np.array([[0.]]))
+
+        # Currently ss2zpk doesn't support missing zeros, so we need to suppress
+        # a BadCoefficients warning and then remove excessively large zeros.
+        # Ideally this should be fixed in ss2zpk.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            z2, p2, k2 = ss2zpk(A, B, C, D)
+            k2 *= abs(z2[abs(z2) >= 1e3]).prod()
+            z2 = z2[abs(z2) < 1e3]
+        xp_assert_close(np.sort(z2), np.sort(z), rtol=1e-12)
+        xp_assert_close(np.sort(p2), np.sort(p), rtol=1e-13)
+        xp_assert_close(k2, k, rtol=1e-13)
 
 
 class TestLsim:
