@@ -67,6 +67,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    derivative
     design_matrix
 
     See Also
