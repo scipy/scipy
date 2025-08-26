@@ -9994,22 +9994,14 @@ class trapezoid_gen(rv_continuous):
         # the following result.
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
-    def fit(self, data, *args, **kwds):
-        """Override fit method to provide sensible default starting values for c and d.
+    def _fitstart(self, data):
+        """Override _fitstart to provide sensible default starting values for c and d.
         
         The default starting values c=0.33, d=0.66 provide better convergence
         than the generic defaults, especially for trapezoidal distributions
         that are not close to triangular.
         """
-        # Handle default starting values for c and d
-        if len(args) == 0:
-            # No positional args provided, use defaults
-            args = (0.33, 0.66)
-        elif len(args) == 1:
-            # Only c provided, set d to default
-            args = (args[0], 0.66)
-        
-        return super().fit(data, *args, **kwds)
+        return super()._fitstart(data, args=(0.33, 0.66))
 
 
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
