@@ -11,7 +11,7 @@ from . import _dierckx  # type: ignore[attr-defined]
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
 
-from ._bsplines import _not_a_knot
+from ._bsplines import _not_a_knot, BSpline
 
 __all__ = ["NdBSpline"]
 
@@ -246,6 +246,76 @@ class NdBSpline:
 
         return csr_array((data, indices, indptr))
 
+    def _bspline_derivative_along_axis(self, c, t, k, axis, nu=1):
+        # Move the selected axis to front
+        c = np.moveaxis(c, axis, 0)
+        n = c.shape[0]
+        trailing_shape = c.shape[1:]
+        c_flat = c.reshape(n, -1)
+
+        new_c_list = []
+        new_t = None
+
+        for i in range(c_flat.shape[1]):
+            if k >= nu:
+                b = BSpline.construct_fast(t, c_flat[:, i], k)
+                db = b.derivative(nu)
+                # truncate coefficients to match new knot/degree size
+                db.c = db.c[:len(db.t) - db.k - 1]
+            else:
+                db = BSpline.construct_fast(t, np.zeros(len(t) - 1), 0)
+
+            if new_t is None:
+                new_t = db.t
+
+            new_c_list.append(db.c)
+
+        new_c = np.stack(new_c_list, axis=1).reshape(
+            (len(new_c_list[0]),) + trailing_shape)
+        new_c = np.moveaxis(new_c, 0, axis)
+
+        return new_c, new_t
+
+    def derivative(self, nu=1):
+        """
+        Construct a new NdBSpline representing the derivative.
+
+        Parameters
+        ----------
+        nu : array_like of shape (ndim,)
+            Order(s) of the derivative to compute along each dimension.
+
+        Returns
+        -------
+        NdBSpline
+            A new NdBSpline representing the derivative.
+        """
+        nu_arr = np.asarray(nu, dtype=np.int64)
+        ndim = len(self.t)
+
+        if nu_arr.ndim != 1 or nu_arr.shape[0] != ndim:
+            raise ValueError(
+                f"invalid number of derivative orders {nu = } for "
+                f"ndim = {len(self.t)}.")
+
+        if any(n < 0 for n in nu_arr):
+            raise ValueError(f"derivatives must be positive, got {nu = }")
+
+        t_new = list(self.t)
+        k_new = list(self.k)
+        c_new = self.c.copy()
+
+        for axis, n in enumerate(nu_arr):
+            if n == 0:
+                continue
+
+            c_new, t_new[axis] = self._bspline_derivative_along_axis(
+                c_new, t_new[axis], k_new[axis], axis, nu=n
+            )
+            k_new[axis] = max(k_new[axis] - n, 0)
+
+        return NdBSpline(tuple(t_new), c_new,
+                         tuple(k_new), extrapolate=self.extrapolate)
 
 def _preprocess_inputs(k, t_tpl):
     """Helpers: validate and preprocess NdBSpline inputs.
