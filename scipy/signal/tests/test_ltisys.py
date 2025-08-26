@@ -1050,13 +1050,15 @@ class Test_abcd_normalize:
         assert C.shape == (D_.shape[0], A_.shape[0])
 
     def test_missing_ABC_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, D=self.D)
+        assert_raises(ValueError, abcd_normalize, D=xp.asarray(self.D))
 
     def test_missing_BD_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, A=self.A, C=self.C)
+        assert_raises(ValueError, abcd_normalize, A=xp.asarray(self.A),
+                      C=xp.asarray(self.C))
 
     def test_missing_CD_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, A=self.A, B=self.B)
+        assert_raises(ValueError, abcd_normalize, A=xp.asarray(self.A),
+                      B=xp.asarray(self.B))
 
 
 class Test_bode:
