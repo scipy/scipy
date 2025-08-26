@@ -5,6 +5,7 @@ import pytest
 from pytest import raises
 
 
+@skip_xp_invalid_arg
 def test_bandwidth_dtypes():
     n = 5
     for t in np.typecodes['All']:
