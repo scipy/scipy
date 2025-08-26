@@ -92,7 +92,7 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   firwin_2d        -- Windowed FIR filter design, with frequency response for 
+   firwin_2d        -- Windowed FIR filter design, with frequency response for
                     -- 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
@@ -242,7 +242,7 @@ obtain these windows by name:
 .. autosummary::
    :toctree: generated/
 
-   get_window -- Return a window of a given length and type.
+   get_window -- Convenience function for creating various windows.
 
 Peak finding
 ============
