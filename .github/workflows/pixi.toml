@@ -80,7 +80,6 @@ pytorch-gpu = "*"
 [feature.torch-cuda.tasks]
 test-torch-cuda = { cmd = "spin test -b torch", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
 
-
 [feature.cupy]
 platforms = ["linux-64"]
 
@@ -96,7 +95,7 @@ test-cupy = { cmd = "spin test -b cupy", cwd = "../.." }
 platforms = ["linux-64"]
 
 [feature.jax-cpu.dependencies]
-jax = "!=0.6.2"  # https://github.com/jax-ml/jax/issues/29537
+jax = "!=0.6.2"                                   # https://github.com/jax-ml/jax/issues/29537
 jaxlib = { version = "!=0.6.2", build = "*cpu*" }
 
 [feature.jax-cuda]
@@ -118,32 +117,36 @@ array-api-strict = "*"
 [feature.array_api_strict.tasks]
 test-strict = { cmd = "spin test -b array_api_strict", cwd = "../.." }
 
+[feature.spatch.pypi-dependencies]
+spatch = { git = "https://github.com/seberg/spatch.git", branch = "scipy-fixes" }
 
 [environments]
 default = ["build", "test", "openblas"]
 torch = ["torch-base", "torch-cpu", "mkl"]
-torch-cuda = ["torch-base", "torch-cuda", "mkl", "cuda"]
-cupy = ["cupy"]
+torch-cuda = ["torch-base", "torch-cuda", "mkl", "cuda", "spatch"]
+cupy = ["cupy", "spatch"]
 jax = ["jax-base", "jax-cpu"]
-jax-cuda = ["jax-base", "jax-cuda", "cuda"]
+jax-cuda = ["jax-base", "jax-cuda", "cuda", "spatch"]
 array-api-strict = ["array_api_strict"]
 array-api = [
-    "cpu",
-    "array_api_strict",
-    "jax-base",
-    "jax-cpu",
-    "mkl",
-    "torch-base",
-    "torch-cpu",
+  "cpu",
+  "array_api_strict",
+  "jax-base",
+  "jax-cpu",
+  "mkl",
+  "torch-base",
+  "torch-cpu",
+  "spatch",
 ]
 array-api-cuda = [
-    "cuda",
-    "array_api_strict",
-    "cupy",
-    "jax-base",
-    "jax-cuda",
-    "mkl",
-    "torch-base",
-    "torch-cuda",
-    "test",
+  "cuda",
+  "array_api_strict",
+  "cupy",
+  "jax-base",
+  "jax-cuda",
+  "mkl",
+  "torch-base",
+  "torch-cuda",
+  "test",
+  "spatch",
 ]
