@@ -11,7 +11,7 @@ from scipy._lib._array_api import array_namespace, xp_capabilities, _asarray, is
 __all__ = ['orthogonal_procrustes']
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=1)
+@xp_capabilities(jax_jit=False, allow_dask_compute=2)
 @_apply_over_batch(('A', 2), ('B', 2))
 def orthogonal_procrustes(A, B, check_finite=True):
     """
