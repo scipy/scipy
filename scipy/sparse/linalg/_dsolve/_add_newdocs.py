@@ -145,3 +145,12 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_r',
 
     See the `SuperLU` docstring for details.
     """))
+
+add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('cond1est',
+    """
+    Estimate the condition number of a sparse matrix in the 1-norm.
+
+    See `sparse.linalg.cond1est` for details.
+
+    .. versionadded:: 1.17.0
+    """))
