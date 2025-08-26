@@ -140,7 +140,7 @@ class TestOrthogonalProcrustes:
         expected = xp.asarray([[3, 21], [-18, 0], [3, -21], [24, 0]], dtype=xp.float64)
         xp_assert_close(B_approx, expected, atol=1e-8)
         # Check disparity symmetry.
-        expected_disparity = xp.asarray(0.4501246882793018)
+        expected_disparity = xp.asarray(0.4501246882793018, dtype=xp.float64)
         AB_disparity = (xp.linalg.matrix_norm(B_approx - B_orig)
                         / xp.linalg.matrix_norm(B))**2
         xp_assert_close(AB_disparity, expected_disparity)
@@ -173,7 +173,7 @@ class TestOrthogonalProcrustes:
         B_standardized = xp.asarray([[-0.13363062, 0.6681531],
                                      [-0.13363062, 0.13363062],
                                      [-0.13363062, -0.40089186],
-                                     [0.40089186, -0.40089186]])
+                                     [0.40089186, -0.40089186]], dtype=xp.float64)
         A, A_mu = _centered(A_orig, xp)
         B, B_mu = _centered(B_orig, xp)
         R, s = orthogonal_procrustes(A, B)
