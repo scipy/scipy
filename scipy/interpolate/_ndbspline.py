@@ -300,7 +300,7 @@ class NdBSpline:
                 f"invalid number of derivative orders {nu = } for "
                 f"ndim = {len(self.t)}.")
 
-        if any(n < 0 for n in nu_arr):
+        if any(nu_arr < 0):
             raise ValueError(f"derivative orders must be positive, got {nu = }")
 
         t_new = list(self.t)
