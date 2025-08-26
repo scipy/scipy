@@ -238,7 +238,6 @@ def test_from_components_array_like():
     assert not tf.single
 
 
-
 def test_as_components(xp):
     atol = 1e-12
     n = 10
@@ -1015,6 +1014,11 @@ def test_input_validation(xp):
                        match="Expected `rotation` to be a `Rotation` instance"):
         RigidTransform.from_rotation(xp.eye(3))
 
+    # Test Rotation with more than 2 dimensions. TODO: Remove once RigidTransform
+    # supports more than 2 dimensions.
+    r = Rotation.from_quat(xp.ones((2, 2, 4)))
+    with pytest.raises(ValueError, match="Rotations with more than 1 leading"):
+        RigidTransform.from_rotation(r)
 
 def test_translation_validation(xp):
     # Test invalid translation shapes
