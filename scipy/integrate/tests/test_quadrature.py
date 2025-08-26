@@ -469,7 +469,7 @@ class TestQMCQuad:
         assert_allclose(res.integral, ref, 1e-2)
 
 
-def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1):
+def cumulative_simpson_nd_ref(y, *, x=None, dx=None, initial=None, axis=-1):
     # Use cumulative_trapezoid if length of y < 3
     if y.shape[axis] < 3:
         if initial is None:
@@ -513,7 +513,7 @@ class TestCumulativeSimpson:
 
     @pytest.mark.parametrize('use_dx', (False, True))
     @pytest.mark.parametrize('use_initial', (False, True))
-    def test_1d(self, use_dx, use_initial):
+    def test_1d(self, use_dx, use_initial, xp):
         # Test for exact agreement with polynomial of highest
         # possible order (3 if `dx` is constant, 2 otherwise).
         rng = np.random.default_rng(82456839535679456794)
@@ -522,13 +522,15 @@ class TestCumulativeSimpson:
         # Generate random polynomials and ground truth
         # integral of appropriate order
         order = 3 if use_dx else 2
-        dx = rng.random()
-        x = (np.sort(rng.random(n)) if order == 2
-             else np.arange(n)*dx + rng.random())
-        i = np.arange(order + 1)[:, np.newaxis]
-        c = rng.random(order + 1)[:, np.newaxis]
-        y = np.sum(c*x**i, axis=0)
-        Y = np.sum(c*x**(i + 1)/(i + 1), axis=0)
+        dx = xp.asarray(rng.random())
+        if order == 2:
+            x = xp.asarray(np.sort(rng.random(n)))
+        else:
+            x = xp.arange(n, dtype=xp_default_dtype(xp))*dx + xp.asarray(rng.random())
+        i = xp.arange(order + 1, dtype=xp_default_dtype(xp))[:, xp.newaxis]
+        c = xp.asarray(rng.random(order + 1))[:, xp.newaxis]
+        y = xp.sum(c*x**i, axis=0)
+        Y = xp.sum(c*x**(i + 1)/(i + 1), axis=0)
         ref = Y if use_initial else (Y-Y[0])[1:]
 
         # Integrate with `cumulative_simpson`
@@ -538,20 +540,20 @@ class TestCumulativeSimpson:
 
         # Compare result against reference
         if not use_dx:
-            assert_allclose(res, ref, rtol=2e-15)
+            xp_assert_close(res, ref, rtol=2e-15)
         else:
             i0 = 0 if use_initial else 1
             # all terms are "close"
-            assert_allclose(res, ref, rtol=0.0025)
+            xp_assert_close(res, ref, rtol=0.0025)
             # only even-interval terms are "exact"
-            assert_allclose(res[i0::2], ref[i0::2], rtol=2e-15)
+            xp_assert_close(res[i0::2], ref[i0::2], rtol=2e-15)
 
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
     @pytest.mark.parametrize('x_len', (1, 2, 7))
     @pytest.mark.parametrize('i_ndim', (None, 0, 3,))
     @pytest.mark.parametrize('dx', (None, True))
-    def test_nd(self, axis, x_ndim, x_len, i_ndim, dx):
+    def test_nd(self, axis, x_ndim, x_len, i_ndim, dx, xp):
         # Test behavior of `cumulative_simpson` with N-D `y`
         rng = np.random.default_rng(82456839535679456794)
 
@@ -563,20 +565,28 @@ class TestCumulativeSimpson:
         i_shape = shape_len_1 if i_ndim == 3 else ()
 
         # initialize arguments
-        y = rng.random(size=shape)
+        y = xp.asarray(rng.random(size=shape))
         x, dx = None, None
         if dx:
             dx = rng.random(size=shape_len_1) if x_ndim > 1 else rng.random()
+            dx = xp.asarray(dx)
         else:
             x = (np.sort(rng.random(size=shape), axis=axis) if x_ndim > 1
                  else np.sort(rng.random(size=shape[axis])))
-        initial = None if i_ndim is None else rng.random(size=i_shape)
+            x = xp.asarray(x)
+        initial = None if i_ndim is None else xp.asarray(rng.random(size=i_shape))
 
         # compare results
         res = cumulative_simpson(y, x=x, dx=dx, initial=initial, axis=axis)
-        ref = cumulative_simpson_nd_reference(y, x=x, dx=dx, initial=initial, axis=axis)
-        np.testing.assert_allclose(res, ref, rtol=1e-15)
+        ref = cumulative_simpson_nd_ref(
+            np.asarray(y), x=np.asarray(x), dx=None if dx is None else np.asarray(dx),
+            initial=None if initial is None else np.asarray(initial), axis=axis
+        )
+        xp_assert_close(res, xp.asarray(ref), rtol=1e-15)
 
+    @pytest.mark.filterwarnings(
+        "ignore:Creating a tensor from a list of numpy.ndarrays:UserWarning"
+    )
     @pytest.mark.parametrize(('message', 'kwarg_update'), [
         ("x must be strictly increasing", dict(x=[2, 2, 3, 4])),
         ("x must be strictly increasing", dict(x=[x0, [2, 2, 4, 8]], y=[y0, y0])),
@@ -587,17 +597,20 @@ class TestCumulativeSimpson:
         ("`initial` must either be a scalar or...", dict(initial=np.arange(5))),
         ("`dx` must either be a scalar or...", dict(x=None, dx=np.arange(5))),
     ])
-    def test_simpson_exceptions(self, message, kwarg_update):
-        kwargs0 = dict(y=self.y0, x=self.x0, dx=None, initial=None, axis=-1)
+    def test_simpson_exceptions(self, message, kwarg_update, xp):
+        kwargs0 = dict(y=xp.asarray(self.y0), x=xp.asarray(self.x0), dx=None,
+                       initial=None, axis=-1)
+        kwarg_update = {k: xp.asarray(v) if isinstance(v, list) else v
+                        for k, v in kwarg_update.items()}
         with pytest.raises(ValueError, match=message):
             cumulative_simpson(**dict(kwargs0, **kwarg_update))
 
-    def test_special_cases(self):
+    def test_special_cases(self, xp):
         # Test special cases not checked elsewhere
         rng = np.random.default_rng(82456839535679456794)
-        y = rng.random(size=10)
-        res = cumulative_simpson(y, dx=0)
-        assert_equal(res, 0)
+        y = xp.asarray(rng.random(size=10))
+        res = cumulative_simpson(y, dx=0.)
+        xp_assert_equal(res, 0*res)
 
         # Should add tests of:
         # - all elements of `x` identical
@@ -643,7 +656,7 @@ class TestCumulativeSimpson:
         )
     )
     def test_cumulative_simpson_against_simpson_with_default_dx(
-        self, y
+        self, y, xp
     ):
         """Theoretically, the output of `cumulative_simpson` will be identical
         to `simpson` at all even indices and in the last index. The first index
@@ -655,13 +668,14 @@ class TestCumulativeSimpson:
                 [simpson(y[..., :i], dx=1.0) for i in range(2, y.shape[-1]+1)], axis=-1,
             )
 
-        res = cumulative_simpson(y, dx=1.0)
+        res = cumulative_simpson(xp.asarray(y), dx=1.0)
         ref = simpson_reference(y)
         theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
             y, x=np.arange(y.shape[-1])
         )
-        np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
+        xp_assert_close(
+            res[..., 1:], xp.asarray(ref[..., 1:] + theoretical_difference[..., 1:]),
+            atol=1e-16
         )
 
     @pytest.mark.fail_slow(10)
@@ -674,7 +688,7 @@ class TestCumulativeSimpson:
         )
     )
     def test_cumulative_simpson_against_simpson(
-        self, y
+        self, y, xp
     ):
         """Theoretically, the output of `cumulative_simpson` will be identical
         to `simpson` at all even indices and in the last index. The first index
@@ -691,13 +705,13 @@ class TestCumulativeSimpson:
                 axis=-1,
             )
 
-        res = cumulative_simpson(y, x=x)
+        res = cumulative_simpson(xp.asarray(y), x=xp.asarray(x))
         ref = simpson_reference(y, x)
         theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
             y, x
         )
-        np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+        xp_assert_close(
+            res[..., 1:], xp.asarray(ref[..., 1:] + theoretical_difference[..., 1:])
         )
 
 

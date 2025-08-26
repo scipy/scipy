@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
@@ -9,7 +8,7 @@ from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
 from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type,
-                                   xp_capabilities,)
+                                   xp_capabilities, xp_promote, xp_swapaxes)
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -552,6 +551,7 @@ def _cumulatively_sum_simpson_integrals(
     y: np.ndarray,
     dx: np.ndarray,
     integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    xp
 ) -> np.ndarray:
     """Calculate cumulative sum of Simpson integrals.
     Takes as input the integration function to be used.
@@ -559,17 +559,20 @@ def _cumulatively_sum_simpson_integrals(
     composite Simpson's rule. Assumes the axis of summation is -1.
     """
     sub_integrals_h1 = integration_func(y, dx)
-    sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
+    sub_integrals_h2 = xp.flip(
+        integration_func(xp.flip(y, axis=-1), xp.flip(dx, axis=-1)),
+        axis=-1
+    )
 
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
-    sub_integrals = np.empty(shape)
+    sub_integrals = xp.empty(shape)
     sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
     sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
     # Integral over last subinterval can only be calculated from
     # formula for h2
     sub_integrals[..., -1] = sub_integrals_h2[..., -1]
-    res = np.cumsum(sub_integrals, axis=-1)
+    res = xp.cumulative_sum(sub_integrals, axis=-1)
     return res
 
 
@@ -611,14 +614,7 @@ def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.n
     return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
 
 
-def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
-    arr = np.asarray(arr)
-    if np.issubdtype(arr.dtype, np.integer):
-        arr = arr.astype(float, copy=False)
-    return arr
-
-
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
@@ -742,64 +738,65 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     estimates of the underlying integral over subintervals.
 
     """
-    y = _ensure_float_array(y)
+    xp = array_namespace(y)
+    y = xp_promote(y, force_floating=True, xp=xp)
 
     # validate `axis` and standardize to work along the last axis
     original_y = y
     original_shape = y.shape
     try:
-        y = np.swapaxes(y, axis, -1)
+        y = xp_swapaxes(y, axis, -1, xp)
     except IndexError as e:
         message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
         raise ValueError(message) from e
     if y.shape[-1] < 3:
         res = cumulative_trapezoid(original_y, x, dx=dx, axis=axis, initial=None)
-        res = np.swapaxes(res, axis, -1)
+        res = xp_swapaxes(res, axis, -1, xp)
 
     elif x is not None:
-        x = _ensure_float_array(x)
+        x = xp_promote(x, force_floating=True, xp=xp)
         message = ("If given, shape of `x` must be the same as `y` or 1-D with "
                    "the same length as `y` along `axis`.")
         if not (x.shape == original_shape
-                or (x.ndim == 1 and len(x) == original_shape[axis])):
+                or (x.ndim == 1 and x.shape[0] == original_shape[axis])):
             raise ValueError(message)
 
-        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.swapaxes(x, axis, -1)
-        dx = np.diff(x, axis=-1)
-        if np.any(dx <= 0):
+        x = xp.broadcast_to(x, y.shape) if x.ndim == 1 else xp_swapaxes(x, axis, -1, xp)
+        dx = xp.diff(x, axis=-1)
+        if xp.any(dx <= 0):
             raise ValueError("Input x must be strictly increasing.")
         res = _cumulatively_sum_simpson_integrals(
-            y, dx, _cumulative_simpson_unequal_intervals
+            y, dx, _cumulative_simpson_unequal_intervals, xp
         )
 
     else:
-        dx = _ensure_float_array(dx)
+        dx = xp_promote(xp.asarray(dx), force_floating=True, xp=xp)
         final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
         alt_input_dx_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `dx` must either be a scalar or have the same "
                    "shape as `y` but with only 1 point along `axis`.")
         if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
             raise ValueError(message)
-        dx = np.broadcast_to(dx, final_dx_shape)
-        dx = np.swapaxes(dx, axis, -1)
+        dx = xp.broadcast_to(dx, final_dx_shape)
+        dx = xp_swapaxes(dx, axis, -1, xp)
         res = _cumulatively_sum_simpson_integrals(
-            y, dx, _cumulative_simpson_equal_intervals
+            y, dx, _cumulative_simpson_equal_intervals, xp
         )
 
     if initial is not None:
-        initial = _ensure_float_array(initial)
+        initial = xp_promote(initial, force_floating=True, xp=xp)
         alt_initial_input_shape = tupleset(original_shape, axis, 1)
         message = ("If provided, `initial` must either be a scalar or have the "
                    "same shape as `y` but with only 1 point along `axis`.")
         if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
             raise ValueError(message)
-        initial = np.broadcast_to(initial, alt_initial_input_shape)
-        initial = np.swapaxes(initial, axis, -1)
+        initial = xp.broadcast_to(initial, alt_initial_input_shape)
+        initial = xp_swapaxes(initial, axis, -1, xp)
 
         res += initial
-        res = np.concatenate((initial, res), axis=-1)
+        res = xp.concat((initial, res), axis=-1)
 
-    res = np.swapaxes(res, -1, axis)
+    res = xp_swapaxes(res, -1, axis, xp)
     return res
 
 
