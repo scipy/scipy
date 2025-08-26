@@ -14,8 +14,8 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import make_xp_test_case
-from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import make_xp_test_case, xp_default_dtype
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -39,16 +39,16 @@ class TestFixedQuad:
 
 @make_xp_test_case(romb)
 class TestRomb:
-    def test_romb(self):
-        assert_equal(romb(np.arange(17)), 128)
+    def test_romb(self, xp):
+        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0, dtype=xp.float64))
 
-    def test_romb_gh_3731(self):
+    def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
         x = np.arange(2**4+1)
         y = np.cos(0.2*x)
-        val = romb(y)
-        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
-        assert_allclose(val, val2, rtol=1e-8, atol=0)
+        val = romb(xp.asarray(y))
+        expected, _ = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
+        xp_assert_close(val, xp.asarray(expected, dtype=xp.float64), rtol=1e-8, atol=0)
 
 
 @make_xp_test_case(newton_cotes)
@@ -188,92 +188,92 @@ class TestSimpson:
 
 @make_xp_test_case(cumulative_trapezoid)
 class TestCumulative_trapezoid:
-    def test_1d(self):
-        x = np.linspace(-2, 2, num=5)
+    def test_1d(self, xp):
+        x = xp.linspace(-2, 2, num=5)
         y = x
         y_int = cumulative_trapezoid(y, x, initial=0)
-        y_expected = [0., -1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0., -1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, x, initial=None)
-        assert_allclose(y_int, y_expected[1:])
+        xp_assert_close(y_int, y_expected[1:])
 
-    def test_y_nd_x_nd(self):
-        x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
+    def test_y_nd_x_nd(self, xp):
+        x = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
         y = x
         y_int = cumulative_trapezoid(y, x, initial=0)
-        y_expected = np.array([[[0., 0.5, 2., 4.5],
-                                [0., 4.5, 10., 16.5]],
-                               [[0., 8.5, 18., 28.5],
-                                [0., 12.5, 26., 40.5]],
-                               [[0., 16.5, 34., 52.5],
-                                [0., 20.5, 42., 64.5]]])
+        y_expected = xp.asarray([[[0., 0.5, 2., 4.5],
+                                  [0., 4.5, 10., 16.5]],
+                                 [[0., 8.5, 18., 28.5],
+                                  [0., 12.5, 26., 40.5]],
+                                 [[0., 16.5, 34., 52.5],
+                                  [0., 20.5, 42., 64.5]]])
 
-        assert_allclose(y_int, y_expected)
+        xp_assert_close(y_int, y_expected)
 
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
             y_int = cumulative_trapezoid(y, x, initial=0, axis=axis)
-            assert_equal(y_int.shape, (3, 2, 4))
+            assert y_int.shape == (3, 2, 4)
             y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
-            assert_equal(y_int.shape, shape)
+            assert y_int.shape == shape
 
-    def test_y_nd_x_1d(self):
-        y = np.arange(3 * 2 * 4).reshape(3, 2, 4)
-        x = np.arange(4)**2
+    def test_y_nd_x_1d(self, xp):
+        y = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
+        x = xp.arange(4, dtype=xp_default_dtype(xp))**2
         # Try with all axes
         ys_expected = (
-            np.array([[[4., 5., 6., 7.],
-                       [8., 9., 10., 11.]],
-                      [[40., 44., 48., 52.],
-                       [56., 60., 64., 68.]]]),
-            np.array([[[2., 3., 4., 5.]],
-                      [[10., 11., 12., 13.]],
-                      [[18., 19., 20., 21.]]]),
-            np.array([[[0.5, 5., 17.5],
-                       [4.5, 21., 53.5]],
-                      [[8.5, 37., 89.5],
-                       [12.5, 53., 125.5]],
-                      [[16.5, 69., 161.5],
-                       [20.5, 85., 197.5]]]))
+            xp.asarray([[[4., 5., 6., 7.],
+                         [8., 9., 10., 11.]],
+                        [[40., 44., 48., 52.],
+                         [56., 60., 64., 68.]]]),
+            xp.asarray([[[2., 3., 4., 5.]],
+                        [[10., 11., 12., 13.]],
+                        [[18., 19., 20., 21.]]]),
+            xp.asarray([[[0.5, 5., 17.5],
+                         [4.5, 21., 53.5]],
+                        [[8.5, 37., 89.5],
+                         [12.5, 53., 125.5]],
+                        [[16.5, 69., 161.5],
+                         [20.5, 85., 197.5]]]))
 
         for axis, y_expected in zip([0, 1, 2], ys_expected):
             y_int = cumulative_trapezoid(y, x=x[:y.shape[axis]], axis=axis,
                                          initial=None)
-            assert_allclose(y_int, y_expected)
+            xp_assert_close(y_int, y_expected)
 
-    def test_x_none(self):
-        y = np.linspace(-2, 2, num=5)
+    def test_x_none(self, xp):
+        y = xp.linspace(-2, 2, num=5)
 
         y_int = cumulative_trapezoid(y)
-        y_expected = [-1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([-1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, initial=0)
-        y_expected = [0, -1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0, -1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3)
-        y_expected = [-4.5, -6., -4.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([-4.5, -6., -4.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3, initial=0)
-        y_expected = [0, -4.5, -6., -4.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0, -4.5, -6., -4.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
     @pytest.mark.parametrize(
         "initial", [1, 0.5]
     )
-    def test_initial_error(self, initial):
+    def test_initial_error(self, initial, xp):
         """If initial is not None or 0, a ValueError is raised."""
-        y = np.linspace(0, 10, num=10)
+        y = xp.linspace(0, 10, num=10)
         with pytest.raises(ValueError, match="`initial`"):
             cumulative_trapezoid(y, initial=initial)
 
-    def test_zero_len_y(self):
+    def test_zero_len_y(self, xp):
         with pytest.raises(ValueError, match="At least one point is required"):
-            cumulative_trapezoid(y=[])
+            cumulative_trapezoid(y=xp.asarray([]))
 
 
 @make_xp_test_case(trapezoid)
