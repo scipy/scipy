@@ -2053,16 +2053,11 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
     if (std::isnan(dfn) || std::isnan(dfd) || std::isnan(p) || std::isnan(x)) {
         return NAN;
     }
-    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0 || std::isinf(dfn) || std::isinf(dfd)) {
+    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0) {
         sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
-    Real guess;
-    try {
-        guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
-    } catch (const std::overflow_error&) {
-        guess = Real(1.0);
-    }
+    Real guess = Real(10);                           // Starting guess.
     Real factor = 8;                                 // How big steps to take when searching.
     const std::uintmax_t maxit = boost::math::policies::get_max_root_iterations<SpecialPolicy>();
     std::uintmax_t it = maxit;                      // Root finding iteration counter.
