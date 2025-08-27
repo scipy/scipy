@@ -548,6 +548,7 @@ class TestCumulativeSimpson:
             # only even-interval terms are "exact"
             xp_assert_close(res[i0::2], ref[i0::2], rtol=2e-15)
 
+    @skip_xp_backends(cpu_only=True)  # uses np.apply_along_axis
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
     @pytest.mark.parametrize('x_len', (1, 2, 7))
