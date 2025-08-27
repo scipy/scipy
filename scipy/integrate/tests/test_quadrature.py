@@ -526,8 +526,8 @@ class TestCumulativeSimpson:
         if order == 2:
             x = xp.asarray(np.sort(rng.random(n)))
         else:
-            x = xp.arange(n, dtype=xp_default_dtype(xp))*dx + xp.asarray(rng.random())
-        i = xp.arange(order + 1, dtype=xp_default_dtype(xp))[:, xp.newaxis]
+            x = xp.arange(n, dtype=xp.float64)*dx + xp.asarray(rng.random())
+        i = xp.arange(order + 1, dtype=xp.float64)[:, xp.newaxis]
         c = xp.asarray(rng.random(order + 1))[:, xp.newaxis]
         y = xp.sum(c*x**i, axis=0)
         Y = xp.sum(c*x**(i + 1)/(i + 1), axis=0)

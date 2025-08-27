@@ -566,7 +566,7 @@ def _cumulatively_sum_simpson_integrals(
 
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
-    sub_integrals = xp.empty(shape)
+    sub_integrals = xp.empty(shape, dtype=xp.result_type(y, dx))
     sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
     sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
     # Integral over last subinterval can only be calculated from
