@@ -117,8 +117,8 @@ array-api-strict = "*"
 [feature.array_api_strict.tasks]
 test-strict = { cmd = "spin test -b array_api_strict", cwd = "../.." }
 
-[feature.spatch.pypi-dependencies]
-spatch = { git = "https://github.com/seberg/spatch.git", branch = "scipy-fixes" }
+[feature.spatch.dependencies]
+spatch = { git = "https://github.com/scientific-python/spatch.git" }
 
 [environments]
 default = ["build", "test", "openblas"]
