@@ -2982,60 +2982,6 @@ struct TupleDID cdffnc_which4(double p, double q, double f, double dfn, double p
 }
 
 
-struct TupleDID cdffnc_which5(double p, double q, double f, double dfn, double dfd)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-
-    DS.small = 0.;
-    DS.big = 1e4;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.;
-    struct TupleDDI fncret;
-    struct TupleDID ret = {0};
-
-    if (!((0 <= p) && (p <= (1. - 1e-16)))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : (1. - 1e-16));
-        return ret;
-    }
-    if (!(0 <= f)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3};
-    }
-    if (!(0 < dfn)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    if (!(0 < dfd)) {
-        return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -4};
-    }
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        fncret = cumfnc(f, dfn, dfd, DS.x);
-        DS.fx = fncret.d1 - p;
-        if (fncret.i1 != 0) {
-            return (struct TupleDID){.d1 = DS.x, .d2 = 0.0, .i1 = 10};
-        }
-        dinvr(&DS, &DZ);
-    }
-
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0 : 1e4);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
     //               Cumulative Distribution Function
     //                         GAMma Distribution
     //

@@ -129,7 +129,6 @@ struct TupleDDID cdffnc_which1(double, double, double, double);
 struct TupleDID cdffnc_which2(double, double, double, double, double);
 struct TupleDID cdffnc_which3(double, double, double, double, double);
 struct TupleDID cdffnc_which4(double, double, double, double, double);
-struct TupleDID cdffnc_which5(double, double, double, double, double);
 struct TupleDDID cdfgam_which1(double, double, double);
 struct TupleDID cdfgam_which2(double, double, double, double);
 struct TupleDID cdfgam_which3(double, double, double, double);
