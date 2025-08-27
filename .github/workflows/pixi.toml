@@ -96,15 +96,15 @@ test-cupy = { cmd = "spin test -b cupy", cwd = "../.." }
 platforms = ["linux-64"]
 
 [feature.jax-cpu.dependencies]
-jax = "!=0.6.2"                                   # https://github.com/jax-ml/jax/issues/29537
-jaxlib = { version = "!=0.6.2", build = "*cpu*" }
+jax = "!=0.7.0"                                   # https://github.com/jax-ml/jax/issues/29537
+jaxlib = { version = "!=0.7.0", build = "*cpu*" }
 
 [feature.jax-cuda]
 platforms = ["linux-64"]
 
 [feature.jax-cuda.dependencies]
-jax = "*"
-jaxlib = { version = "*", build = "*cuda*" }
+jax = "!=0.7.0"
+jaxlib = { version = "!=0.7.0", build = "*cuda*" }
 
 [feature.jax-base.tasks]
 test-jax = { cmd = "spin test -b jax.numpy", cwd = "../.." }
