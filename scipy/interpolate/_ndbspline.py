@@ -67,6 +67,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    derivative
     design_matrix
 
     See Also
@@ -276,19 +277,20 @@ class NdBSpline:
 
         return new_c, new_t
 
-    def derivative(self, nu=1):
+    def derivative(self, nu):
         """
-        Construct a new NdBSpline representing the derivative.
+        Construct a new NdBSpline representing the partial derivative.
 
         Parameters
         ----------
         nu : array_like of shape (ndim,)
-            Order(s) of the derivative to compute along each dimension.
+            Orders of the partial derivatives to compute along each dimension.
 
         Returns
         -------
         NdBSpline
-            A new NdBSpline representing the derivative.
+            A new NdBSpline representing the partial derivative of the original spline.
+
         """
         nu_arr = np.asarray(nu, dtype=np.int64)
         ndim = len(self.t)
@@ -298,8 +300,8 @@ class NdBSpline:
                 f"invalid number of derivative orders {nu = } for "
                 f"ndim = {len(self.t)}.")
 
-        if any(n < 0 for n in nu_arr):
-            raise ValueError(f"derivatives must be positive, got {nu = }")
+        if any(nu_arr < 0):
+            raise ValueError(f"derivative orders must be positive, got {nu = }")
 
         t_new = list(self.t)
         k_new = list(self.k)
