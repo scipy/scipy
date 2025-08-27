@@ -2053,11 +2053,16 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
     if (std::isnan(dfn) || std::isnan(dfd) || std::isnan(p) || std::isnan(x)) {
         return NAN;
     }
-    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0) {
+    if (dfn <= 0 || dfd <= 0 || p < 0 || p > 1 || x < 0 || std::isinf(dfn) || std::isinf(dfd)) {
         sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
-    Real guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
+    Real guess;
+    try {
+        guess = std::max(Real(1.0), dfn * dfd / (dfn + dfd)); // Crude initial guess.
+    } catch (const std::overflow_error&) {
+        guess = Real(1.0);
+    }
     Real factor = 8;                                 // How big steps to take when searching.
     const std::uintmax_t maxit = boost::math::policies::get_max_root_iterations<SpecialPolicy>();
     std::uintmax_t it = maxit;                      // Root finding iteration counter.
@@ -2077,15 +2082,15 @@ _ncfdtrinc(const Real dfn, const Real dfd, const Real p, const Real x)
                             ncfdtrinc_target<Real>(x, dfn, dfd, p), guess, factor,
                             is_rising, tol, it, SpecialPolicy());
     }
-    catch (const std::domain_error& e) {
+    catch (const std::domain_error&) {
         sf_error("ncfdtrinc", SF_ERROR_DOMAIN, NULL);
         y = NAN;
     }
-    catch (const std::overflow_error& e) {
+    catch (const std::overflow_error&) {
         sf_error("ncfdtrinc", SF_ERROR_OVERFLOW, NULL);
         y = INFINITY;
     }
-    catch (const std::underflow_error& e) {
+    catch (const std::underflow_error&) {
         sf_error("ncfdtrinc", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     }
