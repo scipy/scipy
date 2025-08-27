@@ -614,7 +614,8 @@ def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.n
     return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=1,
+                 skip_backends=[("jax.numpy", "item assignment")])
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
