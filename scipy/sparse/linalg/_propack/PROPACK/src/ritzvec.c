@@ -29,7 +29,8 @@ void sritzvec(const int which, const int jobu, const int jobv, const int m, cons
     sgemm_ovwr(1, dim, dim+1, dim, 1.0f, &work[ip], dim, 0.0f, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
     mstart = (which == 0) ? dim - k : 0;  // smallest : largest
-    if (jobu) {
+    if (jobu)
+    {
         // Form left Ritz-vectors, U = U * X^T
         sgemm_ovwr_left(1, m, k, dim+1, 1.0f, U, ldu, &work[imt + mstart], dim+1, &work[iwrk], lwrk / k);
     }
@@ -71,7 +72,8 @@ void dritzvec(const int which, const int jobu, const int jobv, const int m, cons
     dgemm_ovwr(1, dim, dim+1, dim, 1.0, &work[ip], dim, 0.0, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
     mstart = (which == 0) ? dim - k : 0;  // smallest : largest
-    if (jobu) {
+    if (jobu)
+    {
         // Form left Ritz-vectors, U = U * X^T
         dgemm_ovwr_left(1, m, k, dim+1, 1.0, U, ldu, &work[imt + mstart], dim+1, &work[iwrk], lwrk / k);
     }
@@ -103,7 +105,7 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk + 1;
+    lwrk = lwrk - iwrk;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
@@ -115,13 +117,15 @@ void critzvec(const int which, const int jobu, const int jobv, const int m, cons
     // Compute left singular vectors for B, X = P^T * M^T
     sgemm_ovwr(1, dim, dim+1, dim, 1.0f, &work[ip], dim, 0.0f, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
-    if (jobu) {
+    if (jobu)
+    {
         mstart = (which == 0) ? dim - k : 0;  // smallest : largest
         // Form left Ritz-vectors, U = U * X^T
         csgemm_ovwr_left(1, m, k, dim+1, U, ldu, &work[imt + mstart], dim+1, cwork, lcwrk / k);
     }
 
-    if (jobv) {
+    if (jobv)
+    {
         mstart = (which == 0) ? dim - k : 0;  // smallest : largest
         // Form right Ritz-vectors, V = V * Q
         csgemm_ovwr_left(1, n, k, dim, V, ldv, &work[iqt + mstart], dim, cwork, lcwrk / k);
@@ -148,26 +152,25 @@ void zritzvec(const int which, const int jobu, const int jobv, const int m, cons
     iqt = imt + (dim+1)*(dim+1);
     ip = iqt + dim*dim;
     iwrk = ip + dim*dim;
-    lwrk = lwrk - iwrk + 1;
+    lwrk = lwrk - iwrk;
 
     // Compute QR-factorization
     //   B = M * [R; 0]
     dbdqr((dim == (m < n ? m : n)), jobu, dim, D, E, &c1, &c2, &work[imt], dim+1);
-
     // Compute SVD of R using the Divide-and-conquer SVD: R = P * S * Q^T,
     dbdsdc_("U", "I", &dim, D, E, &work[ip], &dim, &work[iqt], &dim, dd, id, &work[iwrk], iwork, &info);
-
     // Compute left singular vectors for B, X = P^T * M^T
     dgemm_ovwr(1, dim, dim+1, dim, 1.0, &work[ip], dim, 0.0, &work[imt], dim+1, &work[iwrk], lwrk / dim);
 
-    if (jobu) {
-        mstart = (which == 0) ? dim - k : 0;  // smallest : largest
+    mstart = (which == 0) ? dim - k : 0;  // smallest : largest
+    if (jobu)
+    {
         // Form left Ritz-vectors, U = U * X^T
         zdgemm_ovwr_left(1, m, k, dim+1, U, ldu, &work[imt + mstart], dim+1, zwork, lzwrk / k);
     }
 
-    if (jobv) {
-        mstart = (which == 0) ? dim - k : 0;  // smallest : largest
+    if (jobv)
+    {
         // Form right Ritz-vectors, V = V * Q
         zdgemm_ovwr_left(1, n, k, dim, V, ldv, &work[iqt + mstart], dim, zwork, lzwrk / k);
     }

@@ -144,17 +144,15 @@ void cgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLXF_TYPE* u0, f
         if (j >= 1) {
             int indices[4];
             indices[0] = 0;      // start index (0-based)
-            indices[1] = j - 1;  // end index (0-based, inclusive)
-            indices[2] = j;      // terminator
-            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
+            indices[1] = j;      // end index (0-based, inclusive)
+            indices[2] = j + 1;  // terminator
+            indices[3] = j + 1;  // Extra termination value to prevent out-of-bounds access.
 
             creorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
 
         // Check if we have a valid vector
-        if (*u0norm > 0.0f) {
-            return;  // Success
-        }
+        if (*u0norm > 0.0f) { return; }
     }
 
     // Failed to generate valid vector
@@ -201,17 +199,15 @@ void zgetu0(int transa, int m, int n, int j, int ntry, PROPACK_CPLX_TYPE* u0, do
         if (j >= 1) {
             int indices[4];
             indices[0] = 0;      // start index (0-based)
-            indices[1] = j - 1;  // end index (0-based, inclusive)
-            indices[2] = j;      // terminator
-            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
+            indices[1] = j;      // end index (0-based, inclusive)
+            indices[2] = j + 1;  // terminator
+            indices[3] = j + 1;  // Extra termination value to prevent out-of-bounds access.
 
             zreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
 
         // Check if we have a valid vector
-        if (*u0norm > 0.0) {
-            return;  // Success
-        }
+        if (*u0norm > 0.0) { return; }
     }
 
     // Failed to generate valid vector
