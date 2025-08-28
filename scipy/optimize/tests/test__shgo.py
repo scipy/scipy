@@ -834,13 +834,18 @@ class TestShgoArguments:
         def func(x):
             return np.sum(np.power(x, 2)), 2 * x
 
+        min_kwds = {"method": "SLSQP", "jac": True}
+        opt_kwds = {"jac": True}
         shgo(
             func,
             bounds=[[-1, 1], [1, 2]],
             n=100, iters=5,
             sampling_method="sobol",
-            minimizer_kwargs={'method': 'SLSQP', 'jac': True}
+            minimizer_kwargs=min_kwds,
+            options=opt_kwds
         )
+        assert min_kwds['jac'] is True
+        assert "jac" in opt_kwds
 
         # new
         def func(x):
