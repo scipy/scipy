@@ -1491,6 +1491,21 @@ class TestBetaInc:
         result = special.betaincinv(a, a, x)
         assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
 
+    @pytest.mark.parametrize("dtype, rtol",
+                             [(np.float32, 1e-4),
+                              (np.float64, 1e-15)])
+    @pytest.mark.parametrize("a, b, x, reference",
+                             [(1e-20, 1e-21, 0.5, 0.0909090909090909),
+                              (1e-15, 1e-16, 0.5, 0.09090909090909091)])
+    def test_gh22682(self, a, b, x, reference, dtype, rtol):
+        # gh-22682: betainc returned incorrect results for tiny
+        # single precision inputs. test that this is resolved
+        a = np.array(a, dtype=dtype)
+        b = np.array(b, dtype=dtype)
+        x = np.array(x, dtype=dtype)
+        res = special.betainc(a, b, x)
+        assert_allclose(res, reference, rtol=rtol)
+
 
 class TestCombinatorics:
     def test_comb(self):

@@ -502,7 +502,9 @@ def test_bdtrik_nbdtrik_inf():
      [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
      [0.1, 0.1, 1.0, 1.0, 0.3136335813423239],
      [100.0, 100.0, 0.1, 10.0, 1.0],
-     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
+     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897],
+     [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+    ]
 )
 def test_ncfdtr_and_inverses(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
@@ -670,6 +672,8 @@ class TestNoncentralTFunctions:
         (980, 3.8, 15, 1.0),
         (980, 38, 0.0015, 3.0547506e-316),
         (980, 38, 0.15, 8.6191646313e-314),
+        # revisit when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
         pytest.param(980, 38, 1.5, 1.1824454111413493e-291,
                      marks=pytest.mark.xfail(
                         reason="Bug in underlying Boost math implementation")),
@@ -691,7 +695,9 @@ class TestNoncentralTFunctions:
 
     @pytest.mark.parametrize(
         "df, nc, x, expected, rtol",
-        [[3., 5., -2., 1.5645373999149622e-09, 5e-9],
+        # revisit tolerances when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
+        [[3., 5., -2., 1.5645373999149622e-09, 2e-8],
          [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
          [1e-5, -6., 2., 0.9999999990135003, 1e-13],
          [10., 20., 0.15, 6.426530505957303e-88, 1e-13],

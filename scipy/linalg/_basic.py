@@ -1274,7 +1274,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
         # This is the same tolerance as used in np.linalg.matrix_rank.
         tol = abs_fc.max(axis=-1) * nc * np.finfo(np.float64).eps
         if tol.shape != ():
-            tol.shape = tol.shape + (1,)
+            tol = tol.reshape(tol.shape + (1,))
         else:
             tol = np.atleast_1d(tol)
 
