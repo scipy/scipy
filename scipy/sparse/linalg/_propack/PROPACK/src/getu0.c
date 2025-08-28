@@ -21,9 +21,7 @@ void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm,
 
     for (int itry = 0; itry < ntry; itry++) {
         // Generate random vector
-        for (int i = 0; i < rsize; i++) {
-            work[i] = random_float(rng_state);
-        }
+        for (int i = 0; i < rsize; i++) { work[i] = random_float(rng_state); }
 
         // Compute norm of random vector
         float nrm = snrm2_(&rsize, work, &ione);
@@ -39,17 +37,15 @@ void sgetu0(int transa, int m, int n, int j, int ntry, float* u0, float* u0norm,
         if (j >= 1) {
             int indices[4];
             indices[0] = 0;      // start index (0-based)
-            indices[1] = j - 1;  // end index (0-based, inclusive)
-            indices[2] = j;      // terminator
-            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
+            indices[1] = j;  // end index (0-based, inclusive)
+            indices[2] = j+1;      // terminator
+            indices[3] = j+1;      // Extra termination value to prevent out-of-bounds access.
 
             sreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
 
         // Check if we have a valid vector
-        if (*u0norm > 0.0f) {
-            return;  // Success
-        }
+        if (*u0norm > 0.0f) { return; }
     }
 
     // Failed to generate valid vector
@@ -77,9 +73,7 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
 
     for (int itry = 0; itry < ntry; itry++) {
         // Generate random vector
-        for (int i = 0; i < rsize; i++) {
-            work[i] = random_double(rng_state);
-        }
+        for (int i = 0; i < rsize; i++) { work[i] = random_double(rng_state); }
 
         // Compute norm of random vector
         double nrm = dnrm2_(&rsize, work, &ione);
@@ -95,17 +89,15 @@ void dgetu0(int transa, int m, int n, int j, int ntry, double* u0, double* u0nor
         if (j >= 1) {
             int indices[4];
             indices[0] = 0;      // start index (0-based)
-            indices[1] = j - 1;  // end index (0-based, inclusive)
-            indices[2] = j;      // terminator
-            indices[3] = j;      // Extra termination value to prevent out-of-bounds access.
+            indices[1] = j;      // end index (0-based, inclusive)
+            indices[2] = j + 1;  // terminator
+            indices[3] = j + 1;  // Extra termination value to prevent out-of-bounds access.
 
             dreorth(usize, j, U, ldu, u0, u0norm, indices, kappa, work, icgs);
         }
 
         // Check if we have a valid vector
-        if (*u0norm > 0.0) {
-            return;  // Success
-        }
+        if (*u0norm > 0.0) { return; }
     }
 
     // Failed to generate valid vector

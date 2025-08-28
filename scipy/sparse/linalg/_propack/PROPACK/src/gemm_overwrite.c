@@ -234,9 +234,8 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
         dgemm_("N", &transcharb, &blocksize, &n, &k, &alpha, &A[block_start], &lda, B, &ldb, &zero, work, &blocksize);
 
-        // Copy result back to A - optimized pointer arithmetic
+        // Copy result back to A
         double* work_ptr = work;
-
         for (j = 0; j < n; j++)
         {
             double* A_ptr = &A[block_start + j * lda];
@@ -255,7 +254,6 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
 
         // Copy remainder results back
         double* work_ptr = work;
-
         for (j = 0; j < n; j++)
         {
             double* A_ptr = &A[block_start + j * lda];
