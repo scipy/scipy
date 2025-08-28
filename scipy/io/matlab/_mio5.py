@@ -603,7 +603,7 @@ class VarWriter5:
             self.write_element(np.array(shape, dtype='i4'))
         # write name
         name = np.asarray(name)
-        if name == '':  # empty string zero-terminated
+        if name == '' or name == b'':  # empty string zero-terminated
             self.write_smalldata_element(name, miINT8, 0)
         else:
             self.write_element(name, miINT8)
@@ -896,7 +896,7 @@ class MatFile5Writer:
             self.write_file_header()
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
-            if name == '__subsystem__':
+            if name == '__function_workspace__':
                 name = ''
             elif name[0] == '_':
                 msg = (f"Starting field name with a "
