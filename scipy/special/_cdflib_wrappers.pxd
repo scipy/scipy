@@ -23,23 +23,14 @@ cdef extern from "cdflib.h" nogil:
         int i1
         double d3
 
-    TupleDID cdfbet_which3(double, double, double, double, double)
-    TupleDID cdfbet_which4(double, double, double, double, double)
     TupleDID cdfbin_which2(double, double, double, double, double)
     TupleDID cdfbin_which3(double, double, double, double, double)
     TupleDID cdfchi_which3(double, double, double)
-    TupleDDID cdfchn_which1(double, double, double)
-    TupleDID cdfchn_which2(double, double, double)
-    TupleDID cdfchn_which3(double, double, double)
-    TupleDID cdfchn_which4(double, double, double)
     TupleDID cdff_which4(double, double, double, double);
-    TupleDDID cdffnc_which1(double, double, double, double);
-    TupleDID cdffnc_which2(double, double, double, double, double);
     TupleDID cdffnc_which3(double, double, double, double, double);
     TupleDID cdffnc_which4(double, double, double, double, double);
     TupleDID cdffnc_which5(double, double, double, double, double);
     TupleDID cdfgam_which2(double, double, double, double);
-    TupleDID cdfgam_which3(double, double, double, double);
     TupleDID cdfgam_which4(double, double, double, double);
     TupleDID cdfnbn_which2(double, double, double, double, double);
     TupleDID cdfnbn_which3(double, double, double, double, double);
@@ -49,8 +40,6 @@ cdef extern from "cdflib.h" nogil:
     TupleDDID cdft_which1(double, double);
     TupleDID cdft_which2(double, double, double);
     TupleDID cdft_which3(double, double, double);
-    TupleDDID cdftnc_which1(double, double, double);
-    TupleDID cdftnc_which2(double, double, double, double);
     TupleDID cdftnc_which3(double, double, double, double);
     TupleDID cdftnc_which4(double, double, double, double);
 
@@ -89,53 +78,6 @@ cdef inline double get_result(
         return NAN
     sf_error.error(name, sf_error.OTHER, "Unknown error.")
     return NAN
-
-
-cdef inline double btdtria(double p, double b, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double y = 1.0 - x
-        double result, bound
-        int status = 10
-        char *argnames[5]
-        TupleDID ret
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-    argnames[3] = "y"
-    argnames[4] = "b"
-
-    if isnan(p) or isnan(b) or isnan(x):
-      return NAN
-
-    ret = cdfbet_which3(p, q, x, y, b)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("btdtria", argnames, result, status, bound, 1)
-
-
-
-cdef inline double btdtrib(double a, double p, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double y = 1.0 - x
-        double result, bound
-        int status = 10
-        char *argnames[5]
-        TupleDID ret
-
-    if isnan(a) or isnan(p) or isnan(x):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-    argnames[3] = "y"
-    argnames[4] = "a"
-
-    ret = cdfbet_which4(p, q, x, y, a)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("btdtrib", argnames, result, status, bound, 1)
 
 
 cdef inline double bdtrik(double p, double xn, double pr) noexcept nogil:
@@ -203,82 +145,6 @@ cdef inline double chdtriv(double p, double x) noexcept nogil:
     return get_result("chdtriv", argnames, result, status, bound, 1)
 
 
-cdef inline double chndtr(double x, double df, double nc) noexcept nogil:
-    cdef:
-        double result, _, bound
-        int status = 10
-        char *argnames[3]
-        TupleDDID ret
-
-    if isnan(x) or isnan(df) or isnan(nc):
-      return NAN
-
-    argnames[0] = "x"
-    argnames[1] = "df"
-    argnames[2] = "nc"
-
-    ret = cdfchn_which1(x, df, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d3
-    return get_result("chndtr", argnames, result, status, bound, 1)
-
-
-cdef inline double chndtridf(double x, double p, double nc) noexcept nogil:
-    cdef:
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isnan(x) or isnan(p) or isnan(nc):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "x"
-    argnames[2] = "nc"
-
-    ret = cdfchn_which3(p, x, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("chndtridf", argnames, result, status, bound, 1)
-
-
-cdef inline double chndtrinc(double x, double df, double p) noexcept nogil:
-    cdef:
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isnan(x) or isnan(df) or isnan(p):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "x"
-    argnames[2] = "df"
-
-    ret = cdfchn_which4(p, x, df)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("chndtrinc", argnames, result, status, bound, 1)
-
-
-cdef inline double chndtrix(double p, double df, double nc) noexcept nogil:
-    cdef:
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isnan(p) or isnan(df) or isnan(nc):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "df"
-    argnames[2] = "nc"
-
-    ret = cdfchn_which2(p, df, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("chndtrix", argnames, result, status, bound, 0)
-
-
 cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:
     cdef:
         double q = 1.0 - p
@@ -319,27 +185,6 @@ cdef inline double gdtria(double p, double shp, double x) noexcept nogil:
     ret = cdfgam_which4(p, q, x, shp)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("gdtria", argnames, result, status, bound, 1)
-
-
-cdef inline double gdtrib(double scl, double p, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(scl) or isnan(p) or isnan(x):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-    argnames[3] = "scl"
-
-    ret = cdfgam_which3(p, q, x, scl)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("gdtrib", argnames, result, status, bound, 1)
 
 
 cdef inline double gdtrix(double scl, double shp, double p) noexcept nogil:
@@ -409,48 +254,6 @@ cdef inline double nbdtrin(double s, double p, double pr) noexcept nogil:
     return get_result("nbdtrin", argnames, result, status, bound, 1)
 
 
-cdef inline double ncfdtr(double dfn, double dfd, double nc, double f) noexcept nogil:
-    cdef:
-        double result, _, bound
-        int status = 10
-        char *argnames[4]
-        TupleDDID ret
-
-    if isnan(dfn) or isnan(dfd) or isnan(nc) or isnan(f):
-      return NAN
-
-    argnames[0] = "f"
-    argnames[1] = "dfn"
-    argnames[2] = "dfd"
-    argnames[3] = "nc"
-
-    ret = cdffnc_which1(f, dfn, dfd, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d3
-    return get_result("ncfdtr", argnames, result, status, bound, 0)
-
-
-cdef inline double ncfdtri(double dfn, double dfd, double nc, double p) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[5]
-        TupleDID ret
-
-    if isnan(dfn) or isnan(dfd) or isnan(nc) or isnan(p):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "dfn"
-    argnames[3] = "dfd"
-    argnames[4] = "nc"
-
-    ret = cdffnc_which2(p, q, dfn, dfd, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("ncfdtri", argnames, result, status, bound, 1)
-
-
 cdef inline double ncfdtridfd(double dfn, double p, double nc, double f) noexcept nogil:
     cdef:
         double q = 1.0 - p
@@ -517,25 +320,6 @@ cdef inline double ncfdtrinc(double dfn, double dfd, double p, double f) noexcep
     return get_result("ncfdtrinc", argnames, result, status, bound, 1)
 
 
-cdef inline double nctdtr(double df, double nc, double t) noexcept nogil:
-    cdef:
-        double result, _, bound
-        int status = 10
-        char *argnames[3]
-        TupleDDID ret
-
-    if isnan(df) or isnan(nc) or isnan(t):
-      return NAN
-
-    argnames[0] = "t"
-    argnames[1] = "df"
-    argnames[2] = "nc"
-
-    ret = cdftnc_which1(t, df, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d3
-    return get_result("nctdtr", argnames, result, status, bound, 1)
-
-
 cdef inline double nctdtridf(double p, double nc, double t) noexcept nogil:
     cdef:
         double q = 1.0 - p
@@ -576,27 +360,6 @@ cdef inline double nctdtrinc(double df, double p, double t) noexcept nogil:
     ret = cdftnc_which4(p, q, t, df)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("nctdtrinc", argnames, result, status, bound, 1)
-
-
-cdef inline double nctdtrit(double df, double nc, double p) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(df) or isnan(nc) or isnan(p):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "df"
-    argnames[3] = "nc"
-
-    ret = cdftnc_which2(p, q, df, nc)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("nctdtrit", argnames, result, status, bound, 1)
 
 
 cdef inline double nrdtrimn(double p, double std, double x) noexcept nogil:
