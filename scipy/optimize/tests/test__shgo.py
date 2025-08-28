@@ -1,5 +1,6 @@
 import logging
 import sys
+import warnings
 
 import numpy as np
 import time
@@ -8,9 +9,10 @@ from numpy.testing import assert_allclose, IS_PYPY
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
-                            rosen_der, rosen_hess, NonlinearConstraint)
+                            rosen_der, rosen_hess, NonlinearConstraint, OptimizeWarning)
 from scipy.optimize._constraints import new_constraint_to_old
 from scipy.optimize._shgo import SHGO
+from scipy.optimize.tests.test_minimize_constrained import MaratosTestArgs
 
 
 class StructTestFunction:
@@ -568,6 +570,46 @@ class TestShgoArguments:
         ref = shgo(func=lambda x: 2 * x + 1, bounds=[(0, 3)])
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x)
+
+    def test_args_gh23517(self):
+        """
+        Using `args` for func, jac and hess doesn't work
+        """
+        obj = MaratosTestArgs("a", 234)
+        obj.bounds = Bounds([-5, -5], [5, 5])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+
+            res2 = minimize(
+                obj.fun,
+                [4.0, 4.0],
+                constraints=obj.constr,
+                bounds=obj.bounds,
+                method='trust-constr',
+                args=("a", 234),
+                jac=obj.grad
+            )
+        assert_allclose(res2.x, obj.x_opt, atol=1e-6)
+
+        obj = MaratosTestArgs("a", 234)
+        obj.bounds = Bounds([-10., -10.], [10., 10.])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", (OptimizeWarning, RuntimeWarning, UserWarning))
+            res = shgo(
+                func=obj.fun,
+                bounds=obj.bounds,
+                args=("a", 234),
+                minimizer_kwargs={
+                    "method": 'trust-constr',
+                    "constraints": obj.constr,
+                    "bounds": obj.bounds,
+                    "jac": obj.grad,
+                    "args": ("a", 234),
+                },
+                constraints=obj.constr,
+                sampling_method='sobol',
+            )
+        assert_allclose(res.x, obj.x_opt, atol=1e-6)
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
