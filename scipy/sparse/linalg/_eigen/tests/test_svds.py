@@ -671,8 +671,8 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     @pytest.mark.parallel_threads(4)  # Very slow
     @pytest.mark.parametrize("shape", SHAPES)
-    # ARPACK supports only dtype float, complex, or np.float32
-    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    @pytest.mark.parametrize("dtype", (np.float32, np.float64,
+                                       np.complex64, np.complex128))
     def test_small_sigma_sparse(self, shape, dtype):
         # https://github.com/scipy/scipy/pull/11829
         solver = self.solver
