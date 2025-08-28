@@ -1,3 +1,8 @@
+LICENSE_cctbx.txt
+=================
+Applies to:
+- scipy/io/_fast_matrix_market/src/pystreambuf.h
+
 LICENSE_getLebedevSphere.txt
 ============================
 Applies to:

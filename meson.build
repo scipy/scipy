@@ -14,7 +14,6 @@ project(
     'scipy/fft/_pocketfft/LICENSE.md',  # BSD-3-Clause
     # 'scipy/interpolate/_aaa.py',  # BSD-2-Clause
     'scipy/io/_fast_matrix_market/LICENSE.txt',  # BSD-2-Clause
-    # 'scipy/io/_fast_matrix_market/src/pystreambuf.h',  # BSD-3-Clause
     'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT',  # MIT
     'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost',  # BSL-1.0
     'scipy/optimize/_direct/COPYING',  # MIT
