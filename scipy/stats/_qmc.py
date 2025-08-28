@@ -443,7 +443,7 @@ def geometric_discrepancy(
         raise ValueError("Sample must contain at least two points")
 
     if method == "mindist":
-        min_d = distance._pmindist(sample, metric=metric)
+        min_d = distance.pdist(sample, metric=metric).min()
         if np.isclose(min_d, 0.0):
             warnings.warn("Sample contains duplicate points.", stacklevel=2)
         return min_d

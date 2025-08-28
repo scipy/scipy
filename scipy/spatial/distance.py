@@ -106,10 +106,6 @@ import warnings
 import dataclasses
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 import numpy as np
 
@@ -2109,34 +2105,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
 
-def _pmindist(sample: "npt.ArrayLike", metric: str) -> float:
-    """Mininum distance between points in the given sample.
-
-    Parameters
-    ----------
-    sample : array_like (n, d)
-        The sample to compute the minimum distance from.
-    metric : str or callable, optional
-        The distance metric to use. See the documentation
-        for `scipy.spatial.distance.pdist` for the available metrics and
-        the default.
-
-    Returns
-    -------
-    distance : float
-        Minimum distance.
-
-    """
-    sample = _asarray(sample)
-    n = sample.shape[0]
-    d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
-    if np.isclose(d, 0.0):
-        return 0.0
-
-    for i in range(2, n):
-        d = min(d, cdist(sample[(i-1):i,...], sample[i:,...], metric=metric).min())
-    return d
-
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
 
@@ -2348,7 +2316,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
     The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
     ``D[i,k] <= D[i,j] + D[j,k]``
-
+    
     Parameters
     ----------
     D : array_like
@@ -2364,7 +2332,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         `throw` is True to identify the offending variable.
     warning : bool, optional
         If True, a warning message is raised instead of throwing an exception.
-
+        
     Returns
     -------
     valid : bool
