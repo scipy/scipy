@@ -441,7 +441,8 @@ void sreorth(int n, int k, float* V, int ldv, float* vnew, float* normvnew, cons
     // Check for quick return
     if ((k < 0) || (n <= 0)) { return; }
 
-    for (int itry = 0; itry < NTRY; itry++) {
+    for (int itry = 0; itry < NTRY; itry++)
+    {
         float normvnew_0 = *normvnew;
 
         if (iflag == 1) {
@@ -497,7 +498,8 @@ void dreorth(int n, int k, double* V, int ldv, double* vnew, double* normvnew, c
 
     // Check for quick return
     if ((k < 0) || (n <= 0)) { return; }
-    for (int itry = 0; itry < NTRY; itry++) {
+    for (int itry = 0; itry < NTRY; itry++)
+    {
         double normvnew_0 = *normvnew;
 
         if (iflag == 1) {
@@ -555,7 +557,8 @@ void creorth(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* v
     // Check for quick return
     if ((k < 0) || (n <= 0)) { return; }
 
-    for (int itry = 0; itry < NTRY; itry++) {
+    for (int itry = 0; itry < NTRY; itry++)
+    {
         float normvnew_0 = *normvnew;
 
         if (iflag == 1) {
@@ -613,7 +616,8 @@ void zreorth(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vne
     // Check for quick return
     if ((k < 0) || (n <= 0)) { return; }
 
-    for (int itry = 0; itry < NTRY; itry++) {
+    for (int itry = 0; itry < NTRY; itry++)
+    {
         double normvnew_0 = *normvnew;
 
         if (iflag == 1) {

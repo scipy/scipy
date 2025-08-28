@@ -308,8 +308,7 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     while ((nconv < *neig) && (iter < maxiter))
     {
         // Compute bidiagonalization A*V_{j} = U_{j+1}*B_{j}
-        dlanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm,
-                 &doption[0], &ioption[0], &work[iwrk], iwork, dparm, iparm, &ierr, rng_state);
+        dlanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm, &doption[0], &ioption[0], &work[iwrk], iwork, dparm, iparm, &ierr, rng_state);
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
@@ -320,12 +319,10 @@ void dlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0; }
 
         // QR factorization of bidiagonal matrix
-        dbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1],
-              &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
+        dbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1,
-                &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -504,12 +501,12 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Set machine dependent constants
     eps = FLT_EPSILON;
     eps34 = powf(eps, 3.0f/4.0f);
-    epsn = (float)fmaxf(m, n) * eps / 2.0f;
-    epsn2 = sqrtf((float)fmaxf(m, n)) * eps / 2.0f;
+    epsn = (float)int_max(m, n) * eps / 2.0f;
+    epsn2 = sqrtf((float)int_max(m, n)) * eps / 2.0f;
     sfmin = FLT_MIN;
 
     // Guard against absurd arguments
-    dim = fminf(fminf(dim, n + 1), m + 1);
+    dim = int_min(int_min(dim, n + 1), m + 1);
     k = dim - p;
     tol = fminf(1.0f, fmaxf(16.0f * eps, tolin));
     anorm = 0.0f;
@@ -524,7 +521,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk + 1;
+    lwrk = lwork - iwrk;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0f; }
@@ -545,8 +542,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     while ((nconv < *neig) && (iter < maxiter))
     {
         // Compute bidiagonalization A*V_{j} = U_{j+1}*B_{j}
-        clanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm,
-                 &soption[0], &ioption[0], &work[iwrk], cwork, iwork, cparm, iparm, &ierr, rng_state);
+        clanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm, &soption[0], &ioption[0], &work[iwrk], cwork, iwork, cparm, iparm, &ierr, rng_state);
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
@@ -557,12 +553,10 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0f; }
 
         // QR factorization of bidiagonal matrix
-        sbdqr((dim == fminf(m, n)), 0, dim, &work[ialpha1], &work[ibeta1],
-              &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
+        sbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        sbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1,
-                &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        sbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -573,17 +567,14 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         }
 
         // Scale error bounds by rnorm
-        for (i = 0; i < dim; i++)
-        {
-            work[ibnd + i] = fabsf(rnorm * work[ibnd + i]);
-        }
+        for (i = 0; i < dim; i++) { work[ibnd + i] = fabsf(rnorm * work[ibnd + i]); }
 
         // Refine error bounds using the "Gap theorem"
         if (which == 0)  // which == 'S' (smallest)
         {
-            srefinebounds(fminf(m, n), dim, &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
+            srefinebounds(int_min(m, n), dim, &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
         } else {  // which == 'L' (largest)
-            srefinebounds(fminf(m, n), fminf(dim, *neig), &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
+            srefinebounds(int_min(m, n), int_min(dim, *neig), &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
         }
 
         // Determine the number of converged singular values
@@ -604,7 +595,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         } else {  // largest singular values
             i = 0;
             nconv = 0;
-            while (i < fminf(dim, *neig))
+            while (i < int_min(dim, *neig))
             {
                 if (work[ibnd + i] <= tol * work[ialpha1 + i])
                 {
@@ -701,7 +692,7 @@ void clansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
             //   U_{dim+1}^{+} = U_{dim+1} * P(:,1:k+1)
             //   V_{dim}^{+} = V_{dim} * Q(:,1:k)
 
-            csgemm_ovwr_left(0, m, k + 1, dim + 1, U, ldu, &work[ip], dim + 1, cwork, lcwork / (k+1));
+            csgemm_ovwr_left(0, m, k + 1, dim + 1, U, ldu, &work[ip], dim + 1, cwork, lcwork / (k + 1));
             csgemm_ovwr_left(0, n, k, dim, V, ldv, &work[iq], dim, cwork, lcwork / k);
 
             rnorm = work[ibeta + k - 1];
@@ -741,12 +732,12 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     // Set machine dependent constants
     eps = DBL_EPSILON;
     eps34 = pow(eps, 3.0/4.0);
-    epsn = (double)fmax(m, n) * eps / 2.0;
-    epsn2 = sqrt((double)fmax(m, n)) * eps / 2.0;
+    epsn = (double)int_max(m, n) * eps / 2.0;
+    epsn2 = sqrt((double)int_max(m, n)) * eps / 2.0;
     sfmin = DBL_MIN;
 
     // Guard against absurd arguments
-    dim = fmin(fmin(dim, n + 1), m + 1);
+    dim = int_min(int_min(dim, n + 1), m + 1);
     k = dim - p;
     tol = fmin(1.0, fmax(16.0 * eps, tolin));
     anorm = 0.0;
@@ -761,7 +752,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     ip = ishift + dim;
     iq = ip + (dim + 1) * (dim + 1);
     iwrk = iq + dim * dim;
-    lwrk = lwork - iwrk + 1;
+    lwrk = lwork - iwrk;
 
     // Zero out work array sections
     for (i = 0; i < 8 * dim + 3 + 2 * dim * dim; i++) { work[i] = 0.0; }
@@ -782,8 +773,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
     while ((nconv < *neig) && (iter < maxiter))
     {
         // Compute bidiagonalization A*V_{j} = U_{j+1}*B_{j}
-        zlanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm,
-                 &doption[0], &ioption[0], &work[iwrk], zwork, iwork, zparm, iparm, &ierr, rng_state);
+        zlanbpro(m, n, kold, &dim, aprod, U, ldu, V, ldv, &work[ialpha], dim, &rnorm, &doption[0], &ioption[0], &work[iwrk], zwork, iwork, zparm, iparm, &ierr, rng_state);
         kold = k;
 
         // Compute and analyze SVD(B) and error bounds
@@ -794,12 +784,10 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0; }
 
         // QR factorization of bidiagonal matrix
-        dbdqr((dim == fmin(m, n)), 0, dim, &work[ialpha1], &work[ibeta1],
-              &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
+        dbdqr((dim == fmin(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
-        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1,
-                &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+        dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
         // Update anorm estimate
         if (dim > 5)
@@ -818,9 +806,9 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         // Refine error bounds using the "Gap theorem"
         if (which == 0)  // which == 'S' (smallest)
         {
-            drefinebounds(fmin(m, n), dim, &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
+            drefinebounds(int_min(m, n), dim, &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
         } else {  // which == 'L' (largest)
-            drefinebounds(fmin(m, n), fmin(dim, *neig), &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
+            drefinebounds(int_min(m, n), int_min(dim, *neig), &work[ialpha1], &work[ibnd], epsn * anorm, eps34);
         }
 
         // Determine the number of converged singular values
@@ -841,7 +829,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         } else {  // largest singular values
             i = 0;
             nconv = 0;
-            while (i < fmin(dim, *neig))
+            while (i < int_min(dim, *neig))
             {
                 if (work[ibnd + i] <= tol * work[ialpha1 + i])
                 {
@@ -938,7 +926,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
             //   U_{dim+1}^{+} = U_{dim+1} * P(:,1:k+1)
             //   V_{dim}^{+} = V_{dim} * Q(:,1:k)
 
-            zdgemm_ovwr_left(0, m, k + 1, dim + 1, U, ldu, &work[ip], dim + 1, zwork, lzwork / (k+1));
+            zdgemm_ovwr_left(0, m, k + 1, dim + 1, U, ldu, &work[ip], dim + 1, zwork, lzwork / (k + 1));
             zdgemm_ovwr_left(0, n, k, dim, V, ldv, &work[iq], dim, zwork, lzwork / k);
 
             rnorm = work[ibeta + k - 1];
