@@ -515,7 +515,7 @@ class SHGO:
                 self.func = MemoizeJac(func)
                 jac = self.func.derivative
                 minimizer_kwargs['jac'] = jac
-                func = self.func  # .fun
+                func = self.func  # fun
             else:
                 self.func = func  # Normal definition of objective function
         except (TypeError, KeyError):
@@ -626,6 +626,20 @@ class SHGO:
 
             # Feedback
             self.disp = False
+
+        # normalize grad + hess calls for args
+        # this has to be done after minimizer_kwargs has finished having its
+        # jac/hess/args edited.
+        _grad = self.minimizer_kwargs.get('jac', None)
+        if callable(_grad):
+            self.minimizer_kwargs['jac'] = _FunctionWrapper(_grad, self.args)
+        _hess = self.minimizer_kwargs.get('hess', None)
+        if callable(_hess):
+            self.minimizer_kwargs['hess'] = _FunctionWrapper(_hess, self.args)
+
+        # we've already wrapped fun, grad, hess, so no need for args
+        self.minimizer_kwargs.pop("args", None)
+        self.minimizer_kwargs["options"].pop("args", None)
 
         # Remove unknown arguments in self.minimizer_kwargs
         # Start with arguments all the solvers have in common
