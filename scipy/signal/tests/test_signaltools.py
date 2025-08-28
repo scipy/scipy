@@ -3509,81 +3509,8 @@ class TestHilbert2:
     def test_hilbert2_types(self, dtype, xp):
         dtype = getattr(xp, dtype)
         in_typed = xp.zeros((2, 32), dtype=dtype)
-        assert xp.real(signal.hilbert2(in_typed)).dtype == dtype
-    
-    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    @pytest.mark.parametrize('axes', [(-2, -1), (0, 1)])
-    def test_hilbert2_old_implementation(self, xp, shape, axes):
-
-        def _hilbert2(x, N=None):
-            """
-            Compute the '2-D' analytic signal of `x`
-
-            Parameters
-            ----------
-            x : array_like
-                2-D signal data.
-            N : int or tuple of two ints, optional
-                Number of Fourier components. Default is ``x.shape``
-
-            Returns
-            -------
-            xa : ndarray
-                Analytic signal of `x` taken along axes (0,1).
-
-            References
-            ----------
-            .. [1] Wikipedia, "Analytic signal",
-                https://en.wikipedia.org/wiki/Analytic_signal
-
-            """
-            xp = array_namespace(x)
-            x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
-            if x.ndim > 2:
-                raise ValueError("x must be 2-D.")
-            if xp.isdtype(x.dtype, 'complex floating'):
-                raise ValueError("x must be real.")
-
-            if N is None:
-                N = x.shape
-            elif isinstance(N, int):
-                if N <= 0:
-                    raise ValueError("N must be positive.")
-                N = (N, N)
-            elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
-                raise ValueError("When given as a tuple, N must hold exactly "
-                                "two positive integers")
-
-            Xf = sp_fft.fft2(x, N, axes=(0, 1))
-            h1 = xp.zeros(N[0], dtype=Xf.dtype)
-            h2 = xp.zeros(N[1], dtype=Xf.dtype)
-            for h in (h1, h2):
-                N1 = h.shape[0]
-                if N1 % 2 == 0:
-                    h[0] = h[N1 // 2] = 1
-                    h[1:N1 // 2] = 2
-                else:
-                    h[0] = 1
-                    h[1:(N1 + 1) // 2] = 2
-
-            h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
-            k = x.ndim
-            while k > 2:
-                h = h[:, xp.newaxis]
-                k -= 1
-            x = sp_fft.ifft2(Xf * h, axes=(0, 1))
-            return x
-
-        x = xp.reshape(xp.arange(shape[0] * shape[1], dtype=xp.float64), shape)
-        xh_old = _hilbert2(x)
-        if axes == (0, 1):
-            x = x[..., None]
-            squeeze_axis = 2
-        elif axes == (-2, -1):
-            x = x[None, ...]
-            squeeze_axis = 0
-        xh = xp.squeeze(hilbert2(x, axes=axes), axis=squeeze_axis)
-        xp_assert_close(xh_old, xh)
+        out = xp.real(signal.hilbert2(in_typed))
+        assert out.dtype == dtype
     
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
     def test_quadrant_power(self, xp, shape):
@@ -3591,15 +3518,93 @@ class TestHilbert2:
         freq0 = xp.asarray(sp_fft.fftfreq(sh0)[:, None])
         freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None, ...])
         x = xp.reshape(xp.arange(sh0 * sh1, dtype=xp.float64), shape)
+        x_f = sp_fft.fft2(x)
         x_as = hilbert2(x)
         x_as_f = sp_fft.fft2(x_as)
-        n_quads = (freq0 < 0) | (freq1 < 0)
+
+        # 3 quadrants are zero
+        zero_mask = (freq0 < 0) | (freq1 < 0)
         if sh0 % 2 == 0:
-            n_quads = n_quads & (freq0 != xp.min(freq0))
+            zero_mask = zero_mask & (freq0 != xp.min(freq0))
         if sh1 % 2 == 0:
-            n_quads = n_quads & (freq1 != xp.min(freq1))
-        zero_quad = x_as_f[n_quads]
+            zero_mask = zero_mask & (freq1 != xp.min(freq1))
+        zero_quad = x_as_f[zero_mask]
         xp_assert_close(zero_quad, xp.zeros_like(zero_quad), atol=1e-12)
+
+        # (+, +) quadrant is scaled by 4
+        four_mask = (freq0 > 0) & (freq1 > 0)
+        x_as_four_quad = x_as_f[four_mask]
+        x_four_quad = x_f[four_mask]
+        xp_assert_close(x_as_four_quad, x_four_quad * 4, atol=1e-12)
+    
+    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
+    def test_zero_analytic_signal(self, xp, shape):
+        """Test that a real signal with Z[-p,-q] == np.conj(Z[p,q])
+        produces a zero analytic signal."""
+        c0 = shape[0] // 2
+        c1 = shape[1] // 2
+        x_f = xp.zeros(shape)
+        x_f[c0 - 1, c1 + 1] = 1.0
+        x_f[c0 + 1, c1 - 1] = 1.0
+        x_f = sp_fft.ifftshift(x_f)
+        x = sp_fft.ifft2(x_f).real
+        assert abs(x).sum() > 0.0
+        x_as = hilbert2(x)
+        xp_assert_close(x_as, xp.zeros_like(x_as), atol=1e-16)
+    
+    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
+    def test_impulse(self, xp, shape):
+        """Test expected values for unit impulse with constant offset."""
+        sh0, sh1 = shape
+        x = xp.ones(shape)
+        x[0, 0] += 1
+        x_as = hilbert2(x)
+        x_as_f = sp_fft.fft2(x_as)
+        freq0 = xp.asarray(sp_fft.fftfreq(sh0)[:, None])
+        freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None, ...])
+
+        mask = (freq0 == 0) & (freq1 == 0)
+        xp_assert_close(x_as_f[mask].real.item(), sh0 * sh1 + 1.0)
+        xp_assert_close(x_as_f[mask].imag.item(), 0.0)
+
+        mask = (
+            ((freq0 == 0) & (freq1 > 0)) |
+            ((freq0 > 0) & (freq1 == 0))
+        )
+        size = xp.sum(mask)
+        xp_assert_close(
+            x_as_f[mask].real,
+            2.0 * xp.ones(size),
+            )
+        xp_assert_close(x_as_f[mask].imag, xp.zeros(size))
+
+        mask = (freq0 > 0) & (freq1 > 0)
+        size = xp.sum(mask)
+        xp_assert_close(
+            x_as_f[mask].real,
+            4.0 * xp.ones(size),
+            )
+        xp_assert_close(x_as_f[mask].imag, xp.zeros(size))
+    
+    @pytest.mark.parametrize('sh0', [4, 5])
+    @pytest.mark.parametrize('sh1', [6, 7])
+    @pytest.mark.parametrize('sh2', [8, 9])
+    @pytest.mark.parametrize('not_axis', [0, 1, 2])
+    def test_3d(self, xp, sh0, sh1, sh2, not_axis):
+        """2d transform on 3d array is equal to 2d transform
+        on 2d slices."""
+        x = np.arange(
+            sh0 * sh1 * sh2,
+            dtype=xp.float64,
+            ).reshape(sh0, sh1, sh2)
+        transform_axes = [0, 1, 2]
+        transform_axes.pop(not_axis)
+        x_as_3d = hilbert2(x, axes=(transform_axes))
+        parts = xp.split(x, x.shape[not_axis], axis=not_axis) 
+        parts = [xp.squeeze(p, axis=not_axis) for p in parts]
+        x_as_2d = [hilbert2(p) for p in parts]
+        x_as_2d = xp.stack(x_as_2d, axis=not_axis)
+        xp_assert_close(x_as_3d, x_as_2d)
 
 
 class TestEnvelope:
