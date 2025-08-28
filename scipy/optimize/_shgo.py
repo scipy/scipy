@@ -496,6 +496,12 @@ class SHGO:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
+        # copy the options dictionaries so that the user input is not mutated
+        if minimizer_kwargs is not None and isinstance(minimizer_kwargs, dict):
+            minimizer_kwargs = minimizer_kwargs.copy()
+        if options is not None and isinstance(options, dict):
+            options = options.copy()
+
         if options is not None and options.get('jac', None) is True:
             if minimizer_kwargs is None:
                 minimizer_kwargs = {}
