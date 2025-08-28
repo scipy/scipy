@@ -989,7 +989,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
         raise ValueError("bands must contain frequency pairs.")
     if (bands < 0).any() or (bands > 1).any():
         raise ValueError("bands must be between 0 and 1 relative to Nyquist")
-    bands.shape = (-1, 2)
+    bands = bands.reshape((-1, 2))
 
     # check remaining params
     desired = np.asarray(desired).flatten()
@@ -998,7 +998,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
             f"desired must have one entry per frequency, got {desired.size} "
             f"gains for {bands.size} frequencies."
         )
-    desired.shape = (-1, 2)
+    desired = desired.reshape((-1, 2))
     if (np.diff(bands) <= 0).any() or (np.diff(bands[:, 0]) < 0).any():
         raise ValueError("bands must be monotonically nondecreasing and have "
                          "width > 0.")
