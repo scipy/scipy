@@ -32,7 +32,6 @@ from scipy._lib._array_api import (
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype, array_namespace
 )
-import scipy._lib.array_api_extra as xpx
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
