@@ -10,6 +10,10 @@
 #include "blaslapack_declarations.h"
 
 
+static inline int int_min(const int a, const int b) { return a < b ? a : b; }
+static inline int int_max(const int a, const int b) { return a > b ? a : b; }
+
+
 void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s aprod,
              float* U, int ldu, float* sigma, float* bnd, float* V, int ldv,
              float tolin, float* work, int lwork, int* iwork,
@@ -26,12 +30,12 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     // Set machine dependent constants
     eps = FLT_EPSILON;
     eps34 = powf(eps, 3.0f/4.0f);
-    epsn = (float)fmaxf(m, n) * eps / 2.0f;
-    epsn2 = sqrtf((float)fmaxf(m, n)) * eps / 2.0f;
+    epsn = (float)int_max(m, n) * eps / 2.0f;
+    epsn2 = sqrtf((float)int_max(m, n)) * eps / 2.0f;
     sfmin = FLT_MIN;
 
     // Guard against absurd arguments
-    lanmax = fminf(fminf(n + 1, m + 1), kmax);
+    lanmax = int_min(int_min(n + 1, m + 1), kmax);
     tol = fminf(1.0f, fmaxf(16.0f * eps, tolin));
     anorm = 0.0f;
 
@@ -42,16 +46,12 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     ip = ib1 + 2 * lanmax;
     iq = ip + (lanmax + 1) * (lanmax + 1);
     iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk + 1;
+    lwrk = lwork - iwrk;
 
     // Zero out work array sections
-    for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++)
-    {
-        work[i] = 0.0f;
-    }
+    for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++) { work[i] = 0.0f; }
 
     // Set up random starting vector if none is provided by the user
-
     rnorm = snrm2_(&m, &U[0], &int1);  // U(:,0) in 0-based indexing
     if (rnorm == 0.0f)
     {
@@ -61,7 +61,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     *info = 0;
     neig = 0;
     jold = 0;
-    j = fminf(k + fmaxf(8, k) + 1, lanmax);
+    j = int_min(k + int_max(k, 8) + 1, lanmax);
 
     // Iterate until convergence...
     while (neig < k)
@@ -78,7 +78,8 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
         for (i = 0; i < j + 1; i++) { work[ibnd + i] = 0.0f; }
 
         // QR factorization of bidiagonal matrix
-        sbdqr((j == fminf(m, n)), 0, j, &work[ib1], &work[ib1 + lanmax], &work[ibnd + j - 1], &work[ibnd + j], &work[ip], lanmax + 1);
+        sbdqr((j == int_min(m, n)), 0, j, &work[ib1], &work[ib1 + lanmax], &work[ibnd + j - 1], &work[ibnd + j], &work[ip], lanmax + 1);
+
         // SVD of bidiagonal matrix
         sbdsqr_("U", &j, &int0, &int1, &int0, &work[ib1], &work[ib1 + lanmax], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
 
@@ -91,17 +92,17 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
         }
 
         // Scale error bounds by rnorm
-        for (i = 0; i < j; i++) { work[ibnd + i] = fabsf(rnorm * work[ibnd + i]); }
+        for (i = 0; i < j+1; i++) { work[ibnd + i] = fabsf(rnorm * work[ibnd + i]); }
 
         // Refine error bounds using the "Gap theorem"
-        srefinebounds(fminf(m, n), j, &work[ib1], &work[ibnd], epsn * anorm, eps34);
+        srefinebounds(int_min(m, n), j, &work[ib1], &work[ibnd], epsn * anorm, eps34);
 
         // Determine the number of converged singular values
-        for (i = 0; i < fminf(j, k); i++) { bnd[i] = work[ibnd + i]; }
+        for (i = 0; i < int_min(j, k); i++) { bnd[i] = work[ibnd + i]; }
 
         i = 0;
         neig = 0;
-        while (i < fminf(j, k))
+        while (i < int_min(j, k))
         {
             if (work[ibnd + i] <= tol * work[ib1 + i])
             {
@@ -109,151 +110,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
                 neig++;
                 i++;
             } else {
-                i = k;  // Break out of loop
-            }
-        }
-
-        // Test if an invariant subspace has been found or
-        // if the workspace has been exhausted.
-        if (ierr < 0)
-        {
-            // Invariant subspace found
-            if (j < k) { *info = j; }
-            break;
-        }
-
-        if (j >= lanmax)
-        {
-            // Maximum dimension of Krylov subspace exceeded
-            if (neig < k) { *info = -1; }
-            break;
-        }
-
-        // Increase the dimension of the Krylov subspace.
-        // If any Ritz values have converged then try to estimate the average
-        // number of iterations per converged Ritz value.
-        // Else increase the dimension by 50%.
-        if (neig > 1) {
-            dj = fminf(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
-            dj = fminf(100, fmaxf(2, dj));
-        } else {
-            dj = j / 2;
-            dj = fminf(100, fmaxf(10, dj));
-        }
-        j = fminf(j + dj, lanmax);
-    }
-
-    // Calculate singular vectors if requested
-    if ((neig >= k || *info > 0) && (jobu || jobv)) {
-        lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        sritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
-    }
-
-    k = neig;
-    nlandim = j;
-}
-
-
-void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d aprod,
-             double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
-             double tolin, double* work, int lwork, int* iwork,
-             double* doption, int* ioption, int* info, double* dparm, int* iparm,
-             uint64_t* rng_state)
-{
-    // Parameters
-    int int1 = 1, int0 = 0;
-
-    // Local variables
-    int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
-    double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
-
-    // Set machine dependent constants
-    eps = DBL_EPSILON;
-    eps34 = pow(eps, 3.0/4.0);
-    epsn = (double)fmax(m, n) * eps / 2.0;
-    epsn2 = sqrt((double)fmax(m, n)) * eps / 2.0;
-    sfmin = DBL_MIN;
-
-    // Guard against absurd arguments
-    lanmax = fmin(fmin(n + 1, m + 1), kmax);
-    tol = fmin(1.0, fmax(16.0 * eps, tolin));
-    anorm = 0.0;
-
-    // Set pointers into work array
-    ibnd = 0;
-    ib = ibnd + lanmax + 1;
-    ib1 = ib + 2 * lanmax;
-    ip = ib1 + 2 * lanmax;
-    iq = ip + (lanmax + 1) * (lanmax + 1);
-    iwrk = iq + lanmax * lanmax;
-    lwrk = lwork - iwrk + 1;
-
-    // Zero out work array sections
-    for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++)
-    {
-        work[i] = 0.0;
-    }
-
-    // Set up random starting vector if none is provided by the user
-    rnorm = dnrm2_(&m, &U[0], &int1);  // U(:,0) in 0-based indexing
-    if (rnorm == 0.0)
-    {
-        dgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, dparm, iparm, &ierr, ioption[0], &anorm, &work[iwrk], rng_state);
-    }
-
-    *info = 0;
-    neig = 0;
-    jold = 0;
-    j = fmin(k + fmax(8, k) + 1, lanmax);
-
-    // Iterate until convergence...
-    while (neig < k)
-    {
-        // Compute bidiagonalization A*V_{j} = U_{j+1}*B_{j}
-        dlanbpro(m, n, jold, &j, aprod, U, ldu, V, ldv, &work[ib], lanmax, &rnorm, doption, ioption, &work[iwrk], iwork, dparm, iparm, &ierr, rng_state);
-        jold = j;
-
-        // Compute and analyze SVD(B) and error bounds
-        int two_lanmax = 2 * lanmax;
-        dcopy_(&two_lanmax, &work[ib], &int1, &work[ib1], &int1);
-
-        // Zero out bounds array
-        for (i = 0; i < j + 1; i++) { work[ibnd + i] = 0.0; }
-
-        // QR factorization of bidiagonal matrix
-        dbdqr((j == fmin(m, n)), 0, j, &work[ib1], &work[ib1 + lanmax], &work[ibnd + j - 1], &work[ibnd + j], &work[ip], lanmax + 1);
-
-        // SVD of bidiagonal matrix
-        dbdsqr_("U", &j, &int0, &int1, &int0, &work[ib1], &work[ib1 + lanmax], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
-
-        // Update anorm estimate
-        if (j > 5)
-        {
-            anorm = work[ib1];
-        } else {
-            anorm = fmax(anorm, work[ib1]);
-        }
-
-        // Scale error bounds by rnorm
-        for (i = 0; i < j; i++) { work[ibnd + i] = fabs(rnorm * work[ibnd + i]); }
-
-        // Refine error bounds using the "Gap theorem"
-        drefinebounds(fmin(m, n), j, &work[ib1], &work[ibnd], epsn * anorm, eps34);
-
-        // Determine the number of converged singular values
-        for (i = 0; i < fmin(j, k); i++) { bnd[i] = work[ibnd + i]; }
-
-        i = 0;
-        neig = 0;
-        while (i < fmin(j, k))
-        {
-            if (work[ibnd + i] <= tol * work[ib1 + i])
-            {
-                sigma[neig] = work[ib1 + i];
-                neig++;
-                i++;
-            } else {
-                i = k;  // Break out of loop
+                break;
             }
         }
 
@@ -279,20 +136,163 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
         // Else increase the dimension by 50%.
         if (neig > 1)
         {
-            dj = fmin(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
-            dj = fmin(100, fmax(2, dj));
+            dj = int_min(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
+            dj = int_min(100, fmaxf(2, dj));
         } else {
             dj = j / 2;
-            dj = fmin(100, fmax(10, dj));
+            dj = int_min(100, fmaxf(10, dj));
         }
-        j = fmin(j + dj, lanmax);
+        j = int_min(j + dj, lanmax);
     }
 
     // Calculate singular vectors if requested
-    if ((neig >= k || *info > 0) && (jobu || jobv))
+    if (((neig >= k) || (*info > 0)) && (jobu || jobv))
     {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        dritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        sritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
+    }
+
+    k = neig;
+    nlandim = j;
+}
+
+
+void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d aprod,
+             double* U, int ldu, double* sigma, double* bnd, double* V, int ldv,
+             double tolin, double* work, int lwork, int* iwork,
+             double* doption, int* ioption, int* info, double* dparm, int* iparm,
+             uint64_t* rng_state)
+{
+    // Parameters
+    int int1 = 1, int0 = 0;
+
+    // Local variables
+    int i, j, dj, jold, ibnd, ib, ib1, iwrk, ierr, ip, iq, neig, lwrk, lapinfo, lanmax, nlandim;
+    double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
+
+    // Set machine dependent constants
+    eps = DBL_EPSILON;
+    eps34 = pow(eps, 3.0/4.0);
+    epsn = fmax(m, n) * eps / 2.0;
+    epsn2 = sqrt(fmax(m, n)) * eps / 2.0;
+    sfmin = DBL_MIN;
+
+    // Guard against absurd arguments
+    lanmax = int_min(int_min(n + 1, m + 1), kmax);
+    tol = fmin(1.0, fmax(16.0 * eps, tolin));
+    anorm = 0.0;
+
+    // Set pointers into work array
+    ibnd = 0;
+    ib = ibnd + lanmax + 1;
+    ib1 = ib + 2 * lanmax;
+    ip = ib1 + 2 * lanmax;
+    iq = ip + (lanmax + 1) * (lanmax + 1);
+    iwrk = iq + lanmax * lanmax;
+    lwrk = lwork - iwrk;
+
+    // Zero out work array sections
+    for (i = 0; i < 7 * lanmax + 2 + 2 * lanmax * lanmax; i++) { work[i] = 0.0; }
+
+    // Set up random starting vector if none is provided by the user
+    rnorm = dnrm2_(&m, &U[0], &int1);  // U(:,0) in 0-based indexing
+    if (rnorm == 0.0)
+    {
+        dgetu0(0, m, n, 0, 1, &U[0], &rnorm, U, ldu, aprod, dparm, iparm, &ierr, ioption[0], &anorm, &work[iwrk], rng_state);
+    }
+
+    *info = 0;
+    neig = 0;
+    jold = 0;
+    j = int_min(k + int_max(k, 8) + 1 , lanmax);
+
+    // Iterate until convergence...
+    while (neig < k)
+    {
+        // Compute bidiagonalization A*V_{j} = U_{j+1}*B_{j}
+        dlanbpro(m, n, jold, &j, aprod, U, ldu, V, ldv, &work[ib], lanmax, &rnorm, doption, ioption, &work[iwrk], iwork, dparm, iparm, &ierr, rng_state);
+        jold = j;
+
+        // Compute and analyze SVD(B) and error bounds
+        int two_lanmax = 2 * lanmax;
+        dcopy_(&two_lanmax, &work[ib], &int1, &work[ib1], &int1);
+
+        // Zero out bounds array
+        for (i = 0; i < j + 1; i++) { work[ibnd + i] = 0.0; }
+
+        // QR factorization of bidiagonal matrix
+        dbdqr((j == int_min(m, n)), 0, j, &work[ib1], &work[ib1 + lanmax], &work[ibnd + j - 1], &work[ibnd + j], &work[ip], lanmax + 1);
+
+        // SVD of bidiagonal matrix
+        dbdsqr_("U", &j, &int0, &int1, &int0, &work[ib1], &work[ib1 + lanmax], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);
+
+        // Update anorm estimate
+        if (j > 5)
+        {
+            anorm = work[ib1];
+        } else {
+            anorm = fmax(anorm, work[ib1]);
+        }
+
+        // Scale error bounds by rnorm
+        for (i = 0; i < j+1; i++) { work[ibnd + i] = fabs(rnorm * work[ibnd + i]); }
+
+        // Refine error bounds using the "Gap theorem"
+        drefinebounds(int_min(m, n), j, &work[ib1], &work[ibnd], epsn * anorm, eps34);
+
+        // Determine the number of converged singular values
+        for (i = 0; i < int_min(j, k); i++) { bnd[i] = work[ibnd + i]; }
+
+        i = 0;
+        neig = 0;
+        while (i < int_min(j, k))
+        {
+            if (work[ibnd + i] <= tol * work[ib1 + i])
+            {
+                sigma[neig] = work[ib1 + i];
+                neig++;
+                i++;
+            } else {
+                break;
+            }
+        }
+
+        // Test if an invariant subspace has been found or
+        // if the workspace has been exhausted.
+        if (ierr < 0)
+        {
+            // Invariant subspace found
+            if (j < k) { *info = j; }
+            break;
+        }
+
+        if (j >= lanmax)
+        {
+            // Maximum dimension of Krylov subspace exceeded
+            if (neig < k) { *info = -1; }
+            break;
+        }
+
+        // Increase the dimension of the Krylov subspace.
+        // If any Ritz values have converged then try to estimate the average
+        // number of iterations per converged Ritz value.
+        // Else increase the dimension by 50%.
+        if (neig > 1)
+        {
+            dj = int_min(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
+            dj = int_min(100, fmax(2, dj));
+        } else {
+            dj = j / 2;
+            dj = int_min(100, fmax(10, dj));
+        }
+        j = int_min(j + dj, lanmax);
+    }
+
+    // Calculate singular vectors if requested
+    if (((neig >= k) || (*info > 0)) && (jobu || jobv))
+    {
+        lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
+        dritzvec(1, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     k = neig;

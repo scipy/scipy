@@ -2,6 +2,11 @@
 #include <float.h>
 #include "lanbpro.h"
 
+
+static inline int int_min(const int a, const int b) { return a < b ? a : b; }
+static inline int int_max(const int a, const int b) { return a > b ? a : b; }
+
+
 /**
  * @brief Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
  *
@@ -136,10 +141,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
     const float kappa = sqrtf(2.0f) / 2.0f;
 
     // Machine constants
-    const float eps = FLT_EPSILON;
+    const float eps = FLT_EPSILON*0.5f;
     const float eps34 = powf(eps, 0.75f);
-    const float epsn = fmaxf(m, n) * eps;
-    const float epsn2 = sqrtf(fmaxf(m, n)) * eps;
+    const float epsn = (float)int_max(m, n) * eps;
+    const float epsn2 = sqrtf((float)int_max(m, n)) * eps;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -179,6 +184,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         anorm = hypotf(B[0], B[ldb]);
         if (anorm <= 0.0f) {
             *ierr = -1;
+            doption[2] = anorm;
             return;
         }
     } else {
@@ -191,18 +197,17 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
 
     // Get starting vector if needed
     if (*rnorm == 0.0f) {
-        sgetu0(0, m, n, k0, 3, &U[k0 * ldu], rnorm, U, ldu, aprod,
-               dparm, iparm, ierr, cgs, &anormest, work, rng_state);
+        sgetu0(0, m, n, k0, 3, &U[k0 * ldu], rnorm, U, ldu, aprod, dparm, iparm, ierr, cgs, &anormest, work, rng_state);
         anorm = fmaxf(anorm, anormest);
     }
 
     // Set pointers into work array
     // work layout: [mu(k+1), nu(k+1), workspace...]
     imu = 0;
-    inu = imu + *k + 1;
-    is = inu + 2 * (*k + 1);
+    inu = *k + 1;
+    is = 2 * (*k + 1);
     iidx = 0;
-    for (i = 0; i < fmaxf(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0f; }
+    for (i = 0; i < int_max(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0f; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
 
     // Prepare Lanczos iteration
@@ -236,9 +241,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
             *ierr = k0;
         }
 
-        iwork[iidx] = 0;
-        iwork[iidx + 1] = k0 - 1;
-        iwork[iidx + 2] = k0;
+    iwork[iidx] = 0;
+    iwork[iidx + 1] = k0 - 1;
+    iwork[iidx + 2] = k0;
+    iwork[iidx + 3] = k0;
 
         sscal_(&m, rnorm, &U[k0 * ldu], &ione);
         sreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &work[is], cgs);
@@ -250,7 +256,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         // Estimate ||B||_2^2 as ||B^T * B||_1
         B[k0 - 1 + ldb] = beta;
         amax = 0.0f;
-        for (j = 0; j < k0; j++) {
+    for (j = 0; j < k0; j++) {
             amax = fmaxf(amax, fmaxf(B[j], B[j + ldb]));
             if (j == 0) {
                 anorm = fmaxf(anorm, FUDGE * alpha);
@@ -265,7 +271,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                 anorm = fmaxf(anorm, a1);
             }
         }
-        j0 = k0;
+    j0 = k0 - 1;
     }
 
     numax = 0.0f;
@@ -274,7 +280,6 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
     // Start Lanczos bidiagonalization iteration
     for (j = j0; j < *k; j++)
     {
-
         // alpha_j * v_j = A^T * u_j - beta_j * v_{j-1}
         aprod(1, m, n, &U[j * ldu], &V[j * ldv], dparm, iparm);
 
@@ -295,7 +300,8 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                     s = sdot_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     float neg_s = -s;
                     saxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    if (beta != 0.0f) {
+                    if (beta != 0.0f)
+                    {
                         beta = beta + s;
                         B[j - 1 + ldb] = beta;
                     }
@@ -335,10 +341,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                 iwork[iidx] = 0;
                 iwork[iidx + 1] = j - 1;
                 iwork[iidx + 2] = j;
+                iwork[iidx + 3] = j;
             } else if (!force_reorth) {
                 scompute_int(&work[inu], j - 1, delta, eta, &iwork[iidx]);
             }
-
             sreorth(n, j - 1, V, ldv, &V[j * ldv], &alpha, &iwork[iidx], kappa, &work[is], cgs);
             sset_mu(j - 1, &work[inu], &iwork[iidx], eps);
             numax = eta;
@@ -347,7 +353,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         }
 
         // Check whether an invariant subspace was found
-        if ((alpha < anorm * epsn) && (j < *k - 1)) {
+    if ((alpha < anorm * epsn) && (j < *k - 1)) {
             *rnorm = alpha;
             alpha = 0.0f;
 
@@ -359,8 +365,9 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                 // in span(A^T) orthogonal to span(V(:,1:j-1)).
                 // Most likely span(V(:,1:j-1)) is an invariant
                 // subspace.
-                *k = j - 1;
-                *ierr = -j;
+                *k = j;
+                *ierr = -j-1;
+                doption[2] = anorm;
                 return;
             } else {
                 // We have managed to generate a random vector
@@ -430,9 +437,10 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         if ((full_reorth || mumax > delta || force_reorth) && beta != 0.0f) {
             if ((full_reorth) || (eta == 0.0f))
             {
-                iwork[iidx] = 1;
+                iwork[iidx] = 0;
                 iwork[iidx + 1] = j;
                 iwork[iidx + 2] = j + 1;
+                iwork[iidx + 3] = j + 1;
             } else if (!force_reorth) {
                 scompute_int(&work[imu], j, delta, eta, &iwork[iidx]);
             } else {
@@ -441,6 +449,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                     if (iwork[iidx + i] == j)
                     {
                         iwork[iidx + i] = j + 1;
+                        iwork[iidx + i + 1] = j + 1;
                         break;
                     }
                 }
@@ -454,10 +463,9 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         }
 
         // Check whether an invariant subspace was found
-        if ((beta < anorm * epsn) && (j < *k - 1)) {
+    if ((beta < anorm * epsn) && (j < *k - 1)) {
             *rnorm = beta;
             beta = 0.0f;
-
             // Try to build an orthogonal subspace starting with a random vector
             sgetu0(0, m, n, j, 3, &U[(j + 1) * ldu], &beta, U, ldu, aprod, dparm, iparm, ierr, cgs, &anormest, &work[is], rng_state);
 
@@ -466,8 +474,9 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                 // in span(A) orthogonal to span(U(:,1:j)).
                 // Most likely span(U(:,1:j)) is an invariant
                 // subspace.
-                *k = j;
-                *ierr = -j;
+                *k = j+1;
+                *ierr = -j-1;
+                doption[2] = anorm;
                 return;
             } else {
                 // We have managed to generate a random vector
@@ -488,7 +497,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         *rnorm = beta;
     }
 
-    *ierr = 0;
+    doption[2] = anorm;
 }
 
 
@@ -530,10 +539,10 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     const double kappa = sqrt(2.0) / 2.0;
 
     // Machine constants
-    const double eps = DBL_EPSILON;
+    const double eps = DBL_EPSILON*0.5;
     const double eps34 = pow(eps, 0.75);
-    const double epsn = fmax(m, n) * eps;
-    const double epsn2 = sqrt(fmax(m, n)) * eps;
+    const double epsn = int_max(m, n) * eps;
+    const double epsn2 = sqrt(int_max(m, n)) * eps;
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
@@ -573,6 +582,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         anorm = hypot(B[0], B[ldb]);
         if (anorm <= 0.0) {
             *ierr = -1;
+            doption[2] = anorm;
             return;
         }
     } else {
@@ -592,10 +602,10 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     // Set pointers into work array
     // work layout: [mu(k+1), nu(k+1), workspace...]
     imu = 0;
-    inu = imu + *k + 1;
-    is = inu + 2 * (*k + 1);
+    inu = *k + 1;
+    is = 2 * (*k + 1);
     iidx = 0;
-    for (i = 0; i < fmax(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0; }
+    for (i = 0; i < int_max(m, n) + 2 * (*k) + 2; i++) { work[i] = 0.0; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
 
     // Prepare Lanczos iteration
@@ -632,6 +642,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         iwork[iidx] = 0;
         iwork[iidx + 1] = k0 - 1;
         iwork[iidx + 2] = k0;
+        iwork[iidx + 3] = k0;
 
         dscal_(&m, rnorm, &U[k0 * ldu], &ione);
         dreorth(m, k0, U, ldu, &U[k0 * ldu], rnorm, &iwork[iidx], kappa, &work[is], cgs);
@@ -658,7 +669,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 anorm = fmax(anorm, a1);
             }
         }
-        j0 = k0;
+        j0 = k0 - 1;
     }
 
     numax = 0.0;
@@ -667,7 +678,6 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
     // Start Lanczos bidiagonalization iteration
     for (j = j0; j < *k; j++)
     {
-
         // alpha_j * v_j = A^T * u_j - beta_j * v_{j-1}
         aprod(1, m, n, &U[j * ldu], &V[j * ldv], dparm, iparm);
 
@@ -688,7 +698,8 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                     s = ddot_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     double neg_s = -s;
                     daxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    if (beta != 0.0) {
+                    if (beta != 0.0)
+                    {
                         beta = beta + s;
                         B[j - 1 + ldb] = beta;
                     }
@@ -718,9 +729,8 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         // Update the nu recurrence
         if ((!full_reorth) && (alpha != 0.0))
         {
-            dupdate_nu(&numax, &work[imu], &work[inu], j, &B[0], &B[ldb], anorm, epsn2);
+              dupdate_nu(&numax, &work[imu], &work[inu], j, &B[0], &B[ldb], anorm, epsn2);
         }
-
         // Reorthogonalize if necessary
         if ((full_reorth || numax > delta || force_reorth) && alpha != 0.0) {
             if ((full_reorth) || (eta == 0.0))
@@ -728,10 +738,10 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 iwork[iidx] = 0;
                 iwork[iidx + 1] = j - 1;
                 iwork[iidx + 2] = j;
+                iwork[iidx + 3] = j;
             } else if (!force_reorth) {
                 dcompute_int(&work[inu], j - 1, delta, eta, &iwork[iidx]);
             }
-
             dreorth(n, j - 1, V, ldv, &V[j * ldv], &alpha, &iwork[iidx], kappa, &work[is], cgs);
             dset_mu(j - 1, &work[inu], &iwork[iidx], eps);
             numax = eta;
@@ -752,8 +762,9 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 // in span(A^T) orthogonal to span(V(:,1:j-1)).
                 // Most likely span(V(:,1:j-1)) is an invariant
                 // subspace.
-                *k = j - 1;
-                *ierr = -j;
+                *k = j;
+                *ierr = -j-1;
+                doption[2] = anorm;
                 return;
             } else {
                 // We have managed to generate a random vector
@@ -778,14 +789,14 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
 
         // beta_{j+1} * u_{j+1} = A * v_j - alpha_j * u_j
         aprod(0, m, n, &V[j * ldv], &U[(j + 1) * ldu], dparm, iparm);
-
         double neg_alpha = -alpha;
         daxpy_(&m, &neg_alpha, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
         beta = dnrm2_(&m, &U[(j + 1) * ldu], &ione);
 
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha)) {
-            for (i = 0; i < elr; i++) {
+            for (i = 0; i < elr; i++)
+            {
                 s = ddot_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 double neg_s = -s;
                 daxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
@@ -813,19 +824,19 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
             a1 = amax * sqrt(a1 * a1 + pow(B[j + ldb] / amax, 2) + a1 * B[j - 1 + ldb] / amax);
         }
         anorm = fmax(anorm, a1);
-
         // Update the mu recurrence
         if ((!full_reorth) && (beta != 0.0)) {
             dupdate_mu(&mumax, &work[imu], &work[inu], j, &B[0], &B[ldb], anorm, epsn2);
         }
 
         // Reorthogonalize u_{j+1} if necessary
-        if ((full_reorth || mumax > delta || force_reorth) && beta != 0.0) {
+        if ((full_reorth || (mumax > delta) || force_reorth) && (beta != 0.0)) {
             if ((full_reorth) || (eta == 0.0))
             {
-                iwork[iidx] = 1;
+                iwork[iidx] = 0;
                 iwork[iidx + 1] = j;
                 iwork[iidx + 2] = j + 1;
+                iwork[iidx + 3] = j + 1;
             } else if (!force_reorth) {
                 dcompute_int(&work[imu], j, delta, eta, &iwork[iidx]);
             } else {
@@ -834,6 +845,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                     if (iwork[iidx + i] == j)
                     {
                         iwork[iidx + i] = j + 1;
+                        iwork[iidx + i + 1] = j + 1;
                         break;
                     }
                 }
@@ -850,7 +862,6 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         if ((beta < anorm * epsn) && (j < *k - 1)) {
             *rnorm = beta;
             beta = 0.0;
-
             // Try to build an orthogonal subspace starting with a random vector
             dgetu0(0, m, n, j, 3, &U[(j + 1) * ldu], &beta, U, ldu, aprod, dparm, iparm, ierr, cgs, &anormest, &work[is], rng_state);
 
@@ -859,8 +870,9 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 // in span(A) orthogonal to span(U(:,1:j)).
                 // Most likely span(U(:,1:j)) is an invariant
                 // subspace.
-                *k = j;
-                *ierr = -j;
+                *k = j+1;
+                *ierr = -j-1;
+                doption[2] = anorm;
                 return;
             } else {
                 // We have managed to generate a random vector
@@ -872,7 +884,9 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 force_reorth = 1;
                 if (delta > 0.0) { full_reorth = 0; }
             }
-        } else if (!full_reorth && (j < *k - 1) && (delta * beta < anorm * eps)) { *ierr = j; }
+        } else if (!full_reorth && (j < *k - 1) && (delta * beta < anorm * eps)) {
+            *ierr = j;
+        }
 
         B[j + ldb] = beta;
         if ((beta != 0.0) && (beta != 1.0)) {
@@ -881,7 +895,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         *rnorm = beta;
     }
 
-    *ierr = 0;
+    doption[2] = anorm;
 }
 
 
