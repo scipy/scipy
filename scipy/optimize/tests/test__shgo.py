@@ -577,26 +577,25 @@ class TestShgoArguments:
         """
         obj = MaratosTestArgs("a", 234)
         obj.bounds = Bounds([-5, -5], [5, 5])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-
-            res2 = minimize(
-                obj.fun,
-                [4.0, 4.0],
-                constraints=obj.constr,
-                bounds=obj.bounds,
-                method='trust-constr',
-                args=("a", 234),
-                jac=obj.grad
-            )
+        res2 = minimize(
+            obj.fun,
+            [4.0, 4.0],
+            constraints=obj.constr,
+            bounds=obj.bounds,
+            method='trust-constr',
+            args=("a", 234),
+            jac=obj.grad
+        )
         assert_allclose(res2.x, obj.x_opt, atol=1e-6)
 
         obj = MaratosTestArgs("a", 234)
         obj.bounds = Bounds([-10., -10.], [10., 10.])
         with warnings.catch_warnings():
+            # warnings are from initialization of NonlinearConstraint and
+            # poor initialization of the constraint by shgo
             warnings.simplefilter(
                 "ignore",
-                (OptimizeWarning, RuntimeWarning, UserWarning)
+                (OptimizeWarning, RuntimeWarning)
             )
             res = shgo(
                 func=obj.fun,
