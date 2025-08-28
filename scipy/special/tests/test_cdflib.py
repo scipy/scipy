@@ -672,6 +672,8 @@ class TestNoncentralTFunctions:
         (980, 3.8, 15, 1.0),
         (980, 38, 0.0015, 3.0547506e-316),
         (980, 38, 0.15, 8.6191646313e-314),
+        # revisit when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
         pytest.param(980, 38, 1.5, 1.1824454111413493e-291,
                      marks=pytest.mark.xfail(
                         reason="Bug in underlying Boost math implementation")),
@@ -693,6 +695,8 @@ class TestNoncentralTFunctions:
 
     @pytest.mark.parametrize(
         "df, nc, x, expected, rtol",
+        # revisit tolerances when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
         [[3., 5., -2., 1.5645373999149622e-09, 2e-8],
          [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
          [1e-5, -6., 2., 0.9999999990135003, 1e-13],
