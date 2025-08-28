@@ -127,7 +127,7 @@ void sbdqr(const int ignorelast, const int jobq, const int n, float* restrict D,
     {
         slartg_(&D[i], &E[i], &cs, &sn, &r);
         D[i] = r;
-        E[i] = sn*D[i+1];
+        E[i]   = sn*D[i+1];
         D[i+1] = cs*D[i+1];
         if (jobq)
         {
@@ -135,9 +135,9 @@ void sbdqr(const int ignorelast, const int jobq, const int n, float* restrict D,
             for (int j = 0; j <= i; j++)
             {
                 Qt[i+1 + j*ldq] = -sn*Qt[i + j*ldq];
-                Qt[i + j*ldq] = cs*Qt[i + j*ldq];
+                Qt[i   + j*ldq] =  cs*Qt[i + j*ldq];
             }
-            Qt[i + (i+1)*ldq] = sn;
+            Qt[i   + (i+1)*ldq] = sn;
             Qt[i+1 + (i+1)*ldq] = cs;
         }
     }
@@ -151,13 +151,13 @@ void sbdqr(const int ignorelast, const int jobq, const int n, float* restrict D,
         if (jobq)
         {
             // Apply the last Givens rotation to Qt.
-            for (int j = 0; j < n-1; j++)
+            for (int j = 0; j < n; j++)
             {
-                Qt[n-1 + j*ldq] = -sn*Qt[n-2 + j*ldq];
-                Qt[n-2 + j*ldq] = cs*Qt[n-2 + j*ldq];
+                Qt[n   + j*ldq] = -sn*Qt[n-1 + j*ldq];
+                Qt[n-1 + j*ldq] =  cs*Qt[n-1 + j*ldq];
             }
-            Qt[n-2 + (n-1)*ldq] = sn;
-            Qt[n-1 + (n-1)*ldq] = cs;
+            Qt[n-1 + n*ldq] = sn;
+            Qt[n   + n*ldq] = cs;
         }
     }
 
@@ -216,52 +216,78 @@ void srefinebounds(const int n, const int k, float* restrict theta, float* restr
 
 void scompute_int(float* restrict mu, const int j, const float delta, const float eta, int* restrict indices)
 {
-    // If exists find peaks higher than delta and check for the skirts of
-    // the peaks that are higher than eta on both sides for all peaks.
 
-    if (delta < eta) { return; }  // Malformed input
-    int i = 0, ip = 0, k = 0, s = 0;
-    indices[0] = 0;
-    while (i < j) {
-        // Find next k > i where |mu[k]| > delta
-        k = -1;
-        for (int kk = i; kk < j; ++kk) {
-            if (fabs(mu[kk]) > delta) { k = kk; break; }
+    if (delta < eta) { return; } // Malformed input
+
+    int interval_count = 0;
+    int current_pos = 0;
+
+    // Process the array from left to right
+    while (current_pos <= j) {
+        // Find the next peak (value > delta)
+        int peak_idx = -1;
+        for (int k = current_pos; k <= j; k++) {
+            if (fabsf(mu[k]) > delta) {
+                peak_idx = k;
+                break;
+            }
         }
-        // No peaks, quit while loop
-        if (k == -1) { break; }
-        // Peak is at k, check right side of the peak for a drop below eta
-        s = k;
-        for (int ss = k; ss >= i; ss--) {
-            if (fabs(mu[ss]) < eta) { s = ss+1; break; }
+
+        // If no peak found, we're done
+        if (peak_idx == -1) {
+            break;
         }
-        // 10
-        indices[ip++] = s;
-        // Left side of the peak
-        i = j;
-        for (int kk = k; kk < j; kk++) {
-            if (fabs(mu[kk]) < eta) { i = kk; break; }
+
+        // Find the left edge of the interval
+        // Go backwards from the peak to find where values drop below eta
+        int left_edge = peak_idx;
+        for (int k = peak_idx; k >= current_pos; k--)
+        {
+            if (fabsf(mu[k]) >= eta)
+            {
+                left_edge = k;
+            } else {
+                break;
+            }
         }
-        // 20
-        indices[ip++] = i-1;
+
+        // Find the right edge of the interval
+        // Go forwards from the peak to find where values drop below eta
+        int right_edge = peak_idx;
+        for (int k = peak_idx; k <= j; k++) {
+            if (fabsf(mu[k]) >= eta)
+            {
+                right_edge = k;
+            } else {
+                break;
+            }
+        }
+
+        // Step 4: Store the interval [left_edge, right_edge]
+        indices[interval_count * 2] = left_edge;
+        indices[interval_count * 2 + 1] = right_edge;
+        interval_count++;
+
+        // Step 5: Move past this interval for the next search
+        current_pos = right_edge + 1;
     }
-    //30
-    // Insert a sentinel marking the end
-    indices[ip++] = j;
+
+    // Add a sentinel interval to mark the end of intervals
+    indices[interval_count * 2]     = j + 1;
+    indices[interval_count * 2 + 1] = j + 1;
+
 }
 
 
 void sset_mu(const int k, float* restrict mu, int* const restrict indices, const float val)
 {
     int i = 0, p, q;
-    while ((indices[i] < k) && (indices[i] > 0))
+    while (indices[i] <= k)
     {
+        if ((i > 1) && (indices[i+1] == 0)) { break; }
         p = indices[i];
         q = indices[i+1];
-        for (int j = p; j <= q; j++)
-        {
-            mu[j] = val;
-        }
+        for (int j = p; j <= q; j++) { mu[j] = val; }
         i += 2;
     }
 }
@@ -284,19 +310,19 @@ supdate_mu(
         d = eps1 * (hypotf(alpha[j], beta[j]) + alpha[0]) + eps1 * anorm;
         mu[0] = (mu[0] + copysignf(d, mu[0])) / beta[j];
         *mumax = fabsf(mu[0]);
-        for (int k = 1; k < j - 1; k++)
+        for (int k = 1; k < j; k++)
         {
-            mu[k] = alpha[k]*nu[k] +beta[k-1]*nu[k-1]-alpha[j]*mu[k];
+            mu[k] = alpha[k]*nu[k] + beta[k-1]*nu[k-1] - alpha[j]*mu[k];
             d = eps1 * (hypotf(alpha[j], beta[j]) + hypotf(alpha[k], beta[k-1])) + eps1 * anorm;
             mu[k] = (mu[k] + copysignf(d, mu[k])) / beta[j];
-            *mumax = fmax(*mumax, fabsf(mu[k]));
+            *mumax = fmaxf(*mumax, fabsf(mu[k]));
         }
-        mu[j-1] = beta[j-1] * nu[j-1];
+        mu[j] = beta[j-1] * nu[j-1];
         d = eps1 * (hypotf(alpha[j], beta[j]) + hypotf(alpha[j], beta[j-1])) + eps1 * anorm;
-        mu[j-1] = (mu[j-1] + copysignf(d, mu[j-1])) / beta[j];
-        *mumax = fmaxf(*mumax, fabsf(mu[j-1]));
+        mu[j] = (mu[j] + copysignf(d, mu[j])) / beta[j];
+        *mumax = fmaxf(*mumax, fabsf(mu[j]));
     }
-    mu[j] = 1.0f;
+    mu[j+1] = 1.0f;
 }
 
 
@@ -309,14 +335,14 @@ void supdate_nu(
     if (j > 0)
     {
         *numax = 0.0f;
-        for (int k = 0; k < j-1; k++)
+        for (int k = 0; k < j; k++)
         {
-            nu[k] += beta[k] * mu[k+1] + alpha[k] * mu[k] - beta[j-1] * nu[k];
+            nu[k] = beta[k] * mu[k+1] + alpha[k] * mu[k] - beta[j-1] * nu[k];
             d = eps1 * (hypotf(alpha[k], beta[k]) + hypotf(alpha[j], beta[j-1])) + eps1 * anorm;
-            nu[k] = (nu[k] + copysignf(d, nu[k])) / (alpha[j]);
-            *numax = fmaxf(*numax, fabsf(nu[k]));
+            nu[k] = (nu[k] + copysignf(d, nu[k])) / alpha[j];
+            *numax = fmaxf(*numax, fabs(nu[k]));
         }
-        nu[j-1] = 1.0f;
+        nu[j] = 1.0f;
     }
 }
 
@@ -395,7 +421,7 @@ void dbdqr(const int ignorelast, const int jobq, const int n, double* restrict D
     {
         dlartg_(&D[i], &E[i], &cs, &sn, &r);
         D[i] = r;
-        E[i] = sn*D[i+1];
+        E[i]   = sn*D[i+1];
         D[i+1] = cs*D[i+1];
         if (jobq)
         {
@@ -403,9 +429,9 @@ void dbdqr(const int ignorelast, const int jobq, const int n, double* restrict D
             for (int j = 0; j <= i; j++)
             {
                 Qt[i+1 + j*ldq] = -sn*Qt[i + j*ldq];
-                Qt[i + j*ldq] = cs*Qt[i + j*ldq];
+                Qt[i   + j*ldq] =  cs*Qt[i + j*ldq];
             }
-            Qt[i + (i+1)*ldq] = sn;
+            Qt[i   + (i+1)*ldq] = sn;
             Qt[i+1 + (i+1)*ldq] = cs;
         }
     }
@@ -419,13 +445,13 @@ void dbdqr(const int ignorelast, const int jobq, const int n, double* restrict D
         if (jobq)
         {
             // Apply the last Givens rotation to Qt.
-            for (int j = 0; j < n-1; j++)
+            for (int j = 0; j < n; j++)
             {
-                Qt[n-1 + j*ldq] = -sn*Qt[n-2 + j*ldq];
-                Qt[n-2 + j*ldq] = cs*Qt[n-2 + j*ldq];
+                Qt[n   + j*ldq] = -sn*Qt[n-1 + j*ldq];
+                Qt[n-1 + j*ldq] =  cs*Qt[n-1 + j*ldq];
             }
-            Qt[n-2 + (n-1)*ldq] = sn;
-            Qt[n-1 + (n-1)*ldq] = cs;
+            Qt[n-1 + n*ldq] = sn;
+            Qt[n   + n*ldq] = cs;
         }
     }
 
@@ -484,52 +510,78 @@ void drefinebounds(const int n, const int k, double* restrict theta, double* res
 
 void dcompute_int(double* restrict mu, const int j, const double delta, const double eta, int* restrict indices)
 {
-    // If exists find peaks higher than delta and check for the skirts of
-    // the peaks that are higher than eta on both sides for all peaks.
 
-    if (delta < eta) { return; }  // Malformed input
-    int i = 0, ip = 0, k = 0, s = 0;
-    indices[0] = 0;
-    while (i < j) {
-        // Find next k > i where |mu[k]| > delta
-        k = -1;
-        for (int kk = i; kk < j; ++kk) {
-            if (fabs(mu[kk]) > delta) { k = kk; break; }
+    if (delta < eta) { return; } // Malformed input
+
+    int interval_count = 0;
+    int current_pos = 0;
+
+    // Process the array from left to right
+    while (current_pos <= j) {
+        // Find the next peak (value > delta)
+        int peak_idx = -1;
+        for (int k = current_pos; k <= j; k++) {
+            if (fabs(mu[k]) > delta) {
+                peak_idx = k;
+                break;
+            }
         }
-        // No peaks, quit while loop
-        if (k == -1) { break; }
-        // Peak is at k, check right side of the peak for a drop below eta
-        s = k;
-        for (int ss = k; ss >= i; ss--) {
-            if (fabs(mu[ss]) < eta) { s = ss+1; break; }
+
+        // If no peak found, we're done
+        if (peak_idx == -1) {
+            break;
         }
-        // 10
-        indices[ip++] = s;
-        // Left side of the peak
-        i = j;
-        for (int kk = k; kk < j; kk++) {
-            if (fabs(mu[kk]) < eta) { i = kk; break; }
+
+        // Find the left edge of the interval
+        // Go backwards from the peak to find where values drop below eta
+        int left_edge = peak_idx;
+        for (int k = peak_idx; k >= current_pos; k--)
+        {
+            if (fabs(mu[k]) >= eta)
+            {
+                left_edge = k;
+            } else {
+                break;
+            }
         }
-        // 20
-        indices[ip++] = i-1;
+
+        // Find the right edge of the interval
+        // Go forwards from the peak to find where values drop below eta
+        int right_edge = peak_idx;
+        for (int k = peak_idx; k <= j; k++) {
+            if (fabs(mu[k]) >= eta)
+            {
+                right_edge = k;
+            } else {
+                break;
+            }
+        }
+
+        // Step 4: Store the interval [left_edge, right_edge]
+        indices[interval_count * 2] = left_edge;
+        indices[interval_count * 2 + 1] = right_edge;
+        interval_count++;
+
+        // Step 5: Move past this interval for the next search
+        current_pos = right_edge + 1;
     }
-    //30
-    // Insert a sentinel marking the end
-    indices[ip++] = j;
+
+    // Add a sentinel interval to mark the end of intervals
+    indices[interval_count * 2]     = j + 1;
+    indices[interval_count * 2 + 1] = j + 1;
+
 }
 
 
 void dset_mu(const int k, double* restrict mu, int* const restrict indices, const double val)
 {
     int i = 0, p, q;
-    while ((indices[i] < k) && (indices[i] > 0))
+    while (indices[i] <= k)
     {
+        if ((i > 1) && (indices[i+1] == 0)) { break; }
         p = indices[i];
         q = indices[i+1];
-        for (int j = p; j <= q; j++)
-        {
-            mu[j] = val;
-        }
+        for (int j = p; j <= q; j++) { mu[j] = val; }
         i += 2;
     }
 }
@@ -540,7 +592,6 @@ void dupdate_mu(
     double* restrict beta, const double anorm, const double eps1)
 {
     double d = 0.0;
-
     if (j == 0)
     {
         d = eps1 * (hypot(alpha[j], beta[j]) + alpha[0]) + eps1 * anorm;
@@ -551,19 +602,19 @@ void dupdate_mu(
         d = eps1 * (hypot(alpha[j], beta[j]) + alpha[0]) + eps1 * anorm;
         mu[0] = (mu[0] + copysign(d, mu[0])) / beta[j];
         *mumax = fabs(mu[0]);
-        for (int k = 1; k < j - 1; k++)
+        for (int k = 1; k < j; k++)
         {
-            mu[k] = alpha[k]*nu[k] +beta[k-1]*nu[k-1]-alpha[j]*mu[k];
+            mu[k] = alpha[k]*nu[k] + beta[k-1]*nu[k-1] - alpha[j]*mu[k];
             d = eps1 * (hypot(alpha[j], beta[j]) + hypot(alpha[k], beta[k-1])) + eps1 * anorm;
             mu[k] = (mu[k] + copysign(d, mu[k])) / beta[j];
             *mumax = fmax(*mumax, fabs(mu[k]));
         }
-        mu[j-1] = beta[j-1] * nu[j-1];
+        mu[j] = beta[j-1] * nu[j-1];
         d = eps1 * (hypot(alpha[j], beta[j]) + hypot(alpha[j], beta[j-1])) + eps1 * anorm;
-        mu[j-1] = (mu[j-1] + copysign(d, mu[j-1])) / beta[j];
-        *mumax = fmax(*mumax, fabs(mu[j-1]));
+        mu[j] = (mu[j] + copysign(d, mu[j])) / beta[j];
+        *mumax = fmax(*mumax, fabs(mu[j]));
     }
-    mu[j] = 1.0;
+    mu[j+1] = 1.0;
 }
 
 
@@ -576,13 +627,13 @@ void dupdate_nu(
     if (j > 0)
     {
         *numax = 0.0;
-        for (int k = 0; k < j-1; k++)
+        for (int k = 0; k < j; k++)
         {
-            nu[k] += beta[k] * mu[k+1] + alpha[k] * mu[k] - beta[j-1] * nu[k];
+            nu[k] = beta[k] * mu[k+1] + alpha[k] * mu[k] - beta[j-1] * nu[k];
             d = eps1 * (hypot(alpha[k], beta[k]) + hypot(alpha[j], beta[j-1])) + eps1 * anorm;
-            nu[k] = (nu[k] + copysign(d, nu[k])) / (alpha[j]);
+            nu[k] = (nu[k] + copysign(d, nu[k])) / alpha[j];
             *numax = fmax(*numax, fabs(nu[k]));
         }
-        nu[j-1] = 1.0;
+        nu[j] = 1.0;
     }
 }
