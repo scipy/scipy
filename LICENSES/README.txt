@@ -1,3 +1,8 @@
+LICENSE_getLebedevSphere.txt
+============================
+Applies to:
+- scipy/integrate/_lebedev.py
+
 LICENSE_NumPy.txt
 =================
 Applies to files copied from NumPy.

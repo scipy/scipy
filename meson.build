@@ -12,7 +12,6 @@ project(
     'scipy/_lib/pyprima/LICENCE.txt',  # BSD-3-Clause
     'scipy/_lib/unuran/license.txt',  # BSD-3-Clause  # git submodule
     'scipy/fft/_pocketfft/LICENSE.md',  # BSD-3-Clause
-    # 'scipy/integrate/_lebedev.py',  # BSD-2-Clause
     # 'scipy/interpolate/_aaa.py',  # BSD-2-Clause
     'scipy/io/_fast_matrix_market/LICENSE.txt',  # BSD-2-Clause
     # 'scipy/io/_fast_matrix_market/src/pystreambuf.h',  # BSD-3-Clause
