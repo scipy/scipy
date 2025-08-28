@@ -3432,8 +3432,8 @@ class TestHilbert2:
         x_f[c0 - 1, c1 + 1] = 1.0
         x_f[c0 + 1, c1 - 1] = 1.0
         x_f = sp_fft.ifftshift(x_f)
-        x = sp_fft.ifft2(x_f).real
-        assert abs(x).sum() > 0.0
+        x = xp.real(sp_fft.ifft2(x_f))
+        assert xp.sum(abs(x)) > 0.0
         x_as = hilbert2(x)
         xp_assert_close(x_as, xp.zeros_like(x_as), atol=1e-16)
     
@@ -3449,47 +3449,72 @@ class TestHilbert2:
         freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None, ...])
 
         mask = (freq0 == 0) & (freq1 == 0)
-        xp_assert_close(x_as_f[mask].real.item(), sh0 * sh1 + 1.0)
-        xp_assert_close(x_as_f[mask].imag.item(), 0.0)
+        val = xp.real(x_as_f[mask])
+        xp_assert_close(
+            val,
+            (sh0 * sh1 + 1.0) * xp.ones_like(val),
+            )
+        val = xp.imag(x_as_f[mask])
+        xp_assert_close(
+            val,
+            xp.zeros_like(val),
+            )
 
         mask = (
             ((freq0 == 0) & (freq1 > 0)) |
             ((freq0 > 0) & (freq1 == 0))
         )
-        size = xp.sum(mask)
+        size = xp.sum(xp.astype(mask, xp.uint8))
         xp_assert_close(
-            x_as_f[mask].real,
+            xp.real(x_as_f[mask]),
             2.0 * xp.ones(size),
             )
-        xp_assert_close(x_as_f[mask].imag, xp.zeros(size))
+        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size))
 
         mask = (freq0 > 0) & (freq1 > 0)
-        size = xp.sum(mask)
+        size = xp.sum(xp.astype(mask, xp.uint8))
         xp_assert_close(
-            x_as_f[mask].real,
+            xp.real(x_as_f[mask]),
             4.0 * xp.ones(size),
             )
-        xp_assert_close(x_as_f[mask].imag, xp.zeros(size))
+        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size))
     
     @pytest.mark.parametrize('sh0', [4, 5])
     @pytest.mark.parametrize('sh1', [6, 7])
     @pytest.mark.parametrize('sh2', [8, 9])
     @pytest.mark.parametrize('not_axis', [0, 1, 2])
-    def test_3d(self, xp, sh0, sh1, sh2, not_axis):
+    def test_3d_vs_slice(self, xp, sh0, sh1, sh2, not_axis):
         """2d transform on 3d array is equal to 2d transform
         on 2d slices."""
-        x = np.arange(
-            sh0 * sh1 * sh2,
-            dtype=xp.float64,
-            ).reshape(sh0, sh1, sh2)
+        x = xp.reshape(
+            xp.arange(sh0 * sh1 * sh2, dtype=xp.float64),
+            (sh0, sh1, sh2),
+        )
         transform_axes = [0, 1, 2]
         transform_axes.pop(not_axis)
         x_as_3d = hilbert2(x, axes=(transform_axes))
-        parts = xp.split(x, x.shape[not_axis], axis=not_axis) 
-        parts = [xp.squeeze(p, axis=not_axis) for p in parts]
+        parts = xp.unstack(x, axis=not_axis) 
         x_as_2d = [hilbert2(p) for p in parts]
         x_as_2d = xp.stack(x_as_2d, axis=not_axis)
         xp_assert_close(x_as_3d, x_as_2d)
+
+    def test_3d_axis_order(self, xp):
+        """2d transform on equalarrays with moved axis are equal."""
+        x0 = xp.reshape(
+            xp.arange(5 * 7 * 9, dtype=xp.float64),
+            (5, 7, 9),
+        )
+        x0_as = hilbert2(x0)
+
+        x1 = xp.moveaxis(x0, 0, 1)
+        x1_as = hilbert2(x1, axes=(0, 2))
+        x1_as = xp.moveaxis(x1_as, 1, 0)
+        xp_assert_close(x0_as, x1_as)
+
+        x2 = xp.moveaxis(x0, 0, 2)
+        x2_as = hilbert2(x2, axes=(0, 1))
+        x2_as = xp.moveaxis(x2_as, 2, 0)
+        xp_assert_close(x0_as, x2_as)
 
 
 class TestEnvelope:
