@@ -573,7 +573,7 @@ class TestShgoArguments:
 
     def test_args_gh23517(self):
         """
-        Using `args` for func, jac and hess doesn't work
+        Checks that using `args` for func, jac and hess works
         """
         obj = MaratosTestArgs("a", 234)
         obj.bounds = Bounds([-5, -5], [5, 5])
@@ -594,7 +594,10 @@ class TestShgoArguments:
         obj = MaratosTestArgs("a", 234)
         obj.bounds = Bounds([-10., -10.], [10., 10.])
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", (OptimizeWarning, RuntimeWarning, UserWarning))
+            warnings.simplefilter(
+                "ignore",
+                (OptimizeWarning, RuntimeWarning, UserWarning)
+            )
             res = shgo(
                 func=obj.fun,
                 bounds=obj.bounds,
@@ -609,7 +612,23 @@ class TestShgoArguments:
                 constraints=obj.constr,
                 sampling_method='sobol',
             )
-        assert_allclose(res.x, obj.x_opt, atol=1e-6)
+            assert_allclose(res.x, obj.x_opt, atol=1e-6)
+
+            res = shgo(
+                func=obj.fun,
+                bounds=obj.bounds,
+                args=("a", 234),
+                minimizer_kwargs={
+                    "method": 'trust-constr',
+                    "constraints": obj.constr,
+                    "bounds": obj.bounds,
+                    "jac": obj.grad,
+                    "hess": obj.hess,
+                },
+                constraints=obj.constr,
+                sampling_method='sobol',
+            )
+            assert_allclose(res.x, obj.x_opt, atol=1e-6)
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
