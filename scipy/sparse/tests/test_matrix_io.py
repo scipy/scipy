@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tempfile
 
+import pytest
 from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
@@ -72,8 +73,10 @@ def test_sparray_vs_spmatrix():
     assert_(loaded_matrix.dtype == loaded_array.dtype)
     assert_equal(loaded_matrix.toarray(), loaded_array.toarray())
 
-def test_nd_coo_format(tmpdir):
-    A = coo_array([[[0]]])
+@pytest.mark.parametrize("value", [0, 1.2])
+@pytest.mark.parametrize("ndim", [1, 2, 3])
+def test_nd_coo_format(ndim, value, tmpdir):
+    A = coo_array([value]).reshape((1,) * ndim)
 
     #save/load array
     with tmpdir.as_cwd():
