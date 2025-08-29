@@ -1142,16 +1142,21 @@ def test_setitem(xp):
     tf[...] = triple
     xp_assert_close(tf.translation, xp.asarray([[3.0, 3, 3], [4, 4, 4], [5, 5, 5]]))
 
-    # Test indexing with integer array
-    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
-    idx = xp.asarray([0, 2])
-    tf[idx] = double
-    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
-
     # Test indexing with boolean array
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
     mask = xp.asarray([True, False, True])
     tf[mask] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
+
+
+@make_xp_test_case(RigidTransform.__setitem__)
+@pytest.mark.skip_xp_backends("array_api_strict",
+                              reason="doesn't support fancy indexing __setitem__")
+def test_setitem_fancy_indexing(xp):
+    double = RigidTransform.from_translation(xp.asarray([[2, 2, 2], [3, 3, 3]]))
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    idx = xp.asarray([0, 2])
+    tf[idx] = double
     xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
 
 

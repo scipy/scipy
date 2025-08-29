@@ -251,8 +251,10 @@ def pow(matrix: Array, n: float | Array) -> Array:
 def setitem(
     matrix: Array, indexer: Array | int | slice | EllipsisType | None, value: Array
 ) -> Array:
-    # TODO: Fix for array API integer indexing
+    xp = array_namespace(matrix)
     if isinstance(indexer, EllipsisType):
+        return xpx.at(matrix)[indexer].set(value)
+    if is_array_api_obj(indexer) and indexer.dtype == xp.bool:
         return xpx.at(matrix)[indexer].set(value)
     return xpx.at(matrix)[indexer, ...].set(value)
 
