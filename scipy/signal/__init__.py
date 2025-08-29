@@ -223,13 +223,15 @@ Waveforms
 .. autosummary::
    :toctree: generated/
 
-   chirp        -- Frequency swept cosine signal, with several freq functions.
-   gausspulse   -- Gaussian modulated sinusoid.
-   max_len_seq  -- Maximum length sequence.
-   sawtooth     -- Periodic sawtooth.
-   square       -- Square wave.
-   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial.
-   unit_impulse -- Discrete unit impulse.
+   chirp         -- Frequency swept cosine signal, with several freq functions.
+   gausspulse    -- Gaussian modulated sinusoid.
+   max_len_seq   -- Maximum length sequence.
+   sawtooth      -- Periodic sawtooth.
+   sawtooth_rfft -- Onesided FFT of a sawtooth or triangle wave signal.
+   square        -- Square wave.
+   square_rfft   -- Onesided FFT of a square wave signal.
+   sweep_poly    -- Frequency swept cosine signal; freq is arbitrary polynomial.
+   unit_impulse  -- Discrete unit impulse.
 
 Window functions
 ================
