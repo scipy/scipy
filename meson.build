@@ -19,7 +19,6 @@ project(
     'scipy/optimize/_direct/COPYING',  # MIT
     # 'scipy/optimize/_lbfgsb_py.py',  # MIT
     'scipy/optimize/tnc/LICENSE',  # MIT
-    # 'scipy/sparse/csgraph/_matching.pyx',  # BSD-3-Clause
     'scipy/ndimage/LICENSE.txt',  # BSD-3-Clause
     'scipy/sparse/linalg/_dsolve/SuperLU/License.txt',  # BSD-3-Clause
     'scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING',  # BSD-3-Clause
