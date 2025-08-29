@@ -6,10 +6,10 @@ project(
   license_files = [
     'LICENSE.txt',
     'scipy/_build_utils/tempita/LICENSE.txt',  # MIT
-    'scipy/_lib/array_api_compat/LICENCE',  # MIT  # git submodule
+    'scipy/_lib/array_api_compat/LICENCE',  # MIT
     'scipy/_lib/_uarray/LICENSE',  # BSD-3-Clause
     'scipy/_lib/pyprima/LICENCE.txt',  # BSD-3-Clause
-    'scipy/_lib/unuran/license.txt',  # BSD-3-Clause  # git submodule
+    'scipy/_lib/unuran/license.txt',  # BSD-3-Clause
     'scipy/fft/_pocketfft/LICENSE.md',  # BSD-3-Clause
     'scipy/io/_fast_matrix_market/LICENSE.txt',  # BSD-2-Clause
     'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT',  # MIT
@@ -21,11 +21,11 @@ project(
     'scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING',  # BSD-3-Clause
     'scipy/spatial/COPYING_QHULL.txt',  # Qhull
     'scipy/stats/biasedurn/license.txt',  # BSD-3-Clause
-    'scipy/_lib/array_api_compat/LICENSE',  # MIT  # git submodule
-    'subprojects/boost_math/math/LICENSE',  # BSL-1.0  # git submodule
-    'subprojects/highs/LICENSE.txt',  # MIT  # git submodule
+    'scipy/_lib/array_api_compat/LICENSE',  # MIT
+    'subprojects/boost_math/math/LICENSE',  # BSL-1.0
+    'subprojects/highs/LICENSE.txt',  # MIT
     'subprojects/qhull_r/libqhull_r/COPYING.txt',  # Qhull
-    'subprojects/xsf/LICENSES_bundled.txt',  # BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception  # git submodule
+    'subprojects/xsf/LICENSES_bundled.txt',  # BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception
   ],
   meson_version: '>= 1.5.0',
   default_options: [
