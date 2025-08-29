@@ -5,6 +5,14 @@ project(
   license: 'BSD-3-Clause AND BSD-2-Clause AND BSL-1.0 AND MIT AND Qhull AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception',
   license_files = [
     'LICENSE.txt',
+    'LICENSES/LICENSE_cctbx.txt',  # BSD-3-Clause
+    'LICENSES/LICENSE_getLebedevSphere.txt',  # BSD-2-Clause
+    'LICENSES/LICENSE_LAPJVS.txt',  # BSD-3-Clause
+    'LICENSES/LICENSE_L-BFGS-B.txt',  # BSD-3-Clause
+    'LICENSES/LICENSE_L-BFGS-B_python_wrapper.txt',  # MIT
+    'LICENSES/LICENSE_NumPy.txt',  # BSD-3-Clause
+    'LICENSES/LICENSE_pybind11.txt',  # BSD-3-Clause
+    'LICENSES/LICENSE_Pythran.txt',  # BSD-3-Clause
     'scipy/_build_utils/tempita/LICENSE.txt',  # MIT
     'scipy/_lib/array_api_compat/LICENCE',  # MIT
     'scipy/_lib/_uarray/LICENSE',  # BSD-3-Clause
