@@ -60,6 +60,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -71,7 +72,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = [
-    "pytest",
+    "pytest>=8.0.0",
     "pytest-cov",
     "pytest-timeout",
     "pytest-xdist",
@@ -100,7 +101,8 @@ doc = [
     "pooch",
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
-    "linkify-it-py"
+    "linkify-it-py",
+    "tabulate"
 ]
 dev = [
     "spin",
@@ -108,7 +110,7 @@ dev = [
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
-    "ruff>=0.0.292",
+    "ruff>=0.12.0",
     "cython-lint>=0.12.2",
 ]
 

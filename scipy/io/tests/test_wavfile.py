@@ -1,11 +1,12 @@
 import os
 import sys
-from io import BytesIO
+from io import (BytesIO, UnsupportedOperation)
 import threading
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises, warns
 
@@ -58,9 +59,12 @@ def test_read_3():
 def test_read_4():
     # Contains unsupported 'PEAK' chunk
     for mmap in [False, True]:
-        with suppress_warnings() as sup:
-            sup.filter(wavfile.WavFileWarning,
-                       "Chunk .non-data. not understood, skipping it")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Chunk .non-data. not understood, skipping it",
+                wavfile.WavFileWarning
+            )
             filename = 'test-48000Hz-2ch-64bit-float-le-wavex.wav'
             rate, data = wavfile.read(datafile(filename), mmap=mmap)
 
@@ -403,7 +407,6 @@ def test_read_unknown_wave_format():
                 wavfile.read(fp, mmap=mmap)
 
 
-@pytest.mark.thread_unsafe
 def test_read_early_eof_with_data():
     # File ends inside 'data' chunk, but we keep incomplete data
     for mmap in [False, True]:
@@ -499,3 +502,19 @@ def test_wavfile_dtype_unsupported(tmpdir, dtype):
     rate = 8000
     with pytest.raises(ValueError, match="Unsupported"):
         wavfile.write(tmpfile, rate, data)
+
+def test_seek_emulating_reader_invalid_seek():
+    # Dummy data for the reader
+    reader = wavfile.SeekEmulatingReader(BytesIO(b'\x00\x00'))
+    
+    # Test SEEK_END with an invalid whence value
+    with pytest.raises(UnsupportedOperation):
+        reader.seek(0, 5)  # Invalid whence value
+    
+    # Test with negative seek value
+    with pytest.raises(UnsupportedOperation):
+        reader.seek(-1, 0)  # Negative position with SEEK_SET
+    
+    # Test SEEK_END with valid parameters (should not raise)
+    pos = reader.seek(0, os.SEEK_END)  # Valid usage
+    assert pos == 2, f"Failed to seek to end, got position {pos}"

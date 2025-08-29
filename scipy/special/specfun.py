@@ -6,9 +6,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 # ruff: noqa: F822
 __all__ = [
-    'clpmn',
-    'lpmn',
-    'lpn',
     'lqmn',
     'pbdv'
 ]

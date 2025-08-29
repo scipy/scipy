@@ -1,12 +1,13 @@
-import pytest
+import warnings
 
 from functools import lru_cache
 
-from numpy.testing import (assert_warns, assert_,
+import pytest
+
+from numpy.testing import (assert_,
                            assert_allclose,
                            assert_equal,
-                           assert_array_equal,
-                           suppress_warnings)
+                           assert_array_equal)
 import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
@@ -366,11 +367,10 @@ class TestNewton(TestScalarRootFinders):
         x = zeros.newton(lambda y, z: z - y ** 2, [4] * 2, args=([15, 17],))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
 
-    @pytest.mark.thread_unsafe
     def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
-        assert_warns(RuntimeWarning, zeros.newton,
-                     lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
+        with pytest.warns(RuntimeWarning):
+            zeros.newton(lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
         # test failures and zero_der
         with pytest.warns(RuntimeWarning):
             results = zeros.newton(lambda y: y**2 - 2, [0., 0.],
@@ -436,13 +436,13 @@ class TestNewton(TestScalarRootFinders):
                 with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_deriv_zero_warning(self):
         def func(x):
             return x ** 2 - 2.0
         def dfunc(x):
             return 2 * x
-        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
+        with pytest.warns(RuntimeWarning):
+            zeros.newton(func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
             zeros.newton(func, 0.0, dfunc)
 
@@ -620,7 +620,6 @@ def test_complex_halley():
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
 
 
-@pytest.mark.thread_unsafe
 def test_zero_der_nz_dp(capsys):
     """Test secant method with a non-zero dp, but an infinite newton step"""
     # pick a symmetrical functions and choose a point on the side that with dx
@@ -632,28 +631,27 @@ def test_zero_der_nz_dp(capsys):
     # 100 - p0 = p1 - 100 = p0 * (1 + dx) + dx - 100
     # -> 200 = p0 * (2 + dx) + dx
     p0 = (200.0 - dx) / (2.0 + dx)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "RMS of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "RMS of", RuntimeWarning)
         x = zeros.newton(lambda y: (y - 100.0)**2, x0=[p0] * 10)
     assert_allclose(x, [100] * 10)
     # test scalar cases too
     p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "Tolerance of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Tolerance of", RuntimeWarning)
         x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, 1)
     with pytest.raises(RuntimeError, match='Tolerance of'):
         x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=True)
     p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "Tolerance of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Tolerance of", RuntimeWarning)
         x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, -1)
     with pytest.raises(RuntimeError, match='Tolerance of'):
         x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=True)
 
 
-@pytest.mark.thread_unsafe
 def test_array_newton_failures():
     """Test that array newton fails as expected"""
     # p = 0.68  # [MPa]
@@ -817,7 +815,6 @@ def test_gh9254_flag_if_maxiter_exceeded(maximum_iterations, flag_expected):
         assert result[1].iterations < maximum_iterations
 
 
-@pytest.mark.thread_unsafe
 def test_gh9551_raise_error_if_disp_true():
     """Test that if disp is true then zero derivative raises RuntimeError"""
 
@@ -827,7 +824,8 @@ def test_gh9551_raise_error_if_disp_true():
     def f_p(x):
         return 2*x
 
-    assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
+    with pytest.warns(RuntimeWarning):
+        zeros.newton(f, 1.0, f_p, disp=False)
     with pytest.raises(
             RuntimeError,
             match=r'^Derivative was zero\. Failed to converge after \d+ iterations, '
@@ -890,7 +888,6 @@ def test_function_calls(solver_name, rs_interface):
         assert res[1].function_calls == f.calls
 
 
-@pytest.mark.thread_unsafe
 def test_gh_14486_converged_false():
     """Test that zero slope with secant method results in a converged=False"""
     def lhs(x):

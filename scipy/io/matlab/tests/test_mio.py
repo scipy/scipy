@@ -11,9 +11,9 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, assert_warns, assert_allclose)
+                           assert_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns as assert_warns
 
 import numpy as np
 from numpy import array
@@ -38,7 +38,7 @@ pytestmark = pytest.mark.thread_unsafe
 def mlarr(*args, **kwargs):
     """Convenience function to return matlab-compatible 2-D array."""
     arr = np.array(*args, **kwargs)
-    arr.shape = matdims(arr)
+    arr = arr.reshape(matdims(arr))
     return arr
 
 

@@ -68,11 +68,11 @@ In the example
 4.5
 
 which corresponds to :math:`y[0]`. For N even, the elements
-:math:`y[1]...y[N/2-1]` contain the positive-frequency terms, and the elements
-:math:`y[N/2]...y[N-1]` contain the negative-frequency terms, in order of
+:math:`y[1], ..., y[N/2-1]` contain the positive-frequency terms, and the elements
+:math:`y[N/2], ..., y[N-1]` contain the negative-frequency terms, in order of
 decreasingly negative frequency. For N odd, the elements
-:math:`y[1]...y[(N-1)/2]` contain the positive-frequency terms, and the
-elements :math:`y[(N+1)/2]...y[N-1]` contain the negative-frequency terms, in
+:math:`y[1], ..., y[(N-1)/2]` contain the positive-frequency terms, and the
+elements :math:`y[(N+1)/2], ..., y[N-1]` contain the negative-frequency terms, in
 order of decreasingly negative frequency.
 
 In case the sequence x is real-valued, the values of :math:`y[n]` for positive
@@ -183,7 +183,7 @@ complex FFT coefficients :math:`y[n]` for only half of the frequency range. The
 remaining negative frequency components are implied by the Hermitian symmetry of
 the FFT for a real input (``y[n] = conj(y[-n])``). In case of N being even:
 :math:`[Re(y[0]) + 0j, y[1], ..., Re(y[N/2]) + 0j]`; in case of N being odd
-:math:`[Re(y[0]) + 0j, y[1], ..., y[N/2]`. The terms shown explicitly as
+:math:`[Re(y[0]) + 0j, y[1], ..., y[N/2]]`. The terms shown explicitly as
 :math:`Re(y[k]) + 0j` are restricted to be purely real since, by the hermitian
 property, they are their own complex conjugate.
 

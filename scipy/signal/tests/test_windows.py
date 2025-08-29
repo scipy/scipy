@@ -1,8 +1,8 @@
 import math
+import warnings
 
 import numpy as np
 from numpy import array
-from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
@@ -260,8 +260,9 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
 class TestChebWin:
 
     def test_basic(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             xp_assert_close(windows.chebwin(6, 100, xp=xp),
                             xp.asarray([0.1046401879356917, 0.5075781475823447,
                                         1.0, 1.0,
@@ -288,14 +289,16 @@ class TestChebWin:
                                         0.5190521247588651], dtype=xp.float64))
 
     def test_cheb_odd_high_attenuation(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_odd = windows.chebwin(53, at=-40, xp=xp)
         assert_array_almost_equal(cheb_odd, xp.asarray(cheb_odd_true), decimal=4)
 
     def test_cheb_even_high_attenuation(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_even = windows.chebwin(54, at=40, xp=xp)
         assert_array_almost_equal(cheb_even, xp.asarray(cheb_even_true), decimal=4)
 
@@ -303,8 +306,9 @@ class TestChebWin:
         cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
                                            0.610151, 0.586405, 0.519052,
                                            1.000000], dtype=xp.float64)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_odd = windows.chebwin(7, at=10, xp=xp)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
@@ -312,8 +316,9 @@ class TestChebWin:
         cheb_even_low_at_true = xp.asarray([1.000000, 0.451924, 0.51027,
                                             0.541338, 0.541338, 0.51027,
                                             0.451924, 1.000000], dtype=xp.float64)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_even = windows.chebwin(8, at=-10, xp=xp)
         assert_array_almost_equal(cheb_even, cheb_even_low_at_true, decimal=4)
 
@@ -784,8 +789,9 @@ class TestGetWindow:
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_odd(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
         assert_array_almost_equal(
             w, xp.asarray(cheb_odd_true, dtype=xp.float64), decimal=4
@@ -794,8 +800,9 @@ class TestGetWindow:
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_even(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, xp.asarray(cheb_even_true), decimal=4)
 
@@ -876,8 +883,9 @@ def test_windowfunc_basics(xp):
             if is_torch(xp) and SCIPY_DEVICE != 'cpu':
                 pytest.skip(reason='needs eight_tridiagonal which is CPU only')
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True, xp=xp)
             w2 = window(7, *params, sym=False, xp=xp)

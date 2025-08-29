@@ -290,7 +290,7 @@ Checklist before submitting a PR
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
 -  Is the code style correct? See :ref:`pep8-scipy`.
 -  Are there benchmarks? See :ref:`benchmarking-with-asv`.
--  Is the commit message :ref:`formatted correctly <numpy:writing-the-commit-message>`?
+-  Is the commit message formatted correctly? See :ref:`writing-the-commit-message`.
 -  Is the docstring of the new functionality tagged with
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``

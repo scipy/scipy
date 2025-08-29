@@ -1,15 +1,20 @@
 # Pytest customization
 import json
+import multiprocessing
 import os
+import sys
 import warnings
 import tempfile
 from contextlib import contextmanager
 from typing import Literal
 
 import numpy as np
-import numpy.testing as npt
 import pytest
-import hypothesis
+try:
+    import hypothesis
+    hypothesis_available = True
+except ImportError:
+    hypothesis_available = False
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
@@ -86,6 +91,12 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
+    if os.name == 'posix' and sys.version_info < (3, 14):
+        # On POSIX, Python 3.13 and older uses the 'fork' context by
+        # default. Calling fork() from multiple threads leads to
+        # deadlocks. This has been changed in 3.14 to 'forkserver'.
+        multiprocessing.set_start_method('forkserver', force=True)
+
 
 def pytest_runtest_setup(item):
     mark = item.get_closest_marker("xslow")
@@ -103,8 +114,8 @@ def pytest_runtest_setup(item):
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441
-    with npt.suppress_warnings() as sup:
-        sup.filter(pytest.PytestUnraisableExceptionWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pytest.PytestUnraisableExceptionWarning)
 
         try:
             from threadpoolctl import threadpool_limits
@@ -488,31 +499,32 @@ def devices(xp):
     return xp.__array_namespace_info__().devices() + [None]
 
 
-# Following the approach of NumPy's conftest.py...
-# Use a known and persistent tmpdir for hypothesis' caches, which
-# can be automatically cleared by the OS or user.
-hypothesis.configuration.set_hypothesis_home_dir(
-    os.path.join(tempfile.gettempdir(), ".hypothesis")
-)
+if hypothesis_available:
+    # Following the approach of NumPy's conftest.py...
+    # Use a known and persistent tmpdir for hypothesis' caches, which
+    # can be automatically cleared by the OS or user.
+    hypothesis.configuration.set_hypothesis_home_dir(
+        os.path.join(tempfile.gettempdir(), ".hypothesis")
+    )
 
-# We register two custom profiles for SciPy - for details see
-# https://hypothesis.readthedocs.io/en/latest/settings.html
-# The first is designed for our own CI runs; the latter also
-# forces determinism and is designed for use via scipy.test()
-hypothesis.settings.register_profile(
-    name="nondeterministic", deadline=None, print_blob=True,
-)
-hypothesis.settings.register_profile(
-    name="deterministic",
-    deadline=None, print_blob=True, database=None, derandomize=True,
-    suppress_health_check=list(hypothesis.HealthCheck),
-)
+    # We register two custom profiles for SciPy - for details see
+    # https://hypothesis.readthedocs.io/en/latest/settings.html
+    # The first is designed for our own CI runs; the latter also
+    # forces determinism and is designed for use via scipy.test()
+    hypothesis.settings.register_profile(
+        name="nondeterministic", deadline=None, print_blob=True,
+    )
+    hypothesis.settings.register_profile(
+        name="deterministic",
+        deadline=None, print_blob=True, database=None, derandomize=True,
+        suppress_health_check=list(hypothesis.HealthCheck),
+    )
 
-# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into `.spin/cmds.py`.
-SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
-                                          "deterministic")
-hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
+    # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+    # In the future, it would be good to work the choice into `.spin/cmds.py`.
+    SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                              "deterministic")
+    hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 
 
 ############################################################################
@@ -588,8 +600,7 @@ if HAVE_SCPDT:
             np.random.seed(None)
             with warnings.catch_warnings():
                 if test and test.name in known_warnings:
-                    warnings.filterwarnings('ignore',
-                                            **known_warnings[test.name])
+                    warnings.filterwarnings('ignore', **known_warnings[test.name])
                     yield
                 elif test and test.name in legit:
                     yield

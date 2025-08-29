@@ -7,6 +7,7 @@ from numpy.linalg import pinv
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
+from scipy._lib._array_api import xp_capabilities
 
 
 EPS = np.finfo(float).eps
@@ -708,6 +709,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
     return fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped
 
 
+@xp_capabilities(np_only=True)
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
               tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
     """Solve a boundary value problem for a system of ODEs.

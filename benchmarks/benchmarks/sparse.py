@@ -7,37 +7,36 @@ import timeit
 import pickle
 
 import numpy as np
-from numpy import ones, array, asarray, empty
 
 from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import sparse
-    from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
-                              dok_matrix, rand, SparseEfficiencyWarning)
 
 
-def random_sparse(m, n, nnz_per_row):
+def random_sparse(m, n, nnz_per_row, sparse_type):
     rows = np.arange(m).repeat(nnz_per_row)
-    cols = np.random.randint(0, n, size=nnz_per_row*m)
-    vals = np.random.random_sample(m*nnz_per_row)
-    return coo_matrix((vals, (rows, cols)), (m, n)).tocsr()
+    cols = np.random.randint(0, n, size=rows.size)
+    vals = np.random.random_sample(rows.size)
+    coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
+    return coo((vals, (rows, cols)), (m, n)).tocsr()
 
 
 # TODO move this to a matrix gallery and add unittests
-def poisson2d(N, dtype='d', format=None):
+def poisson2d(N, dtype='d', format=None, sparse_type="sparray"):
     """
     Return a sparse matrix for the 2D Poisson problem
     with standard 5-point finite difference stencil on a
     square N-by-N grid.
     """
+    dia = sparse.dia_array if sparse_type == "sparray" else sparse.dia_matrix
     if N == 1:
-        diags = asarray([[4]], dtype=dtype)
-        return dia_matrix((diags, [0]), shape=(1, 1)).asformat(format)
+        diags = np.asarray([[4]], dtype=dtype)
+        return dia((diags, [0]), shape=(1, 1)).asformat(format)
 
-    offsets = array([0, -N, N, -1, 1])
+    offsets = np.array([0, -N, N, -1, 1])
 
-    diags = empty((5, N**2), dtype=dtype)
+    diags = np.empty((5, N**2), dtype=dtype)
 
     diags[0] = 4  # main diagonal
     diags[1:] = -1  # all offdiagonals
@@ -45,19 +44,20 @@ def poisson2d(N, dtype='d', format=None):
     diags[3, N-1::N] = 0  # first lower diagonal
     diags[4, N::N] = 0  # first upper diagonal
 
-    return dia_matrix((diags, offsets), shape=(N**2, N**2)).asformat(format)
+    return dia((diags, offsets), shape=(N**2, N**2)).asformat(format)
 
 
 class Arithmetic(Benchmark):
-    param_names = ['format', 'XY', 'op']
+    param_names = ['sparse_type', 'format', 'XY', 'op']
     params = [
+        ['spmatrix', 'sparray'],
         ['csr', 'csc', 'coo', 'dia'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
 
-    def setup(self, format, XY, op):
-        matrices = dict(A=poisson2d(250, format=format))
+    def setup(self, sparse_type, format, XY, op):
+        matrices = dict(A=poisson2d(250, format=format, sparse_type=sparse_type))
         matrices['B'] = (matrices['A']**2).asformat(format)
 
         x = matrices[XY[0]]
@@ -65,78 +65,94 @@ class Arithmetic(Benchmark):
         self.fn = getattr(x, op)
         self.fn(self.y)  # warmup
 
-    def time_arithmetic(self, format, XY, op):
+    def time_arithmetic(self, sparse_type, format, XY, op):
         self.fn(self.y)
 
 
 class Sort(Benchmark):
-    params = ['Rand10', 'Rand25', 'Rand50', 'Rand100', 'Rand200']
-    param_names = ['matrix']
+    param_names = ['sparse_type', 'name',]
+    params = [
+        ['spmatrix', 'sparray'],
+        ['Rand10', 'Rand25', 'Rand50', 'Rand100', 'Rand200'],
+    ]
 
-    def setup(self, matrix):
+    def setup(self, sparse_type, name):
         n = 10000
-        if matrix.startswith('Rand'):
-            k = int(matrix[4:])
-            self.A = random_sparse(n, n, k)
+        if name.startswith('Rand'):
+            k = int(name[4:])
+            self.A = random_sparse(n, n, k, sparse_type)
             self.A.has_sorted_indices = False
             self.A.indices[:2] = 2, 1
         else:
             raise NotImplementedError()
 
-    def time_sort(self, matrix):
+    def time_sort(self, sparse_type, name):
         """sort CSR column indices"""
         self.A.sort_indices()
 
 
 class Matvec(Benchmark):
+    param_names = ['sparse_type', 'name', 'format']
     params = [
+        ['spmatrix', 'sparray'],
         ['Identity', 'Poisson5pt', 'Block2x2', 'Block3x3'],
-        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr']
+        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr'],
     ]
-    param_names = ['matrix', 'format']
 
-    def setup(self, matrix, format):
-        if matrix == 'Identity':
+    def setup(self, sparse_type, name, format):
+        if name == 'Identity':
             if format in ('lil', 'dok'):
                 raise NotImplementedError()
-            self.A = sparse.eye(10000, 10000, format=format)
-        elif matrix == 'Poisson5pt':
-            self.A = poisson2d(300, format=format)
-        elif matrix == 'Block2x2':
+            if sparse_type == "sparray":
+                self.A = sparse.eye_array(10000, format=format)
+            else:
+                self.A = sparse.eye(10000, format=format)
+        elif name == 'Poisson5pt':
+            self.A = poisson2d(300, format=format, sparse_type=sparse_type)
+        elif name == 'Block2x2':
             if format not in ('csr', 'bsr'):
                 raise NotImplementedError()
             b = (2, 2)
-            self.A = sparse.kron(poisson2d(150),
-                                 ones(b)).tobsr(blocksize=b).asformat(format)
-        elif matrix == 'Block3x3':
+            self.A = sparse.kron(poisson2d(150, sparse_type=sparse_type),
+                                 np.ones(b)).tobsr(blocksize=b).asformat(format)
+        elif name == 'Block3x3':
             if format not in ('csr', 'bsr'):
                 raise NotImplementedError()
             b = (3, 3)
-            self.A = sparse.kron(poisson2d(100),
-                                 ones(b)).tobsr(blocksize=b).asformat(format)
+            self.A = sparse.kron(poisson2d(100, sparse_type=sparse_type),
+                                 np.ones(b)).tobsr(blocksize=b).asformat(format)
         else:
             raise NotImplementedError()
 
-        self.x = ones(self.A.shape[1], dtype=float)
+        self.x = np.ones(self.A.shape[1], dtype=float)
 
-    def time_matvec(self, matrix, format):
-        self.A * self.x
+    def time_matvec(self, sparse_type, name, format):
+        self.A @ self.x
 
 
 class Matvecs(Benchmark):
-    params = ['dia', 'coo', 'csr', 'csc', 'bsr']
-    param_names = ["format"]
+    param_names = ['sparse_type', "format"]
+    params = [
+        ['spmatrix', 'sparray'],
+        ['dia', 'coo', 'csr', 'csc', 'bsr'],
+    ]
 
-    def setup(self, format):
-        self.A = poisson2d(300, format=format)
-        self.x = ones((self.A.shape[1], 10), dtype=self.A.dtype)
+    def setup(self, sparse_type, format):
+        self.A = poisson2d(300, format=format, sparse_type=sparse_type)
+        self.x = np.ones((self.A.shape[1], 10), dtype=self.A.dtype)
 
-    def time_matvecs(self, format):
-        self.A * self.x
+    def time_matvecs(self, sparse_type, format):
+        self.A @ self.x
 
 
 class Matmul(Benchmark):
-    def setup(self):
+    param_names = ['sparse_type']
+    params = [
+        ['spmatrix', 'sparray']
+    ]
+
+    def setup(self, sparse_type):
+        coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
         H1, W1 = 1, 100000
         H2, W2 = W1, 1000
         C1 = 10
@@ -147,16 +163,16 @@ class Matmul(Benchmark):
         i = rng.integers(H1, size=C1)
         j = rng.integers(W1, size=C1)
         data = rng.random(C1)
-        self.matrix1 = coo_matrix((data, (i, j)), shape=(H1, W1)).tocsr()
+        self.matrix1 = coo((data, (i, j)), shape=(H1, W1)).tocsr()
 
         i = rng.integers(H2, size=C2)
         j = rng.integers(W2, size=C2)
         data = rng.random(C2)
-        self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
+        self.matrix2 = coo((data, (i, j)), shape=(H2, W2)).tocsr()
 
-    def time_large(self):
+    def time_large(self, sparse_type):
         for i in range(100):
-            self.matrix1 * self.matrix2
+            self.matrix1 @ self.matrix2
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_large.version = (
@@ -165,50 +181,63 @@ class Matmul(Benchmark):
 
 
 class Construction(Benchmark):
+    param_names = ['sparse_type', 'name', 'format']
     params = [
+        ['spmatrix', 'sparray'],
         ['Empty', 'Identity', 'Poisson5pt'],
-        ['lil', 'dok']
+        ['lil', 'dok'],
     ]
-    param_names = ['matrix', 'format']
 
-    def setup(self, name, format):
+    def setup(self, sparse_type, name, format):
         if name == 'Empty':
-            self.A = coo_matrix((10000, 10000))
+            self.A = sparse.coo_array((10000, 10000))
         elif name == 'Identity':
-            self.A = sparse.eye(10000, format='coo')
+            self.A = sparse.eye_array(10000, format='coo')
         else:
             self.A = poisson2d(100, format='coo')
+        if sparse_type == "spmatrix":
+            self.A = sparse.coo_matrix(self.A)
 
-        formats = {'lil': lil_matrix, 'dok': dok_matrix}
+        formats = {'lil': sparse.lil_matrix, 'dok': sparse.dok_matrix}
         self.cls = formats[format]
 
-    def time_construction(self, name, format):
+    def time_construction(self, sparse_type, name, format):
         T = self.cls(self.A.shape)
-        for i, j, v in zip(self.A.row, self.A.col, self.A.data):
+        for v, i, j in zip(self.A.data, *self.A.coords):
             T[i, j] = v
 
 
 class BlockDiagDenseConstruction(Benchmark):
-    param_names = ['num_matrices']
-    params = [1000, 5000, 10000, 15000, 20000]
+    param_names = ['sparse_type', 'num_matrices']
+    params = [
+        ['spmatrix', 'sparray'],
+        [1000, 5000, 10000, 15000, 20000],
+    ]
 
-    def setup(self, num_matrices):
+    def setup(self, sparse_type, num_matrices):
+        coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
         self.matrices = []
         for i in range(num_matrices):
             rows = np.random.randint(1, 4)
             columns = np.random.randint(1, 4)
             mat = np.random.randint(0, 10, (rows, columns))
-            self.matrices.append(mat)
+            if i == 0:
+                self.matrices.append(coo(mat))  # make 1st requested sparse_type
+            else:
+                self.matrices.append(mat)
 
-    def time_block_diag(self, num_matrices):
+    def time_block_diag(self, sparse_type, num_matrices):
         sparse.block_diag(self.matrices)
 
 
 class BlockDiagSparseConstruction(Benchmark):
-    param_names = ['num_matrices']
-    params = [1000, 5000, 10000, 15000, 20000]
+    param_names = ['sparse_type', 'num_matrices']
+    params = [
+        ['spmatrix', 'sparray'],
+        [1000, 5000, 10000, 15000, 20000],
+    ]
 
-    def setup(self, num_matrices):
+    def setup(self, sparse_type, num_matrices):
         self.matrices = []
         for i in range(num_matrices):
             rows = np.random.randint(1, 20)
@@ -216,64 +245,71 @@ class BlockDiagSparseConstruction(Benchmark):
             density = 2e-3
             nnz_per_row = int(density*columns)
 
-            mat = random_sparse(rows, columns, nnz_per_row)
+            mat = random_sparse(rows, columns, nnz_per_row, sparse_type)
             self.matrices.append(mat)
 
-    def time_block_diag(self, num_matrices):
+    def time_block_diag(self, sparse_type, num_matrices):
         sparse.block_diag(self.matrices)
 
 
 class CsrHstack(Benchmark):
-    param_names = ['num_rows']
-    params = [10000, 25000, 50000, 100000, 250000]
+    param_names = ['sparse_type', 'num_rows']
+    params = [
+        ['spmatrix', 'sparray'],
+        [10000, 25000, 50000, 100000, 250000],
+    ]
 
-    def setup(self, num_rows):
+    def setup(self, sparse_type, num_rows):
         num_cols = int(1e5)
         density = 2e-3
         nnz_per_row = int(density*num_cols)
-        self.mat = random_sparse(num_rows, num_cols, nnz_per_row)
+        self.mat = random_sparse(num_rows, num_cols, nnz_per_row, sparse_type)
 
-    def time_csr_hstack(self, num_rows):
+    def time_csr_hstack(self, sparse_type, num_rows):
         sparse.hstack([self.mat, self.mat])
 
 
 class Conversion(Benchmark):
+    param_names = ['sparse_type', 'from_format', 'to_format']
     params = [
+        ['spmatrix', 'sparray'],
         ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
         ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
     ]
-    param_names = ['from_format', 'to_format']
 
-    def setup(self, fromfmt, tofmt):
-        base = poisson2d(100, format=fromfmt)
+    def setup(self, sparse_type, from_format, to_format):
+        base = poisson2d(100, format=from_format, sparse_type=sparse_type)
 
         try:
-            self.fn = getattr(base, 'to' + tofmt)
+            self.fn = getattr(base, 'to' + to_format)
         except Exception:
             def fn():
                 raise RuntimeError()
             self.fn = fn
 
-    def time_conversion(self, fromfmt, tofmt):
+    def time_conversion(self, sparse_type, from_format, to_format):
         self.fn()
 
 
 class Getset(Benchmark):
+    param_names = ['sparse_type', 'N', 'sparsity pattern', 'format']
     params = [
+        ['spmatrix', 'sparray'],
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
-        ['csr', 'csc', 'lil', 'dok']
+        ['csr', 'csc', 'lil', 'dok'],
     ]
-    param_names = ['N', 'sparsity pattern', 'format']
     unit = "seconds"
 
-    def setup(self, N, sparsity_pattern, format):
+    def setup(self, sparse_type, N, sparsity_pattern, format):
         if format == 'dok' and N > 500:
             raise NotImplementedError()
 
-        self.A = rand(1000, 1000, density=1e-5)
+        if sparse_type == "sparray":
+            A = self.A = sparse.random_array((1000, 1000), density=1e-5)
+        else:
+            A = self.A = sparse.random(1000, 1000, density=1e-5)
 
-        A = self.A
         N = int(N)
 
         # indices to assign to
@@ -320,66 +356,78 @@ class Getset(Benchmark):
             min_time = min(min_time, duration/number)
         return min_time
 
-    def track_fancy_setitem(self, N, sparsity_pattern, format):
+    def track_fancy_setitem(self, sparse_type, N, sparsity_pattern, format):
         def kernel(A, i, j, v):
             A[i, j] = v
 
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+            warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
             return self._timeit(kernel, sparsity_pattern == 'different')
 
-    def time_fancy_getitem(self, N, sparsity_pattern, format):
+    def time_fancy_getitem(self, sparse_type, N, sparsity_pattern, format):
         self.m[self.i, self.j]
 
 
 class NullSlice(Benchmark):
-    params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
-    param_names = ['density', 'format']
+    param_names = ['sparse_type', 'density', 'format']
+    params = [
+        ['spmatrix', 'sparray'],
+        [0.05, 0.01],
+        ['csr', 'csc', 'lil'],
+    ]
 
-    def _setup(self, density, format):
+    def _setup(self, sparse_type, density, format):
         n = 100000
         k = 1000
 
-        # faster version of rand(n, k, format=format, density=density),
+        # faster version of sparse.rand(n, k, format=format, density=density),
         # with non-exact nnz
         nz = int(n*k * density)
         row = np.random.randint(0, n, size=nz)
         col = np.random.randint(0, k, size=nz)
         data = np.ones(nz, dtype=np.float64)
-        X = coo_matrix((data, (row, col)), shape=(n, k))
+        coo = sparse.coo_array if sparse_type == "sparray" else sparse.coo_matrix
+        X = coo((data, (row, col)), shape=(n, k))
         X.sum_duplicates()
         X = X.asformat(format)
-        with open(f'{density}-{format}.pck', 'wb') as f:
+        with open(f'{sparse_type}-{density}-{format}.pck', 'wb') as f:
             pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def setup_cache(self):
-        for density in self.params[0]:
-            for fmt in self.params[1]:
-                self._setup(density, fmt)
+        for sparse_type in self.params[0]:
+            for density in self.params[1]:
+                for fmt in self.params[2]:
+                    self._setup(sparse_type, density, fmt)
 
     setup_cache.timeout = 120
 
-    def setup(self, density, format):
+    def setup(self, sparse_type, density, format):
         # Unpickling is faster than computing the random matrix...
-        with open(f'{density}-{format}.pck', 'rb') as f:
+        with open(f'{sparse_type}-{density}-{format}.pck', 'rb') as f:
             self.X = pickle.load(f)
 
-    def time_getrow(self, density, format):
-        self.X.getrow(100)
+    def time_getrow(self, sparse_type, density, format):
+        if sparse_type == "sparray":
+            self.X[100]
+        else:
+            self.X.getrow(100)
 
-    def time_getcol(self, density, format):
-        self.X.getcol(100)
+    def time_getcol(self, sparse_type, density, format):
+        if sparse_type == "sparray":
+            self.X[:, 100]
+        else:
+            self.X.getcol(100)
 
-    def time_3_rows(self, density, format):
+    def time_3_rows(self, sparse_type, density, format):
         self.X[[0, 100, 105], :]
 
-    def time_10000_rows(self, density, format):
+    def time_10000_rows(self, sparse_type, density, format):
         self.X[np.arange(10000), :]
 
-    def time_3_cols(self, density, format):
+    def time_3_cols(self, sparse_type, density, format):
         self.X[:, [0, 100, 105]]
 
-    def time_100_cols(self, density, format):
+    def time_100_cols(self, sparse_type, density, format):
         self.X[:, np.arange(100)]
 
     # Retain old benchmark results (remove this if changing the benchmark)
@@ -404,19 +452,26 @@ class NullSlice(Benchmark):
 
 
 class Diagonal(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok', 'dia']]
-    param_names = ['density', 'format']
+    param_names = ['sparse_type', 'density', 'format']
+    params = [
+        ['spmatrix', 'sparray'],
+        [0.01, 0.1, 0.5],
+        ['csr', 'csc', 'coo', 'lil', 'dok', 'dia'],
+    ]
 
-    def setup(self, density, format):
+    def setup(self, sparse_type, density, format):
         n = 1000
         if format == 'dok' and n * density >= 500:
             raise NotImplementedError()
 
-        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
 
-        self.X = sparse.rand(n, n, format=format, density=density)
+        if sparse_type == "sparray":
+            self.X = sparse.random_array((n, n), format=format, density=density)
+        else:
+            self.X = sparse.random(n, n, format=format, density=density)
 
-    def time_diagonal(self, density, format):
+    def time_diagonal(self, sparse_type, density, format):
         self.X.diagonal()
 
     # Retain old benchmark results (remove this if changing the benchmark)
@@ -426,24 +481,31 @@ class Diagonal(Benchmark):
 
 
 class Sum(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok', 'dia']]
-    param_names = ['density', 'format']
+    param_names = ['sparse_type', 'density', 'format']
+    params = [
+        ['spmatrix', 'sparray'],
+        [0.01, 0.1, 0.5],
+        ['csr', 'csc', 'coo', 'lil', 'dok', 'dia'],
+    ]
 
-    def setup(self, density, format):
+    def setup(self, sparse_type, density, format):
         n = 1000
         if format == 'dok' and n * density >= 500:
             raise NotImplementedError()
 
-        warnings.simplefilter('ignore', SparseEfficiencyWarning)
-        self.X = sparse.rand(n, n, format=format, density=density)
+        warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
+        if sparse_type == "sparray":
+            self.X = sparse.random_array((n, n), format=format, density=density)
+        else:
+            self.X = sparse.random(n, n, format=format, density=density)
 
-    def time_sum(self, density, format):
+    def time_sum(self, sparse_type, density, format):
         self.X.sum()
 
-    def time_sum_axis0(self, density, format):
+    def time_sum_axis0(self, sparse_type, density, format):
         self.X.sum(axis=0)
 
-    def time_sum_axis1(self, density, format):
+    def time_sum_axis1(self, sparse_type, density, format):
         self.X.sum(axis=1)
 
     # Retain old benchmark results (remove this if changing the benchmark)
@@ -459,31 +521,42 @@ class Sum(Benchmark):
 
 
 class Iteration(Benchmark):
-    params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
-    param_names = ['density', 'format']
+    param_names = ['sparse_type', 'density', 'format']
+    params = [
+        ['spmatrix', 'sparray'],
+        [0.05, 0.01],
+        ['csr', 'csc', 'lil'],
+    ]
 
-    def setup(self, density, format):
+    def setup(self, sparse_type, density, format):
         n = 500
         k = 1000
-        self.X = sparse.rand(n, k, format=format, density=density)
+        if sparse_type == "sparray":
+            self.X = sparse.random_array((n, k), format=format, density=density)
+        else:
+            self.X = sparse.random(n, k, format=format, density=density)
 
-    def time_iteration(self, density, format):
+    def time_iteration(self, sparse_type, density, format):
         for row in self.X:
             pass
 
 
 class Densify(Benchmark):
+    param_names = ['sparse_type', 'format', 'order']
     params = [
+        ['spmatrix', 'sparray'],
         ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr'],
         ['C', 'F'],
     ]
-    param_names = ['format', 'order']
 
-    def setup(self, format, order):
-        warnings.simplefilter('ignore', SparseEfficiencyWarning)
-        self.X = sparse.rand(1000, 1000, format=format, density=0.01)
+    def setup(self, sparse_type, format, order):
+        warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
+        if sparse_type == "sparray":
+            self.X = sparse.random_array((1000, 1000), format=format, density=0.01)
+        else:
+            self.X = sparse.random(1000, 1000, format=format, density=0.01)
 
-    def time_toarray(self, format, order):
+    def time_toarray(self, sparse_type, format, order):
         self.X.toarray(order=order)
 
     # Retain old benchmark results (remove this if changing the benchmark)
@@ -493,32 +566,46 @@ class Densify(Benchmark):
 
 
 class Random(Benchmark):
+    param_names = ['sparse_type', 'density']
     params = [
-        np.arange(0, 1.1, 0.1).tolist()
+        ['spmatrix', 'sparray'],
+        np.arange(0, 1.1, 0.1).tolist(),
     ]
-    param_names = ['density']
 
-    def setup(self, density):
-        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+    def setup(self, sparse_type, density):
+        warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
         self.nrows = 1000
         self.ncols = 1000
         self.format = 'csr'
 
-    def time_rand(self, density):
-        sparse.rand(self.nrows, self.ncols,
-                    format=self.format, density=density)
+    def time_rand(self, sparse_type, density):
+        if sparse_type == "sparray":
+            self.X = sparse.random_array(
+                (self.nrows, self.ncols), format=self.format, density=density
+            )
+        else:
+            self.X = sparse.random(
+                self.nrows, self.ncols, format=self.format, density=density
+            )
 
 
 class Argmax(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo'], [True, False]]
-    param_names = ['density', 'format', 'explicit']
+    param_names = ['sparse_type', 'density', 'format', 'explicit']
+    params = [
+        ['spmatrix', 'sparray'],
+        [0.01, 0.1, 0.5],
+        ['csr', 'csc', 'coo'],
+        [True, False],
+    ]
 
-    def setup(self, density, format, explicit):
+    def setup(self, sparse_type, density, format, explicit):
         n = 1000
 
-        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        warnings.simplefilter('ignore', sparse.SparseEfficiencyWarning)
+        if sparse_type == "sparray":
+            self.X = sparse.random_array((n, n), format=format, density=density)
+        else:
+            self.X = sparse.random(n, n, format=format, density=density)
 
-        self.X = sparse.rand(n, n, format=format, density=density)
-
-    def time_argmax(self, density, format, explicit):
+    def time_argmax(self, sparse_type, density, format, explicit):
         self.X.argmax(explicit=explicit)

@@ -6,8 +6,7 @@ import pytest
 import threading
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal, assert_allclose,
-                           assert_warns, suppress_warnings)
+                           assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import array, float64
@@ -542,9 +541,11 @@ class TestCurveFit:
 
         pcov_expected = np.array([np.inf]*4).reshape(2, 2)
 
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning,
-                       "Covariance of the parameters could not be estimated")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Covariance of the parameters could not be estimated",
+                OptimizeWarning)
             popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
             popt1, pcov1 = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
 
@@ -563,13 +564,12 @@ class TestCurveFit:
         y = [3, 5, 7, 9]
         assert_allclose(curve_fit(f_linear, x, y)[0], [2, 1], atol=1e-10)
 
-    @pytest.mark.thread_unsafe
     def test_indeterminate_covariance(self):
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])
         ydata = np.array([1, 2, 3, 4, 5.5, 6])
-        assert_warns(OptimizeWarning, curve_fit,
-                     lambda x, a, b: a*x, xdata, ydata)
+        with pytest.warns(OptimizeWarning):
+            curve_fit(lambda x, a, b: a*x, xdata, ydata)
 
     def test_NaN_handling(self):
         # Test for correct handling of NaNs in input data: gh-3422

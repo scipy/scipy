@@ -82,8 +82,10 @@ __all__ = ['ode', 'complex_ode']
 
 import re
 import threading
+import types
 import warnings
 
+import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import _vode
@@ -91,7 +93,6 @@ from . import _dop
 from . import _lsoda
 
 
-_dop_int_dtype = _dop.types.intvar.dtype
 _vode_int_dtype = _vode.types.intvar.dtype
 _lsoda_int_dtype = _lsoda.types.intvar.dtype
 
@@ -351,6 +352,9 @@ class ode:
         Springer-Verlag (1993)
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __init__(self, f, jac=None):
         self.stiff = 0
@@ -788,6 +792,9 @@ class IntegratorBase:
     integrator_classes = []
     scalar = float
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def acquire_new_handle(self):
         # Some of the integrators have internal state (ancient
         # Fortran...), and so only one instance can use them at a time.
@@ -1054,6 +1061,8 @@ class zvode(vode):
     scalar = complex
     active_global_handle = 0
 
+    __class_getitem__ = None
+
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
 
@@ -1131,6 +1140,8 @@ class dopri5(IntegratorBase):
                 -4: 'problem is probably stiff (interrupted)',
                 }
 
+    __class_getitem__ = None
+
     def __init__(self,
                  rtol=1e-6, atol=1e-12,
                  nsteps=500,
@@ -1173,17 +1184,15 @@ class dopri5(IntegratorBase):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), _dop_int_dtype)
-        iwork[0] = self.nsteps
-        iwork[2] = self.verbosity
-        self.iwork = iwork
+        self.iwork = zeros((21,), dtype=np.int32)
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.iout, self.work, self.iwork]
+                          self.iout, self.work, self.iwork,
+                          self.nsteps, self.verbosity]
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        x, y, iwork, istate = self.runner(*((f, t0, y0, t1) +
-                                          tuple(self.call_args) + (f_params,)))
+        x, y, istate = self.runner(*((f, t0, y0, t1) +
+                                   tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
@@ -1193,7 +1202,7 @@ class dopri5(IntegratorBase):
             self.success = 0
         return y, x
 
-    def _solout(self, nr, xold, x, y, nd, icomp, con):
+    def _solout(self, x, y):
         if self.solout is not None:
             if self.solout_cmplx:
                 y = y[::2] + 1j * y[1::2]
@@ -1207,7 +1216,7 @@ if dopri5.runner is not None:
 
 
 class dop853(dopri5):
-    runner = getattr(_dop, 'dop853', None)
+    runner = getattr(_dop, 'dopri853', None)
     name = 'dop853'
 
     def __init__(self,
@@ -1234,12 +1243,10 @@ class dop853(dopri5):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), _dop_int_dtype)
-        iwork[0] = self.nsteps
-        iwork[2] = self.verbosity
-        self.iwork = iwork
+        self.iwork = zeros((21,), dtype=np.int32)
         self.call_args = [self.rtol, self.atol, self._solout,
-                          self.iout, self.work, self.iwork]
+                          self.iout, self.work, self.iwork,
+                          self.nsteps, self.verbosity]
         self.success = 1
 
 
@@ -1261,6 +1268,8 @@ class lsoda(IntegratorBase):
         -6: "Error weight became zero during problem.",
         -7: "Internal workspace insufficient to finish (internal error)."
     }
+
+    __class_getitem__ = None
 
     def __init__(self,
                  with_jacobian=False,

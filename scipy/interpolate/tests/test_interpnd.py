@@ -1,8 +1,8 @@
 import os
 import sys
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 import pytest
 from scipy._lib._array_api import xp_assert_close, assert_almost_equal
@@ -174,7 +174,6 @@ class TestLinearNDInterpolation:
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
     @pytest.mark.slow
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
     def test_threading(self):
         # This test was taken from issue 8856
@@ -251,9 +250,12 @@ class TestEstimateGradients2DGlobal:
         tri = qhull.Delaunay(points)
 
         # This should not hang
-        with suppress_warnings() as sup:
-            sup.filter(interpnd.GradientEstimationWarning,
-                       "Gradient estimation did not converge")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Gradient estimation did not converge",
+                interpnd.GradientEstimationWarning
+            )
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 

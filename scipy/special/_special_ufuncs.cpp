@@ -35,7 +35,6 @@
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/zeta.h>
-#include "xsf_special.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -175,7 +174,6 @@ extern const char *spherical_in_doc;
 extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
-extern const char *sph_harm_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
@@ -1051,12 +1049,6 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            "sph_legendre_p", nullptr, "(),(),()->(3)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "sph_legendre_p", sph_legendre_p);
-
-    PyObject *sph_harm =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::qqdd_D>(::sph_harm), static_cast<xsf::numpy::dddd_D>(::sph_harm),
-                           static_cast<xsf::numpy::qqff_F>(::sph_harm), static_cast<xsf::numpy::ffff_F>(::sph_harm)},
-                          "sph_harm", sph_harm_doc);
-    PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
     PyObject *sph_harm_y =
         Py_BuildValue("(N, N, N)",

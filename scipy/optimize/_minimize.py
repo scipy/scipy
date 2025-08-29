@@ -188,7 +188,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
 
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected

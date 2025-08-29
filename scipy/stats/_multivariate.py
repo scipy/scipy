@@ -4,6 +4,7 @@
 import math
 import warnings
 import threading
+import types
 import numpy as np
 import scipy.linalg
 from scipy._lib import doccer
@@ -213,6 +214,7 @@ class multi_rv_generic:
     Class which encapsulates common functionality between all multivariate
     distributions.
     """
+
     def __init__(self, seed=None):
         super().__init__()
         self._random_state = check_random_state(seed)
@@ -247,6 +249,10 @@ class multi_rv_frozen:
     Class which encapsulates common functionality between all frozen
     multivariate distributions.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     @property
     def random_state(self):
         return self._dist._random_state
@@ -875,6 +881,8 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
                  maxpts=None, abseps=1e-5, releps=1e-5):
         """Create a frozen multivariate normal distribution.
@@ -1412,6 +1420,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     >>> distn.logpdf(X)
     -10.590229595124615
     """
+    __class_getitem__ = None
 
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         self._dist = matrix_normal_gen(seed)
@@ -1830,6 +1839,8 @@ dirichlet = dirichlet_gen()
 
 
 class dirichlet_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = dirichlet_gen(seed)
@@ -2527,6 +2538,8 @@ class wishart_frozen(multi_rv_frozen):
         that instance is used.
 
     """
+    __class_getitem__ = None
+
     def __init__(self, df, scale, seed=None):
         self._dist = wishart_gen(seed)
         self.dim, self.df, self.scale = self._dist._process_parameters(
@@ -3059,6 +3072,8 @@ invwishart = invwishart_gen()
 
 
 class invwishart_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, df, scale, seed=None):
         """Create a frozen inverse Wishart distribution.
 
@@ -3673,6 +3688,8 @@ special_ortho_group = special_ortho_group_gen()
 
 
 class special_ortho_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen SO(N) distribution.
 
@@ -3826,6 +3843,8 @@ ortho_group = ortho_group_gen()
 
 
 class ortho_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
 
@@ -4081,6 +4100,8 @@ random_correlation = random_correlation_gen()
 
 
 class random_correlation_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
         """Create a frozen random correlation matrix distribution.
 
@@ -4241,6 +4262,8 @@ unitary_group = unitary_group_gen()
 
 
 class unitary_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
 
@@ -4774,6 +4797,7 @@ class multivariate_t_gen(multi_rv_generic):
 
 
 class multivariate_t_frozen(multi_rv_frozen):
+    __class_getitem__ = None
 
     def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
@@ -5687,6 +5711,8 @@ random_table = random_table_gen()
 
 
 class random_table_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, row, col, *, seed=None):
         self._dist = random_table_gen(seed)
         self._params = self._dist._process_parameters(row, col)

@@ -6,12 +6,14 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
+
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-
+@make_xp_test_case(stats.entropy)
 class TestEntropy:
     def test_entropy_positive(self, xp):
         # See ticket #497
@@ -117,6 +119,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
+@make_xp_test_case(stats.differential_entropy)
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.
@@ -233,6 +236,13 @@ class TestDifferentialEntropy:
         message = "`method` must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.differential_entropy(x, method='ekki-ekki')
+
+    def test_window_length_is_none(self, xp):
+        rng = np.random.default_rng(358923459826738562)
+        x = xp.asarray(rng.random(size=10))
+        ref = stats.differential_entropy(x)
+        res = stats.differential_entropy(x, window_length=None)
+        xp_assert_close(res, ref, rtol=0.005)
 
     @methods
     def test_consistency(self, method, xp):

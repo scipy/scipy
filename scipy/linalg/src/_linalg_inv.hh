@@ -10,33 +10,6 @@
 #include "_common_array_utils.hh"
 
 
-// Structure tags; python side maps assume_a strings to these values
-enum St : Py_ssize_t
-{
-    NONE = -1,
-    GENERAL = 0,
-    UPPER_TRIANGULAR = 21,
-    LOWER_TRIANGULAR = 22,
-    POS_DEF = 101,
-    POS_DEF_UPPER = 111,
-    POS_DEF_LOWER = 112,
-};
-
-
-/*
- * Copy n-by-n slice from slice_ptr to dst.
- */
-template<typename T>
-void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp s2, const npy_intp s1) {
-
-    for (npy_intp i = 0; i < n; i++) {
-        for (npy_intp j = 0; j < n; j++) {
-            dst[i * n + j] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));
-        }
-    }
-}
-
-
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
 inline CBLAS_INT invert_slice_general(
@@ -54,7 +27,7 @@ inline CBLAS_INT invert_slice_general(
 
     if (info == 0){
         // getrf success, check the condition number
-        gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);      
+        gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
             *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
@@ -137,7 +110,7 @@ inline CBLAS_INT invert_slice_triangular(
 
 
 template<typename T>
-void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
+void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, CBLAS_INT* info)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
@@ -239,7 +212,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             temp_idx /= shape[i];
         }
         T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
-        copy_slice(scratch, slice_ptr, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
+        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]); // XXX: make it in one go
         swap_cf(scratch, data, n, n, n);
 
         // detect the structure if not given
@@ -291,7 +264,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
                 else { // potrf failed
                     if(posdef_fallback) {
                         // restore
-                        copy_slice(scratch, slice_ptr, n, strides[ndim-2], strides[ndim-1]);
+                        copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
                         swap_cf(scratch, data, n, n, n);
 
                         // no break: fall back to the general solver
@@ -312,7 +285,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
         if (*isSingular == 1) {
             // nan_matrix(data, n);
             goto free_exit;     // fail fast and loud
-        } 
+        }
 
         // Swap back to original order
         swap_cf(data, &ret_data[idx*n*n], n, n, n);
@@ -324,3 +297,4 @@ free_exit:
     free(ipiv);
     return;
 }
+

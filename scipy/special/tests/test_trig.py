@@ -1,6 +1,8 @@
+import warnings
+
 import pytest
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, suppress_warnings
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy.special._ufuncs import _sinpi as sinpi
 from scipy.special._ufuncs import _cospi as cospi
@@ -41,8 +43,9 @@ def test_intermediate_overlow():
     sinpi_std = [complex(-8.113438309924894e+295, -np.inf),
                  complex(1.9507801934611995e+306, np.inf),
                  complex(2.205958493464539e+306, np.inf)]
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "invalid value encountered in multiply", RuntimeWarning)
         for p, std in zip(sinpi_pts, sinpi_std):
             res = sinpi(p)
             assert_allclose(res.real, std.real)
@@ -51,8 +54,9 @@ def test_intermediate_overlow():
     # Test for cosine, less interesting because cos(0) = 1.
     p = complex(0.5 + 1e-14, 227)
     std = complex(-8.113438309924894e+295, -np.inf)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "invalid value encountered in multiply", RuntimeWarning)
         res = cospi(p)
         assert_allclose(res.real, std.real)
         assert_allclose(res.imag, std.imag)

@@ -18,7 +18,6 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_array_almost_equal,
                                 assert_array_almost_equal_nulp, assert_,
                                 assert_allclose, assert_array_equal)
-from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
@@ -542,7 +541,7 @@ class TestTrimming:
         assert_equal(trimx.count(), 48)
         assert_equal(trimx._mask, [1]*16 + [0]*34 + [1]*20 + [0]*14 + [1]*16)
         x._mask = nomask
-        x.shape = (10,10)
+        x = x.reshape((10,10))
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
@@ -988,8 +987,9 @@ class TestTheilslopes:
         with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered...", RuntimeWarning)
             res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
             assert_allclose(res, (0, 0, np.nan, np.nan))
 
@@ -1284,8 +1284,9 @@ class TestTtest_rel:
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 1, 1], [0, 0, 0]])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             for pair in [(outcome[:, 0], outcome[:, 1]),
                          ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_rel(*pair)
@@ -1317,8 +1318,9 @@ class TestTtest_rel:
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
             assert_array_equal(t, np.array([np.nan, np.nan]))
             assert_array_equal(p, np.array([np.nan, np.nan]))
@@ -1383,8 +1385,9 @@ class TestTtest_ind:
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             for pair in [(outcome[:, 0], outcome[:, 1]),
                          ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_ind(*pair)
@@ -1407,8 +1410,9 @@ class TestTtest_ind:
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
             assert_array_equal(t, (np.nan, np.nan))
             assert_array_equal(p, (np.nan, np.nan))
@@ -1459,8 +1463,9 @@ class TestTtest_1samp:
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
         expected = (np.nan, np.nan)
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
                 t, p = mstats.ttest_1samp(*pair)
                 assert_array_equal(p, expected)
@@ -1482,8 +1487,9 @@ class TestTtest_1samp:
         t, p = mstats.ttest_1samp([0, 0, 0], 1)
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in absolute", RuntimeWarning)
             t, p = mstats.ttest_1samp([0, 0, 0], 0)
             assert_(np.isnan(t))
             assert_array_equal(p, (np.nan, np.nan))
@@ -1848,9 +1854,11 @@ class TestCompareWithStats:
                 assert_allclose(r[0][1], rm[0][1], rtol=1e-14)
 
     def test_normaltest(self):
-        with np.errstate(over='raise'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "`kurtosistest` p-value may be inaccurate")
-            sup.filter(UserWarning, "kurtosistest only valid for n>=20")
+        with np.errstate(over='raise'), warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "`kurtosistest` p-value may be inaccurate", UserWarning)
+            warnings.filterwarnings(
+                "ignore", "kurtosistest only valid for n>=20", UserWarning)
             for n in self.get_n():
                 if n > 8:
                     x, y, xm, ym = self.generate_xy_sample(n)
@@ -1896,7 +1904,7 @@ class TestCompareWithStats:
     def test_ks_1samp(self):
         """Checks that mstats.ks_1samp and stats.ks_1samp agree on masked arrays."""
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings():
+            with warnings.catch_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1914,7 +1922,7 @@ class TestCompareWithStats:
         Checks that 1-sample mstats.kstest and stats.kstest agree on masked arrays.
         """
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings():
+            with warnings.catch_warnings():
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1931,10 +1939,10 @@ class TestCompareWithStats:
         """Checks that mstats.ks_2samp and stats.ks_2samp agree on masked arrays.
         gh-8431"""
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings() as sup:
+            with warnings.catch_warnings():
                 if mode in ['auto', 'exact']:
                     message = "ks_2samp: Exact calculation unsuccessful."
-                    sup.filter(RuntimeWarning, message)
+                    warnings.filterwarnings("ignore", message, RuntimeWarning)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1952,10 +1960,10 @@ class TestCompareWithStats:
         Checks that 2-sample mstats.kstest and stats.kstest agree on masked arrays.
         """
         for mode in ['auto', 'exact', 'asymp']:
-            with suppress_warnings() as sup:
+            with warnings.catch_warnings():
                 if mode in ['auto', 'exact']:
                     message = "ks_2samp: Exact calculation unsuccessful."
-                    sup.filter(RuntimeWarning, message)
+                    warnings.filterwarnings("ignore", message, RuntimeWarning)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)

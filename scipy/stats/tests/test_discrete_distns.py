@@ -1,5 +1,6 @@
 import pytest
 import itertools
+import warnings
 
 from scipy import stats
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
@@ -9,7 +10,7 @@ from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
 
 import numpy as np
 from numpy.testing import (
-    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+    assert_almost_equal, assert_equal, assert_allclose
 )
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
@@ -452,8 +453,8 @@ class TestNCH:
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
                             mean(N, m1, n, w), rtol=2e-2)
@@ -466,8 +467,8 @@ class TestNCH:
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(
                 nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),

@@ -42,6 +42,7 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 ``LinearOperator`` instances.
 """
 
+import types
 import warnings
 
 import numpy as np
@@ -150,6 +151,9 @@ class LinearOperator:
     ndim = 2
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:

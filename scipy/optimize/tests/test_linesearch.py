@@ -1,9 +1,10 @@
 """
 Tests for line search routines
 """
+import warnings
+
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_array_almost_equal_nulp, assert_warns,
-                           suppress_warnings)
+                           assert_array_almost_equal_nulp)
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
@@ -233,11 +234,15 @@ class TestLineSearch:
             f0 = f(x)
             g0 = fprime(x)
             self.fcount.c = 0
-            with suppress_warnings() as sup:
-                sup.filter(LineSearchWarning,
-                           "The line search algorithm could not find a solution")
-                sup.filter(LineSearchWarning,
-                           "The line search algorithm did not converge")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "The line search algorithm could not find a solution",
+                    LineSearchWarning)
+                warnings.filterwarnings(
+                    "ignore",
+                    "The line search algorithm did not converge",
+                    LineSearchWarning)
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
                                                                g0, f0, old_f,
                                                                amax=smax)
@@ -251,7 +256,6 @@ class TestLineSearch:
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert c > 3  # check that the iterator really works...
 
-    @pytest.mark.thread_unsafe
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
 
@@ -271,14 +275,14 @@ class TestLineSearch:
         s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p, amax=30, c2=c2)
         assert_line_wolfe(x, p, s, f, fp)
 
-        s, _, _, _, _, _ = assert_warns(LineSearchWarning,
-                                        ls.line_search_wolfe2, f, fp, x, p,
-                                        amax=29, c2=c2)
+        with pytest.warns(LineSearchWarning):
+            s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p,
+                                                     amax=29, c2=c2)
         assert s is None
 
         # s=30 will only be tried on the 6th iteration, so this won't converge
-        assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
-                     c2=c2, maxiter=5)
+        with pytest.warns(LineSearchWarning):
+            ls.line_search_wolfe2(f, fp, x, p, c2=c2, maxiter=5)
 
     def test_line_search_armijo(self):
         c = 0

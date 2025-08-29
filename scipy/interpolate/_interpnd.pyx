@@ -29,6 +29,7 @@ import scipy.spatial._qhull as qhull
 cimport scipy.spatial._qhull as qhull
 
 import warnings
+from types import GenericAlias
 
 #------------------------------------------------------------------------------
 # Numpy etc.
@@ -54,6 +55,9 @@ class NDInterpolatorBase:
     .. versionadded:: 0.9
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, points, values, fill_value=np.nan, ndim=None,
                  rescale=False, need_contiguous=True, need_values=True):
@@ -112,7 +116,7 @@ class NDInterpolatorBase:
         else:
             self.values = values.reshape(values.shape[0],
                                             np.prod(values.shape[1:]))
-        
+
         # Complex or real?
         self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
         if self.is_complex:
@@ -146,7 +150,7 @@ class NDInterpolatorBase:
         xi = xi.reshape(-1, xi.shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
-    
+
     def __call__(self, *args):
         """
         interpolator(xi)
@@ -322,7 +326,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef int i, j, k, m, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
-        
+
         ndim = xi.shape[1]
         fill_value = self.fill_value
 
@@ -932,7 +936,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
                                     fill_value=fill_value, rescale=rescale,
                                     need_values=False)
-    
+
     def _set_values(self, values, fill_value=np.nan, need_contiguous=True, ndim=None):
         """
         Sets the values of the interpolation points.
@@ -946,7 +950,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                     tol=self._tol, maxiter=self._maxiter)
-    
+
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
 
@@ -992,7 +996,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                 isimplex = qhull._find_simplex(&info, c,
                                                &xi[i,0],
                                                &start, eps, eps_broad)
-                
+
                 # 2) Clough-Tocher interpolation
 
                 if isimplex == -1:

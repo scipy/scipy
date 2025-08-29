@@ -109,6 +109,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
+        "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
 };
 

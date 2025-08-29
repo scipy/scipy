@@ -17,7 +17,7 @@ from .trf import trf
 from .dogbox import dogbox
 from .common import EPS, in_bounds, make_strictly_feasible
 
-    
+
 from scipy.optimize._optimize import _wrap_callback
 
 TERMINATION_MESSAGES = {
@@ -392,7 +392,7 @@ def least_squares(
 
         * For 'trf'    : ``x_scale == 1``
         * For 'dogbox' : ``x_scale == 1``
-        * For 'jac'    : ``x_scale == 'jac'``
+        * For 'lm'     : ``x_scale == 'jac'``
 
         .. versionchanged:: 1.16.0
             The default keyword value is changed from 1 to None to indicate that

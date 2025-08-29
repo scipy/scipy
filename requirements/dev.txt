@@ -5,5 +5,5 @@ mypy==1.10.0
 typing_extensions
 types-psutil
 pycodestyle
-ruff>=0.0.292
+ruff>=0.12.0
 cython-lint>=0.12.2

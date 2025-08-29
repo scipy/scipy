@@ -6,11 +6,12 @@
 """
 import functools
 import pytest
+import warnings
 
 import numpy as np
 from numpy import array, identity, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
-                           assert_array_less, assert_array_equal, suppress_warnings)
+                           assert_array_less, assert_array_equal)
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
@@ -137,8 +138,8 @@ class TestLogM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
                 # Check logm round trip.
-                with suppress_warnings() as sup:
-                    sup.filter(category=RuntimeWarning)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", RuntimeWarning)
 
                     M_logm = logm(M)
                     M_logm_round_trip = expm(M_logm)
@@ -323,8 +324,8 @@ class TestSqrtM:
             assert_(not any(w.imag or w.real < 0 for w in W))
 
             # Last test matrix is singular so suppress the warning
-            with suppress_warnings() as sup:
-                sup.filter(category=LinAlgWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", LinAlgWarning)
 
                 # check float type preservation
                 A = np.array(matrix_as_list, dtype=float)
@@ -379,8 +380,8 @@ class TestSqrtM:
                 [0, 0, 3, 0],
                 [0, 0, 0, 3],
                 [0, 0, 0, 0]], dtype=dt)
-            with suppress_warnings() as sup:
-                sup.filter(category=LinAlgWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", LinAlgWarning)
 
                 A_sqrtm = sqrtm(A)
                 assert_allclose(np.tril(A_sqrtm), np.zeros((4, 4)))
@@ -426,8 +427,8 @@ class TestSqrtM:
                       [0, 0, 0, 0],
                       [sqrt(0.5), 0, 0, sqrt(0.5)]])
         assert_allclose(R @ R, M, atol=1e-14)
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LinAlgWarning)
 
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
@@ -435,16 +436,16 @@ class TestSqrtM:
         M = np.diag([2, 1, 0])
         R = np.diag([sqrt(2), 1, 0])
         assert_allclose(R @ R, M, atol=1e-14)
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=LinAlgWarning)
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
     def test_gh7839(self):
         M = np.zeros((2, 2))
         R = np.zeros((2, 2))
         # Catch and silence LinAlgWarning
-        with suppress_warnings() as sup:
-            sup.filter(category=LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=LinAlgWarning)
 
             assert_allclose(sqrtm(M), R, atol=1e-14)
 
@@ -453,6 +454,13 @@ class TestSqrtM:
         M.fill(0.94)
         np.fill_diagonal(M, 1)
         assert np.isrealobj(sqrtm(M))
+
+    def test_gh23278(self):
+        M = np.array([[1., 0., 0.], [0, 1, -1j], [0, 1j, 2]])
+        sq = sqrtm(M)
+        assert_allclose(sq @ sq, M, atol=1e-14)
+        sq = sqrtm(M.astype(np.complex64))
+        assert_allclose(sq @ sq, M, atol=1e-6)
 
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.eye(10, dtype=np.uint8)

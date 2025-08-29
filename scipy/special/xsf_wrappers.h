@@ -124,9 +124,6 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
 double special_rgamma(double x);
 npy_cdouble special_crgamma(npy_cdouble z);
 
-npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
-npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
-
 double special_ellipk(double m);
 
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
@@ -337,9 +334,6 @@ double xsf_bdtrc(double k, int n, double p);
 double xsf_chdtr(double df, double x);
 double xsf_chdtrc(double df, double x);
 double xsf_chdtri(double df, double y);
-double xsf_fdtr(double a, double b, double x);
-double xsf_fdtrc(double a, double b, double x);
-double xsf_fdtri(double a, double b, double y);
 double xsf_gdtr(double a, double b, double x);
 double xsf_gdtrc(double a, double b, double x);
 double xsf_gdtrib(double a, double p, double x);

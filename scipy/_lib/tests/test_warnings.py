@@ -53,8 +53,8 @@ class FindFuncs(ast.NodeVisitor):
                     )
                 case _:
                     raise ValueError("unknown ast node type")
-            # check if filter is set to ignore
-            if argtext == "ignore":
+            # check if filter is set to ignore outside of test code
+            if argtext == "ignore" and "tests" not in self.__filename.parts:
                 self.bad_filters.append(
                     f"{self.__filename}:{node.lineno}")
 
@@ -102,7 +102,7 @@ def test_warning_calls_filters(warning_calls):
 
     # We try not to add filters in the code base, because those filters aren't
     # thread-safe. We aim to only filter in tests with
-    # np.testing.suppress_warnings. However, in some cases it may prove
+    # warnings.catch_warnings. However, in some cases it may prove
     # necessary to filter out warnings, because we can't (easily) fix the root
     # cause for them and we don't want users to see some warnings when they use
     # SciPy correctly. So we list exceptions here.  Add new entries only if
@@ -131,8 +131,7 @@ def test_warning_calls_filters(warning_calls):
 
     if bad_filters:
         raise AssertionError(
-            "warning ignore filter should not be used, instead, use\n"
-            "numpy.testing.suppress_warnings (in tests only);\n"
-            "found in:\n    {}".format(
+            "Warning ignore filters should not be used outside of tests.\n"
+            "Found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 

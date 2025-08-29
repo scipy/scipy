@@ -1,6 +1,7 @@
 import itertools
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -378,9 +379,10 @@ class TestEig:
         # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
         # the ordering of eigenvalues also comes out different on different
         # systems depending on who knows what.
-        with np.testing.suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # isclose chokes on inf/nan values
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
@@ -2763,7 +2765,7 @@ def test_aligned_mem_float():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=2, count=100, dtype=float32)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2778,7 +2780,7 @@ def test_aligned_mem():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2791,7 +2793,7 @@ def test_aligned_mem_complex():
 
     # Create an array with boundary offset 8
     z = np.frombuffer(a.data, offset=8, count=100, dtype=complex)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     # This does not need special handling
@@ -2807,7 +2809,7 @@ def check_lapack_misaligned(func, args, kwargs):
             aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
             aa = np.frombuffer(aa.data, offset=4, count=a[i].size,
                                dtype=a[i].dtype)
-            aa.shape = a[i].shape
+            aa = aa.reshape(a[i].shape)
             aa[...] = a[i]
             a[i] = aa
             func(*a, **kwargs)
@@ -2820,11 +2822,10 @@ def check_lapack_misaligned(func, args, kwargs):
                    reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10, dtype=float)
-    R = np.arange(100)
-    R.shape = 10, 10
+    R = np.arange(100).reshape((10, 10))
     S = np.arange(20000, dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
-    S.shape = 10, 10
+    S = S.reshape((10, 10))
     b = np.ones(10)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
@@ -2914,7 +2915,7 @@ def _check_orth(n, dtype, skip_big=False):
 
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=tol)
+    assert_allclose(Y, Y.mean(), atol=tol, rtol=1.4e-7)
 
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))

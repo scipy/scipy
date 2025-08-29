@@ -1,10 +1,11 @@
 """
 Unit test for constraint conversion
 """
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
-                           assert_allclose, assert_warns, suppress_warnings)
+                           assert_allclose)
 import pytest
 from scipy.optimize import (NonlinearConstraint, LinearConstraint,
                             OptimizeWarning, minimize, BFGS)
@@ -25,8 +26,8 @@ class TestOldToNew:
                 {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
                 {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
             res = minimize(fun, self.x0, method=self.method,
                            bounds=self.bnds, constraints=cons)
         assert_allclose(res.x, [1.4, 1.7], rtol=1e-4)
@@ -39,8 +40,8 @@ class TestOldToNew:
                 'fun': lambda x, p1, p2: p1*x[0] - p2*x[1],
                 'args': (1, 1.1),
                 'jac': lambda x, p1, p2: np.array([[p1, -p2]])}
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
             res = minimize(fun, self.x0, method=self.method,
                            bounds=self.bnds, constraints=cons)
         assert_allclose(res.x, [1.7918552, 1.62895927])
@@ -52,8 +53,8 @@ class TestOldToNew:
         cons = [{'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                 NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
             res = minimize(fun, self.x0, method=self.method,
                            bounds=self.bnds, constraints=cons)
         assert_allclose(res.x, [1.75, 1.75], rtol=1e-4)
@@ -82,8 +83,8 @@ class TestNewToOld:
         for con in coni:
             funs = {}
             for method in methods:
-                with suppress_warnings() as sup:
-                    sup.filter(UserWarning)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-4)
@@ -154,8 +155,8 @@ class TestNewToOld:
         for con in coni:
             funs = {}
             for method in methods:
-                with suppress_warnings() as sup:
-                    sup.filter(UserWarning)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
@@ -167,8 +168,8 @@ class TestNewToOld:
         for con in cone:
             funs = {}
             for method in [method for method in methods if method != 'cobyla']:
-                with suppress_warnings() as sup:
-                    sup.filter(UserWarning)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
@@ -197,8 +198,8 @@ class TestNewToOldSLSQP:
 
         for prob in self.list_of_problems:
 
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
                 result = minimize(prob.fun, prob.x0,
                                   method=self.method,
                                   bounds=prob.bounds,
@@ -206,7 +207,6 @@ class TestNewToOldSLSQP:
 
             assert_array_almost_equal(result.x, prob.x_opt, decimal=3)
 
-    @pytest.mark.thread_unsafe
     def test_warn_mixed_constraints(self):
         # warns about inefficiency of mixed equality/inequality constraints
         def fun(x):
@@ -214,12 +214,12 @@ class TestNewToOldSLSQP:
         cons = NonlinearConstraint(lambda x: [x[0]**2 - x[1], x[1] - x[2]],
                                    [1.1, .8], [1.1, 1.4])
         bnds = ((0, None), (0, None), (0, None))
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.0")
-            assert_warns(OptimizeWarning, minimize, fun, (2, 0, 1),
-                         method=self.method, bounds=bnds, constraints=cons)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.0", UserWarning)
+            with pytest.warns(OptimizeWarning):
+                 minimize(fun, (2, 0, 1),
+                          method=self.method, bounds=bnds, constraints=cons)
 
-    @pytest.mark.thread_unsafe
     def test_warn_ignored_options(self):
         # warns about constraint options being ignored
         def fun(x):
@@ -255,7 +255,8 @@ class TestNewToOldSLSQP:
         cons.append(LinearConstraint([1, 0, 0], 2, np.inf,
                                      keep_feasible=True))
         for con in cons:
-            assert_warns(OptimizeWarning, minimize, fun, x0,
+            with pytest.warns(OptimizeWarning):
+                minimize(fun, x0,
                          method=self.method, bounds=bnds, constraints=cons)
 
 
@@ -272,8 +273,8 @@ class TestNewToOldCobyla:
 
         for prob in self.list_of_problems:
 
-            with suppress_warnings() as sup:
-                sup.filter(UserWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
                 truth = minimize(prob.fun, prob.x0,
                                  method='trust-constr',
                                  bounds=prob.bounds,

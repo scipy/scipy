@@ -1,8 +1,9 @@
 # Created by Pearu Peterson, June 2003
 import itertools
 import sys
+import warnings
+
 import numpy as np
-from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
@@ -19,7 +20,14 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
 
 from scipy._lib._testutils import _run_concurrent_barrier
 
-from scipy.interpolate import make_splrep
+from scipy.interpolate import make_splrep, NdBSpline
+
+def convert_to_ndbspline(lut):
+    tx, ty = lut.get_knots()
+    kx, ky = lut.degrees
+    nx, ny = len(tx), len(ty)
+    c = lut.get_coeffs().reshape((nx - kx - 1, ny - ky - 1))
+    return NdBSpline((tx, ty), c, (kx, ky))
 
 class TestUnivariateSpline:
     def test_linear_constant(self):
@@ -31,7 +39,13 @@ class TestUnivariateSpline:
         assert abs(lut.get_residual()) < 1e-10
         assert_array_almost_equal(lut([1, 1.5, 2]), [3, 3, 3])
 
-        spl = make_splrep(x, y, k=1, s=len(x))
+    @pytest.mark.parametrize("bc_type", [None, 'periodic'])
+    def test_linear_constant_periodic(self, bc_type):
+        x = [1,2,3]
+        y = [3,3,3]
+        lut = UnivariateSpline(x,y,k=1)
+
+        spl = make_splrep(x, y, k=1, s=len(x), bc_type=bc_type)
         xp_assert_close(spl.t[1:-1], lut.get_knots(), atol=1e-15)
         xp_assert_close(spl.c, lut.get_coeffs(), atol=1e-15)
 
@@ -371,7 +385,6 @@ class TestUnivariateSpline:
         xp_assert_close(spl1([0.1, 0.5, 0.9, 0.99]),
                         spl2([0.1, 0.5, 0.9, 0.99]))
 
-    @pytest.mark.thread_unsafe
     def test_fpknot_oob_crash(self):
         # https://github.com/scipy/scipy/issues/3691
         x = range(109)
@@ -387,17 +400,9 @@ class TestUnivariateSpline:
              0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
              0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
              10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
-        with suppress_warnings() as sup:
-            r = sup.record(
-                UserWarning,
-                r"""
-The maximal number of iterations maxit \(set to 20 by the program\)
-allowed for finding a smoothing spline with fp=s has been reached: s
-too small.
-There is an approximation returned but the corresponding weighted sum
-of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
+        msg = r"does not satisfy the condition abs\(fp-s\)/s < tol"
+        with pytest.warns(UserWarning, match=msg):
             UnivariateSpline(x, y, k=1)
-            assert len(r) == 1
 
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
@@ -416,7 +421,6 @@ of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
 
 class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient
-    @pytest.mark.thread_unsafe
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -424,8 +428,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
             assert len(r) == 1
 
@@ -438,9 +441,8 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline"):
             # This seems to fail (ier=1, see ticket 1642).
-            sup.filter(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
 
         tx, ty = lut.get_knots()
@@ -456,7 +458,6 @@ class TestLSQBivariateSpline:
                               + lut(xb, yb)*t*s)
                         assert_almost_equal(lut(xp,yp), zp)
 
-    @pytest.mark.thread_unsafe
     def test_integral(self):
         x = [1,1,1,2,2,2,8,8,8]
         y = [1,2,3,1,2,3,1,2,3]
@@ -465,8 +466,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
             assert len(r) == 1
         tx, ty = lut.get_knots()
@@ -477,7 +477,6 @@ class TestLSQBivariateSpline:
         assert_almost_equal(np.asarray(lut.integral(tx[0], tx[-1], ty[0], ty[-1])),
                             np.asarray(trpz))
 
-    @pytest.mark.thread_unsafe
     def test_empty_input(self):
         # Test whether empty inputs returns an empty output. Ticket 1014
         x = [1,1,1,2,2,2,3,3,3]
@@ -486,8 +485,7 @@ class TestLSQBivariateSpline:
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
             assert len(r) == 1
 
@@ -537,7 +535,6 @@ class TestLSQBivariateSpline:
             LSQBivariateSpline(x, y, z, tx, ty, eps=1.0)
         assert "eps should be between (0, 1)" in str(exc_info.value)
 
-    @pytest.mark.thread_unsafe
     def test_array_like_input(self):
         s = 0.1
         tx = np.array([1 + s, 3 - s])
@@ -548,8 +545,7 @@ class TestLSQBivariateSpline:
         w = np.linspace(1.0, 10.0)
         bbox = np.array([1.0, 10.0, 1.0, 10.0])
 
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             # np.array input
             spl1 = LSQBivariateSpline(x, y, z, tx, ty, w=w, bbox=bbox)
             # list input
@@ -559,7 +555,6 @@ class TestLSQBivariateSpline:
             xp_assert_close(spl1(2.0, 2.0), spl2(2.0, 2.0))
             assert len(r) == 2
 
-    @pytest.mark.thread_unsafe
     def test_unequal_length_of_knots(self):
         """Test for the case when the input knot-location arrays in x and y are
         of different lengths.
@@ -570,8 +565,7 @@ class TestLSQBivariateSpline:
         z = 3.0 * np.ones_like(x)
         tx = np.linspace(0.1, 98.0, 29)
         ty = np.linspace(0.1, 98.0, 33)
-        with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline") as r:
             lut = LSQBivariateSpline(x,y,z,tx,ty)
             assert len(r) == 1
 
@@ -602,15 +596,15 @@ class TestSmoothBivariateSpline:
         assert abs(lut.get_residual()) < 1e-15
         assert_array_almost_equal(lut([1,1.5,2],[1,1.5]),[[0,0],[1,1],[2,2]])
 
-    @pytest.mark.thread_unsafe
     def test_integral(self):
         x = [1,1,1,2,2,2,4,4,4]
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # This seems to fail (ier=1, see ticket 1642).
-            sup.filter(UserWarning, "\nThe required storage space")
+            warnings.filterwarnings(
+                "ignore", "\nThe required storage space", UserWarning)
             lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
 
         tx = [1,2,4]
@@ -977,6 +971,27 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y,dy=1,grid=False),dy)
         assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
 
+    def make_pair_grid(self, x, y):
+        """
+        Create an array of (xi, yi) pairs for all xi in x and yi in y,
+        and reshape it to the desired shape.
+
+        Parameters
+        ----------
+        x : array_like
+            1D array of x-values.
+        y : array_like
+            1D array of y-values.
+        dest_shape : tuple
+            Desired output shape.
+
+        Returns
+        -------
+        np.ndarray
+            Reshaped array of (x, y) pairs.
+        """
+        return np.array([[xi, yi] for xi in x for yi in y])
+
     def test_partial_derivative_method_grid(self):
         x = array([1, 2, 3, 4, 5])
         y = array([1, 2, 3, 4, 5])
@@ -1001,9 +1016,15 @@ class TestRectBivariateSpline:
                       [22, -13.75, 0, 13.75, -22],
                       [-8, 5, 0, -5, 8]]) / 6.
         lut = RectBivariateSpline(x, y, z)
-        assert_array_almost_equal(lut.partial_derivative(1, 0)(x, y), dx)
-        assert_array_almost_equal(lut.partial_derivative(0, 1)(x, y), dy)
-        assert_array_almost_equal(lut.partial_derivative(1, 1)(x, y), dxdy)
+        lut_ndbspline = convert_to_ndbspline(lut)
+        for orders, expected in [([1, 0], dx), ([0, 1], dy), ([1, 1], dxdy)]:
+            actual_rect = lut.partial_derivative(*orders)(x, y)
+            actual_ndb = lut_ndbspline.derivative(orders)(
+                self.make_pair_grid(x, y)
+            ).reshape(expected.shape)
+
+            assert_array_almost_equal(actual_rect, expected)
+            assert_array_almost_equal(actual_ndb, expected)
 
     def test_partial_derivative_method(self):
         x = array([1, 2, 3, 4, 5])
@@ -1013,27 +1034,41 @@ class TestRectBivariateSpline:
                    [1, 2, 3, 2, 1],
                    [1, 2, 2, 2, 1],
                    [1, 2, 1, 2, 1]])
-        dx = array([0, 0, 2./3, 0, 0])
-        dy = array([4, -1, 0, -.25, -4])
-        dxdy = array([160, 65, 0, 55, 32]) / 24.
+        expected = {
+            (1, 0): array([0, 0, 2./3, 0, 0]), # dx
+            (0, 1): array([4, -1, 0, -.25, -4]), # dy
+            (1, 1): array([160, 65, 0, 55, 32]) / 24. # dxdy
+        }
+
         lut = RectBivariateSpline(x, y, z)
-        assert_array_almost_equal(lut.partial_derivative(1, 0)(x, y,
-                                                               grid=False),
-                                  dx)
-        assert_array_almost_equal(lut.partial_derivative(0, 1)(x, y,
-                                                               grid=False),
-                                  dy)
-        assert_array_almost_equal(lut.partial_derivative(1, 1)(x, y,
-                                                               grid=False),
-                                  dxdy)
+        lut_ndbspline = convert_to_ndbspline(lut)
+
+        points = self.make_pair_grid(x, y)  # shape: (25, 2)
+
+        # Evaluate only the diagonal points: (x[i], y[i])
+        diag_idx = np.arange(len(x))
+        diag_points = points[diag_idx * len(y) + diag_idx]
+
+        for orders, expected_vals in expected.items():
+            dx, dy = orders
+            # RectBivariateSpline result
+            actual_rbs = lut.partial_derivative(dx, dy)(x, y, grid=False)
+            assert_array_almost_equal(actual_rbs, expected_vals)
+
+            # NdBSpline result
+            actual_ndb = lut_ndbspline.derivative([dx, dy])(diag_points)
+            assert_array_almost_equal(actual_ndb, expected_vals)
 
     def test_partial_derivative_order_too_large(self):
         x = array([0, 1, 2, 3, 4], dtype=float)
         y = x.copy()
         z = ones((x.size, y.size))
         lut = RectBivariateSpline(x, y, z)
+        lut_ndbspline = convert_to_ndbspline(lut)
         with assert_raises(ValueError):
             lut.partial_derivative(4, 1)
+
+        assert (lut_ndbspline.derivative([4, 1]).c == 0.0).all()
 
     def test_broadcast(self):
         x = array([1,2,3,4,5])
@@ -1386,8 +1421,7 @@ class Test_DerivedBivariateSpline:
         x = np.concatenate(list(zip(range(10), range(10))))
         y = np.concatenate(list(zip(range(10), range(1, 11))))
         z = np.concatenate((np.linspace(3, 1, 10), np.linspace(1, 3, 10)))
-        with suppress_warnings() as sup:
-            sup.record(UserWarning, "\nThe coefficients of the spline")
+        with pytest.warns(UserWarning, match="\nThe coefficients of the spline"):
             self.lut_lsq = LSQBivariateSpline(x, y, z,
                                               linspace(0.5, 19.5, 4),
                                               linspace(1.5, 20.5, 4),
@@ -1416,14 +1450,23 @@ class Test_DerivedBivariateSpline:
     def test_creation_from_Rect(self):
         for nux, nuy in self.orders:
             lut_der = self.lut_rect.partial_derivative(nux, nuy)
+            lut_ndspline = convert_to_ndbspline(self.lut_rect)
+            lut_der_ndbspline = lut_ndspline.derivative((nux, nuy))
             a = lut_der(0.5, 1.5, grid=False)
+            a_ndbspline = lut_der_ndbspline([(0.5, 1.5)])
             b = self.lut_rect(0.5, 1.5, dx=nux, dy=nuy, grid=False)
+            b_ndbspline = lut_ndspline([(0.5, 1.5)], nu=(nux, nuy))
             assert a == b
+            assert_almost_equal(a_ndbspline, b_ndbspline)
 
     def test_invalid_attribute_fp(self):
         der = self.lut_rect.partial_derivative(1, 1)
+        lut_ndspline = convert_to_ndbspline(self.lut_rect)
+        der_ndbspline = lut_ndspline.derivative((1, 1))
         with assert_raises(AttributeError):
             der.fp
+        with assert_raises(AttributeError):
+            der_ndbspline.fp
 
     def test_invalid_attribute_get_residual(self):
         der = self.lut_smooth.partial_derivative(1, 1)

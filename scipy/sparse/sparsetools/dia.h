@@ -109,7 +109,7 @@ void dia_matmat(const I A_rows,
             T* diag_r = data->data() + npy_intp(L) * ofs_map[ofs] + B_ofs; // row-indexed
             // overlapping span of data within current B and A diagonals
             const I j_beg = max(B_j_beg, A_ofs),
-                    j_end = min({B_j_end, min(A_cols, A_L), A_rows + A_ofs});
+                    j_end = min({B_j_end, A_cols, A_L, A_rows + A_ofs});
             // add partial product to output
             for (I j = j_beg; j < j_end; ++j)
                 diag_r[j] += A_diag_c[j] * B_diag_r[j];
@@ -216,7 +216,7 @@ void dia_matvecs(const I A_rows,
             if (k < 0 or k >= k_end)
                 continue;
             // element at i-th row, k-th column in A
-            const T a = (A_data + npy_intp(A_L) * n)[k];
+            const T a = A_data[npy_intp(A_L) * n + k];
             // k-th row in B
             const T* B_row = B_data + npy_intp(B_cols) * k;
             // loop over columns in current output row
@@ -224,6 +224,73 @@ void dia_matvecs(const I A_rows,
                 row[j] += a * B_row[j];
         }
     }
+}
+
+
+/*
+ * Compute B = A for DIA matrix A, CSR matrix B
+ *
+ *
+ * Input Arguments:
+ *   I  n_rows            - number of rows in A
+ *   I  n_cols            - number of columns in A
+ *   I  n_diags           - number of diagonals in A
+ *   I  L                 - length of each diagonal in A
+ *   I  offsets[n_diags]  - diagonal offsets in A
+ *   T  data[n_diags,L]   - diagonals data of A (in C order)
+ *   I  order[n_diags]    - indices for traversing offsets[] in ascending order
+ *
+ * Output Arguments:
+ *   T  csr_data[max_nnz] - CSR format data array for B
+ *   I  indices[max_nnz]  - CSR format index array for B
+ *   I  indptr[n_rows+1]  - CSR format index pointer array for B
+ *
+ * Return Value:
+ *   I  nnz               - number of (non-zero) values stored in B
+ *
+ * Note:
+ *   Output arrays csr_data, indices and indptr must be preallocated and have
+ *   sufficient size (with max_nnz >= nnz == A.count_nonzero()), then resulting
+ *   arrays csr_data and indices must be truncated to the actual size returned
+ *   as nnz
+ *
+ * Note:
+ *   Output has canonical CSR format (sorted indices and no duplicates)
+ *
+ */
+template <class I, class T>
+I dia_tocsr(const I n_rows,
+            const I n_cols,
+            const I n_diags,
+            const I L,
+            const I offsets[],
+            const T data[],
+            const I order[],
+                  T csr_data[],
+                  I indices[],
+                  I indptr[])
+{
+    const I j_end = min(L, n_cols); // columns limit
+    indptr[0] = 0;
+    I nnz = 0;
+    // loop over rows
+    for (I i = 0; i < n_rows; ++i) {
+        // loop over offsets in ascending order
+        for (I k = 0; k < n_diags; ++k) {
+            const I n = order[k], // index of diagonal
+                    j = i + offsets[n]; // column
+            if (j < 0 or j >= j_end)
+                continue;
+            const T x = data[npy_intp(L) * n + j];
+            if (x != 0) {
+                indices[nnz] = j;
+                csr_data[nnz] = x;
+                ++nnz;
+            }
+        }
+        indptr[1 + i] = nnz;
+    }
+    return nnz; // actual output lengths
 }
 
 

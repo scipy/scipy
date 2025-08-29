@@ -29,7 +29,6 @@ def test_ufunc_signatures(ufunc):
     # "Don't add float32 versions of ufuncs with integer arguments, as this
     # can lead to incorrect dtype selection if the integer arguments are
     # arrays, but float arguments are scalars.
-    # For instance sph_harm(0,[0],0,0).dtype == complex64
     # This may be a NumPy bug, but we need to work around it.
     # cf. gh-4895, https://github.com/numpy/numpy/issues/5895"
     types = set(sig for sig in ufunc.types

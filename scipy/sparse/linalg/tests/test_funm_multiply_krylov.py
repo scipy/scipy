@@ -49,11 +49,11 @@ class TestKrylovFunmv:
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
     @pytest.mark.parametrize("f", FUNCS)
-    def test_funm_multiply_krylov_nonhermitian_sparse(self, f):
+    def test_funm_multiply_krylov_nonhermitian_sparse(self, f, num_parallel_threads):
 
         rng = np.random.default_rng(1738151906092735)
         n = 100
-        nsamples = 10
+        nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
             D = scipy.sparse.diags(rng.standard_normal(n))
@@ -88,11 +88,11 @@ class TestKrylovFunmv:
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
     @pytest.mark.parametrize("f", FUNCS)
-    def test_funm_multiply_krylov_hermitian_sparse(self, f):
+    def test_funm_multiply_krylov_hermitian_sparse(self, f, num_parallel_threads):
 
         rng = np.random.default_rng(1738151906092735)
         n = 100
-        nsamples = 10
+        nsamples = 1 + 9 // num_parallel_threads  # Very slow otherwise
 
         for i in range(nsamples):
             D = scipy.sparse.diags(rng.standard_normal(n))
@@ -131,6 +131,31 @@ class TestKrylovFunmv:
         expected = fA @ b
         observed = funm_multiply_krylov(expm, A, b, restart_every_m = 40)
         assert_allclose(observed, expected)
+
+    def test_funm_multiply_krylov_invalid_input(self):
+            A = np.array([[1, 2], [3, 4]])  # Non-hermitian matrix
+            b = np.array([1.0, 2.0])  # Ensure 'b' is a 1D array of floats
+
+            # Test for invalid 'b' (not 1D)
+            b_invalid = np.array([[1.0], [2.0]])  # 2D array
+            with pytest.raises(ValueError, 
+                    match="argument 'b' must be a 1D array."): 
+                funm_multiply_krylov(np.exp, A, b_invalid)
+
+            # Test for invalid restart parameter
+            with pytest.raises(ValueError, 
+                    match="argument 'restart_every_m' must be positive."): 
+                funm_multiply_krylov(np.exp, A, b, restart_every_m=0)
+
+            # Test for invalid max_restarts
+            with pytest.raises(ValueError, 
+                    match="argument 'max_restarts' must be positive."): 
+                funm_multiply_krylov(np.exp, A, b, max_restarts=0)
+
+            # Test for invalid 'assume_a' string
+            with pytest.raises(ValueError, 
+                    match="is not a recognized matrix structure"): 
+                funm_multiply_krylov(np.exp, A, b, assume_a='invalid')
 
 
 @pytest.mark.parametrize("dtype_a", DTYPES)

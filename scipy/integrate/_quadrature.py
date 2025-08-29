@@ -8,7 +8,8 @@ from collections.abc import Callable
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib._array_api import _asarray, array_namespace, xp_result_type
+from scipy._lib._array_api import (_asarray, array_namespace, xp_result_type,
+                                   xp_capabilities,)
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -17,6 +18,8 @@ __all__ = ['fixed_quad', 'romb',
            'qmc_quad', 'cumulative_simpson']
 
 
+@xp_capabilities(skip_backends=[('jax.numpy',
+                                 "JAX arrays do not support item assignment")])
 def trapezoid(y, x=None, dx=1.0, axis=-1):
     r"""
     Integrate along the given axis using the composite trapezoidal rule.
@@ -175,6 +178,7 @@ def _cached_roots_legendre(n):
 _cached_roots_legendre.cache = dict()
 
 
+@xp_capabilities(np_only=True)
 def fixed_quad(func, a, b, args=(), n=5):
     """
     Compute a definite integral using fixed-order Gaussian quadrature.
@@ -248,6 +252,7 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
+@xp_capabilities()
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
@@ -299,24 +304,27 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
+
     if y.shape[axis] == 0:
         raise ValueError("At least one point is required along `axis`.")
+
     if x is None:
         d = dx
     else:
-        x = np.asarray(x)
+        x = xp.asarray(x)
         if x.ndim == 1:
-            d = np.diff(x)
+            d = xp.diff(x)
             # reshape to correct shape
             shape = [1] * y.ndim
             shape[axis] = -1
-            d = d.reshape(shape)
+            d = xp.reshape(d, tuple(shape))
         elif len(x.shape) != len(y.shape):
             raise ValueError("If given, shape of x must be 1-D or the "
                              "same as y.")
         else:
-            d = np.diff(x, axis=axis)
+            d = xp.diff(x, axis=axis)
 
         if d.shape[axis] != y.shape[axis] - 1:
             raise ValueError("If given, length of x along axis must be the "
@@ -325,7 +333,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     nd = len(y.shape)
     slice1 = tupleset((slice(None),)*nd, axis, slice(1, None))
     slice2 = tupleset((slice(None),)*nd, axis, slice(None, -1))
-    res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
+    res = xp.cumulative_sum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
         if initial != 0:
@@ -335,8 +343,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
-                             axis=axis)
+        res = xp.concat((xp.full(tuple(shape), initial, dtype=res.dtype), res),
+                        axis=axis)
 
     return res
 
@@ -378,6 +386,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
+@xp_capabilities(np_only=True)
 def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
@@ -540,24 +549,24 @@ def simpson(y, x=None, *, dx=1.0, axis=-1):
 
 
 def _cumulatively_sum_simpson_integrals(
-    y: np.ndarray, 
-    dx: np.ndarray, 
+    y: np.ndarray,
+    dx: np.ndarray,
     integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
 ) -> np.ndarray:
     """Calculate cumulative sum of Simpson integrals.
-    Takes as input the integration function to be used. 
+    Takes as input the integration function to be used.
     The integration_func is assumed to return the cumulative sum using
     composite Simpson's rule. Assumes the axis of summation is -1.
     """
     sub_integrals_h1 = integration_func(y, dx)
     sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
-    
+
     shape = list(sub_integrals_h1.shape)
     shape[-1] += 1
     sub_integrals = np.empty(shape)
     sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
     sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
-    # Integral over last subinterval can only be calculated from 
+    # Integral over last subinterval can only be calculated from
     # formula for h2
     sub_integrals[..., -1] = sub_integrals_h2[..., -1]
     res = np.cumsum(sub_integrals, axis=-1)
@@ -609,10 +618,11 @@ def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
     return arr
 
 
+@xp_capabilities(np_only=True)
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
-    The integral of the samples at every point is calculated by assuming a 
+    The integral of the samples at every point is calculated by assuming a
     quadratic relationship between each point and the two adjacent points.
 
     Parameters
@@ -628,7 +638,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         If `x` is None (default), integration is performed using spacing `dx`
         between consecutive elements in `y`.
     dx : scalar or array_like, optional
-        Spacing between elements of `y`. Only used if `x` is None. Can either 
+        Spacing between elements of `y`. Only used if `x` is None. Can either
         be a float, or an array with the same shape as `y`, but of length one along
         `axis`. Default is 1.0.
     axis : int, optional
@@ -651,7 +661,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum
-    cumulative_trapezoid : cumulative integration using the composite 
+    cumulative_trapezoid : cumulative integration using the composite
         trapezoidal rule
     simpson : integrator for sampled data using the Composite Simpson's Rule
 
@@ -660,18 +670,18 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     .. versionadded:: 1.12.0
 
-    The composite Simpson's 1/3 method can be used to approximate the definite 
-    integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
+    The composite Simpson's 1/3 method can be used to approximate the definite
+    integral of a sampled input function :math:`y(x)` [1]_. The method assumes
     a quadratic relationship over the interval containing any three consecutive
     sampled points.
 
-    Consider three consecutive points: 
+    Consider three consecutive points:
     :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
 
     Assuming a quadratic relationship over the three points, the integral over
     the subinterval between :math:`x_1` and :math:`x_2` is given by formula
     (8) of [2]_:
-    
+
     .. math::
         \int_{x_1}^{x_2} y(x) dx\ &= \frac{x_2-x_1}{6}\left[\
         \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
@@ -683,11 +693,11 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     appearances of :math:`x_1` and :math:`x_3`. The integral is estimated
     separately for each subinterval and then cumulatively summed to obtain
     the final result.
-    
+
     For samples that are equally spaced, the result is exact if the function
     is a polynomial of order three or less [1]_ and the number of subintervals
     is even. Otherwise, the integral is exact for polynomials of order two or
-    less. 
+    less.
 
     References
     ----------
@@ -793,6 +803,7 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     return res
 
 
+@xp_capabilities()
 def romb(y, dx=1.0, axis=-1, show=False):
     """
     Romberg integration using samples of a function.
@@ -849,8 +860,12 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ======================================================
     -0.742561336672229  # may vary
 
+    >>> integrate.romb([[1, 2, 3], [4, 5, 6]], show=True)
+    *** Printing table only supported for integrals of a single data set.
+    array([ 4., 10.])
     """
-    y = np.asarray(y)
+    xp = array_namespace(y)
+    y = xp.asarray(y)
     nd = len(y.shape)
     Nsamps = y.shape[axis]
     Ninterv = Nsamps-1
@@ -867,7 +882,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     slice_all = (slice(None),) * nd
     slice0 = tupleset(slice_all, axis, 0)
     slicem1 = tupleset(slice_all, axis, -1)
-    h = Ninterv * np.asarray(dx, dtype=float)
+    h = Ninterv * xp.asarray(dx, dtype=xp.float64)
     R[(0, 0)] = (y[slice0] + y[slicem1])/2.0*h
     slice_R = slice_all
     start = stop = step = Ninterv
@@ -875,7 +890,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
         start >>= 1
         slice_R = tupleset(slice_R, axis, slice(start, stop, step))
         step >>= 1
-        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*y[slice_R].sum(axis=axis))
+        R[(i, 0)] = 0.5*(R[(i-1, 0)] + h*xp.sum(y[slice_R], axis=axis))
         for j in range(1, i+1):
             prev = R[(i, j-1)]
             R[(i, j)] = prev + (prev-R[(i-1, j-1)]) / ((1 << (2*j))-1)
@@ -969,6 +984,7 @@ _builtincoeffs = {
     }
 
 
+@xp_capabilities(np_only=True)
 def newton_cotes(rn, equal=0):
     r"""
     Return weights and error coefficient for Newton-Cotes integration.
@@ -1155,6 +1171,7 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log):
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
+@xp_capabilities(np_only=True)
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
              log=False):
     """

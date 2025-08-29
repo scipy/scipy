@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_equal
@@ -175,8 +177,8 @@ def test_dunder_ror(d, Asp):
 
 # Note: comparison dunders, e.g. ==, >=, etc follow np.array not dict
 def test_dunder_eq(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp == Asp).toarray().all()
         assert (A == Asp).all()
 
@@ -193,14 +195,14 @@ def test_dunder_gt(A, Asp):
     assert not (A > Asp).any()
 
 def test_dunder_le(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp <= Asp).toarray().all()
         assert (A <= Asp).all()
 
 def test_dunder_ge(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp >= Asp).toarray().all()
         assert (A >= Asp).all()
 

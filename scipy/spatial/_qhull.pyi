@@ -5,11 +5,11 @@ Static type checking stub file for scipy/spatial/qhull.pyx
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from typing_extensions import final
+from typing import final
 
 class QhullError(RuntimeError):
     ...
-    
+
 @final
 class _Qhull:
     # Read-only cython attribute that behaves, more or less, like a property

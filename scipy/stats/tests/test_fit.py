@@ -1,6 +1,7 @@
 import os
+import warnings
+
 import numpy as np
-import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
@@ -521,8 +522,8 @@ class TestFit:
         if getattr(dist, 'pdf', False):
             data = dist.rvs(*ref, size=N, random_state=rng)
 
-        with npt.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "overflow encountered", RuntimeWarning)
             res = stats.fit(dist, data, bounds, method=method,
                             optimizer=self.opt)
 

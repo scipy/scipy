@@ -1,4 +1,6 @@
 import sys
+import warnings
+
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -190,10 +192,11 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
             and distname != 'vonmises'):
         check_private_entropy(distfn, arg, stats.rv_continuous)
 
-    with npt.suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
-        sup.filter(IntegrationWarning, "Extremely bad integrand")
-        sup.filter(RuntimeWarning, "invalid value")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The occurrence of roundoff error", IntegrationWarning)
+        warnings.filterwarnings("ignore", "Extremely bad integrand", IntegrationWarning)
+        warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
         check_entropy_vect_scale(distfn, arg)
 
     check_retrieving_support(distfn, arg)
@@ -284,7 +287,7 @@ def test_rvs_scalar(distname, arg):
     assert np.isscalar(distfn.rvs(*arg, size=None))
 
 
-@pytest.mark.parallel_threads(1)
+@pytest.mark.thread_unsafe(reason="global rng")
 def test_levy_stable_random_state_property():
     # levy_stable only implements rvs(), so it is skipped in the
     # main loop in test_cont_basic(). Here we apply just the test
@@ -341,16 +344,25 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    with npt.suppress_warnings() as sup:
-        sup.filter(IntegrationWarning,
-                   "The integral is probably divergent, or slowly convergent.")
-        sup.filter(IntegrationWarning,
-                   "The maximum number of subdivisions.")
-        sup.filter(IntegrationWarning,
-                   "The algorithm does not converge.")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "The integral is probably divergent, or slowly convergent.",
+            IntegrationWarning,
+        )
+        warnings.filterwarnings(
+            "ignore",
+            "The maximum number of subdivisions.",
+            IntegrationWarning
+        )
+        warnings.filterwarnings(
+            "ignore",
+            "The algorithm does not converge.",
+            IntegrationWarning
+        )
 
         if is_xfailing:
-            sup.filter(IntegrationWarning)
+            warnings.simplefilter("ignore", IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
@@ -770,10 +782,10 @@ def check_retrieving_support(distfn, args):
 
 
 def check_fit_args(distfn, arg, rvs, method):
-    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
-        sup.filter(category=RuntimeWarning,
+    with np.errstate(all='ignore'), warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning,
                    message="The shape parameter of the erlang")
-        sup.filter(category=RuntimeWarning,
+        warnings.filterwarnings("ignore", category=RuntimeWarning,
                    message="floating point number truncated")
         vals = distfn.fit(rvs, method=method)
         vals2 = distfn.fit(rvs, optimizer='powell', method=method)
@@ -783,8 +795,8 @@ def check_fit_args(distfn, arg, rvs, method):
 
 
 def check_fit_args_fix(distfn, arg, rvs, method):
-    with np.errstate(all='ignore'), npt.suppress_warnings() as sup:
-        sup.filter(category=RuntimeWarning,
+    with np.errstate(all='ignore'), warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning,
                    message="The shape parameter of the erlang")
 
         vals = distfn.fit(rvs, floc=0, method=method)
@@ -991,8 +1003,7 @@ def test_kappa4_array_gh13582():
     assert res2.shape == (4, 4, 3)
 
 
-@pytest.mark.parallel_threads(1)
-def test_frozen_attributes():
+def test_frozen_attributes(monkeypatch):
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
     message = "'rv_continuous_frozen' object has no attribute"
@@ -1000,10 +1011,10 @@ def test_frozen_attributes():
         stats.norm().pmf
     with pytest.raises(AttributeError, match=message):
         stats.norm().logpmf
-    stats.norm.pmf = "herring"
+    monkeypatch.setattr(stats.norm, "pmf", "herring", raising=False)
     frozen_norm = stats.norm()
     assert isinstance(frozen_norm, rv_continuous_frozen)
-    delattr(stats.norm, 'pmf')
+    assert not hasattr(frozen_norm, "pmf")
 
 
 def test_skewnorm_pdf_gh16038():

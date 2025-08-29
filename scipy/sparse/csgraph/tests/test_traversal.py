@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
@@ -79,9 +80,10 @@ def test_return_type():
         assert isinstance(breadth_first_tree(csgraph, 0, directed), csr_array)
 
     # start of testing with matrix/spmatrix types
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "the matrix subclass.*")
-        sup.filter(PendingDeprecationWarning, "the matrix subclass.*")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "the matrix subclass.*", DeprecationWarning)
+        warnings.filterwarnings(
+            "ignore", "the matrix subclass.*", PendingDeprecationWarning)
 
         nm_csgraph = np.matrix([[0, 1, 2, 0, 0],
                                 [1, 0, 0, 0, 3],

@@ -125,7 +125,7 @@ def _analytical_solution(a, y0, t):
     return sol
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="vode integrator is not thread-safe")
 def test_banded_ode_solvers():
     # Test the "lsoda", "vode" and "zvode" solvers of the `ode` class
     # with a system that has a banded Jacobian matrix.
@@ -251,7 +251,7 @@ def banded_stiff_jac(t, y):
         [0,  0.04,           3e7*2*y[2],         0, 0]
     ])
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="lsoda integrator is not thread-safe")
 def test_banded_lsoda():
     # expected solution is given by problem with full jacobian
     tfull, yfull = _solve_robertson_lsoda(use_jac=True, banded=False)

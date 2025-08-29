@@ -5,12 +5,13 @@
 
 """
 import math
+import warnings
 
 import numpy as np
 from numpy import array, eye, exp, random
 from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
-        assert_array_almost_equal_nulp, suppress_warnings)
+        assert_array_almost_equal_nulp)
 
 from scipy.sparse import csc_array, SparseEfficiencyWarning
 from scipy.sparse._construct import eye_array
@@ -143,8 +144,9 @@ class TestExpM:
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * eye_array(3, 3, dtype=dtype, format='csc')
             e = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                msg = "Changing the sparsity structure"
+                warnings.filterwarnings("ignore", msg, SparseEfficiencyWarning)
                 exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
                 inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
             assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
@@ -156,8 +158,9 @@ class TestExpM:
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * eye_array(3, 3, dtype=dtype, format='csc')
             e = exp(scale) * eye(3, dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            with warnings.catch_warnings():
+                msg = "Changing the sparsity structure"
+                warnings.filterwarnings("ignore", msg, SparseEfficiencyWarning)
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
@@ -219,8 +222,10 @@ class TestExpM:
         tiny = 1e-17
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "Ill-conditioned.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Ill-conditioned.*", RuntimeWarning)
+            warnings.filterwarnings("ignore", "An ill-conditioned.*", RuntimeWarning)
+
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny
@@ -537,9 +542,11 @@ class TestExpM:
         A = np.zeros((200, 200))
         A[-1,0] = 1
         B0 = expm(A)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "the matrix subclass.*")
-            sup.filter(PendingDeprecationWarning, "the matrix subclass.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "the matrix subclass.*", DeprecationWarning)
+            warnings.filterwarnings(
+                "ignore", "the matrix subclass.*", PendingDeprecationWarning)
             B = expm(np.matrix(A))
         assert_allclose(B, B0)
 

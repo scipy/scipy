@@ -31,7 +31,6 @@ from scipy._lib._array_api import (
 
 )
 from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_compat.numpy as np_compat
 import scipy._lib.array_api_extra as xpx
 
 
@@ -99,22 +98,6 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
-
-
-def _reject_objects(arr, name):
-    """Warn if arr.dtype is object or longdouble.
-    """
-    dt = np.asarray(arr).dtype
-    if not (np.issubdtype(dt, np.integer)
-            or dt in [np.bool_, np.float16, np.float32, np.float64,
-                      np.complex64, np.complex128]
-    ):
-        msg = (
-            f"dtype={dt} is not supported by {name} and will raise an error in "
-            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
-            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
-        )
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -250,15 +233,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -1372,15 +1347,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'choose_conv_method')
-        _reject_objects(in2, 'choose_conv_method')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1511,15 +1478,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -2211,16 +2170,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(b, a, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(x, 'lfilter')
-        _reject_objects(a, 'lfilter')
-        _reject_objects(b, 'lfilter')
+    xp = array_namespace(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -2339,17 +2289,7 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    try:
-        xp = array_namespace(a, b, y, x)
-    except TypeError:
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(a, 'lfiltic')
-        _reject_objects(b, 'lfiltic')
-        _reject_objects(y, 'lfiltic')
-        if x is not None:
-            _reject_objects(x, 'lfiltic')
+    xp = array_namespace(a, b, y, x)
 
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
@@ -4921,8 +4861,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     """
     xp = array_namespace(b, a, x)
 
-    b = np.atleast_1d(b)
-    a = np.atleast_1d(a)
+    b = np.atleast_1d(np.asarray(b))
+    a = np.atleast_1d(np.asarray(a))
     x = np.asarray(x)
 
     if method not in ["pad", "gust"]:
@@ -5080,17 +5020,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(sos, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(sos, 'sosfilt')
-        _reject_objects(x, 'sosfilt')
-        if zi is not None:
-            _reject_objects(zi, 'sosfilt')
+    xp = array_namespace(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -5130,10 +5060,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape = x_shape
+    x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
-        zi.shape = zi_shape
+        zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
@@ -5245,7 +5175,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
-    zi.shape = [n_sections] + zi_shape
+    zi = zi.reshape([n_sections] + zi_shape)
     x_0 = axis_slice(ext, stop=1, axis=axis)
     (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)

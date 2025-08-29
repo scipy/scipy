@@ -1,4 +1,5 @@
 import warnings
+from types import GenericAlias
 
 import numpy as np
 from scipy.special import factorial
@@ -49,6 +50,9 @@ class _Interpolator1D:
     """
 
     __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis

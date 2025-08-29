@@ -119,7 +119,6 @@ def test_fht_identity(n, bias, offset, optimal, xp):
 
 
 
-@pytest.mark.thread_unsafe
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 

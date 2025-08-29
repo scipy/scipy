@@ -1,3 +1,5 @@
+import warnings
+
 import numpy.testing as npt
 from numpy.testing import assert_allclose
 
@@ -99,9 +101,9 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         if distname in ['zipf', 'betanbinom']:
-            sup.filter(RuntimeWarning)
+            warnings.simplefilter("ignore", RuntimeWarning)
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -418,8 +420,7 @@ def test_integer_shapes(distname, shapename, shapes):
     assert not np.any(np.isnan(pmf[2, :]))
 
 
-@pytest.mark.parallel_threads(1)
-def test_frozen_attributes():
+def test_frozen_attributes(monkeypatch):
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
     message = "'rv_discrete_frozen' object has no attribute"
@@ -427,10 +428,10 @@ def test_frozen_attributes():
         stats.binom(10, 0.5).pdf
     with pytest.raises(AttributeError, match=message):
         stats.binom(10, 0.5).logpdf
-    stats.binom.pdf = "herring"
+    monkeypatch.setattr(stats.binom, "pdf", "herring", raising=False)
     frozen_binom = stats.binom(10, 0.5)
     assert isinstance(frozen_binom, rv_discrete_frozen)
-    delattr(stats.binom, 'pdf')
+    assert not hasattr(frozen_binom, "pdf")
 
 
 @pytest.mark.parametrize('distname, shapes', distdiscrete)

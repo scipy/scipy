@@ -994,6 +994,21 @@ class TestAkima1DInterpolator:
         xp_assert_close(y_ext, ak_true(x_ext), atol=1e-15)
 
 
+    def test_no_overflow(self):
+        # check a large jump does not cause a float overflow
+        x = np.arange(1, 10)
+        y = 1.e6*np.sqrt(np.finfo(float).max)*np.heaviside(x-4, 0.5)
+
+        ak1 = Akima1DInterpolator(x, y, method='makima')
+        ak2 = Akima1DInterpolator(x, y, method='akima')
+
+        y_eval1 = ak1(x)
+        y_eval2 = ak2(x)
+
+        assert np.isfinite(y_eval1).all()
+        assert np.isfinite(y_eval2).all()
+
+
 @pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])
 def test_complex(method):
     # Complex-valued data deprecated
@@ -2438,7 +2453,6 @@ class TestNdPPoly:
         paz = p.antiderivative((0, 0, 1))
         xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
 
@@ -2493,7 +2507,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     V = np.vander(diff, N=K)
     values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
-    res.shape = saveshape
+    res = res.reshape(saveshape)
     return res
 
 

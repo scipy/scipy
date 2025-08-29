@@ -533,7 +533,7 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
     SCIPY_C* restrict data = &buffer[0];
     SCIPY_C* restrict vs = &buffer[n*n];
     SCIPY_C* restrict w = &buffer[2*n*n];
-    float* restrict rwork = &((float*)buffer)[2*n*n + n];
+    float* restrict rwork = (float*)(&buffer[2*n*n + n]);
     SCIPY_C* restrict work = &buffer[2*n*n + 2*n];
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {
@@ -635,7 +635,7 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
     SCIPY_Z* restrict data = &buffer[0];
     SCIPY_Z* restrict vs = &buffer[n*n];
     SCIPY_Z* restrict w = &buffer[2*n*n];
-    double* restrict rwork = &((double*)buffer)[2*n*n + n];
+    double* restrict rwork = (double*)(&buffer[2*n*n + n]);
     SCIPY_Z* restrict work = &buffer[2*n*n + 2*n];
 
     for (npy_intp idx = 0; idx < outer_size; idx++) {

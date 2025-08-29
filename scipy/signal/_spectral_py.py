@@ -243,11 +243,11 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights *= 1.0 / weights.sum()
+    weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
     if precenter:
-        y -= y.mean()
+        y = y - y.mean()
 
     # transform arrays
     # row vector

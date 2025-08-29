@@ -184,9 +184,6 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(f(3j, [[3-4j]], [-4], 3, [5j]),
                                       [-48-21j])
 
-    # All of these *ger* functions are segfaulting when called from multiple
-    # threads under free-threaded CPython, see gh-21936.
-    @pytest.mark.thread_unsafe
     @parametrize_blas(fblas, "ger", "sd")
     def test_ger(self, f, dtype):
         assert_array_almost_equal(f(1, [1, 2], [3, 4]), [[3, 4], [6, 8]])
@@ -200,7 +197,6 @@ class TestFBLAS2Simple:
             assert_array_almost_equal(f(2, [1j, 2j, 3j], [3j, 4j]),
                                       [[6, 8], [12, 16], [18, 24]])
 
-    @pytest.mark.thread_unsafe
     @parametrize_blas(fblas, "geru", "cz")
     def test_geru(self, f, dtype):
         assert_array_almost_equal(f(1, [1j, 2], [3, 4]),
@@ -208,7 +204,6 @@ class TestFBLAS2Simple:
         assert_array_almost_equal(f(-2, [1j, 2j, 3j], [3j, 4j]),
                                   [[6, 8], [12, 16], [18, 24]])
 
-    @pytest.mark.thread_unsafe
     @parametrize_blas(fblas, "gerc", "cz")
     def test_gerc(self, f, dtype):
         assert_array_almost_equal(f(1, [1j, 2], [3, 4]),

@@ -7,6 +7,9 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+import os
+import sys
+import textwrap
 from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
@@ -61,14 +64,6 @@ _RNG: TypeAlias = np.random.Generator | np.random.RandomState
 SeedType: TypeAlias = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
-
-# Since Generator was introduced in numpy 1.17, the following condition is needed for
-# backward compatibility
-try:
-    from numpy.random import Generator as Generator
-except ImportError:
-    class Generator:  # type: ignore[no-redef]
-        pass
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -350,6 +345,13 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
 
             return fun(*args, **kwargs)
 
+        # Add the old parameter name to the function signature
+        wrapped_signature = inspect.signature(fun)
+        wrapper.__signature__ = wrapped_signature.replace(parameters=[
+            *wrapped_signature.parameters.values(),
+            inspect.Parameter(old_name, inspect.Parameter.KEYWORD_ONLY, default=None),
+        ])
+
         if replace_doc:
             doc = FunctionDoc(wrapper)
             parameter_names = [param.name for param in doc['Parameters']]
@@ -618,18 +620,26 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import Pool
+            from multiprocessing import get_context, get_start_method
+
+            method = get_start_method(allow_none=True)
+
+            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+                # Python 3.13 and older used "fork" on posix, which can lead to
+                # deadlocks. This backports that fix to older Python versions.
+                method = 'forkserver'
+
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
-                self.pool = Pool()
+                self.pool = get_context(method=method).Pool()
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             elif int(pool) == 1:
                 pass
             elif int(pool) > 1:
                 # use the number of processors requested
-                self.pool = Pool(processes=int(pool))
+                self.pool = get_context(method=method).Pool(processes=int(pool))
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             else:
@@ -734,7 +744,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
-    if isinstance(gen, Generator):
+    if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
     else:
@@ -807,38 +817,6 @@ def _argmin(a, keepdims=False, axis=None):
     if keepdims and axis is not None:
         res = np.expand_dims(res, axis=axis)
     return res
-
-
-def _first_nonnan(a, axis):
-    """
-    Return the first non-nan value along the given axis.
-
-    If a slice is all nan, nan is returned for that slice.
-
-    The shape of the return value corresponds to ``keepdims=True``.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> nan = np.nan
-    >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
-    >>> _first_nonnan(a, axis=0)
-    array([[3., 3., 2., 3.]])
-    >>> _first_nonnan(a, axis=1)
-    array([[ 3.],
-           [ 1.],
-           [ 9.],
-           [ 5.],
-           [ 2.],
-           [nan]])
-    """
-    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
-    return np.take_along_axis(a, k, axis=axis)
 
 
 def _contains_nan(
@@ -1232,3 +1210,15 @@ def np_vecdot(x1, x2, /, *, axis=-1):
         # of course there are other fancy ways of doing this (e.g. `einsum`)
         # but let's keep it simple since it's temporary
         return np.sum(x1 * x2, axis=axis)
+
+
+def _dedent_for_py313(s):
+    """Apply textwrap.dedent to s for Python versions 3.13 or later."""
+    return s if sys.version_info < (3, 13) else textwrap.dedent(s)
+
+
+def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
+    )

@@ -10,7 +10,8 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_copy,
-    xp_promote
+    xp_promote,
+    xp_capabilities
 )
 from scipy._lib._util import MapWrapper
 
@@ -56,6 +57,7 @@ class CubatureResult:
     rtol: float
 
 
+@xp_capabilities(allow_dask_compute=True, jax_jit=False)
 def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
              args=(), workers=1, points=None):
     r"""

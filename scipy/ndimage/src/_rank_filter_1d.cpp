@@ -155,7 +155,26 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
                   int mode, T cval, int origin) {
   int i, arr_len_thresh, lim = (win_len - 1) / 2 - origin;
   int lim2 = arr_len - lim;
-  if (lim2 < 0) return;
+  /* Note: `arr_len == 1` is the only case implemented here for `lim2 < 0`; the calling code */
+  /* in _filters.py ensures that this function isn't called otherwise. xref gh-23293 for details. */
+  if (lim2 < 0 && arr_len == 1) {
+      switch (mode) {
+          case REFLECT:
+          case NEAREST:
+          case WRAP:
+          case MIRROR:
+              out_arr[0] = in_arr[0];
+              return;
+          case CONSTANT:
+              if (win_len == 1) {
+                  out_arr[0] = in_arr[0];
+              }
+              else {
+                  out_arr[0] = cval;
+              }
+              return;
+      }
+  }
   int offset;
   Mediator *m = MediatorNew(win_len, rank);
   T *data = new T[win_len]();

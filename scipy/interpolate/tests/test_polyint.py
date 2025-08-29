@@ -314,12 +314,10 @@ class TestKrogh:
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         xp_assert_close(cmplx, cmplx2, atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_high_degree_warning(self):
         with pytest.warns(UserWarning, match="40 degrees provided,"):
             KroghInterpolator(np.arange(40), np.ones(40))
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = KroghInterpolator(self.xs, self.ys)
 
@@ -519,7 +517,6 @@ class TestBarycentric:
         # at the nodes
         assert_almost_equal(yi, P.yi.ravel())
 
-    @pytest.mark.thread_unsafe
     def test_repeated_node(self):
         # check that a repeated node raises a ValueError
         # (computing the weights requires division by xi[i] - xi[j])
@@ -529,7 +526,6 @@ class TestBarycentric:
                            match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = BarycentricInterpolator(self.xs, self.ys)
 
@@ -625,7 +621,6 @@ class TestPCHIP:
             for t in (x[0], x[-1]):
                 assert pp(t, 1) != 0
 
-    @pytest.mark.thread_unsafe
     def test_all_zeros(self):
         x = np.arange(10)
         y = np.zeros_like(x)

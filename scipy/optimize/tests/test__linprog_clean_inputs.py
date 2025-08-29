@@ -1,6 +1,8 @@
 """
 Unit test for Linear Programming via Simplex Algorithm.
 """
+import warnings
+
 from copy import deepcopy
 from datetime import date
 
@@ -115,8 +117,9 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "Creating an ndarray from ragged", VisibleDeprecationWarning)
         assert_raises(ValueError, _clean_inputs,
                       _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
 
@@ -248,8 +251,9 @@ def test_bad_bounds():
 
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "Creating an ndarray from ragged", VisibleDeprecationWarning)
         assert_raises(ValueError, _clean_inputs,
                       lp._replace(bounds=[(1, 2), (1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs,

@@ -1,0 +1,92 @@
+Arnaud - ARPACK in C
+====================
+
+This project is a C adaptation and rewrite of the well-known Fortran77 ARPACK large
+scale eigenvalue problem solver, which is widely used in scientific computing, authored
+by Richard Lehoucq, Kristi Maschhoff, Danny Sorensen, and Chao Yang. Original Fortran77
+ARPACK code license can be found in the "ARPACK_LICENSE.txt" file. Arnaud license is
+given in the LICENSE file.
+
+The source is based on the original Fortran77 code and a few of the patches collected
+over the years. The patched Fortran code can be found at arpack-ng repository on GitHub,
+at the time of writing version 3.9.1:
+
+ https://github.com/opencollab/arpack-ng/
+
+While the translation is done mostly in a mechanical fashion, however,
+still there are significant changes, namely, XYapps.f and Xstqrb.f are rewritten
+to avoid the goto-based flow. This version also includes API breaking changes to
+make it more flexible to be included in other projects. Hence the name change.
+
+ARPACK uses the so-called reverse-communication style that typically exits
+the program with its in/out arguments to signal in what stage the algorithm
+is and what it needs. Then user modifies the arguments and calls again with
+the necessary information. Thus the state of the whole program is sent back
+and forth through in-place modified arguments. On top of this, ARPACK also
+uses lots of variables through Fortran's dreadful use of the SAVE attribute
+(similar to that of the C language STATIC keyword inside a function body) that
+persists the variable values across consecutive calls. Instead, we move all of
+those variables into the reverse communication layer by a C-struct bridge and,
+for array arguments, pointers that are provided by the user to make modifications
+in-place without any alloc/free. This struct bridge also allows for reentrancy
+and avoids issues that prevent thread safety.
+
+Compared to the original Fortran code, random number generation is now delegated
+to the user side to allow for seed control, custom generators and replicable runs.
+Hence, the ido_RANDOM and ido_RANDOM_OPX codes are used to signal that the user
+input is needed. In turn the original ARPACK ido mode -1 is removed.
+
+
+Usage
+-----
+
+Similar to ARPACK F77 routines, Arnaud uses a reverse-communication scheme.
+After creating an instance of an Arnaud struct (single or double precision), the
+relevant functions can be called within a loop until success or an error. An example
+pseudo-code of a double precision non-symmetric Arnoldi step is as follows;
+
+```C
+
+#include "arnaud.h"
+
+// Instantiate a state struct
+struct ARNAUD_state_d Vars = {0};
+
+// Set up the input parameters of the problem. See arnaud.h for more information
+Vars.tol = 1e-8;       // Problem tolerance
+Vars.which = which_LM; // Sort by largest magnitude
+Vars.ido = ido_FIRST;  // All problems start with ido_FIRST
+Vars.info = 0;         // If info set to 1, then it is assumed that the user provides the initial v0
+Vars.bmat = 0;         // If bmat set to 1, then a generalized problem is assumed, 0 for standard problem
+Vars.n = 100;          // The size of the operator A, B
+Vars.ncv = 20;         // The number of the Ritz vectors to be used. Higher more precise but more memory consumption.
+Vars.nev = 3;          // The number of eigenvalues/eigenvectors requested from the algorithm.
+Vars.shift = 0         // If shift is 1 then the user needs to provide the shifts manually.
+Vars.maxiter = 100     // The number of iterations before giving up in case no convergence achieved.
+
+
+while (Vars.ido != ido_DONE) {
+    // Call the Arnaud function
+    ARNAUD_dnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+
+    // Check the necessary step requested by Arnaud
+
+    switch (Vars.ido) {
+        case (ido_OPX):
+            // Perform y = OP(x)
+        case (ido_BX):
+            // Perform z = OPB(y)
+        case (ido_USER_SHIFT):
+            // Provide the shifts as described in the ARPACK manual
+        case (ido_RANDOM):
+            // Fill in "resid" vector with random entries from a uniform distribution [-1, 1]
+        case (ido_RANDOM_OPX):
+            // Perform an x = OP(resid) to get a random vector in the image of OP
+        default:
+            break; // Do nothing, either success or error; both results with ido_DONE.
+    }
+}
+
+// Proceed with calling dneupd 
+
+```

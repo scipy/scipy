@@ -7,6 +7,7 @@ import functools
 import numpy as np
 
 from scipy._lib._util import MapWrapper, _FunctionWrapper
+from scipy._lib._array_api import xp_capabilities
 
 
 class LRUDict(collections.OrderedDict):
@@ -103,6 +104,7 @@ class _Bunch:
         return f"_Bunch({key_value_pairs})"
 
 
+@xp_capabilities(np_only=True)
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
              limit=10000, workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):

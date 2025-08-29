@@ -286,7 +286,6 @@ class SVDSCommonTests:
             svds(np.eye(10), return_singular_vectors=rsv, solver=self.solver, rng=0)
 
     # --- Test Parameters ---
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("k", [3, 5])
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_parameter_k_which(self, k, which):
@@ -441,7 +440,6 @@ class SVDSCommonTests:
         with pytest.raises(AssertionError, match=message):
             assert_equal(res1a, res2a)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
@@ -473,7 +471,6 @@ class SVDSCommonTests:
         assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
         assert_allclose(np.abs(sd), np.abs(s), atol=1e-9)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("rsv", (True, False, 'u', 'vh'))
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
     def test_svd_return_singular_vectors(self, rsv, shape):
@@ -546,7 +543,6 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:k >= N - 1",
                                 reason="needed to demonstrate #16725")
     @pytest.mark.parametrize('A', (A1, A2))
@@ -583,7 +579,6 @@ class SVDSCommonTests:
             u, s, vh = svds(A2, k, solver=self.solver, rng=0)
         _check_svds(A, k, u, s, vh, atol=atol)
 
-    @pytest.mark.thread_unsafe
     def test_svd_linop(self):
         solver = self.solver
 
@@ -674,6 +669,7 @@ class SVDSCommonTests:
 
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.filterwarnings("ignore:Exited postprocessing")
+    @pytest.mark.parallel_threads(4)  # Very slow
     @pytest.mark.parametrize("shape", SHAPES)
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
@@ -699,7 +695,6 @@ class SVDSCommonTests:
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("shape", ((6, 5), (5, 5), (5, 6)))
     @pytest.mark.parametrize("dtype", (float, complex))
     def test_svd_LM_ones_matrix(self, shape, dtype):
@@ -723,7 +718,6 @@ class SVDSCommonTests:
         z = np.ones_like(s)
         assert_allclose(s, z)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings("ignore:k >= N - 1",
                                 reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))

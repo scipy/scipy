@@ -125,9 +125,9 @@ class TestConstructUtils:
             assert_equal(construct.spdiags(d, o, (m, n)).toarray(), result)
 
     def test_diags(self):
-        a = array([1, 2, 3, 4, 5])
-        b = array([6, 7, 8, 9, 10])
-        c = array([11, 12, 13, 14, 15])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
+        b = array([6.0, 7.0, 8.0, 9.0, 10.0])
+        c = array([11.0, 12.0, 13.0, 14.0, 15.0])
 
         cases = []
         cases.append((a[:1], 0, (1, 1), [[1]]))
@@ -179,16 +179,16 @@ class TestConstructUtils:
         cases.append(([a], [0], (1, 1), [[1]]))
         cases.append(([a[:3],b], [0,2], (3, 3), [[1, 0, 6], [0, 2, 0], [0, 0, 3]]))
         cases.append((
-            np.array([[1, 2, 3], [4, 5, 6]]),
+            np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
             [0,-1],
             (3, 3),
             [[1, 0, 0], [4, 2, 0], [0, 5, 3]]
         ))
 
         # scalar case: broadcasting
-        cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
-                                                    [1, -2, 1],
-                                                    [0, 1, -2]]))
+        cases.append(([1.0,-2.0,1.0], [1,0,-1], (3, 3), [[-2, 1, 0],
+                                                         [1, -2, 1],
+                                                         [0, 1, -2]]))
 
         for d, o, shape, result in cases:
             err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
@@ -199,11 +199,11 @@ class TestConstructUtils:
                 and hasattr(d[0], '__len__')
                 and len(d[0]) <= max(shape)):
                 # should be able to find the shape automatically
-                assert_equal(construct.diags(d, offsets=o).toarray(), result,
-                             err_msg=err_msg)
+                assert_equal(construct.diags(d, offsets=o).toarray(),
+                             result, err_msg=err_msg)
 
     def test_diags_default(self):
-        a = array([1, 2, 3, 4, 5])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
         assert_equal(construct.diags(a).toarray(), np.diag(a))
 
     def test_diags_default_bad(self):
@@ -211,9 +211,9 @@ class TestConstructUtils:
         assert_raises(ValueError, construct.diags, a)
 
     def test_diags_bad(self):
-        a = array([1, 2, 3, 4, 5])
-        b = array([6, 7, 8, 9, 10])
-        c = array([11, 12, 13, 14, 15])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
+        b = array([6.0, 7.0, 8.0, 9.0, 10.0])
+        c = array([11.0, 12.0, 13.0, 14.0, 15.0])
 
         cases = []
         cases.append(([a[:0]], 0, (1, 1)))
@@ -221,7 +221,7 @@ class TestConstructUtils:
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], None))
         cases.append(([], [-4,2,-1], None))
-        cases.append(([1], [-5], (4, 4)))
+        cases.append(([1.0], [-5], (4, 4)))
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
@@ -262,7 +262,7 @@ class TestConstructUtils:
         assert_equal(x.toarray(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
-        d = list(range(5))
+        d = [0.0, 1.0, 2.0, 3.0, 4.0]
         for k in range(-5, 6):
             assert_equal(construct.diags(d, offsets=k).toarray(),
                          construct.diags([d], offsets=[k]).toarray())
@@ -397,8 +397,8 @@ class TestConstructUtils:
 
     def test_kron_large(self):
         n = 2**16
-        a = construct.diags_array([1], shape=(1, n), offsets=n-1)
-        b = construct.diags_array([1], shape=(n, 1), offsets=1-n)
+        a = construct.diags_array([1], shape=(1, n), offsets=n-1, dtype=None)
+        b = construct.diags_array([1], shape=(n, 1), offsets=1-n, dtype=None)
 
         construct.kron(a, a)
         construct.kron(b, b)
@@ -674,7 +674,6 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
     @pytest.mark.xslow
-    @pytest.mark.thread_unsafe
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
@@ -854,19 +853,45 @@ class TestConstructUtils:
 
 def test_diags_array():
     """Tests of diags_array that do not rely on diags wrapper."""
-    diag = np.arange(1, 5)
+    diag = np.arange(1.0, 5.0)
 
-    assert_array_equal(construct.diags_array(diag).toarray(), np.diag(diag))
+    assert_array_equal(construct.diags_array(diag, dtype=None).toarray(), np.diag(diag))
 
     assert_array_equal(
-        construct.diags_array(diag, offsets=2).toarray(), np.diag(diag, k=2)
+        construct.diags_array(diag, offsets=2, dtype=None).toarray(), np.diag(diag, k=2)
     )
 
     assert_array_equal(
-        construct.diags_array(diag, offsets=2, shape=(4, 4)).toarray(),
+        construct.diags_array(diag, offsets=2, shape=(4, 4), dtype=None).toarray(),
         np.diag(diag, k=2)[:4, :4]
     )
 
     # Offset outside bounds when shape specified
     with pytest.raises(ValueError, match=".*out of bounds"):
-        construct.diags(np.arange(1, 5), 5, shape=(4, 4))
+        construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
+
+
+@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+def test_diags_int(func):
+    d = [[3], [1, 2], [4]]
+    offsets = [-1, 0, 1]
+    # Until the deprecation period is over, `dtype=None` must be given
+    # explicitly to avoid the warning and the cast to an inexact type
+    # in diags_array() (gh-23102).
+    arr = func(d, offsets=offsets, dtype=None)
+    expected = np.array([[1, 4], [3, 2]])
+    assert_array_equal(arr.toarray(), expected, strict=True)
+
+
+@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+def test_diags_int_to_float64(func):
+    d = [[3], [1, 2], [4]]
+    offsets = [-1, 0, 1]
+    # Until the deprecation period is over, diags and diag_array will cast
+    # integer inputs to float64 by default.  A warning will be generated
+    # that indicates this behavior is deprecated.
+    # See gh-23102.
+    with pytest.warns(FutureWarning, match="output has been cast to"):
+        arr = func(d, offsets=offsets)
+    expected = np.array([[1.0, 4.0], [3.0, 2.0]])
+    assert_array_equal(arr.toarray(), expected, strict=True)

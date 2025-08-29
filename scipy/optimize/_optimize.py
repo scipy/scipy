@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -1409,7 +1409,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
-        x0.shape = (1,)
+        x0 = x0.reshape((1,))
     if maxiter is None:
         maxiter = len(x0) * 200
 
