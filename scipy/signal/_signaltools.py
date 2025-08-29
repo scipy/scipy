@@ -835,7 +835,7 @@ def _split(x, indices_or_sections, axis, xp):
 
     # handle array case.
     Nsections = len(indices_or_sections) + 1
-    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+    div_points = [0] + list(indices_or_sections) + [Ntotal]
 
     sub_arys = []
     sary = _swapaxes(x, axis, 0, xp=xp)
@@ -2412,7 +2412,7 @@ def hilbert(x, N=None, axis=-1):
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
-    
+
     The transformation is done along the last axis by default.
 
     For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
@@ -2531,8 +2531,8 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     r"""Compute the '2-D' analytic signal of `x`.
 
     The 2-D analytic signal is calculated as a so-called "single-orthant" transform.
-    This is achieved by applying one-dimensional Hilbert function (as in
-    `~signal.hilbert`) to the first and to the second array axis in Fourier space.
+    This is achieved by applying one-dimensional Hilbert functions (as in
+    `~scipy.signal.hilbert`) to the first and to the second array axis in Fourier space.
 
     For NumPy arrays, `scipy.fft.set_workers` can be used to change the number of
     workers used for the FFTs.
@@ -2547,7 +2547,9 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     axes : tuple of two ints, optional
         Axes along which to do the transformation.  Default: (-2, -1).
 
-        .. versionadded:: 1.16.2
+        .. versionchanged:: 1.17
+
+            Added `axes` parameter
 
     Returns
     -------
@@ -2562,7 +2564,7 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     1. Calculate the two-dimensional FFT of the input, i.e.,
 
        .. math::
-       
+
             X[p,q] = \sum_{k,l=0}^{N_0,N_1} x[k,l]\,
                                                  e^{-2j\pi k p/N_0}\, e^{-2j\pi l q/N_1}
 
@@ -2586,7 +2588,7 @@ def hilbert2(x, N=None, axes=(-2, -1)):
        The limitation of the ":math:`+1`" case to the range of ``[1:(N+1)//2]``
        accounts for the unpaired Nyquist frequency bin at :math:`N/2` for even
        :math:`N`. Note that :math:`X_a[p] = \big(1 + s_N(p)\big) X[p]` is the
-       one-dimensional Hilbert function (as in `~signal.hilbert`) in Fourier
+       one-dimensional Hilbert function (as in `~scipy.signal.hilbert`) in Fourier
        space.
 
     3. Produce the analytic signal by performing the inverse FFT, i.e.,
@@ -2693,13 +2695,12 @@ def hilbert2(x, N=None, axes=(-2, -1)):
 
     Xf = sp_fft.fft2(x, N, axes=axes)
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
-    nn = np.array(N)
-    end, start = (nn + 1) // 2, nn // 2 + 1
+    k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
-    Xf[..., 1:end[0], :] *= 2.0
-    Xf[..., 1:end[1]] *= 2.0
-    Xf[..., start[0]:N[0], :] = 0.0
-    Xf[..., start[1]:N[1]] = 0.0
+    Xf[..., 1:k0, :] *= 2.0
+    Xf[..., :, 1:k1] *= 2.0
+    Xf[..., k0:, :] = 0.0
+    Xf[..., :, k1:] = 0.0
 
     Xf = xp.moveaxis(Xf, (-2, -1), axes)
     x = sp_fft.ifft2(Xf, axes=axes)
@@ -3795,8 +3796,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     antialiasing filter with the maximum bandwidth by default.
 
     Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
-    even number of ``n1=128`` output samples, which requires a special treatment as 
-    discussed in the previous example. 
+    even number of ``n1=128`` output samples, which requires a special treatment as
+    discussed in the previous example.
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
