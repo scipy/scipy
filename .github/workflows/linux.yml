@@ -327,6 +327,7 @@ jobs:
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        python -m pip install git+https://github.com/seberg/spatch@scipy-fixes
 
     - name:  Prepare compiler cache
       id:    prep-ccache
