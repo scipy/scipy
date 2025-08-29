@@ -5,7 +5,8 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
-           'diags_array', 'block_array', 'eye_array', 'random_array']
+           'diags_array', 'block_array', 'eye_array', 'random_array',
+           'expand_dims', 'permute_dims', 'swapaxes']
 
 import numbers
 import math
@@ -16,7 +17,7 @@ import numpy as np
 
 from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
 from scipy._lib.deprecation import _NoValue
-from ._sputils import upcast, get_index_dtype, isscalarlike
+from ._sputils import upcast, get_index_dtype, isscalarlike, isintlike
 
 from ._sparsetools import csr_hstack
 from ._bsr import bsr_matrix, bsr_array
@@ -26,6 +27,141 @@ from ._csr import csr_matrix, csr_array
 from ._dia import dia_matrix, dia_array
 
 from ._base import issparse, sparray
+
+
+def expand_dims(A, /, *, axis=0):
+    """
+    Add trivial axes to an array. Shape gets a ``1`` inserted at position `axis`.
+
+    Parameters
+    ----------
+    A : sparse array
+
+    axis : int
+        Position in the expanded axes where the new axis (or axes) is placed.
+        For a dimension ``N`` array, a valid axis is an integer on the
+        closed-interval ``[-N-1, N]``. Negative values work from the end of
+        the shape. ``0`` prepends an axis, as does ``-N-1``. ``-1`` appends
+        an axis, as does ``N``. The new axis has shape ``1`` and indices are
+        created with the value ``0``.
+
+    Returns
+    -------
+    out : sparse array
+        A expanded copy output in COO format with the same dtype as A.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N-1, N]`` axis,
+        where ``N`` is ``A.ndim``.
+    """
+    if not isintlike(axis):
+        raise ValueError(f"Invalid axis {axis}. Must be an integer.")
+    idx = axis if axis >= 0 else axis + A.ndim + 1
+    if idx < 0 or idx > A.ndim:
+        raise ValueError(f"Invalid axis {axis} for N={A.ndim}. Must be in [-N-1, N].")
+
+    A = A.tocoo(copy=True)
+    new_coord = np.zeros_like(A.coords[0])
+
+    A.coords = A.coords[:idx] + (new_coord,) + A.coords[idx:]
+    A._shape = A.shape[:idx] + (1,) + A.shape[idx:]
+    A.has_canonical_format = False  # data not guaranteed sorted
+    return A
+
+
+def swapaxes(A, axis1, axis2):
+    """Interchange two axes of an array.
+
+    Parameters
+    ----------
+    A : sparse array
+    axis1 : int
+        First axis.
+    axis2 : int
+        Second axis.
+
+    Returns
+    -------
+    a_swapped : sparse array in COO format
+        A copy of the input array with the two identified axes swapped.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+    """
+    if not isintlike(axis1):
+        raise ValueError(f"Invalid axis1 {axis1}. Must be an integer.")
+    idx1 = axis1 if axis1 >= 0 else axis1 + A.ndim
+    if idx1 < 0 or idx1 > A.ndim - 1:
+        raise ValueError(f"Invalid axis1 {axis1} for N={A.ndim}. Must be in [-N, N-1].")
+    if not isintlike(axis2):
+        raise ValueError(f"Invalid axis2 {axis2}. Must be an integer.")
+    idx2 = axis2 if axis2 >= 0 else axis2 + A.ndim
+    if idx2 < 0 or idx2 > A.ndim - 1:
+        raise ValueError(f"Invalid axis2 {axis2} for N={A.ndim}. Must be in [-N, N-1].")
+
+    A = A.tocoo(copy=True)
+    if idx1 == idx2:
+        return A
+    new_coords = list(A.coords)
+    new_coords[idx1], new_coords[idx2] = new_coords[idx2], new_coords[idx1]
+    A.coords = tuple(new_coords)
+    new_shape = list(A.shape)
+    new_shape[idx1], new_shape[idx2] = new_shape[idx2], new_shape[idx1]
+    A._shape = tuple(new_shape)
+    A.has_canonical_format = False  # data not guaranteed sorted
+    return A
+
+
+def permute_dims(A, axes=None, copy=False):
+    """Permute the axes of the sparse array `A` to the order `axes`.
+
+    Parameters
+    ----------
+    A : sparse array
+    axes : tuple or list of ints, optional
+        If specified, it must be a tuple or list which contains a permutation
+        of ``[0,1,…,N-1]`` where ``N`` is the number of axes of `A`. The i’th
+        axis of the returned array will correspond to the axis numbered ``axes[i]``
+        of the input. If not specified, defaults to ``range(a.ndim)[::-1]``,
+        which reverses the order of the axes.
+    copy : bool, optional (default: False)
+        Whether to return the permutation as a copy. If False, an in-place
+        permutation is provided if possible depending on format.
+
+    Returns
+    -------
+    out : sparse array in COO format
+        A copy of ``A`` with permuted axes.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+    """
+    N = A.ndim
+    if axes is None:
+        axes = range(N)[::-1]
+    elif len(axes) != N:
+        raise ValueError(f"Incorrect number of axes: {N} instead of {A.ndim}")
+    elif len(set(axes)) != N:
+        raise ValueError(f"Duplicate axes are not allowed: {axes=}")
+
+    for axis in axes:
+        if not isintlike(axis):
+            raise ValueError(f"Invalid axis {axis}. Must be an integer.")
+        if axis < 0 or axis >= A.ndim:
+            raise ValueError(f"Invalid axis {axis} for N={N}. Must be in [-N, N-1].")
+    A = A.tocoo(copy=copy)
+    A._shape = tuple(A.shape[idx] for idx in axes)
+    A.coords = tuple(A.coords[idx] for idx in axes)
+    A.has_canonical_format = False  # data not guaranteed sorted
+    return A
 
 
 def spdiags(data, diags, m=None, n=None, format=None):
