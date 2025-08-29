@@ -13,6 +13,11 @@ LICENSE_LAPJVS.txt
 Applies to:
 - scipy/sparse/csgraph/_matching.pyx
 
+LICENSE_L-BFGS-B_python_wrapper.txt
+===================================
+Applies to:
+- scipy/optimize/_lbfgsb_py.py
+
 LICENSE_NumPy.txt
 =================
 Applies to files copied from NumPy.
