@@ -14,6 +14,9 @@
     #define CPLX_C(real, imag) (_FCbuild(real, imag))
 #else
     #include <complex.h>
+    #ifndef I
+    #define I _Complex_I  // Ensure I is defined for complex number literals
+    #endif
     #define SCIPY_Z double complex
     #define SCIPY_C float complex
     #define CPLX_Z(real, imag) (real + imag*I)
