@@ -2998,3 +2998,11 @@ def test_rotation_iter(xp):
         xp_assert_equal(r_i.as_quat(), r[i].as_quat())
         if i > len(r):
             raise RuntimeError("Iteration exceeded length of rotations")
+
+
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_rotation_shape(xp, ndim: int):
+    shape = tuple(range(2, 2 + ndim)[:ndim - 1])
+    quat = xp.ones(shape + (4,))
+    r = Rotation.from_quat(quat)
+    assert r.shape == shape, f"Got {r.shape}, expected {shape}"

@@ -2547,6 +2547,13 @@ class Rotation:
         """Whether this instance represents a single rotation."""
         return self._single or self._quat.ndim == 1
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """The shape of the rotation's leading dimensions."""
+        if self._single:
+            return ()
+        return self._quat.shape[:-1]
+
     def __bool__(self) -> bool:
         """Comply with Python convention for objects to be True.
 
