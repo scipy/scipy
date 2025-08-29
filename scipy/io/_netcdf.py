@@ -696,13 +696,13 @@ class netcdf_file:
                 a_size = reduce(mul, shape, 1) * size
                 if self.use_mmap:
                     data = self._mm_buf[begin_:begin_+a_size].view(dtype=dtype_)
-                    data.shape = shape
+                    data = data.reshape(shape)
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
                     data = frombuffer(self.fp.read(a_size), dtype=dtype_
                                       ).copy()
-                    data.shape = shape
+                    data = data.reshape(shape)
                     self.fp.seek(pos)
 
             # Add variable.
