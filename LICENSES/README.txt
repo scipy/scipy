@@ -8,6 +8,11 @@ LICENSE_getLebedevSphere.txt
 Applies to:
 - scipy/integrate/_lebedev.py
 
+LICENSE_LAPJVS.txt
+==================
+Applies to:
+- scipy/sparse/csgraph/_matching.pyx
+
 LICENSE_NumPy.txt
 =================
 Applies to files copied from NumPy.
