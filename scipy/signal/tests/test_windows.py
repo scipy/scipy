@@ -788,9 +788,11 @@ class TestGetWindow:
           entry characterizing the existence of window parameters as ``True``,
           ``False`` or ``'OPTIONAL'``.
 
-          It is checked that the key tuple contains the windo names contain the name of
-          the window function, and it is verified that the second entry in the value
-          tuple is either ``True``, ``False`` or ``'OPTIONAL'``.
+
+          It is verified that the correct window name (i.e., corresponding to the
+          function in the value tuple) is included in the key tuple. It is also checked
+          that the second entry in the value tuple is either ``True``, ``False`` or
+          ``'OPTIONAL'``.
           """
         for nn_, v_ in _WIN_FUNC_DATA.items():
             func_name = v_[0].__name__

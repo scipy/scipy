@@ -2360,8 +2360,8 @@ for nn_, v_ in _WIN_FUNC_DATA.items():
 def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     r"""Convenience function for creating various windows.
 
-    This function is wrapper for the window functions provided in the
-    `scipy.signal.windows` name.space.
+    This function is a wrapper for the window functions provided in the
+    `scipy.signal.windows` namespace.
 
     Parameters
     ----------
@@ -2389,7 +2389,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     Raises
     ------
     ValueError
-        If the provided parameters do not allow to choose a vali window function
+        If the provided parameters do not allow to choose a valid window function
         with valid parameters.
 
     Notes
@@ -2411,7 +2411,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
         Bartlett window (aliases: ``'bart', 'brt'``)
     `blackman`/ ``'blackman'``:
         Blackman window (aliases: ``'black', 'blk'``)
-    `blackman` / ``'blackmanharris'``:
+    `blackmanharris` / ``'blackmanharris'``:
         4-term Blackman-Harris window (aliases: ``'blackharr', 'bkh'``)
     `bohman` / ``'bohman'``:
         Bohman window (aliases: ``'bman', 'bmn'``)
@@ -2452,7 +2452,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     `lanczos` / ``'lanczos'``:
         Lanczos / sinc window (aliases: ``'sinc'``)
     `nuttall`/ ``'nuttall'``:
-        Minimum 4-term Blackman-Harris window according to Nuttal
+        Minimum 4-term Blackman-Harris window according to Nuttall
         (aliases: ``'nutl', 'nut'``)
     `parzen` / ``'parzen'``:
         Parzen window (aliases: ``'parz', 'par'``)
@@ -2469,7 +2469,7 @@ def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
 
     Examples
     --------
-    This example shows a different usages of the `window` parameter:
+    This example shows different usages of the `window` parameter:
 
     >>> from scipy.signal import get_window
     >>> get_window('triang', 7)

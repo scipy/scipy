@@ -1626,7 +1626,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a perodic Hann window. Must match the window used to generate the
+        to a periodic Hann window. Must match the window used to generate the
         STFT for faithful inversion.
     nperseg : int, optional
         Number of data points corresponding to each STFT segment. This
