@@ -3483,7 +3483,8 @@ class multinomial_gen(multi_rv_generic):
 
         n = n[..., np.newaxis]
         new_axes_needed = max(p.ndim, n.ndim) - x.ndim + 1
-        x.shape += (1,)*new_axes_needed
+        new_shape = x.shape + (1,)*new_axes_needed
+        x = x.reshape(new_shape)
 
         term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
                        axis=(-1, -1-new_axes_needed))

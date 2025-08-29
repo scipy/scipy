@@ -720,13 +720,13 @@ class netcdf_file:
             if self.use_mmap:
                 buf = self._mm_buf[begin:begin+self._recs*self._recsize]
                 rec_array = buf.view(dtype=dtypes)
-                rec_array.shape = (self._recs,)
+                rec_array = rec_array.reshape((self._recs,))
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
                 rec_array = frombuffer(self.fp.read(self._recs*self._recsize),
                                        dtype=dtypes).copy()
-                rec_array.shape = (self._recs,)
+                rec_array = rec_array.reshape((self._recs,))
                 self.fp.seek(pos)
 
             for var in rec_vars:
