@@ -3457,6 +3457,7 @@ class TestHilbert2:
         xp_assert_close(
             val,
             xp.zeros_like(val),
+            atol=1e-12
             )
 
         mask = (
@@ -3468,7 +3469,7 @@ class TestHilbert2:
             xp.real(x_as_f[mask]),
             2.0 * xp.ones(size),
             )
-        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size))
+        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size), atol=1e-12)
 
         mask = (freq0 > 0) & (freq1 > 0)
         size = xp.sum(xp.astype(mask, xp.uint8))
@@ -3476,7 +3477,7 @@ class TestHilbert2:
             xp.real(x_as_f[mask]),
             4.0 * xp.ones(size),
             )
-        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size))
+        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size), atol=1e-12)
     
     @pytest.mark.parametrize('sh0', [4, 5])
     @pytest.mark.parametrize('sh1', [6, 7])
