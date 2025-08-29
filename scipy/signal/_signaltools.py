@@ -2606,13 +2606,12 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         `N` along `axes`.  Default: ``x.shape[i] for i in axes``
     axes : tuple of two ints, optional
         Axes along which to do the transformation.  Default: (-2, -1).
+        .. versionadded:: 1.16.2
 
     Returns
     -------
     xa : ndarray
         Analytic signal of `x` taken along given axes.
-
-    .. versionadded:: 1.16.2
 
     Notes
     -----
