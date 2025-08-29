@@ -1410,15 +1410,33 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     }[assume_a]
 
     # a1 is well behaved, invert it.
-    result = _batched_linalg._inv(a1, structure, overwrite_a)
-    inv_a, is_ill_cond, is_singular, info = result
+    inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a)
 
-    if info < 0:
-        raise ValueError("Internal LAPACK error.")
-    if is_singular:
-        raise LinAlgError("A singular matrix detected")
-    if is_ill_cond:
-        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+    # emit helpful errors/warnings
+    if err_lst:
+        singular, lapack_err, ill_cond = [], [], []
+        for i, dct in enumerate(err_lst):
+            if dct["is_singular"]:
+                singular.append(i)
+            if dct["lapack_info"] < 0:
+                lapack_err.append(f"slice {i} emits lapack info={dct['lapack_info']}")
+            if dct["is_ill_conditioned"]:
+                ill_cond.append(f"slice {i} has rcond = {dct['rcond']}")
+
+        if singular:
+            raise LinAlgError(
+                f"An ill-conditioned matrix detected: slice(s) {singular} are singular."
+            )
+
+        if lapack_err:
+            raise ValueError(f"Internal LAPACK errors: {','.join(lapack_err)}.")
+
+        if ill_cond:
+           warnings.warn(
+                f"An ill-conditioned matrix detected: {','.join(ill_cond)}.",
+                LinAlgWarning,
+                stacklevel=2
+            )
 
     return inv_a
 
