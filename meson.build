@@ -17,7 +17,6 @@ project(
     'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/LICENSE-MIT',  # MIT
     'scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost',  # BSL-1.0
     'scipy/optimize/_direct/COPYING',  # MIT
-    # 'scipy/optimize/_lbfgsb_py.py',  # MIT
     'scipy/optimize/tnc/LICENSE',  # MIT
     'scipy/ndimage/LICENSE.txt',  # BSD-3-Clause
     'scipy/sparse/linalg/_dsolve/SuperLU/License.txt',  # BSD-3-Clause
