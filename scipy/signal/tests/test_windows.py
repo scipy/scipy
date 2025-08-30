@@ -8,6 +8,7 @@ from pytest import raises as assert_raises
 
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
+from scipy.signal.windows._windows import _WIN_FUNC_DATA
 from scipy._lib._array_api import (
      xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
      assert_array_almost_equal, SCIPY_DEVICE, is_numpy
@@ -777,6 +778,27 @@ class TestLanczos:
 
 
 class TestGetWindow:
+    """Unit test for `scipy.signal.get_windows`. """
+
+    def test_WIN_FUNC_DATA_integrity(self):
+        """Verify that the `_windows._WIN_FUNC_DATA` dict is consistent.
+
+          The keys of _WIN_FUNC_DATA are made of tuples of strings of allowed window
+          names. Its values are 2-tuples made up of the window function and a
+          entry characterizing the existence of window parameters as ``True``,
+          ``False`` or ``'OPTIONAL'``.
+
+
+          It is verified that the correct window name (i.e., corresponding to the
+          function in the value tuple) is included in the key tuple. It is also checked
+          that the second entry in the value tuple is either ``True``, ``False`` or
+          ``'OPTIONAL'``.
+          """
+        for nn_, v_ in _WIN_FUNC_DATA.items():
+            func_name = v_[0].__name__
+            msg = f"Function name in {nn_} does not contain name of actual function!"
+            assert func_name in nn_, msg
+            assert v_[1] in (True, False, 'OPTIONAL')
 
     def test_boxcar(self, xp):
         w = windows.get_window('boxcar', 12, xp=xp)
@@ -810,19 +832,54 @@ class TestGetWindow:
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
-        assert_array_almost_equal(win1, win2, decimal=4)
+        xp_assert_equal(win1, win2)
 
     def test_kaiser_float(self, xp):
         win1 = windows.get_window(7.2, 64, xp=xp)
         win2 = windows.kaiser(64, 7.2, False, xp=xp)
-        xp_assert_close(win1, win2)
+        xp_assert_equal(win1, win2)
 
+    @pytest.mark.parametrize('Nx', [-1, 3.0, np.float64(3)])
+    def test_invalid_parameter_NX(self, Nx, xp):
+        with pytest.raises(ValueError, match="^Parameter Nx=.*"):
+            windows.get_window('hann', Nx, xp=xp)
+
+    # noinspection PyTypeChecker
     def test_invalid_inputs(self, xp):
-        # Window is not a float, tuple, or string
-        assert_raises(ValueError, windows.get_window, set('hann'), 8, xp=xp)
+        """Raise all exceptions (except those concerning parameter `Nx`). """
+        with pytest.raises(ValueError, match="^Parameter fftbins=.*"):
+            windows.get_window('hann', 5, fftbins=1, xp=xp)
+        with pytest.raises(ValueError, match="^Parameter window=.*"):
+            windows.get_window(['hann',], 5, xp=xp)
+        with pytest.raises(ValueError, match="^First tuple entry of parameter win.*"):
+            windows.get_window((42,), 5, xp=xp)
+        with pytest.raises(ValueError, match="^Invalid window name 'INVALID'.*"):
+            windows.get_window('INVALID', 5, xp=xp)
+        with pytest.raises(ValueError, match="^'hann' does not allow parameters.*"):
+            windows.get_window(('hann', 1), 5, xp=xp)
+        with pytest.raises(ValueError, match="^'kaiser' must have parameters.*"):
+            windows.get_window('kaiser', 5, xp=xp)
+        with pytest.raises(ValueError, match="^Window dpss must have one.*"):
+            windows.get_window(('dpss', 1, 2), 5, xp=xp)
+        with pytest.raises(ValueError, match="^'general_cosine' does not accept.*"):
+            xp_ = xp or np  # ensure parameter xp_ is not None
+            windows.get_window(('general cosine', [1, 2]), 5, xp=xp_)
 
-        # Unknown window type error
-        assert_raises(ValueError, windows.get_window, 'broken', 4, xp=xp)
+    def test_symmetric_periodic(self, xp):
+        """Ensure that suffixes `_periodic` and `_symmetric` work for window names. """
+        w_sym = windows.bartlett(5, sym=True, xp=xp)
+        xp_assert_close(get_window('bartlett', 5, fftbins=False, xp=xp), w_sym)
+        xp_assert_close(get_window('bartlett_symmetric', 5, xp=xp), w_sym)
+        # overwrite parameter `fftbins`:
+        xp_assert_close(get_window('bartlett_symmetric', 5, fftbins=True, xp=xp), w_sym)
+
+        w_per = windows.bartlett(5, sym=False, xp=xp)
+        xp_assert_close(get_window('bartlett', 5, xp=xp), w_per)
+        xp_assert_close(get_window('bartlett', 5, fftbins=True, xp=xp), w_per)
+        xp_assert_close(get_window('bartlett_periodic', 5, xp=xp), w_per)
+        # overwrite parameter `fftbins`:
+        xp_assert_close(get_window('bartlett_periodic', 5, fftbins=False, xp=xp),
+                        w_per)
 
     @xfail_xp_backends(np_only=True, reason='TODO: make resample array API ready')
     def test_array_as_window(self, xp):

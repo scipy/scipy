@@ -238,11 +238,11 @@ convolve2d_signature = convolve_signature
 correlate2d_signature = convolve_signature
 
 
-def coherence_signature(x, y, fs=1.0, window='hann', *args, **kwds):
+def coherence_signature(x, y, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
-def csd_signature(x, y, fs=1.0, window='hann', *args, **kwds):
+def csd_signature(x, y, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
@@ -250,19 +250,19 @@ def periodogram_signature(x, fs=1.0, window='boxcar'):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def welch_signature(x, fs=1.0, window='hann', *args, **kwds):
+def welch_signature(x, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def spectrogram_signature(x, fs=1.0, window=('tukey', 0.25), *args, **kwds):
+def spectrogram_signature(x, fs=1.0, window=('tukey_periodic', 0.25), *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def stft_signature(x, fs=1.0, window='hann', *args, **kwds):
+def stft_signature(x, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def istft_signature(Zxx, fs=1.0, window='hann', *args, **kwds):
+def istft_signature(Zxx, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(Zxx, _skip_if_str_or_tuple(window))
 
 
@@ -423,7 +423,7 @@ tf2zpk_signature = lp2bp_signature
 tf2sos_signature = lp2bp_signature
 
 normalize_signature = lp2bp_signature
-residue_signature = lp2bp_signature 
+residue_signature = lp2bp_signature
 residuez_signature = residue_signature
 
 
@@ -562,4 +562,3 @@ def wiener_signature(im, mysize=None, noise=None):
 
 def zoom_fft_signature(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     return array_namespace(x, fn)
-

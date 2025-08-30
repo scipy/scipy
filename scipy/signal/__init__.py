@@ -242,7 +242,7 @@ obtain these windows by name:
 .. autosummary::
    :toctree: generated/
 
-   get_window -- Return a window of a given length and type.
+   get_window -- Convenience function for creating various windows.
 
 Peak finding
 ============
