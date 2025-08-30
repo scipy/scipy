@@ -2,10 +2,6 @@ from . cimport sf_error
 
 from libc.math cimport NAN, isnan, isinf, isfinite
 
-cdef extern from "xsf_wrappers.h" nogil:
-    double cephes_ndtr_wrap(double a)
-    double cephes_ndtri_wrap(double y0)
-
 cdef extern from "cdflib.h" nogil:
     cdef struct TupleDDI:
         double d1

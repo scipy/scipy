@@ -4,7 +4,6 @@
 #include <cmath>
 #include <stdexcept>
 #include "sf_error.h"
-// #include "xsf_wrappers.h"
 
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
