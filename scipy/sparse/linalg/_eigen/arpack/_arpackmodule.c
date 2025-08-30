@@ -11,6 +11,10 @@
     #define ARNAUD_cplx(real, imag) ((_Dcomplex){real, imag})
     #define ARNAUD_cplxf(real, imag) ((_Fcomplex){real, imag})
 #else
+    #include <complex.h>
+    #ifndef I
+    #define I _Complex_I  // Ensure I is defined for complex number literals
+    #endif
     #define ARNAUD_cplx(real, imag) ((real) + (imag)*I)
     #define ARNAUD_cplxf(real, imag) ((real) + (imag)*I)
 #endif
