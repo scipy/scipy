@@ -34,7 +34,6 @@ class Test_RealInterval:
         with pytest.raises(TypeError, match=message):
             domain.get_numerical_endpoints(dict)
 
-
     @pytest.mark.parametrize('x', [rng.uniform(10, 10, size=(2, 3, 4)),
                                    -np.inf, np.pi])
     def test_contains_simple(self, x):
@@ -2196,3 +2195,26 @@ class TestMixture:
         np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
         np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
         np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))
+
+
+def test_trapezoid_fit_convergence():
+    """Test that trapezoid.fit converges without starting values."""
+    
+    # Generate test data from a trapezoidal distribution
+    true_c, true_d = 0.3, 0.7
+    true_dist = stats.trapezoid(true_c, true_d, 0, 1)
+    rvs = true_dist.rvs(1000, random_state=42)
+    
+    # Test: Fit without starting values (should now work)
+    fitted_args = stats.trapezoid.fit(rvs, floc=0, scale=1, fscale=1)
+    fitted_c, fitted_d = fitted_args[0], fitted_args[1]
+    
+    # Should not converge to triangular distribution (c=d=1)
+    assert not (abs(fitted_c - 1.0) < 0.01 and abs(fitted_d - 1.0) < 0.01), \
+        "fit() still converging to triangular distribution (c=d=1)"
+    
+    # Use numpy.testing.assert_allclose for rigorous comparison
+    assert_allclose(fitted_c, true_c, atol=0.05, rtol=0.01, 
+                    err_msg=f"fitted c={fitted_c} not close to true c={true_c}")
+    assert_allclose(fitted_d, true_d, atol=0.05, rtol=0.01, 
+                    err_msg=f"fitted d={fitted_d} not close to true d={true_d}")
