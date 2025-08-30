@@ -3,7 +3,7 @@ project(
   'c', 'cpp', 'cython',
   version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3-Clause AND BSD-2-Clause AND BSL-1.0 AND MIT AND Qhull AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception',
-  license_files = [
+  license_files: [
     'LICENSE.txt',
     'LICENSES/LICENSE_cctbx.txt',  # BSD-3-Clause
     'LICENSES/LICENSE_getLebedevSphere.txt',  # BSD-2-Clause
@@ -14,7 +14,7 @@ project(
     'LICENSES/LICENSE_pybind11.txt',  # BSD-3-Clause
     'LICENSES/LICENSE_Pythran.txt',  # BSD-3-Clause
     'scipy/_build_utils/tempita/LICENSE.txt',  # MIT
-    'scipy/_lib/array_api_compat/LICENCE',  # MIT
+    'scipy/_lib/array_api_compat/LICENSE',  # MIT
     'scipy/_lib/_uarray/LICENSE',  # BSD-3-Clause
     'scipy/_lib/pyprima/LICENCE.txt',  # BSD-3-Clause
     'scipy/_lib/unuran/license.txt',  # BSD-3-Clause
@@ -26,10 +26,9 @@ project(
     'scipy/optimize/tnc/LICENSE',  # MIT
     'scipy/ndimage/LICENSE.txt',  # BSD-3-Clause
     'scipy/sparse/linalg/_dsolve/SuperLU/License.txt',  # BSD-3-Clause
-    'scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING',  # BSD-3-Clause
+    'scipy/sparse/linalg/_eigen/arpack/arnaud/ARPACK_LICENSE.txt',  # BSD-3-Clause
     'scipy/spatial/COPYING_QHULL.txt',  # Qhull
     'scipy/stats/biasedurn/license.txt',  # BSD-3-Clause
-    'scipy/_lib/array_api_compat/LICENSE',  # MIT
     'subprojects/boost_math/math/LICENSE',  # BSL-1.0
     'subprojects/highs/LICENSE.txt',  # MIT
     'subprojects/qhull_r/libqhull_r/COPYING.txt',  # Qhull
