@@ -35,7 +35,10 @@ def test_stdtrit_vs_R_large_df():
              -1.2815515655446008125]
     assert_allclose(res, res_R, rtol=1e-15, atol=1e-15)
     # last value should also agree with ndtri
-    assert_equal(res[3], ndtri(0.1))
+    # actually the result fromT_ stdtrit is closer to R than ndtri,
+    # so we accept a deviation of one ULP
+    epsilon = np.finfo(np.float64).eps
+    assert_allclose(res[3], ndtri(0.1), rtol=epsilon, atol=epsilon)
 
 
 def test_stdtr_stdtri_invalid():
