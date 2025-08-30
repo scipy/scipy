@@ -423,6 +423,7 @@ Customizing builds
 ------------------
 
 .. toctree::
+   :caption: Customizing builds
    :maxdepth: 1
 
    compilers_and_options
@@ -435,6 +436,7 @@ Background information
 ----------------------
 
 .. toctree::
+   :caption: Background information
    :maxdepth: 1
 
    understanding_meson
