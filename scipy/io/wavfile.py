@@ -25,6 +25,12 @@ __all__ = [
 
 
 class WavFileWarning(UserWarning):
+    """
+    Warning for WAV files with format issues that can still be read.
+    
+    Raised when a WAV file has problems like missing metadata or 
+    non-standard formatting, but can still be processed successfully.
+    """
     pass
 
 

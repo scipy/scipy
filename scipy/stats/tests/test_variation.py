@@ -1,12 +1,12 @@
 import math
+import warnings
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
@@ -14,7 +14,7 @@ from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_om
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-@skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
+@make_xp_test_case(variation)
 class TestVariation:
     """
     Test class for scipy.stats.variation
@@ -133,13 +133,14 @@ class TestVariation:
         y = variation(x)
         xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
 
+    @pytest.mark.filterwarnings('ignore:Invalid value encountered:RuntimeWarning:dask')
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # torch
-            sup.filter(UserWarning, "std*")
+            warnings.filterwarnings("ignore", "std*", UserWarning)
             if axis != 0:
                 if is_numpy(xp):
                     with pytest.warns(SmallSampleWarning, match="See documentation..."):
@@ -150,6 +151,7 @@ class TestVariation:
                 y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
+    @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning:dask')
     def test_neg_inf(self, xp):
         # Edge case that produces -inf: ddof equals the number of non-nan
         # values, the values are not constant, and the mean is negative.

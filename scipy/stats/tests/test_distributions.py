@@ -13,9 +13,8 @@ import platform
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
-                           assert_allclose, assert_, assert_warns,
-                           assert_array_less, suppress_warnings,
-                           assert_array_max_ulp, IS_PYPY)
+                           assert_allclose, assert_,
+                           assert_array_less, assert_array_max_ulp)
 import pytest
 from pytest import raises as assert_raises
 
@@ -4901,11 +4900,9 @@ class TestBeta:
         assert_equal(stats.beta.pdf(1, a, b), 5)
         assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
-    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
-        with pytest.warns(RuntimeWarning):
-            stats.beta.ppf(q, a, b)
+        stats.beta.ppf(q, a, b)
 
     @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
     @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
@@ -5002,6 +4999,19 @@ class TestBeta:
         #     )
         #     return float(entropy)
         assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
+
+    def test_entropy_broadcasting(self):
+        # gh-23127 reported that the entropy method of the beta
+        # distribution did not broadcast correctly.
+        Beta = stats.make_distribution(stats.beta)
+        a = np.asarray([5e6, 100, 1e9, 10])
+        b = np.asarray([5e6, 1e9, 100, 20])
+        res = Beta(a=a, b=b).entropy()
+        ref = np.asarray([Beta(a=a[0], b=b[0]).entropy(),
+                          Beta(a=a[1], b=b[1]).entropy(),
+                          Beta(a=a[2], b=b[2]).entropy(),
+                          Beta(a=a[3], b=b[3]).entropy()])
+        assert_allclose(res, ref)
 
 
 class TestBetaPrime:
@@ -5762,7 +5772,6 @@ class TestLevyStable:
             ),
         ]
     )
-    @pytest.mark.thread_unsafe
     def test_pdf_nolan_samples(
             self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -5918,12 +5927,10 @@ class TestLevyStable:
             stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
-            with suppress_warnings() as sup:
+            msg = "Density calculations experimental for FFT method"
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", msg, RuntimeWarning)
                 # occurs in FFT methods only
-                sup.record(
-                    RuntimeWarning,
-                    "Density calculations experimental for FFT method.*"
-                )
                 p = stats.levy_stable.pdf(
                     subdata['x'],
                     subdata['alpha'],
@@ -5978,7 +5985,6 @@ class TestLevyStable:
             ),
         ]
     )
-    @pytest.mark.thread_unsafe
     def test_cdf_nolan_samples(
             self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -6066,12 +6072,12 @@ class TestLevyStable:
             stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
-            with suppress_warnings() as sup:
-                sup.record(
-                    RuntimeWarning,
-                    'Cumulative density calculations experimental for FFT'
-                    + ' method. Use piecewise method instead.*'
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    'ignore',
+                    ('Cumulative density calculations experimental for FFT'
+                     ' method. Use piecewise method instead.'),
+                    RuntimeWarning)
                 p = stats.levy_stable.cdf(
                     subdata['x'],
                     subdata['alpha'],
@@ -6164,8 +6170,8 @@ class TestLevyStable:
                 .25, .5, 1
             ]
         )
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(
+        with np.errstate(all='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                 category=RuntimeWarning,
                 message="Density calculation unstable.*"
             )
@@ -7022,11 +7028,10 @@ class TestExpect:
         assert_allclose(res,
                         sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
-        assert_warns(RuntimeWarning, stats.zipf.expect,
-                     lambda x: x**2, (2,))
+        with pytest.warns(RuntimeWarning):
+            stats.zipf.expect(lambda x: x**2, (2,))
 
     def test_discrete_kwds(self):
         # check that discrete expect accepts keywords to control the summation
@@ -8307,9 +8312,9 @@ class TestStudentizedRange:
 
     @pytest.mark.xslow
     def test_fitstart_valid(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        with warnings.catch_warnings(), np.errstate(invalid="ignore"):
             # the integration warning message may differ
-            sup.filter(IntegrationWarning)
+            warnings.simplefilter("ignore", IntegrationWarning)
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
 
@@ -8694,12 +8699,17 @@ def test_ksone_fit_freeze():
          -0.06037974, 0.37670779, -0.21684405])
 
     with np.errstate(invalid='ignore'):
-        with suppress_warnings() as sup:
-            sup.filter(IntegrationWarning,
-                       "The maximum number of subdivisions .50. has been "
-                       "achieved.")
-            sup.filter(RuntimeWarning,
-                       "floating point number truncated to an integer")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The maximum number of subdivisions .50. has been achieved.",
+                IntegrationWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                "floating point number truncated to an integer",
+                RuntimeWarning,
+            )
             stats.ksone.fit(d)
 
 
@@ -9950,6 +9960,15 @@ class TestWrapCauchy:
         cr = (1 + c)/(1 - c)
         assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
+
+    @pytest.mark.parametrize('c', [1e-10, 1e-1])
+    @pytest.mark.parametrize('loc', [-100, -2*np.pi, -np.pi, 0, np.pi, 2*np.pi, 100])
+    @pytest.mark.parametrize('scale', [1e-10, 1, 1e10])
+    def test_rvs_lie_on_circle(self, c, loc, scale):
+        # Check that the random variates lie in range [0, 2*pi]
+        x = stats.wrapcauchy.rvs(c=c, loc=loc, scale=scale, size=1000)
+        assert np.all(x >= 0)
+        assert np.all(x <= 2 * np.pi)
 
 
 def test_rvs_no_size_error():

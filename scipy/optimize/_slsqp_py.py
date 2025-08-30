@@ -221,21 +221,21 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using Sequential
     Least Squares Programming (SLSQP).
 
-    Options
-    -------
+    Parameters
+    ----------
     ftol : float
         Precision target for the value of f in the stopping criterion. This value
         controls the final accuracy for checking various optimality conditions;
         gradient of the lagrangian and absolute sum of the constraint violations
-        should be lower than ``ftol``. Similarly, if computed step size and the
-        objective function chage are checked against this value. Default is 1e-6.
+        should be lower than ``ftol``. Similarly, computed step size and the
+        objective function changes are checked against this value. Default is 1e-6.
     eps : float
         Step size used for numerical approximation of the Jacobian.
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
-    maxiter : int
-        Maximum number of iterations.
+    maxiter : int, optional
+        Maximum number of iterations. Default value is 100.
     finite_diff_rel_step : None or array_like, optional
         If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
@@ -249,6 +249,46 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         This evaluation is carried out as ``workers(fun, iterable)``.
 
         .. versionadded:: 1.16.0
+
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as an `OptimizeResult` object.
+        In this dict-like object the following fields are of particular importance:
+        ``x`` the solution array, ``success`` a Boolean flag indicating if the
+        optimizer exited successfully, ``message`` which describes the reason for
+        termination, and ``multipliers`` which contains the Karush-Kuhn-Tucker
+        (KKT) multipliers for the QP approximation used in solving the original
+        nonlinear problem. See ``Notes`` below. See also `OptimizeResult` for a
+        description of other attributes.
+
+    Notes
+    -----
+    The KKT multipliers are returned in the ``OptimizeResult.multipliers``
+    attribute as a NumPy array. Denoting the dimension of the equality constraints
+    with ``meq``, and of inequality constraints with ``mineq``, then the returned
+    array slice ``m[:meq]`` contains the multipliers for the equality constraints,
+    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the
+    inequality constraints. The multipliers corresponding to bound inequalities
+    are not returned. See [1]_ pp. 321 or [2]_ for an explanation of how to interpret
+    these multipliers. The internal QP problem is solved using the methods given
+    in [3]_ Chapter 25.
+
+    Note that if new-style `NonlinearConstraint` or `LinearConstraint` were
+    used, then ``minimize`` converts them first to old-style constraint dicts.
+    It is possible for a single new-style constraint to simultaneously contain
+    both inequality and equality constraints. This means that if there is mixing
+    within a single constraint, then the returned list of multipliers will have
+    a different length than the original new-style constraints.
+
+    References
+    ----------
+    .. [1] Nocedal, J., and S J Wright, 2006, "Numerical Optimization", Springer,
+       New York.
+    .. [2] Kraft, D., "A software package for sequential quadratic programming",
+       1988, Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace Center, Germany.
+    .. [3] Lawson, C. L., and R. J. Hanson, 1995, "Solving Least Squares Problems",
+       SIAM, Philadelphia, PA.
 
     """
     _check_unknown_options(unknown_options)
@@ -421,7 +461,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "inconsistent": 0,
         "reset": 0,
         "iter": 0,
-        "itermax": maxiter,
+        "itermax": int(maxiter),
         "line": 0,
         "m": m,
         "meq": meq,

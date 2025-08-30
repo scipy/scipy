@@ -691,7 +691,7 @@ def test_nonlin_bc():
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="multithreaded sys.stdout parsing is not thread-safe")
 def test_verbose():
     # Smoke test that checks the printing does something and does not crash
     x = np.linspace(0, 1, 5)

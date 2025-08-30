@@ -204,7 +204,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
@@ -318,11 +318,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     or the original candidate is made with a binomial distribution (the 'bin'
     in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
-    ``b'``, otherwise it is loaded from the original candidate. The final
-    parameter is always loaded from ``b'``. Once the trial candidate is built
-    its fitness is assessed. If the trial is better than the original candidate
-    then it takes its place. If it is also better than the best overall
-    candidate it also replaces that.
+    ``b'``, otherwise it is loaded from the original candidate. A randomly 
+    selected parameter is always loaded from ``b'``. For binomial crossover, 
+    this is a single random parameter. For exponential crossover, this is the 
+    starting point of a consecutive sequence of parameters from ``b'``. Once 
+    the trial candidate is built its fitness is assessed. If the trial is
+    better than the original candidate then it takes its place. If it is
+    also better than the best overall candidate it also replaces that.
 
     The other strategies available are outlined in Qiang and
     Mitchell (2014) [3]_.
@@ -1729,16 +1731,21 @@ class DifferentialEvolutionSolver:
         crossovers = rng.uniform(size=(S, self.parameter_count))
         crossovers = crossovers < self.cross_over_probability
         if self.strategy in self._binomial:
-            # the last one is always from the bprime vector for binomial
-            # If you fill in modulo with a loop you have to set the last one to
-            # true. If you don't use a loop then you can have any random entry
-            # be True.
+            # A randomly selected parameter is always from the bprime vector for
+            # binomial crossover. The fill_point ensures at least one parameter
+            # comes from bprime, preventing the possibility of no mutation 
+            # influence in the trial vector.
             i = np.arange(S)
             crossovers[i, fill_point[i]] = True
             trial = np.where(crossovers, bprime, trial)
             return trial
 
         elif self.strategy in self._exponential:
+            # For exponential crossover, fill_point determines the starting index
+            # for a consecutive sequence of parameters from bprime. The sequence
+            # continues until a crossover probability check fails. The starting
+            # index is always from the bprime vector ensuring at least one 
+            # parameter comes from bprime.
             crossovers[..., 0] = True
             for j in range(S):
                 i = 0
@@ -1770,15 +1777,20 @@ class DifferentialEvolutionSolver:
         crossovers = rng.uniform(size=self.parameter_count)
         crossovers = crossovers < self.cross_over_probability
         if self.strategy in self._binomial:
-            # the last one is always from the bprime vector for binomial
-            # If you fill in modulo with a loop you have to set the last one to
-            # true. If you don't use a loop then you can have any random entry
-            # be True.
+            # A randomly selected parameter is always from the bprime vector for
+            # binomial crossover. The fill_point ensures at least one parameter
+            # comes from bprime, preventing the possibility of no mutation
+            # influence in the trial vector.
             crossovers[fill_point] = True
             trial = np.where(crossovers, bprime, trial)
             return trial
 
         elif self.strategy in self._exponential:
+            # For exponential crossover, fill_point determines the starting index
+            # for a consecutive sequence of parameters from bprime. The sequence
+            # continues until a crossover probability check fails. The starting
+            # index is always from the bprime vector ensuring at least one 
+            # parameter comes from bprime.
             i = 0
             crossovers[0] = True
             while i < self.parameter_count and crossovers[i]:

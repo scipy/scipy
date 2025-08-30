@@ -1,6 +1,7 @@
 """Module for RBF interpolation."""
 import warnings
 from itertools import combinations_with_replacement
+from types import GenericAlias
 
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -203,7 +204,7 @@ class RBFInterpolator:
     linear equations
 
     .. math::
-        (K(y, y) + \\lambda I) a + P(y) b = d
+        (K(x, y) + \\lambda I) a + P(y) b = d
 
     and
 
@@ -271,8 +272,9 @@ class RBFInterpolator:
     >>> xobs = 2*Halton(2, seed=rng).random(100) - 1
     >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
 
-    >>> xgrid = np.mgrid[-1:1:50j, -1:1:50j]
-    >>> xflat = xgrid.reshape(2, -1).T
+    >>> x1 = np.linspace(-1, 1, 50)
+    >>> xgrid = np.asarray(np.meshgrid(x1, x1, indexing='ij'))
+    >>> xflat = xgrid.reshape(2, -1).T     # make it a 2-D array
     >>> yflat = RBFInterpolator(xobs, yobs)(xflat)
     >>> ygrid = yflat.reshape(50, 50)
 
@@ -283,6 +285,9 @@ class RBFInterpolator:
     >>> plt.show()
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, y, d,
                  neighbors=None,
@@ -465,12 +470,12 @@ class RBFInterpolator:
 
         Parameters
         ----------
-        x : (Q, N) array_like
+        x : (npts, ndim) array_like
             Evaluation point coordinates.
 
         Returns
         -------
-        (Q, ...) ndarray
+        ndarray, shape (npts, )
             Values of the interpolant at `x`.
 
         """

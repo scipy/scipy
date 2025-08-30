@@ -2,12 +2,16 @@ import os
 import operator
 import itertools
 import math
+import cmath
 import threading
 import copy
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d
+)
+import scipy._lib.array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 
@@ -22,6 +26,7 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
+from scipy.interpolate._fitpack_repro import Fperiodic, root_rati
 
 from scipy.interpolate import generate_knots, make_splrep, make_splprep
 
@@ -36,10 +41,14 @@ from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+
+@skip_xp_backends(cpu_only=True)
 class TestBSpline:
 
-    def test_ctor(self):
+    def test_ctor(self, xp):
         # knots should be an ordered 1-D array of finite real numbers
         assert_raises((TypeError, ValueError), BSpline,
                 **dict(t=[1, 1.j], c=[1.], k=0))
@@ -66,8 +75,8 @@ class TestBSpline:
 
         # tck vs self.tck
         n, k = 11, 3
-        t = np.arange(n+k+1, dtype=np.float64)
-        c = np.random.random(n)
+        t = xp.arange(n+k+1, dtype=xp.float64)
+        c = xp.asarray(np.random.random(n))
         b = BSpline(t, c, k)
 
         xp_assert_close(t, b.t)
@@ -86,6 +95,15 @@ class TestBSpline:
         with pytest.raises(AttributeError):
             b.tck = 'foo'
 
+    def test_call_namespace(self, xp):
+        # similar to test_degree_0 below, only parametrized with xp
+        # (test_degree_0 tests array-like inputs, which resolve to numpy)
+        b = BSpline(t=xp.asarray([0, 1., 2]), c=xp.asarray([3., 4]), k=0)
+        xx = xp.linspace(0, 2, 10)
+
+        expected = xp.where(xx < 1., xp.asarray(3., dtype=xp.float64), 4.0)
+        xp_assert_close(b(xx), expected)
+
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
 
@@ -95,43 +113,52 @@ class TestBSpline:
         b = BSpline(t=[0, 0.35, 1], c=[3, 4], k=0)
         xp_assert_close(b(xx), np.where(xx < 0.35, 3.0, 4.0))
 
-    def test_degree_1(self):
-        t = [0, 1, 2, 3, 4]
-        c = [1, 2, 3]
+    def test_degree_1(self, xp):
+        t = xp.asarray([0, 1, 2, 3, 4])
+        c = xp.asarray([1.0, 2, 3])
         k = 1
         b = BSpline(t, c, k)
 
-        x = np.linspace(1, 3, 50)
-        xp_assert_close(c[0]*B_012(x) + c[1]*B_012(x-1) + c[2]*B_012(x-2),
-                        b(x), atol=1e-14)
-        xp_assert_close(splev(x, (t, c, k)), b(x), atol=1e-14)
+        x = xp.linspace(1.0, 3.0, 50, dtype=xp.float64)
+        xp_assert_close(
+            b(x),
+            c[0]*B_012(x, xp=xp) + c[1]*B_012(x-1, xp=xp) + c[2]*B_012(x-2, xp=xp),
+            atol=1e-14
+        )
+        x_np, t_np, c_np = map(np.asarray, (x, t, c))
+        splev_result = splev(x_np, (t_np, c_np, k))
+        xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
-    def test_bernstein(self):
+    @skip_xp_backends(np_only=True, reason="TODO convert BPoly")
+    def test_bernstein(self, xp):
         # a special knot vector: Bernstein polynomials
         k = 3
-        t = np.asarray([0]*(k+1) + [1]*(k+1))
-        c = np.asarray([1., 2., 3., 4.])
+        t = xp.asarray([0]*(k+1) + [1]*(k+1))
+        c = xp.asarray([1., 2., 3., 4.])
         bp = BPoly(c.reshape(-1, 1), [0, 1])
         bspl = BSpline(t, c, k)
 
         xx = np.linspace(-1., 2., 10)
         xp_assert_close(bp(xx, extrapolate=True),
                         bspl(xx, extrapolate=True), atol=1e-14)
+
+        t, c = map(np.asarray, (t, c))
         xp_assert_close(splev(xx, (t, c, k)),
                         bspl(xx), atol=1e-14)
 
-    def test_rndm_naive_eval(self):
+    @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
+    @skip_xp_backends("torch", reason="_naive_eval breaks down on torch. Why?")
+    def test_rndm_naive_eval(self, xp):
         # test random coefficient spline *on the base interval*,
         # t[k] <= x < t[-k-1]
-        b = _make_random_spline()
+        b = _make_random_spline(xp=xp)
         t, c, k = b.tck
-        xx = np.linspace(t[k], t[-k-1], 50)
+        xx = xp.linspace(t[k], t[-k-1], 50)
         y_b = b(xx)
-
-        y_n = [_naive_eval(x, t, c, k) for x in xx]
+        y_n = xp.stack([_naive_eval(x, t, c, k, xp=xp) for x in xx])
         xp_assert_close(y_b, y_n, atol=1e-14)
 
-        y_n2 = [_naive_eval_2(x, t, c, k) for x in xx]
+        y_n2 = xp.stack([_naive_eval_2(x, t, c, k, xp=xp) for x in xx])
         xp_assert_close(y_b, y_n2, atol=1e-14)
 
     def test_rndm_splev(self):
@@ -152,20 +179,21 @@ class TestBSpline:
         xx = np.linspace(t[k], t[-k-1], 80)
         xp_assert_close(b(xx), splev(xx, tck), atol=1e-14)
 
-    def test_rndm_unity(self):
-        b = _make_random_spline()
-        b.c = np.ones_like(b.c)
-        xx = np.linspace(b.t[b.k], b.t[-b.k-1], 100)
-        xp_assert_close(b(xx), np.ones_like(xx))
+    def test_rndm_unity(self, xp):
+        b = _make_random_spline(xp=xp)
+        b.c = xp.ones_like(b.c)
+        xx = xp.linspace(b.t[b.k], b.t[-b.k-1], 100, dtype=xp.float64)
+        xp_assert_close(b(xx), xp.ones_like(xx))
 
-    def test_vectorization(self):
+    def test_vectorization(self, xp):
         rng = np.random.RandomState(1234)
         n, k = 22, 3
         t = np.sort(rng.random(n))
         c = rng.random(size=(n, 6, 7))
+        t, c = map(xp.asarray, (t, c))
         b = BSpline(t, c, k)
         tm, tp = t[k], t[-k-1]
-        xx = tm + (tp - tm) * rng.random((3, 4, 5))
+        xx = tm + (tp - tm) * xp.asarray(rng.random((3, 4, 5)))
         assert b(xx).shape == (3, 4, 5, 6, 7)
 
     def test_len_c(self):
@@ -204,11 +232,11 @@ class TestBSpline:
         xp_assert_close(b(t[k+1:-k-1] - 1e-10), b(t[k+1:-k-1] + 1e-10),
                 atol=1e-9)
 
-    def test_extrap(self):
-        b = _make_random_spline()
+    def test_extrap(self, xp):
+        b = _make_random_spline(xp=xp)
         t, c, k = b.tck
         dt = t[-1] - t[0]
-        xx = np.linspace(t[k] - dt, t[-k-1] + dt, 50)
+        xx = xp.linspace(t[k] - dt, t[-k-1] + dt, 50)
         mask = (t[k] < xx) & (xx < t[-k-1])
 
         # extrap has no effect within the base interval
@@ -216,8 +244,9 @@ class TestBSpline:
                         b(xx[mask], extrapolate=False))
 
         # extrapolated values agree with FITPACK
-        xp_assert_close(b(xx, extrapolate=True),
-                splev(xx, (t, c, k), ext=0))
+        xx_np, t_np, c_np = map(np.asarray, (xx, t, c))
+        splev_result = xp.asarray(splev(xx_np, (t_np, c_np, k), ext=0))
+        xp_assert_close(b(xx, extrapolate=True), splev_result)
 
     def test_default_extrap(self):
         # BSpline defaults to extrapolate=True
@@ -227,23 +256,32 @@ class TestBSpline:
         yy = b(xx)
         assert not np.all(np.isnan(yy))
 
-    def test_periodic_extrap(self):
+    def test_periodic_extrap(self, xp):
         rng = np.random.RandomState(1234)
         t = np.sort(rng.random(8))
         c = rng.random(4)
+        t, c = map(xp.asarray, (t, c))
         k = 3
         b = BSpline(t, c, k, extrapolate='periodic')
-        n = t.size - (k + 1)
+        n = t.shape[0] - (k + 1)
 
         dt = t[-1] - t[0]
-        xx = np.linspace(t[k] - dt, t[n] + dt, 50)
+        xx = xp.linspace(t[k] - dt, t[n] + dt, 50)
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        xp_assert_close(b(xx), splev(xy, (t, c, k)))
+        xy_np, t_np, c_np = map(np.asarray, (xy, t, c))
+        atol = 1e-12 if xp_default_dtype(xp) == xp.float64 else 2e-7
+        xp_assert_close(
+            b(xx), xp.asarray(splev(xy_np, (t_np, c_np, k))), atol=atol
+        )
 
         # Direct check
-        xx = [-1, 0, 0.5, 1]
+        xx = xp.asarray([-1, 0, 0.5, 1])
         xy = t[k] + (xx - t[k]) % (t[n] - t[k])
-        xp_assert_equal(b(xx, extrapolate='periodic'), b(xy, extrapolate=True))
+        xp_assert_close(
+            b(xx, extrapolate='periodic'),
+            b(xy, extrapolate=True),
+            atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 5e-7
+        )
 
     def test_ppoly(self):
         b = _make_random_spline()
@@ -292,18 +330,21 @@ class TestBSpline:
         # 2nd derivative is not guaranteed to be continuous either
         assert not np.allclose(b(x - 1e-10, nu=2), b(x + 1e-10, nu=2))
 
-    def test_basis_element_quadratic(self):
-        xx = np.linspace(-1, 4, 20)
-        b = BSpline.basis_element(t=[0, 1, 2, 3])
-        xp_assert_close(b(xx),
-                        splev(xx, (b.t, b.c, b.k)), atol=1e-14)
-        xp_assert_close(b(xx),
-                        B_0123(xx), atol=1e-14)
+    def test_basis_element_quadratic(self, xp):
+        xx = xp.linspace(-1, 4, 20)
+        b = BSpline.basis_element(t=xp.asarray([0, 1, 2, 3]))
 
-        b = BSpline.basis_element(t=[0, 1, 1, 2])
-        xx = np.linspace(0, 2, 10)
+        xx_np, t_np, c_np = map(np.asarray, (xx, b.t, b.c))
+        splev_result = xp.asarray(splev(xx_np, (t_np, c_np, b.k)))
+        xp_assert_close(b(xx), splev_result, atol=1e-14)
+
+        atol=1e-14 if xp_default_dtype(xp) == xp.float64 else 1e-7
+        xp_assert_close(b(xx), xp.asarray(B_0123(xx), dtype=xp.float64), atol=atol)
+
+        b = BSpline.basis_element(t=xp.asarray([0, 1, 1, 2]))
+        xx = xp.linspace(0, 2, 10, dtype=xp.float64)
         xp_assert_close(b(xx),
-                np.where(xx < 1, xx*xx, (2.-xx)**2), atol=1e-14)
+                xp.where(xx < 1, xx*xx, (2.-xx)**2), atol=1e-14)
 
     def test_basis_element_rndm(self):
         b = _make_random_spline()
@@ -324,73 +365,78 @@ class TestBSpline:
         xp_assert_close(b(xx).real, b_re(xx), atol=1e-14)
         xp_assert_close(b(xx).imag, b_im(xx), atol=1e-14)
 
-    def test_nan(self):
+    def test_nan(self, xp):
         # nan in, nan out.
-        b = BSpline.basis_element([0, 1, 1, 2])
-        assert np.isnan(b(np.nan))
+        b = BSpline.basis_element(xp.asarray([0, 1, 1, 2]))
+        assert xp.isnan(b(xp.nan))
 
-    def test_derivative_method(self):
-        b = _make_random_spline(k=5)
+    def test_derivative_method(self, xp):
+        b = _make_random_spline(k=5, xp=xp)
         t, c, k = b.tck
         b0 = BSpline(t, c, k)
-        xx = np.linspace(t[k], t[-k-1], 20)
+        xx = xp.linspace(t[k], t[-k-1], 20)
         for j in range(1, k):
             b = b.derivative()
             xp_assert_close(b0(xx, j), b(xx), atol=1e-12, rtol=1e-12)
 
-    def test_antiderivative_method(self):
-        b = _make_random_spline()
+    def test_antiderivative_method(self, xp):
+        b = _make_random_spline(xp=xp)
         t, c, k = b.tck
-        xx = np.linspace(t[k], t[-k-1], 20)
+        xx = xp.linspace(t[k], t[-k-1], 20)
         xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
         # repeat with N-D array for c
-        c = np.c_[c, c, c]
-        c = np.dstack((c, c))
+        c = xp.stack((c, c, c), axis=1)
+        c = xp.stack((c, c), axis=2)
         b = BSpline(t, c, k)
         xp_assert_close(b.antiderivative().derivative()(xx),
                         b(xx), atol=1e-14, rtol=1e-14)
 
-    def test_integral(self):
-        b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
-        xp_assert_close(b.integrate(0, 1), np.asarray(0.5))
-        xp_assert_close(b.integrate(1, 0), np.asarray(-1 * 0.5))
-        xp_assert_close(b.integrate(1, 0), np.asarray(-0.5))
+    def test_integral(self, xp):
+        b = BSpline.basis_element(xp.asarray([0, 1, 2]))  # x for x < 1 else 2 - x
+        assert math.isclose(b.integrate(0, 1), 0.5, abs_tol=1e-14)
+        assert math.isclose(b.integrate(1, 0), -1 * 0.5, abs_tol=1e-14)
+        assert math.isclose(b.integrate(1, 0), -0.5, abs_tol=1e-14)
+
+
+        assert math.isclose(b.integrate(0, 1), 0.5, abs_tol=1e-14)
+        assert math.isclose(b.integrate(1, 0), -1 * 0.5, abs_tol=1e-14)
+        assert math.isclose(b.integrate(1, 0), -0.5, abs_tol=1e-14)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
-        xp_assert_close(b.integrate(-1, 1), np.asarray(0.0))
-        xp_assert_close(b.integrate(-1, 1, extrapolate=True), np.asarray(0.0))
-        xp_assert_close(b.integrate(-1, 1, extrapolate=False), np.asarray(0.5))
-        xp_assert_close(b.integrate(1, -1, extrapolate=False), np.asarray(-1 * 0.5))
+        assert math.isclose(b.integrate(-1, 1), 0.0, abs_tol=1e-14)
+        assert math.isclose(b.integrate(-1, 1, extrapolate=True), 0.0, abs_tol=1e-14)
+        assert math.isclose(b.integrate(-1, 1, extrapolate=False), 0.5, abs_tol=1e-14)
+        assert math.isclose(b.integrate(1, -1, extrapolate=False), -0.5, abs_tol=1e-14)
 
         # Test ``_fitpack._splint()``
-        xp_assert_close(b.integrate(1, -1, extrapolate=False),
-                        np.asarray(_impl.splint(1, -1, b.tck)))
+        assert math.isclose(b.integrate(1, -1, extrapolate=False),
+                            _impl.splint(1, -1, b.tck), abs_tol=1e-14)
 
         # Test ``extrapolate='periodic'``.
         b.extrapolate = 'periodic'
         i = b.antiderivative()
-        period_int = np.asarray(i(2) - i(0))
+        period_int = xp.asarray(i(2) - i(0), dtype=xp.float64)
 
-        xp_assert_close(b.integrate(0, 2), period_int)
-        xp_assert_close(b.integrate(2, 0), np.asarray(-1 * period_int))
-        xp_assert_close(b.integrate(-9, -7), period_int)
-        xp_assert_close(b.integrate(-8, -4), np.asarray(2 * period_int))
+        assert math.isclose(b.integrate(0, 2), period_int)
+        assert math.isclose(b.integrate(2, 0), -1 * period_int)
+        assert math.isclose(b.integrate(-9, -7), period_int)
+        assert math.isclose(b.integrate(-8, -4), 2 * period_int)
 
         xp_assert_close(b.integrate(0.5, 1.5),
-                        np.asarray(i(1.5) - i(0.5)))
+                        xp.asarray(i(1.5) - i(0.5)))
         xp_assert_close(b.integrate(1.5, 3),
-                        np.asarray(i(1) - i(0) + i(2) - i(1.5)))
+                        xp.asarray(i(1) - i(0) + i(2) - i(1.5)))
         xp_assert_close(b.integrate(1.5 + 12, 3 + 12),
-                        np.asarray(i(1) - i(0) + i(2) - i(1.5)))
+                        xp.asarray(i(1) - i(0) + i(2) - i(1.5)))
         xp_assert_close(b.integrate(1.5, 3 + 12),
-                        np.asarray(i(1) - i(0) + i(2) - i(1.5) + 6 * period_int))
+                        xp.asarray(i(1) - i(0) + i(2) - i(1.5) + 6 * period_int))
 
-        xp_assert_close(b.integrate(0, -1), np.asarray(i(0) - i(1)))
-        xp_assert_close(b.integrate(-9, -10), np.asarray(i(0) - i(1)))
+        xp_assert_close(b.integrate(0, -1), xp.asarray(i(0) - i(1)))
+        xp_assert_close(b.integrate(-9, -10), xp.asarray(i(0) - i(1)))
         xp_assert_close(b.integrate(0, -9),
-                        np.asarray(i(1) - i(2) - 4 * period_int))
+                        xp.asarray(i(1) - i(2) - 4 * period_int))
 
     def test_integrate_ppoly(self):
         # test .integrate method to be consistent with PPoly.integrate
@@ -422,9 +468,9 @@ class TestBSpline:
         assert b.antiderivative().__class__ == B
 
     @pytest.mark.parametrize('axis', range(-4, 4))
-    def test_axis(self, axis):
+    def test_axis(self, axis, xp):
         n, k = 22, 3
-        t = np.linspace(0, 1, n + k + 1)
+        t = xp.linspace(0, 1, n + k + 1)
         sh = [6, 7, 8]
         # We need the positive axis for some of the indexing and slices used
         # in this test.
@@ -432,7 +478,7 @@ class TestBSpline:
         sh.insert(pos_axis, n)   # [22, 6, 7, 8] etc
         sh = tuple(sh)
         rng = np.random.RandomState(1234)
-        c = rng.random(size=sh)
+        c = xp.asarray(rng.random(size=sh))
         b = BSpline(t, c, k, axis=axis)
         assert b.c.shape == (sh[pos_axis],) + sh[:pos_axis] + sh[pos_axis+1:]
 
@@ -451,17 +497,16 @@ class TestBSpline:
                    BSpline(t, c, k, axis=axis).antiderivative(2)]:
             assert b1.axis == b.axis
 
-    def test_neg_axis(self):
+    def test_neg_axis(self, xp):
         k = 2
-        t = [0, 1, 2, 3, 4, 5, 6]
-        c = np.array([[-1, 2, 0, -1], [2, 0, -3, 1]])
+        t = xp.asarray([0, 1, 2, 3, 4, 5, 6])
+        c = xp.asarray([[-1, 2, 0, -1], [2, 0, -3, 1]])
 
         spl = BSpline(t, c, k, axis=-1)
-        spl0 = BSpline(t, c[0], k)
-        spl1 = BSpline(t, c[1], k)
-        xp_assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
+        spl0 = BSpline(t, c[0, :], k)
+        spl1 = BSpline(t, c[1, :], k)
+        xp_assert_equal(spl(2.5), xp.stack([spl0(2.5), spl1(2.5)]))
 
-    @pytest.mark.thread_unsafe
     def test_design_matrix_bc_types(self):
         '''
         Splines with different boundary conditions are built on different
@@ -578,6 +623,7 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis(self, bc_type):
+        # TODO: convert CubicSpline
         rng = np.random.RandomState(1234)
         x = np.sort(rng.random(20))
         y = rng.random(20)
@@ -593,6 +639,7 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis_complex(self, bc_type):
+        # TODO: convert CubicSpline
         rng = np.random.RandomState(1234)
         x = np.sort(rng.random(20))
         y = rng.random(20) + rng.random(20) * 1j
@@ -636,14 +683,13 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
-    @pytest.mark.thread_unsafe
-    def test_concurrency(self):
+    def test_concurrency(self, xp):
         # Check that no segfaults appear with concurrent access to BSpline
-        b = _make_random_spline()
+        b = _make_random_spline(xp=xp)
 
         def worker_fn(_, b):
             t, _, k = b.tck
-            xx = np.linspace(t[k], t[-k-1], 10000)
+            xx = xp.linspace(t[k], t[-k-1], 10000)
             b(xx)
 
         _run_concurrent_barrier(10, worker_fn, b)
@@ -673,95 +719,102 @@ class TestBSpline:
         xp_assert_close(b(xx), expected)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
-    def test_insert(self, xval):
+    def test_insert(self, xval, xp):
         # insert a knot, incl edges (0.0, 7.0) and exactly at an existing knot (4.0)
-        x = np.arange(8)
-        y = np.sin(x)**3
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        spl_1f = insert(xval, spl)     # FITPACK
+        tck = (spl._t, spl._c, spl.k)
+        spl_1f = BSpline(*insert(xval, tck))     # FITPACK
         spl_1 = spl.insert_knot(xval)
 
-        xp_assert_close(spl_1.t, spl_1f.t, atol=1e-15)
-        xp_assert_close(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, xp.asarray(spl_1f.t), atol=1e-15)
+        xp_assert_close(spl_1.c, xp.asarray(spl_1f.c[:-spl.k-1]), atol=1e-15)
 
         # knot insertion preserves values, unless multiplicity >= k+1
         xx = x if xval != x[-1] else x[:-1]
-        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        xx = xp.concat((xx, 0.5*(x[1:] + x[:-1])))
         xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
         # ... repeat with ndim > 1
-        y1 = np.cos(x)**3
+        y1 = xp.cos(x)**3
         spl_y1 = make_interp_spline(x, y1, k=3)
-        spl_yy = make_interp_spline(x, np.c_[y, y1], k=3)
+        spl_yy = make_interp_spline(x, xp.stack((y, y1), axis=1), k=3)
         spl_yy1 = spl_yy.insert_knot(xval)
 
         xp_assert_close(spl_yy1.t, spl_1.t, atol=1e-15)
-        xp_assert_close(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
-                                         spl_y1.insert_knot(xval).c], atol=1e-15)
+        xp_assert_close(
+            spl_yy1.c,
+            xp.stack((spl.insert_knot(xval).c, spl_y1.insert_knot(xval).c), axis=1),
+            atol=1e-15
+        )
 
         xx = x if xval != x[-1] else x[:-1]
-        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        xx = xp.concat((xx, 0.5*(x[1:] + x[:-1])))
         xp_assert_close(spl_yy(xx), spl_yy1(xx), atol=1e-15)
 
 
     @pytest.mark.parametrize(
         'xval, m', [(0.0, 2), (1.0, 3), (1.5, 5), (4, 2), (7.0, 2)]
     )
-    def test_insert_multi(self, xval, m):
-        x = np.arange(8)
-        y = np.sin(x)**3
+    def test_insert_multi(self, xval, m, xp):
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x)**3
         spl = make_interp_spline(x, y, k=3)
 
-        spl_1f = insert(xval, spl, m=m)
+        spl_1f = BSpline(*insert(xval, (spl._t, spl._c, spl.k), m=m))
         spl_1 = spl.insert_knot(xval, m)
 
-        xp_assert_close(spl_1.t, spl_1f.t, atol=1e-15)
-        xp_assert_close(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, xp.asarray(spl_1f.t), atol=1e-15)
+        xp_assert_close(spl_1.c, xp.asarray(spl_1f.c[:-spl.k-1]), atol=1e-15)
 
         xx = x if xval != x[-1] else x[:-1]
-        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        xx = xp.concat((xx, 0.5*(x[1:] + x[:-1])))
         xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
-    def test_insert_random(self):
+    def test_insert_random(self, xp):
         rng = np.random.default_rng(12345)
         n, k = 11, 3
 
-        t = np.sort(rng.uniform(size=n+k+1))
-        c = rng.uniform(size=(n, 3, 2))
+        t = xp.asarray(np.sort(rng.uniform(size=n+k+1)))
+        c = xp.asarray(rng.uniform(size=(n, 3, 2)))
         spl = BSpline(t, c, k)
 
-        xv = rng.uniform(low=t[k+1], high=t[-k-1])
+        xv = xp.asarray(rng.uniform(low=t[k+1], high=t[-k-1]))
         spl_1 = spl.insert_knot(xv)
 
-        xx = rng.uniform(low=t[k+1], high=t[-k-1], size=33)
+        xx = xp.asarray(rng.uniform(low=t[k+1], high=t[-k-1], size=33))
         xp_assert_close(spl(xx), spl_1(xx), atol=1e-15)
 
     @pytest.mark.parametrize('xv', [0, 0.1, 2.0, 4.0, 4.5,      # l.h. edge
                                     5.5, 6.0, 6.1, 7.0]         # r.h. edge
     )
-    def test_insert_periodic(self, xv):
-        x = np.arange(8)
-        y = np.sin(x)**3
-        tck = splrep(x, y, k=3)
-        spl = BSpline(*tck, extrapolate="periodic")
+    def test_insert_periodic(self, xv, xp):
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x)**3
+        t, c, k = splrep(x, y, k=3)
+        t, c = map(xp.asarray, (t, c))
+        spl = BSpline(t, c, k, extrapolate="periodic")
 
         spl_1 = spl.insert_knot(xv)
         tf, cf, k = insert(xv, spl.tck, per=True)
 
-        xp_assert_close(spl_1.t, tf, atol=1e-15)
-        xp_assert_close(spl_1.c[:-k-1], cf[:-k-1], atol=1e-15)
+        xp_assert_close(spl_1.t, xp.asarray(tf), atol=1e-15)
+        xp_assert_close(spl_1.c[:-k-1], xp.asarray(cf[:-k-1]), atol=1e-15)
 
-        xx = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
-        xp_assert_close(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
+        xx_np = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
+        xx = xp.asarray(xx_np)
+        xp_assert_close(spl_1(xx), xp.asarray(splev(xx_np, (tf, cf, k))), atol=1e-15)
 
     @pytest.mark.parametrize('extrapolate', [None, 'periodic'])
-    def test_complex(self, extrapolate):
-        x = np.arange(8)*2*np.pi
-        y_re, y_im = np.sin(x), np.cos(x)
+    def test_complex(self, extrapolate, xp):
+        x = xp.arange(8, dtype=xp.float64) * 2 * np.pi
+        y_re, y_im = xp.sin(x), xp.cos(x)
 
         spl = make_interp_spline(x, y_re + 1j*y_im, k=3)
         spl.extrapolate = extrapolate
@@ -839,7 +892,6 @@ def test_knots_multiplicity():
                 check_splev(b1, j, der, 1e-12, 1e-12)
 
 
-### stolen from @pv, verbatim
 def _naive_B(x, k, i, t):
     """
     Naive way to compute B-spline basis functions. Useful only for testing!
@@ -858,25 +910,25 @@ def _naive_B(x, k, i, t):
     return (c1 + c2)
 
 
-### stolen from @pv, verbatim
-def _naive_eval(x, t, c, k):
+def _naive_eval(x, t, c, k, *, xp):
     """
     Naive B-spline evaluation. Useful only for testing!
     """
     if x == t[k]:
         i = k
     else:
-        i = np.searchsorted(t, x) - 1
+        i = xp.searchsorted(t, x) - 1
+
     assert t[i] <= x <= t[i+1]
-    assert i >= k and i < len(t) - k
+    assert i >= k and i < t.shape[0] - k
     return sum(c[i-j] * _naive_B(x, k, i-j, t) for j in range(0, k+1))
 
 
-def _naive_eval_2(x, t, c, k):
+def _naive_eval_2(x, t, c, k, *, xp):
     """Naive B-spline evaluation, another way."""
-    n = len(t) - (k+1)
+    n = t.shape[0] - (k+1)
     assert n >= k+1
-    assert len(c) >= n
+    assert c.shape[0] >= n
     assert t[k] <= x <= t[n]
     return sum(c[i] * _naive_B(x, k, i, t) for i in range(n))
 
@@ -884,7 +936,7 @@ def _naive_eval_2(x, t, c, k):
 def _sum_basis_elements(x, t, c, k):
     n = len(t) - (k+1)
     assert n >= k+1
-    assert len(c) >= n
+    assert c.shape[0] >= n
     s = 0.
     for i in range(n):
         b = BSpline.basis_element(t[i:i+k+2], extrapolate=False)(x)
@@ -892,13 +944,14 @@ def _sum_basis_elements(x, t, c, k):
     return s
 
 
-def B_012(x):
+def B_012(x, xp=np):
     """ A linear B-spline function B(x | 0, 1, 2)."""
     x = np.atleast_1d(x)
-    return np.piecewise(x, [(x < 0) | (x > 2),
+    result = np.piecewise(x, [(x < 0) | (x > 2),
                             (x >= 0) & (x < 1),
                             (x >= 1) & (x <= 2)],
                            [lambda x: 0., lambda x: x, lambda x: 2.-x])
+    return xp.asarray(result)
 
 
 def B_0123(x, der=0):
@@ -919,10 +972,11 @@ def B_0123(x, der=0):
     return pieces
 
 
-def _make_random_spline(n=35, k=3):
+def _make_random_spline(n=35, k=3, xp=np):
     rng = np.random.RandomState(123)
     t = np.sort(rng.random(n+k+1))
     c = rng.random(n)
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k)
 
 
@@ -1170,6 +1224,7 @@ class TestInterop:
         assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
 
 
+@skip_xp_backends(cpu_only=True)
 class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
@@ -1177,21 +1232,26 @@ class TestInterp:
     xx = np.linspace(0., 2.*np.pi)
     yy = np.sin(xx)
 
+    def _get_xy(self, xp):
+        return xp.asarray(self.xx), xp.asarray(self.yy)
+
     def test_non_int_order(self):
         with assert_raises(TypeError):
             make_interp_spline(self.xx, self.yy, k=2.5)
 
-    def test_order_0(self):
-        b = make_interp_spline(self.xx, self.yy, k=0)
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        b = make_interp_spline(self.xx, self.yy, k=0, axis=-1)
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+    def test_order_0(self, xp):
+        xx, yy = self._get_xy(xp)
+        b = make_interp_spline(xx, yy, k=0)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=0, axis=-1)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
-    def test_linear(self):
-        b = make_interp_spline(self.xx, self.yy, k=1)
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+    def test_linear(self, xp):
+        xx, yy = self._get_xy(xp)
+        b = make_interp_spline(xx, yy, k=1)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=1, axis=-1)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     @pytest.mark.parametrize('k', [0, 1, 2, 3])
     def test_incompatible_x_y(self, k):
@@ -1216,37 +1276,42 @@ class TestInterp:
         with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
             make_interp_spline(x, y, k=k)
 
-    def test_not_a_knot(self):
+    def test_not_a_knot(self, xp):
+        xx, yy = self._get_xy(xp)
         for k in [2, 3, 4, 5, 6, 7]:
-            b = make_interp_spline(self.xx, self.yy, k)
-            xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+            b = make_interp_spline(xx, yy, k)
+            xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
-    def test_periodic(self):
+    def test_periodic(self, xp):
+        xx, yy = self._get_xy(xp)
+
         # k = 5 here for more derivatives
-        b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic')
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=5, bc_type='periodic')
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
         # in periodic case it is expected equality of k-1 first
         # derivatives at the boundaries
         for i in range(1, 5):
-            xp_assert_close(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+            xp_assert_close(b(xx[0], nu=i), b(xx[-1], nu=i), atol=1e-11)
         # tests for axis=-1
-        b = make_interp_spline(self.xx, self.yy, k=5, bc_type='periodic', axis=-1)
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=5, bc_type='periodic', axis=-1)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
         for i in range(1, 5):
-            xp_assert_close(b(self.xx[0], nu=i), b(self.xx[-1], nu=i), atol=1e-11)
+            xp_assert_close(b(xx[0], nu=i), b(xx[-1], nu=i), atol=1e-11)
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5, 6, 7])
-    def test_periodic_random(self, k):
+    def test_periodic_random(self, k, xp):
         # tests for both cases (k > n and k <= n)
         n = 5
         rng = np.random.RandomState(1234)
         x = np.sort(rng.random_sample(n) * 10)
         y = rng.random_sample(n) * 100
         y[0] = y[-1]
+        x, y = xp.asarray(x), xp.asarray(y)
+
         b = make_interp_spline(x, y, k=k, bc_type='periodic')
         xp_assert_close(b(x), y, atol=1e-14)
 
-    def test_periodic_axis(self):
+    def test_periodic_axis(self, xp):
         n = self.xx.shape[0]
         rng = np.random.RandomState(1234)
         x = rng.random_sample(n) * 2 * np.pi
@@ -1256,6 +1321,8 @@ class TestInterp:
         y = np.zeros((2, n))
         y[0] = np.sin(x)
         y[1] = np.cos(x)
+        x, y = xp.asarray(x), xp.asarray(y)
+
         b = make_interp_spline(x, y, k=5, bc_type='periodic', axis=1)
         for i in range(n):
             xp_assert_close(b(x[i]), y[:, i], atol=1e-14)
@@ -1319,53 +1386,65 @@ class TestInterp:
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         t = _periodic_knots(self.xx, k)
         c = _make_interp_per_full_matr(self.xx, self.yy, t, k)
-        b1 = np.vectorize(lambda x: _naive_eval(x, t, c, k))
+        b1 = np.vectorize(lambda x: _naive_eval(x, t, c, k, xp=np))
         xp_assert_close(b(self.xx), b1(self.xx), atol=1e-14)
 
-    def test_quadratic_deriv(self):
+    def test_quadratic_deriv(self, xp):
+        xx, yy = self._get_xy(xp)
         der = [(1, 8.)]  # order, value: f'(x) = 8.
 
         # derivative at right-hand edge
-        b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(None, der))
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=2, bc_type=(None, der))
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
         xp_assert_close(
-            b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+            b(xx[-1], 1),
+            xp.asarray(der[0][1], dtype=xp.float64),
+            atol=1e-14, rtol=1e-14, check_0d=False
         )
 
         # derivative at left-hand edge
-        b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(der, None))
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=2, bc_type=(der, None))
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
         xp_assert_close(
-            b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14, check_0d=False
+            b(xx[0], 1),
+            xp.asarray(der[0][1], dtype=xp.float64),
+            atol=1e-14, rtol=1e-14, check_0d=False
         )
 
-    def test_cubic_deriv(self):
+    def test_cubic_deriv(self, xp):
+        xx, yy = self._get_xy(xp)
         k = 3
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.)], [(1, 4.)]
-        b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(np.asarray([b(self.xx[0], 1), b(self.xx[-1], 1)]),
-                        np.asarray([der_l[0][1], der_r[0][1]]), atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(
+            b(xx[0], 1),
+            xp.asarray(der_l[0][1], dtype=xp.float64), atol=1e-14, rtol=1e-14
+        )
+        xp_assert_close(
+            b(xx[-1], 1),
+            xp.asarray(der_r[0][1], dtype=xp.float64), atol=1e-14, rtol=1e-14
+        )
 
         # 'natural' cubic spline, zero out 2nd derivatives at the boundaries
         der_l, der_r = [(2, 0)], [(2, 0)]
-        b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
-    def test_quintic_derivs(self):
+    def test_quintic_derivs(self, xp):
         k, n = 5, 7
-        x = np.arange(n).astype(np.float64)
-        y = np.sin(x)
+        x = xp.arange(n, dtype=xp.float64)
+        y = xp.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
         b = make_interp_spline(x, y, k=k, bc_type=(der_l, der_r))
         xp_assert_close(b(x), y, atol=1e-14, rtol=1e-14)
-        xp_assert_close(np.asarray([b(x[0], 1), b(x[0], 2)]),
-                        np.asarray([val for (nu, val) in der_l]))
-        xp_assert_close(np.asarray([b(x[-1], 1), b(x[-1], 2)]),
-                        np.asarray([val for (nu, val) in der_r]))
+        xp_assert_close(xp.stack([b(x[0], 1), b(x[0], 2)]),
+                        xp.asarray([val for (nu, val) in der_l], dtype=xp.float64))
+        xp_assert_close(xp.stack([b(x[-1], 1), b(x[-1], 2)]),
+                        xp.asarray([val for (nu, val) in der_r], dtype=xp.float64))
 
     @pytest.mark.xfail(reason='unstable')
     def test_cubic_deriv_unstable(self):
@@ -1382,30 +1461,34 @@ class TestInterp:
         b = make_interp_spline(self.xx, self.yy, k, t, bc_type=(der_l, None))
         xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
-    def test_knots_not_data_sites(self):
+    def test_knots_not_data_sites(self, xp):
         # Knots need not coincide with the data sites.
         # use a quadratic spline, knots are at data averages,
         # two additional constraints are zero 2nd derivatives at edges
         k = 2
-        t = np.r_[(self.xx[0],)*(k+1),
-                  (self.xx[1:] + self.xx[:-1]) / 2.,
-                  (self.xx[-1],)*(k+1)]
-        b = make_interp_spline(self.xx, self.yy, k, t,
+        xx, yy = self._get_xy(xp)
+
+        t = concat_1d(xp,
+                xp.ones(k+1) * xx[0],
+                (xx[1:] + xx[:-1]) / 2.,
+                xp.ones(k+1) * xx[-1]
+        )
+        b = make_interp_spline(xx, yy, k, t,
                                bc_type=([(2, 0)], [(2, 0)]))
 
-        xp_assert_close(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[0], 2), np.asarray(0.0), atol=1e-14)
-        xp_assert_close(b(self.xx[-1], 2), np.asarray(0.0), atol=1e-14)
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        assert math.isclose(b(xx[0], 2), 0.0, abs_tol=1e-14)
+        assert math.isclose(b(xx[-1], 2), 0.0, abs_tol=1e-14)
 
-    def test_minimum_points_and_deriv(self):
+    def test_minimum_points_and_deriv(self, xp):
         # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and
         # f'(0) = 0, f'(1) = 3.
         k = 3
-        x = [0., 1.]
-        y = [0., 1.]
+        x = xp.asarray([0., 1.])
+        y = xp.asarray([0., 1.])
         b = make_interp_spline(x, y, k, bc_type=([(1, 0.)], [(1, 3.)]))
 
-        xx = np.linspace(0., 1.)
+        xx = xp.linspace(0., 1., 21, dtype=xp.float64)
         yy = xx**3
         xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
@@ -1432,8 +1515,8 @@ class TestInterp:
         with assert_raises(ValueError):
             make_interp_spline(x, y, bc_type=(l, r))
 
-    def test_deriv_order_too_large(self):
-        x = np.arange(7)
+    def test_deriv_order_too_large(self, xp):
+        x = xp.arange(7)
         y = x**2
         l, r = [(6, 0)], [(1, 0)]    # 6th derivative = 0 at x[0] for k=3
         with assert_raises(ValueError, match="Bad boundary conditions at 0."):
@@ -1445,30 +1528,26 @@ class TestInterp:
             # does not segfault
             make_interp_spline(x, y, bc_type=(l, r))
 
-    def test_complex(self):
+    def test_complex(self, xp):
         k = 3
-        xx = self.xx
-        yy = self.yy + 1.j*self.yy
+        xx, yy = self._get_xy(xp)
+        yy = yy + 1.j*yy
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
         b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
         xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(
-            b(xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14, check_0d=False
-        )
-        xp_assert_close(
-            b(xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14, check_0d=False
-        )
+        assert cmath.isclose(b(xx[0], 1), der_l[0][1], abs_tol=1e-14)
+        assert cmath.isclose(b(xx[-1], 1), der_r[0][1], abs_tol=1e-14)
 
         # also test zero and first order
         for k in (0, 1):
             b = make_interp_spline(xx, yy, k=k)
             xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
 
-    def test_int_xy(self):
-        x = np.arange(10).astype(int)
-        y = np.arange(10).astype(int)
+    def test_int_xy(self, xp):
+        x = xp.arange(10, dtype=xp.int32)
+        y = xp.arange(10, dtype=xp.int32)
 
         # Cython chokes on "buffer type mismatch" (construction) or
         # "no matching signature found" (evaluation)
@@ -1476,9 +1555,9 @@ class TestInterp:
             b = make_interp_spline(x, y, k=k)
             b(x)
 
-    def test_sliced_input(self):
+    def test_sliced_input(self, xp):
         # Cython code chokes on non C contiguous arrays
-        xx = np.linspace(-1, 1, 100)
+        xx = xp.linspace(-1, 1, 100)
 
         x = xx[::5]
         y = xx[::5]
@@ -1486,13 +1565,13 @@ class TestInterp:
         for k in (0, 1, 2, 3):
             make_interp_spline(x, y, k=k)
 
-    def test_check_finite(self):
+    def test_check_finite(self, xp):
         # check_finite defaults to True; nans and such trigger a ValueError
-        x = np.arange(10).astype(float)
+        x = xp.arange(10, dtype=xp.float64)
         y = x**2
 
-        for z in [np.nan, np.inf, -np.inf]:
-            y[-1] = z
+        for z in [xp.nan, xp.inf, -xp.inf]:
+            y = xpx.at(y, -1).set(z)
             assert_raises(ValueError, make_interp_spline, x, y)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 5])
@@ -1502,15 +1581,22 @@ class TestInterp:
         y = [a**2 for a in x]
         make_interp_spline(x, y, k=k)
 
-    def test_multiple_rhs(self):
-        yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
+    def test_multiple_rhs(self, xp):
+        xx, yy = self._get_xy(xp)
+        yy = xp.stack((xx, yy), axis=1)
         der_l = [(1, [1., 2.])]
         der_r = [(1, [3., 4.])]
 
-        b = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
-        xp_assert_close(b(self.xx), yy, atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
-        xp_assert_close(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(xx, yy, k=3, bc_type=(der_l, der_r))
+        xp_assert_close(b(xx), yy, atol=1e-14, rtol=1e-14)
+        xp_assert_close(
+            b(xx[0], 1),
+            xp.asarray(der_l[0][1], dtype=xp.float64), atol=1e-14, rtol=1e-14
+        )
+        xp_assert_close(
+            b(xx[-1], 1),
+            xp.asarray(der_r[0][1], dtype=xp.float64), atol=1e-14, rtol=1e-14
+        )
 
     def test_shapes(self):
         rng = np.random.RandomState(1234)
@@ -1527,41 +1613,42 @@ class TestInterp:
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert b.c.shape == (n + k - 1, 5, 6, 7)
 
-    def test_string_aliases(self):
-        yy = np.sin(self.xx)
+    def test_string_aliases(self, xp):
+        xx, yy = self._get_xy(xp)
+        yy = xp.sin(xx)
 
         # a single string is duplicated
-        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='natural')
-        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=([(2, 0)], [(2, 0)]))
+        b1 = make_interp_spline(xx, yy, k=3, bc_type='natural')
+        b2 = make_interp_spline(xx, yy, k=3, bc_type=([(2, 0)], [(2, 0)]))
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # two strings are handled
-        b1 = make_interp_spline(self.xx, yy, k=3,
+        b1 = make_interp_spline(xx, yy, k=3,
                                 bc_type=('natural', 'clamped'))
-        b2 = make_interp_spline(self.xx, yy, k=3,
+        b2 = make_interp_spline(xx, yy, k=3,
                                 bc_type=([(2, 0)], [(1, 0)]))
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # one-sided BCs are OK
-        b1 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, 'clamped'))
-        b2 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, [(1, 0.0)]))
+        b1 = make_interp_spline(xx, yy, k=2, bc_type=(None, 'clamped'))
+        b2 = make_interp_spline(xx, yy, k=2, bc_type=(None, [(1, 0.0)]))
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # 'not-a-knot' is equivalent to None
-        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='not-a-knot')
-        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=None)
+        b1 = make_interp_spline(xx, yy, k=3, bc_type='not-a-knot')
+        b2 = make_interp_spline(xx, yy, k=3, bc_type=None)
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # unknown strings do not pass
         with assert_raises(ValueError):
-            make_interp_spline(self.xx, yy, k=3, bc_type='typo')
+            make_interp_spline(xx, yy, k=3, bc_type='typo')
 
         # string aliases are handled for 2D values
-        yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
+        yy = xp.stack((xp.sin(xx), xp.cos(xx)), axis=1)
         der_l = [(1, [0., 0.])]
         der_r = [(2, [0., 0.])]
-        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
-        b1 = make_interp_spline(self.xx, yy, k=3,
+        b2 = make_interp_spline(xx, yy, k=3, bc_type=(der_l, der_r))
+        b1 = make_interp_spline(xx, yy, k=3,
                                 bc_type=('clamped', 'natural'))
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
@@ -1570,23 +1657,26 @@ class TestInterp:
         k, n = 3, 22
         x = np.sort(rng.random(size=n))
         y = rng.random(size=(n, 5, 6, 7))
+        x, y = xp.asarray(x), xp.asarray(y)
 
         # now throw in some derivatives
-        d_l = [(1, np.zeros((5, 6, 7)))]
-        d_r = [(1, np.zeros((5, 6, 7)))]
+        d_l = [(1, xp.zeros((5, 6, 7)))]
+        d_r = [(1, xp.zeros((5, 6, 7)))]
         b1 = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         b2 = make_interp_spline(x, y, k, bc_type='clamped')
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
-    def test_full_matrix(self):
+    def test_full_matrix(self, xp):
         rng = np.random.RandomState(1234)
         k, n = 3, 7
-        x = np.sort(rng.random(size=n))
-        y = rng.random(size=n)
-        t = _not_a_knot(x, k)
+        x_np = np.sort(rng.random(size=n))
+        y_np = rng.random(size=n)
+        t_np = _not_a_knot(x_np, k)
+        cf = make_interp_full_matr(x_np, y_np, t_np, k)
+        cf = xp.asarray(cf)
 
+        x, y, t = map(xp.asarray, (x_np, y_np, t_np))
         b = make_interp_spline(x, y, k, t)
-        cf = make_interp_full_matr(x, y, t, k)
         xp_assert_close(b.c, cf, atol=1e-14, rtol=1e-14)
 
     def test_woodbury(self):
@@ -1676,6 +1766,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
+@skip_xp_backends(cpu_only=True)
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -1703,10 +1794,10 @@ class TestLSQ:
         xp_assert_close(b.c, c1)
 
     @parametrize_lsq_methods
-    def test_weights(self, method):
+    def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = self.x, self.y, self.t, self.k
-        w = np.ones_like(x)
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
         b_w = make_lsq_spline(x, y, t, k, w=w, method=method)
@@ -1715,79 +1806,84 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
 
-    def test_weights_same(self):
+    def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = self.x, self.y, self.t, self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
+        w = xp.asarray(w)
 
         b_ne = make_lsq_spline(x, y, t, k, w=w, method="norm-eq")
         b_qr = make_lsq_spline(x, y, t, k, w=w, method="qr")
         b_no_w = make_lsq_spline(x, y, t, k, method="qr")
 
         xp_assert_close(b_ne.c, b_qr.c, atol=1e-14)
-        assert not np.allclose(b_no_w.c, b_qr.c, atol=1e-14)
+        assert not xp.all(xp.abs(b_no_w.c - b_qr.c) < 1e-14)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
+        y = xp.asarray(y)
+
         b = make_lsq_spline(x, y, t, k, method=method)
-        assert b.c.shape == (t.size-k-1, 5, 6, 7)
+        assert b.c.shape == (t.shape[0] - k - 1, 5, 6, 7)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs_2(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_2(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b = make_lsq_spline(x, y, t, k, method=method)
 
         bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
               for i in range(nrhs)]
-        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+        coefs = xp.stack([bb[i].c for i in range(nrhs)]).T
 
         xp_assert_close(coefs, b.c, atol=1e-15)
 
-    def test_multiple_rhs_3(self):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_3(self, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b_qr = make_lsq_spline(x, y, t, k, method="qr")
         b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
         xp_assert_close(b_qr.c, b_neq.c, atol=1e-15)
 
     @parametrize_lsq_methods
-    def test_complex(self, method):
+    def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
-        b_re = make_lsq_spline(x, yc.real, t, k, method=method)
-        b_im = make_lsq_spline(x, yc.imag, t, k, method=method)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k, method=method)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k, method=method)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
-    def test_complex_2(self):
+    def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
-        yc = np.stack((yc, yc), axis=1)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
         # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
-        yc = np.stack((yc, yc), axis=1)
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
@@ -2013,7 +2109,7 @@ class TestGivensQR:
 
         # sign changes are consistent between Q and R:
         c_full = sl.solve(r, qTy)
-        c_banded = _dierckx.fpback(R.a, R.nc, y_)
+        c_banded, _, _ = _dierckx.fpback(R.a, R.nc, x, y_, t, k, np.ones_like(y), y_)
         xp_assert_close(c_full, c_banded[:, 0], atol=5e-13)
 
     def test_py_vs_compiled(self):
@@ -2069,7 +2165,7 @@ class TestGivensQR:
         _dierckx.qr_reduce(A, offset, nc, y)
 
         c = fpback(R, y)
-        cc = _dierckx.fpback(A, nc, y)
+        cc, _, _ = _dierckx.fpback(A, nc, x, y, t, k, np.ones_like(x), y)
 
         xp_assert_close(cc, c, atol=1e-14)
 
@@ -2079,6 +2175,7 @@ def data_file(basename):
                         'data', basename)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestSmoothingSpline:
     #
     # test make_smoothing_spline
@@ -2167,10 +2264,10 @@ class TestSmoothingSpline:
         # using an iterative algorithm for minimizing the GCV criteria. These
         # algorithms may vary, so the tolerance should be rather low.
         # Not checking dtypes as gcvspl.npz stores little endian arrays, which
-        # result in conflicting dtypes on big endian systems. 
+        # result in conflicting dtypes on big endian systems.
         xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
-    def test_non_regularized_case(self):
+    def test_non_regularized_case(self, xp):
         """
         In case the regularization parameter is 0, the resulting spline
         is an interpolation spline with natural boundary conditions.
@@ -2181,29 +2278,33 @@ class TestSmoothingSpline:
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = xp.asarray(x), xp.asarray(y)
+
         spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
 
-        grid = np.linspace(x[0], x[-1], 2 * n)
+        grid = xp.linspace(x[0], x[-1], 2 * n)
         xp_assert_close(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
 
     @pytest.mark.fail_slow(2)
-    def test_weighted_smoothing_spline(self):
+    def test_weighted_smoothing_spline(self, xp):
         # create data sample
         rng = np.random.RandomState(1234)
         n = 100
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = map(xp.asarray, (x, y))
+
         spl = make_smoothing_spline(x, y)
 
         # in order not to iterate over all of the indices, we select 10 of
         # them randomly
         for ind in rng.choice(range(100), size=10):
-            w = np.ones(n)
-            w[ind] = 30.
+            w = xp.ones(n)
+            xpx.at(w, int(ind)).set(30.)    # w[int(ind)] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
             # original point than the one without weights
@@ -2488,25 +2589,32 @@ class TestNdBSpline:
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
 
-        der = bspl2(xi, nu=(1, 0))
-        xp_assert_close(der,
-                        [3*x**2 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+        # Derivative orders and expected functions
+        test_cases = {
+            (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
+            (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
+            (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+        }
 
-        der = bspl2(xi, nu=(1, 1))
-        xp_assert_close(der,
-                        [3*x**2 * (2*y + 2) for x, y in xi], atol=1e-14)
+        for nu, expected_fn in test_cases.items():
+            expected_vals = [expected_fn(x, y) for x, y in xi]
 
-        der = bspl2(xi, nu=(0, 0))
-        xp_assert_close(der,
-                        [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+            # Evaluate via nu argument
+            direct = bspl2(xi, nu=nu)
+            xp_assert_close(direct, expected_vals, atol=1e-14)
 
-        with assert_raises(ValueError):
-            # all(nu >= 0)
-            der = bspl2(xi, nu=(-1, 0))
+            # Evaluate via .derivative() call
+            via_method = bspl2.derivative(nu)(xi)
+            xp_assert_close(via_method, expected_vals, atol=1e-14)
 
-        with assert_raises(ValueError):
-            # len(nu) == ndim
-            der = bspl2(xi, nu=(-1, 0, 1))
+        # Error cases
+        for bad_nu in [(-1, 0), # all(nu >= 0)
+                       (-1, 0, 1)]: # len(nu) == ndim
+            with assert_raises(ValueError):
+                bspl2(xi, nu=bad_nu)
+            with assert_raises(ValueError):
+                bspl2.derivative(bad_nu)
+
 
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
@@ -2583,20 +2691,20 @@ class TestNdBSpline:
         x, y, z = rng.uniform(size=(3, 11)) * 5
         xi = [_ for _ in zip(x, y, z)]
 
-        xp_assert_close(bspl3(xi, nu=(1, 0, 0)),
-                        3*x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+        # Derivative orders and their expected expressions
+        test_cases = {
+            (1, 0, 0): lambda x, y, z: 3 * x**2 * (y**3 + 2*y) * (z**3 + 3*z + 1),
+            (2, 0, 0): lambda x, y, z: 6 * x * (y**3 + 2*y) * (z**3 + 3*z + 1),
+            (2, 1, 0): lambda x, y, z: 6 * x * (3*y**2 + 2) * (z**3 + 3*z + 1),
+            (2, 1, 3): lambda x, y, z: 6 * x * (3*y**2 + 2) * 6,
+            (2, 1, 4): lambda x, y, z: 0.0,
+        }
 
-        xp_assert_close(bspl3(xi, nu=(2, 0, 0)),
-                        6*x * (y**3 + 2*y) * (z**3 + 3*z + 1), atol=1e-14)
+        for nu, expected_fn in test_cases.items():
+            expected_vals = [expected_fn(xi_, yi_, zi_) for xi_, yi_, zi_ in xi]
+            xp_assert_close(bspl3(xi, nu=nu), expected_vals, atol=1e-14)
+            xp_assert_close(bspl3.derivative(nu)(xi), expected_vals, atol=1e-14)
 
-        xp_assert_close(bspl3(xi, nu=(2, 1, 0)),
-                        6*x * (3*y**2 + 2) * (z**3 + 3*z + 1), atol=1e-14)
-
-        xp_assert_close(bspl3(xi, nu=(2, 1, 3)),
-                        6*x * (3*y**2 + 2) * (6), atol=1e-14)
-
-        xp_assert_close(bspl3(xi, nu=(2, 1, 4)),
-                        np.zeros(len(xi)), atol=1e-14)
 
     def test_3D_random(self):
         rng = np.random.default_rng(12345)
@@ -2755,7 +2863,6 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -3138,6 +3245,7 @@ def _add_knot(x, t, k, residuals):
     return t_new
 
 
+@skip_xp_backends(cpu_only=True)
 class TestGenerateKnots:
     def test_split_add_knot(self):
         # smoke test implementation details: insert a new knot given residuals
@@ -3164,28 +3272,31 @@ class TestGenerateKnots:
         xp_assert_close(new_t2, new_t2_py, atol=1e-15)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
-    def test_s0(self, k):
-        x = np.arange(8, dtype=np.float64)
-        y = np.sin(x*np.pi/8)
+    def test_s0(self, k, xp):
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         t = list(generate_knots(x, y, k=k, s=0))[-1]
 
         tt = splrep(x, y, k=k, s=0)[0]
+        tt = xp.asarray(tt, dtype=xp.float64)
         xp_assert_close(t, tt, atol=1e-15)
 
-    def test_s0_1(self):
+    def test_s0_1(self, xp):
         # with these data, naive algorithm tries to insert >= nmax knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
-    def test_s0_n20(self):
+    def test_s0_n20(self, xp):
         n = 20
-        x = np.arange(n)
+        x = xp.arange(n)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
     def test_s0_nest(self):
         # s=0 and non-default nest: not implemented, errors out
@@ -3194,7 +3305,7 @@ class TestGenerateKnots:
         with assert_raises(ValueError):
             list(generate_knots(x, y, k=3, s=0, nest=10))
 
-    def test_s_switch(self):
+    def test_s_switch(self, xp):
         # test the process switching to interpolating knots when len(t) == m + k + 1
         """
         To generate the `wanted` list below apply the following diff and rerun
@@ -3217,8 +3328,8 @@ index 1afb1900f1..d817e51ad8 100644
            if(n.eq.nmax) go to 10
  c  test whether we cannot further increase the number of knots.
         """  # NOQA: E501
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*np.pi/8)
         k = 3
 
         knots = list(generate_knots(x, y, k=k, s=1e-7))
@@ -3228,6 +3339,7 @@ index 1afb1900f1..d817e51ad8 100644
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
+        wanted = [xp.asarray(want, dtype=xp.float64) for want in wanted]
 
         assert len(knots) == len(wanted)
         for t, tt in zip(knots, wanted):
@@ -3235,7 +3347,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         # also check that the last knot vector matches FITPACK
         t, _, _ = splrep(x, y, k=k, s=1e-7)
-        xp_assert_close(knots[-1], t, atol=1e-15)
+        xp_assert_close(knots[-1], xp.asarray(t), atol=1e-15)
 
     def test_list_input(self):
         # test that list inputs are accepted
@@ -3243,15 +3355,18 @@ index 1afb1900f1..d817e51ad8 100644
         gen = generate_knots(x, x, s=0.1, k=1)
         next(gen)
 
-    def test_nest(self):
+    def test_nest(self, xp):
         # test that nest < nmax stops the process early (and we get 10 knots not 12)
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         s = 1e-7
 
         knots = list(generate_knots(x, y, k=3, s=s, nest=10))
-        xp_assert_close(knots[-1],
-                        [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
+        xp_assert_close(
+            knots[-1],
+            xp.asarray([0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], dtype=xp.float64),
+            atol=1e-15
+        )
 
         with assert_raises(ValueError):
             # nest < 2*(k+1)
@@ -3286,7 +3401,6 @@ index 1afb1900f1..d817e51ad8 100644
 
         xp_assert_close(tt, t, atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         n = 14
         x = np.arange(n)
@@ -3295,10 +3409,9 @@ index 1afb1900f1..d817e51ad8 100644
         # XXX splrep warns that "s too small": ier=2
         knots = list(generate_knots(x, y, k=3, s=1e-50))
 
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning)
+        with pytest.warns(RuntimeWarning) as r:
             tck = splrep(x, y, k=3, s=1e-50)
-            assert len(r) == 1
+        assert len(r) == 1
         xp_assert_equal(knots[-1], tck[0])
 
 
@@ -3331,16 +3444,17 @@ class F_dense:
     """ The r.h.s. of ``f(p) = s``, an analog of _fitpack_repro.F
     Uses full matrices, so is for tests only.
     """
-    def __init__(self, x, y, t, k, s, w=None):
+    def __init__(self, x, y, t, k, s, w=None, extrapolate=True):
         self.x = x
         self.y = y
         self.t = t
         self.k = k
         self.w = np.ones_like(x, dtype=float) if w is None else w
+        self.extrapolate = extrapolate
         assert self.w.ndim == 1
 
         # lhs
-        a_dense = BSpline(t, np.eye(t.shape[0] - k - 1), k)(x)
+        a_dense = BSpline(t, np.eye(t.shape[0] - k - 1), k, extrapolate=extrapolate)(x)
         self.a_dense = a_dense * self.w[:, None]
 
         from scipy.interpolate import _fitpack_repro as _fr
@@ -3365,94 +3479,262 @@ class F_dense:
         nc = r.shape[1]
         c = solve(r[:nc, :nc], qy[:nc])
 
-        spl = BSpline(self.t, c, self.k)
+        spl = BSpline(self.t, c, self.k, extrapolate=self.extrapolate)
         fp = np.sum(self.w**2 * (spl(self.x) - self.y)**2)
 
         self.spl = spl   # store it
 
         return fp - self.s
 
+@skip_xp_backends(cpu_only=True)
+class _TestMakeSplrepBase:
 
-class TestMakeSplrep:
+    bc_type = None
+
+    def _get_xykt(self, xp=np):
+        if self.bc_type == 'periodic':
+            x = xp.linspace(0, 2*np.pi, 10)    # nodes
+            y  = xp.sin(x)
+            s = 1.7e-4
+
+            return x, y, s
+        else:
+            x = xp.linspace(0, 5, 11)
+            y  = xp.sin(x*3.14 / 5)**2
+            s = 1.7e-4
+
+            return x, y, s
+
     def test_input_errors(self):
         x = np.linspace(0, 10, 11)
         y = np.linspace(0, 10, 12)
         with assert_raises(ValueError):
             # len(x) != len(y)
-            make_splrep(x, y)
+            make_splrep(x, y, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # 0D inputs
-            make_splrep(1, 2, s=0.1)
+            make_splrep(1, 2, s=0.1, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # y.ndim > 2
             y = np.ones((x.size, 2, 2, 2))
-            make_splrep(x, y, s=0.1)
+            make_splrep(x, y, s=0.1, bc_type=self.bc_type)
 
         w = np.ones(12)
         with assert_raises(ValueError):
             # len(weights) != len(x)
-            make_splrep(x, x**3, w=w, s=0.1)
+            make_splrep(x, x**3, w=w, s=0.1, bc_type=self.bc_type)
 
         w = -np.ones(12)
         with assert_raises(ValueError):
             # w < 0
-            make_splrep(x, x**3, w=w, s=0.1)
+            make_splrep(x, x**3, w=w, s=0.1, bc_type=self.bc_type)
 
         w = np.ones((x.shape[0], 2))
         with assert_raises(ValueError):
             # w.ndim != 1
-            make_splrep(x, x**3, w=w, s=0.1)
+            make_splrep(x, x**3, w=w, s=0.1, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # x not ordered
-            make_splrep(x[::-1], x**3, s=0.1)
+            make_splrep(x[::-1], x**3, s=0.1, bc_type=self.bc_type)
 
         with assert_raises(TypeError):
             # k != int(k)
-            make_splrep(x, x**3, k=2.5, s=0.1)
+            make_splrep(x, x**3, k=2.5, s=0.1, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # s < 0
-            make_splrep(x, x**3, s=-1)
+            make_splrep(x, x**3, s=-1, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # nest < 2*k + 2
-            make_splrep(x, x**3, k=3, nest=2, s=0.1)
+            make_splrep(x, x**3, k=3, nest=2, s=0.1, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # nest not None and s==0
-            make_splrep(x, x**3, s=0, nest=11)
+            make_splrep(x, x**3, s=0, nest=11, bc_type=self.bc_type)
 
         with assert_raises(ValueError):
             # len(x) != len(y)
-            make_splrep(np.arange(8), np.arange(9), s=0.1)
+            make_splrep(np.arange(8), np.arange(9), s=0.1, bc_type=self.bc_type)
 
-    def _get_xykt(self):
-        x = np.linspace(0, 5, 11)
-        y  = np.sin(x*3.14 / 5)**2
-        k = 3
-        s = 1.7e-4
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+    def _test_with_knots(self, x, y, k, s):
+        t = list(generate_knots(x, y, k=k, s=s, bc_type=self.bc_type))[-1]
 
-        return x, y, k, s, tt
+        spl_auto = make_splrep(x, y, k=k, s=s, bc_type=self.bc_type)
+        spl_t = make_splrep(x, y, t=t, k=k, s=s, bc_type=self.bc_type)
 
-    def test_fitpack_F(self):
+        xp_assert_close(spl_auto.t, spl_t.t, atol=1e-15)
+        xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
+        assert spl_auto.k == spl_t.k
+
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_with_knots(self, k):
+        x, y, s = self._get_xykt()
+
+        self._test_with_knots(x, y, k, s)
+
+    def _test_default_s(self, x, y, k):
+        spl = make_splrep(x, y, k=k, bc_type=self.bc_type)
+        spl_i = make_interp_spline(x, y, k=k, bc_type=self.bc_type)
+        t = list(generate_knots(x, y, k=k, bc_type=self.bc_type))[-1]
+
+        xp_assert_close(spl.c, spl_i.c, atol=1e-15)
+        xp_assert_close(spl.t, t, atol=1e-15)
+        xp_assert_close(spl_i.t, t, atol=1e-15)
+
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_default_s(self, k):
+        x, y, _ = self._get_xykt()
+        self._test_default_s(x, y, k)
+
+    @pytest.mark.thread_unsafe
+    def test_s_too_small(self):
+        # both splrep and make_splrep warn that "s too small": ier=2
+        s = 1e-30
+        if self.bc_type == 'periodic':
+            x = np.linspace(0, 2*np.pi, 14)
+            y = np.sin(x)
+        else:
+            x = np.arange(14)
+            y = x**3
+
+        with warnings.catch_warnings():
+            warnings.simplefilter(
+                "ignore",
+                RuntimeWarning
+            )
+            tck = splrep(x, y, k=3, s=s, per=(self.bc_type == 'periodic'))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter(
+                "ignore",
+                RuntimeWarning
+            )
+            spl = make_splrep(x, y, k=3, s=s, bc_type=self.bc_type)
+
+        xp_assert_close(spl.t, tck[0])
+        xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                        tck[1], atol=5e-13)
+
+    @pytest.mark.parametrize("k", [1, 2, 3])
+    def test_shape(self, k):
+        # make sure coefficients have the right shape (not extra dims)
+        n = 10
+        if self.bc_type == 'periodic':
+            x = np.linspace(0, 2*np.pi, n)
+            y = np.cos(x)
+        else:
+            x = np.arange(n)
+            y = x**3
+
+        spl = make_splrep(x, y, k=k, bc_type=self.bc_type)
+        spl_1 = make_splrep(x, y, k=k, s=1e-5, bc_type=self.bc_type)
+
+        assert spl.c.ndim == 1
+        assert spl_1.c.ndim == 1
+
+        # force the general code path, not shortcuts
+        spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5, bc_type=self.bc_type)
+        assert spl_2.c.ndim == 1
+
+    def test_error_on_invalid_bc_type(self):
+        N = 10
+        a, b = 0, 2*np.pi
+        x = np.linspace(a, b, N + 1)    # nodes
+        y = np.exp(x)
+
+        with assert_raises(ValueError):
+            make_splrep(x, y, s=1e-8, bc_type="nonsense")
+
+    @pytest.mark.parametrize("bc_type", ["periodic", None])
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+    def test_make_splrep_with_unequal_weights(self, bc_type, k):
+        # Sample data
+        x = np.linspace(0, 2*np.pi, 10)
+        y = np.sin(x)
+
+        w = np.linspace(1, 5, len(x))
+
+        tck = splrep(x, y, w=w, k=k, s=1e-8, per=(bc_type == 'periodic'))
+        spl = make_splrep(x, y, w=w, s=1e-8, k=k, bc_type=bc_type)
+
+        xp_assert_close(spl.t, tck[0])
+        xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                        tck[1], atol=1e-8)
+
+    @pytest.mark.parametrize("bc_type", ["periodic", None])
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+    def test_make_splrep_impl_no_optimization(self, bc_type, k):
+        # Sample data
+        x = np.linspace(0, 1, 10)
+        y = np.sin(2 * np.pi * x)
+
+        xb, xe = x[0], x[-1]
+        k = 3  # Cubic spline
+        s = 1e-8  # No smoothing
+
+        # Provide t with only boundary knots -> length = 2*(k+1)
+        t = np.array([xb] * (k + 1) + [xe] * (k + 1))
+
+        # Should skip optimization
+        spl = make_splrep(x, y, xb=xb, xe=xe, k=k,
+                        s=s, t=t, nest=None, bc_type=bc_type)
+
+        assert isinstance(spl, BSpline)
+        assert spl.t.shape[0] == 2 * (k + 1)
+        assert spl.k == k
+        xp_assert_close(spl.t[:k+1], np.asarray([xb] * (k + 1)))
+        xp_assert_close(spl.t[-(k+1):], np.asarray([xe] * (k + 1)))
+
+    @pytest.mark.parametrize("n", [100, 51, 15, 11])
+    @pytest.mark.parametrize("s", [10, 8, 5, 1, 1e-2])
+    def test_make_splrep_matches_splrep_periodic(self, n, s):
+        rng = np.random.default_rng(123)
+        x = np.r_[0, np.sort(rng.uniform(0, 2 * np.pi, size=n - 2)), 2 * np.pi]
+        y = np.sin(x) + np.cos(x)
+
+        t, c, k = splrep(x, y, s=s, per=(self.bc_type == "periodic"))
+        spl = make_splrep(x, y, s=s, bc_type=self.bc_type)
+
+        if not (n == 11 and s == 1 and self.bc_type == "periodic"):
+            xp_assert_close(spl.t, t, atol=1e-15)
+            xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
+
+    @pytest.mark.parametrize("n", [100, 51, 15, 11])
+    @pytest.mark.parametrize("s", [10, 8, 5, 1, 1e-2])
+    def test_make_splrep_with_splrep_knots(self, n, s):
+        rng = np.random.default_rng(123)
+        x = np.r_[0, np.sort(rng.uniform(0, 2 * np.pi, size=n - 2)), 2 * np.pi]
+        y = np.sin(x) + np.cos(x)
+
+        t, c, k = splrep(x, y, s=s, per=(self.bc_type == "periodic"))
+        spl = make_splrep(x, y, s=s, bc_type=self.bc_type, t=t)
+        xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
+
+class TestMakeSplrep(_TestMakeSplrepBase):
+
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_fitpack_F(self, k):
         # test an implementation detail: banded/packed linalg vs full matrices
         from scipy.interpolate._fitpack_repro import F
 
-        x, y, k, s, t = self._get_xykt()
+        x, y, s = self._get_xykt()
+        t = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
         f = F(x, y[:, None], t, k, s)    # F expects y to be 2D
         f_d = F_dense(x, y, t, k, s)
         for p in [1, 10, 100]:
             xp_assert_close(f(p), f_d(p), atol=1e-15)
 
-    def test_fitpack_F_with_weights(self):
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_fitpack_F_with_weights(self, k):
         # repeat test_fitpack_F, with weights
         from scipy.interpolate._fitpack_repro import F
 
-        x, y, k, s, t = self._get_xykt()
+        x, y, s = self._get_xykt()
+        t = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
         w = np.arange(x.shape[0], dtype=float)
         fw = F(x, y[:, None], t, k, s, w=w)       # F expects y to be 2D
         fw_d = F_dense(x, y, t, k, s, w=w)
@@ -3477,18 +3759,22 @@ class TestMakeSplrep:
         assert D.shape[0] == n - 2*k - 2   # number of internal knots
         xp_assert_close(D, D_dense, atol=1e-15)
 
-    def test_simple_vs_splrep(self):
-        x, y, k, s, tt = self._get_xykt()
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+    def test_simple_vs_splrep(self, xp):
+        # XX: Non-periodic splines do not work for all supported degrees
+        k = 3
+        x, y, s = self._get_xykt(xp)
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
-        t,c,k = splrep(x, y, k=k, s=s)
+        t, c, k = splrep(x, y, k=k, s=s)
+        t, c = xp.asarray(t), xp.asarray(c)
         assert all(t == tt)
 
         spl = make_splrep(x, y, k=k, s=s)
-        xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
+        xp_assert_close(c[:spl.c.shape[0]], spl.c, atol=1e-15)
 
     def test_with_knots(self):
-        x, y, k, s, _ = self._get_xykt()
+        k = 3
+        x, y, s = self._get_xykt()
 
         t = list(generate_knots(x, y, k=k, s=s))[-1]
 
@@ -3499,44 +3785,56 @@ class TestMakeSplrep:
         xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
         assert spl_auto.k == spl_t.k
 
-    def test_no_internal_knots(self):
+    def test_no_internal_knots(self, xp):
         # should not fail if there are no internal knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         k = 3
         spl = make_splrep(x, y, k=k, s=1)
         assert spl.t.shape[0] == 2*(k+1)
 
-    def test_default_s(self):
+    def test_default_s(self, xp):
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         spl = make_splrep(x, y, k=3)
         spl_i = make_interp_spline(x, y, k=3)
 
         xp_assert_close(spl.c, spl_i.c, atol=1e-15)
 
-    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
         n = 14
         x = np.arange(n)
         y = x**3
 
-        with suppress_warnings() as sup:
-            r = sup.record(RuntimeWarning)
+        with pytest.warns(RuntimeWarning) as r:
             tck = splrep(x, y, k=3, s=1e-50)
             spl = make_splrep(x, y, k=3, s=1e-50)
-            assert len(r) == 2
             xp_assert_equal(spl.t, tck[0])
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
+        assert len(r) == 2
 
-    def test_shape(self):
+    def test_issue_22704(self):
+        # Reference - https://github.com/scipy/scipy/issues/22704
+        x = np.asarray([20.00, 153.81, 175.57, 202.47, 237.11,
+             253.61, 258.56, 273.40, 284.54, 293.61,
+             298.56, 301.86, 305.57, 307.22, 308.45,
+             310.10, 310.10, 310.50], dtype=np.float64)
+        y = np.asarray([53.00, 49.50, 48.60, 46.80, 43.20,
+             40.32, 39.60, 36.00, 32.40, 28.80,
+             25.20, 21.60, 18.00, 14.40, 10.80,
+             7.20, 3.60, 0.0], dtype=np.float64)
+        w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
+        with assert_raises(ValueError):
+            make_splrep(x, y, w=w, k=2, s=12)
+
+    def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl = make_splrep(x, y, k=k)
@@ -3549,10 +3847,10 @@ class TestMakeSplrep:
         spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5)
         assert spl_2.c.ndim == 1
 
-    def test_s0_vs_not(self):
+    def test_s0_vs_not(self, xp):
         # check that the shapes are consistent
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl_0 = make_splrep(x, y, k=3, s=0)
@@ -3564,11 +3862,105 @@ class TestMakeSplrep:
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
+class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
+    bc_type = 'periodic'
+
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_no_internal_knots(self, k):
+        # should not fail if there are no internal knots
+        x = np.linspace(0, 10, 11)    # nodes
+        y = np.ones((11,))
+
+        spl = make_splrep(x, y, k=k, s=1, bc_type=self.bc_type)
+        assert spl.t.shape[0] == 2*(k+1)
+
+    @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
+    def test_s0_vs_not(self, k):
+        # check that the shapes are consistent
+        n = 10
+        x = np.linspace(0, 2*np.pi, n)
+        y = np.sin(x) + np.cos(x)
+
+        spl_0 = make_splrep(x, y, k=k, s=0, bc_type=self.bc_type)
+        spl_1 = make_splrep(x, y, k=k, s=1, bc_type=self.bc_type)
+
+        assert spl_0.c.ndim == 1
+        assert spl_1.c.ndim == 1
+
+        assert spl_0.t.shape[0] == n + 2 * k
+
+    def test_periodic_with_periodic_data(self):
+        N = 10
+        a, b = 0, 2*np.pi
+        x = np.linspace(a, b, N + 1)    # nodes
+
+        y = np.cos(x)
+        spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+        xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
+
+        y = np.sin(x) + np.cos(x)
+        spl = make_splrep(x, y, s=1e-12, bc_type=self.bc_type)
+        xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-6)
+
+        y = 5*np.sin(x) + np.cos(x)*3
+        spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+        xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
+
+    def test_periodic_with_non_periodic_data(self):
+        N = 10
+        a, b = 0, 2*np.pi
+        x = np.linspace(a, b, N + 1)    # nodes
+
+        y = np.exp(x)
+        with assert_raises(ValueError):
+            make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
+
+    @pytest.mark.parametrize("s", [0, 1e-50])
+    def test_make_splrep_periodic_m_eq_2_k_eq_1(self, s):
+        # Two data points (m = 2)
+        x = np.array([0.0, 1.0])
+        y = np.array([5.0, 5.0])  # constant function
+        w = np.array([1.0, 1.0]) if s > 0 else None
+
+        # Degree 1 periodic spline
+        spl = make_splrep(x, y, w=w, k=1, bc_type="periodic", s=s)
+        tck = splrep(x, y, w=w, k=1, per=1, s=s)
+
+        if s > 0:
+            xp_assert_close(spl.t, tck[0])
+        xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                        tck[1])
+
+    @pytest.mark.parametrize("k_fp", [(1, -0.0001), (2, -0.0001), (3, -8.62e-05)])
+    @pytest.mark.parametrize("s", [1e-4])
+    def test_fperiodic_basic_fit(self, k_fp, s):
+        n = 10
+        x = np.linspace(0, 1, n)
+        y = np.sin(2 * np.pi * x)
+        k, fp = k_fp
+
+        tck = splrep(x, y, k=k, s=s, per=1)
+
+        fp0 = 4.5
+
+        spline = Fperiodic(x, y[:, None], tck[0], k=k, s=s)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            _ = root_rati(spline, 2.0, ((0, fp0 - s), (np.inf, fp - s)), s * 0.001)
+
+        # Check the returned spline is periodic at endpoints
+        bs = spline.spl
+        x_check = np.array([0.0, 1.0])
+        y_check = bs(x_check)
+
+        xp_assert_close(y_check[0], y_check[1])
+
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplprep:
-    def _get_xyk(self, m=10, k=3):
-        x = np.arange(m) * np.pi / m
-        y = [np.sin(x), np.cos(x)]
+    def _get_xyk(self, m=10, k=3, xp=np):
+        x = xp.arange(m, dtype=xp.float64) * xp.pi / m
+        y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
@@ -3614,8 +4006,7 @@ class TestMakeSplprep:
         xp_assert_close(u, u_a, atol=s)
         xp_assert_close(tck[0], tck_a[0], atol=1e-15)
         assert len(tck[1]) == len(tck_a[1])
-        for c1, c2 in zip(tck[1], tck_a[1]):
-            xp_assert_close(c1, c2, atol=1e-15)
+        xp_assert_close(tck[1], tck_a[1], atol=1e-15)
         assert tck[2] == tck_a[2]
         assert np.shape(splev(u, tck)) == np.shape(y)
 
@@ -3636,22 +4027,22 @@ class TestMakeSplprep:
         with assert_raises(ValueError):
             make_splprep(np.asarray(y).T, s=s)
 
-    def test_default_s_is_zero(self):
-        x, y, k = self._get_xyk(m=10)
+    def test_default_s_is_zero(self, xp):
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl, u = make_splprep(y)
-        xp_assert_close(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
 
-    def test_s_zero_vs_near_zero(self):
+    def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
-        x, y, k = self._get_xyk(m=10)
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl_i, u_i = make_splprep(y, s=0)
         spl_n, u_n = make_splprep(y, s=1e-15)
 
         xp_assert_close(u_i, u_n, atol=1e-15)
-        xp_assert_close(spl_i(u_i), y, atol=1e-15)
-        xp_assert_close(spl_n(u_n), y, atol=1e-7)
+        xp_assert_close(spl_i(u_i), xp.stack(y), atol=1e-15)
+        xp_assert_close(spl_n(u_n), xp.stack(y), atol=1e-7)
         assert spl_i.axis == spl_n.axis
         assert spl_i.c.shape == spl_n.c.shape
 
@@ -3672,6 +4063,103 @@ class TestMakeSplprep:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+class TestMakeSplprepPeriodic:
+
+    def _get_xyk(self, n=10, k=3):
+        x = np.linspace(0, 2*np.pi, n)
+        y = [np.sin(x), np.cos(x)]
+        return x, y, k
+
+    @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
+    def test_simple_vs_splprep(self, s):
+        # Check/document the interface vs splPrep
+        # The four values of `s` are to probe all code paths and shortcuts
+        n = 10
+        x = np.linspace(0, 2*np.pi, n)
+        y = [np.sin(x), np.cos(x)]
+
+        # the number of knots depends on `s` (this is by construction)
+        num_knots = {0: 14, 1e-4: 16, 1e-5: 16, 1e-6: 16}
+
+        # construct the splines
+        (t, c, k), u_ = splprep(y, s=s, per=1)
+        spl, u = make_splprep(y, s=s, bc_type="periodic")
+
+        # parameters
+        xp_assert_close(u, u_, atol=1e-15)
+
+        # knots
+        assert len(spl.t) == num_knots[s]
+
+        # values: note axis=1
+        xp_assert_close(spl(u), BSpline(t, c, k, axis=1)(u),
+                        atol=1e-06, rtol=1e-06)
+
+    @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
+    def test_array_not_list(self, s):
+        # the argument of splPrep is either a list of arrays or a 2D array (sigh)
+        _, y, _ = self._get_xyk()
+        assert isinstance(y, list)
+        assert np.shape(y)[0] == 2
+
+        # assert the behavior of FITPACK's splrep
+        tck, u = splprep(y, s=s, per=1)
+        tck_a, u_a = splprep(np.asarray(y), s=s, per=1)
+        xp_assert_close(u, u_a, atol=s)
+        xp_assert_close(tck[0], tck_a[0], atol=1e-15)
+        assert len(tck[1]) == len(tck_a[1])
+        for c1, c2 in zip(tck[1], tck_a[1]):
+            xp_assert_close(c1, c2, atol=1e-15)
+        assert tck[2] == tck_a[2]
+        assert np.shape(splev(u, tck)) == np.shape(y)
+
+        spl, u = make_splprep(y, s=s, bc_type="periodic")
+        xp_assert_close(u, u_a, atol=1e-15)
+        assert spl.k == tck_a[2]
+        assert spl(u).shape == np.shape(y)
+
+        spl, u = make_splprep(np.asarray(y), s=s, bc_type="periodic")
+        xp_assert_close(u, u_a, atol=1e-15)
+        assert spl.k == tck_a[2]
+        assert spl(u).shape == np.shape(y)
+
+        with assert_raises(ValueError):
+            make_splprep(np.asarray(y).T, s=s, bc_type="periodic")
+
+    def test_default_s_is_zero(self):
+        x, y, k = self._get_xyk(n=10)
+
+        spl, u = make_splprep(y, bc_type="periodic")
+        xp_assert_close(spl(u), y, atol=1e-15)
+
+    def test_s_zero_vs_near_zero(self):
+        # s=0 and s \approx 0 are consistent
+        x, y, k = self._get_xyk(n=10)
+
+        spl_i, u_i = make_splprep(y, s=0, bc_type="periodic")
+        spl_n, u_n = make_splprep(y, s=1e-12, bc_type="periodic")
+
+        xp_assert_close(u_i, u_n, atol=1e-15)
+        xp_assert_close(spl_i(u_i), y, atol=1e-15)
+        xp_assert_close(spl_n(u_n), y, atol=1e-7, rtol=1e-6)
+        assert spl_i.axis == spl_n.axis
+
+    def test_1D(self):
+        x = np.linspace(0, 2*np.pi, 8)
+        x = np.sin(x)
+        with assert_raises(ValueError):
+            splprep(x, per=1)
+
+        with assert_raises(ValueError):
+            make_splprep(x, s=0, bc_type="periodic")
+
+        with assert_raises(ValueError):
+            make_splprep(x, s=0.1, bc_type="periodic")
+
+        spl, u = make_splprep([x], s=1e-15, bc_type="periodic")
+
+        assert spl(u).shape == (1, 8)
+        xp_assert_close(spl(u), [x], atol=1e-15)
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior

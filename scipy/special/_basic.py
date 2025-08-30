@@ -19,9 +19,6 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all,
-                           legendre_p_all)
-from scipy._lib.deprecation import _deprecated
 
 
 __all__ = [
@@ -33,7 +30,6 @@ __all__ = [
     'bernoulli',
     'berp_zeros',
     'bi_zeros',
-    'clpmn',
     'comb',
     'digamma',
     'diric',
@@ -60,8 +56,6 @@ __all__ = [
     'kerp_zeros',
     'kvp',
     'lmbda',
-    'lpmn',
-    'lpn',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -87,11 +81,6 @@ __all__ = [
     'zeta'
 ]
 
-
-__DEPRECATION_MSG_1_15 = (
-    "`scipy.special.{}` is deprecated as of SciPy 1.15.0 and will be "
-    "removed in SciPy 1.17.0. Please use `scipy.special.{}` instead."
-)
 
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
 _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
@@ -1709,172 +1698,6 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
-@_deprecated(__DEPRECATION_MSG_1_15.format("lpmn", "assoc_legendre_p_all"))
-def lpmn(m, n, z):
-    """Sequence of associated Legendre functions of the first kind.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    This function takes a real argument ``z``. For complex arguments ``z``
-    use clpmn instead.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like
-        Input value.
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders 0..m and degrees 0..n
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n
-
-    See Also
-    --------
-    clpmn: associated Legendre functions of the first kind for complex z
-
-    Notes
-    -----
-    In the interval (-1, 1), Ferrer's function of the first kind is
-    returned. The phase convention used for the intervals (1, inf)
-    and (-inf, -1) is such that the result is always real.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.3
-
-    """
-
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if np.iscomplexobj(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    branch_cut = np.where(np.abs(z) <= 1, 2, 3)
-
-    p, pd = assoc_legendre_p_all(n, abs(m), z, branch_cut=branch_cut, diff_n=1)
-    p = np.swapaxes(p, 0, 1)
-    pd = np.swapaxes(pd, 0, 1)
-
-    if (m >= 0):
-        p = p[:(m + 1)]
-        pd = pd[:(m + 1)]
-    else:
-        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
-        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
-
-    return p, pd
-
-
-@_deprecated(__DEPRECATION_MSG_1_15.format("clpmn", "assoc_legendre_p_all"))
-def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind for complex arguments.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like, float or complex
-        Input value.
-    type : int, optional
-       takes values 2 or 3
-       2: cut on the real axis ``|x| > 1``
-       3: cut on the real axis ``-1 < x < 1`` (default)
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders ``0..m`` and degrees ``0..n``
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders ``0..m`` and degrees ``0..n``
-
-    See Also
-    --------
-    lpmn: associated Legendre functions of the first kind for real z
-
-    Notes
-    -----
-    By default, i.e. for ``type=3``, phase conventions are chosen according
-    to [1]_ such that the function is analytic. The cut lies on the interval
-    (-1, 1). Approaching the cut from above or below in general yields a phase
-    factor with respect to Ferrer's function of the first kind
-    (cf. `lpmn`).
-
-    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
-    on the interval (-1, 1) in the complex plane yields Ferrer's function
-    of the first kind.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.21
-
-    """
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if not (type == 2 or type == 3):
-        raise ValueError("type must be either 2 or 3.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    if not np.iscomplexobj(z):
-        z = np.asarray(z, dtype=complex)
-
-    out, out_jac = assoc_legendre_p_all(n, abs(m), z, branch_cut=type, diff_n=1)
-    out = np.swapaxes(out, 0, 1)
-    out_jac = np.swapaxes(out_jac, 0, 1)
-
-    if (m >= 0):
-        out = out[:(m + 1)]
-        out_jac = out_jac[:(m + 1)]
-    else:
-        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
-        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
-
-    return out, out_jac
-
-
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
 
@@ -2039,29 +1862,6 @@ def euler(n):
     else:
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
-
-
-@_deprecated(__DEPRECATION_MSG_1_15.format("lpn", "legendre_p_all"))
-def lpn(n, z):
-    """Legendre function of the first kind.
-
-    Compute sequence of Legendre functions of the first kind (polynomials),
-    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
-
-    See also special.legendre for polynomial class.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.legendre_p_all` instead.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    """
-
-    return legendre_p_all(n, z, diff_n=1)
 
 
 def lqn(n, z):
@@ -2859,15 +2659,9 @@ def _factorialx_array_exact(n, k=1):
     k > 1 corresponds to the multifactorial.
     """
     un = np.unique(n)
-    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
-    # to unify the behaviour, we remove the nan's here; the respective
-    # values will be set separately at the end
-    un = un[~np.isnan(un)]
 
     # Convert to object array if np.int64 can't handle size
-    if np.isnan(n).any():
-        dt = float
-    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+    if k in _FACTORIALK_LIMITS_64BITS.keys():
         if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
             # e.g. k=1: 21! > np.iinfo(np.int64).max
             dt = object
@@ -2908,9 +2702,6 @@ def _factorialx_array_exact(n, k=1):
                 val *= _range_prod(int(prev + 1), int(current), k=k)
                 out[n == current] = val
 
-    if np.isnan(n).any():
-        out = out.astype(np.float64)
-        out[np.isnan(n)] = np.nan
     return out
 
 
@@ -3231,7 +3022,7 @@ def factorial2(n, exact=False, extend="zero"):
     --------
     >>> from scipy.special import factorial2
     >>> factorial2(7, exact=False)
-    array(105.00000000000001)
+    np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
 

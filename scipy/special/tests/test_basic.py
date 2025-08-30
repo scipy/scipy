@@ -22,6 +22,7 @@ import itertools
 import operator
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -32,8 +33,7 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose, assert_array_almost_equal_nulp,
-        suppress_warnings)
+        assert_, assert_allclose, assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -41,7 +41,6 @@ from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import softplus
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
-from scipy.special import lpn, lpmn, clpmn
 from scipy._lib._util import np_long, np_ulong
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, SCIPY_ARRAY_API
 
@@ -178,12 +177,6 @@ class TestCephes:
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
-    def test_btdtria(self):
-        assert_equal(cephes.btdtria(1,1,1),5.0)
-
-    def test_btdtrib(self):
-        assert_equal(cephes.btdtrib(1,1,1),5.0)
-
     def test_cbrt(self):
         assert_approx_equal(cephes.cbrt(1),1.0)
 
@@ -198,42 +191,6 @@ class TestCephes:
 
     def test_chdtriv(self):
         assert_equal(cephes.chdtriv(0,0),5.0)
-
-    def test_chndtr(self):
-        assert_equal(cephes.chndtr(0,1,0),0.0)
-
-        # Each row holds (x, nu, lam, expected_value)
-        # These values were computed using Wolfram Alpha with
-        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
-        values = np.array([
-            [25.00, 20.0, 400, 4.1210655112396197139e-57],
-            [25.00, 8.00, 250, 2.3988026526832425878e-29],
-            [0.001, 8.00, 40., 5.3761806201366039084e-24],
-            [0.010, 8.00, 40., 5.45396231055999457039e-20],
-            [20.00, 2.00, 107, 1.39390743555819597802e-9],
-            [22.50, 2.00, 107, 7.11803307138105870671e-9],
-            [25.00, 2.00, 107, 3.11041244829864897313e-8],
-            [3.000, 2.00, 1.0, 0.62064365321954362734],
-            [350.0, 300., 10., 0.93880128006276407710],
-            [100.0, 13.5, 10., 0.99999999650104210949],
-            [700.0, 20.0, 400, 0.99999999925680650105],
-            [150.0, 13.5, 10., 0.99999999999999983046],
-            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
-        ])
-        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
-        assert_allclose(cdf, values[:, 3], rtol=1e-12)
-
-        assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
-        assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
-        assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
-        assert_(np.isnan(cephes.chndtr(5, np.nan, 2)))
-        assert_(np.isnan(cephes.chndtr(5, 1, np.nan)))
-
-    def test_chndtridf(self):
-        assert_equal(cephes.chndtridf(0,0,1),5.0)
-
-    def test_chndtrinc(self):
-        assert_equal(cephes.chndtrinc(0,1,0),5.0)
 
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
@@ -379,7 +336,11 @@ class TestCephes:
         p = 0.8756751669632105666874
         assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
 
-    @pytest.mark.xfail(reason='Returns nan on i686.')
+    def test_gh20835(self):
+        # gh-20835 reported fdtri failing for extreme inputs
+        dfd, dfn, x = 1, 50000, 29.72591544307521
+        assert_allclose(cephes.fdtri(dfd, dfn, cephes.fdtr(dfd, dfn, x)), x, rtol=1e-15)
+
     def test_fdtri_mysterious_failure(self):
         assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
@@ -568,8 +529,9 @@ class TestCephes:
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
             assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
             assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
@@ -835,8 +797,9 @@ class TestCephes:
         assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+        with warnings.catch_warnings():
+            msg = "floating point number truncated to an integer"
+            warnings.filterwarnings("ignore", msg, RuntimeWarning)
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
@@ -1384,11 +1347,15 @@ class TestBetaInc:
           0.9688708782196045),
          # gh-12796:
          (4, 99997, 0.0001947841578892121, 0.999995)])
-    def test_betainc_betaincinv(self, a, b, x, p):
+    def test_betainc_and_inverses(self, a, b, x, p):
         p1 = special.betainc(a, b, x)
         assert_allclose(p1, p, rtol=1e-15)
         x1 = special.betaincinv(a, b, p)
         assert_allclose(x1, x, rtol=5e-13)
+        a1 = special.btdtria(p, b, x)
+        assert_allclose(a1, a, rtol=1e-13)
+        b1 = special.btdtrib(a, p, x)
+        assert_allclose(b1, b, rtol=1e-13)
 
     # Expected values computed with mpmath:
     #     from mpmath import mp
@@ -1441,13 +1408,14 @@ class TestBetaInc:
         assert_allclose(x, ref, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
+                                      special.btdtria, special.btdtrib,
                                       special.betaincc, special.betainccinv])
     @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
-                special.betainc(*args)
+                func(*args)
 
     @pytest.mark.parametrize(
         "args,expected",
@@ -1523,6 +1491,21 @@ class TestBetaInc:
         result = special.betaincinv(a, a, x)
         assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
 
+    @pytest.mark.parametrize("dtype, rtol",
+                             [(np.float32, 1e-4),
+                              (np.float64, 1e-15)])
+    @pytest.mark.parametrize("a, b, x, reference",
+                             [(1e-20, 1e-21, 0.5, 0.0909090909090909),
+                              (1e-15, 1e-16, 0.5, 0.09090909090909091)])
+    def test_gh22682(self, a, b, x, reference, dtype, rtol):
+        # gh-22682: betainc returned incorrect results for tiny
+        # single precision inputs. test that this is resolved
+        a = np.array(a, dtype=dtype)
+        b = np.array(b, dtype=dtype)
+        x = np.array(x, dtype=dtype)
+        res = special.betainc(a, b, x)
+        assert_allclose(res, reference, rtol=rtol)
+
 
 class TestCombinatorics:
     def test_comb(self):
@@ -1556,7 +1539,6 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
-    @pytest.mark.thread_unsafe
     def test_comb_exact_non_int_error(self):
         msg = "`exact=True`"
         with pytest.raises(ValueError, match=msg):
@@ -1577,7 +1559,6 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
-    @pytest.mark.thread_unsafe
     def test_perm_iv(self):
         # currently `exact=True` only support scalars
         with pytest.raises(ValueError, match="scalar integers"):
@@ -2432,8 +2413,8 @@ class TestFactorialFunctions:
                         special.factorialk(n_ref, k=3, **kw))
         def _check_inf(n):
             # produce inf of same type/dimension
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
                 shaped_inf = n / 0
             assert_func(special.factorial(n, **kw), shaped_inf)
             assert_func(special.factorial2(n, **kw), shaped_inf)
@@ -4223,53 +4204,6 @@ class TestRound:
         rndrl = (10,10,10,11)
         assert_array_equal(rnd,rndrl)
 
-# sph_harm is deprecated and is implemented as a shim around sph_harm_y.
-# The following two tests are maintained to verify the correctness of the shim.
-
-def test_sph_harm():
-    # Tests derived from tables in
-    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
-    sh = special.sph_harm
-    pi = np.pi
-    exp = np.exp
-    sqrt = np.sqrt
-    sin = np.sin
-    cos = np.cos
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        assert_array_almost_equal(sh(0,0,0,0),
-               0.5/sqrt(pi))
-        assert_array_almost_equal(sh(-2,2,0.,pi/4),
-               0.25*sqrt(15./(2.*pi)) *
-               (sin(pi/4))**2.)
-        assert_array_almost_equal(sh(-2,2,0.,pi/2),
-               0.25*sqrt(15./(2.*pi)))
-        assert_array_almost_equal(sh(2,2,pi,pi/2),
-               0.25*sqrt(15/(2.*pi)) *
-               exp(0+2.*pi*1j)*sin(pi/2.)**2.)
-        assert_array_almost_equal(sh(2,4,pi/4.,pi/3.),
-               (3./8.)*sqrt(5./(2.*pi)) *
-               exp(0+2.*pi/4.*1j) *
-               sin(pi/3.)**2. *
-               (7.*cos(pi/3.)**2.-1))
-        assert_array_almost_equal(sh(4,4,pi/8.,pi/6.),
-               (3./16.)*sqrt(35./(2.*pi)) *
-               exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
-
-
-def test_sph_harm_ufunc_loop_selection():
-    # see https://github.com/scipy/scipy/issues/4895
-    dt = np.dtype(np.complex128)
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
-        assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
-        assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
-        assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
-        assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
-        assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
-
-
 class TestStruve:
     def _series(self, v, z, n=100):
         """Compute Struve function & error estimate from its power series."""
@@ -4428,8 +4362,9 @@ def test_agm_simple():
 
 def test_legacy():
     # Legacy behavior: truncating arguments to integers
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "floating point number truncated to an integer", RuntimeWarning)
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
@@ -4628,7 +4563,6 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-@pytest.mark.thread_unsafe
 def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):
@@ -4794,22 +4728,3 @@ class TestStirling2:
             denom = stirling2([n], k_entries, exact=True)
             num = denom - stirling2([n], k_entries, exact=False)
             assert np.max(np.abs(num / denom)) < 2e-5
-
-
-class TestLegendreDeprecation:
-
-    def test_warn_lpn(self):
-        msg = "`scipy.special.lpn` is deprecated..."
-        with pytest.deprecated_call(match=msg):
-            _ = lpn(1, 0)
-
-    @pytest.mark.parametrize("xlpmn", [lpmn, clpmn])
-    def test_warn_xlpmn(self, xlpmn):
-        message = f"`scipy.special.{xlpmn.__name__}` is deprecated..."
-        with pytest.deprecated_call(match=message):
-            _ = xlpmn(1, 1, 0)
-
-    def test_warn_sph_harm(self):
-        msg = "`scipy.special.sph_harm` is deprecated..."
-        with pytest.deprecated_call(match=msg):
-            _ = special.sph_harm(1, 1, 0, 0)

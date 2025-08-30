@@ -2,7 +2,13 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy._lib._array_api import xp_default_dtype, is_numpy, is_torch, SCIPY_ARRAY_API
+from scipy._lib._array_api import (
+    xp_default_dtype,
+    is_numpy,
+    is_torch,
+    make_xp_test_case,
+    SCIPY_ARRAY_API,
+)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -37,8 +43,7 @@ def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
     return res
 
 
-@skip_xp_backends('dask.array', reason="No take_along_axis yet.")
-@skip_xp_backends('jax.numpy', reason="No mutation.")
+@make_xp_test_case(stats.quantile)
 class TestQuantile:
 
     def test_input_validation(self, xp):
@@ -86,8 +91,8 @@ class TestQuantile:
           'hazen', 'interpolated_inverted_cdf', 'linear',
           'median_unbiased', 'normal_unbiased', 'weibull'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
-         [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
-          ((10, 2), None, 0), ((10, 2), None, 0)])
+         [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
+          ((10, 2), None, 0), ((10, 2), None, 0),])
     def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
@@ -103,7 +108,8 @@ class TestQuantile:
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
+    # Test with `marray` again when `asarray` supports `device`
+    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])  # 'marray'
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
@@ -165,7 +171,7 @@ class TestQuantile:
          ([], [0.5, 0.6], np.full(2, np.nan), {}),
          (np.arange(1, 28).reshape((3, 3, 3)), 0.5, [[[14.]]],
           {'axis': None, 'keepdims': True}),
-         ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]], 
+         ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]],
           {'axis': None, 'keepdims': True}),])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
         default_dtype = xp_default_dtype(xp)

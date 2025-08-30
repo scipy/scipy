@@ -5,7 +5,7 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_promote)
+                                   xp_promote, xp_capabilities)
 
 
 __all__ = ['nsum']
@@ -27,6 +27,10 @@ __all__ = ['nsum']
 #  make public?
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
              atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
@@ -955,6 +959,11 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol, xp
 
 
+@xp_capabilities(skip_backends=[('torch', 'data-apis/array-api-compat#271'),
+                                ('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent finite or infinite series.
 
@@ -1180,6 +1189,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
+    i0b = b < a                            # zero
     i1 = (nterms + 1 <= maxterms) & ~i0    # direct sum evaluation
     i2 = xp.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
     i3 = xp.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
@@ -1188,6 +1198,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     if xp.any(i0):
         S[i0], E[i0] = xp.nan, xp.nan
         status[i0] = -1
+
+        S[i0b], E[i0b] = zero, zero
+        status[i0b] = 0
 
     if xp.any(i1):
         args_direct = [arg[i1] for arg in args]
@@ -1307,7 +1320,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
         tol = tol + rtol*lb.integral
-    i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
+    i_skip = lb.status == -3  # avoid unnecessary f_evals if integral is divergent
     tol[i_skip] = xp.nan
     status = lb.status
 

@@ -1,10 +1,12 @@
+import warnings
+
 from itertools import product
 from multiprocessing import Pool
 
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal, suppress_warnings)
+                           assert_equal)
 import pytest
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_array
@@ -183,6 +185,7 @@ LOSSES = list(IMPLEMENTED_LOSSES.keys()) + [cubic_soft_l1]
 
 
 class BaseMixin:
+    msg = "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
     def test_basic(self):
         # Test that the basic calling sequence works.
         res = least_squares(fun_trivial, 2., method=self.method)
@@ -193,11 +196,8 @@ class BaseMixin:
         # Test that args and kwargs are passed correctly to the functions.
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
@@ -213,11 +213,8 @@ class BaseMixin:
 
     def test_jac_options(self):
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
@@ -313,11 +310,8 @@ class BaseMixin:
                 ['2-point', '3-point', 'cs', jac_rosenbrock],
                 [1.0, np.array([1.0, 0.2]), 'jac'],
                 ['exact', 'lsmr']):
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
             assert_allclose(res.x, x_opt)
@@ -400,6 +394,7 @@ class BaseMixin:
                                 method=self.method)
             assert_allclose(res.x, x_opt)
 
+    @pytest.mark.parallel_threads(4)  # 0.4 GiB per thread RAM usage
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)
@@ -818,10 +813,11 @@ class TestLM(BaseMixin):
         def callback(x):
             assert(False)  # Dummy callback function
         
-        with suppress_warnings() as sup:
-            sup.filter(
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Callback function specified, but not supported with `lm` method.",
                 UserWarning,
-                "Callback function specified, but not supported with `lm` method."
             )
             least_squares(fun_trivial, x0=[0], method='lm', callback=callback)
 

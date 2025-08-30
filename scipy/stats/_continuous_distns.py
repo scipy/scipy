@@ -935,23 +935,26 @@ class beta_gen(rv_continuous):
             log_term = sum_ab*np.log1p(a/b) + np.log(b) - 2*np.log(sum_ab)
             return t1 + t2 + log_term
 
-        def threshold_large(v):
-            if v == 1.0:
-                return 1000
-
-            j = np.log10(v)
-            digits = int(j)
-            d = int(v / 10 ** digits) + 2
-            return d*10**(7 + j)
-
-        if a >= 4.96e6 and b >= 4.96e6:
-            return asymptotic_ab_large(a, b)
-        elif a <= 4.9e6 and b - a >= 1e6 and b >= threshold_large(a):
-            return asymptotic_b_large(a, b)
-        elif b <= 4.9e6 and a - b >= 1e6 and a >= threshold_large(b):
+        def asymptotic_a_large(a, b):
             return asymptotic_b_large(b, a)
-        else:
-            return regular(a, b)
+
+        def threshold_large(v):
+            j = np.floor(np.log10(v))
+            d = np.floor(v / 10 ** j) + 2
+            return xpx.apply_where(v != 1.0, (d, j), lambda d_, j_: d_ * 10**(7 + j_),
+                                   fill_value=1000)
+
+        threshold_a = threshold_large(a)
+        threshold_b = threshold_large(b)
+        return _lazyselect([(a >= 4.96e6) & (b >= 4.96e6),
+                            (a <= 4.9e6) & (b - a >= 1e6) & (b >= threshold_a),
+                            (b <= 4.9e6) & (a - b >= 1e6) & (a >= threshold_b),
+                            (a < 4.9e6) & (b < 4.9e6)
+                           ],
+                           [asymptotic_ab_large, asymptotic_b_large,
+                            asymptotic_a_large, regular],
+                           [a, b]
+        )
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
@@ -7823,12 +7826,12 @@ class ncx2_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (x, df, nc), scu._ncx2_cdf,
+            return xpx.apply_where(nc != 0, (x, df, nc), sc.chndtr,
                                    lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (q, df, nc), scu._ncx2_ppf,
+            return xpx.apply_where(nc != 0, (q, df, nc), sc.chndtrix,
                                    lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
@@ -11381,6 +11384,10 @@ class wrapcauchy_gen(rv_continuous):
             data = data._uncensor()
         return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
+    @inherit_docstring_from(rv_continuous)
+    def rvs(self, *args, **kwds):
+        rvs = super().rvs(*args, **kwds)
+        return np.mod(rvs, 2*np.pi)
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
@@ -11452,6 +11459,15 @@ class gennorm_gen(rv_continuous):
 
     def _isf(self, x, beta):
         return -self._ppf(x, beta)
+
+    def _munp(self, n, beta):
+        if n == 0:
+            return 1.
+        if n % 2 == 0:
+            c1, cn = sc.gammaln([1.0/beta, (n + 1.0)/beta])
+            return np.exp(cn - c1)
+        else:
+            return 0.
 
     def _stats(self, beta):
         c1, c3, c5 = sc.gammaln([1.0/beta, 3.0/beta, 5.0/beta])

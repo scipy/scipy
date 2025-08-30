@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.11) & dev deps (py3.13), fast, spin
+    name: mypy (py3.11) & dev deps (py3.14), fast, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.11', '3.13-dev'] # this run will use python dev versions when available
+        python-version: ['3.11', '3.14-dev'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -68,7 +68,7 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
+      if: matrix.python-version == '3.14-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson
@@ -140,7 +140,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        spin test -j2 -- --durations 10 --timeout=60
+        spin test -j3 -- --durations 10 --timeout=60
 
   #################################################################################
   test_venv_install:
@@ -192,7 +192,7 @@ jobs:
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
-        python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
+        python -m pip install . --no-build-isolation
 
         # Basic tests
         cd ..
@@ -213,6 +213,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
@@ -222,13 +223,13 @@ jobs:
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
-          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis
-          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
+          python3-dbg -m pytest --pyargs scipy -n4 --durations=10 -m "not slow"
 
   #################################################################################
   gcc9:
@@ -266,20 +267,20 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python -m pip install dist/scipy*.whl
 
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.25.2"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.26.4"
 
       - name: Run tests
         run: |
           # can't be in source directory
           pushd $RUNNER_TEMP
           export PYTHONOPTIMIZE=2
-          python -m pytest --pyargs scipy -n2 --durations=10
+          python -m pytest --pyargs scipy -n4 --durations=10
           popd
 
   #################################################################################
@@ -357,7 +358,7 @@ jobs:
     - name: Downgrade NumPy from 2.0-dev to lowest supported
       if: matrix.python-version == '3.11'
       run: |
-        python -m pip install "numpy==1.25.2"
+        python -m pip install "numpy==1.26.4"
 
     - name: Test SciPy
       run: |
@@ -400,7 +401,7 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==1.25.2 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==1.26.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
@@ -435,7 +436,7 @@ jobs:
 
       - name: Build wheel and install
         run: |
-          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3.11 -m pip install dist/*.whl
 
       - name: Install test dependencies
@@ -467,28 +468,24 @@ jobs:
       with:
         submodules: recursive
         fetch-tags: true
+
     - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
-        python-version: '3.13t'
+        python-version: '3.14t-dev'
 
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y gfortran
 
-    - name: Install nightly Cython
-      run: |
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython
-
     - name: Install Python dependencies
       run: |
-        pip install numpy ninja meson-python pybind11 spin pytest pytest-xdist threadpoolctl pooch hypothesis
+        # Needs nightly numpy build until the 2.3.x release for Python 3.14 support
+        # pip install -r requirements/build.txt
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        pip install meson-python Cython pybind11 pythran ninja
         pip install -r requirements/openblas.txt
-
-    - name: Install Pythran master
-      run: |
-        # 0.17.0 doesn't support free-threading, update once the next release is out
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+        pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis
 
     - name: Install pytest-run-parallel
       if: ${{ matrix.parallel == '1'}}
@@ -503,7 +500,7 @@ jobs:
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
       run: |
-        spin test -j2 -m full --durations=10
+        spin test -j4 -m full --durations=10
 
     - name: Run tests (fast, with pytest-run-parallel)
       if: ${{ matrix.parallel == '1'}}
@@ -511,6 +508,7 @@ jobs:
         # Excluded modules:
         # - scipy.spatial has multiple issues  in kdtree/qhull, and gh-20655 is pending.
         TEST_SUBMODULES: >-
+          scipy._lib
           scipy.cluster
           scipy.constants
           scipy.datasets
@@ -530,9 +528,11 @@ jobs:
           scipy.special
           scipy.stats
       run: |
-        # Note: only fast tests; full test suite is unlikely to uncover anything more,
-        #       and it'll be quite slow with pytest-run-parallel
-        spin test -t $TEST_SUBMODULES -- --parallel-threads=4
+        # Note: Only fast tests; full test suite is unlikely to uncover anything more,
+        #       and it'll be quite slow with pytest-run-parallel. Also skip
+        #       tests that won't run in parallel, those are covered by the
+        #       parallel == 0 run.
+        spin test -t $TEST_SUBMODULES -- --parallel-threads=4 --skip-thread-unsafe=true
 
   #################################################################################
   clang-17-build-only:

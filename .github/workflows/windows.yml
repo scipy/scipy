@@ -29,12 +29,13 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: windows-2019
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
@@ -60,7 +61,7 @@ jobs:
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          spin test -j2 -- --durations=25
+          spin test -j4 -- --durations=25
 
 
   #############################################################################
@@ -70,12 +71,13 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: windows-2019
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
@@ -90,8 +92,8 @@ jobs:
 
       - name: pip-packages
         run: |
-          # 1.25.2 is currently our oldest supported NumPy version
-          python -m pip install numpy==1.25.2 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          # 1.26.4 is currently our oldest supported NumPy version
+          python -m pip install numpy==1.26.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
@@ -102,7 +104,7 @@ jobs:
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          spin test -j2 --mode full -- --durations=25 --timeout=60
+          spin test -j4 --mode full -- --durations=25 --timeout=60
 
 
   #############################################################################
@@ -113,7 +115,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: windows-2019
+    runs-on: windows-2025
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -166,3 +168,105 @@ jobs:
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           pytest --pyargs scipy
+
+
+  #############################################################################
+  fast_spin_arm64:
+    name: fast, py3.12/npAny, spin (Win-ARM64)
+    runs-on: windows-11-arm
+    needs: get_commit_message
+    if: > 
+      needs.get_commit_message.outputs.message == 1 &&
+      (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: '3.12'
+          architecture: 'arm64'
+
+      - name: Set up Flang and pkgconf for ARM64
+        uses: ./.github/windows_arm64_steps
+
+      - name: pip-packages
+        run: |
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          python -m pip install -r requirements/openblas.txt
+
+      - name: Build
+        run: |
+          $env:cc = "clang-cl"
+          $env:cxx = "clang-cl"
+          $env:fc = "flang-new"
+          spin build --with-scipy-openblas
+
+      - name: Test
+        run: |
+          $env:OPENBLAS_NUM_THREADS = 1
+          spin test -j2 -- --durations=25
+
+
+  #############################################################################
+  full_build_sdist_wheel_arm64:
+    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest (Win-ARM64)
+    runs-on: windows-11-arm
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1 &&
+      (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: '3.11'
+          architecture: 'arm64'
+          cache: 'pip'
+          cache-dependency-path: 'environment.yml'
+
+      - name: Set up Flang and pkgconf for ARM64
+        uses: ./.github/windows_arm64_steps
+
+      - name: Install OpenBLAS
+        shell: bash
+        run: |
+          set -xe
+          export PKG_CONFIG_PATH=$(cygpath -u "$PKG_CONFIG_PATH")
+          export PATH="$(cygpath -u 'C:\vcpkg\installed\arm64-windows\tools\pkgconf'):$PATH"
+          python -m pip install -r requirements/openblas.txt
+          bash tools/wheels/cibw_before_build_win.sh .
+          echo "PKG_CONFIG_PATH=$(cygpath -w "${{ github.workspace }}")" >> $GITHUB_ENV
+
+      - name: pip-packages
+        run: |
+          python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis numpy
+
+      - name: Build
+        shell: bash
+        run: |
+          set -xe
+          export CC=clang-cl
+          export CXX=clang-cl
+          export FC=flang-new
+          export PATH="$(cygpath -u 'C:\vcpkg\installed\arm64-windows\tools\pkgconf'):$PATH"
+          python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
+          wheel_name=$(ls dist/*.whl)
+          openblas_dir=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
+          delvewheel repair --add-path "$openblas_dir" -w wheelhouse "$wheel_name"
+          python -m pip install wheelhouse/*
+
+      - name: Test
+        shell: pwsh
+        run: |
+          Set-Location $env:RUNNER_TEMP
+          $env:OPENBLAS_NUM_THREADS = 1
+          pytest --pyargs scipy -n2

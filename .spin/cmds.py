@@ -3,6 +3,7 @@ import os
 import sys
 import importlib
 import importlib.util
+import importlib.metadata
 import json
 import traceback
 import warnings
@@ -34,13 +35,9 @@ PROJECT_MODULE = "scipy"
 @click.option(
     '--release', '-r', default=False, is_flag=True, help="Release build")
 @click.option(
-    '--parallel', '-j', default=None, metavar='N_JOBS',
-    help=("Number of parallel jobs for building. "
-            "This defaults to the number of available physical CPU cores"))
-@click.option(
-    '--setup-args', '-C', default=[], multiple=True,
+    '--setup-args', '-S', default=[], multiple=True,
     help=("Pass along one or more arguments to `meson setup` "
-            "Repeat the `-C` in case of multiple arguments."))
+            "Repeat the `-S` in case of multiple arguments."))
 @click.option(
     '--show-build-log', default=False, is_flag=True,
     help="Show build output rather than using a log file")
@@ -54,13 +51,18 @@ PROJECT_MODULE = "scipy"
             " Takes precedence over -with-scipy-openblas (macOS only)")
 )
 @click.option(
+    '--use-system-libraries', default=False, is_flag=True,
+    help=("If set, use system libraries"
+            "if they are available for subprojects."))
+@click.option(
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
-@spin.util.extend_command(spin.cmds.meson.build)
+@spin.util.extend_command(spin.cmds.meson.build, doc="")
 def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
-          release, parallel, setup_args, show_build_log,
-          with_scipy_openblas, with_accelerate, tags, **kwargs):
+          release, setup_args, show_build_log,
+          with_scipy_openblas, with_accelerate, use_system_libraries,
+          tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
     MESON_ARGS are passed through e.g.:
@@ -127,13 +129,14 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                 os.environ.get('PKG_CONFIG_PATH', '')
                 ])
 
-    if parallel is None:
+    if use_system_libraries:
+        meson_args = meson_args + ("-Duse-system-libraries=auto",)
+
+    if jobs is None:
         # Use number of physical cores rather than ninja's default of 2N+2,
         # to avoid out of memory issues (see gh-17941 and gh-18443)
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
-    else:
-        jobs = parallel
 
     meson_install_args = meson_install_args + ("--tags=" + tags, )
 
@@ -159,10 +162,6 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     help=("'fast', 'full', or something that could be passed to "
             "`pytest -m` as a marker expression"))
 @click.option(
-    '--parallel', '-j', default=1, metavar='N_JOBS',
-    help="Number of parallel jobs for testing"
-)
-@click.option(
     '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
     multiple=True,
     help=(
@@ -171,10 +170,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         "'jax.numpy', 'dask.array')."
     )
 )
-@spin.util.extend_command(spin.cmds.meson.test)
+@spin.util.extend_command(spin.cmds.meson.test, doc="")
 def test(*, parent_callback, pytest_args, tests, coverage,
-         durations, submodule, mode, parallel,
-         array_api_backend, **kwargs):
+         durations, submodule, mode, array_api_backend, **kwargs):
     """🔧 Run tests
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -255,13 +253,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
         if markexpr != "full":
             pytest_args = ('-m', markexpr) + pytest_args
 
-    n_jobs = parallel
-    if (n_jobs != 1) and ('-n' not in pytest_args):
-        pytest_args = ('-n', str(n_jobs)) + pytest_args
-
-    if tests and '--pyargs' not in pytest_args:
-        pytest_args += ('--pyargs', tests)
-
     if durations:
         pytest_args += ('--durations', durations)
 
@@ -271,64 +262,27 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
                     "coverage": coverage, **kwargs})
 
-@click.option(
-        '--list-targets', '-t', default=False, is_flag=True,
-        help='List doc targets',
-    )
-@click.option(
-        '--parallel', '-j', default="auto", metavar='N_JOBS',
-        help="Number of parallel jobs"
-    )
-@click.option(
-    '--no-cache', default=False, is_flag=True,
-    help="Forces a full rebuild of the docs. Note that this may be " + \
-            "needed in order to make docstring changes in C/Cython files " + \
-            "show up."
-)
-@spin.util.extend_command(spin.cmds.meson.docs)
-def docs(*, parent_callback, sphinx_target, clean, jobs,
-         list_targets, parallel, no_cache, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.docs,
+                          remove_args=("sphinx_gallery_plot", ), doc="")
+def docs(*, parent_callback, sphinx_target, clean, jobs, **kwargs):
     """📖 Build Sphinx documentation
 
-    By default, SPHINXOPTS="-W", raising errors on warnings.
-    To build without raising on warnings:
+    Following Sphinx targets are supported:
 
-      SPHINXOPTS="" spin docs
+    html:
 
-    To list all Sphinx targets:
+      spin docs html
 
-      spin docs targets
-
-    To build another Sphinx target:
-
-      spin docs TARGET
-
-    E.g., to build a zipfile of the html docs for distribution:
+    dist: to build a zipfile of the html docs for distribution
 
       spin docs dist
 
     """
     meson.docs.ignore_unknown_options = True
 
-    if clean: # SciPy has its own mechanism to clear the previous docs build
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, "doc"))
-        subprocess.call(["make", "clean"], cwd=os.getcwd())
-        clean = False
-        os.chdir(cwd)
-
-    SPHINXOPTS = "-W"
-    if no_cache:
-        SPHINXOPTS += " -E"
-
-    jobs = parallel
-    SPHINXOPTS = os.environ.get("SPHINXOPTS", "") + SPHINXOPTS
-    os.environ["SPHINXOPTS"] = SPHINXOPTS
-
-    sphinx_target = "html"
-
     parent_callback(**{"sphinx_target": sphinx_target,
-                       "clean": clean, "jobs": jobs, **kwargs})
+                       "clean": clean, "jobs": jobs,
+                       "sphinx_gallery_plot": False, **kwargs})
 
 def _set_pythonpath(pythonpath):
     env = os.environ
@@ -341,7 +295,7 @@ def _set_pythonpath(pythonpath):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.python)
+@spin.util.extend_command(spin.cmds.meson.python, doc="")
 def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
@@ -355,7 +309,7 @@ def python(*, parent_callback, pythonpath, **kwargs):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.ipython)
+@spin.util.extend_command(spin.cmds.meson.ipython, doc="")
 def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
@@ -369,7 +323,7 @@ def ipython(*, parent_callback, pythonpath, **kwargs):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.shell)
+@spin.util.extend_command(spin.cmds.meson.shell, doc="")
 def shell(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch shell with PYTHONPATH set
 
@@ -437,7 +391,7 @@ def mypy(ctx, build_dir=None):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
 
-@spin.util.extend_command(test, doc='')
+@spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
 
@@ -471,8 +425,11 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
 
     """  # noqa: E501
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
-    if not importlib.util.find_spec("scipy_doctest"):
-        raise ModuleNotFoundError("Please install scipy-doctest")
+    if (
+        not importlib.util.find_spec("scipy_doctest")
+        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+    ):
+        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
@@ -484,7 +441,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # turn doctesting on:
     doctest_args = (
         '--doctest-modules',
-        '--doctest-collect=api'
+        '--doctest-only-doctests=true',
     )
 
     if not tests:
@@ -588,6 +545,43 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
     util.run(cmd)
 
 @click.command()
+@click.argument('version_args', nargs=2)
+@click.pass_context
+def notes(ctx_obj, version_args):
+    """Release notes and log generation.
+
+    Example:
+
+      spin notes v1.7.0 v1.8.0
+    """
+    if version_args:
+        sys.argv = version_args
+        log_start = sys.argv[0]
+        log_end = sys.argv[1]
+    cmd = ["python", "tools/write_release_and_log.py", f"{log_start}", f"{log_end}"]
+    click.secho(' '.join(cmd), bold=True, fg="bright_blue")
+    util.run(cmd)
+
+@click.command()
+@click.argument('revision_args', nargs=2)
+@click.pass_context
+def authors(ctx_obj, revision_args):
+    """Generate list of authors who contributed within revision
+    interval.
+
+    Example:
+
+      spin authors v1.7.0 v1.8.0
+    """
+    if revision_args:
+        sys.argv = revision_args
+        start_revision = sys.argv[0]
+        end_revision = sys.argv[1]
+    cmd = ["python", "tools/authors.py", f"{start_revision}..{end_revision}"]
+    click.secho(' '.join(cmd), bold=True, fg="bright_blue")
+    util.run(cmd)
+
+@click.command()
 @click.option(
     '--fix', default=False, is_flag=True,
     help='Attempt to auto-fix errors')
@@ -606,7 +600,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    cmd_prefix = [sys.executable] if sys.platform == "win32" else []
+    cmd_prefix = [sys.executable]
 
     cmd_lint = cmd_prefix + [
         os.path.join('tools', 'lint.py'),
@@ -727,10 +721,19 @@ def _dirty_git_working_dir():
     required=False,
     nargs=-1
 )
+@click.option(
+    '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
+    multiple=True,
+    help=(
+        "Array API backend "
+        "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', "
+        "'jax.numpy', 'dask.array')."
+    )
+)
 @meson.build_dir_option
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
-          commits, build_dir=None, *args, **kwargs):
+          commits, array_api_backend, build_dir=None, *args, **kwargs):
     """🔧 Run benchmarks.
 
     \b
@@ -766,6 +769,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
     if quick:
         bench_args = ['--quick'] + bench_args
 
+    if len(array_api_backend) != 0:
+        os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
+
     if not compare:
         # No comparison requested; we build and benchmark the current version
 
@@ -790,10 +796,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = [
-            'asv', 'run', '--dry-run',
-            '--show-stderr', '--python=same',
-            '--quick'] + bench_args
+        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
@@ -807,7 +810,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             )
 
         cmd_compare = [
-            'asv', 'continuous', '--factor', '1.05', '--quick'
+            'asv', 'continuous', '--factor', '1.05'
         ] + bench_args + [commit_a, commit_b]
         _run_asv(cmd_compare)
 

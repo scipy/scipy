@@ -5,19 +5,14 @@ The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
 
-Name: Decorator
-Files: scipy/_lib/decorator.py
-License: 2-clause BSD
-  For details, see the header inside scipy/_lib/decorator.py
-
 Name: fast_matrix_market
 Files: scipy/io/_fast_matrix_market/*
-License: 2-clause BSD
+License: BSD-2-Clause
   For details, see scipy/io/_fast_matrix_market/LICENSE.txt
 
 Name: pystreambuf
 Files: scipy/io/_fast_matrix_market/src/pystreambuf.h
-License: 3-clause BSD
+License: BSD-3-Clause
   For details, see the header inside scipy/io/_fast_matrix_market/src/pystreambuf.h
 
 Name: fast_float
@@ -28,21 +23,16 @@ License: MIT
 Name: ryu
 Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/*
 License: BSL-1.0
-  For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-BOOST
-
-Name: ID
-Files: scipy/linalg/src/id_dist/*
-License: 3-clause BSD
-  For details, see scipy/linalg/src/id_dist/doc/doc.tex
+  For details, see scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/ryu/LICENSE-Boost
 
 Name: L-BFGS-B
-Files: scipy/optimize/lbfgsb/*
-License: BSD license
-  For details, see scipy/optimize/lbfgsb/README
+Files: scipy/optimize/lbfgsb/[__lbfgsb.h,__lbfgsb.c]
+License: BSD-3-Clause
+  For details, see scipy/optimize/__lbfgsb.c
 
 Name: LAPJVsp
 Files: scipy/sparse/csgraph/_matching.pyx
-License: 3-clause BSD
+License: BSD-3-Clause
 Copyright 1987-, A. Volgenant/Amsterdam School of Economics,
                  University of Amsterdam
 
@@ -77,35 +67,35 @@ Copyright 1987-, A. Volgenant/Amsterdam School of Economics,
 
 
 Name: SuperLU
-Files: scipy/sparse/linalg/dsolve/SuperLU/*
-License: 3-clause BSD
-  For details, see scipy/sparse/linalg/dsolve/SuperLU/License.txt
+Files: scipy/sparse/linalg/_dsolve/SuperLU/*
+License: BSD-3-Clause
+  For details, see scipy/sparse/linalg/_dsolve/SuperLU/License.txt
 
 Name: ARPACK
-Files: scipy/sparse/linalg/eigen/arpack/ARPACK/*
-License: 3-clause BSD
-  For details, see scipy/sparse/linalg/eigen/arpack/ARPACK/COPYING
+Files: scipy/sparse/linalg/_eigen/arpack/ARPACK/*
+License: BSD-3-Clause
+  For details, see scipy/sparse/linalg/_eigen/arpack/ARPACK/COPYING
 
 Name: Qhull
-Files: scipy/spatial/qhull/*
-License: Qhull license (BSD-like)
-  For details, see scipy/spatial/qhull/COPYING.txt
+Files: subprojects/qhull_r/libqhull_r/*
+License: Qhull
+  For details, see subprojects/qhull_r/libqhull_r/COPYING.txt
 
 Name: xsf
-Files: scipy/subprojects/xsf/*
-License: 3-Clause BSD
-  For details, see scipy/subprojects/xsf/LICENSE and
-  scipy/subprojects/xsf/LICENSES_bundled.txt
+Files: subprojects/xsf/*
+License: BSD-3-Clause AND MIT AND BSD-3-Clause-LBNL AND Apache-2.0 WITH LLVM-exception
+  For details, see subprojects/xsf/LICENSE and
+  subprojects/xsf/LICENSES_bundled.txt
 
 Name: pypocketfft
-Files: scipy/fft/_pocketfft/[pocketfft.h, pypocketfft.cxx]
-License: 3-Clause BSD
+Files: scipy/fft/_pocketfft/pypocketfft.cxx
+License: BSD-3-Clause
   For details, see scipy/fft/_pocketfft/LICENSE.md
 
 Name: uarray
-Files: scipy/_lib/uarray/*
-License: 3-Clause BSD
-  For details, see scipy/_lib/uarray/LICENSE
+Files: scipy/_lib/_uarray/*
+License: BSD-3-Clause
+  For details, see scipy/_lib/_uarray/LICENSE
 
 Name: ampgo
 Files: benchmarks/benchmarks/go_benchmark_functions/*.py
@@ -116,7 +106,7 @@ License: MIT
 Name: pybind11
 Files: no source files are included, however pybind11 binary artifacts are
   included with every binary build of SciPy.
-License:
+License: BSD-3-Clause
   Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>, All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -145,52 +135,52 @@ License:
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Name: HiGHS
-Files: scipy/optimize/_highs/*
+Files: subprojects/highs/*
 License: MIT
-  For details, see scipy/optimize/_highs/LICENCE
+  For details, see subprojects/highs/LICENSE.txt
 
 Name: Boost
 Files: subprojects/boost_math/math/*
-License: Boost Software License - Version 1.0
+License: BSL-1.0
   For details, see subprojects/boost_math/math/LICENSE
 
 Name: Biasedurn
 Files: scipy/stats/biasedurn/*
-License 3-Clause BSD
+License: BSD-3-Clause
   For details, see scipy/stats/biasedurn/license.txt
 
 Name: UNU.RAN
 Files: scipy/_lib/unuran/*
-License 3-Clause BSD
+License: BSD-3-Clause
   For details, see scipy/_lib/unuran/license.txt
 
 Name: NumPy
-Files: scipy/stats/_rcont/[logfactorial.h,logfactorial.c]
-License 3-Clause BSD
-  For details, see header inside scipy/stats/_rcont/logfactorial.h
-  and scipy/stats/_rcont/logfactorial.c
+Files: scipy/stats/libnpyrandom/[logfactorial.h,logfactorial.c]
+License: BSD-3-Clause
+  For details, see header inside scipy/stats/libnpyrandom/logfactorial.h
+  and scipy/stats/libnpyrandom/logfactorial.c
 
 Name: array-api-compat
 Files: scipy/_lib/array_api_compat/*
 License: MIT
-  For details, see scipy/_lib/array_api_compat/LICENCE
+  For details, see scipy/_lib/array_api_compat/LICENSE
 
 Name: Tempita
 Files: scipy/_build_utils/tempita/*
 License: MIT
-  For details, see scipy/_build_utils/tempita/LICENCE.txt
+  For details, see scipy/_build_utils/tempita/LICENSE.txt
 
 Name: Chebfun
-Files: scipy/interpolate/[_aaa.py, tests/test_aaa.py]
-License 3-Clause BSD
-  For details, see scipy/interpolate/_aaa.py
+Files: scipy/interpolate/[_bary_rational.py, tests/test_bary_rational.py]
+License: BSD-3-Clause
+  For details, see scipy/interpolate/_bary_rational.py
 
 Name: getLebedevSphere
 Files: scipy/integrate/_lebedev.py
-License 2-Clause BSD
+License: BSD-2-Clause
   For details, see scipy/integrate/_lebedev.py
 
 Name: prima
 Files: scipy/_lib/pyprima
 License: BSD-3-Clause
-  For details, see scipy/_lib/pyprima/prima/LICENCE.txt
+  For details, see scipy/_lib/pyprima/LICENCE.txt

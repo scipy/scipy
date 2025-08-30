@@ -505,6 +505,9 @@ def _sum_finite(x):
 # Frozen RV class
 class rv_frozen:
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
@@ -829,6 +832,10 @@ class rv_generic:
 
     def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         tempdict = docdict.copy()
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
@@ -871,6 +878,10 @@ class rv_generic:
     def _construct_default_doc(self, longname=None,
                                docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         if longname is None:
             longname = 'A'
         self.__doc__ = ''.join([f'{longname} {discrete} random variable.',
@@ -3746,6 +3757,13 @@ class rv_discrete(rv_generic):
         k : array_like
             Quantile corresponding to the lower tail probability, q.
 
+        Notes
+        -----
+        For discrete distributions, the `cdf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `cdf` at `k` is at
+        least `q`. There is one exception:  the `ppf` of ``0`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
+
         """
         args, loc, _ = self._parse_args(*args, **kwds)
         q, loc = map(asarray, (q, loc))
@@ -3785,6 +3803,13 @@ class rv_discrete(rv_generic):
         -------
         k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
+
+        Notes
+        -----
+        For discrete distributions, the `sf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `sf` at `k` is
+        no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)

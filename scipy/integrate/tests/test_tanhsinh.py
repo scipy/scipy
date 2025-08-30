@@ -8,7 +8,8 @@ from numpy.testing import assert_allclose
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
+from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
+                                   is_numpy, make_xp_test_case)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
@@ -43,15 +44,7 @@ def _vectorize(xp):
     return decorator
 
 
-@pytest.mark.skip_xp_backends(
-    'array_api_strict', reason='Currently uses fancy indexing assignment.'
-)
-@pytest.mark.skip_xp_backends(
-    'dask.array', reason='boolean indexing assignment'
-)
-@pytest.mark.skip_xp_backends(
-    'jax.numpy', reason='JAX arrays do not support item assignment.'
-)
+@make_xp_test_case(_tanhsinh)
 class TestTanhSinh:
 
     # Test problems from [1] Section 6
@@ -764,13 +757,7 @@ class TestTanhSinh:
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
 
 
-@pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
-@pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing.')
-@pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
-@pytest.mark.skip_xp_backends(
-    'dask.array',
-    reason='Data-dependent shapes in boolean index assignment'
-)
+@make_xp_test_case(nsum)
 class TestNSum:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10).tolist()
@@ -825,13 +812,21 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             nsum(f, a, b, tolerances=dict(rtol=pytest))
 
-        with np.errstate(all='ignore'):
+        with (np.errstate(all='ignore')):
             res = nsum(f, xp.asarray([np.nan, np.inf]), xp.asarray(1.))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(10.), xp.asarray([np.nan, 1]))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(1.), xp.asarray(10.),
                        step=xp.asarray([xp.nan, -xp.inf, xp.inf, -1, 0]))
             assert xp.all((res.status == -1) & xp.isnan(res.sum)
@@ -1084,8 +1079,8 @@ class TestNSum:
                 return 1 / x
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=0)
-        assert xp.isnan(res.sum)
-        assert xp.isnan(res.error)
+        assert xp.isinf(res.sum)
+        assert xp.isinf(res.error)
         assert res.status == -2
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=1)

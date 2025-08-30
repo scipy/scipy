@@ -28,12 +28,12 @@ requires = [
     # Note that building against numpy 1.x works fine too - users and
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
-    "numpy>=2.0.0rc1",
+    "numpy>=2.0.0",
 ]
 
 [project]
 name = "scipy"
-version = "1.16.0.dev0"
+version = "1.17.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -44,9 +44,9 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.11"
+requires-python = ">=3.11"  # keep in sync with `min_python_version` in meson.build
 dependencies = [
-    "numpy>=1.25.2",
+    "numpy>=1.26.4",
 ] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
@@ -60,6 +60,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -71,7 +72,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = [
-    "pytest",
+    "pytest>=8.0.0",
     "pytest-cov",
     "pytest-timeout",
     "pytest-xdist",
@@ -100,18 +101,17 @@ doc = [
     "pooch",
     "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
-    "linkify-it-py"
+    "linkify-it-py",
+    "tabulate"
 ]
 dev = [
+    "spin",
     "mypy==1.10.0",
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
-    "ruff>=0.0.292",
+    "ruff>=0.12.0",
     "cython-lint>=0.12.2",
-    "rich-click",
-    "doit>=0.36.0",
-    "pydevtool",
 ]
 
 [project.urls]
@@ -121,9 +121,6 @@ source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
 
-[tool.doit]
-dodoFile = "dev.py"
-
 [tool.spin]
 package = 'scipy'
 
@@ -131,7 +128,7 @@ package = 'scipy'
 install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
+skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
 # We're only testing with essential test dependencies, not optional ones.
 # Some of those require binary wheels (often missing for some platforms),
 # or they slow down the test suite runs too much or simply aren't necessary.
@@ -142,12 +139,13 @@ test-requires = [
     "pooch",
     "hypothesis",
 ]
-before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
-manylinux-x86_64-image = "manylinux2014"
-manylinux-aarch64-image = "manylinux2014"
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 
 [tool.cibuildwheel.linux.environment]
@@ -191,5 +189,9 @@ PKG_CONFIG_PATH = "{project}"
   ".spin/cmds.py:smoke_docs",
   ".spin/cmds.py:refguide_check",
   ".spin/cmds.py:smoke_tutorials"
+]
+"Release" = [
+  ".spin/cmds.py:notes",
+  ".spin/cmds.py:authors"
 ]
 "Metrics" = [".spin/cmds.py:bench"]

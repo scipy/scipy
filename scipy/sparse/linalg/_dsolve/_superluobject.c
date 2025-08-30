@@ -109,6 +109,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
+        "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -915,20 +917,11 @@ static int trans_cvt(PyObject * input, trans_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOTRANS);
+    ENUM_CHECK_NAME(NOTRANS, "N");
     ENUM_CHECK(TRANS);
+    ENUM_CHECK_NAME(TRANS, "T");
     ENUM_CHECK(CONJ);
-    if (my_strxcmp(s, "N") == 0) {
-        *value = NOTRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "T") == 0) {
-        *value = TRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "H") == 0) {
-        *value = CONJ;
-        return 1;
-    }
+    ENUM_CHECK_NAME(CONJ, "H");
     ENUM_CHECK_FINISH("invalid value for 'Trans' parameter");
 }
 
@@ -967,34 +960,13 @@ static int milu_cvt(PyObject * input, milu_t * value)
 static int droprule_one_cvt(PyObject * input, int *value)
 {
     ENUM_CHECK_INIT;
-    if (my_strxcmp(s, "BASIC") == 0) {
-        *value = DROP_BASIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "PROWS") == 0) {
-        *value = DROP_PROWS;
-        return 1;
-    }
-    if (my_strxcmp(s, "COLUMN") == 0) {
-        *value = DROP_COLUMN;
-        return 1;
-    }
-    if (my_strxcmp(s, "AREA") == 0) {
-        *value = DROP_AREA;
-        return 1;
-    }
-    if (my_strxcmp(s, "SECONDARY") == 0) {
-        *value = DROP_SECONDARY;
-        return 1;
-    }
-    if (my_strxcmp(s, "DYNAMIC") == 0) {
-        *value = DROP_DYNAMIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "INTERP") == 0) {
-        *value = DROP_INTERP;
-        return 1;
-    }
+    ENUM_CHECK_NAME(DROP_BASIC, "BASIC");
+    ENUM_CHECK_NAME(DROP_PROWS, "PROWS");
+    ENUM_CHECK_NAME(DROP_COLUMN, "COLUMN");
+    ENUM_CHECK_NAME(DROP_AREA, "AREA");
+    ENUM_CHECK_NAME(DROP_SECONDARY, "SECONDARY");
+    ENUM_CHECK_NAME(DROP_DYNAMIC, "DYNAMIC");
+    ENUM_CHECK_NAME(DROP_INTERP, "INTERP");
     ENUM_CHECK_FINISH("invalid value for 'ILU_DropRule' parameter");
 }
 

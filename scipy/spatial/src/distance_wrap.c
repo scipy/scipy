@@ -89,10 +89,8 @@ DEFINE_WRAP_CDIST(sqeuclidean, double)
 
 DEFINE_WRAP_CDIST(dice, char)
 DEFINE_WRAP_CDIST(jaccard, char)
-DEFINE_WRAP_CDIST(kulczynski1, char)
 DEFINE_WRAP_CDIST(rogerstanimoto, char)
 DEFINE_WRAP_CDIST(russellrao, char)
-DEFINE_WRAP_CDIST(sokalmichener, char)
 DEFINE_WRAP_CDIST(sokalsneath, char)
 DEFINE_WRAP_CDIST(yule, char)
 
@@ -381,11 +379,9 @@ DEFINE_WRAP_PDIST(jensenshannon, double)
 DEFINE_WRAP_PDIST(sqeuclidean, double)
 
 DEFINE_WRAP_PDIST(dice, char)
-DEFINE_WRAP_PDIST(kulczynski1, char)
 DEFINE_WRAP_PDIST(jaccard, char)
 DEFINE_WRAP_PDIST(rogerstanimoto, char)
 DEFINE_WRAP_PDIST(russellrao, char)
-DEFINE_WRAP_PDIST(sokalmichener, char)
 DEFINE_WRAP_PDIST(sokalsneath, char)
 DEFINE_WRAP_PDIST(yule, char)
 
@@ -715,9 +711,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_jensenshannon_double_wrap",
    cdist_jensenshannon_double_wrap,
    METH_VARARGS},
-   {"cdist_kulczynski1_bool_wrap",
-   cdist_kulczynski1_char_wrap,
-   METH_VARARGS},
   {"cdist_mahalanobis_double_wrap",
    (PyCFunction) cdist_mahalanobis_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -739,9 +732,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_seuclidean_double_wrap",
    (PyCFunction) cdist_seuclidean_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
-  {"cdist_sokalmichener_bool_wrap",
-   cdist_sokalmichener_char_wrap,
-   METH_VARARGS},
   {"cdist_sokalsneath_bool_wrap",
    cdist_sokalsneath_char_wrap,
    METH_VARARGS},
@@ -787,9 +777,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_jensenshannon_double_wrap",
    pdist_jensenshannon_double_wrap,
    METH_VARARGS},
-   {"pdist_kulczynski1_bool_wrap",
-   pdist_kulczynski1_char_wrap,
-   METH_VARARGS},
   {"pdist_mahalanobis_double_wrap",
    (PyCFunction) pdist_mahalanobis_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
@@ -811,9 +798,6 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_seuclidean_double_wrap",
    (PyCFunction) pdist_seuclidean_double_wrap,
    METH_VARARGS | METH_KEYWORDS},
-  {"pdist_sokalmichener_bool_wrap",
-   pdist_sokalmichener_char_wrap,
-   METH_VARARGS},
   {"pdist_sokalsneath_bool_wrap",
    pdist_sokalsneath_char_wrap,
    METH_VARARGS},
