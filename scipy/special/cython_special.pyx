@@ -3534,17 +3534,6 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
         else:
             return NAN
 
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.sph_harm"""
-    if dlp_number_t is double:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm_unsafe(x0, x1, x2, x3))
-    elif dlp_number_t is long:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    elif dlp_number_t is Py_ssize_t:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    else:
-        return NAN
-
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
     if df_number_t is float:

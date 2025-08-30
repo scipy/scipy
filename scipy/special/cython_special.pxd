@@ -237,7 +237,6 @@ cpdef double sindg(double x0) noexcept nogil
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil
 cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double stdtridf(double x0, double x1) noexcept nogil
 cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil
