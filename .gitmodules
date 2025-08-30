@@ -36,4 +36,4 @@
 
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
-	url = https://github.com/scipy/xsf.git
+	url = https://github.com/Emiliano-DM/xsf.git
