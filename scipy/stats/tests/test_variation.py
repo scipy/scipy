@@ -10,6 +10,7 @@ from scipy._lib._array_api import is_numpy, make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
+from scipy._lib import skip_on_windows_non_avx512
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -127,6 +128,7 @@ class TestVariation:
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.parametrize('x', [[0.]*5, [1, 2, np.inf, 9]])
+    @skip_on_windows_non_avx512("TestVariation::test_return_nan hangs on Windows with non-AVX512 CPUs")
     def test_return_nan(self, x, xp):
         x = xp.asarray(x)
         # Test some cases where `variation` returns nan.
@@ -136,6 +138,7 @@ class TestVariation:
     @pytest.mark.filterwarnings('ignore:Invalid value encountered:RuntimeWarning:dask')
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
+    @skip_on_windows_non_avx512("TestVariation::test_2d_size_zero_with_axis hangs on Windows with non-AVX512 CPUs")
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
         with warnings.catch_warnings():
@@ -152,6 +155,7 @@ class TestVariation:
         xp_assert_equal(y, xp.asarray(expected))
 
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning:dask')
+    @skip_on_windows_non_avx512("TestVariation::test_neg_inf hangs on Windows with non-AVX512 CPUs")
     def test_neg_inf(self, xp):
         # Edge case that produces -inf: ddof equals the number of non-nan
         # values, the values are not constant, and the mean is negative.
@@ -160,6 +164,7 @@ class TestVariation:
 
     @skip_xp_backends(np_only=True,
                       reason='`nan_policy` only supports NumPy backend')
+    @skip_on_windows_non_avx512("TestVariation::test_neg_inf_nan hangs on Windows with non-AVX512 CPUs")
     def test_neg_inf_nan(self, xp):
         x2 = xp.asarray([[xp.nan, 1, -10, xp.nan],
                          [-20, -3, xp.nan, xp.nan]])
@@ -169,6 +174,7 @@ class TestVariation:
     @skip_xp_backends(np_only=True,
                       reason='`nan_policy` only supports NumPy backend')
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
+    @skip_on_windows_non_avx512("TestVariation::test_combined_edge_cases hangs on Windows with non-AVX512 CPUs")
     def test_combined_edge_cases(self, nan_policy, xp):
         x = xp.asarray([[0, 10, xp.nan, 1],
                         [0, -5, xp.nan, 2],
@@ -188,6 +194,7 @@ class TestVariation:
          (1, [0.5, np.sqrt(5/6), np.inf, 0, np.nan, 0, np.nan]),
          (2, [np.sqrt(0.5), np.sqrt(5/4), np.inf, np.nan, np.nan, 0, np.nan])]
     )
+    @skip_on_windows_non_avx512("TestVariation::test_more_nan_policy_omit_tests hangs on Windows with non-AVX512 CPUs")
     def test_more_nan_policy_omit_tests(self, ddof, expected, xp):
         # The slightly strange formatting in the follow array is my attempt to
         # maintain a clean tabular arrangement of the data while satisfying
@@ -207,6 +214,7 @@ class TestVariation:
 
     @skip_xp_backends(np_only=True,
                       reason='`nan_policy` only supports NumPy backend')
+    @skip_on_windows_non_avx512("TestVariation::test_variation_ddof hangs on Windows with non-AVX512 CPUs")
     def test_variation_ddof(self, xp):
         # test variation with delta degrees of freedom
         # regression test for gh-13341

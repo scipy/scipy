@@ -13,6 +13,7 @@ import tokenize
 import scipy
 
 import pytest
+from scipy._lib import skip_on_windows_non_avx512
 
 
 class ParseCall(ast.NodeVisitor):
@@ -97,6 +98,7 @@ def warning_calls():
 
 @pytest.mark.fail_slow(40)
 @pytest.mark.slow
+@skip_on_windows_non_avx512("test_warning_calls_filters hangs on Windows with non-AVX512 CPUs")
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 

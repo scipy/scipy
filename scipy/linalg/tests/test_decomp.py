@@ -10,6 +10,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib import skip_on_windows_non_avx512
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd,
@@ -936,6 +937,7 @@ class TestEigh:
 
     @pytest.mark.parametrize('dtype_', DTYPES)
     @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    @skip_on_windows_non_avx512("TestEigh::test_various_drivers_standard hangs on Windows with non-AVX512 CPUs")
     def test_various_drivers_standard(self, driver, dtype_):
         a = _random_hermitian_matrix(n=20, dtype=dtype_)
         w, v = eigh(a, driver=driver)
@@ -1083,6 +1085,7 @@ class TestSVD_GESDD:
                 sigma[i, i] = s[i]
             assert_array_almost_equal(u @ sigma @ vh, a)
 
+    @skip_on_windows_non_avx512("TestSVD_GESVD::test_random_complex hangs on Windows with non-AVX512 CPUs")
     def test_random_complex(self):
         rng = np.random.RandomState(1234)
         n = 20
@@ -1103,6 +1106,7 @@ class TestSVD_GESDD:
                         sigma[i, i] = s[i]
                     assert_array_almost_equal(u @ sigma @ vh, a)
 
+    @skip_on_windows_non_avx512("TestSVD_GESDD/GESVD::test_crash_1580 hangs on Windows with non-AVX512 CPUs")
     def test_crash_1580(self):
         rng = np.random.RandomState(1234)
         sizes = [(13, 23), (30, 50), (60, 100)]

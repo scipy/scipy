@@ -8,6 +8,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
+from scipy._lib import skip_on_windows_non_avx512
 
 from numpy import (arange, triu, tril, zeros, tril_indices, ones,
                    diag, append, eye, nonzero)
@@ -486,6 +487,7 @@ class TestFBLAS2Simple:
         *[('spr', dtype) for dtype in REAL_DTYPES + COMPLEX_DTYPES],
         *[('hpr', dtype) for dtype in COMPLEX_DTYPES],
     ])
+    @skip_on_windows_non_avx512("TestFBLAS2Simple::test_spr_hpr hangs on Windows with non-AVX512 CPUs")
     def test_spr_hpr(self, fname, dtype):
         rng = np.random.default_rng(1234)
         n = 3

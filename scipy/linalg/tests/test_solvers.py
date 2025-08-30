@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib import skip_on_windows_non_avx512
 
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
@@ -315,6 +316,7 @@ class TestSolveContinuousAre:
                    None, 9, 14, 13, 14, None, 12, None, None)
 
     @pytest.mark.parametrize("j, case", enumerate(cases))
+    @skip_on_windows_non_avx512("TestSolveContinuousAre::test_solve_continuous_are hangs on Windows with non-AVX512 CPUs")
     def test_solve_continuous_are(self, j, case):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
