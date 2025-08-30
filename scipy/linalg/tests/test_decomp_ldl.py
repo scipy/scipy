@@ -6,6 +6,7 @@ from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
 from numpy.exceptions import ComplexWarning
 from scipy.linalg import ldl
 import pytest
+from scipy._lib import skip_on_windows_non_avx512
 
 
 def test_args():
@@ -92,6 +93,7 @@ def test_permutations():
 
 @pytest.mark.parametrize("dtype", [float32, float64])
 @pytest.mark.parametrize("n", [30, 150])
+@skip_on_windows_non_avx512("test_ldl_type_size_combinations_real hangs on Windows with non-AVX512 CPUs")
 def test_ldl_type_size_combinations_real(n, dtype):
     rng = np.random.default_rng(1234)
     msg = (f"Failed for size: {n}, dtype: {dtype}")

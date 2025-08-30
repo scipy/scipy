@@ -17,6 +17,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
                            assert_array_less, assert_array_max_ulp)
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib import skip_on_windows_non_avx512
 
 import numpy as np
 from numpy import typecodes, array
@@ -3063,6 +3064,7 @@ class TestKSTwo:
             vals_sf = stats.kstwo.sf(xn, n)
             assert_array_almost_equal(vals_cdf, 1 - vals_sf)
 
+    @skip_on_windows_non_avx512("TestKSTwo::test_ppf_of_cdf hangs on Windows with non-AVX512 CPUs")
     def test_ppf_of_cdf(self):
         x = np.linspace(0, 1, 11)
         for n in [1, 2, 3, 10, 100, 1000]:
@@ -3073,6 +3075,7 @@ class TestKSTwo:
             vals = stats.kstwo.ppf(vals_cdf, n)
             assert_allclose(vals[cond], xn[cond], rtol=1e-4)
 
+    @skip_on_windows_non_avx512("TestKSTwo::test_isf_of_sf hangs on Windows with non-AVX512 CPUs")
     def test_isf_of_sf(self):
         x = np.linspace(0, 1, 11)
         for n in [1, 2, 3, 10, 100, 1000]:
@@ -3082,6 +3085,7 @@ class TestKSTwo:
             vals = stats.kstwo.sf(vals_isf, n)
             assert_allclose(vals[cond], xn[cond], rtol=1e-4)
 
+    @skip_on_windows_non_avx512("TestKSTwo::test_ppf_of_cdf_sqrtn hangs on Windows with non-AVX512 CPUs")
     def test_ppf_of_cdf_sqrtn(self):
         x = np.linspace(0, 1, 11)
         for n in [1, 2, 3, 10, 100, 1000]:
@@ -3091,6 +3095,7 @@ class TestKSTwo:
             vals = stats.kstwo.ppf(vals_cdf, n)
             assert_allclose(vals[cond], xn[cond])
 
+    @skip_on_windows_non_avx512("TestKSTwo::test_isf_of_sf_sqrtn hangs on Windows with non-AVX512 CPUs")
     def test_isf_of_sf_sqrtn(self):
         x = np.linspace(0, 1, 11)
         for n in [1, 2, 3, 10, 100, 1000]:
@@ -3101,6 +3106,7 @@ class TestKSTwo:
             vals = stats.kstwo.isf(vals_sf, n)
             assert_allclose(vals[cond], xn[cond])
 
+    @skip_on_windows_non_avx512("TestKSTwo::test_ppf hangs on Windows with non-AVX512 CPUs")
     def test_ppf(self):
         probs = np.linspace(0, 1, 11)[1:]
         for n in [1, 2, 3, 10, 100, 1000]:

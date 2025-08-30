@@ -10,6 +10,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib import skip_on_windows_non_avx512
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
@@ -1723,6 +1724,7 @@ class TestLstsq:
     @pytest.mark.parametrize("n", (20, 200))
     @pytest.mark.parametrize("lapack_driver", lapack_drivers)
     @pytest.mark.parametrize("overwrite", (True, False))
+    @skip_on_windows_non_avx512("TestLstsq::test_random_exact hangs on Windows with non-AVX512 CPUs")
     def test_random_exact(self, dtype, n, lapack_driver, overwrite):
         rng = np.random.RandomState(1234)
 
@@ -1760,6 +1762,7 @@ class TestLstsq:
     @pytest.mark.parametrize("n", (20, 200))
     @pytest.mark.parametrize("lapack_driver", lapack_drivers)
     @pytest.mark.parametrize("overwrite", (True, False))
+    @skip_on_windows_non_avx512("TestLstsq::test_random_complex_exact hangs on Windows with non-AVX512 CPUs")
     def test_random_complex_exact(self, dtype, n, lapack_driver, overwrite):
         rng = np.random.RandomState(1234)
 
