@@ -34,6 +34,7 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 try:
     from scipy.__config__ import CONFIG
 except ImportError:
@@ -926,6 +927,7 @@ class TestEigh:
         w, z = eigh(a)
         w, z = eigh(a, b)
 
+    @skip_xp_invalid_arg
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse
