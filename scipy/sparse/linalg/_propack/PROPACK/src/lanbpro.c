@@ -14,7 +14,8 @@ static inline int int_max(const int a, const int b) { return a > b ? a : b; }
  * @param alpha The scaling factor.
  * @param x The vector to be scaled.
  */
-static void ssafescal(int n, float alpha, float* x) {
+static void ssafescal(int n, float alpha, float* x)
+{
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
     int ione = 1;
@@ -38,7 +39,8 @@ static void ssafescal(int n, float alpha, float* x) {
  * @param alpha The scaling factor.
  * @param x The vector to be scaled.
  */
-void dsafescal(int n, double alpha, double* x) {
+void dsafescal(int n, double alpha, double* x)
+{
     // Scale the vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
     int ione = 1;
@@ -62,7 +64,8 @@ void dsafescal(int n, double alpha, double* x) {
  * @param alpha The scaling factor.
  * @param x The complex vector to be scaled.
  */
-void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x) {
+void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x)
+{
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static float sfmin = FLT_MIN;
     int ione = 1;
@@ -86,7 +89,8 @@ void csafescal(int n, float alpha, PROPACK_CPLXF_TYPE* x) {
  * @param alpha The scaling factor.
  * @param x The complex vector to be scaled.
  */
-void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x) {
+void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x)
+{
     // Scale the complex vector x by 1/alpha avoiding unnecessary under- and overflow.
     static double sfmin = DBL_MIN;
     int ione = 1;
@@ -134,7 +138,8 @@ void zsafescal(int n, double alpha, PROPACK_CPLX_TYPE* x) {
 void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
               float* U, int ldu, float* V, int ldv, float* B, int ldb,
               float* rnorm, float* doption, int* ioption, float* work, int* iwork,
-              float* dparm, int* iparm, int* ierr, uint64_t* rng_state) {
+              float* dparm, int* iparm, int* ierr, uint64_t* rng_state)
+{
 
     // Constants
     const float FUDGE = 1.01f;
@@ -273,7 +278,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
                 anorm = fmaxf(anorm, a1);
             }
         }
-        j0 = k0 - 1;
+        j0 = k0;
     }
 
     numax = 0.0f;
@@ -349,6 +354,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
             } else if (!force_reorth) {
                 scompute_int(&work[inu], j - 1, delta, eta, &iwork[iidx]);
             }
+
             sreorth(n, j - 1, V, ldv, &V[j * ldv], &alpha, &iwork[iidx], kappa, &work[is], cgs);
             sset_mu(j - 1, &work[inu], &iwork[iidx], eps);
             numax = eta;
@@ -406,7 +412,8 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         // Extended local reorthogonalization
         if ((elr > 0) && (beta < kappa * alpha))
         {
-            for (i = 0; i < elr; i++) {
+            for (i = 0; i < elr; i++)
+            {
                 s = sdot_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 float neg_s = -s;
                 saxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
@@ -443,7 +450,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         }
 
         // Reorthogonalize u_{j+1} if necessary
-        if ((full_reorth || mumax > delta || force_reorth) && beta != 0.0f)
+        if ((full_reorth || (mumax > delta) || force_reorth) && beta != 0.0f)
         {
             if ((full_reorth) || (eta == 0.0f))
             {
@@ -468,7 +475,6 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
             sreorth(m, j, U, ldu, &U[(j + 1) * ldu], &beta, &iwork[iidx], kappa, &work[is], cgs);
             sset_mu(j, &work[imu], &iwork[iidx], eps);
             mumax = eta;
-
             force_reorth = (force_reorth ? 0 : 1);
         }
 
@@ -505,6 +511,7 @@ void slanbpro(int m, int n, int k0, int* k, PROPACK_aprod_s aprod,
         }
 
         B[j + ldb] = beta;
+
         if ((beta != 0.0f) && (beta != 1.0f))
         {
             ssafescal(m, beta, &U[(j + 1) * ldu]);
@@ -686,7 +693,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
                 anorm = fmax(anorm, a1);
             }
         }
-        j0 = k0 - 1;
+        j0 = k0;
     }
 
     numax = 0.0;
@@ -746,7 +753,7 @@ void dlanbpro(int m, int n, int k0, int* k, PROPACK_aprod_d aprod,
         // Update the nu recurrence
         if ((!full_reorth) && (alpha != 0.0))
         {
-              dupdate_nu(&numax, &work[imu], &work[inu], j, &B[0], &B[ldb], anorm, epsn2);
+            dupdate_nu(&numax, &work[imu], &work[inu], j, &B[0], &B[ldb], anorm, epsn2);
         }
 
         // Reorthogonalize if necessary
@@ -966,7 +973,7 @@ void clanbpro(
 
     // Constants
     const float FUDGE = 1.01f;
-    const float kappa = sqrtf(2.0f) / 2.0f;
+    const float kappa = 0.717f;//sqrtf(2.0f) / 2.0f;
 
     // Machine constants
     const float eps = FLT_EPSILON*0.5;
@@ -976,7 +983,8 @@ void clanbpro(
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
-    float s, mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
+    float mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
+    PROPACK_CPLXF_TYPE s;
     int force_reorth, full_reorth;
     int ione = 1;
 
@@ -1038,7 +1046,7 @@ void clanbpro(
     iidx = 0;
     for (i = 0; i < 2 * (*k) + 2; i++) { swork[i] = 0.0f; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
-    for (i = 0; i < int_min(m, n); i++) { cwork[i] = PROPACK_cplxf(0.0f, 0.0f); }
+    for (i = 0; i < int_max(m, n); i++) { cwork[i] = PROPACK_cplxf(0.0f, 0.0f); }
 
     // Prepare Lanczos iteration
     if (k0 == 0) {
@@ -1103,7 +1111,7 @@ void clanbpro(
                 anorm = fmaxf(anorm, a1);
             }
         }
-        j0 = k0 - 1;
+        j0 = k0;
     }
 
     numax = 0.0f;
@@ -1163,7 +1171,7 @@ void clanbpro(
         }
 
         // Reorthogonalize if necessary
-        if ((full_reorth || numax > delta || force_reorth) && alpha != 0.0f)
+        if ((full_reorth || (numax > delta) || force_reorth) && alpha != 0.0f)
         {
             if ((full_reorth) || (eta == 0.0f))
             {
@@ -1197,8 +1205,8 @@ void clanbpro(
                 // in span(A^H) orthogonal to span(V(:,1:j-1)).
                 // Most likely span(V(:,1:j-1)) is an invariant
                 // subspace.
-                *k = j - 1;
-                *ierr = -j;
+                *k = j;
+                *ierr = -j-1;
                 soption[2] = anorm;
                 return;
             } else {
@@ -1270,7 +1278,7 @@ void clanbpro(
         {
             if ((full_reorth) || (eta == 0.0f))
             {
-                iwork[iidx] = 1;
+                iwork[iidx] = 0;
                 iwork[iidx + 1] = j;
                 iwork[iidx + 2] = j + 1;
                 iwork[iidx + 3] = j + 1;
@@ -1310,8 +1318,8 @@ void clanbpro(
                 // in span(A) orthogonal to span(U(:,1:j)).
                 // Most likely span(U(:,1:j)) is an invariant
                 // subspace.
-                *k = j;
-                *ierr = -j;
+                *k = j+1;
+                *ierr = -j-1;
                 soption[2] = anorm;
                 return;
             } else {
@@ -1387,7 +1395,8 @@ void zlanbpro(
 
     // Local variables
     int i, j, inu, imu, is, iidx, j0;
-    double s, mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
+    double mumax, numax, alpha, beta, a1, b1, amax, anormest, nrm;
+    PROPACK_CPLX_TYPE s;
     int force_reorth, full_reorth;
     int ione = 1;
 
@@ -1435,7 +1444,8 @@ void zlanbpro(
     *ierr = 0;
 
     // Get starting vector if needed
-    if (*rnorm == 0.0) {
+    if (*rnorm == 0.0)
+    {
         zgetu0(0, m, n, k0, 3, &U[k0 * ldu], rnorm, U, ldu, aprod, zparm, iparm, ierr, cgs, &anormest, zwork, rng_state);
         anorm = fmax(anorm, anormest);
     }
@@ -1448,7 +1458,7 @@ void zlanbpro(
     iidx = 0;
     for (i = 0; i < 2 * (*k) + 2; i++) { dwork[i] = 0.0; }
     for (i = 0; i < 2 * (*k) + 1; i++) { iwork[i] = 0; }
-    for (i = 0; i < int_min(m,n); i++) { zwork[i] = PROPACK_cplx(0.0, 0.0); }
+    for (i = 0; i < int_max(m, n); i++) { zwork[i] = PROPACK_cplx(0.0, 0.0); }
 
     // Prepare Lanczos iteration
     if (k0 == 0) {
@@ -1513,7 +1523,7 @@ void zlanbpro(
                 anorm = fmax(anorm, a1);
             }
         }
-        j0 = k0 - 1;
+        j0 = k0;
     }
 
     numax = 0.0;
