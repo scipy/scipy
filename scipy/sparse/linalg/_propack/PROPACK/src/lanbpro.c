@@ -1138,7 +1138,7 @@ void clanbpro(
                 for (i = 0; i < elr; i++)
                 {
                     s = cdotc_(&n, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
-                    PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-creal(s), -cimag(s));
+                    PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-crealf(s), -cimagf(s));
                     caxpy_(&n, &neg_s, &V[(j - 1) * ldv], &ione, &V[j * ldv], &ione);
                     nrm = scnrm2_(&n, &V[j * ldv], &ione);
                     if (nrm >= kappa * alpha) { break; }
@@ -1244,7 +1244,7 @@ void clanbpro(
             for (i = 0; i < elr; i++)
             {
                 s = cdotc_(&m, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
-                PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-creal(s), -cimag(s));
+                PROPACK_CPLXF_TYPE neg_s = PROPACK_cplxf(-crealf(s), -cimagf(s));
                 caxpy_(&m, &neg_s, &U[j * ldu], &ione, &U[(j + 1) * ldu], &ione);
                 nrm = scnrm2_(&m, &U[(j + 1) * ldu], &ione);
                 if (nrm >= kappa * beta) { break; }

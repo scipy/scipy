@@ -304,8 +304,7 @@ static void csgemm_kernel(
 #ifdef _MSC_VER
                 PROPACK_CPLXF_TYPE tmp1 = _FCmulcr(A[i + l * lda], b_val);
                 PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
-                C[i + j * ldc] = PROPACK_cplxf(crealf(tmp2) + crealf(tmp1),
-                                               cimagf(tmp2) + cimagf(tmp1));
+                C[i + j * ldc] = PROPACK_cplxf(crealf(tmp2) + crealf(tmp1), cimagf(tmp2) + cimagf(tmp1));
 #else
                 C[i + j * ldc] += A[i + l * lda] * b_val;
 #endif
@@ -400,8 +399,7 @@ static void zdgemm_kernel(
 #ifdef _MSC_VER
                 PROPACK_CPLX_TYPE tmp1 = _Cmulcr(A[i + l * lda], b_val);
                 PROPACK_CPLX_TYPE tmp2 = C[i + j * ldc];
-                C[i + j * ldc] = PROPACK_cplx(creal(tmp2) + creal(tmp1),
-                                              cimag(tmp2) + cimag(tmp1));
+                C[i + j * ldc] = PROPACK_cplx(creal(tmp2) + creal(tmp1), cimag(tmp2) + cimag(tmp1));
 #else
                 C[i + j * ldc] += A[i + l * lda] * b_val;
 #endif
