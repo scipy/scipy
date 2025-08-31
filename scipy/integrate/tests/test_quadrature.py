@@ -613,7 +613,7 @@ class TestCumulativeSimpson:
         rng = np.random.default_rng(82456839535679456794)
         y = xp.asarray(rng.random(size=10))
         res = cumulative_simpson(y, dx=0.)
-        xp_assert_equal(res, 0*res)
+        xp_assert_equal(res, xp.zeros(9, dtype=xp.float64))
 
         # Should add tests of:
         # - all elements of `x` identical
