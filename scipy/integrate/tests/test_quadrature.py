@@ -579,6 +579,8 @@ class TestCumulativeSimpson:
 
         # compare results
         res = cumulative_simpson(y, x=x, dx=dx, initial=initial, axis=axis)
+        # use np to generate `ref` as `cumulative_simpson_nd_ref`
+        # uses `apply_along_axis`
         ref = cumulative_simpson_nd_ref(
             np.asarray(y), x=np.asarray(x), dx=None if dx is None else np.asarray(dx),
             initial=None if initial is None else np.asarray(initial), axis=axis
