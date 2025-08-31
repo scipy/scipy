@@ -15,7 +15,7 @@ propack_incdir_private = include_directories('PROPACK/src/include')
 propack_lib = static_library('propack_lib',
   propack_sources,
   include_directories: [propack_incdir_public, propack_incdir_private],
-  dependencies: [m_dep, lapack_dep, blas_dep],
+  dependencies: [m_dep, lapack_lp64_dep],
 )
 
 py3.extension_module('_propack',
