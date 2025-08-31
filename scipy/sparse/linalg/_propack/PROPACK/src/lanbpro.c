@@ -973,7 +973,7 @@ void clanbpro(
 
     // Constants
     const float FUDGE = 1.01f;
-    const float kappa = 0.717f;//sqrtf(2.0f) / 2.0f;
+    const float kappa = sqrtf(2.0f) / 2.0f;
 
     // Machine constants
     const float eps = FLT_EPSILON*0.5;

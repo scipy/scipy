@@ -92,7 +92,8 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
     int remainder_rows = m % blocksize;
 
     // Process full blocks of rows
-    for (i = 0; i < num_full_blocks; i++) {
+    for (i = 0; i < num_full_blocks; i++)
+    {
         int block_start = i * blocksize;
 
         // Compute work = alpha * A(block_start:block_start+blocksize-1, :) * op(B)
@@ -101,9 +102,11 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
         // Copy result back to A
         float* work_ptr = work;
 
-        for (j = 0; j < n; j++) {
+        for (j = 0; j < n; j++)
+        {
             float* A_ptr = &A[block_start + j * lda];
-            for (l = 0; l < blocksize; l++) {
+            for (l = 0; l < blocksize; l++)
+            {
                 *A_ptr++ = *work_ptr++;
             }
         }
@@ -118,9 +121,11 @@ void sgemm_ovwr_left(const int transb, int m, int n, int k, float alpha,
         // Copy remainder results back
         float* work_ptr = work;
 
-        for (j = 0; j < n; j++) {
+        for (j = 0; j < n; j++)
+        {
             float* A_ptr = &A[block_start + j * lda];
-            for (l = 0; l < remainder_rows; l++) {
+            for (l = 0; l < remainder_rows; l++)
+            {
                 *A_ptr++ = *work_ptr++;
             }
         }
@@ -276,8 +281,8 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
  *
  */
 static void csgemm_kernel(
-    const int transb, int m, int n, int k, const complex float* restrict A, int lda,
-    const float* restrict B, int ldb, complex float* restrict C, int ldc)
+    const int transb, int m, int n, int k, const PROPACK_CPLXF_TYPE* restrict A, int lda,
+    const float* restrict B, int ldb, PROPACK_CPLXF_TYPE* restrict C, int ldc)
 {
     (void)transb;  // Unused parameter
     // Initialize C to zero
@@ -310,11 +315,11 @@ static void csgemm_kernel(
 }
 
 
-// GEMM operation for mixed dtype, complex float x float
+// GEMM operation for mixed dtype, float complex x float
 void csgemm_ovwr_left(const int transb, int m, int n, int k,
-                      complex float* restrict A, int lda,
+                      PROPACK_CPLXF_TYPE* restrict A, int lda,
                       const float* restrict B, int ldb,
-                      complex float* restrict work, int blocksize)
+                      PROPACK_CPLXF_TYPE* restrict work, int blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 

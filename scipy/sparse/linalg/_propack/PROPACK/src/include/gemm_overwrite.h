@@ -92,7 +92,7 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha, double
  * @param work      workspace array of size at least blocksize * n
  * @param blocksize number of rows to process at once
  */
-void csgemm_ovwr_left(const int transb, int m, int n, int k, complex float* restrict A, int lda, const float* restrict B, int ldb, complex float* restrict work, int blocksize);
+void csgemm_ovwr_left(const int transb, int m, int n, int k, PROPACK_CPLXF_TYPE* restrict A, int lda, const float* restrict B, int ldb, PROPACK_CPLXF_TYPE* restrict work, int blocksize);
 
 
 /**
@@ -109,6 +109,6 @@ void csgemm_ovwr_left(const int transb, int m, int n, int k, complex float* rest
  * @param work      workspace array of size at least blocksize * n
  * @param blocksize number of rows to process at once
  */
-void zdgemm_ovwr_left(const int transb, int m, int n, int k, complex double* restrict A, int lda, const double* restrict B, int ldb, complex double* restrict work, int blocksize);
+void zdgemm_ovwr_left(const int transb, int m, int n, int k, PROPACK_CPLX_TYPE* restrict A, int lda, const double* restrict B, int ldb, PROPACK_CPLX_TYPE* restrict work, int blocksize);
 
 #endif
