@@ -469,7 +469,7 @@ class TestQMCQuad:
         assert_allclose(res.integral, ref, 1e-2)
 
 
-def cumulative_simpson_nd_ref(y, *, x=None, dx=None, initial=None, axis=-1):
+def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1):
     # Use cumulative_trapezoid if length of y < 3
     if y.shape[axis] < 3:
         if initial is None:
@@ -581,7 +581,7 @@ class TestCumulativeSimpson:
         res = cumulative_simpson(y, x=x, dx=dx, initial=initial, axis=axis)
         # use np to generate `ref` as `cumulative_simpson_nd_ref`
         # uses `apply_along_axis`
-        ref = cumulative_simpson_nd_ref(
+        ref = cumulative_simpson_nd_reference(
             np.asarray(y), x=np.asarray(x), dx=None if dx is None else np.asarray(dx),
             initial=None if initial is None else np.asarray(initial), axis=axis
         )
