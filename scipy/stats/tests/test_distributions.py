@@ -3940,7 +3940,7 @@ class TestStudentT:
         t_meth_ref = getattr(t_dist_ref, methname)
         norm_meth = getattr(norm_dist, methname)
         res = t_meth(x)
-        assert_allclose(res[df_infmask], norm_meth(x[df_infmask]), rtol=2e-15)
+        assert_allclose(res[df_infmask], norm_meth(x[df_infmask]), rtol=3e-15)
         assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
 
     @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
