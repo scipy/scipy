@@ -166,11 +166,11 @@ def correlate(in1, in2, mode='full', method='auto'):
 
           z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``,
-    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the
-    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
     :math:`y^*` denotes the complex conjugate of :math:`y`.
-
+    
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
@@ -835,7 +835,7 @@ def _split(x, indices_or_sections, axis, xp):
 
     # handle array case.
     Nsections = len(indices_or_sections) + 1
-    div_points = [0] + list(indices_or_sections) + [Ntotal]
+    div_points = [0] + list(indices_or_sections) + [Ntotal]    
 
     sub_arys = []
     sary = _swapaxes(x, axis, 0, xp=xp)
@@ -2420,7 +2420,7 @@ def hilbert(x, N=None, axis=-1):
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
-
+    
     The transformation is done along the last axis by default.
 
     For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
@@ -2542,13 +2542,6 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     This is achieved by applying one-dimensional Hilbert functions (as in
     `~scipy.signal.hilbert`) to the first and to the second array axis in Fourier space.
 
-    See [3]_ for a description of properties that this 2-D transform does and
-    does not share with the 1-D transform.
-
-    The 2-D analytic signal is calculated as a so-called "single-orthant" transform.
-    This is achieved by applying one-dimensional Hilbert functions (as in
-    `~scipy.signal.hilbert`) to the first and to the second array axis in Fourier space.
-
     For NumPy arrays, `scipy.fft.set_workers` can be used to change the number of
     workers used for the FFTs.
 
@@ -2565,12 +2558,6 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         .. versionchanged:: 1.17
 
             Added `axes` parameter
-
-        .. versionchanged:: 1.17
-
-            Added `axes` parameter
-
-        .. versionadded:: 1.16.2
 
     Returns
     -------
@@ -2718,8 +2705,10 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
-    Xf[..., 1:k0, :] *= 2.0
-    Xf[..., :, 1:k1] *= 2.0
+    if k0 > 1:  # condition k0 > 1 needed for Dask backend
+        Xf[..., 1:k0, :] *= 2.0
+    if k1 > 1:  # condition k1 > 1 needed for Dask backend
+        Xf[..., :, 1:k1] *= 2.0
     Xf[..., k0:, :] = 0.0
     Xf[..., :, k1:] = 0.0
 
@@ -3710,17 +3699,17 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
     >>> from scipy.signal import resample, resample_poly
-    ...
+    ... 
     >>> fac, T0, T1 = 8, 1, 1/8  # upsampling factor and sampling intervals
     >>> for n0 in (15, 16):  # number of samples of input signal
     ...     n1 = fac * n0  # number of samples of upsampled signal
     ...     t0, t1 = T0 * np.arange(n0), T1 * np.arange(n1)  # time stamps
     ...     x0 = np.zeros(n0)  # input signal has two non-zero sample values
     ...     x0[n0//2], x0[n0//2+1] = n0 // 2, -(n0 // 2)
-    ...
+    ... 
     ...     x1n = irfft(rfft(x0), n=n1) * n1 / n0  # naive resampling
     ...     x1r = resample(x0, n1)  # resample signal
-    ...
+    ... 
     ...     # Determine magnitude spectrum:
     ...     x0_up = np.zeros_like(x1r)  # upsampling without antialiasing filter
     ...     x0_up[::n1 // n0] = x0
@@ -3728,25 +3717,25 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     ...     XX1 = (fftshift(fft(x_)) / n1 for x_ in (x1n, x1r))
     ...     f0, f1 = fftshift(fftfreq(n0, T0)), fftshift(fftfreq(n1, T1))  # frequencies
     ...     df = f0[1] - f0[0]  # frequency resolution
-    ...
+    ... 
     ...     fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     ...     ax0.set_title(rf"Upsampling ${fac}\times$ from {n0} to {n1} samples")
-    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$",
+    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", 
     ...             xlim=(0, n1*T1))
-    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2,
+    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2, 
     ...              label="$x_0(t)$ / $X_0(f)$")
     ...     for x_, l_ in zip((x1n, x1r), ('C0--', 'C1-')):
     ...         ax0.plot(t1, x_, l_, alpha=.5, label=None)
     ...     ax0.grid()
-    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)",
+    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)", 
     ...             ylabel="Magnitude $|X(f)|$", xlim=(-0.7, 0.7))
     ...     ax1.axvspan(0.5/T0, f1[-1], color='gray', alpha=.2)
     ...     ax1.axvspan(f1[0], -0.5/T0, color='gray', alpha=.2)
     ...     ax1.plot(f1, abs(X0_up), 'C2-', f0, abs(X0),  'C2o', alpha=.3, linewidth=2)
-    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')):
+    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')): 
     ...         ax1.plot(f1, abs(X_), l_, alpha=.5, label=n_)
     ...     ax1.grid()
-    ...     fig.legend(loc='outside lower center', ncols=4)
+    ...     fig.legend(loc='outside lower center', ncols=4)    
     >>> plt.show()
 
     The first figure shows that upsampling an odd number of samples produces identical
@@ -3763,7 +3752,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     down-sampling: The input signal a non-zero value at :math:`t=0` and is downsampled
     from 19937 to 128 samples. Since 19937 is prime, the FFT is expected to be slow. To
     speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
-    // n1 = 155`` and then pass the result to `resample`. Two parameterization of
+    // n1 = 155`` and then pass the result to `resample`. Two parameterization of 
     `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
     periodic wheras the default parametrization performs zero-padding. The upper
     subplot shows the resulting signals over time whereas the lower subplot depicts the
@@ -3773,31 +3762,31 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> import numpy as np
     >>> from scipy.fft import rfftfreq, rfft
     >>> from scipy.signal import resample, resample_poly
-    ...
+    ... 
     >>> n0 = 19937 # number of input samples - prime
     >>> n1 = 128  # number of output samples - fast FFT length
     >>> T0, T1 = 1/n0, 1/n1  # sampling intervals
     >>> t0, t1 = np.arange(n0)*T0, np.arange(n1)*T1  # time stamps
-    ...
+    ... 
     >>> x0 = np.zeros(n0)  # Input has one non-zero sample
     >>> x0[0] = n0
-    >>>
+    >>> 
     >>> x1r = resample(x0, n1)  # slow due to n0 being prime
     >>> # This is faster:
-    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic
+    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic 
     >>> x2p = resample(resample_poly(x0, 1, n0 // n1), n1)  # with zero-padding
-    ...
-    >>> X0 = rfft(x0) / n0
+    ... 
+    >>> X0 = rfft(x0) / n0 
     >>> X1r, X1p, X2p = rfft(x1r) / n1, rfft(x1p) / n1, rfft(x2p) / n1
     >>> f0, f1 = rfftfreq(n0, T0), rfftfreq(n1, T1)
-    ...
+    ... 
     >>> fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
     >>> ax0.set_title(f"Dowsampled Impulse response (from {n0} to {n1} samples)")
-    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1))
+    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1)) 
     >>> for x_ in (x1r, x1p, x2p):
     ...     ax0.plot(t1, x_, alpha=.5)
     >>> ax0.grid()
-    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)",
+    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)", 
     ...         ylabel="Magnitude $|X(f)|$", xlim=(0, 0.55/T1))
     >>> ax1.axvspan(0.5/T1, f0[-1], color='gray', alpha=.2)
     >>> ax1.plot(f1, abs(X1r), 'C0.-', alpha=.5, label="resample")
@@ -3805,7 +3794,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> ax1.plot(f1, abs(X2p), 'C2x-', alpha=.5, label="resample_poly")
     >>> ax1.grid()
     >>> fig.legend(loc='outside lower center', ncols=2)
-    >>> plt.show()
+    >>> plt.show()    
 
     The plots show that the results of the "pure" `resample` and the usage of the
     default parameters of `resample_poly` agree well.  The periodic padding of
@@ -3817,8 +3806,8 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     antialiasing filter with the maximum bandwidth by default.
 
     Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
-    even number of ``n1=128`` output samples, which requires a special treatment as
-    discussed in the previous example.
+    even number of ``n1=128`` output samples, which requires a special treatment as 
+    discussed in the previous example. 
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")

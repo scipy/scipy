@@ -420,7 +420,7 @@ class TestConvolve2d:
         assert_raises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
 
-    @skip_xp_backends("jax.numpy",
+    @skip_xp_backends("jax.numpy", 
         reason="jax returns floats; scipy returns ints; cf gh-6076")
     def test_same_mode(self, xp):
         e = xp.asarray([[1, 2, 3], [3, 4, 5]])
@@ -3406,8 +3406,7 @@ class TestHilbert2:
         with pytest.raises(ValueError, match="^N must be positive."):
             hilbert2(x, N=-1)
         with pytest.raises(ValueError, match="^When given as a tuple, N must hold"):
-            hilbert2(x, N=(0, 0))
-        assert_raises(ValueError, hilbert2, x, N=(1, 1, 1))
+            hilbert2(x, N=(1, 1, 1))
         with pytest.raises(ValueError, match="^When given as a tuple, N must hold"):
             hilbert2(x, N=(0, 1))
 
@@ -3418,15 +3417,12 @@ class TestHilbert2:
         out = xp.real(signal.hilbert2(in_typed))
         assert out.dtype == dtype
 
-    def test_parameter_N(self, xp):
-        """Compare passing tuple to single int. """
-        x = xp.zeros((5, 5))
-        x0_a = hilbert2(x, N=4)
-        x1_a = hilbert2(x, N=(4, 4))
-        xp_assert_equal(x1_a, x0_a)
-
-        out = xp.real(signal.hilbert2(in_typed))
-        assert out.dtype == dtype
+    def test_1d_input(self, xp):
+        """Needed for 100% coverage """
+        x = xp.asarray([0., 1., 1., 0., -1., -1.])
+        x0a = signal.hilbert2(xp.reshape(x, (6, 1)))
+        x1a = signal.hilbert2(xp.reshape(x, (1, 6)))
+        xp_assert_close(x0a, x1a.T)
 
     def test_parameter_N(self, xp):
         """Compare passing tuple to single int. """
@@ -3436,6 +3432,7 @@ class TestHilbert2:
         xp_assert_equal(x1_a, x0_a)
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
+    @skip_xp_backends("cupy", reason="Bug in cupy implementation, see cupy#9396")
     def test_quadrant_values(self, shape, xp):
         """Compare desired and calculated values in Fourier space. """
         x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
@@ -3450,12 +3447,13 @@ class TestHilbert2:
         f0_pos, f0_neg = slice(1, (shape[0] + 1) // 2), slice((shape[0] + 1) // 2, None)
         f1_pos, f1_neg = slice(1, (shape[1] + 1) // 2), slice((shape[1] + 1) // 2, None)
         # Verify all values:
-        xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=1e-12)
-        xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=1e-12)
-        xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=1e-12)
-        xp_assert_close(x_as_f[0, 0], x_f[0, 0], atol=1e-12)
+        atol = 1e-12  # for x of dtype complex128
+        xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=atol)
+        xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=atol)
+        xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=atol)
+        xp_assert_close(x_as_f[0, 0], x_f[0, 0], atol=atol)
         zz_as_f = x_as_f[f0_neg, f1_neg]  # check for zeroed orthants
-        xp_assert_close(zz_as_f, xp.zeros_like(zz_as_f), atol=1e-12)
+        xp_assert_close(zz_as_f, xp.zeros_like(zz_as_f), atol=atol)
 
     @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
     def test_zero_analytic_signal(self, shape, xp):
@@ -3470,12 +3468,13 @@ class TestHilbert2:
         x = xp.real(sp_fft.ifft2(x_f))
         assert xp.sum(abs(x)) > 0.0
         x_as = hilbert2(x)
-        xp_assert_close(x_as, xp.zeros_like(x_as), atol=1e-16)
+        xp_assert_close(x_as, xp.zeros_like(x_as), atol=xp.finfo(x_as.dtype).eps*16)
 
     @pytest.mark.parametrize('sh0', [4, 5])
     @pytest.mark.parametrize('sh1', [6, 7])
     @pytest.mark.parametrize('sh2', [8, 9])
     @pytest.mark.parametrize('not_axis', [0, 1, 2])
+    @skip_xp_backends("cupy", reason="cupy implementation does not have axes kwarg")
     def test_3d_vs_slice(self, sh0, sh1, sh2, not_axis, xp):
         """2d transform on 3d array is equal to 2d transform on 2d slices."""
         x = xp.reshape(xp.arange(sh0 * sh1 * sh2, dtype=xp.float64), (sh0, sh1, sh2))
@@ -3487,121 +3486,7 @@ class TestHilbert2:
         x_as_2d = xp.stack(x_as_2d, axis=not_axis)
         xp_assert_close(x_as_3d, x_as_2d)
 
-    def test_3d_axis_order(self, xp):
-        """2d transform on equal arrays with moved axis are equal."""
-        x0 = xp.reshape(xp.arange(5 * 7 * 9, dtype=xp.float64), (5, 7, 9))
-        x0_as = hilbert2(x0)
-
-        x1 = xp.moveaxis(x0, 0, 1)
-        x1_as = hilbert2(x1, axes=(0, 2))
-        x1_as = xp.moveaxis(x1_as, 1, 0)
-        xp_assert_close(x0_as, x1_as)
-
-        x2 = xp.moveaxis(x0, 0, 2)
-        x2_as = hilbert2(x2, axes=(0, 1))
-        x2_as = xp.moveaxis(x2_as, 2, 0)
-        xp_assert_close(x0_as, x2_as)
-
-    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    def test_quadrant_values(self, shape, xp):
-        """Compare desired and calculated values in Fourier space. """
-        x_f = xp.ones(shape, dtype=xp.complex128)  # FFT of input signal
-        x_f[0 , 0] += 7
-        x = xp.real(sp_fft.ifft2(x_f))  # x.imag is zero
-
-        x_as = hilbert2(x)
-        x_as_f = sp_fft.fft2(x_as)
-
-        # Create slices for bins with purely positive and purely negative frequencies
-        # (can be verified with `sp_fft.fftfreq()`):
-        f0_pos, f0_neg = slice(1, (shape[0] + 1) // 2), slice((shape[0] + 1) // 2, None)
-        f1_pos, f1_neg = slice(1, (shape[1] + 1) // 2), slice((shape[1] + 1) // 2, None)
-        # Verify all values:
-        xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=1e-12)
-        xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=1e-12)
-        xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=1e-12)
-        xp_assert_close(x_as_f[0, 0], x_f[0, 0], atol=1e-12)
-        zz_as_f = x_as_f[f0_neg, f1_neg]  # check for zeroed orthants
-        xp_assert_close(zz_as_f, xp.zeros_like(zz_as_f), atol=1e-12)
-
-        # (+, +) quadrant is scaled by 4
-        four_mask = (freq0 > 0) & (freq1 > 0)
-        x_as_four_quad = x_as_f[four_mask]
-        x_four_quad = x_f[four_mask]
-        xp_assert_close(x_as_four_quad, x_four_quad * 4, atol=1e-12)
-
-    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    def test_zero_analytic_signal(self, shape, xp):
-        """Test that a real signal with Z[-p,-q] == np.conj(Z[p,q])
-        produces a zero analytic signal."""
-        c0 = shape[0] // 2
-        c1 = shape[1] // 2
-        x_f = xp.zeros(shape)
-        x_f[c0 - 1, c1 + 1] = 1.0
-        x_f[c0 + 1, c1 - 1] = 1.0
-        x_f = sp_fft.ifftshift(x_f)
-        x = xp.real(sp_fft.ifft2(x_f))
-        assert xp.sum(abs(x)) > 0.0
-        x_as = hilbert2(x)
-        xp_assert_close(x_as, xp.zeros_like(x_as), atol=1e-16)
-
-    @pytest.mark.parametrize('shape', [(4, 5), (5, 4), (4, 4), (5, 5)])
-    def test_impulse(self, xp, shape):
-        """Test expected values for unit impulse with constant offset."""
-        sh0, sh1 = shape
-        x = xp.ones(shape)
-        x[0, 0] += 1
-        x_as = hilbert2(x)
-        x_as_f = sp_fft.fft2(x_as)
-        freq0 = xp.asarray(sp_fft.fftfreq(sh0)[:, None])
-        freq1 = xp.asarray(sp_fft.fftfreq(sh1)[None, ...])
-
-        mask = (freq0 == 0) & (freq1 == 0)
-        val = xp.real(x_as_f[mask])
-        xp_assert_close(
-            val,
-            (sh0 * sh1 + 1.0) * xp.ones_like(val),
-            )
-        val = xp.imag(x_as_f[mask])
-        xp_assert_close(
-            val,
-            xp.zeros_like(val),
-            atol=1e-12
-            )
-
-        mask = (
-            ((freq0 == 0) & (freq1 > 0)) |
-            ((freq0 > 0) & (freq1 == 0))
-        )
-        size = xp.sum(xp.astype(mask, xp.uint8))
-        xp_assert_close(
-            xp.real(x_as_f[mask]),
-            2.0 * xp.ones(size),
-            )
-        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size), atol=1e-12)
-
-        mask = (freq0 > 0) & (freq1 > 0)
-        size = xp.sum(xp.astype(mask, xp.uint8))
-        xp_assert_close(
-            xp.real(x_as_f[mask]),
-            4.0 * xp.ones(size),
-            )
-        xp_assert_close(xp.imag(x_as_f[mask]), xp.zeros(size), atol=1e-12)
-    @pytest.mark.parametrize('sh0', [4, 5])
-    @pytest.mark.parametrize('sh1', [6, 7])
-    @pytest.mark.parametrize('sh2', [8, 9])
-    @pytest.mark.parametrize('not_axis', [0, 1, 2])
-    def test_3d_vs_slice(self, sh0, sh1, sh2, not_axis, xp):
-        """2d transform on 3d array is equal to 2d transform on 2d slices."""
-        x = xp.reshape(xp.arange(sh0 * sh1 * sh2, dtype=xp.float64), (sh0, sh1, sh2))
-        transform_axes = [0, 1, 2]
-        transform_axes.pop(not_axis)
-        x_as_3d = hilbert2(x, axes=transform_axes)
-        parts = xp.unstack(x, axis=not_axis)
-        x_as_2d = [hilbert2(p) for p in parts]
-        x_as_2d = xp.stack(x_as_2d, axis=not_axis)
-        xp_assert_close(x_as_3d, x_as_2d)
-
+    @skip_xp_backends("cupy", reason="cupy implementation does not have axes kwarg")
     def test_3d_axis_order(self, xp):
         """2d transform on equal arrays with moved axis are equal."""
         x0 = xp.reshape(xp.arange(5 * 7 * 9, dtype=xp.float64), (5, 7, 9))
