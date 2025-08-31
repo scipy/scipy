@@ -304,8 +304,8 @@ static void csgemm_kernel(
 #ifdef _MSC_VER
                 PROPACK_CPLXF_TYPE tmp1 = _FCMulcr(A[i + l * lda], b_val);
                 PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
-                C[i + j * ldc] = PROPACK_cplxf(creal(tmp2) + creal(tmp1),
-                                               cimag(tmp2) + cimag(tmp1));
+                C[i + j * ldc] = PROPACK_cplxf(crealf(tmp2) + crealf(tmp1),
+                                               cimagf(tmp2) + cimagf(tmp1));
 #else
                 C[i + j * ldc] += A[i + l * lda] * b_val;
 #endif
@@ -316,10 +316,9 @@ static void csgemm_kernel(
 
 
 // GEMM operation for mixed dtype, float complex x float
-void csgemm_ovwr_left(const int transb, int m, int n, int k,
-                      PROPACK_CPLXF_TYPE* restrict A, int lda,
-                      const float* restrict B, int ldb,
-                      PROPACK_CPLXF_TYPE* restrict work, int blocksize)
+void csgemm_ovwr_left(
+    const int transb, int m, int n, int k, PROPACK_CPLXF_TYPE* restrict A, int lda,
+    const float* restrict B, int ldb, PROPACK_CPLXF_TYPE* restrict work, int blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
@@ -413,10 +412,9 @@ static void zdgemm_kernel(
 
 
 // GEMM operation for mixed dtype, complex double x double
-void zdgemm_ovwr_left(const int transb, int m, int n, int k,
-                      PROPACK_CPLX_TYPE* restrict A, int lda,
-                      const double* restrict B, int ldb,
-                      PROPACK_CPLX_TYPE* restrict work, int blocksize)
+void zdgemm_ovwr_left(
+    const int transb, int m, int n, int k, PROPACK_CPLX_TYPE* restrict A, int lda,
+    const double* restrict B, int ldb, PROPACK_CPLX_TYPE* restrict work, int blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
