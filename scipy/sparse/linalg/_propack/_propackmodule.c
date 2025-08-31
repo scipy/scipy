@@ -474,7 +474,7 @@ propack_zlansvd(PyObject* Py_UNUSED(dummy), PyObject* args)
     PyObject* py_aprod;
     PyArrayObject *U, *V, *sigma, *bnd, *work, *cwork, *iwork, *doption, *ioption, *dparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiidOO!O!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "iiiiiidOO!O!O!O!O!O!O!O!O!O!O!O!",
                           &jobu, &jobv, &m, &n, &k, &kmax,                       // iiiiii
                           &tol,                                                  // d
                           &py_aprod,                                             // O
@@ -763,7 +763,7 @@ propack_zlansvd_irl(PyObject* Py_UNUSED(dummy), PyObject* args) {
     PyObject* py_aprod;
     PyArrayObject *U, *sigma, *bnd, *V, *work, *cwork, *iwork, *doption, *ioption, *zparm, *iparm, *ap_rng_state;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiidOO!O!O!O!O!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "iiiiiiiidOO!O!O!O!O!O!O!O!O!O!O!O!",
                          &which, &jobu, &jobv, &m, &n, &shifts, &neig, &maxiter, &tol,
                          &py_aprod,
                          &PyArray_Type, &U,
@@ -831,11 +831,11 @@ static PyMethodDef propack_methods[] = {
     {"slansvd", propack_slansvd, METH_VARARGS, "Single precision SVD"},
     {"dlansvd", propack_dlansvd, METH_VARARGS, "Double precision SVD"},
     {"clansvd", propack_clansvd, METH_VARARGS, "Single precision complex SVD"},
-    {"zlansvd", propack_clansvd, METH_VARARGS, "Double precision complex SVD"},
+    {"zlansvd", propack_zlansvd, METH_VARARGS, "Double precision complex SVD"},
     {"slansvd_irl", propack_slansvd_irl, METH_VARARGS, "Single precision implicitly restarted Lanczos SVD"},
     {"dlansvd_irl", propack_dlansvd_irl, METH_VARARGS, "Double precision implicitly restarted Lanczos SVD"},
     {"clansvd_irl", propack_clansvd_irl, METH_VARARGS, "Single precision complex implicitly restarted Lanczos SVD"},
-    {"zlansvd_irl", propack_clansvd_irl, METH_VARARGS, "Double precision complex implicitly restarted Lanczos SVD"},
+    {"zlansvd_irl", propack_zlansvd_irl, METH_VARARGS, "Double precision complex implicitly restarted Lanczos SVD"},
     {NULL, NULL, 0, NULL}  /* Sentinel */
 };
 
