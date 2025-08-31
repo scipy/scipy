@@ -302,7 +302,7 @@ static void csgemm_kernel(
             for (int i = 0; i < m; i++)
             {
 #ifdef _MSC_VER
-                PROPACK_CPLXF_TYPE tmp1 = _FCMulcr(A[i + l * lda], b_val);
+                PROPACK_CPLXF_TYPE tmp1 = _FCmulcr(A[i + l * lda], b_val);
                 PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
                 C[i + j * ldc] = PROPACK_cplxf(crealf(tmp2) + crealf(tmp1),
                                                cimagf(tmp2) + cimagf(tmp1));
