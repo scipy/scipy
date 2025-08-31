@@ -210,8 +210,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     # these will be the output arrays
     u = np.zeros((m, kmax + 1), order='F', dtype=typ)
     v = np.zeros((n, kmax), order='F', dtype=typ)
-    sigma = np.zeros(k, order='F', dtype=typ)
-    bnd = np.zeros(k, order='F', dtype=typ)
+    sigma = np.zeros(k, order='F', dtype=typ.lower())
+    bnd = np.zeros(k, order='F', dtype=typ.lower())
 
     # Specify the starting vector.  if v0 is all zero, PROPACK will generate
     # a random starting vector: the random seed cannot be controlled in that
@@ -256,7 +256,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     # consumption.  `blocksize` must be ``>= 1``.  Choosing blocksize
     # of 16, but docs don't specify; it's almost surely a
     # power of 2.
-    blocksize = 16
+    blocksize = 32
 
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
@@ -267,7 +267,7 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         liwork = 8*kmax
     else:
         lwork = m + n + 9*kmax + 2*kmax*kmax + 4 + max(m + n, 4*kmax + 4)
-        liwork = 2*kmax + 1
+        liwork = 2*kmax + 2
     work = np.empty(lwork, dtype=typ.lower())
     iwork = np.empty(liwork, dtype=np.int32)
 
