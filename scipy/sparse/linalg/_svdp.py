@@ -285,7 +285,8 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         works = work, iwork
 
     # Generate the seed for the PROPACK random float generator.
-    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max, size=4, dtype=np.uint64)
+    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max, size=4,
+                             dtype=np.uint64)
 
     if irl_mode:
         info = lansvd_irl(_which_converter[which], jobu,
