@@ -5,246 +5,313 @@
 
 
 /**
- * Modified Gram-Schmidt orthogonalization - Single precision
+ * @brief Performs Modified Gram-Schmidt (MGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V, following
- * the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against the `k` columns of the matrix
+ * `V` using the Modified Gram-Schmidt process. The orthogonalization is performed
+ * iteratively over blocks of columns specified by the `indices` array.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive
- *                 Terminated when start_i <= 0 or start_i > k or start_i > end_i
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
  */
 void smgs(int n, int k, float* V, int ldv, float* vnew, const int* indices);
 
+
 /**
- * Modified Gram-Schmidt orthogonalization - Double precision
+ * @brief Performs Modified Gram-Schmidt (MGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V, following
- * the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against the `k` columns of the matrix
+ * `V` using the Modified Gram-Schmidt process. The orthogonalization is performed
+ * iteratively over blocks of columns specified by the `indices` array.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive
- *                 Terminated when start_i <= 0 or start_i > k or start_i > end_i
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
  */
 void dmgs(int n, int k, double* V, int ldv, double* vnew, const int* indices);
 
+
 /**
- * Modified Gram-Schmidt orthogonalization - Single precision complex
+ * @brief Performs Modified Gram-Schmidt (MGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using conjugate
- * inner product, following the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against the `k` columns of the matrix
+ * `V` using the Modified Gram-Schmidt process. The orthogonalization is performed
+ * iteratively over blocks of columns specified by the `indices` array.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive
- *                 Terminated when start_i <= 0 or start_i > k or start_i > end_i
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
  */
 void cmgs(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* vnew, const int* indices);
 
+
 /**
- * Modified Gram-Schmidt orthogonalization - Double precision complex
+ * @brief Performs Modified Gram-Schmidt (MGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using conjugate
- * inner product, following the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against the `k` columns of the matrix
+ * `V` using the Modified Gram-Schmidt process. The orthogonalization is performed
+ * iteratively over blocks of columns specified by the `indices` array.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive
- *                 Terminated when start_i <= 0 or start_i > k or start_i > end_i
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
  */
 void zmgs(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, const int* indices);
 
+
 /**
- * Classical Gram-Schmidt orthogonalization - Single precision
+ * @brief Performs block Classical Gram-Schmidt (CGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * block matrix-vector operations, following the PROPACK partial
- * reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against blocks of columns in the matrix `V`
+ * using the Classical Gram-Schmidt process. The blocks of columns are specified by the
+ * `indices` array, and the orthogonalization is performed iteratively for each block.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param work     Work array
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
+ * @param work    Pointer to a workspace array of length at least equal to the size of the
+ *                largest block (end - start + 1) in the `indices` array.
  */
 void scgs(int n, int k, float* V, int ldv, float* vnew, const int* indices, float* work);
 
+
 /**
- * Classical Gram-Schmidt orthogonalization - Double precision
+ * @brief Performs block Classical Gram-Schmidt (CGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * block matrix-vector operations, following the PROPACK partial
- * reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against blocks of columns in the matrix `V`
+ * using the Classical Gram-Schmidt process. The blocks of columns are specified by the
+ * `indices` array, and the orthogonalization is performed iteratively for each block.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param work     Work array
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
+ * @param work    Pointer to a workspace array of length at least equal to the size of the
+ *                largest block (end - start + 1) in the `indices` array.
  */
 void dcgs(int n, int k, double* V, int ldv, double* vnew, const int* indices, double* work);
 
+
 /**
- * Classical Gram-Schmidt orthogonalization - Single precision complex
+ * @brief Performs block Classical Gram-Schmidt (CGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * block matrix-vector operations with conjugate transpose, following
- * the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against blocks of columns in the matrix `V`
+ * using the Classical Gram-Schmidt process. The blocks of columns are specified by the
+ * `indices` array, and the orthogonalization is performed iteratively for each block.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param work     Work array
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
+ * @param work    Pointer to a workspace array of length at least equal to the size of the
+ *                largest block (end - start + 1) in the `indices` array.
  */
 void ccgs(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* vnew, const int* indices, PROPACK_CPLXF_TYPE* work);
 
+
 /**
- * Classical Gram-Schmidt orthogonalization - Double precision complex
+ * @brief Performs block Classical Gram-Schmidt (CGS) orthogonalization on a vector.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * block matrix-vector operations with conjugate transpose, following
- * the PROPACK partial reorthogonalization pattern.
+ * This function orthogonalizes the vector `vnew` against blocks of columns in the matrix `V`
+ * using the Classical Gram-Schmidt process. The blocks of columns are specified by the
+ * `indices` array, and the orthogonalization is performed iteratively for each block.
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param work     Work array
+ * @param n       The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k       The number of columns in the matrix `V` to orthogonalize against.
+ * @param V       Pointer to the matrix `V` stored in column-major order.
+ * @param ldv     The leading dimension of the matrix `V`.
+ * @param vnew    Pointer to the vector to be orthogonalized. Modified in-place.
+ * @param indices Pointer to an array specifying the start and end indices of column blocks
+ *                in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                for each block. The last element is marked as a terminator typically a value
+ *                greater than k-1.
+ * @param work    Pointer to a workspace array of length at least equal to the size of the
+ *                largest block (end - start + 1) in the `indices` array.
  */
 void zcgs(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, const int* indices, PROPACK_CPLX_TYPE* work);
 
+
 /**
- * Iterated orthogonalization with convergence check - Single precision
+ * @brief Reorthogonalizes a vector against a subset of columns of a matrix.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * iterated classical or modified Gram-Schmidt until convergence criterion
- * is met or maximum iterations reached.
+ * This function reorthogonalizes the vector `vnew` against a subset of the columns
+ * of the matrix `V` using iterated Classical or Modified Gram-Schmidt. The process
+ * is repeated until the norm of the reorthogonalized vector satisfies the condition:
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param normvnew Pointer to norm of vnew (input: initial norm, output: final norm)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param alpha    Convergence parameter (typically 0.5 or 0.717)
- * @param work     Work array of size at least max(end_i-start_i+1) (only used if iflag==1)
- * @param iflag    0 for Modified Gram-Schmidt, 1 for Classical Gram-Schmidt
+ *     ||vnew'|| > alpha * ||vnew||
+ *
+ * If the condition is not satisfied after a fixed number of attempts, the vector
+ * `vnew` is deemed to lie numerically in the span of the selected columns of `V`
+ * and is set to the zero vector.
+ *
+ * @param n         The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k         The number of columns in the matrix `V` to orthogonalize against.
+ * @param V         Pointer to the matrix `V` stored in column-major order.
+ * @param ldv       The leading dimension of the matrix `V`.
+ * @param vnew      Pointer to the vector to be reorthogonalized. Modified in-place.
+ * @param normvnew  Pointer to the norm of the vector `vnew`. Updated in-place.
+ * @param indices   Pointer to an array specifying the start and end indices of column blocks
+ *                  in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                  where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                  for each block. The last element is marked as a terminator typically a value
+ *                  greater than k-1.
+ * @param alpha     The threshold factor for the reorthogonalization condition.
+ * @param work      Pointer to a workspace array of length at least equal to the size of the
+ *                  largest block (end - start + 1) in the `indices` array. Used only if `iflag == 1`.
+ * @param iflag     Determines the orthogonalization method:
+ *                  - `0`: Iterated Modified Gram-Schmidt (MGS).
+ *                  - `1`: Iterated Classical Gram-Schmidt (CGS).
  */
 void sreorth(int n, int k, float* V, int ldv, float* vnew, float* normvnew, const int* indices, float alpha, float* work, int iflag);
 
+
 /**
- * Iterated orthogonalization with convergence check - Double precision
+ * @brief Reorthogonalizes a vector against a subset of columns of a matrix.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * iterated classical or modified Gram-Schmidt until convergence criterion
- * is met or maximum iterations reached.
+ * This function reorthogonalizes the vector `vnew` against a subset of the columns
+ * of the matrix `V` using iterated Classical or Modified Gram-Schmidt. The process
+ * is repeated until the norm of the reorthogonalized vector satisfies the condition:
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param normvnew Pointer to norm of vnew (input: initial norm, output: final norm)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param alpha    Convergence parameter (typically 0.5 or 0.717)
- * @param work     Work array of size at least max(end_i-start_i+1) (only used if iflag==1)
- * @param iflag    0 for Modified Gram-Schmidt, 1 for Classical Gram-Schmidt
+ *     ||vnew'|| > alpha * ||vnew||
+ *
+ * If the condition is not satisfied after a fixed number of attempts, the vector
+ * `vnew` is deemed to lie numerically in the span of the selected columns of `V`
+ * and is set to the zero vector.
+ *
+ * @param n         The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k         The number of columns in the matrix `V` to orthogonalize against.
+ * @param V         Pointer to the matrix `V` stored in column-major order.
+ * @param ldv       The leading dimension of the matrix `V`.
+ * @param vnew      Pointer to the vector to be reorthogonalized. Modified in-place.
+ * @param normvnew  Pointer to the norm of the vector `vnew`. Updated in-place.
+ * @param indices   Pointer to an array specifying the start and end indices of column blocks
+ *                  in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                  where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                  for each block. The last element is marked as a terminator typically a value
+ *                  greater than k-1.
+ * @param alpha     The threshold factor for the reorthogonalization condition.
+ * @param work      Pointer to a workspace array of length at least equal to the size of the
+ *                  largest block (end - start + 1) in the `indices` array. Used only if `iflag == 1`.
+ * @param iflag     Determines the orthogonalization method:
+ *                  - `0`: Iterated Modified Gram-Schmidt (MGS).
+ *                  - `1`: Iterated Classical Gram-Schmidt (CGS).
  */
 void dreorth(int n, int k, double* V, int ldv, double* vnew, double* normvnew, const int* indices, double alpha, double* work, int iflag);
 
+
 /**
- * Iterated orthogonalization with convergence check - Single precision complex
+ * @brief Reorthogonalizes a vector against a subset of columns of a matrix.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * iterated classical or modified Gram-Schmidt until convergence criterion
- * is met or maximum iterations reached.
+ * This function reorthogonalizes the vector `vnew` against a subset of the columns
+ * of the matrix `V` using iterated Classical or Modified Gram-Schmidt. The process
+ * is repeated until the norm of the reorthogonalized vector satisfies the condition:
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param normvnew Pointer to norm of vnew (input: initial norm, output: final norm)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param alpha    Convergence parameter (typically 0.5 or 0.717)
- * @param work     Work array of size at least max(end_i-start_i+1) (only used if iflag==1)
- * @param iflag    0 for Modified Gram-Schmidt, 1 for Classical Gram-Schmidt
+ *     ||vnew'|| > alpha * ||vnew||
+ *
+ * If the condition is not satisfied after a fixed number of attempts, the vector
+ * `vnew` is deemed to lie numerically in the span of the selected columns of `V`
+ * and is set to the zero vector.
+ *
+ * @param n         The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k         The number of columns in the matrix `V` to orthogonalize against.
+ * @param V         Pointer to the matrix `V` stored in column-major order.
+ * @param ldv       The leading dimension of the matrix `V`.
+ * @param vnew      Pointer to the vector to be reorthogonalized. Modified in-place.
+ * @param normvnew  Pointer to the norm of the vector `vnew`. Updated in-place.
+ * @param indices   Pointer to an array specifying the start and end indices of column blocks
+ *                  in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                  where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                  for each block. The last element is marked as a terminator typically a value
+ *                  greater than k-1.
+ * @param alpha     The threshold factor for the reorthogonalization condition.
+ * @param work      Pointer to a workspace array of length at least equal to the size of the
+ *                  largest block (end - start + 1) in the `indices` array. Used only if `iflag == 1`.
+ * @param iflag     Determines the orthogonalization method:
+ *                  - `0`: Iterated Modified Gram-Schmidt (MGS).
+ *                  - `1`: Iterated Classical Gram-Schmidt (CGS).
  */
 void creorth(int n, int k, PROPACK_CPLXF_TYPE* V, int ldv, PROPACK_CPLXF_TYPE* vnew, float* normvnew, const int* indices, float alpha, PROPACK_CPLXF_TYPE* work, int iflag);
 
+
 /**
- * Iterated orthogonalization with convergence check - Double precision complex
+ * @brief Reorthogonalizes a vector against a subset of columns of a matrix.
  *
- * Orthogonalizes vnew against specified blocks of vectors in V using
- * iterated classical or modified Gram-Schmidt until convergence criterion
- * is met or maximum iterations reached.
+ * This function reorthogonalizes the vector `vnew` against a subset of the columns
+ * of the matrix `V` using iterated Classical or Modified Gram-Schmidt. The process
+ * is repeated until the norm of the reorthogonalized vector satisfies the condition:
  *
- * @param n        Length of vectors
- * @param k        Number of vectors in V (maximum column index)
- * @param V        Matrix of orthogonal vectors (column-major, ldv x k)
- * @param ldv      Leading dimension of V
- * @param vnew     Vector to be orthogonalized (modified in-place)
- * @param normvnew Pointer to norm of vnew (input: initial norm, output: final norm)
- * @param indices  Array specifying which columns to orthogonalize against
- *                 Format: [start1, end1, start2, end2, ...]
- *                 Blocks are [start_i, end_i] inclusive (0-based indexing)
- *                 Terminated when start_i < 0 or start_i > k or start_i > end_i
- * @param alpha    Convergence parameter (typically 0.5 or 0.717)
- * @param work     Work array of size at least max(end_i-start_i+1) (only used if iflag==1)
- * @param iflag    0 for Modified Gram-Schmidt, 1 for Classical Gram-Schmidt
+ *     ||vnew'|| > alpha * ||vnew||
+ *
+ * If the condition is not satisfied after a fixed number of attempts, the vector
+ * `vnew` is deemed to lie numerically in the span of the selected columns of `V`
+ * and is set to the zero vector.
+ *
+ * @param n         The number of rows in the matrix `V` and the length of the vector `vnew`.
+ * @param k         The number of columns in the matrix `V` to orthogonalize against.
+ * @param V         Pointer to the matrix `V` stored in column-major order.
+ * @param ldv       The leading dimension of the matrix `V`.
+ * @param vnew      Pointer to the vector to be reorthogonalized. Modified in-place.
+ * @param normvnew  Pointer to the norm of the vector `vnew`. Updated in-place.
+ * @param indices   Pointer to an array specifying the start and end indices of column blocks
+ *                  in `V` to process. The array should have at least `2 * num_blocks` elements,
+ *                  where `num_blocks` is the number of blocks. It encodes the pairs [start, end]
+ *                  for each block. The last element is marked as a terminator typically a value
+ *                  greater than k-1.
+ * @param alpha     The threshold factor for the reorthogonalization condition.
+ * @param work      Pointer to a workspace array of length at least equal to the size of the
+ *                  largest block (end - start + 1) in the `indices` array. Used only if `iflag == 1`.
+ * @param iflag     Determines the orthogonalization method:
+ *                  - `0`: Iterated Modified Gram-Schmidt (MGS).
+ *                  - `1`: Iterated Classical Gram-Schmidt (CGS).
  */
 void zreorth(int n, int k, PROPACK_CPLX_TYPE* V, int ldv, PROPACK_CPLX_TYPE* vnew, double* normvnew, const int* indices, double alpha, PROPACK_CPLX_TYPE* work, int iflag);
 

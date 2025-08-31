@@ -2,6 +2,7 @@
 #include <math.h>
 #include <float.h>
 
+
 // ==================================================================================
 // Random 64bit integer generator for random floating point number purposes; based on
 // https://prng.di.unimi.it/xoshiro256plus.c
@@ -340,7 +341,7 @@ void supdate_nu(
             nu[k] = beta[k] * mu[k+1] + alpha[k] * mu[k] - beta[j-1] * nu[k];
             d = eps1 * (hypotf(alpha[k], beta[k]) + hypotf(alpha[j], beta[j-1])) + eps1 * anorm;
             nu[k] = (nu[k] + copysignf(d, nu[k])) / alpha[j];
-            *numax = fmaxf(*numax, fabs(nu[k]));
+            *numax = fmaxf(*numax, fabsf(nu[k]));
         }
         nu[j] = 1.0f;
     }

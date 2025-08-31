@@ -1,15 +1,6 @@
 #include "gemm_overwrite.h"
 
 
-static void csgemm_kernel(
-    const int transb, int m, int n, int k, const complex float* restrict A, int lda,
-    const float* restrict B, int ldb, complex float* restrict C, int ldc);
-
-static void zdgemm_kernel(
-    const int transb, int m, int n, int k, const complex double* restrict A, int lda,
-    const double* restrict B, int ldb, complex double* restrict C, int ldc);
-
-
 void sgemm_ovwr(const int transa, int m, int n, int k, float alpha,
                 float* restrict A, int lda, float beta,
                 float* restrict B, int ldb,
@@ -266,6 +257,59 @@ void dgemm_ovwr_left(const int transb, int m, int n, int k, double alpha,
 }
 
 
+/**
+ * @brief Naive (complex float) x (float) GEMM kernel.
+ *
+ * @param transb Whether to transpose B (ignored, always A * B^T)
+ * @param m Number of rows of A and C
+ * @param n Number of columns of B and C
+ * @param k Number of columns of A and rows of B
+ * @param A complex float matrix A of size (m, k)
+ * @param lda Leading dimension of A
+ * @param B float matrix B of size (n, k)
+ * @param ldb Leading dimension of B
+ * @param C complex float output matrix C of size (m, n)
+ * @param ldc Leading dimension of C
+ *
+ * @note Fortran code is a bit confusing over this kernel since they also provide a
+ *       blocked version however left a note that the performance is not promising.
+ *
+ */
+static void csgemm_kernel(
+    const int transb, int m, int n, int k, const complex float* restrict A, int lda,
+    const float* restrict B, int ldb, complex float* restrict C, int ldc)
+{
+    (void)transb;  // Unused parameter
+    // Initialize C to zero
+    for (int j = 0; j < n; j++)
+    {
+        for (int i = 0; i < m; i++)
+        {
+            C[i + j * ldc] = PROPACK_cplxf(0.0f, 0.0f );
+        }
+    }
+    // Always compute C = A * B^T
+    for (int l = 0; l < k; l++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            float b_val = B[j + l * ldb];
+            for (int i = 0; i < m; i++)
+            {
+#ifdef _MSC_VER
+                PROPACK_CPLXF_TYPE tmp1 = _FCMulcr(A[i + l * lda], b_val);
+                PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
+                C[i + j * ldc] = PROPACK_cplxf(creal(tmp2) + creal(tmp1),
+                                               cimag(tmp2) + cimag(tmp1));
+#else
+                C[i + j * ldc] += A[i + l * lda] * b_val;
+#endif
+            }
+        }
+    }
+}
+
+
 // GEMM operation for mixed dtype, complex float x float
 void csgemm_ovwr_left(const int transb, int m, int n, int k,
                       complex float* restrict A, int lda,
@@ -310,55 +354,53 @@ void csgemm_ovwr_left(const int transb, int m, int n, int k,
 }
 
 
-static void csgemm_kernel(
-    const int transb, int m, int n, int k, const complex float* restrict A, int lda,
-    const float* restrict B, int ldb, complex float* restrict C, int ldc)
+/**
+ * @brief Naive (complex double) x (double) GEMM kernel.
+ *
+ * @param transb Whether to transpose B (ignored, always A * B^T)
+ * @param m Number of rows of A and C
+ * @param n Number of columns of B and C
+ * @param k Number of columns of A and rows of B
+ * @param A Complex double matrix A of size (m, k)
+ * @param lda Leading dimension of A
+ * @param B Double matrix B of size (n, k)
+ * @param ldb Leading dimension of B
+ * @param C Complex double output matrix C of size (m, n)
+ * @param ldc Leading dimension of C
+ *
+ * @note Fortran code is a bit confusing over this kernel since they also provide a
+ *       blocked version however left a note that the performance is not promising.
+ *
+ */
+static void zdgemm_kernel(
+    const int transb, int m, int n, int k, const PROPACK_CPLX_TYPE* restrict A, int lda,
+    const double* restrict B, int ldb, PROPACK_CPLX_TYPE* restrict C, int ldc)
 {
+    (void)transb;  // Unused parameter
     // Initialize C to zero
     for (int j = 0; j < n; j++)
     {
         for (int i = 0; i < m; i++)
         {
-            C[i + j * ldc] = PROPACK_cplxf(0.0f, 0.0f );
+            C[i + j * ldc] = PROPACK_cplx(0.0, 0.0);
         }
     }
-
-    if (transb)
+    // Always compute C = A * B^T
+    for (int l = 0; l < k; l++)
     {
-        // C = A * B^T
-        for (int l = 0; l < k; l++)
+        for (int j = 0; j < n; j++)
         {
-            for (int j = 0; j < n; j++)
+            double b_val = B[j + l * ldb];
+            for (int i = 0; i < m; i++)
             {
-                float b_val = B[j + l * ldb];  // B^T[j,l] = B[l,j]
-                for (int i = 0; i < m; i++)
-                {
 #ifdef _MSC_VER
-                    PROPACK_CPLXF_TYPE tmp1 = _FCMulcr(A[i + l * lda], b_val);
-                    PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
-                    C[i + j * ldc] = PROPACK_cplxf(creal(tmp2) + creal(tmp1),
-                                                   cimag(tmp2) + cimag(tmp1));
+                PROPACK_CPLX_TYPE tmp1 = _Cmulcr(A[i + l * lda], b_val);
+                PROPACK_CPLX_TYPE tmp2 = C[i + j * ldc];
+                C[i + j * ldc] = PROPACK_cplx(creal(tmp2) + creal(tmp1),
+                                              cimag(tmp2) + cimag(tmp1));
 #else
-                    C[i + j * ldc] += A[i + l * lda] * b_val;
+                C[i + j * ldc] += A[i + l * lda] * b_val;
 #endif
-                }
-            }
-        }
-    } else {
-        // C = A * B (no transpose)
-        for (int l = 0; l < k; l++) {
-            for (int j = 0; j < n; j++) {
-                float b_val = B[l + j * ldb];  // B[l,j]
-                for (int i = 0; i < m; i++) {
-#ifdef _MSC_VER
-                    PROPACK_CPLXF_TYPE tmp1 = _FCMulcr(A[i + l * lda], b_val);
-                    PROPACK_CPLXF_TYPE tmp2 = C[i + j * ldc];
-                    C[i + j * ldc] = PROPACK_cplxf(creal(tmp2) + creal(tmp1),
-                                                   cimag(tmp2) + cimag(tmp1));
-#else
-                    C[i + j * ldc] += A[i + l * lda] * b_val;
-#endif
-                }
             }
         }
     }
@@ -367,9 +409,9 @@ static void csgemm_kernel(
 
 // GEMM operation for mixed dtype, complex double x double
 void zdgemm_ovwr_left(const int transb, int m, int n, int k,
-                      complex double* restrict A, int lda,
+                      PROPACK_CPLX_TYPE* restrict A, int lda,
                       const double* restrict B, int ldb,
-                      complex double* restrict work, int blocksize)
+                      PROPACK_CPLX_TYPE* restrict work, int blocksize)
 {
     if ((m <= 0) || (n <= 0) || (k <= 0)) { return; }
 
@@ -403,61 +445,6 @@ void zdgemm_ovwr_left(const int transb, int m, int n, int k,
             for (int l = 0; l < remainder_rows; l++)
             {
                 A[block_start + l + j * lda] = work[l + j * remainder_rows];
-            }
-        }
-    }
-}
-
-
-static void zdgemm_kernel(
-    const int transb, int m, int n, int k, const complex double* restrict A, int lda,
-    const double* restrict B, int ldb, complex double* restrict C, int ldc)
-{
-    // Initialize C to zero
-    for (int j = 0; j < n; j++)
-    {
-        for (int i = 0; i < m; i++)
-        {
-            C[i + j * ldc] = PROPACK_cplx(0.0, 0.0);
-        }
-    }
-
-    if (transb)
-    {
-        // C = A * B^T
-        for (int l = 0; l < k; l++)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                double b_val = B[j + l * ldb];  // B^T[j,l] = B[l,j]
-                for (int i = 0; i < m; i++)
-                {
-#ifdef _MSC_VER
-                    PROPACK_CPLX_TYPE tmp1 = _Cmulcr(A[i + l * lda], b_val);
-                    PROPACK_CPLX_TYPE tmp2 = C[i + j * ldc];
-                    C[i + j * ldc] = PROPACK_cplx(creal(tmp2) + creal(tmp1),
-                                                  cimag(tmp2) + cimag(tmp1));
-#else
-                    C[i + j * ldc] += A[i + l * lda] * b_val;
-#endif
-                }
-            }
-        }
-    } else {
-        // C = A * B (no transpose)
-        for (int l = 0; l < k; l++) {
-            for (int j = 0; j < n; j++) {
-                double b_val = B[l + j * ldb];  // B[l,j]
-                for (int i = 0; i < m; i++) {
-#ifdef _MSC_VER
-                    PROPACK_CPLX_TYPE tmp1 = _Cmulcr(A[i + l * lda], b_val);
-                    PROPACK_CPLX_TYPE tmp2 = C[i + j * ldc];
-                    C[i + j * ldc] = PROPACK_cplx(creal(tmp2) + creal(tmp1),
-                                                  cimag(tmp2) + cimag(tmp1));
-#else
-                    C[i + j * ldc] += A[i + l * lda] * b_val;
-#endif
-                }
             }
         }
     }

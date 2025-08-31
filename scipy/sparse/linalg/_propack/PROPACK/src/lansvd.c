@@ -28,7 +28,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     float eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
 
     // Set machine dependent constants
-    eps = FLT_EPSILON;
+    eps = FLT_EPSILON*0.5f;
     eps34 = powf(eps, 3.0f/4.0f);
     epsn = (float)int_max(m, n) * eps / 2.0f;
     epsn2 = sqrtf((float)int_max(m, n)) * eps / 2.0f;
@@ -137,10 +137,10 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
         if (neig > 1)
         {
             dj = int_min(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
-            dj = int_min(100, fmaxf(2, dj));
+            dj = int_min(100, int_max(2, dj));
         } else {
             dj = j / 2;
-            dj = int_min(100, fmaxf(10, dj));
+            dj = int_min(100, int_max(10, dj));
         }
         j = int_min(j + dj, lanmax);
     }
@@ -149,7 +149,7 @@ void slansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_s 
     if (((neig >= k) || (*info > 0)) && (jobu || jobv))
     {
         lwrk = lwrk + lanmax * lanmax + (lanmax + 1) * (lanmax + 1);
-        sritzvec(0, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
+        sritzvec(1, jobu, jobv, m, n, neig, jold, &work[ib], &work[ib + lanmax], U, ldu, V, ldv, &work[ip], lwrk, iwork);
     }
 
     k = neig;
@@ -171,7 +171,7 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
     double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
 
     // Set machine dependent constants
-    eps = DBL_EPSILON;
+    eps = DBL_EPSILON*0.5;
     eps34 = pow(eps, 3.0/4.0);
     epsn = (double)int_max(m, n) * eps / 2.0;
     epsn2 = sqrt((double)int_max(m, n)) * eps / 2.0;
@@ -280,10 +280,10 @@ void dlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_d 
         if (neig > 1)
         {
             dj = int_min(j / 2, ((k - neig) * (j - 6)) / (2 * neig + 1));
-            dj = int_min(100, fmax(2, dj));
+            dj = int_min(100, int_max(2, dj));
         } else {
             dj = j / 2;
-            dj = int_min(100, fmax(10, dj));
+            dj = int_min(100, int_max(10, dj));
         }
         j = int_min(j + dj, lanmax);
     }
@@ -314,7 +314,7 @@ void clansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_c 
     float eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
 
     // Set machine dependent constants
-    eps = FLT_EPSILON;
+    eps = FLT_EPSILON*0.5f;
     eps34 = powf(eps, 3.0f/4.0f);
     epsn = (float)int_max(m, n) * eps / 2.0f;
     epsn2 = sqrtf((float)int_max(m, n)) * eps / 2.0f;
@@ -460,7 +460,7 @@ void zlansvd(int jobu, int jobv, int m, int n, int k, int kmax, PROPACK_aprod_z 
     double eps, eps34, epsn2, epsn, sfmin, anorm, rnorm, tol;
 
     // Set machine dependent constants
-    eps = DBL_EPSILON;
+    eps = DBL_EPSILON*0.5;
     eps34 = pow(eps, 3.0/4.0);
     epsn = (double)int_max(m, n) * eps / 2.0;
     epsn2 = sqrt((double)int_max(m, n)) * eps / 2.0;
