@@ -1,5 +1,6 @@
 #include "ritzvec.h"
 
+
 void sritzvec(const int which, const int jobu, const int jobv, const int m, const int n, const int k, int dim,
               float* restrict D, float* restrict E, float* restrict U, const int ldu,
               float* restrict V, const int ldv, float* restrict work, const int in_lwrk, int* restrict iwork)

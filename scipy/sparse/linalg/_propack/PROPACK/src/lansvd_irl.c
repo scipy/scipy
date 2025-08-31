@@ -784,7 +784,7 @@ void zlansvd_irl(int which, int jobu, int jobv, int m, int n, int dim, int p, in
         for (i = 0; i < dim + 1; i++) { work[ibnd + i] = 0.0; }
 
         // QR factorization of bidiagonal matrix
-        dbdqr((dim == fmin(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
+        dbdqr((dim == int_min(m, n)), 0, dim, &work[ialpha1], &work[ibeta1], &work[ibnd + dim - 1], &work[ibnd + dim], &work[ip], dim + 1);
 
         // SVD of bidiagonal matrix
         dbdsqr_("U", &dim, &int0, &int1, &int0, &work[ialpha1], &work[ibeta1], work, &int1, &work[ibnd], &int1, work, &int1, &work[iwrk], &lapinfo);

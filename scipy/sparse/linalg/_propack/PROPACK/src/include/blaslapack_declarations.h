@@ -135,10 +135,10 @@ cdotc_(const int* n, const PROPACK_CPLXF_TYPE* restrict x, const int* incx, cons
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _FCmulcc(x[i], conjf(y[i]));
+            temp = _FCmulcc(conjf(x[i]), y[i]);
             result = PROPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
 #else
-            result = result + (x[i] * conjf(y[i]));
+            result = result + (conjf(x[i]) * y[i]);
 #endif
         }
 
@@ -147,10 +147,10 @@ cdotc_(const int* n, const PROPACK_CPLXF_TYPE* restrict x, const int* incx, cons
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _FCmulcc(x[i * (*incx)], conjf(y[i * (*incy)]));
+            temp = _FCmulcc(conjf(x[i * (*incx)]), y[i * (*incy)]);
             result = PROPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
 #else
-            result = result + (x[i * (*incx)] * conjf(y[i * (*incy)]));
+            result = result + (conjf(x[i * (*incx)]) * y[i * (*incy)]);
 #endif
         }
     }
@@ -172,10 +172,10 @@ zdotc_(const int* n, const PROPACK_CPLX_TYPE* restrict x, const int* incx, const
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[i], conj(y[i]));
+            temp = _Cmulcc(conj(x[i]), y[i]);
             result = PROPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[i] * conj(y[i]));
+            result = result + (conj(x[i]) * y[i]);
 #endif
         }
 
@@ -184,10 +184,10 @@ zdotc_(const int* n, const PROPACK_CPLX_TYPE* restrict x, const int* incx, const
         for (int i = 0; i < *n; i++)
         {
 #ifdef _MSC_VER
-            temp = _Cmulcc(x[i * (*incx)], conj(y[i * (*incy)]));
+            temp = _Cmulcc(conj(x[i * (*incx)]), y[i * (*incy)]);
             result = PROPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
 #else
-            result = result + (x[i * (*incx)] * conj(y[i * (*incy)]));
+            result = result + (conj(x[i * (*incx)]) * y[i * (*incy)]);
 #endif
         }
     }
