@@ -2697,9 +2697,10 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     Xf = xp.moveaxis(Xf, axes, (-2, -1))
     k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
-    if k0 > 1:  # condition k1 > 1 needed for Dask backend
+    if k0 > 1:  # condition k0 > 1 needed for Dask backend
         Xf[..., 1:k0, :] *= 2.0
-    Xf[..., :, 1:k1] *= 2.0
+    if k1 > 1:  # condition k1 > 1 needed for Dask backend
+        Xf[..., :, 1:k1] *= 2.0
     Xf[..., k0:, :] = 0.0
     Xf[..., :, k1:] = 0.0
 
