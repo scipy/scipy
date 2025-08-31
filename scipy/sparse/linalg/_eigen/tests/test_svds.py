@@ -754,8 +754,8 @@ class SVDSCommonTests:
         assert_array_equal(s, 0)
 
     @pytest.mark.parametrize("shape", ((20, 20), (20, 21), (21, 20)))
-    # ARPACK supports only dtype float, complex, or np.float32
-    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    @pytest.mark.parametrize("dtype", (np.float32, np.float64,
+                                       np.complex64, np.complex128))
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
     def test_small_sigma(self, shape, dtype):
@@ -775,9 +775,9 @@ class SVDSCommonTests:
         # LOBPCG needs larger atol and rtol to pass
         _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0, check_svd=False)
 
-    # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.filterwarnings("ignore:The problem size")
-    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    @pytest.mark.parametrize("dtype", (np.float32, np.float64,
+                                       np.complex64, np.complex128))
     def test_small_sigma2(self, dtype):
         rng = np.random.default_rng(179847540)
         # create a 10x10 singular matrix with a 4-dim null space
