@@ -346,15 +346,15 @@ class TestConstructUtils:
         cases.append(array([[-1]]))
         cases.append(array([[4]]))
         cases.append(array([[10]]))
-        cases.append(array([[0],[0]]))
-        cases.append(array([[0,0]]))
-        cases.append(array([[1,2],[3,4]]))
-        cases.append(array([[0,2],[5,0]]))
-        cases.append(array([[0,2,-6],[8,0,14]]))
-        cases.append(array([[5,4],[0,0],[6,0]]))
-        cases.append(array([[5,4,4],[1,0,0],[6,0,8]]))
-        cases.append(array([[0,1,0,2,0,5,8]]))
-        cases.append(array([[0.5,0.125,0,3.25],[0,2.5,0,0]]))
+        cases.append(array([[0], [0]]))
+        cases.append(array([[0, 0]]))
+        cases.append(array([[1, 2], [3, 4]]))
+        cases.append(array([[0, 2], [5, 0]]))
+        cases.append(array([[0, 2, -6], [8, 0, 14]]))
+        cases.append(array([[5, 4], [0, 0], [6, 0]]))
+        cases.append(array([[5, 4, 4], [1, 0, 0], [6, 0, 8]]))
+        cases.append(array([[0, 1, 0, 2, 0, 5, 8]]))
+        cases.append(array([[0.5, 0.125, 0, 3.25], [0, 2.5, 0, 0]]))
 
         # test all cases with some formats
         for a in cases:
@@ -368,9 +368,22 @@ class TestConstructUtils:
                     assert_array_equal(result.toarray(), expected)
                     assert isinstance(result, sparray)
 
+        # nD cases
+        cases.append(array([0, 1, 2]))
+        cases.append(array([[[0, 1, 2], [0, 1, 0]]]))
+        cases.append(array([[[0, 1]], [[2, 2]], [[1, 0]], [[2, 0]]]))
+
+        for a in cases:
+            ca = coo_array(a)
+            for b in cases:
+                cb = coo_array(b)
+                expected = np.kron(a, b)
+                result = construct.kron(ca, cb, format="coo")
+                assert_array_equal(result.toarray(), expected)
+
         # test one case with all formats
-        a = cases[-1]
-        b = cases[-3]
+        a = array([[0.5, 0.125, 0, 3.25], [0, 2.5, 0, 0]])
+        b = array([[5, 4, 4], [1, 0, 0], [6, 0, 8]])
         ca = csr_array(a)
         cb = csr_array(b)
 
@@ -388,12 +401,19 @@ class TestConstructUtils:
         assert isinstance(result, spmatrix)
 
     def test_kron_ndim_exceptions(self):
-        with pytest.raises(ValueError, match='requires 2D input'):
-            construct.kron([[0], [1]], csr_array([0, 1]))
-        with pytest.raises(ValueError, match='requires 2D input'):
-            construct.kron(csr_array([0, 1]), [[0], [1]])
-        # no exception if sparse arrays are not input (spmatrix inferred)
-        construct.kron([[0], [1]], [0, 1])
+        # spmatrix is default, so exceptions with 3D unless sparse arrays are input
+        with pytest.raises(TypeError, match='expected 2D array or matrix'):
+            construct.kron([[0], [1]], [[[0, 1]]])
+        with pytest.raises(TypeError, match="expected 2D array or matrix"):
+            construct.kron([[[1, 1]]], [[1], [1]])
+        # no exception for 3D if any sparse arrays input
+        construct.kron(coo_array([[[0, 1]]]), [[[0], [1]]])
+        construct.kron([[[0, 1]]], coo_array([[[0], [1]]]))
+        # no exception for 1D if either sparray or spmatrix
+        construct.kron([[0], [1]], [0, 1, 0])
+        construct.kron([1, 1], [[1], [1]])
+        construct.kron([[0], [1]], coo_array([0, 1, 0]))
+        construct.kron(coo_array([1, 1]), [[1], [1]])
 
     def test_kron_large(self):
         n = 2**16

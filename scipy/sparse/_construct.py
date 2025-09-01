@@ -550,17 +550,21 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
 
 def kron(A, B, format=None):
-    """Kronecker product of sparse matrices `A` and `B`
+    """Sparse representation of the Kronecker product of `A` and `B`
+
+    Computes the Kronecker product, a composite sparse array
+    made of blocks consisting of the second array scaled by each
+    element of the first array.
 
     Parameters
     ----------
-    A : sparse or dense matrix
-        first matrix of the product
-    B : sparse or dense matrix
-        second matrix of the product
+    A : sparse or dense array
+        first array of the product
+    B : sparse or dense array
+        second array of the product
     format : str, optional (default: 'bsr' or 'coo')
         format of the result (e.g. "csr")
-        If None, choose 'bsr' for relatively dense array and 'coo' for others
+        If None, choose 'bsr' for relatively dense 2D arrays and 'coo' for others
 
     Returns
     -------
@@ -599,56 +603,58 @@ def kron(A, B, format=None):
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
-    if B.ndim != 2:
-        raise ValueError(f"kron requires 2D input arrays. `B` is {B.ndim}D.")
 
-    # B is fairly dense, use BSR
-    if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
-        A = csr_sparse(A,copy=True)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+    # B is 2D and fairly dense, use BSR
+    if (
+        (format is None or format == "bsr") and
+        B.ndim == 2 and 2*B.nnz >= math.prod(B.shape)
+    ):
+        A = coo_sparse(A, copy=True)
+        if A.ndim == 2:
+            A = A.tocsr()
+            output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+            if A.nnz == 0 or B.nnz == 0:
+                # kronecker product is the zero matrix
+                return coo_sparse(output_shape).asformat(format)
 
-        B = B.toarray()
-        data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
-        data = data * B
+            B = B.toarray()
+            data = A.data.repeat(B.size).reshape(-1, B.shape[0], B.shape[1])
+            data = data * B
 
-        return bsr_sparse((data,A.indices,A.indptr), shape=output_shape)
+            return bsr_sparse((data, A.indices, A.indptr), shape=output_shape)
+
+    # use COO
+    A = coo_sparse(A)
+
+    if coo_sparse is coo_matrix:
+        output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
     else:
-        # use COO
-        A = coo_sparse(A)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+        ndim_diff = A.ndim - B.ndim
+        B_shape = B.shape if ndim_diff <= 0 else (1,) * ndim_diff + B.shape
+        if ndim_diff < 0:
+            A = A.reshape((1,) * (-ndim_diff) + A.shape)
+        output_shape = tuple(a * b for a, b in zip(A.shape, B_shape))
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+    if A.nnz == 0 or B.nnz == 0:
+        # kronecker product is the zero matrix
+        return coo_sparse(output_shape).asformat(format)
 
-        # expand entries of a into blocks
-        idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
-        row = np.asarray(A.row, dtype=idx_dtype).repeat(B.nnz)
-        col = np.asarray(A.col, dtype=idx_dtype).repeat(B.nnz)
-        data = A.data.repeat(B.nnz)
+    # expand entries of a into blocks
+    idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
+    coords = [np.asarray(co, dtype=idx_dtype).repeat(B.nnz) for co in A.coords]
+    data = A.data.repeat(B.nnz)
 
-        row *= B.shape[0]
-        col *= B.shape[1]
+    for co, B_shape_i in zip(coords[-B.ndim:], B.shape):
+        co *= B_shape_i
 
-        # increment block indices
-        row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
-        row += B.row
-        col += B.col
-        row,col = row.reshape(-1),col.reshape(-1)
+    # increment block indices
+    coords[-B.ndim:] = [(co.reshape(-1, B.nnz) + Bco).ravel()
+                        for co, Bco in zip(coords[-B.ndim:], B.coords)]
+    # compute block entries
+    data = (data.reshape(-1, B.nnz) * B.data).ravel()
 
-        # compute block entries
-        data = data.reshape(-1,B.nnz) * B.data
-        data = data.reshape(-1)
-
-        return coo_sparse((data,(row,col)), shape=output_shape).asformat(format)
+    return coo_sparse((data, tuple(coords)), shape=output_shape).asformat(format)
 
 
 def kronsum(A, B, format=None):
