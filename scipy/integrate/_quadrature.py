@@ -989,9 +989,9 @@ def newton_cotes(rn, equal=0):
     r"""
     Return weights and error coefficient for Newton-Cotes integration.
 
-    Suppose we have (N+1) samples of f at the positions
-    x_0, x_1, ..., x_N. Then an N-point Newton-Cotes formula for the
-    integral between x_0 and x_N is:
+    Suppose we have :math:`(N+1)` samples of :math:`f` at the positions
+    :math:`x_0, x_1, ..., x_N`. Then an :math:`N`-point Newton-Cotes formula
+    for the integral between :math:`x_0` and :math:`x_N` is:
 
     :math:`\int_{x_0}^{x_N} f(x)dx = \Delta x \sum_{i=0}^{N} a_i f(x_i)
     + B_N (\Delta x)^{N+2} f^{N+1} (\xi)`
