@@ -19,11 +19,12 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a;
+    int lower;
     PyObject *ret_dct = NULL;
     PyObject *ret_lst = NULL;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, ("O!|np"), &PyArray_Type, (PyObject **)&ap_Am, &structure, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, ("O!|npp"), &PyArray_Type, (PyObject **)&ap_Am, &structure, &overwrite_a, &lower)) {
         return NULL;
     }
 
@@ -64,16 +65,16 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_Ainv);
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _inverse<float>(ap_Am, (float *)buf, structure, overwrite_a, vec_status);
+            info = _inverse<float>(ap_Am, (float *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _inverse<double>(ap_Am, (double *)buf, structure, overwrite_a, vec_status);
+            info = _inverse<double>(ap_Am, (double *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, overwrite_a, vec_status);
+            info = _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, overwrite_a, vec_status);
+            info = _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
