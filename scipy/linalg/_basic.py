@@ -1323,10 +1323,12 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
      upper triangular               'upper triangular'
      lower triangular               'lower triangular'
      symmetric positive definite    'pos'
+     symmetric                      'sym'
+     Hermitian                      'her'
     =============================  ================================
 
-    For the 'pos' option, only the specified triangle of the input matrix is used, and
-    the other triangle is not referenced.
+    For the 'pos', 'sym' and 'her' options, only the specified triangle of the input
+    matrix is used, and the other triangle is not referenced.
 
     Parameters
     ----------
@@ -1402,7 +1404,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
         overwrite_a = True
         a1 = a1.copy()
 
-    # keep the numbers in sync with C
+    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
         'general': 0,
@@ -1410,6 +1412,8 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101,
+        'sym' : 201,
+        'her' : 211,
     }[assume_a]
 
     # a1 is well behaved, invert it.
