@@ -464,6 +464,20 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
 
+    The final polishing step can be customised by providing a callable that
+    mimics the `minimize` interface. The user is responsible for ensuring that
+    the minimizer obeys any bounds and constraints.
+
+    >>> from functools import partial
+    >>> from scipy.optimize import minimize
+    >>> polish_func = partial(minimize, bounds=bounds, method="SLSQP")
+    >>> result = differential_evolution(
+    ...     ackley, bounds, vectorized=True, updating='deferred', rng=1,
+    ...     polish=polish_func
+    ... )
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
+
     The following custom strategy function mimics 'best1bin':
 
     >>> def custom_strategy_fn(candidate, population, rng=None):
