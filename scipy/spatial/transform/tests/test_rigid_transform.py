@@ -23,11 +23,13 @@ pytestmark = make_xp_pytest_marks(RigidTransform.as_matrix)
 
 
 def rotation_to_xp(r: Rotation, xp):
-    return Rotation.from_quat(xp.asarray(r.as_quat()))
+    dtype = xpx.default_dtype(xp)
+    return Rotation.from_quat(xp.asarray(r.as_quat(), dtype=dtype))
 
 
 def rigid_transform_to_xp(r: RigidTransform, xp):
-    return RigidTransform.from_matrix(xp.asarray(r.as_matrix()))
+    dtype = xpx.default_dtype(xp)
+    return RigidTransform.from_matrix(xp.asarray(r.as_matrix(), dtype=dtype))
 
 
 def test_repr(xp):
@@ -260,10 +262,11 @@ def test_from_components_array_like():
 
 @make_xp_test_case(RigidTransform.as_components)
 def test_as_components(xp):
-    atol = 1e-12
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     n = 10
     rng = np.random.default_rng(123)
-    t = xp.asarray(rng.normal(size=(n, 3)))
+    t = xp.asarray(rng.normal(size=(n, 3)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(n, rng=rng), xp=xp)
     tf = RigidTransform.from_components(t, r)
     new_t, new_r = tf.as_components()
@@ -275,13 +278,14 @@ def test_as_components(xp):
 def test_from_exp_coords(xp):
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
+    dtype = xpx.default_dtype(xp)
     angle1 = np.deg2rad(30.0)
     mat = xp.asarray([
         [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
         [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
-    ])
+    ], dtype=dtype)
     tf1 = RigidTransform.from_matrix(mat)
     angle2 = np.deg2rad(60.0)
     mat = xp.asarray([
@@ -289,7 +293,7 @@ def test_from_exp_coords(xp):
         [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
-    ])
+    ], dtype=dtype)
     tf2 = RigidTransform.from_matrix(mat)
     expected = tf2 * tf1.inv()
     deg2rag = xp.asarray(np.deg2rad(30.0))
@@ -402,16 +406,18 @@ def test_as_exp_coords(xp):
 
 @make_xp_test_case(RigidTransform.from_dual_quat)
 def test_from_dual_quat(xp):
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     # identity
     xp_assert_close(
         RigidTransform.from_dual_quat(
             xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])).as_matrix(),
-        xp.eye(4), atol=1e-12)
+        xp.eye(4), atol=atol)
     xp_assert_close(
         RigidTransform.from_dual_quat(
             xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
             scalar_first=True).as_matrix(),
-        xp.eye(4), atol=1e-12)
+        xp.eye(4), atol=atol)
 
     # only translation
     actual = RigidTransform.from_dual_quat(
@@ -422,7 +428,7 @@ def test_from_dual_quat(xp):
         [0, 0, 1, -1.4],
         [0, 0, 0, 1]
     ])
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol)
     actual = RigidTransform.from_dual_quat(
         xp.asarray([1, 0, 0, 0, 0, 0.25, 0.15, -0.7]), scalar_first=True)
     expected_matrix = xp.asarray([
@@ -431,7 +437,7 @@ def test_from_dual_quat(xp):
         [0, 0, 1, -1.4],
         [0, 0, 0, 1]
     ])
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol)
 
     # only rotation
     actual_rot = Rotation.from_euler("xyz", xp.asarray([65, -13, 90]), degrees=True)
@@ -439,14 +445,14 @@ def test_from_dual_quat(xp):
         xp.concat((actual_rot.as_quat(), xp.zeros(4)), axis=-1))
     expected_matrix = xp.eye(4)
     expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol)
 
     actual = RigidTransform.from_dual_quat(
         xp.concat((actual_rot.as_quat(scalar_first=True), xp.zeros(4)), axis=-1),
         scalar_first=True)
     expected_matrix = xp.eye(4)
     expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol)
 
     # rotation and translation
     # rtol is set to 1e-7 because xp_assert_close deviates from
@@ -468,7 +474,7 @@ def test_from_dual_quat(xp):
           [0.08979911, 0.91647262, -0.3898898, -0.70540077],
           [-0.8587822, 0.26951399, 0.43572393, -0.47776265],
           [0., 0., 0., 1.]]])
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol, rtol=1e-7)
 
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
@@ -477,13 +483,13 @@ def test_from_dual_quat(xp):
          [0.8450749, 0.19507259, 0.49404931, -0.06091285,
           0.04174544, 0.65049656, -0.30782513, 0.16566752]]),
         scalar_first=True)
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=atol, rtol=1e-7)
 
     # unnormalized dual quaternions
 
     # invalid real quaternion with norm 0
     actual = RigidTransform.from_dual_quat(xp.zeros(8))
-    xp_assert_close(actual.as_matrix(), xp.eye(4), atol=1e-12)
+    xp_assert_close(actual.as_matrix(), xp.eye(4), atol=atol)
 
     # real quaternion with norm != 1
     unnormalized_dual_quat = xp.asarray(
@@ -491,7 +497,7 @@ def test_from_dual_quat(xp):
          0.38559628, 0.08184063, 0.1755943, -0.1582222]  # orthogonal
     )
     xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3)[()],
-                    atol=1e-12)
+                    atol=atol)
     xp_assert_close(xp.vecdot(unnormalized_dual_quat[:4],
                               unnormalized_dual_quat[4:])[()],
                     xp.asarray(0.0)[()], atol=1e-8)
@@ -500,7 +506,7 @@ def test_from_dual_quat(xp):
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
     xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
-                    atol=1e-12)
+                    atol=atol)
 
     # real and dual quaternion are not orthogonal
     unnormalized_dual_quat = xp.asarray(
@@ -508,13 +514,13 @@ def test_from_dual_quat(xp):
          -0.16051025, 0.10742978, 0.21277201, 0.20596935]  # not orthogonal
     )
     xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0)[()],
-                    atol=1e-12)
+                    atol=atol)
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
+    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=atol)
     xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
-                    atol=1e-12)
+                    atol=atol)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
     unnormalized_dual_quat = xp.asarray(
@@ -522,13 +528,13 @@ def test_from_dual_quat(xp):
     assert xp.vecdot(xp.asarray([0.0, 0, 0, 1]), unnormalized_dual_quat[4:]) != 0.0
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=1e-12)
+    xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=atol)
     xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
-                    atol=1e-12)
+                    atol=atol)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
-    t = xp.asarray(rng.normal(size=(3,)))
+    t = xp.asarray(rng.normal(size=(3,)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(10, rng=rng), xp=xp)
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
@@ -539,11 +545,11 @@ def test_from_dual_quat(xp):
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
     expected = xp.ones(dual_quat_norm.shape[0])
-    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), expected, atol=1e-12)
+    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), expected, atol=atol)
 
     # compensation for precision loss in dual quaternion, results in violation
     # of orthogonality constraint
-    t = xp.asarray(rng.normal(size=(10, 3)))
+    t = xp.asarray(rng.normal(size=(10, 3)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(10, rng=rng), xp=xp)
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
@@ -555,8 +561,8 @@ def test_from_dual_quat(xp):
         random_dual_quats).as_dual_quat()
     expected = xp.zeros(dual_quat_norm.shape[0])
     xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]), expected,
-                              atol=1e-12)
-    xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
+                              atol=atol)
+    xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=atol)
 
 
 def test_from_dual_quat_array_like():
@@ -582,20 +588,22 @@ def test_from_dual_quat_array_like():
 
 @make_xp_test_case(RigidTransform.as_dual_quat)
 def test_as_dual_quat(xp):
+    dtype = xpx.default_dtype(xp)
     # identity
-    expected = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
-    actual = xp.asarray(RigidTransform.identity().as_dual_quat())
+    expected = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], dtype=dtype)
+    actual = rigid_transform_to_xp(RigidTransform.identity(), xp).as_dual_quat()
     xp_assert_close(actual, expected, atol=1e-12)
 
     expected = xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    actual = xp.asarray(RigidTransform.identity().as_dual_quat(scalar_first=True))
+    tf = rigid_transform_to_xp(RigidTransform.identity(), xp)
+    actual = tf.as_dual_quat(scalar_first=True)
     xp_assert_close(actual, expected, atol=1e-12)
 
     rng = np.random.default_rng(10)
 
     # only rotation
     for _ in range(10):
-        real_part = xp.asarray(Rotation.random(rng=rng).as_quat())
+        real_part = xp.asarray(Rotation.random(rng=rng).as_quat(), dtype=dtype)
         dual_part = xp.zeros(4)
         expected = xp.concat((real_part, dual_part), axis=-1)
         actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
@@ -616,7 +624,7 @@ def test_as_dual_quat(xp):
 
     # rotation and translation
     for _ in range(10):
-        t = xp.asarray(rng.normal(size=3))
+        t = xp.asarray(rng.normal(size=3), dtype=dtype)
         r = rotation_to_xp(Rotation.random(rng=rng), xp=xp)
         expected = RigidTransform.from_components(t, r).as_dual_quat()
         actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
@@ -631,10 +639,11 @@ def test_as_dual_quat(xp):
                    RigidTransform.from_matrix, RigidTransform.from_dual_quat,
                    RigidTransform.as_dual_quat)
 def test_from_as_internal_consistency(xp):
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12
     n = 1000
     rng = np.random.default_rng(10)
-    t = xp.asarray(rng.normal(size=(n, 3)))
+    t = xp.asarray(rng.normal(size=(n, 3)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(n, rng=rng), xp=xp)
     tf0 = RigidTransform.from_components(t, r)
 
@@ -654,9 +663,10 @@ def test_from_as_internal_consistency(xp):
     xp_assert_close(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     # exp_coords small rotation
-    tf0 = RigidTransform.from_components(
-        xp.asarray(rng.normal(scale=1000.0, size=(1000, 3))),
-        Rotation.from_rotvec(xp.asarray(rng.normal(scale=1e-10, size=(1000, 3)))))
+    t = xp.asarray(rng.normal(scale=1000.0, size=(1000, 3)), dtype=dtype)
+    r = rotation_to_xp(Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))),
+                       xp=xp)
+    tf0 = RigidTransform.from_components(t, r)
     tf1 = RigidTransform.from_exp_coords(tf0.as_exp_coords())
     xp_assert_close(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
@@ -819,10 +829,11 @@ def test_composition(xp):
 
 @make_xp_test_case(RigidTransform.__pow__, RigidTransform.__mul__)
 def test_pow(xp):
-    atol = 1e-12
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     num = 10
     rng = np.random.default_rng(100)
-    t = xp.asarray(rng.normal(size=(num, 3)))
+    t = xp.asarray(rng.normal(size=(num, 3)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(num, rng=rng), xp=xp)
     p = RigidTransform.from_components(t, r)
     p_inv = p.inv()
@@ -872,7 +883,8 @@ def test_pow_equivalence_with_rotation(xp):
 
 @make_xp_test_case(RigidTransform.inv, RigidTransform.__mul__)
 def test_inverse(xp):
-    atol = 1e-12
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
 
     # Test inverse transform
     r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
@@ -886,7 +898,7 @@ def test_inverse(xp):
 
     n = 10
     rng = np.random.default_rng(1000)
-    t = xp.asarray(rng.normal(size=(n, 3)))
+    t = xp.asarray(rng.normal(size=(n, 3)), dtype=dtype)
     r = rotation_to_xp(Rotation.random(n, rng=rng), xp=xp)
     tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
@@ -1192,6 +1204,8 @@ def test_copy_flag(xp):
 
 @make_xp_test_case(normalize_dual_quaternion)
 def test_normalize_dual_quaternion(xp):
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
     xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
                     atol=1e-12)
@@ -1199,12 +1213,12 @@ def test_normalize_dual_quaternion(xp):
                     xp.asarray(0.0)[()], atol=1e-12)
 
     rng = np.random.default_rng(103213650)
-    dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
+    dual_quat = xp.asarray(rng.normal(size=(1000, 8)), dtype=dtype)
     dual_quat = normalize_dual_quaternion(dual_quat)
     expected = xp.ones(dual_quat.shape[0])
-    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), expected, atol=1e-12)
+    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), expected, atol=atol)
     expected = xp.zeros(dual_quat.shape[0])
-    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), expected, atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), expected, atol=atol)
 
 
 @make_xp_test_case(RigidTransform.from_matrix, RigidTransform.from_rotation,
