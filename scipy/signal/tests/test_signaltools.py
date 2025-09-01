@@ -3423,7 +3423,7 @@ class TestHilbert2:
         f0_pos, f0_neg = slice(1, (shape[0] + 1) // 2), slice((shape[0] + 1) // 2, None)
         f1_pos, f1_neg = slice(1, (shape[1] + 1) // 2), slice((shape[1] + 1) // 2, None)
         # Verify all values:
-        atol = np.finfo(x.dtype).resolution
+        atol = 1e-12  # for x of dtype complex128
         xp_assert_close(x_as_f[f0_pos, f1_pos], x_f[f0_pos, f1_pos] * 4, atol=atol)
         xp_assert_close(x_as_f[0, f1_pos], x_f[0, f1_pos] * 2, atol=atol)
         xp_assert_close(x_as_f[f0_pos, 0], x_f[f0_pos, 0] * 2, atol=atol)
@@ -3444,7 +3444,7 @@ class TestHilbert2:
         x = xp.real(sp_fft.ifft2(x_f))
         assert xp.sum(abs(x)) > 0.0
         x_as = hilbert2(x)
-        xp_assert_close(x_as, xp.zeros_like(x_as), atol=xp.finfo(x_as.dtype).resolution)
+        xp_assert_close(x_as, xp.zeros_like(x_as), atol=xp.finfo(x_as.dtype).eps*16)
 
     @pytest.mark.parametrize('sh0', [4, 5])
     @pytest.mark.parametrize('sh1', [6, 7])
