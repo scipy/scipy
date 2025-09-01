@@ -1394,10 +1394,13 @@ class TestInv:
         y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos", lower=True)
         assert_allclose(y_inv3, y_inv0, atol=1e-15)
 
-    def test_posdef_not_posdef(self):
-        # the `b` matrix is invertible but not positive definite
+    @pytest.mark.parametrize('complex_', [False, True])
+    def test_posdef_not_posdef(self, complex_):
+        # the `b` matrix is invertible but not pos definite: test the "sym" fallback
         a = np.arange(9).reshape(3, 3)
         b = a + a.T + np.eye(3)
+        if complex_:
+            b = b + 1j*b
 
         # cholesky solver fails, and the routine falls back to the symmetric inverse
         b_inv0 = inv(b)
@@ -1407,10 +1410,58 @@ class TestInv:
         with assert_raises(LinAlgError):
             inv(b, assume_a='pos')
 
-        # TODO:
-        #   1. posdef fallback for complex symmetric, hermitian inputs
-        #   2. assume_a = "sym" for real and complex
-        #   3. assume_a = "her" for real and complex
+        # test posdef fallback to the hermitian solver, too
+        if complex_:
+            a = np.arange(9).reshape(3, 3)
+            a = a + 1j*a
+            b = a + a.T.conj() + np.eye(3)
+            assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    @pytest.mark.parametrize('complex_', [False, True])
+    def test_sym(self, complex_):
+        # test the "sym" mode
+        a = np.arange(9).reshape(3, 3)
+        b = a + a.T + np.eye(3)
+        if complex_:
+            b = b + 1j*b
+
+        b_inv0 = inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
+
+        b_inv1 = inv(b, assume_a="sym")
+        assert_allclose(b_inv0, b_inv1, atol=1e-15)
+
+        # check that the "other" triangle is not referenced
+        mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
+        b_inv2 = inv(b*mask, check_finite=False, assume_a="sym", lower=False)
+        assert_allclose(b_inv2, b_inv0, atol=1e-15)
+
+        # repeat with the upper triangle
+        b_inv3 = inv(b*mask.T, check_finite=False, assume_a="sym", lower=True)
+        assert_allclose(b_inv3, b_inv0, atol=1e-15)
+
+    @pytest.mark.parametrize('complex_', [False, True])
+    def test_her(self, complex_):
+        # test the "her" mode
+        a = np.arange(9).reshape(3, 3)
+        if complex_:
+            a = a + 1j*a
+        b = a + a.T.conj() + np.eye(3)
+
+        b_inv0 = inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
+
+        b_inv1 = inv(b, assume_a="her")
+        assert_allclose(b_inv0, b_inv1, atol=1e-15)
+
+        # check that the "other" triangle is not referenced
+        mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
+        b_inv2 = inv(b*mask, check_finite=False, assume_a="her", lower=False)
+        assert_allclose(b_inv2, b_inv0, atol=1e-15)
+
+        # repeat with the upper triangle
+        b_inv3 = inv(b*mask.T, check_finite=False, assume_a="her", lower=True)
+        assert_allclose(b_inv3, b_inv0, atol=1e-15)
 
     def test_triangular_1(self):
         x = np.arange(25, dtype=float).reshape(5, 5)
@@ -1447,13 +1498,6 @@ class TestInv:
         mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
         y_inv_2_l = inv(y*mask.T, check_finite=False, assume_a='lower triangular')
         assert_allclose(y_inv_2_l @ np.tril(y), np.eye(5), atol=1e-15)
-
-        # TODO
-        # 1. general, ill-conditioned: warns
-        # 2. posdef, ill-conditioned: warns
-        # 4. triangular, upper, lower, ill-conditioned: warns
-        # 5. assume_a="posdef" but Cholesky fails: fall back to general or raise?
-        # 6. error control (fast-fail, fill with nans, fill and raise)
 
 
 class TestDet:
