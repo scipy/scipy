@@ -4,13 +4,14 @@ Unit tests for the differential global minimization algorithm.
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
 import warnings
+from functools import partial
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
 from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
-from scipy.optimize import rosen, minimize
+from scipy.optimize import rosen, minimize, rosen_der
 from scipy.sparse import csr_array
 from scipy import stats
 
@@ -1606,6 +1607,41 @@ class TestDifferentialEvolutionSolver:
                                       polish=False)
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
+
+    def test_polish_function(self):
+        # the polishing may be done by a callable
+        pf = partial(
+            minimize,
+            jac=rosen_der,
+            bounds=self.bounds,
+            method='trust-constr',
+        )
+        res = differential_evolution(
+            rosen,
+            self.bounds,
+            polish=pf,
+            maxiter=1
+        )
+        # res.success will be False because of the small number of iterations
+        # The solution produced by DE would be bad after only one iteration.
+        # However, we still expect a good answer if the polishing worked
+        assert res.jac is not None
+        assert_allclose(res.x, np.ones(len(self.bounds)), atol=1e-6)
+
+        def dummy_pf(func, x):
+            assert func is rosen
+            return np.ones(len(self.bounds))
+
+        with assert_raises(
+            ValueError,
+            match="The result from a user defined polishing"
+        ):
+            differential_evolution(
+                rosen,
+                self.bounds,
+                polish=dummy_pf,
+                maxiter=1
+            )
 
     def test_constraint_violation_error_message(self):
 
