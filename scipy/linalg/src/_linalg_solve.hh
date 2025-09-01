@@ -116,7 +116,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 
     char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm = false;
+    bool is_symm_or_herm = false, is_symm_not_herm = false;
     char uplo = 'X';    // sentinel
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
@@ -231,8 +231,8 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                is_symm = is_sym_herm(data, n);
-                if (is_symm) {
+                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
+                if (is_symm_or_herm) {
                     slice_structure = St::POS_DEF;
                 }
                 else {
