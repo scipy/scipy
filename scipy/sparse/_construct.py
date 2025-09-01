@@ -125,7 +125,7 @@ def permute_dims(A, axes=None, copy=False):
     A : sparse array
     axes : tuple or list of ints, optional
         If specified, it must be a tuple or list which contains a permutation
-        of ``[0,1,…,N-1]`` where ``N`` is the number of axes of `A`. The i’th
+        of ``[0, 1, ..., N-1]`` where ``N`` is the number of axes of `A`. The ``i``th
         axis of the returned array will correspond to the axis numbered ``axes[i]``
         of the input. If not specified, defaults to ``range(a.ndim)[::-1]``,
         which reverses the order of the axes.
