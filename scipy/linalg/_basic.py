@@ -1324,7 +1324,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
+def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 
@@ -1336,11 +1336,11 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
      general                        'general' (or 'gen')
      upper triangular               'upper triangular'
      lower triangular               'lower triangular'
-     symmetric positive definite    'pos', 'pos upper', 'pos lower'
+     symmetric positive definite    'pos'
     =============================  ================================
 
-    For the 'pos upper' and 'pos lower' options, only the specified
-    triangle of the input matrix is used, and the other triangle is not referenced.
+    For the 'pos' option, only the specified triangle of the input matrix is used, and
+    the other triangle is not referenced.
 
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
@@ -1360,6 +1360,11 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         Valid entries are described above.
         If omitted or ``None``, checks are performed to identify structure so the
         appropriate solver can be called.
+    lower : bool, optional
+        Ignored unless assume_a is one of 'sym', 'her', or 'pos'. If True, the
+        calculation uses only the data in the lower triangle of `a`; entries above the
+        diagonal are ignored. If False (default), the calculation uses only the data in
+        the upper triangle of `a`; entries below the diagonal are ignored.
 
     Returns
     -------
@@ -1423,12 +1428,10 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101,
-        'pos upper': 111,     # the "other" triangle is not referenced
-        'pos lower': 112,
     }[assume_a]
 
     # a1 is well behaved, invert it.
-    inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a)
+    inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a, lower)
 
     # emit helpful errors/warnings
     if err_lst:
