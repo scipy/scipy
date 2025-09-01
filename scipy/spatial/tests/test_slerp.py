@@ -406,38 +406,39 @@ class TestGeometricSlerp:
 
 
     @pytest.mark.parametrize("start, end, t, expected", [
-    # verify intuitive cases for t > 1 or < 0 (extrapolation)
+        # verify intuitive cases for t > 1 or < 0 (extrapolation)
 
-    # quarter way around the unit circle, doubling to
-    # half way around (allowed antipode since non-ambiguous
-    # geodesic):
-    ([0, 1], [1, 0], 2, [0, -1]),
-    # 1/8 way around the unit circle, quadrupling to half way
-    # (another allowed non-ambiguous antipode)
-    ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 4, [0, -1]),
-    # 1/8 way around the unit circle, 6x to 3/4 way around (270 deg)
-    ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 6, [-1, 0]),
-    # 1/8 way around the unit circle, 7x to 315 deg
-    ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 7, [-math.sqrt(2)/2, math.sqrt(2)/2]),
-    # the above three extrapolations in reverse order should be returned
-    # in that same order:
-    ([0, 1],
-     [math.sqrt(2)/2, math.sqrt(2)/2],
-     [7, 6, 4],
-     [[-math.sqrt(2)/2, math.sqrt(2)/2],
-      [-1, 0],
-      [0, -1]]),
-    # same case in 3d (sphere), in the xy plane:
-    ([0, 1, 0],
-     [math.sqrt(2)/2, math.sqrt(2)/2, 0],
-     [7, 6, 4],
-     [[-math.sqrt(2)/2, math.sqrt(2)/2, 0],
-      [-1, 0, 0],
-      [0, -1, 0]]),
-    # 1/8 way around the unit circle, moving 300 deg backwards
-    # should end up at pi/6 (since there is no forward travel with
-    # negative extrapolation)
-    ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], (-300/45), [math.sqrt(3)/2, 0.5]),
+        # quarter way around the unit circle, doubling to
+        # half way around (allowed antipode since non-ambiguous
+        # geodesic):
+        ([0, 1], [1, 0], 2, [0, -1]),
+        # 1/8 way around the unit circle, quadrupling to half way
+        # (another allowed non-ambiguous antipode)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 4, [0, -1]),
+        # 1/8 way around the unit circle, 6x to 3/4 way around (270 deg)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 6, [-1, 0]),
+        # 1/8 way around the unit circle, 7x to 315 deg
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 7,
+         [-math.sqrt(2)/2, math.sqrt(2)/2]),
+        # the above three extrapolations in reverse order should be returned
+        # in that same order:
+        ([0, 1],
+         [math.sqrt(2)/2, math.sqrt(2)/2],
+         [7, 6, 4],
+         [[-math.sqrt(2)/2, math.sqrt(2)/2],
+          [-1, 0],
+          [0, -1]]),
+        # same case in 3d (sphere), in the xy plane:
+        ([0, 1, 0],
+         [math.sqrt(2)/2, math.sqrt(2)/2, 0],
+         [7, 6, 4],
+         [[-math.sqrt(2)/2, math.sqrt(2)/2, 0],
+          [-1, 0, 0],
+          [0, -1, 0]]),
+        # 1/8 way around the unit circle, moving 300 deg backwards
+        # should end up at pi/6 (since there is no forward travel with
+        # negative extrapolation)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], (-300/45), [math.sqrt(3)/2, 0.5]),
     ])
     def test_extrapolation_basic(self, start, end, t, expected):
         actual_path = geometric_slerp(start=start,
@@ -460,7 +461,5 @@ class TestGeometricSlerp:
     ])
     def test_extrapolation_antipodes(self, start, end, t, expected):
         with pytest.warns(UserWarning, match='antipodes'):
-            actual_path = geometric_slerp(start=start,
-                                          end=end,
-                                          t=t)
+            actual_path = geometric_slerp(start=start, end=end, t=t)
         assert_allclose(actual_path, expected, atol=2.8e-16)

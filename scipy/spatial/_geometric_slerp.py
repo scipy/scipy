@@ -190,10 +190,7 @@ def geometric_slerp(
     >>> result = geometric_slerp(start,
     ...                          end,
     ...                          t_vals)
-    >>> ax.plot(result[...,0],
-    ...         result[...,1],
-    ...         result[...,2],
-    ...         c='k')
+    >>> ax.plot(result[...,0], result[...,1], result[...,2], c='k')
     >>> plt.show()
     """
 
