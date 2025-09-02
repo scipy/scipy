@@ -359,7 +359,6 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                     fill_other_triangle(uplo, data, intn);
                 }
                 break;
-
             }
             default:
             {

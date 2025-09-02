@@ -96,7 +96,7 @@ inline void solve_slice_cholesky(
             status.rcond = (double)rcond;
             status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
-            // finally, invert
+            // finally, solve
             potrs(&uplo, &N, &NRHS, data, &N, b_data, &N, &info);
             status.is_singular = (info > 0);
         }
@@ -106,6 +106,56 @@ inline void solve_slice_cholesky(
         status.is_singular = 1;
     }
 }
+
+
+// Symmetric/hermitian solve with sytrf/hetrf and sytrs/hetrs
+template<typename T>
+void solve_slice_sym_herm(
+    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
+    bool is_symm_not_herm,
+    SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    real_type rcond;
+    real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
+
+    if(is_symm_not_herm) {
+        sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    } else {
+        hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    }
+
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0) {
+        // {sy,he}trf success
+        if (is_symm_not_herm) {
+            sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        } else {
+            hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        }
+
+        if (info >= 0) {
+            status.rcond = (double)rcond;
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, solve
+            if (is_symm_not_herm) {
+                sytrs(&uplo, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
+            } else {
+                hetrs(&uplo, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
+            }
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
+}
+
+
 
 
 template<typename T>
@@ -185,6 +235,12 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     uplo = lower ? 'L' : 'U';
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
+    }
+    else if (structure == St::SYM) {
+        is_symm_not_herm = true;
+    }
+    else if (structure == St::HER) {
+        is_symm_not_herm = false;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -290,9 +346,30 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                     }
                 }
             }
+            case St::SYM:  // pos def fails, fall through to here
+            case St::HER:
+            {
+                solve_slice_sym_herm(uplo, intn, int_nrhs, data, data_b, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                if (is_symm_not_herm) {
+                    fill_other_triangle_noconj(uplo, data, intn);
+                }
+                else {
+                    fill_other_triangle(uplo, data, intn);
+                }
+                break;
+            }
             default:
             {
-                // general matrix inverse
+                // general matrix solve
                 solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, slice_status);
 
                 if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
