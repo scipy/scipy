@@ -173,21 +173,9 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     if (irwork == NULL) { free(irwork); *info = -102; return; }
 
     // normalize the structure detection inputs
+    uplo = lower ? 'L' : 'U';
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
-        uplo = lower ? 'L' : 'U';
-    }
-    else {
-        if (structure == St::POS_DEF_UPPER) {
-            structure = St::POS_DEF;
-            uplo = 'U';
-            posdef_fallback = false;
-        }
-        else if (structure == St::POS_DEF_LOWER) {
-            structure = St::POS_DEF;
-            uplo = 'L';
-            posdef_fallback = false;
-        }
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -237,7 +225,6 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                 is_symm = is_sym_herm(data, n);
                 if (is_symm) {
                     slice_structure = St::POS_DEF;
-                    uplo = 'U';
                 }
                 else {
                     // give up auto-detection

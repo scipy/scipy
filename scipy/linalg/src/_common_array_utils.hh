@@ -269,8 +269,8 @@ enum St : Py_ssize_t
     UPPER_TRIANGULAR = 21,
     LOWER_TRIANGULAR = 22,
     POS_DEF = 101,
-    POS_DEF_UPPER = 111,
-    POS_DEF_LOWER = 112,
+    SYM = 201,
+    HER = 211
 };
 
 

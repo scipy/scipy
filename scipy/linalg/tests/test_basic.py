@@ -992,8 +992,7 @@ class TestSolve:
     @pytest.mark.parametrize(
         "assume_a",
         [
-            None, "general", "upper triangular", "lower triangular",
-            "pos", "pos upper", "pos lower"
+            None, "general", "upper triangular", "lower triangular", "pos"
         ]
     )
     def test_vs_np_solve(self, assume_a):
@@ -1022,19 +1021,9 @@ class TestSolve:
         result_np = np.linalg.solve(aa, b)
         assert_allclose(out, result_np, atol=1e-15)
 
-        out = solve(a, b, assume_a='pos lower')
-        assert_allclose(out, result_np, atol=1e-15)
-
         # repeat with uplo='U'
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
-
-        out = solve(a.T, b, assume_a='pos upper')
-        assert_allclose(out, result_np, atol=1e-15)
-
-        # conflicting assume_a & lower
-        with assert_raises(ValueError):
-            solve(a, b, assume_a='pos upper', lower=True)
 
     def test_readonly(self):
         a = np.eye(3)
