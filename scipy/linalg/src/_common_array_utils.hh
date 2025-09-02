@@ -398,6 +398,33 @@ GEN_HECON_CZ(c, npy_complex64, float, float)
 GEN_HECON_CZ(z, npy_complex128, double, double)
 
 
+#define GEN_SYTRS(PREFIX, TYPE) \
+inline void \
+sytrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## sytrs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_SYTRS(s, float)
+GEN_SYTRS(d, double)
+GEN_SYTRS(c, npy_complex64)
+GEN_SYTRS(z, npy_complex128)
+
+
+// dispatch to sSYtrs for "float hermitian"
+#define GEN_HETRS(PREFIX, L_PREFIX, TYPE) \
+inline void \
+hetrs(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## L_PREFIX ## trs)(uplo, n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_HETRS(s, sy, float)
+GEN_HETRS(d, sy, double)
+GEN_HETRS(c, he, npy_complex64)
+GEN_HETRS(z, he, npy_complex128)
+
+
 // Structure tags; python side maps assume_a strings to these values
 enum St : Py_ssize_t
 {
