@@ -209,7 +209,7 @@ def solve(a, b, lower=False, overwrite_a=False,
            [ 5. , -4.5]])
     """
     if assume_a in [
-        'sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded'
+        'diagonal', 'tridiagonal', 'banded'
     ]:
         # TODO: handle these structures in this function
         return solve0(
@@ -225,6 +225,8 @@ def solve(a, b, lower=False, overwrite_a=False,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101, 'positive definite': 101,
+        'sym' : 201, 'symmetric': 201,
+        'her' : 211, 'hermitian': 211,
     }.get(assume_a, 'unknown')
     if structure == 'unknown':
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
