@@ -286,6 +286,17 @@ struct SliceStatus {
     Py_ssize_t lapack_info;
 };
 
+
+void init_status(SliceStatus& slice_status, npy_intp idx, St slice_structure) {
+    slice_status.slice_num = idx;
+    slice_status.structure = (Py_ssize_t)slice_structure;
+    slice_status.is_singular = 0;
+    slice_status.is_ill_conditioned = 0;
+    slice_status.rcond = 0;
+    slice_status.lapack_info = 0;
+}
+
+
 typedef std::vector<SliceStatus> SliceStatusVec;
 
 
