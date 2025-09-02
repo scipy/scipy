@@ -35,6 +35,7 @@
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/zeta.h>
+#include "gen_harmonic.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -46,8 +47,10 @@
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
+extern const char *_gen_harmonic_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_normalized_gen_harmonic_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -232,6 +235,14 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            static_cast<xsf::numpy::F_F>(xsf::cospi), static_cast<xsf::numpy::D_D>(xsf::cospi)},
                           "_cospi", _cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
+
+    PyObject *_gen_harmonic =
+        xsf::numpy::ufunc({gen_harmonic}, "_gen_harmonic", _gen_harmonic_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_normalized_gen_harmonic =
+        xsf::numpy::ufunc({normalized_gen_harmonic}, "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_normalized_gen_harmonic", _normalized_gen_harmonic);
 
     PyObject *_lambertw = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::Dld_D>(xsf::lambertw), static_cast<xsf::numpy::Flf_F>(xsf::lambertw)}, "_lambertw",
