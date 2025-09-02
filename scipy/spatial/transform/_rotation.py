@@ -16,7 +16,6 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_capabilities,
     xp_promote,
-    is_array_api_obj,
 )
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
@@ -39,7 +38,7 @@ def _select_backend(xp: ModuleType, cython_compatible: bool):
 
 
 @xp_capabilities()
-def _promote(x: ArrayLike, xp: ModuleType) -> Array:
+def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
     """Promote arrays to float64 for numpy, else according to the Array API spec.
 
     The return array dtype follows the following rules:
@@ -53,10 +52,12 @@ def _promote(x: ArrayLike, xp: ModuleType) -> Array:
     jax by default).
     """
     if is_numpy(xp):
-        return xp.asarray(x, dtype=np.float64)
-    if not is_array_api_obj(x):
-        x = xp.asarray(x)
-    return xp_promote(x, force_floating=True, xp=xp)
+        args += (np.empty(0, dtype=np.float64),)  # Force float64 conversion
+        out = xp_promote(*args, force_floating=True, xp=xp)
+        if len(args) == 2:  # One argument was passed  + the added empty array
+            return out[0]
+        return out[:-1]
+    return xp_promote(*args, force_floating=True, xp=xp)
 
 
 class Rotation:
@@ -349,12 +350,12 @@ class Rotation:
     ):
         xp = array_namespace(quat)
         self._xp = xp
-        quat = _promote(quat, xp)
+        quat = _promote(quat, xp=xp)
         if quat.shape[-1] != 4:
             raise ValueError(
                 f"Expected `quat` to have shape (..., 4), got {quat.shape}."
             )
-        # Single NumPy quats of list of quats are accelerated by the cython backend.
+        # Single NumPy quats or list of quats are accelerated by the cython backend.
         # This backend needs inputs with fixed ndim, so we always expand to 2D and
         # select the 0th element if quat was single to get the correct shape. For other
         # frameworks and quaternion tensors we use the generic array API backend.
@@ -576,7 +577,7 @@ class Rotation:
         .. versionadded:: 1.4.0
         """
         xp = array_namespace(matrix)
-        matrix = _promote(matrix, xp)
+        matrix = _promote(matrix, xp=xp)
         # Resulting quat will have 1 less dimension than matrix
         backend = _select_backend(xp, cython_compatible=matrix.ndim < 4)
         quat = backend.from_matrix(matrix)
@@ -651,7 +652,7 @@ class Rotation:
 
         """
         xp = array_namespace(rotvec)
-        rotvec = _promote(rotvec, xp)
+        rotvec = _promote(rotvec, xp=xp)
         backend = _select_backend(xp, cython_compatible=rotvec.ndim < 3)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
@@ -754,7 +755,7 @@ class Rotation:
 
         """
         xp = array_namespace(angles)
-        angles = _promote(angles, xp)
+        angles = _promote(angles, xp=xp)
         backend = _select_backend(xp, cython_compatible=angles.ndim < 3)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
@@ -883,8 +884,7 @@ class Rotation:
         [ 0.701057,  0.430459, -0.092296,  0.560986]
         """  # noqa: E501
         xp = array_namespace(axes)
-        axes = _promote(axes, xp)
-        angles = _promote(angles, xp)
+        axes, angles = _promote(axes, angles, xp=xp)
         cython_compatible = axes.ndim < 3 and angles.ndim < 2
         backend = _select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
@@ -959,7 +959,7 @@ class Rotation:
 
         """
         xp = array_namespace(mrp)
-        mrp = _promote(mrp, xp)
+        mrp = _promote(mrp, xp=xp)
         backend = _select_backend(xp, cython_compatible=mrp.ndim < 3)
         quat = backend.from_mrp(mrp)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
@@ -2521,7 +2521,7 @@ class Rotation:
                [0., 1., 2.]])
         """
         xp = array_namespace(a)
-        a, b, weights = xp_promote(a, b, weights, force_floating=True, xp=xp)
+        a, b, weights = _promote(a, b, weights, xp=xp)
         cython_compatible = (
             (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
         )

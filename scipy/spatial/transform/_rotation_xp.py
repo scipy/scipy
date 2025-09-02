@@ -48,7 +48,6 @@ def from_quat(
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    matrix = xp_promote(matrix, force_floating=True, xp=xp)
     # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
     lazy = is_lazy_array(mask)
@@ -451,7 +450,6 @@ def as_davenport(
     quat: Array, axes: ArrayLike, order: str, degrees: bool = False
 ) -> Array:
     xp = array_namespace(quat)
-    axes = xp_promote(axes, force_floating=True, xp=xp)
 
     # Check argument validity
     if order in ["e", "extrinsic"]:
