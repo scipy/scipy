@@ -63,6 +63,36 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
+def _format_errors(err_lst):
+    """Format/emit errors/warnings from a lowlevel batched routine.
+
+    See inv, solve.
+    """
+    singular, lapack_err, ill_cond = [], [], []
+    for i, dct in enumerate(err_lst):
+        if dct["is_singular"]:
+            singular.append(i)
+        if dct["lapack_info"] < 0:
+            lapack_err.append(f"slice {i} emits lapack info={dct['lapack_info']}")
+        if dct["is_ill_conditioned"]:
+            ill_cond.append(f"slice {i} has rcond = {dct['rcond']}")
+
+    if singular:
+        raise LinAlgError(
+            f"An ill-conditioned matrix detected: slice(s) {singular} are singular."
+        )
+
+    if lapack_err:
+        raise ValueError(f"Internal LAPACK errors: {','.join(lapack_err)}.")
+
+    if ill_cond:
+       warnings.warn(
+            f"An ill-conditioned matrix detected: {','.join(ill_cond)}.",
+            LinAlgWarning,
+            stacklevel=3
+        )
+
+
 def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
@@ -250,15 +280,11 @@ def solve(a, b, lower=False, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    result = _batched_linalg._solve(a1, b1, structure, lower, transposed)
-    x, is_ill_cond, is_singular, info = result
+    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
 
-    if info < 0:
-        raise ValueError("Internal LAPACK error.")
-    if is_singular:
-        raise LinAlgError("A singular matrix detected")
-    if is_ill_cond:
-        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+    # emit helpful errors/warnings
+    if err_lst:
+        _format_errors(err_lst)
 
     if b_is_1D:
         x = x[..., 0]
@@ -1422,29 +1448,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
 
     # emit helpful errors/warnings
     if err_lst:
-        singular, lapack_err, ill_cond = [], [], []
-        for i, dct in enumerate(err_lst):
-            if dct["is_singular"]:
-                singular.append(i)
-            if dct["lapack_info"] < 0:
-                lapack_err.append(f"slice {i} emits lapack info={dct['lapack_info']}")
-            if dct["is_ill_conditioned"]:
-                ill_cond.append(f"slice {i} has rcond = {dct['rcond']}")
-
-        if singular:
-            raise LinAlgError(
-                f"An ill-conditioned matrix detected: slice(s) {singular} are singular."
-            )
-
-        if lapack_err:
-            raise ValueError(f"Internal LAPACK errors: {','.join(lapack_err)}.")
-
-        if ill_cond:
-           warnings.warn(
-                f"An ill-conditioned matrix detected: {','.join(ill_cond)}.",
-                LinAlgWarning,
-                stacklevel=2
-            )
+        _format_errors(err_lst)
 
     return inv_a
 
