@@ -14,7 +14,7 @@
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline void solve_slice_general(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work, CBLAS_INT lwork,
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work,
     SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
@@ -146,7 +146,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork = -1, info;
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork, info;
 
     // XXX: workspace query
     lwork = 4*n; // gecon needs at least 4*n
@@ -293,7 +293,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
             default:
             {
                 // general matrix inverse
-                solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, lwork, slice_status);
+                solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, slice_status);
 
                 if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
                     // some problem detected, store data to report
