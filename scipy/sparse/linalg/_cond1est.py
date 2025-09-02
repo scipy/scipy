@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy.sparse import issparse
-from scipy.sparse.linalg import splu
+from scipy.sparse.linalg import norm, splu
 
 __all__ = ['cond1est']
 
@@ -9,13 +9,9 @@ __all__ = ['cond1est']
 def cond1est(A):
     r"""Estimate the condition number of a sparse matrix in the 1-norm.
 
-    This function computes an LU decomposition of ``A`` and calls
-    ``SuperLU.cond1est``. If you already have an LU factorization computed, use
-    ``SuperLU.cond1est`` directly.
-
     Parameters
     ----------
-    A : (N, N) sparray
+    A : ndarray or other linear operator
         A square, sparse matrix. Any matrix not in CSC format will be converted
         internally, and raise a ``SparseEfficiencyWarning``.
 
@@ -27,12 +23,10 @@ def cond1est(A):
     See Also
     --------
     numpy.linalg.cond : Compute the condition number of a dense matrix.
-    SuperLU.cond1est : Compute an estimate of the condition number of a sparse
-                       matrix.
 
     Notes
     -----
-    The condition number is defined as [0]_:
+    The 1-norm condition number is defined as [0]_:
 
     .. math:: \kappa(A) = \left\| A \right\|_1 \left\| A^{-1} \right\|_1.
 
@@ -79,10 +73,15 @@ def cond1est(A):
     if M == 0:
         raise ValueError("Condition number of an empty matrix is undefined.")
 
+    # Compute the 1-norm of A exactly
+    norm_A = norm(A, 1)
+
     try:
-        return splu(A).cond1est()
+        norm_A_inv = splu(A)._norm1est_inv()
     except RuntimeError as e:
         if "Factor is exactly singular" in str(e):
             return np.inf
         else:
             raise e
+
+    return norm_A * norm_A_inv
