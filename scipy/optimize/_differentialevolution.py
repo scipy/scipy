@@ -167,14 +167,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
         Alternatively supply a callable that has a `minimize`-like signature,
-        ``polish_func(func, x0)`` and returns an `OptimizeResult`. This allows
-        the user to have fine control over how the polishing occurs. One way of
-        creating the polishing function would use `functools.partial` to wrap
-        `minimize`, fixing relevant keyword parameters. It is the user's
-        responsibility to ensure that the polishing function obeys bounds, any
-        constraints (including integrality constraints), and that appropriate
-        attributes are set in the `OptimizeResult`, such as `fun`, `x`, `nfev`,
-        `jac`.
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in `kwds`. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as `fun`,
+        `x`, `nfev`, `jac`.
 
         .. versionchanged:: 1.15.0
             If `workers` is specified then the map-like callable that wraps
@@ -470,7 +470,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     >>> from functools import partial
     >>> from scipy.optimize import minimize
-    >>> polish_func = partial(minimize, bounds=bounds, method="SLSQP")
+    >>> # supply extra parameters to the polishing function using partial
+    >>> polish_func = partial(minimize, method="SLSQP")
     >>> result = differential_evolution(
     ...     ackley, bounds, vectorized=True, updating='deferred', rng=1,
     ...     polish=polish_func
@@ -685,12 +686,14 @@ class DifferentialEvolutionSolver:
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
         Alternatively supply a callable that has a `minimize`-like signature,
-        ``polish_func(func, x0)`` and returns an `OptimizeResult`. This allows
-        the user to have fine control over how the polishing occurs. One way of
-        creating the polishing function would use `functools.partial` to wrap
-        `minimize`, fixing relevant parameters. It is the user's responsibility
-        to ensure that the polishing function obeys bounds, and any constraints
-        (including integrality constraints).
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in `kwds`. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as `fun`,
+        `x`, `nfev`, `jac`.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -1261,10 +1264,32 @@ class DifferentialEvolutionSolver:
 
         if self.polish and not np.all(self.integrality):
             # can't polish if all the parameters are integers
+            if np.any(self.integrality):
+                # set the lower/upper bounds equal so that any integrality
+                # constraints work.
+                limits, integrality = self.limits, self.integrality
+                limits[0, integrality] = DE_result.x[integrality]
+                limits[1, integrality] = DE_result.x[integrality]
+
+            polish_method = 'L-BFGS-B'
+
+            if self._wrapped_constraints:
+                polish_method = 'trust-constr'
+
+                constr_violation = self._constraint_violation_fn(DE_result.x)
+                if np.any(constr_violation > 0.):
+                    warnings.warn("differential evolution didn't find a "
+                                  "solution satisfying the constraints, "
+                                  "attempting to polish from the least "
+                                  "infeasible solution",
+                                  UserWarning, stacklevel=2)
+
             if callable(self.polish):
                 result = self.polish(
                     self.original_func,
-                    np.copy(DE_result.x)
+                    np.copy(DE_result.x),
+                    bounds=self.limits.T,
+                    constraints=self.constraints
                 )
                 if not isinstance(result, OptimizeResult):
                     raise ValueError(
@@ -1272,25 +1297,6 @@ class DifferentialEvolutionSolver:
                          "should return an OptimizeResult."
                     )
             else:
-                if np.any(self.integrality):
-                    # set the lower/upper bounds equal so that any integrality
-                    # constraints work.
-                    limits, integrality = self.limits, self.integrality
-                    limits[0, integrality] = DE_result.x[integrality]
-                    limits[1, integrality] = DE_result.x[integrality]
-
-                polish_method = 'L-BFGS-B'
-
-                if self._wrapped_constraints:
-                    polish_method = 'trust-constr'
-
-                    constr_violation = self._constraint_violation_fn(DE_result.x)
-                    if np.any(constr_violation > 0.):
-                        warnings.warn("differential evolution didn't find a "
-                                      "solution satisfying the constraints, "
-                                      "attempting to polish from the least "
-                                      "infeasible solution",
-                                      UserWarning, stacklevel=2)
                 if self.disp:
                     print(f"Polishing solution with '{polish_method}'")
                 result = minimize(

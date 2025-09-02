@@ -1628,8 +1628,10 @@ class TestDifferentialEvolutionSolver:
         assert res.jac is not None
         assert_allclose(res.x, np.ones(len(self.bounds)), atol=1e-6)
 
-        def dummy_pf(func, x):
+        def dummy_pf(func, x, **kwds):
             assert func is rosen
+            assert "bounds" in kwds
+            assert "constraints" in kwds
             return np.ones(len(self.bounds))
 
         with assert_raises(
