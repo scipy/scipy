@@ -13,10 +13,10 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.sparse import random_array
-    from scipy.sparse.linalg import splu
+    from scipy.sparse.linalg import cond1est
 
 
-class Norm1EstBench(Benchmark):
+class Cond1EstBench(Benchmark):
     params = [
         [5000],
         [1e-5, 1e-3, 0.1],
@@ -31,11 +31,11 @@ class Norm1EstBench(Benchmark):
         # Make the matrix non-singular
         self.A.setdiag(N * N)
 
-    def time_splu(self, N, density):
-        splu(self.A)
+    def time_cond1est(self, N, density):
+        cond1est(self.A)
 
-    def peakmem_splu(self, N, density):
-        splu(self.A)
+    def peakmem_cond1est(self, N, density):
+        cond1est(self.A)
 
 
 # =============================================================================
