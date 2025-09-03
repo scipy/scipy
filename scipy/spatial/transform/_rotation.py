@@ -1383,7 +1383,7 @@ class Rotation:
             - Second angle belongs to a set of size 180 degrees,
               given by: ``[-lambda, 180 - lambda]``, if ``lambda ≥ 0`` or
               ``[-180 - lambda, -lambda]``, if ``lambda < 0``. Here ``lambda``
-              is the angle in [-180, 180] that rotates axis 3 unto axis 1 
+              is the angle in [-180, 180] that rotates axis 3 onto axis 1 
               using axis 2 as the rotation vector.
 
         References
