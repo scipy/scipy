@@ -364,7 +364,7 @@ problem. The data shown below were generated using the model:
 
     y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i},
 
-where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5`,
+where :math:`x_{i}=0.1i` for :math:`i=1, \ldots, 10` , :math:`c_{1}=5`,
 and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the
 coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
 linear least squares.

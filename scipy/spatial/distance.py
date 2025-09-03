@@ -2305,39 +2305,52 @@ def squareform(X, force="no", checks=True):
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
-    Return True if input array is a valid distance matrix.
+    Return True if input array satisfies basic distance matrix properties
+    (symmetry and zero diagonal).
 
-    Distance matrices must be 2-dimensional numpy arrays.
-    They must have a zero-diagonal, and they must be symmetric.
+    This function checks whether the input is a 2-dimensional square NumPy array
+    with a zero diagonal and symmetry within a specified tolerance. These are
+    necessary properties for a distance matrix but not sufficient -- in particular,
+    this function does **not** check the triangle inequality, which is required
+    for a true metric distance matrix.
 
+    The triangle inequality states that for any three points ``i``, ``j``, and ``k``:
+    ``D[i,k] <= D[i,j] + D[j,k]``
+    
     Parameters
     ----------
     D : array_like
-        The candidate object to test for validity.
+        The candidate object to test for basic distance matrix properties.
     tol : float, optional
-        The distance matrix should be symmetric. `tol` is the maximum
-        difference between entries ``ij`` and ``ji`` for the distance
-        metric to be considered symmetric.
+        The distance matrix is considered symmetric if the absolute difference
+        between entries ``ij`` and ``ji`` is less than or equal to `tol`. The same
+        tolerance is used to determine whether diagonal entries are effectively zero.
     throw : bool, optional
-        An exception is thrown if the distance matrix passed is not valid.
+        If True, raises an exception when the input is invalid.
     name : str, optional
-        The name of the variable to checked. This is useful if
-        throw is set to True so the offending variable can be identified
-        in the exception message when an exception is thrown.
+        The name of the variable to check. This is used in exception messages when
+        `throw` is True to identify the offending variable.
     warning : bool, optional
-        Instead of throwing an exception, a warning message is
-        raised.
-
+        If True, a warning message is raised instead of throwing an exception.
+        
     Returns
     -------
     valid : bool
-        True if the variable `D` passed is a valid distance matrix.
+        True if the input satisfies the symmetry and zero-diagonal conditions.
+
+    Raises
+    ------
+    ValueError
+        If `throw` is True and `D` is not a valid distance matrix.
+    UserWarning
+        If `warning` is True and `D` is not a valid distance matrix.
 
     Notes
     -----
-    Small numerical differences in `D` and `D.T` and non-zeroness of
-    the diagonal are ignored if they are within the tolerance specified
-    by `tol`.
+    This function does not check the triangle inequality, which is required for
+    a complete validation of a metric distance matrix. Only structural properties
+    (symmetry and zero diagonal) are verified. Small numerical deviations from symmetry
+    or exact zero diagonal are tolerated within the `tol` parameter.
 
     Examples
     --------

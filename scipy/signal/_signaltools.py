@@ -4940,10 +4940,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape = x_shape
+    x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
-        zi.shape = zi_shape
+        zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
@@ -5055,7 +5055,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
-    zi.shape = [n_sections] + zi_shape
+    zi = zi.reshape([n_sections] + zi_shape)
     x_0 = axis_slice(ext, stop=1, axis=axis)
     (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)

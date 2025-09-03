@@ -81,7 +81,7 @@ The demon replies:
     >>> from scipy.stats import binom
     >>> prob = binom.cdf(x, n, p)
     >>> print(f"The correct answer is approximately {prob}")
-    The correct answer is approximately 0.18410080866334788
+    The correct answer is approximately 0.18410080866334808
 
 As your soul is being eaten, you take solace in the knowledge that your
 simple Monte Carlo approach was more accurate than Kyle's normal

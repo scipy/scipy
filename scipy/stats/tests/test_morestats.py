@@ -26,7 +26,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy, is_torch
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -741,6 +741,7 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@make_xp_test_case(stats.bartlett)
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -1278,10 +1279,8 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1)
-        x2 = np.array(x2)
-        x1.shape = (10, 2)
-        x2.shape = (15, 2)
+        x1 = np.array(x1).reshape((10,2))
+        x2 = np.array(x2).reshape((15,2))
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 
@@ -1802,6 +1801,7 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@make_xp_test_case(stats.kstat)
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
@@ -1860,6 +1860,7 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
+@make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -1998,6 +1999,7 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@make_xp_test_case(stats.boxcox_llf)
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2674,6 +2676,7 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
+@make_xp_test_case(stats.circmean, stats.circvar, stats.circstd)
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -3062,6 +3065,8 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
+
+@make_xp_test_case(stats.directional_stats)
 class TestDirectionalStats:
     # Reference implementations are not available
     def test_directional_stats_correctness(self, xp):

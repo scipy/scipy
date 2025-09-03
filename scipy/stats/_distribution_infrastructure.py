@@ -8,7 +8,7 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._array_api import xp_promote
+from scipy._lib._array_api import xp_capabilities, xp_promote
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
@@ -3865,6 +3865,7 @@ _distribution_names = {
 
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
+@xp_capabilities(np_only=True)
 def make_distribution(dist):
     """Generate a `UnivariateDistribution` class from a compatible object
 
@@ -4533,6 +4534,7 @@ class TruncatedDistribution(TransformedDistribution):
                     f"lb={str(self.lb)}, ub={str(self.ub)})")
 
 
+@xp_capabilities(np_only=True)
 def truncate(X, lb=-np.inf, ub=np.inf):
     """Truncate the support of a random variable.
 
@@ -4958,6 +4960,7 @@ class OrderStatisticDistribution(TransformedDistribution):
                     f"n={str(self.n)})")
 
 
+@xp_capabilities(np_only=True)
 def order_statistic(X, /, *, r, n):
     r"""Probability distribution of an order statistic
 
@@ -5621,6 +5624,7 @@ class FoldedDistribution(TransformedDistribution):
             return f"abs({str(self._dist)})"
 
 
+@xp_capabilities(np_only=True)
 def abs(X, /):
     r"""Absolute value of a random variable
 
@@ -5663,6 +5667,7 @@ def abs(X, /):
     return FoldedDistribution(X)
 
 
+@xp_capabilities(np_only=True)
 def exp(X, /):
     r"""Natural exponential of a random variable
 
@@ -5709,6 +5714,7 @@ def exp(X, /):
                                             logdh=lambda u: -np.log(u))
 
 
+@xp_capabilities(np_only=True)
 def log(X, /):
     r"""Natural logarithm of a non-negative random variable
 
@@ -5720,7 +5726,7 @@ def log(X, /):
     Returns
     -------
     Y : `ContinuousDistribution`
-        A random variable :math:`Y = \exp(X)`.
+        A random variable :math:`Y = \log(X)`.
 
     Examples
     --------

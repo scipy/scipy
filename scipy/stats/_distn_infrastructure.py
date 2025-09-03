@@ -3757,6 +3757,13 @@ class rv_discrete(rv_generic):
         k : array_like
             Quantile corresponding to the lower tail probability, q.
 
+        Notes
+        -----
+        For discrete distributions, the `cdf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `cdf` at `k` is at
+        least `q`. There is one exception:  the `ppf` of ``0`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
+
         """
         args, loc, _ = self._parse_args(*args, **kwds)
         q, loc = map(asarray, (q, loc))
@@ -3796,6 +3803,13 @@ class rv_discrete(rv_generic):
         -------
         k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
+
+        Notes
+        -----
+        For discrete distributions, the `sf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `sf` at `k` is
+        no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)

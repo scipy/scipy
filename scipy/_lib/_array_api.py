@@ -626,7 +626,7 @@ def _make_sphinx_capabilities(
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
     # @pytest.mark.skip/xfail_xp_backends kwargs
-    cpu_only=False, np_only=False, exceptions=(),
+    cpu_only=False, np_only=False, out_of_scope=False, exceptions=(),
     # xpx.lazy_xp_backends kwargs
     allow_dask_compute=False, jax_jit=True,
     # list of tuples [(module name, reason), ...]
@@ -634,6 +634,9 @@ def _make_sphinx_capabilities(
     # unused in documentation
     reason=None,
 ):
+    if out_of_scope:
+        return {"out_of_scope": True}
+
     exceptions = set(exceptions)
 
     # Default capabilities
@@ -674,8 +677,24 @@ def _make_sphinx_capabilities(
 
 
 def _make_capabilities_note(fun_name, capabilities):
+    if "out_of_scope" in capabilities:
+        # It will be better to link to a section of the dev-arrayapi docs
+        # that explains what is and isn't in-scope, but such a section
+        # doesn't exist yet. Using :ref:`dev-arrayapi` as a placeholder.
+        note = f"""
+        **Array API Standard Support**
+
+        `{fun_name}` is not in-scope for support of Python Array API Standard compatible
+        backends other than NumPy.
+
+        See :ref:`dev-arrayapi` for more information.
+        """
+        return textwrap.dedent(note)
+
     # Note: deliberately not documenting array-api-strict
     note = f"""
+    **Array API Standard Support**
+
     `{fun_name}` has experimental support for Python Array API Standard compatible
     backends in addition to NumPy. Please consider testing these features
     by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
@@ -706,7 +725,8 @@ def xp_capabilities(
     # See documentation in conftest.py.
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
-    cpu_only=False, np_only=False, reason=None, exceptions=(),
+    cpu_only=False, np_only=False, reason=None,
+    out_of_scope=False, exceptions=(),
     # lists of tuples [(module name, reason), ...]
     warnings=(),
     # xpx.testing.lazy_xp_function kwargs.
@@ -733,11 +753,15 @@ def xp_capabilities(
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
+    if out_of_scope:
+        np_only = True
+
     capabilities = dict(
         skip_backends=skip_backends,
         xfail_backends=xfail_backends,
         cpu_only=cpu_only,
         np_only=np_only,
+        out_of_scope=out_of_scope,
         reason=reason,
         exceptions=exceptions,
         allow_dask_compute=allow_dask_compute,
