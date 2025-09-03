@@ -173,10 +173,10 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti(1, 2, 3, 4)
     StateSpaceContinuous(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: None
     )
 
@@ -346,19 +346,19 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti(1, 2, 3, 4)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: True
     )
 
     >>> signal.dlti(1, 2, 3, 4, dt=0.1)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: 0.1
     )
 
@@ -1242,6 +1242,13 @@ class StateSpace(LinearTimeInvariant):
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
+    cast_to: dtype | 'floating64' | None, optional
+        If `system` is made up out of four matrices (A, B, C, D), they are converted
+        into two-dimensional arrays as needed by calling `abcd_normalize`. `cast_to`
+        controls here the dtype of those arrays: If an explicit dtype is given, they
+        are converted into those. If set to ``'floating64'`` (default) the matrices are
+        cast to ``'float64'`` if they are all real-valued else to ``'complex128'``.  If
+        ``None``, the matrices' dtypes are not changed.
 
     See Also
     --------
@@ -1256,6 +1263,10 @@ class StateSpace(LinearTimeInvariant):
     convert to the specific system representation first. For example, call
     ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
+
     Examples
     --------
     >>> from scipy import signal
@@ -1268,12 +1279,12 @@ class StateSpace(LinearTimeInvariant):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1283,8 +1294,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1297,8 +1308,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1332,6 +1343,8 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(system[0], LinearTimeInvariant):
             return
 
+        cast_to = kwargs.pop('cast_to', 'floating64')  # for abcd_normalize()
+
         # Remove system arguments, not needed by parents anymore
         super().__init__(**kwargs)
 
@@ -1340,7 +1353,7 @@ class StateSpace(LinearTimeInvariant):
         self._C = None
         self._D = None
 
-        self.A, self.B, self.C, self.D = abcd_normalize(*system)
+        self.A, self.B, self.C, self.D = abcd_normalize(*system, cast_to=cast_to)
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
