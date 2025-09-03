@@ -260,6 +260,21 @@ class TestAAA:
         assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)
 
 
+class BatchFloaterHormann:
+    # BSpline-line class with reference batch behavior
+    def __init__(self, x, y, axis):
+        y = np.moveaxis(y, axis, -1)
+        self._batch_shape = y.shape[:-1]
+        self._interps = [FloaterHormannInterpolator(x, yi,)
+                         for yi in y.reshape(-1, y.shape[-1])]
+        self._axis = axis
+
+    def __call__(self, x):
+        y = [spline(x) for spline in self._interps]
+        y = np.reshape(y, self._batch_shape + x.shape)
+        return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+
 class TestFloaterHormann:
     def runge(self, z):
         return 1/(1 + z**2)
@@ -364,3 +379,19 @@ class TestFloaterHormann:
         p = r.poles()
         mask = (p.real >= -1) & (p.real <= 1) & (np.abs(p.imag) < 1.e-12)
         assert np.sum(mask) == 0
+
+    @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
+    def test_batch(self, eval_shape, axis=0):
+        rng = np.random.default_rng(4329872134985134)
+        n = 10
+        shape = (2, 3, 4, n)
+        domain = (0, 10)
+
+        x = np.linspace(*domain, n)
+        y = np.moveaxis(rng.random(shape), -1, 0)
+
+        res = FloaterHormannInterpolator(x, y)
+        ref = BatchFloaterHormann(x, y, 0)
+
+        x = rng.uniform(*domain, size=eval_shape)
+        assert_allclose(res(x), ref(x))
