@@ -1845,12 +1845,9 @@ class ShortTimeFFT:
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
-<<<<<<< HEAD
-=======
         last_arg, last_return_value = self._cache_upper_border_begin
         if n == last_arg:  # use cached value:
             return last_return_value
->>>>>>> cad5e3b66b (In `signal.shortTimeFFT`: remove typo in attribute name.)
         w2 = self.win.real**2 + self.win.imag**2
         q2 = n // self.hop + 1  # first t[q] >= t[n]
         q1 = max((n-self.m_num) // self.hop - 1, -1)
@@ -1858,16 +1855,11 @@ class ShortTimeFFT:
         for q_ in range(q2, q1, -1):
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
             if k_ <= n or all(w2[n-k_:] == 0):
-<<<<<<< HEAD
-                return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
-        return 0, 0  # border starts at first slice
-=======
                 return_value = (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
                 self. _cache_upper_border_begin = n, return_value
                 return return_value
         # make linter happy:
         raise RuntimeError("This code line should never run! Please file a bug.")
->>>>>>> cad5e3b66b (In `signal.shortTimeFFT`: remove typo in attribute name.)
 
     @property
     def delta_t(self) -> float:
