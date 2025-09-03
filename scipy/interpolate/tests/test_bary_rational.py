@@ -366,6 +366,9 @@ class TestFloaterHormann:
         assert rr.shape == xx.shape + y_shape
         assert_allclose(rr, yy, rtol=1e-6)
 
+        pytest.raises(NotImplementedError, r.roots)
+        pytest.raises(NotImplementedError, r.residues)
+
     def test_zeros(self):
         x = np.linspace(0, 10, num=100)
         r = FloaterHormannInterpolator(x, np.sin(np.pi*x))

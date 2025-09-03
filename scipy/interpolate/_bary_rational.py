@@ -159,6 +159,9 @@ class _BarycentricRational:
         residues : array
             Residues associated with the `poles` of the approximation
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Residues not implemented for multi-dimensional"
+                                      " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -181,6 +184,9 @@ class _BarycentricRational:
             Zeros of the AAA approximation, repeated according to their multiplicity
             but not in any specific order.
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Roots not implemented for multi-dimensional"
+                                      " data.")
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
             m = self.weights.size
