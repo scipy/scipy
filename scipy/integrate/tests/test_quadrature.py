@@ -587,9 +587,6 @@ class TestCumulativeSimpson:
         )
         xp_assert_close(res, xp.asarray(ref), rtol=1e-15)
 
-    @pytest.mark.filterwarnings(
-        "ignore:Creating a tensor from a list of numpy.ndarrays:UserWarning"
-    )
     @pytest.mark.parametrize(('message', 'kwarg_update'), [
         ("x must be strictly increasing", dict(x=[2, 2, 3, 4])),
         ("x must be strictly increasing", dict(x=[x0, [2, 2, 4, 8]], y=[y0, y0])),
@@ -603,7 +600,7 @@ class TestCumulativeSimpson:
     def test_simpson_exceptions(self, message, kwarg_update, xp):
         kwargs0 = dict(y=xp.asarray(self.y0), x=xp.asarray(self.x0), dx=None,
                        initial=None, axis=-1)
-        kwarg_update = {k: xp.asarray(v) if isinstance(v, list) else v
+        kwarg_update = {k: xp.asarray(np.asarray(v)) if isinstance(v, list) else v
                         for k, v in kwarg_update.items()}
         with pytest.raises(ValueError, match=message):
             cumulative_simpson(**dict(kwargs0, **kwarg_update))
