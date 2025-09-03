@@ -359,8 +359,8 @@ class TestC2dLti:
     def test_c2d_ss(self, xp):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])
-        B = np.array([[0], [1]])
-        C = np.array([[1, 0]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[1., 0.]])
         D = 0
         dt = 0.05
 
