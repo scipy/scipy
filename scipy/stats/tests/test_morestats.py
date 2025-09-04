@@ -1279,10 +1279,8 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1)
-        x2 = np.array(x2)
-        x1.shape = (10, 2)
-        x2.shape = (15, 2)
+        x1 = np.array(x1).reshape((10,2))
+        x2 = np.array(x2).reshape((15,2))
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 

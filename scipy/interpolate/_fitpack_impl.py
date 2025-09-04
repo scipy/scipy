@@ -187,7 +187,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     fp = o['fp']
     n = len(t)
     u = o['u']
-    c.shape = idim, n - k - 1
+    c = c.reshape((idim, n - k - 1))
     tcku = [t, list(c), k], u
     if ier <= 0 and not quiet:
         warnings.warn(
@@ -693,7 +693,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
         raise ValueError("Invalid input data")
     if ier:
         raise TypeError("An error occurred")
-    z.shape = len(x), len(y)
+    z = z.reshape((len(x), len(y)))
     if len(z) > 1:
         return z
     if len(z[0]) > 1:

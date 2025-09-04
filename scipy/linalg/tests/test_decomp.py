@@ -2765,7 +2765,7 @@ def test_aligned_mem_float():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=2, count=100, dtype=float32)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2780,7 +2780,7 @@ def test_aligned_mem():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2793,7 +2793,7 @@ def test_aligned_mem_complex():
 
     # Create an array with boundary offset 8
     z = np.frombuffer(a.data, offset=8, count=100, dtype=complex)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     # This does not need special handling
@@ -2809,7 +2809,7 @@ def check_lapack_misaligned(func, args, kwargs):
             aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
             aa = np.frombuffer(aa.data, offset=4, count=a[i].size,
                                dtype=a[i].dtype)
-            aa.shape = a[i].shape
+            aa = aa.reshape(a[i].shape)
             aa[...] = a[i]
             a[i] = aa
             func(*a, **kwargs)
@@ -2822,11 +2822,10 @@ def check_lapack_misaligned(func, args, kwargs):
                    reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10, dtype=float)
-    R = np.arange(100)
-    R.shape = 10, 10
+    R = np.arange(100).reshape((10, 10))
     S = np.arange(20000, dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
-    S.shape = 10, 10
+    S = S.reshape((10, 10))
     b = np.ones(10)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [

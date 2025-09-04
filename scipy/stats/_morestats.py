@@ -3524,8 +3524,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
         z = z[0]
         pval = pval[0]
     else:
-        z.shape = res_shape
-        pval.shape = res_shape
+        z = z.reshape(res_shape)
+        pval = pval.reshape(res_shape)
     return SignificanceResult(z[()], pval[()])
 
 
