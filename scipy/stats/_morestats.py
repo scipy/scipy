@@ -3012,7 +3012,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
         The sample data, possibly with different lengths. Only one-dimensional
         samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
-        Which function of the data to use in the test.  The default
+        Which statistics to use to center data points within each sample.  Default
         is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
@@ -3102,11 +3102,10 @@ def levene(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+
 
     for j in range(k):
         Ni[j] = len(samples[j])
