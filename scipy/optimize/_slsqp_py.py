@@ -234,8 +234,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
-    maxiter : int
-        Maximum number of iterations.
+    maxiter : int, optional
+        Maximum number of iterations. Default value is 100.
     finite_diff_rel_step : None or array_like, optional
         If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
@@ -268,8 +268,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     attribute as a NumPy array. Denoting the dimension of the equality constraints
     with ``meq``, and of inequality constraints with ``mineq``, then the returned
     array slice ``m[:meq]`` contains the multipliers for the equality constraints,
-    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the 
-    inequality constraints. The multipliers corresponding to bound inequalities 
+    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the
+    inequality constraints. The multipliers corresponding to bound inequalities
     are not returned. See [1]_ pp. 321 or [2]_ for an explanation of how to interpret
     these multipliers. The internal QP problem is solved using the methods given
     in [3]_ Chapter 25.
@@ -461,7 +461,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "inconsistent": 0,
         "reset": 0,
         "iter": 0,
-        "itermax": maxiter,
+        "itermax": int(maxiter),
         "line": 0,
         "m": m,
         "meq": meq,

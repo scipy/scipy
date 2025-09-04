@@ -3167,6 +3167,15 @@ def test_bounds_with_list():
     )
 
 
+@pytest.mark.parametrize('method', (
+    'slsqp', 'cg', 'cobyqa', 'powell','nelder-mead', 'bfgs', 'l-bfgs-b',
+    'trust-constr'))
+def test_minimize_maxiter_noninteger(method):
+    # Regression test for gh-23430
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    optimize.minimize(rosen, x0, method=method, options={'maxiter': 100.1})
+
+
 def test_x_overwritten_user_function():
     # if the user overwrites the x-array in the user function it's likely
     # that the minimizer stops working properly.

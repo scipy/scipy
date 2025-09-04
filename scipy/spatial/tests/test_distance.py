@@ -32,14 +32,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import os.path
-
 from functools import wraps, partial
+import os.path
+import sys
+import sysconfig
+import warnings
 import weakref
 
 import numpy as np
-import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
@@ -632,6 +632,7 @@ class TestCdist:
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
     @pytest.mark.thread_unsafe
+    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
     def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15

@@ -19,6 +19,7 @@ Notes
 """
 import math
 from itertools import product
+from types import GenericAlias
 from typing import cast, get_args, Literal
 
 import numpy as np
@@ -531,11 +532,15 @@ def test_border_values():
     assert SFT.p_max(10) == 4
     assert SFT.k_max(10) == 16
     assert SFT.upper_border_begin(10) == (4, 2)
+    assert SFT.upper_border_begin(10) == (4, 2)  # needed to test caching
     # Raise exceptions:
     with pytest.raises(ValueError, match="^Parameter n must be"):
         SFT.upper_border_begin(3)
     with pytest.raises(ValueError, match="^Parameter n must be"):
         SFT._post_padding(3)
+    with pytest.raises(RuntimeError):
+        SFT._hop = -1  # illegal hop interval
+        SFT.upper_border_begin(8)
 
 def test_border_values_exotic():
     """Ensure that the border calculations are correct for windows with
@@ -573,6 +578,11 @@ def test_t():
     SFT.fs = 1/8
     assert SFT.fs == 1/8
     assert SFT.T == 8
+    with pytest.raises(ValueError):
+        # noinspection PyTypeChecker
+        SFT.t(1.5)  # only integers allowed
+    with pytest.raises(ValueError):
+        SFT.t(-1)  # only positive `n` allowed
 
 
 @pytest.mark.parametrize('fft_mode, f',
@@ -1096,3 +1106,7 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
     X = SFT.stft(x)
     xp = SFT.istft(X, k1=N_x)
     assert xp.shape == x.shape
+
+
+def test_subscriptable_generic_type():
+    assert isinstance(ShortTimeFFT[np.float64], GenericAlias)

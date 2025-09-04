@@ -23,7 +23,7 @@ dependencies:
   # ---
   - pythran
   # For testing and benchmarking
-  - pytest
+  - pytest>=8.0.0
   - pytest-cov
   - pytest-xdist
   - pytest-timeout

@@ -1055,7 +1055,6 @@ class TestLombscargle:
         delta = f[1] - f[0]
         assert(w - f[np.argmax(P)] < (delta/2.))
 
-
     def test_amplitude(self):
         # Test if height of peak in unnormalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
@@ -1502,6 +1501,45 @@ class TestLombscargle:
         freqs = [np.pi/2.0] * 2  # must have 2+ elements
 
         lombscargle(t, y, freqs)
+
+    def test_input_mutation(self):
+        # this tests for mutation of the input arrays
+        # https://github.com/scipy/scipy/issues/23474
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        rng = np.random.default_rng()
+        r = rng.random(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        y = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        weights = np.ones_like(y)
+
+        # create original copies before passing
+        t_org = t.copy()
+        y_org = y.copy()
+        f_org = f.copy()
+        weights_org = weights.copy()
+
+        lombscargle(t, y, f, precenter=True, weights=weights)
+
+        # check all 4 array inputs
+        assert_array_equal(t, t_org)
+        assert_array_equal(y, y_org)
+        assert_array_equal(f, f_org)
+        assert_array_equal(weights, weights_org)
 
 
 class TestSTFT:
