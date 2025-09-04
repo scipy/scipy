@@ -13,7 +13,7 @@ __all__ = ['orthogonal_procrustes']
 
 @xp_capabilities(
     jax_jit=False,
-    skip_backends=[("dask.array", "full_matrics=True is not supported by dask")],
+    skip_backends=[("dask.array", "full_matrices=True is not supported by dask")],
 )
 @_apply_over_batch(('A', 2), ('B', 2))
 def orthogonal_procrustes(A, B, check_finite=True):
