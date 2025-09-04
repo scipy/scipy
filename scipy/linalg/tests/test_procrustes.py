@@ -7,8 +7,7 @@ from pytest import raises as assert_raises
 
 from scipy.linalg import orthogonal_procrustes
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import make_xp_test_case
-from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 from scipy.conftest import skip_xp_invalid_arg
 
 def _centered(A, xp):
@@ -140,7 +139,7 @@ class TestOrthogonalProcrustes:
         expected = xp.asarray([[3, 21], [-18, 0], [3, -21], [24, 0]], dtype=xp.float64)
         xp_assert_close(B_approx, expected, atol=1e-8)
         # Check disparity symmetry.
-        expected_disparity = xp.asarray(0.4501246882793018, dtype=xp.float64)
+        expected_disparity = xp.asarray(0.4501246882793018, dtype=xp.float64)[()]
         AB_disparity = (xp.linalg.matrix_norm(B_approx - B_orig)
                         / xp.linalg.matrix_norm(B))**2
         xp_assert_close(AB_disparity, expected_disparity)
