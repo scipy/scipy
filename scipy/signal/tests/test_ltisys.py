@@ -953,7 +953,8 @@ class Test_abcd_normalize:
 
     def test_normalized_matrices_unchanged(self, xp):
         A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -972,7 +973,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         D_ = xp.zeros((0, 0))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
@@ -983,7 +985,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         C_ = xp.zeros((0, 2))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
