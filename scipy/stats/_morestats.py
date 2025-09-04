@@ -3166,8 +3166,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     sample1, sample2, ... : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
-        Keyword argument controlling which function of the data is used in
-        computing the test statistic.  The default is 'median'.
+        Which statistics to use to center data points within each sample. Default
+        is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
@@ -3268,11 +3268,9 @@ def fligner(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(sample, proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
 
     Ni = asarray([len(samples[j]) for j in range(k)])
     Yci = asarray([func(samples[j]) for j in range(k)])

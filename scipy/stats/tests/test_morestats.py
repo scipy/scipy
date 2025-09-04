@@ -1123,18 +1123,6 @@ class TestFligner:
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
-    def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
-                                    proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
-
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
     # there are ties, while in the other (because of normal rounding
