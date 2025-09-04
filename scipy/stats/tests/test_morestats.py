@@ -801,6 +801,13 @@ class TestLevene:
         assert_almost_equal(W, 1.7059176930008939, 7)
         assert_almost_equal(pval, 0.0990829755522, 7)
 
+    def test_mean(self):
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="mean")
+        assert_almost_equal(W, 2.15945985647285, 7)
+        assert_almost_equal(pval, 0.032236826559783, 7)
+
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
