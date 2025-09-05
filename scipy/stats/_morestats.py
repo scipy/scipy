@@ -3204,7 +3204,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized 
            estimating equations using quadratic inference functions. 
            Biometrika, 87(4), 823-836. 
-           https://doi.org/10.1093/biomet/87.4.823
+           :doi:`10.1093/biomet/87.4.823`
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. Journal of the American Statistical Association.
            71(353), 210-213.
