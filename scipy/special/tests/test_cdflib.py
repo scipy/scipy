@@ -5,7 +5,6 @@ The following functions still need tests:
 
 - ncfdtridfn
 - ncfdtridfd
-- ncfdtrinc
 - nbdtrik
 - nbdtrin
 - pdtrik
@@ -507,7 +506,7 @@ def test_bdtrik_nbdtrik_inf():
      [1e-100, 3, 1.5, 1e100, 0.611815287345399]
     ]
 )
-def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
+def test_ncfdtr_and_inverses(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
     #
     # import numpy as np
@@ -555,6 +554,7 @@ def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
     # of a CDF as they are not bijective in these regions
     if 0 < expected_cdf < 1:
         assert_allclose(sp.ncfdtri(dfn, dfd, nc, expected_cdf), f, rtol=5e-11)
+        assert_allclose(sp.ncfdtrinc(dfn, dfd, expected_cdf, f), nc, rtol=1e-11)
 
 @pytest.mark.parametrize(
     "args",
