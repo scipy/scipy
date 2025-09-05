@@ -25,7 +25,7 @@ from ._special_matrices import block_diag
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
            'solve_lyapunov',
-           'solve_continuous_are', 'solve_discrete_are']
+           'solve_continuous_are', 'solve_discrete_are', 'solve_continuous_rde']
 
 
 @_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
@@ -753,6 +753,213 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
                           'too close to the unit circle')
 
     return (x + x.conj().T)/2
+
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('pt', 2), ('s', 2))
+def solve_continuous_rde(a, b, q, r, pt, tspan, s=None):
+    """
+    Solve the finite-horizon continuous-time Riccati Differential Equation (RDE).
+
+    This function computes the solution of the matrix-valued differential equation:
+
+    .. math::
+
+        \\frac{dP}{dt} = -A^\\top P - PA + PBR^{-1}B^\\top P - Q
+
+    subject to the terminal condition:
+
+    .. math::
+
+        P(t_f) = P_T
+
+    where ``t_f = max(tspan)`` and ``P_T`` is the terminal cost matrix.
+
+    If the optional cross-weight matrix ``s`` is provided, the generalized version is
+    solved:
+
+    .. math::
+
+    The integration is performed backwards in time, from ``tspan[1]`` to ``tspan[0]``,
+     starting at ``P(tspan[1]) = pt``. This corresponds to solving the RDE with a
+     finite-horizon terminal cost in optimal control problems.
+
+    Parameters
+    ----------
+    a : (M, M) array_like
+        State dynamics matrix.
+    b : (M, N) array_like
+        Control input matrix.
+    q : (M, M) array_like
+        State cost matrix.
+    r : (N, N) array_like
+        Control cost matrix. Must be positive definite.
+    pt : (M, M) array_like
+        Terminal condition matrix for P(t_f).
+    tspan : (2,) array_like
+        Time interval of integration as [t0, tf]. Must satisfy t0 < tf.
+    s : (M, N) array_like, optional
+        State-control cross-weight matrix. Defaults to zero matrix if not provided.
+
+    Returns
+    -------
+    t : (K,) ndarray
+        Time vector in forward chronological order.
+    p : (K, M, M) ndarray
+        Time evolution of the solution to the Riccati differential equation.
+        Each entry p[k] corresponds to the solution P(t[k]).
+
+    Raises
+    ------
+    ValueError
+        If any input fails validation checks.
+    RuntimeError
+        If the ODE solver fails during integration.
+
+    References
+    ----------
+    .. [1] D. Liberzon, "Calculus of Variations and Optimal Control",
+       University of Illinois at Urbana-Champaign. Available online:
+       https://liberzon.csl.illinois.edu/teaching/cvoc/node107.html
+
+    .. [2] R. Tedrake, "Underactuated Robotics: Algorithms for Walking, Running,
+       Swimming, Flying, and Manipulation", MIT Course Notes. Available online:
+       https://underactuated.mit.edu/lqr.html#finite_horizon
+    """
+
+    # Validate Arguments
+    a, b, q, r, s, pt, tspan, m = _rde_validate_args(a, b, q, r, s, pt, tspan)
+
+    # Define the equation
+    r_inv = np.linalg.inv(r)
+
+    def riccati_ode(t, p_flat, a, b, q, r_inv, m, s):
+        p = p_flat.reshape((m, m))
+        dpdt = (-a.conj().T @ p - p @ a + (p @ b + s) @ r_inv @
+                (b.conj().T @ p + s.conj().T) - q)
+
+        return dpdt.ravel()
+
+    # Solve the equation
+    from scipy.integrate import solve_ivp
+    dtype = np.result_type(a, b, q, r, pt, s) # Ensures correct data type
+
+    sol = solve_ivp(
+        lambda t, y: riccati_ode(t, y, a, b, q, r_inv, m, s),
+        (tspan[1], tspan[0]), # Reverse tspan for backwards integration
+        pt.ravel().astype(dtype),
+        t_eval=np.linspace(tspan[1], tspan[0], 100), # Fixed time grid
+        rtol=1e-8,
+        atol=1e-10
+    )
+
+    if not sol.success:
+        raise RuntimeError(f"Riccati solver failed: {sol.message}")
+
+    # Reverse solution t
+    t = sol.t[:-1]
+    # Reverse and reshape solution p to (K, m, m)
+    p = sol.y.T[::-1].reshape(-1, m, m)
+
+    # Return the results
+    return t, p
+
+def _rde_validate_args(a, b, q, r, s, pt, tspan):
+    """
+    Validate input arguments for the continuous-time Riccati Differential
+    Equation (RDE) solver.
+
+    This helper function ensures all inputs to the `solve_continuous_rde`
+    function are valid.
+    It performs a series of checks including:
+        - Finite-valued array inputs;
+        - Shape consistency between system and cost matrices;
+        - Symmetry (Hermitian) of Q, R, and PT;
+        - Positive definiteness of R;
+        - Positive semi-definiteness of Q and PT;
+        - Proper definition of the time span vector;
+        - Verification of the cross-weight matrix S.
+
+    Parameters
+    ----------
+        a : (M, M) array_like
+            System matrix.
+        b : (M, N) array_like
+            Input matrix.
+        q : (M, M) array_like
+            State cost matrix.
+        r : (N, N) array_like
+            Control cost matrix. Must be symmetric and positive definite.
+        s : (M, N) array_like or None
+            Optional cross-weight matrix. If None, assumed to be zero.
+        pt : (M, M) array_like
+            Terminal condition matrix. Must be symmetric and positive semi-definite.
+        tspan : (2,) array_like
+            Time interval [t0, tf] with t0 < tf.
+
+    Returns
+    -------
+    a, b, q, r, pt, tspan : ndarray
+        Regularized input data.
+    m : int
+        shape of the problem.
+
+    """
+
+    a = np.atleast_2d(_asarray_validated(a, check_finite=True))
+    b = np.atleast_2d(_asarray_validated(b, check_finite=True))
+    q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+    r = np.atleast_2d(_asarray_validated(r, check_finite=True))
+    pt = np.atleast_2d(_asarray_validated(pt, check_finite=True))
+    tspan = np.atleast_1d(_asarray_validated(tspan, check_finite=True))
+
+    # Shape consistency checks
+    m, n = b.shape
+    if m != a.shape[0]:
+        raise ValueError("Matrix a and b should have the same number of rows.")
+    if m != q.shape[0]:
+        raise ValueError("Matrix a and q should have the same shape.")
+    if n != r.shape[0]:
+        raise ValueError("Matrix b and r should have the same number of cols.")
+    if m != pt.shape[0]:
+        raise ValueError("Matrix pt and b should have the same number of rows.")
+
+    # Check tspan size
+    if tspan.shape != (2,):
+        raise ValueError("tspan must be a 1D array-like of length 2 (e.g., [t0, tf])")
+
+    if tspan[0] >= tspan[1]:
+        raise ValueError("tspan[0] < tspan[1] is required")
+
+    # Check if the data matrices q, r, pt are (sufficiently) hermitian
+    for ind, mat in enumerate((q, r, pt)):
+        if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
+            raise ValueError(f"Matrix {'qrpt'[ind]} should be symmetric/hermitian.")
+
+    # Check if r is positive definite
+    eigvals = np.linalg.eigvalsh(r)
+    if not np.all(eigvals > 0):
+        raise ValueError("R must be positive definite.")
+
+    # Check if q, pt are positive semi-definite
+    eigvals = np.linalg.eigvalsh(q)
+    if not np.all(eigvals >= 0):
+        raise ValueError("Q must be positive semi-definite.")
+
+    eigvals = np.linalg.eigvalsh(pt)
+    if not np.all(eigvals >= 0):
+        raise ValueError("PT must be positive semi-definite.")
+
+    # Check tspan size
+    if tspan.shape != (2,):
+        raise ValueError("tspan must be a 1D array-like of length 2 (e.g., [t0, tf])")
+
+    if s is None:
+        s = np.zeros((m, n))
+    else:
+        s = np.atleast_2d(_asarray_validated(s, check_finite=True))
+        if s.shape != b.shape:
+            raise ValueError("Matrix b and s should have the same shape")
+
+    return a, b, q, r, s, pt, tspan, m
 
 
 def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
