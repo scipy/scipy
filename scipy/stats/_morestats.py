@@ -3197,23 +3197,18 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     nonparametric tests by extensive simulations and they conclude that the
     tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
     superior in terms of robustness of departures from normality and power
-    [3]_.
+    [1]_.
 
     References
     ----------
-    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
+    .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized 
+           estimating equations using quadratic inference functions. 
+           Biometrika, 87(4), 823-836. 
+           https://doi.org/10.1093/biomet/87.4.823
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. Journal of the American Statistical Association.
            71(353), 210-213.
-    .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-    .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
+    .. [3] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
            applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
