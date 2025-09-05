@@ -115,7 +115,7 @@ def tf2ss(num, den):
 
 
 def abcd_normalize(A=None, B=None, C=None, D=None, *, cast_to='floating64'):
-    """Check state-space matrices compatibility and ensure they are 2d arrays.
+    r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     Converts input matrices into two-dimensional arrays as needed. Then the dimensions
     n, q, p are determined by investigating the non-zero entries of the array shapes.
@@ -193,14 +193,20 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, cast_to='floating64'):
     The following snippet shows the effect of the `cast_to` parameter:
 
     >>> from scipy.signal import abcd_normalize
-    >>> AA, BB, CC, DD = abcd_normalize(A=[[1, 2], [3, 4]], D=2.5)
-    >>> AA.dtype, BB.dtype, CC.dtype, DD.dtype
-     (dtype('float64'), dtype('float64'), dtype('float64'), dtype('float64'))
-    >>> # No casting:
-    >>> AA, BB, CC, DD = abcd_normalize(A=[[1, 2], [3, 4]], D=2.5, cast_to=None)
-    >>> AA.dtype, BB.dtype, CC.dtype, DD.dtype
-    (dtype('int64'), dtype('float64'), dtype('float64'), dtype('float64'))
-
+    >>> A, D = [[1, 2], [3, 4]], 2.5
+    ...
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D)  # default type casting
+    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
+     AA: float64, BB: float64
+     CC: float64, DD: float64
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, cast_to=None)  # No type casting
+    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
+     AA: int64, BB: float64
+     CC: float64, DD: float64
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, cast_to='int32')  # Explicit dtype
+    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
+     AA: int32, BB: int32
+     CC: int32, DD: int32
     """
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
