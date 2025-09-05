@@ -3197,7 +3197,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     nonparametric tests by extensive simulations and they conclude that the
     tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
     superior in terms of robustness of departures from normality and power
-    [1]_.
+    [3]_.
 
     References
     ----------
