@@ -419,7 +419,7 @@ where :math:`K=\max\left(N,M\right).` Note that :math:`b_{K}=0` if :math:`K>M`
 and :math:`a_{K}=0` if :math:`K>N.` In this way, the output at time :math:`n`
 depends only on the input at time :math:`n` and the value of :math:`z_{0}` at
 the previous time. This can always be calculated as long as the :math:`K`
-values :math:`z_{0}\left[n-1\right]\ldots z_{K-1}\left[n-1\right]` are
+values :math:`z_{0}\left[n-1\right], \ldots, z_{K-1}\left[n-1\right]` are
 computed and stored at each time step.
 
 The difference-equation filter is called using the command :func:`lfilter` in
@@ -734,6 +734,8 @@ or the analog transfer function:
 Although the sets of roots are stored as ordered NumPy arrays, their ordering
 does not matter: ``([-1, -2], [-3, -4], 1)`` is the same filter as
 ``([-2, -1], [-4, -3], 1)``.
+
+.. _tutorial_signal_state_space_representation:
 
 State-space system representation
 *********************************

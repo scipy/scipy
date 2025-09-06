@@ -411,7 +411,9 @@ def as_mrp(quat: Array) -> Array:
     return sign * quat[..., :3] / denominator
 
 
-def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
+def as_euler(
+    quat: Array, seq: str, degrees: bool = False, *, suppress_warnings: bool = False
+) -> Array:
     xp = array_namespace(quat)
 
     # Sanitize the sequence
@@ -442,12 +444,19 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     c = xp.where(mask, quat[..., j], quat[..., j] + quat[..., 3])
     d = xp.where(mask, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
-    angles = _get_angles(extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d)
+    angles = _get_angles(
+        extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d, suppress_warnings
+    )
     return _rad2deg(angles) if degrees else angles
 
 
 def as_davenport(
-    quat: Array, axes: ArrayLike, order: str, degrees: bool = False
+    quat: Array,
+    axes: ArrayLike,
+    order: str,
+    degrees: bool = False,
+    *,
+    suppress_warnings: bool = False,
 ) -> Array:
     xp = array_namespace(quat)
 
@@ -482,7 +491,12 @@ def as_davenport(
         raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = _compute_davenport_from_quat(
-        quat, axes[..., 0, :], axes[..., 1, :], axes[..., 2, :], extrinsic
+        quat,
+        axes[..., 0, :],
+        axes[..., 1, :],
+        axes[..., 2, :],
+        extrinsic,
+        suppress_warnings,
     )
     if degrees:
         angles = _rad2deg(angles)
@@ -997,7 +1011,12 @@ def _elementary_basis_index(axis: str) -> int:
 
 
 def _compute_davenport_from_quat(
-    quat: Array, n1: Array, n2: Array, n3: Array, extrinsic: bool
+    quat: Array,
+    n1: Array,
+    n2: Array,
+    n3: Array,
+    extrinsic: bool,
+    suppress_warnings: bool,
 ) -> Array:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -1027,7 +1046,7 @@ def _compute_davenport_from_quat(
     c = xp.linalg.vecdot(q_trans[..., :3], n2)
     d = xp.linalg.vecdot(q_trans[..., :3], n_cross)
 
-    angles = _get_angles(extrinsic, False, 1, lamb, a, b, c, d)
+    angles = _get_angles(extrinsic, False, 1, lamb, a, b, c, d, suppress_warnings)
     angles = xpx.at(angles)[..., 1].set(
         xp.where(correct_set, -angles[..., 1], angles[..., 1])
     )
@@ -1061,6 +1080,7 @@ def _get_angles(
     b: Array,
     c: Array,
     d: Array,
+    suppress_warnings: bool,
 ) -> Array:
     xp = array_namespace(a)
     device = xp_device(a)
@@ -1083,7 +1103,7 @@ def _get_angles(
     case1 = xp.abs(angles[..., 1]) <= eps
     case2 = xp.abs(angles[..., 1] - xp.pi) <= eps
     case0 = ~(case1 | case2)
-    if not is_lazy_array(case0) and xp.any(~case0):
+    if not suppress_warnings and not is_lazy_array(case0) and xp.any(~case0):
         warnings.warn(
             "Gimbal lock detected. Setting third angle to zero "
             "since it is not possible to uniquely determine "

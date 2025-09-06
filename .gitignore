@@ -87,6 +87,7 @@ pip-wheel-metadata
 .mesonpy-native-file.ini
 installdir/
 .mesonpy/
+.wraplock
 
 # doit
 ######

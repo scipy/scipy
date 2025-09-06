@@ -541,7 +541,7 @@ class TestTrimming:
         assert_equal(trimx.count(), 48)
         assert_equal(trimx._mask, [1]*16 + [0]*34 + [1]*20 + [0]*14 + [1]*16)
         x._mask = nomask
-        x.shape = (10,10)
+        x = x.reshape((10,10))
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 

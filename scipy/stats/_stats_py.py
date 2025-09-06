@@ -2073,7 +2073,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
         weights = array([(j - idx), (idx - i)], float)
         wshape = [1] * sorted_.ndim
         wshape[axis] = 2
-        weights.shape = wshape
+        weights = weights.reshape(wshape)
         sumval = weights.sum()
 
     # Use np.add.reduce (== np.sum but a little faster) to coerce data type

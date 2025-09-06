@@ -1923,7 +1923,7 @@ Then the problem is:
 
 .. math::
 
-    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in \{0, 1\}
 
 Although the objective function and inequality constraints are linear in the
 *decision variables* :math:`x_i`, this differs from a typical linear

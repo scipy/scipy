@@ -2547,8 +2547,7 @@ const char *hankel1_doc = R"(
 
     See Also
     --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
+    hankel1e : This function with leading exponential behavior stripped off.
 
     Notes
     -----
@@ -2570,6 +2569,38 @@ const char *hankel1_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    boundary conditions, the Green's function is given by
+
+    .. math::
+
+        G(\mathbf{x}, \mathbf{x}^\prime) =
+        \frac{1}{4i} H^{(1)}_0(k|\mathbf{x} - \mathbf{x^\prime}|)
+
+    where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
+    of the first kind and of order zero. In the following example, we will solve the
+    Helmholtz equation with two Dirac sources.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hankel1
+    >>> k = 10  # Wavenumber
+    >>> sources = [0.5, -0.5]  # Location of two point sources
+    >>> x, y = np.linspace(-3, 3, 300), np.linspace(-3, 3, 300)
+    >>> Z = np.add.outer(1j*y, x)
+    >>> U = np.zeros_like(Z)
+    >>> for sz in sources:
+    ...     r = np.abs(Z - sz)
+    ...     U += (1j/4)*hankel1(0, k*r)
+
+    Finally, we will plot the real part of the solution.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(np.real(Z), np.imag(Z), np.real(U))
+    >>> plt.show()
     )";
 
 const char *hankel1e_doc = R"(
@@ -5616,7 +5647,7 @@ const char *modfresnelm_doc = R"(
     fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km : scalar or ndarray
-        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fm``
 
     See Also
     --------
