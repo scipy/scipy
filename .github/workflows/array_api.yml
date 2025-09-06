@@ -41,6 +41,8 @@ jobs:
         with:
           pixi-version: v0.54.1
           manifest-path: .github/workflows/pixi.toml
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          environments: array-api-cpu
 
       - name: Prepare compiler cache
         id: prep-ccache
@@ -66,4 +68,4 @@ jobs:
           pixi run test-cpu "--" --durations 3 --timeout=60
 
       - name: Test SciPy with torch/float32
-        run: pixi run test-torch-float32 "--" --durations 3 --timeout=60
+        run: pixi run --environment=array-api-cpu test-torch-float32 "--" --durations 3 --timeout=60
