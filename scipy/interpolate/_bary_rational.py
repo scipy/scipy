@@ -128,7 +128,8 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 r[jj] = support_values[zv[jj] == self._support_points].squeeze()
 
-        return np.reshape(r, z.shape + self._shape)
+        res = np.reshape(r, z.shape + self._shape)
+        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
 
     def poles(self):
         """Compute the poles of the rational approximation.
@@ -731,15 +732,3 @@ class FloaterHormannInterpolator(_BarycentricRational):
         w *= (-1.)**(np.arange(n) - d)
 
         return z, f, w
-
-    def __call__(self, z):
-        """Evaluate the interpolator at given values.
-
-        Parameters
-        ----------
-        z : array_like
-            Input values.
-        """
-        z = np.asarray(z)
-        res = super().__call__(z)
-        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
