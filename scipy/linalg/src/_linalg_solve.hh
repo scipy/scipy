@@ -167,7 +167,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm_or_herm = false, is_symm_not_herm = false;
-    char uplo = 'X';    // sentinel
+    char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
     SliceStatus slice_status;
@@ -196,10 +196,15 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork, info;
+    CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork=-1, info;
 
-    // XXX: workspace query
-    lwork = 4*n; // gecon needs at least 4*n
+    T tmp = numeric_limits<T>::zero;
+    sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    if (info != 0) { info = -100; return (int)info; }
+
+    lwork = (CBLAS_INT)real_part(tmp);
+    lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
+
     T* buffer = (T *)malloc((2*n*n + n*nrhs + lwork)*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
@@ -232,7 +237,6 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     }
 
     // normalize the structure detection inputs
-    uplo = lower ? 'L' : 'U';
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
     }
