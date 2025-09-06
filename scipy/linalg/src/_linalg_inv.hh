@@ -167,7 +167,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm_or_herm = false, is_symm_not_herm = false;
-    char uplo;
+    char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
     SliceStatus slice_status;
@@ -191,9 +191,14 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     T tmp = numeric_limits<T>::zero;
+    T tmp1 = numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
     getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    if (info != 0) { info = -100; return (int)info; }
+
+    // also query sytrf
+    sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
     /*
@@ -206,7 +211,9 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
      */
     lwork = (CBLAS_INT)(1.01 * real_part(tmp));
 
+    lwork = std::max(lwork, (CBLAS_INT)real_part(tmp1)); // in case sytrf needs more
     lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
+
     T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
@@ -237,7 +244,6 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // normalize the structure detection inputs
-    uplo = lower? 'L' : 'U';
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
     }
