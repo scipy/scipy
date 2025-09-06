@@ -313,7 +313,8 @@ def normalize_dual_quaternion(double[:, :] dual_quat):
 
 
 cdef _normalize_dual_quaternion(np.ndarray[double, ndim=2] real_part, np.ndarray[double, ndim=2] dual_part):
-    """Ensure that unit norm of the dual quaternion.
+    """Ensure that the dual quaternion has unit norm.
+
     The norm is a dual number and must be 1 + 0 * epsilon, which means that
     the real quaternion must have unit norm and the dual quaternion must be
     orthogonal to the real quaternion.
