@@ -215,15 +215,3 @@ array-api-cpu = [
   "jax-cpu",
   "torch-cpu",
 ]
-# array-api-strict = ["array_api_strict"]
-# array-api-cuda = [
-#   "cuda",
-#   "array_api_strict",
-#   "cupy",
-#   "jax-base",
-#   "jax-cuda",
-#   "mkl",
-#   "torch-base",
-#   "torch-cuda",
-#   "test",
-# ]
