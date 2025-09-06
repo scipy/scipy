@@ -801,6 +801,13 @@ class TestLevene:
         assert_almost_equal(W, 1.7059176930008939, 7)
         assert_almost_equal(pval, 0.0990829755522, 7)
 
+    def test_mean(self):
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="mean")
+        assert_almost_equal(W, 2.15945985647285, 7)
+        assert_almost_equal(pval, 0.032236826559783, 7)
+
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
@@ -811,22 +818,11 @@ class TestLevene:
         assert_almost_equal(pval1, pval2)
 
     def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
-
-        # Use center='trimmed'
-        W0, pval0 = stats.levene(x, y, center='trimmed',
-                                 proportiontocut=0.125)
-        W1, pval1 = stats.levene(x2, y, center='trimmed',
-                                 proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(W0, W2)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
+        assert_almost_equal(W, 2.07712845686874, 7)
+        assert_almost_equal(pval, 0.0397269688035377, 7)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
@@ -1124,18 +1120,6 @@ class TestFligner:
         Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
         Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
-
-    def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
-                                    proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
