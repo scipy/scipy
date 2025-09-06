@@ -94,12 +94,10 @@ from . import _lsoda
 
 
 _vode_int_dtype = _vode.types.intvar.dtype
-_lsoda_int_dtype = _lsoda.types.intvar.dtype
 
 
-# lsoda, vode and zvode are not thread-safe. VODE_LOCK protects both vode and
+# vode and zvode are not thread-safe. VODE_LOCK protects both vode and
 # zvode; they share the `def run` implementation
-LSODA_LOCK = threading.Lock()
 VODE_LOCK = threading.Lock()
 
 
@@ -1308,6 +1306,15 @@ class lsoda(IntegratorBase):
         # Calculate parameters for Fortran subroutine dvode.
         if has_jac:
             if self.mu is None and self.ml is None:
+                jt = 0
+            else:
+                if self.mu is None:
+                    self.mu = 0
+                if self.ml is None:
+                    self.ml = 0
+                jt = 3
+        else:
+            if self.mu is None and self.ml is None:
                 jt = 1
             else:
                 if self.mu is None:
@@ -1315,19 +1322,10 @@ class lsoda(IntegratorBase):
                 if self.ml is None:
                     self.ml = 0
                 jt = 4
-        else:
-            if self.mu is None and self.ml is None:
-                jt = 2
-            else:
-                if self.mu is None:
-                    self.mu = 0
-                if self.ml is None:
-                    self.ml = 0
-                jt = 5
         lrn = 20 + (self.max_order_ns + 4) * n
-        if jt in [1, 2]:
+        if jt in [0, 1]:
             lrs = 22 + (self.max_order_s + 4) * n + n * n
-        elif jt in [4, 5]:
+        elif jt in [3, 4]:
             lrs = 22 + (self.max_order_s + 5 + 2 * self.ml + self.mu) * n
         else:
             raise ValueError(f'Unexpected jt={jt}')
@@ -1338,7 +1336,7 @@ class lsoda(IntegratorBase):
         rwork[5] = self.max_step
         rwork[6] = self.min_step
         self.rwork = rwork
-        iwork = zeros((liw,), _lsoda_int_dtype)
+        iwork = zeros((liw,), dtype=np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1352,14 +1350,8 @@ class lsoda(IntegratorBase):
         self.call_args = [self.rtol, self.atol, 1, 1,
                           self.rwork, self.iwork, jt]
         self.success = 1
-        self.initialized = False
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        if self.initialized:
-            self.check_handle()
-        else:
-            self.initialized = True
-            self.acquire_new_handle()
 
         if jac is not None and self.ml is not None and self.ml > 0:
             # Banded Jacobian. Wrap the user-provided function with one
@@ -1370,8 +1362,7 @@ class lsoda(IntegratorBase):
         args = [f, y0, t0, t1] + self.call_args[:-1] + \
                [jac, self.call_args[-1], f_params, 0, jac_params]
 
-        with LSODA_LOCK:
-            y1, t, istate = self.runner(*args)
+        y1, t, istate = self.runner(*args)
 
         self.istate = istate
         if istate < 0:

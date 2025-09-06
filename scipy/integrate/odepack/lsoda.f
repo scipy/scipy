@@ -544,7 +544,7 @@ c          only be at least lin = 20.
 c
 c          the first few words of iwork are used for conditional and
 c          optional inputs and optional outputs.
-c 
+c
 c          the following 2 words in iwork are conditional inputs..
 c            iwork(1) = ml     these are the lower and upper
 c            iwork(2) = mu     half-bandwidths, respectively, of the
@@ -1019,6 +1019,7 @@ c if istate .gt. 1 but the flag init shows that initialization has
 c not yet been done, an error return occurs.
 c if istate = 1 and tout = t, jump to block g and return immediately.
 c-----------------------------------------------------------------------
+      print *, "From LSODA fortran"
       if (istate .lt. 1 .or. istate .gt. 3) go to 601
       if (itask .lt. 1 .or. itask .gt. 5) go to 602
       if (istate .eq. 1) go to 10

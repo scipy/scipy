@@ -1,4 +1,5 @@
 #include "lsoda.h"
+#include <float.h>
 #include <stdio.h>
 
 // Forward declarations (these functions are implemented later in this file)
@@ -7,45 +8,56 @@ static double vmnorm(const int n, double* restrict v, double* restrict w);
 static void intdy(const double t, const int k, double* yh, const int nyh, double* dky, int* iflag, lsoda_common_struct_t* S);
 
 
+static inline int int_min(const int a, const int b) { return a < b ? a : b; }
+static inline int int_max(const int a, const int b) { return a > b ? a : b; }
+
+
+
 /**
- * @brief Computes the norm of a banded n by n matrix consistent with the weighted max-norm on vectors.
+ * @brief Computes the norm of a banded matrix using the weighted max-norm.
  *
- * This function computes the norm of a banded matrix stored in the array a,
- * using the weights in the array w. The matrix is stored in LAPACK banded format,
- * with nra as the leading dimension, and bandwidths ml (lower) and mu (upper).
+ * @param n   Number of columns of the input a.
+ * @param a   Input banded matrix of size (ml+mu+1) by n.
+ * @param nra Leading dimension of the array a, typically ml + mu + 1.
+ * @param ml  Number of sub-diagonals.
+ * @param mu  Number of super-diagonals.
+ * @param w   Weights vector of length n.
  *
- * The norm is defined as:
- *   bnorm = max_{i=0,...,n-1} ( w[i] * sum_{j=jlo}^{jhi} |a[(i1-j-1) + j*nra]| / w[j] )
- * where:
- *   i1 = i + mu + 1
- *   jlo = max(i - ml, 0)
- *   jhi = min(i + mu, n - 1)
+ * @return    The computed norm of the banded matrix.
  *
- * @param n    Number of rows/columns of the matrix.
- * @param a    Pointer to the banded matrix data (LAPACK format).
- * @param nra  Leading dimension of the matrix a (nra >= ml + mu + 1).
- * @param ml   Lower half-bandwidth.
- * @param mu   Upper half-bandwidth.
- * @param w    Pointer to the weights array of length n.
- * @return     The computed weighted max-norm of the banded matrix.
+ * @note The input array a is assumed to be stored in a banded format as follows,
+ * for ml = 3 and mu = 2:
+ *
+ *              col0 col1 col2 col3 col4 col5    diag      first     last
+ *       super2   0    0    x    x    x    x
+ *       super1   0    x    x    x    x    x
+ * row=0 diag     x    x    x    x    x    x    mu + 0   max(0,-3)  min(5,2)
+ * row=1 sub1     x    x    x    x    x    0    mu + 1   max(0,-2)  min(5,3)
+ * row=2 sub2     x    x    x    x    0    0    mu + 2   max(0,-1)  min(5,4)
+ * row=3 sub3     x    x    x    0    0    0    mu + 3   max(0, 0)  min(5,5)
+ * ---------------------------------------------------
+ * row=4          0    0    0    0    0    0    mu + 4   max(0, 1)  min(5,6)
+ * row=5          0    0    0    0    0    0    mu + 5   max(0, 2)  min(5,7)
+ *
  */
 static double
-bnorm(const int n, double* restrict a, const int nra, const int ml, const int mu,
-      double* restrict w)
+bnorm(const int n, double* restrict a, const int nra, const int ml, const int mu, double* restrict w)
 {
-    int i1, jlo, jhi;
-    double an = 0.0, sum = 0.0;
-    for (int i = 0; i < n; i++)
+    int diag, first, last;
+    double an = 0.0, sum;
+    // Trace diagonally in the banded storage.
+    for (int row = 0; row < n; row++)
     {
         sum = 0.0;
-        i1 = i + mu + 1;
-        jlo = (i - ml < 0 ? 0 : i - ml);
-        jhi = (i + mu > n - 1 ? n - 1 : i + mu);
-        for (int j = jlo; j <= jhi; j++)
+        diag = row + mu;
+        first = int_max(row - ml, 0);
+        last = int_min(row + mu, n - 1);
+
+        for (int col = first; col <= last; col++)
         {
-            sum = sum + fabs(a[(i1 - j - 1) + j*nra]) / w[j];  // Original formula was correct
+            sum = sum + fabs(a[diag - col + col*nra]) / w[col];
         }
-        an = fmax(an, sum * w[i]);
+        an = fmax(an, sum * w[row]);
     }
     return an;
 }
@@ -56,12 +68,13 @@ bnorm(const int n, double* restrict a, const int nra, const int ml, const int mu
  *
  * This function computes the norm of a full n by n matrix, stored in
  * the array a, that is consistent with the weighted max-norm on vectors,
- * with weights stored in the array w..
+ * with the weights stored in the array w.
  *
  * @param n Size of the square matrix.
  * @param a Input matrix of size n by n.
  * @param w Weights vector of length n.
- * @return The computed norm of the matrix.
+ *
+ * @return  The computed norm of the matrix.
  *
  */
 static double
@@ -73,7 +86,7 @@ fnorm(const int n, double* restrict a, double* restrict w)
         double sum = 0.0;
         for (int j = 0; j < n; j++)
         {
-            sum = sum + fabs(a[i * n + j]) / w[j];
+            sum = sum + fabs(a[i + j * n]) / w[j];
         }
         // 10
         an = fmax(an, sum*w[i]);
@@ -266,7 +279,7 @@ cfode(const int meth, double* elco, double* tesco)
  *               wm also contains the following matrix-related data:
  *               - wm[0] = sqrt(uround), used in numerical Jacobian increments.
  * @param iwm    Integer work space containing pivot information, starting at iwm[20].
- *               iwm also contains the band parameters ml = iwm[0] and mu = iwm[1] if miter == 4 or 5.
+ *               iwm also contains the band parameters ml = iwm[0] and mu = iwm[1] if miter == 3 or 4.
  * @param el0    el[0] (input).
  * @param pdnorm Norm of Jacobian matrix (output).
  * @param ierpj  Output error flag: 0 if no trouble, >0 if P matrix found to be singular.
@@ -304,7 +317,7 @@ prja(
                 wm[i + 2] = 0.0;
             }
             // 110
-            jac(neq, &S->tn, y, 0, 0, &wm[2], &lenp);
+            jac(neq, &S->tn, y, 0, 0, &wm[2], &S->n);
             if (*neq == -1) { return; }
             double con = -hl0;
             for (int i = 0; i < lenp; i++)
@@ -316,6 +329,8 @@ prja(
             double fac = vmnorm(S->n, savf, ewt);
             double r0 = 1000.0 * fabs(S->h) * S->uround * S->n * fac;
             if (r0 == 0.0) { r0 = 1.0; }
+            // Ensure wm[0] = sqrt(uround) for FD increments (matches Fortran prja)
+            wm[0] = sqrt(S->uround);
             double srur  = wm[0];
             int j1 = 2;
             for (int j = 0; j < S->n; j++)
@@ -380,9 +395,11 @@ prja(
         }
         // 420
     } else if (S->miter == 4) {
-        // Make mband calls to f to approximate j
-        mba = (mband < S->n) ? mband : S->n;
+        // make mband calls to f to approximate j.
+        mba = int_min(mband, S->n);
         int meb1 = meband - 1;
+        // Ensure wm[0] = sqrt(uround) for FD increments (matches Fortran prja)
+        wm[0] = sqrt(S->uround);
         double srur = wm[0];
         double fac = vmnorm(S->n, savf, ewt);
         double r0 = 1000.0 * fabs(S->h) * S->uround * S->n * fac;
@@ -406,13 +423,13 @@ prja(
             // Compute finite differences for all affected columns
             for (int jj = j; jj < S->n; jj += mband)
             {
-                y[jj] = yh[jj]; // yh(jj,1) -> first column of yh
+                y[jj] = yh[jj];
                 double yjj = y[jj];
                 double r = fmax(srur * fabs(yjj), r0 / ewt[jj]);
                 fac = -hl0 / r;
-                int i1 = (jj - mu < 0) ? 0 : jj - mu;
-                int i2 = (jj + ml > S->n - 1) ? S->n - 1 : jj + ml;
-                int ii = jj * meb1 - ml + 2;
+                int i1 = int_max(jj - mu, 0);
+                int i2 = int_min(jj + ml, S->n - 1);
+                int ii = (jj + 1) * meb1 - ml + 1;
                 for (int i = i1; i <= i2; i++)
                 {
                     wm[ii + i] = (ftem[i] - savf[i]) * fac;
@@ -425,9 +442,10 @@ prja(
         S->nfe += mba;
     }
 
+    // Compute norm of J from band storage.
     S->pdnorm = bnorm(S->n, &wm[2], meband, ml, mu, ewt) / fabs(hl0);
-    // Add identity matrix
-    int ii = 2;
+    // Add identity matrix at diagonal positions in LAPACK band storage
+    int ii = 2 + ml + mu;
     for (int i = 0; i < S->n; i++)
     {
         wm[ii] = wm[ii] + 1.0;
@@ -456,14 +474,14 @@ prja(
  *             Storage of matrix elements starts at wm[2].
  *             wm also contains the following matrix-related data:
  *             - wm[0] = sqrt(uround) (not used here)
- *             - wm[1] = hl0, the previous value of h*el0, used if miter == 3
+ *             - wm[1] = hl0, the previous value of h*el0, used if miter == 2
  * @param iwm  Integer work space containing pivot information, starting at iwm[20],
- *             if miter is 1, 2, 4, or 5. iwm also contains band parameters
- *             ml = iwm[0] and mu = iwm[1] if miter is 4 or 5.
+ *             if miter is 0, 1, 3, or 4. iwm also contains band parameters
+ *             ml = iwm[0] and mu = iwm[1] if miter is 3 or 4.
  * @param x    The right-hand side vector on input, and the solution vector on output, of length n.
  * @param tem  Vector of work space of length n, not used in this version.
  * @param iersl Output flag (in common). iersl = 0 if no trouble occurred,
- *              iersl = 1 if a singular matrix arose with miter == 3.
+ *              iersl = 1 if a singular matrix arose with miter == 2.
  *
  * This routine also uses the common variables el0, h, miter, and n.
  */
@@ -644,7 +662,7 @@ stoda_adjust_step_size(lsoda_common_struct_t* S, double* yh, int nyh, const doub
     {
         S->irflag = 0;
         double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-        if (rh * pdh * 1.00001 < sm1[S->nq - 1])
+        if (rh * pdh * 1.00001 >= sm1[S->nq - 1])
         {
             rh = sm1[S->nq - 1] / pdh;
             S->irflag = 1;
@@ -900,7 +918,7 @@ stoda_handle_corrector_failure(double* yh, double* yh1, int nyh, int* ncf, doubl
     if (S->meth == 1) {
         S->irflag = 0;
         double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-        if (rh * pdh * 1.00001 < sm1[S->nq - 1]) {
+        if (rh * pdh * 1.00001 >= sm1[S->nq - 1]) {
             rh = sm1[S->nq - 1] / pdh;
             S->irflag = 1;
         }
@@ -1194,11 +1212,6 @@ stoda(
             S->rc = S->rc * rh;
             S->ialth = S->l;
             stoda_adjust_step_size(S, yh, nyh, sm1);
-            // Check if we should go to label 690 (equivalent to FORTRAN: if (iredo .eq. 0) go to 690)
-            if (should_reset_rmax) {
-                S->rmax = 10.0;  // Label 690: reset rmax
-                break;  // goto 700 (exit function)
-            }
             continue;
         }
 
@@ -1359,7 +1372,8 @@ stoda(
                         }
                     } else {
                         // 470
-                        if (S->irflag != 0) {
+                        if (S->irflag != 0)
+                        {
                             // Switch to BDF with doubled step size
                             S->h = S->h * 2.0;
                             int nqm2 = (S->nq < S->mxords) ? S->nq : S->mxords;
@@ -1526,9 +1540,11 @@ stoda(
 
             // 178-180: Rescale yh array and apply step size
             double r = 1.0;
-            for (int j = 2; j <= S->l; j++) {
+            for (int j = 2; j <= S->l; j++)
+            {
                 r = r * rh;
-                for (int i = 0; i < S->n; i++) {
+                for (int i = 0; i < S->n; i++)
+                {
                     yh[i + (j-1)*nyh] = yh[i + (j-1)*nyh] * r;
                 }
             }
@@ -1540,20 +1556,17 @@ stoda(
         } else if ((S->ialth > 1) || (S->l == S->lmax)) {
             break;
         } else {
-            for (int i = 0; i < S->n; i++)
-            {
-                yh[i + (S->lmax - 1)*nyh] = acor[i];
-            }
+            for (int i = 0; i < S->n; i++) { yh[i + (S->lmax - 1)*nyh] = acor[i]; }
             break;
         }
     }
 
+    // 690: Reset rmax on success
+    if (should_reset_rmax) { S->rmax = 10.0; }
+
     // 700
     double r = 1.0 / S->tesco[1 + (S->nqu - 1)*3];
-    for (int i = 0; i < S->n; i++)
-    {
-        acor[i] = acor[i] * r;
-    }
+    for (int i = 0; i < S->n; i++) { acor[i] = acor[i] * r; }
     S->hold = S->h;
     S->jstart = 1;
     return;
@@ -1569,7 +1582,7 @@ stoda(
 static void
 intdy(const double t, const int k, double* yh, const int nyh, double* dky, int* iflag, lsoda_common_struct_t* S)
 {
-    double hu = 0.0;
+    double hu = S->hu;
     *iflag = 0;
     if ((k < 0) || (k > S->nq)) { *iflag = -1; return; }
     double tp = S->tn - hu - 100.0 * S->uround * (S->tn + hu);
@@ -1656,617 +1669,728 @@ ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, dou
     return;
 }
 
-
+/**
+ * This helper function mimics the error handling at the end of lsoda
+ * in the original FORTRAN code, setting istate and incrementing illin.
+ * If illin reaches 5, istate is set to -8 to indicate a more severe error.
+ */
 void lsoda_mark_error(int* istate, int* illin)
 {
-    *istate = -3;  // Set istate to indicate an error
+    if (*illin == 5) { *istate = -8; return; }
+    printf("Some error occurred in LSODA, marking istate and illin\n");
     (*illin)++;
-    if (*illin == 5) {
-        *istate = -8;  // Set istate to a more severe error after multiple issues
-    }
+    *istate = -3;  // Set istate to indicate an error
+    return;
 }
 
 
 void lsoda(
     lsoda_func_t f, int neq, double* restrict y, double* t, double* tout, int itol, double* rtol, double* atol,
-    int* itask, int* istate, int* iopt, double* restrict rwork, int lrw, int* restrict iwork, int liw, lsoda_jac_t jac, const int jt)
+    int* itask, int* istate, int* iopt, double* restrict rwork, int lrw, int* restrict iwork, int liw, lsoda_jac_t jac,
+    const int jt, lsoda_common_struct_t* S)
 {
 
     const int mord[2] = {12, 5};  // Maximum orders for Adams and BDF methods
     const int mxstp0 = 500;       // Default maximum steps
     const int mxhnl0 = 10;        // Default maximum nil step warnings
 
-    lsoda_common_struct_t S = {0};  // Initialize state structure
-    int n = 0, jtyp, ml = 0, mu = 0;
-    int ixpr, mxstep, mxhnil, mxordn = 12, mxords = 5;
-    double hmxi, hmin, h0 = 0.0, hmax, tsw = 0.0;
-    int len1n, len1s, lwm, lenwm, len1c, len1, len2, lenrw, lenrwn, lenrws, lenrwc;
-    int liwm, leniw, leniwc;
-    int lewt = 0, lsavf, lacor, insufr, insufi;
+    int jtyp, iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
+    double hmx = 0.0, hmxi, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
+    int len1n, len1s, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwn, lenrws, lenrwc, lf0;
     double rtoli, atoli;
-    int i;
-    int ntrep = 0;
 
-    // Phase 1: Input Validation and Initial Dispatch
-    // Block A: Test istate and itask for legality and branch appropriately
-
-    if (*istate < 1 || *istate > 3) { lsoda_mark_error(istate, &S.illin); return; }
-    if (*itask < 1 || *itask > 5) { lsoda_mark_error(istate, &S.illin); return; }
-
-    if (*istate != 2)
+    // block a.
+    // this code block is executed on every call.
+    // it tests istate and itask for legality and branches appropriately.
+    // if istate .gt. 1 but the flag init shows that initialization has
+    // not yet been done, an error return occurs.
+    // if istate = 1 and tout = t, jump to block g and return immediately.
+    printf("HERE0\n");
+    if (*istate < 1 || *istate > 3) { lsoda_mark_error(istate, &S->illin); return; } // istate illegal
+    printf("HERE1\n");
+    if (*itask < 1 || *itask > 5) { lsoda_mark_error(istate, &S->illin); return; }  // itask illegal
+    printf("HERE2\n");
+    if (*istate != 1 && S->init == 0) { lsoda_mark_error(istate, &S->illin); return; } // istate > 1 but LSODA not initialized
+    // Fortran code has some tricky go to logic for istate handling hence despite the
+    // code duplication the states are handled in separate blocks for, mostly, sanity.
+    if (*istate == 1)
     {
-        // Initial state dispatch
-        if (*istate == 1) {
-            S.init = 0;
-            if (*tout == *t) {
-                ntrep++;
-                if (ntrep < 5) return;
-                *istate = -8;
-                printf("Repeated tout equal to t: %f\n", *tout);
-                return;
-            }
-            ntrep = 0;
-        } else {  // *istate == 3
-            if (S.init == 0) { lsoda_mark_error(istate, &S.illin); return; }
-            ntrep = 0;
-            // Continue to Block B (parameter changes)
+        S->init = 0;
+        if (*tout == *t)
+        {
+            // go to 430
+            S->ntrep++;
+            if (S->ntrep < 5) { return; }
+            *istate = -8;
+            return;
         }
+        S->ntrep = 0;
 
-        // Check legality of non-optional inputs neq, itol, iopt, jt, ml, and mu
-        if (neq <= 0) { lsoda_mark_error(istate, &S.illin); return; }
-
-        if (*istate == 1) {
-            n = neq;
-        } else {
-            if (neq > S.n) { lsoda_mark_error(istate, &S.illin); return; }
-            n = neq;
-        }
-
-        if (itol < 1 || itol > 4) { lsoda_mark_error(istate, &S.illin); return; }
-        if (*iopt < 0 || *iopt > 1) { lsoda_mark_error(istate, &S.illin); return; }
-
-        if (jt == 3 || jt < 1 || jt > 5) { lsoda_mark_error(istate, &S.illin); return; }
-        jtyp = jt;
-        if (jt > 2) {
+        if (neq <= 0) { lsoda_mark_error(istate, &S->illin); return; }
+        S->n = neq;
+        if ((itol < 1) || (itol > 4)) { lsoda_mark_error(istate, &S->illin); return; }
+        if ((*iopt < 0) || (*iopt > 1)) { lsoda_mark_error(istate, &S->illin); return; }
+        if (jt == 2 || jt < 0 || jt > 4) { lsoda_mark_error(istate, &S->illin); return; }
+        S->jtyp = jt;
+        if (jt > 1)
+        {
             ml = iwork[0];
             mu = iwork[1];
-            if (ml < 0 || ml >= n) { lsoda_mark_error(istate, &S.illin); return; }
-            if (mu < 0 || mu >= n) { lsoda_mark_error(istate, &S.illin); return; }
+            if ((ml < 0) || (ml >= neq)) { lsoda_mark_error(istate, &S->illin); return; }
+            if ((mu < 0) || (mu >= neq)) { lsoda_mark_error(istate, &S->illin); return; }
         }
 
-        // Process and check optional inputs
+        // next process and check the optional inputs.
         if (*iopt == 1) {
-            ixpr = iwork[4];
-            if (ixpr < 0 || ixpr > 1) { lsoda_mark_error(istate, &S.illin); return; }
+            // 40
+            S->ixpr = iwork[4];
+            if ((S->ixpr < 0) || (S->ixpr > 1)) { lsoda_mark_error(istate, &S->illin); return; }
 
-            mxstep = iwork[5];
-            if (mxstep < 0) { lsoda_mark_error(istate, &S.illin); return; }
-            if (mxstep == 0) mxstep = mxstp0;
+            S->mxstep = iwork[5];
+            if (S->mxstep < 0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxstep == 0) { S->mxstep = mxstp0; }
 
-            mxhnil = iwork[6];
-            if (mxhnil < 0) { lsoda_mark_error(istate, &S.illin); return; }
-            if (mxhnil == 0) mxhnil = mxhnl0;
+            S->mxhnil = iwork[6];
+            if (S->mxhnil < 0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxhnil == 0) { S->mxhnil = mxhnl0; }
 
-            if (*istate == 1) {
-                h0 = rwork[4];
-                mxordn = iwork[7];
-                if (mxordn < 0)  { lsoda_mark_error(istate, &S.illin); return; }
-                if (mxordn == 0) mxordn = 100;
-                mxordn = (mxordn < mord[0]) ? mxordn : mord[0];
-                mxords = iwork[8];
-                if (mxords < 0) { lsoda_mark_error(istate, &S.illin); return; }
-                if (mxords == 0) mxords = 100;
-                mxords = (mxords < mord[1]) ? mxords : mord[1];
-                if ((*tout - *t) * h0 < 0.0) { lsoda_mark_error(istate, &S.illin); return; }
-            }
+
+            h0 = rwork[4];
+            S->mxordn = iwork[7];
+            if (S->mxordn < 0)  { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxordn == 0) { S->mxordn = 100; }
+            S->mxordn = int_min(S->mxordn, mord[0]);
+            S->mxords = iwork[8];
+            if (S->mxords < 0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxords == 0) S->mxords = 100;
+            S->mxords = int_min(S->mxords, mord[1]);
+            if ((*tout - *t) * h0 < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
 
             hmax = rwork[5];
-            if (hmax < 0.0) { lsoda_mark_error(istate, &S.illin); return; }
-            hmxi = 0.0;
-            if (hmax > 0.0) hmxi = 1.0/hmax;
-
+            if (hmax < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            S->hmxi = 0.0;
+            if (hmax > 0.0) { S->hmxi = 1.0/hmax; }
             hmin = rwork[6];
-            if (hmin < 0.0) { lsoda_mark_error(istate, &S.illin); return; }
+            if (hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
         } else {
             // Default optional inputs
-            ixpr = 0;
-            mxstep = mxstp0;
-            mxhnil = mxhnl0;
-            hmxi = 0.0;
+            S->ixpr = 0;
+            S->mxstep = mxstp0;
+            S->mxhnil = mxhnl0;
+            S->hmxi = 0.0;
             hmin = 0.0;
-            if (*istate == 1) {
-                h0 = 0.0;
-                mxordn = mord[0];
-                mxords = mord[1];
-            }
+            h0 = 0.0;
+            S->mxordn = mord[0];
+            S->mxords = mord[1];
         }
+        // 60
 
-        // Workspace setup and length checking
-        if (*istate == 1) S.meth = 1;
-        if (*istate == 1) S.nyh = n;
-        S.lyh = 20;
-        len1n = 20 + (mxordn + 1) * S.nyh;
-        len1s = 20 + (mxords + 1) * S.nyh;
-        lwm = len1s;
-        if (jt <= 2) { lenwm = n * n + 2; }
-        if (jt >= 4) { lenwm = (2 * ml + mu + 1) * n + 2; }
-        len1s = len1s + lenwm;
+        S->meth = 1;
+        S->nyh = S->n;
+        S->lyh = 20;
+        len1n = 20 + (S->mxordn + 1) * S->nyh;
+        len1s = 20 + (S->mxords + 1) * S->nyh;
+        S->lwm = len1s;
+        if (jt <= 1) { lenwm = S->n * S->n + 2; }
+        if (jt >= 3) { lenwm = (2 * ml + mu + 1) * S->n + 2; }
+        len1s += lenwm;
         len1c = len1n;
-        if (S.meth == 2) len1c = len1s;
-        len1 = (len1n > len1s) ? len1n : len1s;
-        len2 = 3 * n;
+        if (S->meth == 2) { len1c = len1s; }
+        len1 = int_min(len1n, len1s);
+        len2 = 3*S->n;
         lenrw = len1 + len2;
         lenrwn = len1n + len2;
         lenrws = len1s + len2;
         lenrwc = len1c + len2;
-        iwork[16] = lenrw;  // Store required rwork length
-        liwm = 1;
-        leniw = 20 + n;
+        iwork[16] = lenrw;
+        S->liwm = 0;
+        leniw = 20 + S->n;
         leniwc = 20;
-        if (S.meth == 2) leniwc = leniw;
-        iwork[16] = leniw;  // Store required iwork length
-
-        // Check workspace lengths
-        if (*istate == 1 && lrw < lenrwc) { lsoda_mark_error(istate, &S.illin); return; }
-        if (*istate == 1 && liw < leniwc) { lsoda_mark_error(istate, &S.illin); return; }
-        if (*istate == 3 && lrw < lenrwc) {
-            *istate = -7;
-            return;
+        if (S->meth == 2) { leniwc = leniw; }
+        iwork[17] = leniw;
+        if (lrw < lenrwc) { lsoda_mark_error(istate, &S->illin); return; }
+        if (liw < leniwc) { lsoda_mark_error(istate, &S->illin); return; }
+        S->lewt = len1;
+        S->insufr = 0;
+        if (lrw < lenrw)
+        {
+            S->insufr = 2;
+            S->lewt = len1c;
         }
-        if (*istate == 3 && liw < leniwc) {
-            *istate = -7;
-            return;
+        S->lsavf = S->lewt + S->n;
+        S->lacor = S->lsavf + S->n;
+        S->insufi = 0;
+        if (liw < leniw)
+        {
+            S->insufi = 2;
         }
+        // 70
 
-        lewt = len1;
-        insufr = 0;
-        if (lrw >= lenrw) {
-            // Sufficient workspace
-            lsavf = lewt + n;
-            lacor = lsavf + n;
-        } else {
-            // Insufficient but will proceed with warning
-            insufr = 2;
-            lewt = len1c;
-            lsavf = lewt + n;
-            lacor = lsavf + n;
-            // Note: xerrwv warning calls omitted as requested
-        }
-
-        insufi = 0;
-        if (liw < leniw) {
-            insufi = 2;
-            // Note: xerrwv warning calls omitted as requested
-        }
-
-        // Check rtol and atol for legality
         rtoli = rtol[0];
         atoli = atol[0];
-        for (i = 0; i < n; i++) {
-            if (itol >= 3) rtoli = rtol[i];
-            if (itol == 2 || itol == 4) atoli = atol[i];
-            if (rtoli < 0.0) { lsoda_mark_error(istate, &S.illin); return; }
-            if (atoli < 0.0) { lsoda_mark_error(istate, &S.illin); return; }
+        for (int i = 0; i < S->n; i++)
+        {
+            if (itol >= 3) { rtoli = rtol[i]; }
+            if ((itol == 2) || (itol == 4)) atoli = atol[i];
+            if (rtoli < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (atoli < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+        }
+        // 75
+        // go to 100
+
+        // block c.
+        // the next block is for the initial call only (istate = 1).
+        // it contains all remaining initializations, the initial call to f,
+        // and the calculation of the initial step size.
+        // the error weights in ewt are inverted after being loaded.
+        S->uround = DBL_EPSILON;
+        S->tn = *t;
+        S->tsw = *t;
+        S->maxord = S->mxordn;
+
+        tcrit = 0.0;
+        if (*itask == 4 || *itask == 5)
+        {
+            tcrit = rwork[0];
+            if ((tcrit - *tout)*(*tout - *t) < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            if ((h0 != 0.0) && ((*t + h0 - tcrit)*h0 > 0.0)) { h0 = tcrit - *t; }
+        }
+        //110
+
+        S->jstart = 0;
+        S->nhnil = 0;
+        S->nst = 0;
+        S->nje = 0;
+        S->nslast = 0;
+        S->hu = 0.0;
+        S->nqu = 0;
+        S->mused = 0;
+        S->miter = 0;
+        S->ccmax = 0.3;
+        S->maxcor = 3;
+        S->msbp = 20;
+        S->mxncf = 10;
+
+        // initial call to f.  (lf0 points to yh(*,2).)
+        lf0 = S->lyh + S->nyh;
+        f(&neq, t, y, &rwork[lf0]);
+        if (neq == -1) { *istate = -1; return; }
+        S->nfe = 1;
+
+        // Load initial value vector in yh
+        for (int i = 0; i < S->n; i++) { rwork[i + S->lyh] = y[i]; }
+
+        // Load and invert the ewt array (h is temporarily set to 1.0)
+        S->nq = 1;
+        S->h = 1.0;
+        ewset(S->n, itol, rtol, atol, &rwork[S->lyh], &rwork[S->lewt]);
+        for (int i = 0; i < S->n; i++)
+        {
+            if (rwork[S->lewt + i] <= 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            rwork[S->lewt + i] = 1.0 / rwork[S->lewt + i];
+        }
+        // 120
+
+        // the coding below computes the step size, h0, to be attempted on the
+        // first step, unless the user has supplied a value for this.
+        // first check that tout - t differs significantly from zero.
+        // a scalar tolerance quantity tol is computed, as max(rtol(i))
+        // if this is positive, or max(atol(i)/abs(y(i))) otherwise, adjusted
+        // so as to be between 100*uround and 1.0e-3.
+        // then the computed value h0 is given by..
+        //
+        //   h0**(-2)  =  1./(tol * w0**2)  +  tol * (norm(f))**2
+        //
+        // where   w0     = max ( abs(t), abs(tout) ),
+        //         f      = the initial value of the vector f(t,y), and
+        //         norm() = the weighted vector norm used throughout, given by
+        //                  the vmnorm function routine, and weighted by the
+        //                  tolerances initially loaded into the ewt array.
+        // the sign of h0 is inferred from the initial values of tout and t.
+        // abs(h0) is made .le. abs(tout-t) in any case.
+
+        if (h0 == 0.0) {
+            double tdist = fabs(*tout - *t);
+            double w0 = fmax(fabs(*t), fabs(*tout));
+            if (tdist < 2.0 * S->uround * w0)  { lsoda_mark_error(istate, &S->illin); return; }
+
+            double tol = rtol[0];
+            if (itol > 2)
+            {
+                for (int i = 0; i < S->n; i++) { tol = fmax(tol, rtol[i]); }
+            }
+
+            if (tol <= 0.0)
+            {
+                atoli = atol[0];
+                for (int i = 0; i < S->n; i++)
+                {
+                    if (itol == 2 || itol == 4) { atoli = atol[i]; }
+                    if (fabs(y[i]) != 0.0) { tol = fmax(tol, atoli / fabs(y[i])); }
+                }
+            }
+
+            tol = fmax(tol, 100.0 * S->uround);
+            tol = fmin(tol, 0.001);
+
+            double sum = vmnorm(S->n, &rwork[lf0], &rwork[S->lewt]);
+            sum = 1.0 / (tol * w0 * w0) + (tol * sum * sum);
+            h0 = 1.0 / sqrt(sum);
+            h0 = fmin(h0, tdist);
+            h0 = copysign(h0, *tout - *t);
+        }
+        // 180
+
+        // Adjust h0 if necessary to meet hmax bound
+        double rh = fabs(h0) * S->hmxi;
+        if (rh > 1.0) { h0 = h0 / rh; }
+
+        // Load h with h0 and scale yh(*,2) by h0
+        S->h = h0;
+        for (int i = 0; i < S->n; i++) { rwork[i + lf0] = h0 * rwork[i + lf0]; }
+        // 190
+
+        // go to 270
+        // To skip the block between label 250 and 270 on the initial call, we
+        // use a dummy variable initial_jump that is set to 0 here and 1 afterwards.
+        initial_jump = 0;
+    } else if (*istate == 3) {
+        S->ntrep = 0;
+
+        // block b
+        if (neq <= 0) { lsoda_mark_error(istate, &S->illin); return; }
+        if (neq > S->n) { lsoda_mark_error(istate, &S->illin); return; }
+        S->n = neq;
+        if ((itol < 1) || (itol > 4)) { lsoda_mark_error(istate, &S->illin); return; }
+        if ((*iopt < 0) || (*iopt > 1)) { lsoda_mark_error(istate, &S->illin); return; }
+        if (jt == 2 || jt < 0 || jt > 4) { lsoda_mark_error(istate, &S->illin); return; }
+        S->jtyp = jt;
+        if (jt > 1)
+        {
+            ml = iwork[0];
+            mu = iwork[1];
+            if ((ml < 0) || (ml >= neq)) { lsoda_mark_error(istate, &S->illin); return; }
+            if ((mu < 0) || (mu >= neq)) { lsoda_mark_error(istate, &S->illin); return; }
         }
 
-        // Handle different initialization paths based on istate
-        if (*istate == 1) {
-            // Block C: First call initialization
-            // Store required workspace lengths
-            iwork[16] = lenrw;
-            iwork[17] = leniw;
+        if (*iopt == 1) {
+            // 40
+            S->ixpr = iwork[4];
+            if ((S->ixpr < 0) || (S->ixpr > 1)) { lsoda_mark_error(istate, &S->illin); return; }
 
-            // Initialize state variables
-            S.uround = 2.22e-16;  // Machine precision (d1mach(4) equivalent)
-            S.tn = *t;
-            tsw = *t;
-            S.maxord = mxordn;
+            S->mxstep = iwork[5];
+            if (S->mxstep < 0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxstep == 0) { S->mxstep = mxstp0; }
 
-            // Handle critical time for itask 4 and 5
-            double tcrit = 0.0;
-            if (*itask == 4 || *itask == 5) {
-                tcrit = rwork[0];  // 0-based indexing
-                if ((tcrit - *tout) * (*tout - *t) < 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                if (h0 != 0.0 && (*t + h0 - tcrit) * h0 > 0.0) {
-                    h0 = tcrit - *t;
-                }
-            }
+            S->mxhnil = iwork[6];
+            if (S->mxhnil < 0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (S->mxhnil == 0) { S->mxhnil = mxhnl0; }
 
-            // Initialize counters and flags
-            S.jstart = 0;
-            S.nhnil = 0;
-            S.nst = 0;
-            S.nje = 0;
-            S.nslast = 0;
-            S.hu = 0.0;
-            S.nqu = 0;
-            S.mused = 0;
-            S.miter = 0;
-            S.ccmax = 0.3;
-            S.maxcor = 3;
-            S.msbp = 20;
-            S.mxncf = 10;
-
-            // Initial call to f (lf0 points to yh(*,2))
-            int lf0 = S.lyh + S.nyh;
-            f(&neq, t, y, &rwork[lf0]);
-            if (neq == -1) { return; }
-
-            S.nfe = 1;
-
-            // Load initial value vector in yh
-            for (i = 0; i < n; i++) { rwork[i + S.lyh - 1] = y[i]; }
-
-            // Load and invert the ewt array (h is temporarily set to 1.0)
-            S.nq = 1;
-            S.h = 1.0;
-
-            // Call ewset (this function needs to be available)
-            ewset(n, itol, rtol, atol, &rwork[S.lyh], &rwork[lewt]);
-
-            for (i = 0; i < n; i++) {
-                if (rwork[i + lewt] <= 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                rwork[i + lewt] = 1.0 / rwork[i + lewt];
-            }
-
-            // Compute initial step size h0 if not provided
-            if (h0 == 0.0) {
-                double tdist = fabs(*tout - *t);
-                double w0 = fmax(fabs(*t), fabs(*tout));
-                if (tdist < 2.0 * S.uround * w0)  { lsoda_mark_error(istate, &S.illin); return; }
-
-                double tol = rtol[0];
-                if (itol <= 2) {
-                    // Find maximum rtol
-                    for (i = 0; i < n; i++) {
-                        if (itol >= 3) tol = fmax(tol, rtol[i]);
-                    }
-                }
-
-                if (tol <= 0.0) {
-                    atoli = atol[0];
-                    for (i = 0; i < n; i++) {
-                        if (itol == 2 || itol == 4) atoli = atol[i];
-                        double ayi = fabs(y[i]);
-                        if (ayi != 0.0) tol = fmax(tol, atoli / ayi);
-                    }
-                }
-
-                tol = fmax(tol, 100.0 * S.uround);
-                tol = fmin(tol, 0.001);
-
-                // Call vmnorm to compute sum
-                double sum = vmnorm(n, &rwork[lf0], &rwork[lewt]);
-                sum = 1.0 / (tol * w0 * w0) + tol * sum * sum;
-                h0 = 1.0 / sqrt(sum);
-                h0 = fmin(h0, tdist);
-                h0 = copysign(h0, *tout - *t);
-            }
-
-            // Adjust h0 if necessary to meet hmax bound
-            double rh = fabs(h0) * hmxi;
-            if (rh > 1.0) { h0 = h0 / rh; }
-
-            // Load h with h0 and scale yh(*,2) by h0
-            S.h = h0;
-            for (i = 0; i < n; i++) { rwork[i + lf0 - 1] = h0 * rwork[i + lf0 - 1]; }
+            hmax = rwork[5];
+            if (hmax < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            S->hmxi = 0.0;
+            if (hmax > 0.0) { S->hmxi = 1.0/hmax; }
+            hmin = rwork[6];
+            if (hmin < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+        } else {
+            // Default optional inputs
+            S->ixpr = 0;
+            S->mxstep = mxstp0;
+            S->mxhnil = mxhnl0;
+            S->hmxi = 0.0;
+            hmin = 0.0;
         }
+        // 60
+
+        S->lyh = 20;
+        len1n = 20 + (S->mxordn + 1) * S->nyh;
+        len1s = 20 + (S->mxords + 1) * S->nyh;
+        S->lwm = len1s;
+        if (jt <= 1) { lenwm = S->n * S->n + 2; }  // jt=0,1 use full matrix
+        if (jt >= 3) { lenwm = (2 * ml + mu + 1) * S->n + 2; } // jt=3,4 use banded matrix
+        len1s += lenwm;
+        len1c = len1n;
+        if (S->meth == 2) { len1c = len1s; }
+        len1 = int_min(len1n, len1s);
+        len2 = 3*S->n;
+        lenrw = len1 + len2;
+        lenrwn = len1n + len2;
+        lenrws = len1s + len2;
+        lenrwc = len1c + len2;
+        iwork[16] = lenrw;
+        S->liwm = 0;
+        leniw = 20 + S->n;
+        leniwc = 20;
+        if (S->meth == 2) { leniwc = leniw; }
+        iwork[17] = leniw;
+        if ((lrw < lenrwc) || (liw < leniwc))
+        {
+            *istate = -7;
+            for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+            *t = S->tn;
+            goto exit;
+        }
+        S->lewt = len1;
+        S->insufr = 0;
+        if (lrw < lenrw)
+        {
+            S->insufr = 2;
+            S->lewt = len1c;
+        }
+        S->lsavf = S->lewt + S->n;
+        S->lacor = S->lsavf + S->n;
+        S->insufi = 0;
+        if (liw < leniw)
+        {
+            S->insufi = 2;
+        }
+
+        // 70
+
+        rtoli = rtol[0];
+        atoli = atol[0];
+        for (int i = 0; i < S->n; i++)
+        {
+            if (itol >= 3) { rtoli = rtol[i]; }
+            if ((itol == 2) || (itol == 4)) atoli = atol[i];
+            if (rtoli < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+            if (atoli < 0.0) { lsoda_mark_error(istate, &S->illin); return; }
+        }
+        // 75
+
+        // if istate = 3, set flag to signal parameter changes to stoda
+        S->jstart = -1;
+        if (S->n != S->nyh) {
+            // neq was reduced. Zero part of yh to avoid undefined references
+            int i1 = S->lyh + S->l * S->nyh;
+            int i2 = S->lyh + (S->maxord + 1) * S->nyh;
+            if (i1 <= i2) {
+                for (int i = i1; i < i2; i++) { rwork[i] = 0.0; }
+                // 95
+            }
+        }
+        // go to 200
+
+    } else {  // (*istate) = 2
+        ;
+        // go to 200
+
     }
 
-    // This is where istate == 2 jumps to after the initial setup and ready for label 200.
-    // istate == 1 is now ready to continue to label 270
-    // istate == 3 is ready to continue to label 200
-    // Hence only istate == 2 and istate == 3 will enter the following label 200 logic.
 
-    if (*istate != 1) {
-        // Label 200: Block D - Task-specific pre-checks for continuation calls (istate == 2,3)
-        S.nslast = S.nst;  // Save step count for later comparison
+    if (*istate != 1)
+    {
+        // 200
+        // the next code block is for continuation calls only (istate = 2 or 3)
+        // and is to check stop conditions before taking a step.
+        S->nslast = S->nst;
 
-        // Handle Block D task-specific pre-checks for continuation calls
         switch (*itask) {
-            case 1:
-                if ((S.tn - *tout) * S.h < 0.0) {
-                    // Continue to main loop
-                    break;
-                }
-                // Call intdy for interpolation
-                int iflag;
-                intdy(*tout, 0, &rwork[S.lyh-1], S.nyh, y, &iflag, &S);
-                if (iflag != 0)  { lsoda_mark_error(istate, &S.illin); return; }
-                *t = *tout;
-                goto success_exit;
+            case 1: {
+                // 210
+                if ((S->tn - *tout) * S->h < 0.0) { break; } // go to 250
 
-            case 2:
+                intdy(*tout, 0, &rwork[S->lyh], S->nyh, y, &iflag, S);
+                if (iflag != 0)  { lsoda_mark_error(istate, &S->illin); return; }
+                *t = *tout;
+                *istate = 2;
+                goto exit;
+            }
+
+            case 2: {
                 // One step mode - continue to main loop
-                break;
+                break; // go to 250
+            }
 
             case 3: {
-                double tp = S.tn - S.hu * (1.0 + 100.0 * S.uround);
-                if ((tp - *tout) * S.h > 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                if ((S.tn - *tout) * S.h < 0.0) {
-                    // Continue to main loop
-                    break;
-                }
-                *t = S.tn;
-                goto success_exit;
+                // 220
+                double tp = S->tn - S->hu * (1.0 + 100.0 * S->uround);
+                if ((tp - *tout) * S->h > 0.0)  { lsoda_mark_error(istate, &S->illin); return; }
+                if ((S->tn - *tout) * S->h < 0.0) { break; } // go to 250
+                *t = S->tn;
+                // go to 400
+                for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                *istate = 2;
+                goto exit;  // 420
             }
 
             case 4: {
-                double tcrit = rwork[0];
-                if ((S.tn - tcrit) * S.h > 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                if ((tcrit - *tout) * S.h < 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                if ((S.tn - *tout) * S.h < 0.0) {
-                    // Continue to main loop after setting tcrit handling
-                    double hmx = fabs(S.tn) + fabs(S.h);
-                    int ihit = fabs(S.tn - tcrit) <= 100.0 * S.uround * hmx;
-                    if (!ihit) {
-                        double tnext = S.tn + S.h * (1.0 + 4.0 * S.uround);
-                        if ((tnext - tcrit) * S.h <= 0.0) {
-                            // Continue to main loop
-                            break;
-                        }
-                        S.h = (tcrit - S.tn) * (1.0 - 4.0 * S.uround);
-                        if (*istate == 2 && S.jstart >= 0) S.jstart = -2;
+                // 230
+                tcrit = rwork[0];
+                if ((S->tn - tcrit) * S->h > 0.0)  { lsoda_mark_error(istate, &S->illin); return; }
+                if ((tcrit - *tout) * S->h < 0.0)  { lsoda_mark_error(istate, &S->illin); return; }
+                if ((S->tn - *tout) * S->h < 0.0)
+                {
+                    hmx = fabs(S->tn) + fabs(S->h);
+                    ihit = (fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx);
+                    if (ihit)
+                    {
+                        *t = tcrit;
+                        // go to 400
+                        for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                        *t = S->tn; // This redundant reassignment is from the original code
+                        if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                        *istate = 2;
+                        goto exit;  // 420
                     }
+
+                    double tnext = S->tn + S->h * (1.0 + 4.0 * S->uround);
+                    if ((tnext - tcrit) * S->h <= 0.0) { break; } // go to 250
+                    S->h = (tcrit - S->tn) * (1.0 - 4.0 * S->uround);
+                    if (*istate == 2 && S->jstart >= 0) { S->jstart = -2; }
                     break;
                 }
-                // Call intdy for interpolation
-                int iflag;
-                intdy(*tout, 0, &rwork[S.lyh-1], S.nyh, y, &iflag, &S);
-                if (iflag != 0)  { lsoda_mark_error(istate, &S.illin); return; }
+
+                intdy(*tout, 0, &rwork[S->lyh], S->nyh, y, &iflag, S);
+                if (iflag != 0)  { lsoda_mark_error(istate, &S->illin); return; }
                 *t = *tout;
-                goto success_exit;
+                *istate = 2;
+                goto exit;
             }
 
             case 5: {
-                double tcrit = rwork[0];
-                if ((S.tn - tcrit) * S.h > 0.0)  { lsoda_mark_error(istate, &S.illin); return; }
-                double hmx = fabs(S.tn) + fabs(S.h);
-                int ihit = fabs(S.tn - tcrit) <= 100.0 * S.uround * hmx;
+                tcrit = rwork[0];
+                if ((S->tn - tcrit) * S->h > 0.0)  { lsoda_mark_error(istate, &S->illin); return; }
+                hmx = fabs(S->tn) + fabs(S->h);
+                int ihit = fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx;
                 if (ihit) {
                     *t = tcrit;
-                    goto success_exit;
+                    *istate = 2;
+                    goto exit;
                 }
-                double tnext = S.tn + S.h * (1.0 + 4.0 * S.uround);
-                if ((tnext - tcrit) * S.h <= 0.0) {
-                    // Continue to main loop
-                    break;
-                }
-                S.h = (tcrit - S.tn) * (1.0 - 4.0 * S.uround);
-                if (*istate == 2 && S.jstart >= 0) S.jstart = -2;
+                double tnext = S->tn + S->h * (1.0 + 4.0 * S->uround);
+                if ((tnext - tcrit) * S->h <= 0.0) { break; }
+                S->h = (tcrit - S->tn) * (1.0 - 4.0 * S->uround);
+                if (*istate == 2 && S->jstart >= 0) { S->jstart = -2; }
                 break;
             }
         }
     }
 
-    // Label 250: Main integration loop - This is the convergence point for all cases
+
+    // block e.
+    // the next block is normally executed for all calls and contains
+    // the call to the one-step core integrator stoda.
+    //
+    // this is a looping point for the integration steps.
+    //
+    // first check for too many steps being taken, update ewt (if not at
+    // start of problem), check for too much accuracy being requested, and
+    // check for h below the roundoff level in t.
+
+    // 250
     while (1) {
-        if (*istate != 1) {
+        if (initial_jump)
+        {
             // Check if method has switched since last iteration
-            if (S.meth != S.mused) {
-                if (S.insufr == 1) {
-                    *istate = -5;  // Insufficient rwork length
-                    goto error_exit;
-                }
-                if (S.insufi == 1) {
-                    *istate = -6;  // Insufficient iwork length
-                    goto error_exit;
+            if (S->meth != S->mused) {
+                if ((S->insufr == 1) || (S->insufi == 1))
+                {
+                    *istate = -7;
+                    for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                    *t = S->tn;
+                    goto exit;
                 }
             }
 
             // Check for too many steps
-            if ((S.nst - S.nslast) >= S.mxstep) {
-                *istate = -1;  // Too many steps
-                goto error_exit;
+            if ((S->nst - S->nslast) >= S->mxstep)
+            {
+                *istate = -1;
+                for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                *t = S->tn;
+                goto exit;
             }
 
-            // Set error weights (skip for istate=1 as already done in Block C)
-            ewset(n, itol, rtol, atol, &rwork[S.lyh], &rwork[lewt]);
-            for (i = 0; i < n; i++) {
-                if (rwork[i + lewt] <= 0.0) {
+            ewset(S->n, itol, rtol, atol, &rwork[S->lyh], &rwork[S->lewt]);
+            for (int i = 0; i < S->n; i++)
+            {
+                if (rwork[i + S->lewt] <= 0.0)
+                {
                     *istate = -6;
-                    goto error_exit;
+                    for (int j = 0; j < S->n; j++) { y[j] = rwork[j + S->lyh]; }
+                    *t = S->tn;
+                    goto exit;
                 }
-                rwork[i + lewt] = 1.0 / rwork[i + lewt];
+                rwork[i + S->lewt] = 1.0 / rwork[i + S->lewt];
             }
         }
+        // Initial jump is done, set flag so we don't skip this block again
+        initial_jump = 1;
 
-        // Label 270: Tolerance check (this is where istate=1 enters after Block C)
-        double tolsf = S.uround * vmnorm(n, &rwork[S.lyh], &rwork[lewt]);
-        if (tolsf > 0.01) {
+        // 270
+        tolsf = S->uround * vmnorm(S->n, &rwork[S->lyh], &rwork[S->lewt]);
+        if (tolsf > 0.01)
+        {
             tolsf = tolsf * 200.0;
-            if (S.nst == 0) {
-                // At start of problem, too much accuracy requested
-                rwork[13] = tolsf;  // Store tolsf for user information
-                lsoda_mark_error(istate, &S.illin);
-                goto error_exit;
+            if (S->nst == 0)
+            {
+                rwork[13] = tolsf;
+                lsoda_mark_error(istate, &S->illin);
+                return;
             }
             // Too much accuracy requested at current t
             *istate = -2;
-            rwork[13] = tolsf;  // Store tolsf for user information
-            *t = S.tn;
-            goto error_exit;
+            for (int j = 0; j < S->n; j++) { y[j] = rwork[j + S->lyh]; }
+            *t = S->tn;
+            goto exit;
         }
+        // 280
 
-        // Check for h too small
-        if ((S.tn + S.h) == S.tn) {
-            S.nhnil++;
-            if (S.nhnil <= S.mxhnil) {
-                // Warning message would go here if ixpr == 1
-            } else {
-                *istate = -4;  // h is effectively 0
-                goto error_exit;
+        // Check for h too small by checking the spacing towards +inf
+        if (fabs(S->h) <= nextafter(fabs(S->tn), 2*fabs(S->tn))-fabs(S->tn)) { S->nhnil++; }
+
+        // 290
+        stoda(&neq, y, &rwork[S->lyh], S->nyh, &rwork[S->lyh], &rwork[S->lewt],
+              &rwork[S->lsavf], &rwork[S->lacor], &rwork[S->lwm], &iwork[S->liwm],
+              f, jac, S);
+        if (neq == -1) { return; }
+        int kgo = 1 - S->kflag;
+
+        // block f.
+        // the following block handles the case of a successful return from the
+        // core integrator (kflag = 0).
+        // if a method switch was just made, record tsw, reset maxord,
+        // set jstart to -1 to signal stoda to complete the switch,
+        // and do extra printing of data if ixpr = 1.
+        // then, in any case, check for stop conditions.
+
+        // Handle special cases; the rest falls through 300 due to F77 computed goto
+        if ((S->kflag == -1) || (S->kflag == -2))
+        {
+            // 530-540
+            *istate = ((S->kflag == -1) ? -4 : -5);
+            double big = 0.0;
+            int imxer = 0;
+            for (int i = 0; i < S->n; i++)
+            {
+                double size = fabs(rwork[i + S->lacor] * rwork[i + S->lewt]);
+                if (size > big)
+                {
+                    big = size;
+                    imxer = i + 1;
+                }
             }
+            iwork[15] = imxer;
+            for (int j = 0; j < S->n; j++) { y[j] = rwork[j + S->lyh]; }
+            *t = S->tn;
+            goto exit;
         }
 
-        // Call the core integrator stoda
-        stoda(&neq, y, &rwork[S.lyh], S.nyh, &rwork[S.lyh], &rwork[lewt],
-              &rwork[S.lsavf], &rwork[S.lacor], &rwork[S.lwm], &iwork[S.liwm],
-              f, jac, &S);
-
-        int kgo = 1 - S.kflag;  // Convert FORTRAN logic
-
-        // Process return from stoda
-        switch (kgo) {
-            case 1:  // kflag = 0, successful step
-                // Continue with task-specific post-step processing
-                break;
-
-            case 2:  // kflag = -1, step size too small
-                *istate = -4;
-                goto error_exit;
-
-            case 3:  // kflag = -2, too much work
-                *istate = -1;
-                goto error_exit;
-
-            default:
-                // This shouldn't happen
-                *istate = -7;
-                goto error_exit;
+        // 300
+        S->init = 1;
+        if (S->meth != S->mused)
+        {
+            S->tsw = S->tn;
+            S->maxord = (S->meth == 2) ? S->mxords : S->mxordn;
+            if (S->meth == 2)
+            {
+                rwork[S->lwm] = sqrt(S->uround);
+            }
+            S->insufr = int_min(S->insufr, 1);
+            S->insufi = int_min(S->insufi, 1);
+            S->jstart = -1;
         }
 
-        // Task-specific post-step processing
+        //  go to (320, 400, 330, 340, 350), itask ... smh
         switch (*itask) {
-            case 1:
-                if ((S.tn - *tout) * S.h < 0.0) {
+
+            case 1: {
+                // itask = 1.  if tout has been reached, interpolate.
+                if ((S->tn - *tout) * S->h < 0.0) {
                     continue;  // Go back to 250 (main loop)
                 }
                 // Call intdy for interpolation
-                int iflag;
-                intdy(*tout, 0, &rwork[S.lyh-1], S.nyh, y, &iflag, &S);
+                intdy(*tout, 0, &rwork[S->lyh], S->nyh, y, &iflag, S);
                 if (iflag != 0) {
-                    lsoda_mark_error(istate, &S.illin);
-                    goto error_exit;
-                }
+                    lsoda_mark_error(istate, &S->illin); return; }
                 *t = *tout;
-                goto success_exit;
-
-            case 2:
-                // One step mode - always exit after one step
-                goto success_exit;
-
-            case 3: {
-                double tp = S.tn - S.hu * (1.0 + 100.0 * S.uround);
-                if ((tp - *tout) * S.h > 0.0) {
-                    lsoda_mark_error(istate, &S.illin);
-                    goto error_exit;
-                }
-                if ((S.tn - *tout) * S.h < 0.0) {
-                    continue;  // Go back to 250
-                }
-                *t = S.tn;
-                goto success_exit;
+                *istate = 2;
+                goto exit;
             }
 
-            case 4: {
-                double tcrit = rwork[0];
-                if ((S.tn - tcrit) * S.h > 0.0) {
-                    lsoda_mark_error(istate, &S.illin);
-                    goto error_exit;
+            case 2: {
+                // go to 400
+                for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                *t = S->tn;
+                if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                *istate = 2;
+                goto exit;
+            }
+
+            case 3: {
+                // itask = 3.  jump to exit if tout was reached.
+                if ((S->tn - *tout) * S->h >= 0.0)
+                {
+                    // go to 400
+                    for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                    *t = S->tn;
+                    if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                    *istate = 2;
+                    goto exit;
                 }
-                double hmx = fabs(S.tn) + fabs(S.h);
-                int ihit = fabs(S.tn - tcrit) <= 100.0 * S.uround * hmx;
-                if (ihit) {
-                    *t = tcrit;
-                    goto success_exit;
-                }
-                double tnext = S.tn + S.h * (1.0 + 4.0 * S.uround);
-                if ((tnext - tcrit) * S.h <= 0.0) {
-                    continue;  // Go back to 250
-                }
-                S.h = (tcrit - S.tn) * (1.0 - 4.0 * S.uround);
-                if (S.jstart >= 0) S.jstart = -2;
                 continue;  // Go back to 250
             }
 
+            case 4: {
+                // itask = 4.  see if tout or tcrit was reached.  adjust h if necessary.
+                if ((S->tn - *tout) * S->h >= 0.0)
+                {
+                    intdy(*tout, 0, &rwork[S->lyh], S->nyh, y, &iflag, S);
+                    *t = *tout;
+                    *istate = 2;
+                    goto exit;
+                }
+                // 345
+                hmx = fabs(S->tn) + fabs(S->h);
+                ihit = (fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx);
+                if (ihit)
+                {
+                    // go to 400
+                    for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                    *t = S->tn;
+                    if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                    *istate = 2;
+                    goto exit;
+                }
+                tnext = S->tn + S->h * (1.0 + 4.0 * S->uround);
+                if ((tnext - tcrit) * S->h <= 0.0) { continue; } // go to 250
+                S->h = (tcrit - S->tn) * (1.0 - 4.0 * S->uround);
+                if (S->jstart >= 0) { S->jstart = -2; }
+                continue; // go to 250
+            }
+
             case 5: {
-                double tcrit = rwork[0];
-                double hmx = fabs(S.tn) + fabs(S.h);
-                int ihit = fabs(S.tn - tcrit) <= 100.0 * S.uround * hmx;
-                if (ihit) {
-                    *t = tcrit;
-                    goto success_exit;
-                }
-                // Call intdy for interpolation
-                int iflag;
-                intdy(*tout, 0, &rwork[S.lyh-1], S.nyh, y, &iflag, &S);
-                if (iflag != 0) {
-                    lsoda_mark_error(istate, &S.illin);
-                    goto error_exit;
-                }
-                *t = *tout;
-                goto success_exit;
+                // itask = 5.  see if tcrit was reached and jump to exit.
+                hmx = fabs(S->tn) + fabs(S->h);
+                // This also seems like a bug in the original code as ihit test is not used before returning.
+                ihit = (fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx);
+                for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
+                *t = S->tn;
+                if ((*itask == 4) || (*itask == 5)) { if (ihit) { *t = tcrit; } }
+                *istate = 2;
+                goto exit;
             }
         }
     }
 
-success_exit:
-    // Block G: Successful return preparation
-    for (i = 0; i < n; i++) {
-        y[i] = rwork[i + S.lyh - 1];
-    }
-    *t = S.tn;
-    if (*itask == 4 || *itask == 5) {
-        // Handle tcrit hit for tasks 4 and 5
-        double tcrit = rwork[0];
-        double hmx = fabs(S.tn) + fabs(S.h);
-        int ihit = fabs(S.tn - tcrit) <= 100.0 * S.uround * hmx;
-        if (ihit) *t = tcrit;
-    }
 
-    *istate = 2;
-    S.illin = 0;
+exit:
+    S->illin = 0;
 
     // Set optional outputs
-    rwork[10] = S.hu;
-    rwork[11] = S.h;
-    rwork[12] = S.tn;
-    rwork[14] = tsw;
-    iwork[10] = S.nst;
-    iwork[11] = S.nfe;
-    iwork[12] = S.nje;
-    iwork[13] = S.nqu;
-    iwork[14] = S.nq;
-    iwork[18] = S.mused;
-    iwork[19] = S.meth;
-    return;
-
-error_exit:;  // Semi-colon to silence compiler warning
-    // Handle error returns
-    // Compute imxer (index of component with largest weighted local error) if relevant
-    int imxer = 1;  // Default to first component (1-based for compatibility)
-    if (S.lacor > 0 && lewt > 0) {  // Only if error vectors are available
-        double big = 0.0;
-        for (i = 0; i < n; i++) {
-            double size = fabs(rwork[i + S.lacor] * rwork[i + lewt]);
-            if (size > big) {
-                big = size;
-                imxer = i + 1;  // Convert to 1-based indexing for compatibility
-            }
-        }
-    }
-    iwork[15] = imxer;  // Store in iwork(16) using 0-based indexing
-
-    // Set y vector and outputs
-    for (i = 0; i < n; i++) {
-        y[i] = rwork[i + S.lyh - 1];
-    }
-    *t = S.tn;
-    S.illin = 0;
-
-    // Set optional outputs
-    rwork[10] = S.hu;
-    rwork[11] = S.h;
-    rwork[12] = S.tn;
-    rwork[14] = tsw;
-    iwork[10] = S.nst;
-    iwork[11] = S.nfe;
-    iwork[12] = S.nje;
-    iwork[13] = S.nqu;
-    iwork[14] = S.nq;
-    iwork[18] = S.mused;
-    iwork[19] = S.meth;
+    rwork[10] = S->hu;
+    rwork[11] = S->h;
+    rwork[12] = S->tn;
+    rwork[14] = S->tsw;
+    iwork[10] = S->nst;
+    iwork[11] = S->nfe;
+    iwork[12] = S->nje;
+    iwork[13] = S->nqu;
+    iwork[14] = S->nq;
+    iwork[18] = S->mused;
+    iwork[19] = S->meth;
     return;
 
 }

@@ -4,7 +4,7 @@
 #include "ccallback.h"
 #include "src/lsoda.h"
 #include <math.h>
-
+#include <stdio.h>
 #define PyArray_MAX(a,b) (((a)>(b))?(a):(b))
 
 #ifdef HAVE_BLAS_ILP64
@@ -43,8 +43,8 @@ static char doc_odeint[] =
  *  stored in F-contiguous order).
  */
 static void
-copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
-                      double *c, int transposed)
+copy_array_to_fortran(double* restrict f, const int ldf, const int nrows,
+                      const int ncols, double* restrict c, const int transposed)
 {
     int i, j;
     int row_stride, col_stride;
@@ -53,18 +53,16 @@ copy_array_to_fortran(double *f, int ldf, int nrows, int ncols,
     if (transposed) {
         row_stride = 1;
         col_stride = nrows;
-    }
-    else {
+    } else {
         row_stride = ncols;
         col_stride = 1;
     }
-    for (i = 0; i < nrows; ++i) {
-        for (j = 0; j < ncols; ++j) {
-            double value;
-            /* value = c[i,j] */
-            value = *(c + row_stride*i + col_stride*j);
-            /* f[i,j] = value */
-            *(f + ldf*j + i) = value;
+    for (i = 0; i < nrows; ++i)
+    {
+        for (j = 0; j < ncols; ++j)
+        {
+            /* f[i,j] = c[i,j] */
+            f[ldf*j + i] = c[row_stride*i + col_stride*j];
         }
     }
 }
@@ -86,8 +84,7 @@ static SCIPY_TLS odepack_callback_t* current_odepack_callback = NULL;
 
 
 /*
- * Modern ODE function thunk - replaces the global variable approach
- * Called from C/Fortran code, interfaces with Python function
+ * @brief ODE function thunk called from C code, interfaces with user Python callback
  */
 static void
 ode_function_thunk(int *n, double *t, double *y, double *ydot)
@@ -212,7 +209,9 @@ ode_function_thunk(int *n, double *t, double *y, double *ydot)
     Py_DECREF(result);
 }
 
-
+/**
+ * @brief ODE function thunk called from C code, interfaces with user Python jacobian callback
+ */
 static void
 ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, int *nrowpd)
 {
@@ -320,11 +319,11 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     // Calculate expected dimensions based on Jacobian type
     npy_intp expected_nrows, expected_ncols;
     expected_ncols = *n;
-    if (current_odepack_callback->jac_type == 4) {
-        // Banded Jacobian
+    if (current_odepack_callback->jac_type == 3) {
+        // Banded Jacobian (jt=3 user supplied) in 0-based indexing
         expected_nrows = *ml + *mu + 1;
     } else {
-        // Full Jacobian
+        // Full Jacobian (jt=0 user supplied) in 0-based indexing
         expected_nrows = *n;
     }
 
@@ -363,7 +362,7 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     }
 
     if (dim_error) {
-        const char *jac_type_str = (current_odepack_callback->jac_type == 4) ? "banded " : "";
+        const char *jac_type_str = (current_odepack_callback->jac_type == 3) ? "banded " : "";
         PyErr_Format(PyExc_RuntimeError,
             "Expected a %sJacobian array with shape (%ld, %ld), but got (%ld, %ld)",
             jac_type_str, expected_nrows, expected_ncols,
@@ -376,15 +375,15 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     }
 
     // Copy result to output array with proper layout handling
-    if ((current_odepack_callback->jac_type == 1) && !current_odepack_callback->jac_transpose) {
-        // Full Jacobian, no transpose needed, use manual loop
+    if ((current_odepack_callback->jac_type == 0) && !current_odepack_callback->jac_transpose) {
+        // Full Jacobian (jt=0 user supplied), no transpose needed, use manual loop
         double *src_data = (double*)PyArray_DATA(result_array);
         for (ssize_t i = 0; i < (*n) * (*nrowpd); i++) {
             pd[i] = src_data[i];
         }
     } else {
         // Need to copy with proper Fortran layout
-        npy_intp m = (current_odepack_callback->jac_type == 4) ? (*ml + *mu + 1) : *n;
+        npy_intp m = (current_odepack_callback->jac_type == 3) ? (*ml + *mu + 1) : *n;
         copy_array_to_fortran(pd, *nrowpd, m, *n,
                              (double*)PyArray_DATA(result_array),
                              !current_odepack_callback->jac_transpose);
@@ -545,10 +544,10 @@ compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
 {
     int lrn, lrs, nyh, lmat;
 
-    if (jt == 1 || jt == 2) {
+    if (jt == 0 || jt == 1) {
         lmat = neq*neq + 2;
     }
-    else if (jt == 4 || jt == 5) {
+    else if (jt == 3 || jt == 4) {
         lmat = (2*ml + mu + 1)*neq + 2;
     }
     else {
@@ -585,7 +584,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     PyArrayObject *ap_tout = NULL;
     PyObject *extra_args = NULL;
     PyObject *Dfun = Py_None;
-    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
+    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 3;
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     long ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
@@ -785,11 +784,12 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         rwork[0] = *tcrit;
     }
 
-    /* Activate modern callback infrastructure for thread-safe operation */
+    lsoda_common_struct_t S = {0};
+
     activate_odepack_callback(&callback);
 
     while (k < ntimes && istate > 0) {    /* loop over desired times */
-
+        printf("Calling LSODA for k=%ld, t=%g, tout=%g, istate=%d\n", k, t, tout[k], istate);
         tout_ptr = tout + k;
         /* Use tcrit if relevant */
         if (itask == 4) {
@@ -807,7 +807,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
         lsoda(ode_function_thunk, neq, y, &t, tout_ptr, itol, rtol, atol, &itask,
               &istate, &iopt, rwork, lrw, iwork, liw,
-              ode_jacobian_thunk, (const int)jt);
+              ode_jacobian_thunk, jt, &S);
         if (full_output) {
             *((double *)PyArray_DATA(ap_hu) + (k-1)) = rwork[10];
             *((double *)PyArray_DATA(ap_tcur) + (k-1)) = rwork[12];
