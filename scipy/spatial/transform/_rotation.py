@@ -1148,7 +1148,13 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def as_euler(self, seq: str, degrees: bool = False) -> Array:
+    def as_euler(
+        self,
+        seq: str,
+        degrees: bool = False,
+        *,
+        suppress_warnings: bool = False
+    ) -> Array:
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1161,8 +1167,9 @@ class Rotation:
         Euler angles suffer from the problem of gimbal lock [3]_, where the
         representation loses a degree of freedom and it is not possible to
         determine the first and third angles uniquely. In this case,
-        a warning is raised, and the third angle is set to zero. Note however
-        that the returned angles still represent the correct rotation.
+        a warning is raised (unless the ``suppress_warnings`` option is used),
+        and the third angle is set to zero. Note however that the returned
+        angles still represent the correct rotation.
 
         Parameters
         ----------
@@ -1175,6 +1182,8 @@ class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        suppress_warnings : boolean, optional
+            Disable warnings about gimbal lock. Default is False.
 
         Returns
         -------
@@ -1234,7 +1243,9 @@ class Rotation:
         (3, 3)
 
         """
-        euler = self._backend.as_euler(self._quat, seq, degrees=degrees)
+        euler = self._backend.as_euler(
+            self._quat, seq, degrees=degrees, suppress_warnings=suppress_warnings
+        )
         if self._single:
             return euler[0, ...]
         return euler
@@ -1245,7 +1256,14 @@ class Rotation:
             ("cupy", "missing .mT attribute in cupy<14.*"),
         ]
     )
-    def as_davenport(self, axes: ArrayLike, order: str, degrees: bool = False) -> Array:
+    def as_davenport(
+        self,
+        axes: ArrayLike,
+        order: str,
+        degrees: bool = False,
+        *,
+        suppress_warnings: bool = False,
+    ) -> Array:
         """Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1269,7 +1287,8 @@ class Rotation:
         Davenport angles, just like Euler angles, suffer from the problem of
         gimbal lock [3]_, where the representation loses a degree of freedom
         and it is not possible to determine the first and third angles
-        uniquely. In this case, a warning is raised, and the third angle is set
+        uniquely. In this case, a warning is raised (unless the
+        ``suppress_warnings`` option is used), and the third angle is set
         to zero. Note however that the returned angles still represent the
         correct rotation.
 
@@ -1287,6 +1306,8 @@ class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        suppress_warnings : boolean, optional
+            Disable warnings about gimbal lock. Default is False.
 
         Returns
         -------
@@ -1354,7 +1375,9 @@ class Rotation:
         axes = self._xp.asarray(
             axes, dtype=self._quat.dtype, device=xp_device(self._quat)
         )
-        davenport = self._backend.as_davenport(self._quat, axes, order, degrees)
+        davenport = self._backend.as_davenport(
+            self._quat, axes, order, degrees, suppress_warnings=suppress_warnings
+        )
         if self._single:
             return davenport[0, ...]
         return davenport
