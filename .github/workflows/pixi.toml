@@ -56,9 +56,9 @@ depends-on = "build"
 
 
 # BLAS/LAPACK features
-[feature.openblas.dependencies]
-libblas = { version = "*", build = "*openblas" }
-openblas = ">=0.3.27,<0.4"
+# [feature.openblas.dependencies]
+# libblas = { version = "*", build = "*openblas" }
+# openblas = ">=0.3.27,<0.4"
 
 
 [feature.mkl.target.linux-64.dependencies]
@@ -71,21 +71,21 @@ cwd = "scipy"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
 
-[feature.accelerate]
-platforms = ["osx-arm64"]
+# [feature.accelerate]
+# platforms = ["osx-arm64"]
 
-[feature.accelerate.dependencies]
-libblas = { version = "*", build = "*accelerate" }
+# [feature.accelerate.dependencies]
+# libblas = { version = "*", build = "*accelerate" }
 
-[feature.accelerate.tasks.build-accelerate]
-cmd = "spin build --build-dir=build-accelerate --with-accelerate"
-cwd = "scipy"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+# [feature.accelerate.tasks.build-accelerate]
+# cmd = "spin build --build-dir=build-accelerate --with-accelerate"
+# cwd = "scipy"
+# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
-[feature.accelerate.tasks.test-accelerate]
-cmd = "spin test --no-build --build-dir=build-accelerate"
-cwd = "scipy"
-depends-on = "build-accelerate"
+# [feature.accelerate.tasks.test-accelerate]
+# cmd = "spin test --no-build --build-dir=build-accelerate"
+# cwd = "scipy"
+# depends-on = "build-accelerate"
 
 
 
@@ -111,12 +111,6 @@ depends-on = "build"
 
 
 # Array libraries we have support for
-[feature.torch-base]
-platforms = ["linux-64"]
-
-[feature.torch-base.tasks]
-test-torch = { cmd = "spin test -b torch", cwd = "../.." }
-
 [feature.torch-cpu.dependencies]
 pytorch-cpu = "*"
 
