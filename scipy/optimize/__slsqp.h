@@ -83,6 +83,14 @@ struct SLSQP_vars {
 void __slsqp_body(struct SLSQP_vars* S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 
 
+// A simple destructor for buffer attached to a NumPy array via a capsule.
+static void
+capsule_destructor(PyObject *capsule) {
+    void *ptr = PyCapsule_GetPointer(capsule, NULL);
+    free(ptr);
+}
+
+
 static PyObject*
 nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
@@ -188,12 +196,28 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     if (mem_ret == NULL)
     {
         free(buffer);
-        PYERR(slsqp_error, "Memory reallocation failed.");
+        PYERR(slsqp_error, "scipy.optimize._slsqplib: Memory reallocation failed.");
     }
+
     npy_intp shape_ret[1] = {n};
     PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_ret, NPY_FLOAT64, mem_ret);
+    if (ap_ret == NULL) {
+        free(mem_ret);
+        PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create numpy array from data.");
+    }
+
+    // Attach the buffer to a capsule
+    PyObject* capsule = PyCapsule_New(mem_ret, NULL, capsule_destructor);
+    if (capsule == NULL) {
+        Py_DECREF(ap_ret);
+        free(mem_ret);
+        PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create capsule.");
+    }
+
+    PyArray_SetBaseObject((PyArrayObject *)ap_ret, capsule);
+
     // Return the result
-    return Py_BuildValue("Ndi",PyArray_Return(ap_ret), rnorm, info);
+    return Py_BuildValue("Ndi", PyArray_Return(ap_ret), rnorm, info);
 
 }
 
