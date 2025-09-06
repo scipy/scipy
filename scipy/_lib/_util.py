@@ -1143,11 +1143,13 @@ def _apply_over_batch(*argdefs):
                     else:
                         arrays.append(kwargs.pop(name))
 
+            xp = array_namespace(*arrays)
+
             # Determine core and batch shapes
             batch_shapes = []
             core_shapes = []
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
-                array = None if array is None else np.asarray(array)
+                array = None if array is None else xp.asarray(array)
                 shape = () if array is None else array.shape
 
                 if ndim == "1|2":  # special case for `solve`, etc.
@@ -1168,7 +1170,7 @@ def _apply_over_batch(*argdefs):
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
                     continue
-                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+                arrays[i] = xp.broadcast_to(array, batch_shape + core_shape)
 
             # Main loop
             results = []
@@ -1183,9 +1185,9 @@ def _apply_over_batch(*argdefs):
 
             # Reshape results
             for i, result in enumerate(results):
-                result = np.stack(result)
+                result = xp.stack(result)
                 core_shape = result.shape[1:]
-                results[i] = np.reshape(result, batch_shape + core_shape)
+                results[i] = xp.reshape(result, batch_shape + core_shape)
 
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
