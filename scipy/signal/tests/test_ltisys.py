@@ -2,6 +2,7 @@ import warnings
 
 
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close
@@ -717,6 +718,13 @@ class TestStateSpace:
         StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
                    np.array([[1, 0]]), np.array([[0]]))
 
+        # Verify that parameter  `cast_to` is passed to `abcd_normalize`:
+        AA = np.array([1], dtype=np.int64)
+        ss0 = StateSpace(AA, 1, 1, 1, cast_to=None)
+        assert ss0.A.dtype == AA.dtype
+        ss1 = StateSpace(AA, 1, 1, 1)
+        assert isinstance(ss1.A.dtype, np.dtypes.Float64DType)
+
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4)
@@ -945,7 +953,8 @@ class Test_abcd_normalize:
 
     def test_normalized_matrices_unchanged(self, xp):
         A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -964,7 +973,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         D_ = xp.zeros((0, 0))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
@@ -975,7 +985,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         C_ = xp.zeros((0, 2))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => cast_to=None:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, cast_to=None)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -1059,6 +1070,38 @@ class Test_abcd_normalize:
     def test_missing_CD_fails(self, xp):
         assert_raises(ValueError, abcd_normalize, A=xp.asarray(self.A),
                       B=xp.asarray(self.B))
+
+    def test_param_cast_to(self, xp):
+        with pytest.raises(ValueError, match="^Parameter cast_to='INVALID' must be"):
+            abcd_normalize(self.A, self.B, self.C, self.D, cast_to='INVALID')
+        with pytest.raises(ValueError, match="^Parameter cast_to=<class 'str'> is not"):
+            abcd_normalize(self.A, self.B, self.C, self.D, cast_to=str)
+
+        AA, BB, CC, DD = abcd_normalize(A=self.A, D=self.D)
+        assert isinstance(AA.dtype, np.dtypes.Float64DType)
+        assert isinstance(BB.dtype, np.dtypes.Float64DType)
+        assert isinstance(CC.dtype, np.dtypes.Float64DType)
+        assert isinstance(DD.dtype, np.dtypes.Float64DType)
+
+        AA, BB, CC, DD = abcd_normalize(A=self.A, D=self.D, cast_to='int64')
+        assert isinstance(AA.dtype, np.dtypes.Int64DType)
+        assert isinstance(BB.dtype, np.dtypes.Int64DType)
+        assert isinstance(CC.dtype, np.dtypes.Int64DType)
+        assert isinstance(DD.dtype, np.dtypes.Int64DType)
+
+        AA_ = [[1, 2], [3, 2**33]]  # converted to int64
+        DD_ = 1 + 2j  # converted to complex128
+        AA, BB, CC, DD = abcd_normalize(A=AA_, D=DD_)
+        assert isinstance(AA.dtype, np.dtypes.Complex128DType)
+        assert isinstance(BB.dtype, np.dtypes.Complex128DType)
+        assert isinstance(CC.dtype, np.dtypes.Complex128DType)
+        assert isinstance(DD.dtype, np.dtypes.Complex128DType)
+
+        AA, BB, CC, DD = abcd_normalize(A=AA_, D=DD_, cast_to=None)
+        assert isinstance(AA.dtype, np.dtypes.Int64DType)
+        assert isinstance(BB.dtype, np.dtypes.Float64DType)
+        assert isinstance(CC.dtype, np.dtypes.Float64DType)
+        assert isinstance(DD.dtype, np.dtypes.Complex128DType)
 
 
 class Test_bode:
