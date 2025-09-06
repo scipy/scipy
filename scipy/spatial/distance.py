@@ -747,6 +747,13 @@ def hamming(u, v, w=None):
     hamming : double
         The Hamming distance between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if `u` and `v` are empty or the total weight is zero,
+       the function would return ``nan``.  This was changed to return
+       ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -769,8 +776,13 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-        w = w / w.sum()
+        w_sum = w.sum()
+        if w_sum == 0:
+            return 0.0
+        w = w / w_sum
         return np.dot(u_ne_v, w)
+    if len(u_ne_v) == 0:
+        return 0.0
     return np.mean(u_ne_v)
 
 
@@ -1375,6 +1387,11 @@ def dice(u, v, w=None):
     Dice similarity index, convert one to the other with similarity =
     1 - dissimilarity.
 
+    .. versionchanged:: 1.15.0
+       Previously, if all (positively weighted) elements in `u` and `v` are
+       zero, the function would return ``nan``.  This was changed to return
+       ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -1401,6 +1418,8 @@ def dice(u, v, w=None):
         else:
             ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
+    if ntf + nft == 0:
+        return 0.0
     return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
 
 
@@ -1435,6 +1454,13 @@ def rogerstanimoto(u, v, w=None):
         The Rogers-Tanimoto dissimilarity between vectors
         `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if `u` and `v` are empty or the total weight is zero, the
+       function would raise ``ZeroDivisionError``.  This was changed to return
+       ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -1451,6 +1477,8 @@ def rogerstanimoto(u, v, w=None):
     if w is not None:
         w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
+    if ntf + nft == 0:
+        return 0.0
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
 
@@ -1485,6 +1513,13 @@ def russellrao(u, v, w=None):
     russellrao : double
         The Russell-Rao dissimilarity between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if `u` and `v` are empty (or the total weight is zero),
+       the function would raise ``ZeroDivisionError`` (or return ``nan``).
+       This was changed to return ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -1508,6 +1543,8 @@ def russellrao(u, v, w=None):
         w = _validate_weights(w)
         ntt = (u * v * w).sum()
         n = w.sum()
+    if n == 0:
+        return 0.0
     return float(n - ntt) / n
 
 
@@ -1541,6 +1578,13 @@ def sokalsneath(u, v, w=None):
     sokalsneath : double
         The Sokal-Sneath dissimilarity between vectors `u` and `v`.
 
+    Notes
+    -----
+    .. versionchanged:: 1.15.0
+       Previously, if all (positively weighted) elements in `u` and `v` are
+       zero, the function would raise ``ValueError``.  This was changed to
+       return ``0.0`` instead.
+
     Examples
     --------
     >>> from scipy.spatial import distance
@@ -1566,8 +1610,7 @@ def sokalsneath(u, v, w=None):
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
     if not denom.any():
-        raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                         'vectors that are entirely false.')
+        return 0.0
     return float(2.0 * (ntf + nft)) / denom
 
 
