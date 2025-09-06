@@ -1193,7 +1193,7 @@ class RigidTransform:
 
     @xp_capabilities(
         jax_jit=False,
-        skip_backends=[("dask.array", "cannot handle zero-length rotations")],
+        skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
     )
     def __getitem__(
         self, indexer: int | slice | EllipsisType | None | ArrayLike
@@ -1271,7 +1271,7 @@ class RigidTransform:
 
     @xp_capabilities(
         jax_jit=False,
-        skip_backends=[("dask.array", "cannot handle zero-length rotations")],
+        skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
     )
     def __setitem__(
         self,

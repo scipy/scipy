@@ -357,7 +357,7 @@ def _create_skew_matrix(vec: Array) -> Array:
 def _normalize_dual_quaternion(
     real_part: Array, dual_part: Array
 ) -> tuple[Array, Array]:
-    """Ensure that unit norm of the dual quaternion.
+    """Ensure that the dual quaternion has unit norm.
 
     The norm is a dual number and must be 1 + 0 * epsilon, which means that
     the real quaternion must have unit norm and the dual quaternion must be
