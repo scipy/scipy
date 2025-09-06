@@ -40,12 +40,15 @@ class _BarycentricRational:
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
 
+    _axis = 0
     def __init__(self, x, y, **kwargs):
         # input validation
         z = np.asarray(x)
         f = np.asarray(y)
 
         self._input_validation(z, f, **kwargs)
+
+        f = np.moveaxis(f, self._axis, 0)
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = np.logical_and.reduce(
@@ -74,8 +77,9 @@ class _BarycentricRational:
         if not y.ndim >= 1:
             raise ValueError("`y` must be at least 1-D.")
 
-        if x.size != y.shape[0]:
-            raise ValueError("`x` be the same size as the first dimension of `y`.")
+        if x.size != y.shape[self._axis]:
+            msg = f"`x` be of size {y.shape[self._axis]} but got size {x.size}."
+            raise ValueError(msg)
 
         if not np.all(np.isfinite(x)):
             raise ValueError("`x` must be finite.")
@@ -625,6 +629,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
         Integer satisfying ``0 <= d < n``. Floater-Hormann interpolation blends
         ``n - d`` polynomials of degree `d` together; for ``d = n - 1``, this is
         equivalent to polynomial interpolation.
+    axis : int, default: 0
+        Axis of `y` corresponding to `x`.
 
     Attributes
     ----------
@@ -704,17 +710,18 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, points, values, *, d=3):
-        super().__init__(points, values, d=d)
+    def __init__(self, points, values, *, d=3, axis=0):
+        self._axis = axis
+        super().__init__(points, values, d=d, axis=axis)
 
-    def _input_validation(self, x, y, d):
+    def _input_validation(self, x, y, d, axis):
         d = operator.index(d)
         if not (0 <= d < len(x)):
             raise ValueError("`d` must satisfy 0 <= d < n")
 
         super()._input_validation(x, y)
 
-    def _compute_weights(self, z, f, d):
+    def _compute_weights(self, z, f, d, **_):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
         w = np.zeros_like(z, dtype=np.result_type(z, 1.0))
         n = w.size
@@ -724,3 +731,15 @@ class FloaterHormannInterpolator(_BarycentricRational):
         w *= (-1.)**(np.arange(n) - d)
 
         return z, f, w
+
+    def __call__(self, z):
+        """Evaluate the interpolator at given values.
+
+        Parameters
+        ----------
+        z : array_like
+            Input values.
+        """
+        z = np.asarray(z)
+        res = super().__call__(z)
+        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res

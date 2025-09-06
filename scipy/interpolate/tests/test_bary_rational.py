@@ -81,7 +81,7 @@ def test_integer_promotion(method, dtype):
 
 class TestAAA:
     def test_input_validation(self):
-        with pytest.raises(ValueError, match="same size"):
+        with pytest.raises(ValueError, match="size"):
             AAA([0], [1, 1])
         with pytest.raises(ValueError, match="1-D"):
             AAA([[0], [0]], [[1], [1]])
@@ -270,7 +270,7 @@ class BatchFloaterHormann:
         self._axis = axis
 
     def __call__(self, x):
-        y = [spline(x) for spline in self._interps]
+        y = [intep(x) for intep in self._interps]
         y = np.reshape(y, self._batch_shape + x.shape)
         return np.moveaxis(y, -1, self._axis) if x.shape else y
 
@@ -287,7 +287,7 @@ class TestFloaterHormann:
             FloaterHormannInterpolator([[0]], [0], d=0)
         with pytest.raises(ValueError, match="`y`"):
             FloaterHormannInterpolator([0], 0, d=0)
-        with pytest.raises(ValueError, match="dimension"):
+        with pytest.raises(ValueError, match="size"):
             FloaterHormannInterpolator([0], [[1, 1], [1, 1]], d=0)
         with pytest.raises(ValueError, match="finite"):
             FloaterHormannInterpolator([np.inf], [1], d=0)
@@ -384,17 +384,18 @@ class TestFloaterHormann:
         assert np.sum(mask) == 0
 
     @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
-    def test_batch(self, eval_shape, axis=0):
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    def test_batch(self, eval_shape, axis):
         rng = np.random.default_rng(4329872134985134)
         n = 10
         shape = (2, 3, 4, n)
         domain = (0, 10)
 
         x = np.linspace(*domain, n)
-        y = np.moveaxis(rng.random(shape), -1, 0)
+        y = np.moveaxis(rng.random(shape), -1, axis)
 
-        res = FloaterHormannInterpolator(x, y)
-        ref = BatchFloaterHormann(x, y, 0)
+        res = FloaterHormannInterpolator(x, y, axis=axis)
+        ref = BatchFloaterHormann(x, y, axis=axis)
 
         x = rng.uniform(*domain, size=eval_shape)
         assert_allclose(res(x), ref(x))
