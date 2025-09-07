@@ -8,8 +8,8 @@ import pytest
 import numpy as np
 import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint, \
-    OptimizeResult
+from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
+                            OptimizeResult)
 
 
 class MyCallBack:
