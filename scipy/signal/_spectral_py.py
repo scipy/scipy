@@ -65,9 +65,13 @@ def lombscargle(
         output periodogram. Frequencies are normally >= 0, as any peak at ``-freq`` will
         also exist at ``+freq``.
     precenter : bool, optional
-        Parameter is deprecated and will be removed in version 1.19.0.
         Pre-center measurement values by subtracting the mean, if True. This is
         a legacy parameter and unnecessary if `floating_mean` is True.
+
+        .. deprecated:: 1.17.0
+            The `precenter` argument is deprecated and will be removed in SciPy 1.19.0.
+            The functionality can be substituted by passing ``y - y.mean()`` to `y`.
+
     normalize : bool | str, optional
         Compute normalized or complex (amplitude + phase) periodogram.
         Valid options are: ``False``/``"power"``, ``True``/``"normalize"``, or
@@ -104,17 +108,17 @@ def lombscargle(
     -----
     The algorithm used will not automatically account for any unknown y offset, unless
     floating_mean is True. Therefore, for most use cases, if there is a possibility of
-    a y offset, it is recommended to set floating_mean to True. Parameter precenter is
-    deprecated and will be removed in version 1.19.0. Precenter is a legacy parameter,
-    and unnecessary when floating_mean is True. Furthermore, the mean removed by
-    precenter does not account for sample weights, nor will it correct for any bias due
-    to consistently missing observations at peaks and/or troughs. The precenter
-    operation can be substituted by passing ``y = (y - y.mean())`` into the input. When
-    the normalize parameter is "amplitude", for any frequency in freqs that is below
-    ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards infinity.
-    The concept of a "Nyquist frequency" limit (see Nyquist-Shannon sampling theorem)
-    is not generally applicable to unevenly sampled data. Therefore, with unevenly
-    sampled data, valid frequencies in freqs can often be much higher than expected.
+    a y offset, it is recommended to set floating_mean to True. Furthermore,
+    floating_mean accounts for sample weights, and will also correct for any bias due
+    to consistently missing observations at peaks and/or troughs. The legacy concept of
+    "pre-centering" entails removing the mean from parameter `y` before processing,
+    i.e., passing ``y - y.mean()`` instead of setting the parameter `floating_mean` to
+    ``True``. When the normalize parameter is "amplitude", for any frequency in freqs
+    that is below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend
+    towards infinity. The concept of a "Nyquist frequency" limit (see Nyquist-Shannon
+    sampling theorem) is not generally applicable to unevenly sampled data. Therefore,
+    with unevenly sampled data, valid frequencies in freqs can often be much higher
+    than expected.
 
     References
     ----------
