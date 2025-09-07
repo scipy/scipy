@@ -46,6 +46,7 @@ jobs:
 
       - name: Test SciPy
         shell: bash -l {0}
+        working-directory: .github/workflows
         run: |
           rm -rf subprojects/boost_math  # so will fail if system boost doesn't work
           rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
@@ -115,6 +116,7 @@ jobs:
             accelerate-ilp64
 
       - name: Test SciPy
+        working-directory: .github/workflows
         run: |
           pixi run --environment=accelerate-lp64 test-accelerate-full
           pixi run --environment=accelerate-ilp64 test-accelerate-full

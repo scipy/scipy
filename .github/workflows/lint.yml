@@ -36,13 +36,16 @@ jobs:
           environments: lint
 
       - name: Spin Lint
+        working-directory: .github/workflows
         run: |
           set -euo pipefail
           pixi run lint --diff-against origin/$GITHUB_BASE_REF
 
       - name: Check that Python.h is first in any file including it.
         shell: bash
+        working-directory: .github/workflows
         run: pixi run check-python-h
 
       - name: Check module interdependencies
+        working-directory: .github/workflows
         run: pixi run tach
