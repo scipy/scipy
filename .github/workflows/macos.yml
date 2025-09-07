@@ -113,7 +113,8 @@ jobs:
         mamba install python=${{ matrix.python-version}}
 
         # optional test dependencies
-        mamba install scikit-umfpack scikit-sparse
+        # scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564
+        mamba install "scikit-umfpack=0.3.3" scikit-sparse
 
         # configure system boost
         mamba install libboost-headers=1.88.0
