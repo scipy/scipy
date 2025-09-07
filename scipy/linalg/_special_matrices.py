@@ -975,15 +975,12 @@ def fiedler(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim > 1:
-        return np.apply_along_axis(fiedler, -1, a)
-
     if a.size == 0:
         return np.array([], dtype=float)
     elif a.size == 1:
         return np.array([[0.]])
     else:
-        return np.abs(a[:, None] - a)
+        return np.abs(a[..., :, None] - a[..., None, :])
 
 
 def fiedler_companion(a):
