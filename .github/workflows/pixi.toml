@@ -10,12 +10,16 @@ spin = ">=0.14,<0.15"
 python = ">=3.12.11,<3.14"
 
 
+### Alternative python versions ###
+
 [feature.py311]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.py311.dependencies]
 python = "==3.11.*"
 
+
+### Basic building ###
 
 [feature.build.dependencies]
 compilers = ">=1.11.0,<2"
@@ -42,6 +46,8 @@ cwd = "../.."
 env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
 
 
+### Basic testing ###
+
 [feature.test.dependencies]
 pytest = ">=8.4.2,<9"
 hypothesis = ">=6.138.14,<7"
@@ -61,6 +67,8 @@ cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
+
+### Linting ###
 
 [feature.lint]
 platforms = ["osx-arm64", "linux-64", "win-64"]
@@ -83,7 +91,8 @@ cmd = "python check_python_h_first.py"
 cwd = "../tools"
 
 
-# BLAS/LAPACK features
+### BLAS/LAPACK features ###
+
 # [feature.openblas.dependencies]
 # libblas = { version = "*", build = "*openblas" }
 # openblas = ">=0.3.27,<0.4"
@@ -121,7 +130,7 @@ cwd = "../.."
 depends-on = "build-accelerate"
 
 
-# CPU/CUDA features
+### CPU/CUDA features ###
 
 [feature.cpu]
 platforms = ["osx-arm64", "linux-64", "win-64"]
@@ -146,7 +155,8 @@ env.SCIPY_DEVICE = "cuda"
 depends-on = [{ task = "build", environment = "build" }]
 
 
-# Array libraries we have support for
+### Array libraries ###
+
 [feature.torch-cpu]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
@@ -239,6 +249,7 @@ cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
 
+### Optional dependencies ###
 
 [feature.umfpack]
 platforms = ["osx-arm64", "linux-64", "win-64"]
@@ -277,6 +288,8 @@ cwd = "../.."
 depends-on = "build-system-libs"
 
 
+### Rarer platforms ###
+
 [feature.aarch64]
 platforms = ["linux-aarch64"]
 
@@ -284,6 +297,8 @@ platforms = ["linux-aarch64"]
 spin = ">=0.14,<0.15"
 python = ">=3.12.11,<3.14"
 
+
+### Alternative test modes ###
 
 [feature.fail-slow.dependencies]
 pytest-fail-slow = "*"
@@ -293,6 +308,8 @@ cmd = "spin test --no-build -m 'not slow' --durations=0 --durations-min=0.5 --fa
 cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
+
+### Environments ###
 
 [environments]
 build = { features = ["build"], solve-group = "default-build" }
