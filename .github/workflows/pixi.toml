@@ -115,15 +115,15 @@ platforms = ["osx-arm64"]
 [feature.accelerate.dependencies]
 libblas = { version = "*", build = "*accelerate" }
 
-[feature.accelerate-lp64.tasks.build-accelerate]
-cmd = "spin build --build-dir=build-accelerate --with-accelerate"
-cwd = "../.."
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+# [feature.accelerate-lp64.tasks.build-accelerate]
+# cmd = "spin build --build-dir=build-accelerate --with-accelerate"
+# cwd = "../.."
+# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
-[feature.accelerate-ilp64.tasks.build-accelerate]
-cmd = "spin build --build-dir=build-accelerate S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
-cwd = "../.."
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+# [feature.accelerate-ilp64.tasks.build-accelerate]
+# cmd = "spin build --build-dir=build-accelerate S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+# cwd = "../.."
+# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
 [feature.accelerate.tasks.test-accelerate-full]
 cmd = "spin test --no-build --build-dir=build-accelerate -m full"
