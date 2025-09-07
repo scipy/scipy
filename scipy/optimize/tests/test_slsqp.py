@@ -375,7 +375,7 @@ class TestSLSQP:
 
         res = minimize(
             self.fun,
-        [-1.0, 1.0],
+            [-1.0, 1.0],
             args=(-1.0, ),
             method='SLSQP',
             callback=callback.callback2,
