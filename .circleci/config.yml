@@ -76,7 +76,7 @@ jobs:
           command: |
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
-            pip install git+https://github.com/HaoZeke/asv.git@19593f241f7b9987d8d94e0b1c10856db27abe87
+            pip install git+https://github.com/airspeed-velocity/asv.git
             pip install py-rattler
             pip install mpmath gmpy2 pooch threadpoolctl spin
             # extra benchmark deps
