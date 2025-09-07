@@ -9,6 +9,7 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
 from scipy import linalg
 
 from scipy._lib._array_api import array_namespace, xp_size
+from scipy._lib.array_api_compat import is_numpy_array
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -114,8 +115,7 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None,
-                   xp=None, device=None):
+def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, xp=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     First, the input matrices are converted into two-dimensional arrays as needed. Then
@@ -142,8 +142,6 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None,
     xp : array_namespace, optional
         The namespace for the return array. When ``None`` (default), then it is derived
         from the parameters `A`, `B`, `C`, `D`.
-    device : device, optional
-        The device for the return arrays.
 
     Returns
     -------
@@ -209,6 +207,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None,
      AA: int32, BB: int32
      CC: int32, DD: int32
     """
+    # Implementation note (2025-09): As of SciPy 1.17, the minimum NumPy version is
+    # 1.26.4. In Numpy 2.1, `np.asarray` learned the `device` keyword parameter and
+    # the `np.astype` function was added (hence, the special NumPy case below).
+
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
     if B is None and D is None:
@@ -220,9 +222,9 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None,
         xp = array_namespace(A, B, C, D)
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
-    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_, device=device), ndim=2, xp=xp)
+    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
                   if M_ is not None else
-                  xp.zeros((0, 0), device=device) for M_ in (A, B, C, D))
+                  xp.zeros((0, 0)) for M_ in (A, B, C, D))
 
     if dtype is None:
         to_comp = any(xp.isdtype(M_.dtype, 'complex floating') for M_ in (A, B, C, D))
@@ -241,14 +243,14 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None,
     q = C.shape[0] or D.shape[0]
 
     # Create zero matrices as needed:
-    A = xp.zeros((n, n), dtype=dtype, device=device) if xp_size(A) == 0 else A
-    B = xp.zeros((n, p), dtype=dtype, device=device) if xp_size(B) == 0 else B
-    C = xp.zeros((q, n), dtype=dtype, device=device) if xp_size(C) == 0 else C
-    D = xp.zeros((q, p), dtype=dtype, device=device) if xp_size(D) == 0 else D
+    A = xp.zeros((n, n)) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p)) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n)) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p)) if xp_size(D) == 0 else D
 
-    # Convert dtype as needed:
-    A, B, C, D = (xp.astype(M_, dtype, copy=False, device=device)
-                  for M_ in (A, B, C, D))
+    # Convert dtype as needed (special case for NumPy is needed for < NumPy 2.1):
+    A, B, C, D = (xp.astype(M_, dtype, copy=False) if not is_numpy_array(M_) else
+                  M_.astype(dtype) for M_ in (A, B, C, D))
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
