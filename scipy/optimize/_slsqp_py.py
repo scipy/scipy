@@ -20,7 +20,7 @@ from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
-                        _check_clip_x)
+                        _check_clip_x, _wrap_callback)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
@@ -181,6 +181,9 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
+    # selects whether to use callback(x) or callback(intermediate_result)
+    callback = _wrap_callback(callback, "slsqp")
 
     opts = {'maxiter': iter,
             'ftol': acc,

@@ -22,6 +22,7 @@ class MyCallBack:
         self.ncalls = 0
 
     def __call__(self, x):
+        assert not isinstance(x, OptimizeResult)
         self.been_called = True
         self.ncalls += 1
 
