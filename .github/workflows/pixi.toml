@@ -3,12 +3,15 @@ name = "scipy-ci"
 description = "Environment and task management for SciPy CI"
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
-platforms = ["osx-arm64", "linux-64", "win-64"]
+platforms = ["osx-arm64", "linux-64", "win-64", "linux-aarch64"]
 
 [dependencies]
 spin = ">=0.14,<0.15"
 python = ">=3.12.11,<3.14"
 
+
+[feature.py311]
+platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.py311.dependencies]
 python = "==3.11.*"
@@ -58,6 +61,9 @@ cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
+
+[feature.lint]
+platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.lint.dependencies]
 ruff = "*"
@@ -116,6 +122,10 @@ depends-on = "build-accelerate"
 
 
 # CPU/CUDA features
+
+[feature.cpu]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
 [feature.cpu.tasks.test-cpu]
 cmd = "spin test --no-build -b all -m 'array_api_backends and not slow'"
 cwd = "../.."
@@ -137,6 +147,9 @@ depends-on = [{ task = "build", environment = "build" }]
 
 
 # Array libraries we have support for
+[feature.torch-cpu]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
 [feature.torch-cpu.dependencies]
 pytorch-cpu = "*"
 
@@ -174,6 +187,7 @@ depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.jax-cpu]
+# include windows so the array-api env can use the jax-cpu feature
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
@@ -201,6 +215,9 @@ env.SCIPY_DEVICE = "cuda"
 depends-on = [{ task = "build", environment = "build" }]
 
 
+[feature.array_api_strict]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
 [feature.array_api_strict.dependencies]
 array-api-strict = "*"
 
@@ -209,6 +226,9 @@ cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not s
 cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
+
+[feature.dask]
+platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.dask.dependencies]
 dask-core = "*" # Don't install distributed, tornado, etc.
@@ -219,11 +239,23 @@ cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
 
+
+[feature.umfpack]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
 [feature.umfpack.dependencies]
 scikit-umfpack = "*"
 
+
+[feature.scikit-sparse]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
 [feature.scikit-sparse.dependencies]
 scikit-sparse = "*"
+
+
+[feature.system-libs]
+platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.system-libs.dependencies]
 libboost-headers = "==1.89.0"
@@ -243,6 +275,24 @@ env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = "build-system-libs"
+
+
+[feature.aarch64]
+platforms = ["linux-aarch64"]
+
+[feature.aarch64.dependencies]
+spin = ">=0.14,<0.15"
+python = ">=3.12.11,<3.14"
+
+
+[feature.fail-slow.dependencies]
+pytest-fail-slow = "*"
+
+[feature.fail-slow.tasks]
+cmd = "spin test --no-build -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0"
+cwd = "../.."
+depends-on = [{ task = "build", environment = "build" }]
+
 
 [environments]
 build = { features = ["build"], solve-group = "default-build" }
@@ -264,3 +314,4 @@ array-api-cpu = { features = [
 py311-system-libs-osx = { features = ["py311", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
 accelerate-lp64 = ["build", "test", "accelerate"]
 accelerate-ilp64 = ["build", "test", "accelerate"]
+aarch64-fail-slow = ["aarch64", "build", "test", "fail-slow"]}

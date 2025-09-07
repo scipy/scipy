@@ -22,10 +22,6 @@ jobs:
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ["3.11"]
-
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
