@@ -10,16 +10,6 @@ spin = ">=0.14,<0.15"
 python = ">=3.12.11,<3.14"
 
 
-### Alternative python versions ###
-
-[feature.py311]
-platforms = ["osx-arm64", "linux-64", "win-64"]
-
-[feature.py311.dependencies]
-python = "3.11.*"
-spin = ">=0.14,<0.15"
-
-
 ### Basic building ###
 
 [feature.build.dependencies]
@@ -32,7 +22,7 @@ cython = ">=3.1.3,<4"
 python-build = ">=1.3.0,<2"
 pip = ">=25.2,<26"
 blas-devel = ">=3.9.0,<4"
-numpy = ">=2.2.6,<3"
+numpy = ">=2.3.2,<3"
 pybind11 = ">=3.0.1,<4"
 pythran = ">=0.18.0,<0.19"
 
@@ -52,7 +42,7 @@ env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_L
 [feature.test.dependencies]
 pytest = ">=8.4.2,<9"
 hypothesis = ">=6.138.14,<7"
-pytest-cov = ">=6.2.1,<7"
+pytest-cov = ">=6.3.0,<7"
 pytest-timeout = ">=2.4.0,<3"
 pytest-xdist = ">=3.8.0,<4"
 threadpoolctl = ">=3.6.0,<4"
@@ -75,10 +65,10 @@ depends-on = [{ task = "build", environment = "build" }]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.lint.dependencies]
-ruff = "*"
-tach = "*"
-cython-lint = ">=0.12.2"
-packaging = "*"
+ruff = ">=0.12.12,<0.13"
+tach = ">=0.29.0,<0.30"
+cython-lint = ">=0.16.7,<0.17"
+packaging = ">=25.0,<26"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
@@ -114,7 +104,7 @@ env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 platforms = ["osx-arm64"]
 
 [feature.accelerate.dependencies]
-libblas = { version = "*", build = "*accelerate" }
+libblas = { version = ">=3.9.0,<4", build = "*accelerate" }
 
 [feature.accelerate-lp64.tasks.build-accelerate]
 cmd = "spin build --build-dir=build-accelerate --with-accelerate"
@@ -148,7 +138,7 @@ platforms = ["linux-64"]
 system-requirements = { cuda = "12" }
 
 [feature.cuda.dependencies]
-cuda-version = ">=12.0,<13"
+cuda-version = ">=12.9,<13"
 
 [feature.cuda.tasks.test-cuda]
 cmd = "spin test --no-build -b cupy -b torch -b jax.numpy -m 'array_api_backends and not slow'"
@@ -163,10 +153,10 @@ depends-on = [{ task = "build", environment = "build" }]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.torch-cpu.dependencies]
-pytorch-cpu = "*"
+pytorch-cpu = ">=2.7.1,<3"
 
 [feature.torch-cuda.dependencies]
-pytorch-gpu = "*"
+pytorch-gpu = ">=2.7.1,<3"
 
 [feature.torch-cpu.tasks.test-torch]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
@@ -190,7 +180,7 @@ depends-on = [{ task = "build", environment = "build" }]
 platforms = ["linux-64"]
 
 [feature.cupy.dependencies]
-cupy = "*"
+cupy = ">=13.6.0,<14"
 
 [feature.cupy.tasks.test-cupy]
 cmd = "spin test --no-build -b cupy -m 'array_api_backends and not slow'"
@@ -211,8 +201,8 @@ jaxlib = { version = "*", build = "*cpu*" }
 platforms = ["linux-64"]
 
 [feature.jax-cuda.dependencies]
-jax = ">=0.6.0"
-jaxlib = { version = "*", build = "*cuda*" }
+jax = ">=0.7.0,<0.8"
+jaxlib = { version = ">=0.7.0,<0.8", build = "*cuda*" }
 
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
 [feature.jax-cpu.target.unix.tasks.test-jax]
@@ -231,7 +221,7 @@ depends-on = [{ task = "build", environment = "build" }]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.array_api_strict.dependencies]
-array-api-strict = "*"
+array-api-strict = ">=2.4.1,<3"
 
 [feature.array_api_strict.tasks.test-strict]
 cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not slow'"
@@ -243,7 +233,7 @@ depends-on = [{ task = "build", environment = "build" }]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.dask.dependencies]
-dask-core = "*" # Don't install distributed, tornado, etc.
+dask-core = ">=2025.7.0,<2026" # Don't install distributed, tornado, etc.
 
 [feature.dask.tasks.test-dask]
 cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
@@ -254,17 +244,18 @@ depends-on = [{ task = "build", environment = "build" }]
 ### Optional dependencies ###
 
 [feature.umfpack]
-platforms = ["osx-arm64", "linux-64", "win-64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [feature.umfpack.dependencies]
-scikit-umfpack = "*"
+# scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564p
+scikit-umfpack = "==0.3.3"
 
 
 [feature.scikit-sparse]
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.scikit-sparse.dependencies]
-scikit-sparse = "*"
+scikit-sparse = ">=0.4.14,<0.5"
 
 
 [feature.system-libs]
@@ -297,13 +288,46 @@ platforms = ["linux-aarch64"]
 
 [feature.aarch64.dependencies]
 spin = ">=0.14,<0.15"
-python = ">=3.12.11,<3.14"
+python = ">=3.13.7,<3.14"
+
+
+### Alternative python versions ###
+
+[feature.py311]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[feature.py311.dependencies]
+python = ">=3.11.13,<3.12"
+spin = ">=0.14,<0.15"
+compilers = ">=1.11.0,<2"
+pkg-config = ">=0.29.2,<0.30"
+ninja = ">=1.13.1,<2"
+meson = ">=1.9.0,<2"
+meson-python = ">=0.18.0,<0.19"
+cython = ">=3.1.3,<4"
+python-build = ">=1.3.0,<2"
+pip = ">=25.2,<26"
+blas-devel = ">=3.9.0,<4"
+numpy = ">=1.26.4,<2"
+pybind11 = ">=3.0.1,<4"
+pythran = ">=0.18.0,<0.19"
+pytest = ">=8.4.2,<9"
+hypothesis = ">=6.138.14,<7"
+pytest-cov = ">=6.3.0,<7"
+pytest-timeout = ">=2.4.0,<3"
+pytest-xdist = ">=3.8.0,<4"
+threadpoolctl = ">=3.6.0,<4"
+pooch = ">=1.8.2,<2"
+mpmath = ">=1.3.0,<2"
+gmpy2 = ">=2.2.1,<3"
+ccache = ">=4.11.3,<5"
+marray-python = ">=0.0.11,<0.0.12"
 
 
 ### Alternative test modes ###
 
 [feature.fail-slow.dependencies]
-pytest-fail-slow = "*"
+pytest-fail-slow = ">=0.6.0,<0.7"
 
 [feature.fail-slow.tasks]
 cmd = "spin test --no-build -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0"
@@ -330,7 +354,7 @@ array-api-cpu = { features = [
   "jax-cpu",
   "torch-cpu",
 ], solve-group = "mkl" }
-py311-system-libs-osx = { features = ["py311", "build", "test", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
+py311-system-libs-osx = { features = ["py311", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
 accelerate-lp64 = ["build", "test", "accelerate", "accelerate-lp64"]
 accelerate-ilp64 = ["build", "test", "accelerate", "accelerate-ilp64"]
 aarch64-fail-slow = ["aarch64", "build", "test", "fail-slow"]
