@@ -9,6 +9,11 @@ platforms = ["osx-arm64", "linux-64", "win-64"]
 spin = ">=0.14,<0.15"
 python = ">=3.12.11,<3.14"
 
+
+[feature.py311.dependencies]
+python = "==3.11.*"
+
+
 [feature.build.dependencies]
 compilers = ">=1.11.0,<2"
 pkg-config = ">=0.29.2,<0.30"
@@ -22,7 +27,6 @@ blas-devel = ">=3.9.0,<4"
 numpy = ">=2.2.6,<3"
 pybind11 = ">=3.0.1,<4"
 pythran = ">=0.18.0,<0.19"
-
 
 [feature.build.tasks.build]
 cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
@@ -53,6 +57,24 @@ marray-python = ">=0.0.11,<0.0.12"
 cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
+
+
+[feature.lint.dependencies]
+ruff = "*"
+tach = "*"
+cython-lint = ">=0.12.2"
+
+[feature.lint.tasks.lint]
+cmd = "spin lint"
+cwd = "../.."
+
+[feature.lint.tasks.tach]
+cmd = "tach check --exact"
+cwd = "../.."
+
+[feature.lint.tasks.check-python-h]
+cmd = "python check_python_h_first.py"
+cwd = "../tools"
 
 
 # BLAS/LAPACK features
@@ -193,8 +215,34 @@ cwd = "../.."
 depends-on = [{ task = "build", environment = "build" }]
 
 
+[feature.umfpack.dependencies]
+scikit-umfpack = "*"
+
+[feature.scikit-sparse.dependencies]
+scikit-sparse = "*"
+
+[feature.system-libs.dependencies]
+libboost-headers = "==1.89.0"
+qhull = "==2020.2"
+
+[feature.system-libs.activation.env]
+# TODO: fix these values
+BOOST_INCLUDEDIR = "${{ env.CONDA }}/envs/scipy-dev/include/boost"
+BOOST_LIBRARYDIR = "${{ env.CONDA }}/envs/scipy-dev/lib"
+
+[feature.system-libs.tasks.build-system-libs]
+cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+
+[feature.system-libs.tasks.test-system-libs]
+cmd = "spin test --no-build"
+cwd = "../.."
+depends-on = "build-system-libs"
+
 [environments]
 build = { features = ["build"], solve-group = "default-build" }
+lint = ["lint"]
 torch-cuda = { features = ["test", "cuda", "torch-cuda", "mkl"], solve-group = "cuda" }
 cupy = { features = ["test", "cupy"], solve-group = "cuda" }
 jax-cuda = { features = ["test", "cuda", "jax-cuda"], solve-group = "cuda" }
@@ -209,3 +257,4 @@ array-api-cpu = { features = [
   "jax-cpu",
   "torch-cpu",
 ], solve-group = "mkl" }
+py311-system-libs-osx = { features = ["py311", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
