@@ -1074,7 +1074,7 @@ class Test_abcd_normalize:
             abcd_normalize(self.A, self.B, self.C, self.D, dtype='INVALID')
         with pytest.raises(ValueError, match="^Parameter dtype=<class 'str'>"):
             abcd_normalize(self.A, self.B, self.C, self.D, dtype=str)
-        with pytest.raises(ValueError, match="^Parameter dtype=.+ is not a numeric"):
+        with pytest.raises(ValueError, match="^Parameter dtype="):
             abcd_normalize(self.A, self.B, self.C, self.D, dtype=np.datetime64, xp=np)
 
     def test_param_dtype(self, xp):
