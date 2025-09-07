@@ -168,7 +168,7 @@ cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
 
-[feature.jax-cuda.tasks.test-jax]
+[feature.jax-cuda.tasks.test-jax-cuda]
 cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
@@ -194,12 +194,12 @@ depends-on = "build"
 
 
 [environments]
-build = ["build"]
-torch-cuda = ["test", "cuda", "torch-cuda", "mkl"]
-cupy = ["test", "cupy"]
-jax-cuda = ["test", "cuda", "jax-cuda"]
-torch = ["test", "torch-cpu", "mkl"]
-array-api-cpu = [
+build = { features = ["build"], solve-group = "default-build" }
+torch-cuda = { features = ["test", "cuda", "torch-cuda", "mkl"], solve-group = "cuda" }
+cupy = { features = ["test", "cupy"], solve-group = "cuda" }
+jax-cuda = { features = ["test", "cuda", "jax-cuda"], solve-group = "cuda" }
+torch = { features = ["test", "torch-cpu", "mkl"], solve-group = "default-build" }
+array-api-cpu = { features = [
   "test",
   "cpu",
   "mkl",
@@ -208,4 +208,4 @@ array-api-cpu = [
   "dask",
   "jax-cpu",
   "torch-cpu",
-]
+], solve-group = "default-build" }
