@@ -138,25 +138,15 @@ To run only a single benchmark, such as ``KleeMinty`` from
 
 .. note::
     Support for ``asv.conf.jsonc`` as a default config file path was added in
-    ``asv v0.6.4``. If developers must use an older version of ``asv``, they should
+    ``asv v0.6.5`` (TBC). If developers must use an older version of ``asv``, they should
     include ``--config=asv.conf.jsonc`` in their commands.
 
 .. note::
 
-    By default, the SciPy config uses ``mamba`` to manage ``asv`` environments,
-    which is preferable as explained in the ``asv`` docs:
-
-        ``libmambapy`` is the fastest for situations where non-pythonic dependencies are
-        required. Anaconda or miniconda is slower but still preferred if the project
-        involves a lot of compiled C/C++ extensions and are available in the conda
-        repository, since conda will be able to fetch precompiled binaries for these
-        dependencies in many cases. Using ``virtualenv``, dependencies without
-        precompiled wheels usually have to be compiled every time the environments are
-        set up.
-
+    By default, the SciPy config uses ``rattler`` to manage ``asv`` environments.
     However, developers may opt in to using ``virtualenv`` by uncommenting the line
     ``"environment_type": "virtualenv",`` in ``asv.conf.jsonc``, and
-    commenting out ``"environment_type": "mamba",``.
+    commenting out ``"environment_type": "rattler",``.
 
 One great feature of ``asv`` is that it can automatically run a
 benchmark not just for the current commit, but for every commit in a
