@@ -42,7 +42,9 @@ jobs:
           pixi-version: v0.54.1
           manifest-path: .github/workflows/pixi.toml
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          environments: array-api-cpu
+          environments: >-
+            build
+            array-api-cpu
 
       - name: Prepare compiler cache
         id: prep-ccache

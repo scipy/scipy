@@ -52,7 +52,7 @@ marray-python = ">=0.0.11,<0.0.12"
 [feature.test.tasks.test]
 cmd = "spin test --no-build"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 # BLAS/LAPACK features
@@ -93,7 +93,7 @@ env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 [feature.cpu.tasks.test-cpu]
 cmd = "spin test --no-build -b all -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.cuda]
@@ -107,7 +107,7 @@ cuda-version = ">=12.0,<13"
 cmd = "spin test --no-build -b cupy -b torch -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 # Array libraries we have support for
@@ -120,19 +120,19 @@ pytorch-gpu = "*"
 [feature.torch-cpu.tasks.test-torch]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 [feature.torch-cpu.tasks.test-torch-float32]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
 env.SCIPY_DEFAULT_DTYPE = "float32"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 [feature.torch-cuda.tasks.test-torch-cuda]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.cupy]
@@ -144,7 +144,7 @@ cupy = "*"
 [feature.cupy.tasks.test-cupy]
 cmd = "spin test --no-build -b cupy -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.jax-cpu]
@@ -166,13 +166,13 @@ jaxlib = { version = "*", build = "*cuda*" }
 [feature.jax-cpu.target.unix.tasks.test-jax]
 cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 [feature.jax-cuda.tasks.test-jax-cuda]
 cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.array_api_strict.dependencies]
@@ -181,7 +181,7 @@ array-api-strict = "*"
 [feature.array_api_strict.tasks.test-strict]
 cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [feature.dask.dependencies]
@@ -190,7 +190,7 @@ dask-core = "*" # Don't install distributed, tornado, etc.
 [feature.dask.tasks.test-dask]
 cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = [{ task = "build", environment = "build" }]
 
 
 [environments]
