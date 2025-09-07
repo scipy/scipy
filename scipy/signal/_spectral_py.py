@@ -118,7 +118,7 @@ def lombscargle(
     towards infinity. The concept of a "Nyquist frequency" limit (see Nyquist-Shannon
     sampling theorem) is not generally applicable to unevenly sampled data. Therefore,
     with unevenly sampled data, valid frequencies in freqs can often be much higher
-    than expected.
+    than expected for those familiar with methods like FFT.
 
     References
     ----------
