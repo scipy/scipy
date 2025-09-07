@@ -1242,13 +1242,6 @@ class StateSpace(LinearTimeInvariant):
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
         example, ``dt=0.1``.
-    cast_to: dtype | 'floating64' | None, optional
-        If `system` is made up out of four matrices (A, B, C, D), they are converted
-        into two-dimensional arrays as needed by calling `abcd_normalize`. `cast_to`
-        controls here the dtype of those arrays: If an explicit dtype is given, they
-        are converted into those. If set to ``'floating64'`` (default) the matrices are
-        cast to ``'float64'`` if they are all real-valued else to ``'complex128'``.  If
-        ``None``, the matrices' dtypes are not changed.
 
     See Also
     --------
@@ -1257,6 +1250,11 @@ class StateSpace(LinearTimeInvariant):
 
     Notes
     -----
+    If the parameter `system` is a tuple (A, B, C, D) with four state space matrices,
+    then those matrices are converted into two-dimensional arrays by calling
+    `abcd_normalize`. Their dtypes will be "complex128" if any of the matrices are
+    complex-valued. Otherwise, they will be of type "float64".
+
     Changing the value of properties that are not part of the
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
@@ -1343,8 +1341,6 @@ class StateSpace(LinearTimeInvariant):
         if isinstance(system[0], LinearTimeInvariant):
             return
 
-        cast_to = kwargs.pop('cast_to', 'floating64')  # for abcd_normalize()
-
         # Remove system arguments, not needed by parents anymore
         super().__init__(**kwargs)
 
@@ -1353,7 +1349,8 @@ class StateSpace(LinearTimeInvariant):
         self._C = None
         self._D = None
 
-        self.A, self.B, self.C, self.D = abcd_normalize(*system, cast_to=cast_to)
+        # Convert A, B, C, D into 2d arrays of dtype float64 or complex128:
+        self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
