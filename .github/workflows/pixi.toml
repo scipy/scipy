@@ -89,7 +89,7 @@ cwd = "../.."
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
-cwd = "../tools"
+cwd = "../../tools"
 
 
 ### BLAS/LAPACK features ###
