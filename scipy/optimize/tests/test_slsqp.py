@@ -31,6 +31,7 @@ class MyCallBack:
         self.ncalls += 1
 
     def callback3(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
         raise StopIteration
 
 
