@@ -16,7 +16,7 @@ python = ">=3.12.11,<3.14"
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.py311.dependencies]
-python = "==3.11.*"
+python = "3.11.*"
 
 
 ### Basic building ###
@@ -331,4 +331,4 @@ array-api-cpu = { features = [
 py311-system-libs-osx = { features = ["py311", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
 accelerate-lp64 = ["build", "test", "accelerate"]
 accelerate-ilp64 = ["build", "test", "accelerate"]
-aarch64-fail-slow = ["aarch64", "build", "test", "fail-slow"]}
+aarch64-fail-slow = ["aarch64", "build", "test", "fail-slow"]
