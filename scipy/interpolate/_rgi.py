@@ -1,6 +1,7 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
+from types import GenericAlias
 
 import numpy as np
 
@@ -54,8 +55,7 @@ def _check_dimensionality(points, values):
 
 
 class RegularGridInterpolator:
-    """
-    Interpolator on a regular or rectilinear grid in arbitrary dimensions.
+    """Interpolator of specified order on a rectilinear grid in N ≥ 1 dimensions.
 
     The data must be defined on a rectilinear grid; that is, a rectangular
     grid with even or uneven spacing. Linear, nearest-neighbor, spline
@@ -272,6 +272,9 @@ class RegularGridInterpolator:
     _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):
@@ -621,13 +624,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data is
         accepted.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
-
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 

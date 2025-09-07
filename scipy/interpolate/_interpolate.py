@@ -1,6 +1,7 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
+from types import GenericAlias
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -38,6 +39,23 @@ def lagrange(x, w):
     lagrange : `numpy.poly1d` instance
         The Lagrange interpolating polynomial.
 
+    Notes
+    -----
+    The name of this function refers to the fact that the returned object represents
+    a Lagrange polynomial, the unique polynomial of lowest degree that interpolates
+    a given set of data [1]_. It computes the polynomial using Newton's divided
+    differences formula [2]_; that is, it works with Newton basis polynomials rather
+    than Lagrange basis polynomials. For numerical calculations, the barycentric form
+    of Lagrange interpolation (`scipy.interpolate.BarycentricInterpolator`) is
+    typically more appropriate.
+
+    References
+    ----------
+    .. [1] Lagrange polynomial. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Lagrange_polynomial
+    .. [2] Newton polynomial. *Wikipedia*.
+           https://en.wikipedia.org/wiki/Newton_polynomial
+
     Examples
     --------
     Interpolate :math:`f(x) = x^3` by 3 points.
@@ -48,7 +66,7 @@ def lagrange(x, w):
     >>> y = x**3
     >>> poly = lagrange(x, y)
 
-    Since there are only 3 points, Lagrange polynomial has degree 2. Explicitly,
+    Since there are only 3 points, the Lagrange polynomial has degree 2. Explicitly,
     it is given by
 
     .. math::
@@ -110,6 +128,8 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
+    Class for 2D interpolation (deprecated and removed)
+
     .. versionremoved:: 1.14.0
 
         `interp2d` has been removed in SciPy 1.14.0.
@@ -153,7 +173,7 @@ def _do_extrapolate(fill_value):
 
 class interp1d(_Interpolator1D):
     """
-    Interpolate a 1-D function.
+    Interpolate a 1-D function (legacy).
 
     .. legacy:: class
 
@@ -574,6 +594,9 @@ class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
@@ -795,8 +818,7 @@ class _PPolyBase:
 
 
 class PPoly(_PPolyBase):
-    """
-    Piecewise polynomial in terms of coefficients and breakpoints
+    """Piecewise polynomial in the power basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     local power basis::
@@ -807,8 +829,8 @@ class PPoly(_PPolyBase):
 
     Parameters
     ----------
-    c : ndarray, shape (k, m, ...)
-        Polynomial coefficients, order `k` and `m` intervals.
+    c : ndarray, shape (k+1, m, ...)
+        Polynomial coefficients, degree `k` and `m` intervals.
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.
@@ -1259,7 +1281,7 @@ class PPoly(_PPolyBase):
 
 
 class BPoly(_PPolyBase):
-    """Piecewise polynomial in terms of coefficients and breakpoints.
+    """Piecewise polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     Bernstein polynomial basis::
@@ -1649,7 +1671,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, (int, np.integer)):
+            if isinstance(orders, int | np.integer):
                 orders = [orders] * m
             k = max(k, max(orders))
 

@@ -10,37 +10,16 @@ spt_cython_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _spatial_pxd, _lib_pxd, cython_lapack_pxd])
 
-qhull_src = [
-  'qhull_src/src/geom2_r.c',
-  'qhull_src/src/geom_r.c',
-  'qhull_src/src/global_r.c',
-  'qhull_src/src/io_r.c',
-  'qhull_src/src/libqhull_r.c',
-  'qhull_src/src/mem_r.c',
-  'qhull_src/src/merge_r.c',
-  'qhull_src/src/poly2_r.c',
-  'qhull_src/src/poly_r.c',
-  'qhull_src/src/qset_r.c',
-  'qhull_src/src/random_r.c',
-  'qhull_src/src/rboxlib_r.c',
-  'qhull_src/src/stat_r.c',
-  'qhull_src/src/user_r.c',
-  'qhull_src/src/usermem_r.c',
-  'qhull_src/src/userprintf_r.c',
-  'qhull_src/src/userprintf_rbox_r.c'
-]
-
 py3.extension_module('_qhull',
   [spt_cython_gen.process('_qhull.pyx'),
-    'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
+    'qhull_misc.h', 'qhull_misc.c'],
   c_args: cython_c_args,
   include_directories: [
     '../_lib',
     '../_build_utils/src',
-    'qhull_src/src'
   ],
   link_args: version_link_args,
-  dependencies: [np_dep],
+  dependencies: [np_dep, qhull_r_dep],
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -106,7 +85,7 @@ py3.extension_module('_hausdorff',
 )
 
 py3.install_sources([
-    'qhull_src/COPYING.txt'
+    'COPYING_QHULL.txt',  # copied from subprojects/qhull_r (see gh-23428)
   ],
   subdir: 'scipy/spatial/qhull_src'
 )

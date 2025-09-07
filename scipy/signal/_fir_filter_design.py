@@ -1,18 +1,19 @@
 """Functions for FIR filter design."""
 
-from math import ceil, log
-import operator
+from math import ceil, log, log2
 import warnings
 from typing import Literal
 
 import numpy as np
-from numpy.fft import irfft, fft, ifft
-from scipy.special import sinc
+from scipy.fft import irfft, fft, ifft
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 from scipy.signal._arraytools import _validate_fs
-
+from .windows import get_window
 from . import _sigtools
+
+from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
+import scipy._lib.array_api_extra as xpx
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
@@ -270,13 +271,13 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         Nyquist frequency.
     cutoff : float or 1-D array_like
         Cutoff frequency of filter (expressed in the same units as `fs`)
-        OR an array of cutoff frequencies (that is, band edges). In the 
-        former case, as a float, the cutoff frequency should correspond 
-        with the half-amplitude point, where the attenuation will be -6dB. 
-        In the latter case, the frequencies in `cutoff` should be positive 
-        and monotonically increasing between 0 and `fs/2`. The values 0 
-        and `fs/2` must not be included in `cutoff`. It should be noted 
-        that this is different than the behavior of `scipy.signal.iirdesign`, 
+        OR an array of cutoff frequencies (that is, band edges). In the
+        former case, as a float, the cutoff frequency should correspond
+        with the half-amplitude point, where the attenuation will be -6dB.
+        In the latter case, the frequencies in `cutoff` should be positive
+        and monotonically increasing between 0 and `fs/2`. The values 0
+        and `fs/2` must not be included in `cutoff`. It should be noted
+        that this is different from the behavior of `scipy.signal.iirdesign`,
         where the cutoff is the half-power point (-3dB).
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
@@ -284,8 +285,10 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         for use in Kaiser FIR filter design. In this case, the `window`
         argument is ignored.
     window : string or tuple of string and parameter values, optional
-        Desired window to use. See `scipy.signal.get_window` for a list
-        of windows and required parameters.
+        Desired window to use. Default is ``'hamming'``. The window will be symmetric,
+        unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters.
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         If True, the gain at the frequency 0 (i.e., the "DC gain") is 1.
         If False, the DC gain is 0. Can also be a string argument for the
@@ -372,6 +375,9 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     array([ 0.04890915,  0.91284326,  0.04890915])
 
     """
+    # NB: scipy's version of array_namespace returns `np_compat` for int or floats
+    xp = array_namespace(cutoff)
+
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
     fs = _validate_fs(fs, allow_none=True)
@@ -379,18 +385,19 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     nyq = 0.5 * fs
 
-    cutoff = np.atleast_1d(cutoff) / float(nyq)
+    cutoff = xp.asarray(cutoff, dtype=xp_default_dtype(xp))
+    cutoff = xpx.atleast_nd(cutoff, ndim=1, xp=xp) / float(nyq)
 
     # Check for invalid input.
     if cutoff.ndim > 1:
         raise ValueError("The cutoff argument must be at most "
                          "one-dimensional.")
-    if cutoff.size == 0:
+    if xp_size(cutoff) == 0:
         raise ValueError("At least one cutoff frequency must be given.")
-    if cutoff.min() <= 0 or cutoff.max() >= 1:
+    if xp.min(cutoff) <= 0 or xp.max(cutoff) >= 1:
         raise ValueError("Invalid cutoff frequency: frequencies must be "
                          "greater than 0 and less than fs/2.")
-    if np.any(np.diff(cutoff) <= 0):
+    if xp.any(cutoff[1:] - cutoff[:-1] <= 0):
         raise ValueError("Invalid cutoff frequencies: the frequencies "
                          "must be strictly increasing.")
 
@@ -401,69 +408,67 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         beta = kaiser_beta(atten)
         window = ('kaiser', beta)
 
-    if isinstance(pass_zero, str):
-        if pass_zero in ('bandstop', 'lowpass'):
-            if pass_zero == 'lowpass':
-                if cutoff.size != 1:
-                    raise ValueError('cutoff must have one element if '
-                                     f'pass_zero=="lowpass", got {cutoff.shape}')
-            elif cutoff.size <= 1:
-                raise ValueError('cutoff must have at least two elements if '
-                                 f'pass_zero=="bandstop", got {cutoff.shape}')
-            pass_zero = True
-        elif pass_zero in ('bandpass', 'highpass'):
-            if pass_zero == 'highpass':
-                if cutoff.size != 1:
-                    raise ValueError('cutoff must have one element if '
-                                     f'pass_zero=="highpass", got {cutoff.shape}')
-            elif cutoff.size <= 1:
-                raise ValueError('cutoff must have at least two elements if '
-                                 f'pass_zero=="bandpass", got {cutoff.shape}')
-            pass_zero = False
-        else:
-            raise ValueError('pass_zero must be True, False, "bandpass", '
-                             '"lowpass", "highpass", or "bandstop", got '
-                             f'{pass_zero}')
-    pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
+    if pass_zero in ('bandstop', 'lowpass'):
+        if pass_zero == 'lowpass':
+            if xp_size(cutoff) != 1:
+                raise ValueError('cutoff must have one element if '
+                                 f'pass_zero=="lowpass", got {cutoff.shape}')
+        elif xp_size(cutoff) <= 1:
+            raise ValueError('cutoff must have at least two elements if '
+                             f'pass_zero=="bandstop", got {cutoff.shape}')
+        pass_zero = True
+    elif pass_zero in ('bandpass', 'highpass'):
+        if pass_zero == 'highpass':
+            if xp_size(cutoff) != 1:
+                raise ValueError('cutoff must have one element if '
+                                 f'pass_zero=="highpass", got {cutoff.shape}')
+        elif xp_size(cutoff) <= 1:
+            raise ValueError('cutoff must have at least two elements if '
+                             f'pass_zero=="bandpass", got {cutoff.shape}')
+        pass_zero = False
+    elif not (pass_zero is True or pass_zero is False):
+        raise ValueError(f"Parameter {pass_zero=} not in (True, False, 'bandpass', " +
+                         "'lowpass', 'highpass', 'bandstop')")
 
-    pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
+    pass_nyquist = (xp_size(cutoff) % 2 == 0) == pass_zero
     if pass_nyquist and numtaps % 2 == 0:
         raise ValueError("A filter with an even number of coefficients must "
                          "have zero response at the Nyquist frequency.")
 
     # Insert 0 and/or 1 at the ends of cutoff so that the length of cutoff
     # is even, and each pair in cutoff corresponds to passband.
-    cutoff = np.hstack(([0.0] * pass_zero, cutoff, [1.0] * pass_nyquist))
+    cutoff = xp.concat((xp.zeros(int(pass_zero)), cutoff, xp.ones(int(pass_nyquist))))
+
 
     # `bands` is a 2-D array; each row gives the left and right edges of
     # a passband.
-    bands = cutoff.reshape(-1, 2)
+    bands = xp.reshape(cutoff, (-1, 2))
 
     # Build up the coefficients.
     alpha = 0.5 * (numtaps - 1)
-    m = np.arange(0, numtaps) - alpha
+    m = xp.arange(0, numtaps, dtype=cutoff.dtype) - alpha
     h = 0
-    for left, right in bands:
-        h += right * sinc(right * m)
-        h -= left * sinc(left * m)
+    for j in range(bands.shape[0]):
+        left, right = bands[j, 0], bands[j, 1]
+        h += right * xpx.sinc(right * m, xp=xp)
+        h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
-    from .windows import get_window
-    win = get_window(window, numtaps, fftbins=False)
+    win = get_window(window, numtaps, fftbins=False, xp=xp)
     h *= win
 
     # Now handle scaling if desired.
     if scale:
         # Get the first passband.
-        left, right = bands[0]
+        left, right = bands[0, ...]
         if left == 0:
             scale_frequency = 0.0
         elif right == 1:
             scale_frequency = 1.0
         else:
             scale_frequency = 0.5 * (left + right)
-        c = np.cos(np.pi * m * scale_frequency)
-        s = np.sum(h * c)
+        c = xp.cos(xp.pi * m * scale_frequency)
+        s = xp.sum(h * c)
         h /= s
 
     return h
@@ -504,9 +509,10 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
         power of 2 that is not less than `numtaps`. `nfreqs` must be greater
         than `numtaps`.
     window : string or (string, float) or float, or None, optional
-        Window function to use. Default is "hamming". See
-        `scipy.signal.get_window` for the complete list of possible values.
-        If None, no window function is applied.
+        Desired window to use. Default is ``'hamming'``. The window will be symmetric,
+        unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters. If ``None``, no window function is applied.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -573,11 +579,14 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
+    xp = array_namespace(freq, gain)
+    freq, gain = xp.asarray(freq), xp.asarray(gain)
+
     fs = _validate_fs(fs, allow_none=True)
     fs = 2 if fs is None else fs
     nyq = 0.5 * fs
 
-    if len(freq) != len(gain):
+    if freq.shape[0] != gain.shape[0]:
         raise ValueError('freq and gain must be of same length.')
 
     if nfreqs is not None and numtaps >= nfreqs:
@@ -588,11 +597,11 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if freq[0] != 0 or freq[-1] != nyq:
         raise ValueError('freq must start with 0 and end with fs/2.')
-    d = np.diff(freq)
-    if (d < 0).any():
+    d = freq[1:] - freq[:-1]
+    if xp.any(d < 0):
         raise ValueError('The values in freq must be nondecreasing.')
     d2 = d[:-1] + d[1:]
-    if (d2 == 0).any():
+    if xp.any(d2 == 0):
         raise ValueError('A value in freq must not occur more than twice.')
     if freq[1] == 0:
         raise ValueError('Value 0 must not be repeated in freq')
@@ -623,28 +632,30 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     if nfreqs is None:
         nfreqs = 1 + 2 ** int(ceil(log(numtaps, 2)))
 
-    if (d == 0).any():
+    if xp.any(d == 0):
         # Tweak any repeated values in freq so that interp works.
-        freq = np.array(freq, copy=True)
-        eps = np.finfo(float).eps * nyq
-        for k in range(len(freq) - 1):
+        freq = xp.asarray(freq, copy=True)
+        eps = xp.finfo(xp_default_dtype(xp)).eps * nyq
+        for k in range(freq.shape[0] - 1):
             if freq[k] == freq[k + 1]:
                 freq[k] = freq[k] - eps
                 freq[k + 1] = freq[k + 1] + eps
         # Check if freq is strictly increasing after tweak
-        d = np.diff(freq)
-        if (d <= 0).any():
+        d = freq[1:] - freq[:-1]
+        if xp.any(d <= 0):
             raise ValueError("freq cannot contain numbers that are too close "
                              "(within eps * (fs/2): "
                              f"{eps}) to a repeated value")
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
-    fx = np.interp(x, freq, gain)
+    fx = np.interp(x, np.asarray(freq), np.asarray(gain))  # XXX array-api-extra#193
+    x = xp.asarray(x)
+    fx = xp.asarray(fx)
 
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
-    shift = np.exp(-(numtaps - 1) / 2. * 1.j * np.pi * x / nyq)
+    shift = xp.exp(-(numtaps - 1) / 2. * 1j * xp.pi * x / nyq)
     if ftype > 2:
         shift *= 1j
 
@@ -655,8 +666,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        from .windows import get_window
-        wind = get_window(window, numtaps, fftbins=False)
+        wind = get_window(window, numtaps, fftbins=False, xp=xp)
     else:
         wind = 1
 
@@ -665,7 +675,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     out = out_full[:numtaps] * wind
 
     if ftype == 3:
-        out[out.size // 2] = 0.0
+        out[xp_size(out) // 2] = 0.0
 
     return out
 
@@ -822,6 +832,12 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     >>> plt.show()
 
     """
+    xp = array_namespace(bands, desired, weight)
+    bands = np.asarray(bands)
+    desired = np.asarray(desired)
+    if weight is not None:
+        weight = np.asarray(weight)
+
     fs = _validate_fs(fs, allow_none=True)
     fs = 1.0 if fs is None else fs
 
@@ -837,8 +853,9 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
         weight = [1] * len(desired)
 
     bands = np.asarray(bands).copy()
-    return _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
-                            maxiter, grid_density)
+    result = _sigtools._remez(numtaps, bands, desired, weight, tnum, fs,
+                              maxiter, grid_density)
+    return xp.asarray(result)
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
@@ -951,6 +968,10 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(bands, desired)
+    bands = np.asarray(bands)
+    desired = np.asarray(desired)
+
     fs = _validate_fs(fs, allow_none=True)
     fs = 2 if fs is None else fs
     nyq = 0.5 * fs
@@ -969,7 +990,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
         raise ValueError("bands must contain frequency pairs.")
     if (bands < 0).any() or (bands > 1).any():
         raise ValueError("bands must be between 0 and 1 relative to Nyquist")
-    bands.shape = (-1, 2)
+    bands = bands.reshape((-1, 2))
 
     # check remaining params
     desired = np.asarray(desired).flatten()
@@ -978,7 +999,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
             f"desired must have one entry per frequency, got {desired.size} "
             f"gains for {bands.size} frequencies."
         )
-    desired.shape = (-1, 2)
+    desired = desired.reshape((-1, 2))
     if (np.diff(bands) <= 0).any() or (np.diff(bands[:, 0]) < 0).any():
         raise ValueError("bands must be monotonically nondecreasing and have "
                          "width > 0.")
@@ -1054,10 +1075,10 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
 
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
-    return coeffs
+    return xp.asarray(coeffs)
 
 
-def _dhtm(mag):
+def _dhtm(mag, xp):
     """Compute the modified 1-D discrete Hilbert transform
 
     Parameters
@@ -1068,20 +1089,20 @@ def _dhtm(mag):
     """
     # Adapted based on code by Niranjan Damera-Venkata,
     # Brian L. Evans and Shawn R. McCaslin (see refs for `minimum_phase`)
-    sig = np.zeros(len(mag))
+    sig = xp.zeros(mag.shape[0])
     # Leave Nyquist and DC at 0, knowing np.abs(fftfreq(N)[midpt]) == 0.5
-    midpt = len(mag) // 2
+    midpt = mag.shape[0] // 2
     sig[1:midpt] = 1
     sig[midpt+1:] = -1
     # eventually if we want to support complex filters, we will need a
     # np.abs() on the mag inside the log, and should remove the .real
-    recon = ifft(mag * np.exp(fft(sig * ifft(np.log(mag))))).real
+    recon = xp.real(ifft(mag * xp.exp(fft(sig * ifft(xp.log(mag))))))
     return recon
 
 
-def minimum_phase(h: np.ndarray,
+def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
-                  n_fft: int | None = None, *, half: bool = True) -> np.ndarray:
+                  n_fft: int | None = None, *, half: bool = True):
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1232,13 +1253,16 @@ def minimum_phase(h: np.ndarray,
     linear filter `h` whereas the other minimum phase filters have only half the order
     and the square root  of the magnitude response.
     """
-    h = np.asarray(h)
-    if np.iscomplexobj(h):
+    xp = array_namespace(h)
+
+    h = xp.asarray(h)
+    if xp.isdtype(h.dtype, "complex floating"):
         raise ValueError('Complex filters not supported')
-    if h.ndim != 1 or h.size <= 2:
+    if h.ndim != 1 or h.shape[0] <= 2:
         raise ValueError('h must be 1-D and at least 2 samples long')
-    n_half = len(h) // 2
-    if not np.allclose(h[-n_half:][::-1], h[:n_half]):
+    n_half = h.shape[0] // 2
+
+    if not xp.any(xp.flip(h[-n_half:]) - h[:n_half] <= 1e-8 + 1e-6*abs(h[:n_half])):
         warnings.warn('h does not appear to by symmetric, conversion may fail',
                       RuntimeWarning, stacklevel=2)
     if not isinstance(method, str) or method not in \
@@ -1247,45 +1271,46 @@ def minimum_phase(h: np.ndarray,
     if method == "hilbert" and not half:
         raise ValueError("`half=False` is only supported when `method='homomorphic'`")
     if n_fft is None:
-        n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
+        n_fft = 2 ** int(ceil(log2(2 * (h.shape[0] - 1) / 0.01)))
     n_fft = int(n_fft)
-    if n_fft < len(h):
+    if n_fft < h.shape[0]:
         raise ValueError(f'n_fft must be at least len(h)=={len(h)}')
+
     if method == 'hilbert':
-        w = np.arange(n_fft) * (2 * np.pi / n_fft * n_half)
-        H = np.real(fft(h, n_fft) * np.exp(1j * w))
+        w = xp.arange(n_fft, dtype=xp.float64) * (2 * xp.pi / n_fft * n_half)
+        H = xp.real(fft(h, n_fft) * xp.exp(1j * w))
         dp = max(H) - 1
         ds = 0 - min(H)
-        S = 4. / (np.sqrt(1+dp+ds) + np.sqrt(1-dp+ds)) ** 2
+        S = 4. / (xp.sqrt(1+dp+ds) + xp.sqrt(1-dp+ds)) ** 2
         H += ds
         H *= S
-        H = np.sqrt(H, out=H)
+        H = xp.sqrt(H)
         H += 1e-10  # ensure that the log does not explode
-        h_minimum = _dhtm(H)
+        h_minimum = _dhtm(H, xp)
     else:  # method == 'homomorphic'
         # zero-pad; calculate the DFT
-        h_temp = np.abs(fft(h, n_fft))
+        h_temp = xp.abs(fft(h, n_fft))
         # take 0.25*log(|H|**2) = 0.5*log(|H|)
-        h_temp += 1e-7 * h_temp[h_temp > 0].min()  # don't let log blow up
-        np.log(h_temp, out=h_temp)
+        h_temp += 1e-7 * xp.min(h_temp[h_temp > 0])  # don't let log blow up
+        h_temp = xp.log(h_temp)
         if half:  # halving of magnitude spectrum optional
             h_temp *= 0.5
         # IDFT
-        h_temp = ifft(h_temp).real
+        h_temp = xp.real(ifft(h_temp))
         # multiply pointwise by the homomorphic filter
         # lmin[n] = 2u[n] - d[n]
         # i.e., double the positive frequencies and zero out the negative ones;
         # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
-        win = np.zeros(n_fft)
+        win = xp.zeros(n_fft)
         win[0] = 1
         stop = n_fft // 2
         win[1:stop] = 2
         if n_fft % 2:
             win[stop] = 1
         h_temp *= win
-        h_temp = ifft(np.exp(fft(h_temp)))
+        h_temp = ifft(xp.exp(fft(h_temp)))
         h_minimum = h_temp.real
-    n_out = (n_half + len(h) % 2) if half else len(h)
+    n_out = (n_half + h.shape[0] % 2) if half else h.shape[0]
     return h_minimum[:n_out]
 
 
@@ -1298,7 +1323,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     filter. The filter is separable with linear phase; it will be designed
     as a product of two 1D filters with dimensions defined by `hsize`.
     Additionally, it can create approximately circularly symmetric 2-D windows.
-    
+
     Parameters
     ----------
     hsize : tuple or list of length 2
@@ -1306,17 +1331,18 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         number of coefficients in the row direction and `hsize[1]` specifies
         the number of coefficients in the column direction.
     window : tuple or list of length 2 or string
-        Desired window to use for each 1D filter or a single window type 
-        for creating circularly symmetric 2-D windows. Each element should be
-        a string or tuple of string and parameter values. See
-        `~scipy.signal.get_window` for a list of windows and required
-        parameters.
+        Desired window to use for each 1D filter or a single window type for creating
+        circularly symmetric 2-D windows. Each element should be a string or tuple of
+        string and parameter values. The generated windows will be symmetric, unless a
+        suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``). Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of the filter in the same units as `fs`. This defines
         the frequency at which the filter's gain drops to approximately -6 dB
         (half power) in a low-pass or high-pass filter. For multi-band filters,
-        `fc` can be an array of cutoff frequencies (i.e., band edges) in the 
-        range [0, fs/2], with each band specified in pairs. Required if 
+        `fc` can be an array of cutoff frequencies (i.e., band edges) in the
+        range [0, fs/2], with each band specified in pairs. Required if
         `circular` is False.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.
@@ -1325,17 +1351,17 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
-        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
+        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``.
         If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will
         have gain 0.
-        It can also be a string argument for the desired filter type 
+        It can also be a string argument for the desired filter type
         (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Set to ``True`` to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
-        
+
         - 0 (DC) if the first passband starts at 0 (i.e. pass_zero is ``True``)
         - `fs`/2 (the Nyquist frequency) if the first passband ends at `fs`/2
           (i.e., the filter is a single band highpass filter);
@@ -1414,9 +1440,9 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         if fc is None:
             raise ValueError("Cutoff frequency `fc` must be "
                              "provided when `circular` is True")
-        
+
         n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
-        
+
         win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))

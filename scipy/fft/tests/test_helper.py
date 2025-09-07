@@ -10,9 +10,7 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, xp_device
-)
+from scipy._lib._array_api import xp_assert_close, xp_device
 from scipy import fft
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -507,12 +505,7 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestFFTFreq:
-
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
         x2 = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float64)
@@ -531,18 +524,13 @@ class TestFFTFreq:
         y = 10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-    def test_device(self, xp):
-        devices = get_xp_devices(xp)
+    def test_device(self, xp, devices):
         for d in devices:
             y = fft.fftfreq(9, xp=xp, device=d)
             x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestRFFTFreq:
 
     def test_definition(self, xp):
@@ -550,7 +538,7 @@ class TestRFFTFreq:
         x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
 
         # default dtype varies across backends
-        
+
         y = 9 * fft.rfftfreq(9, xp=xp)
         xp_assert_close(y, x, check_dtype=False, check_namespace=True)
 
@@ -563,8 +551,7 @@ class TestRFFTFreq:
         y = 10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-    def test_device(self, xp):
-        devices = get_xp_devices(xp)
+    def test_device(self, xp, devices):
         for d in devices:
             y = fft.rfftfreq(9, xp=xp, device=d)
             x = xp.empty(0, device=d)

@@ -1,11 +1,16 @@
 """Constraints definition for minimize."""
-import numpy as np
-from ._hessian_update_strategy import BFGS
-from ._differentiable_functions import (
-    VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from ._optimize import OptimizeWarning
 from warnings import warn, catch_warnings, simplefilter, filterwarnings
-from scipy.sparse import issparse
+from types import GenericAlias
+
+import numpy as np
+
+from ._differentiable_functions import (
+    VectorFunction, LinearVectorFunction, IdentityVectorFunction
+)
+from ._hessian_update_strategy import BFGS
+from ._optimize import OptimizeWarning
+
+from scipy._lib._sparse import issparse
 
 
 def _arr_to_scalar(x):
@@ -246,6 +251,10 @@ class Bounds:
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def _input_validation(self):
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
@@ -336,6 +345,10 @@ class PreparedConstraint:
          Array indicating which components must be kept feasible with a size
          equal to the number of the constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, constraint, x0, sparse_jacobian=None,
                  finite_diff_bounds=(-np.inf, np.inf)):
         if isinstance(constraint, NonlinearConstraint):

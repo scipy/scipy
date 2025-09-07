@@ -1,5 +1,6 @@
 import pytest
 import itertools
+import warnings
 
 from scipy import stats
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
@@ -9,7 +10,7 @@ from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
 
 import numpy as np
 from numpy.testing import (
-    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+    assert_almost_equal, assert_equal, assert_allclose
 )
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
@@ -109,10 +110,10 @@ def test_nhypergeom_rvs_shape():
 def test_nhypergeom_accuracy():
     # Check that nhypergeom.rvs post-gh-13431 gives the same values as
     # inverse transform sampling
-    np.random.seed(0)
-    x = nhypergeom.rvs(22, 7, 11, size=100)
-    np.random.seed(0)
-    p = np.random.uniform(size=100)
+    rng = np.random.RandomState(0)
+    x = nhypergeom.rvs(22, 7, 11, size=100, random_state=rng)
+    rng = np.random.RandomState(0)
+    p = rng.uniform(size=100)
     y = nhypergeom.ppf(p, 22, 7, 11)
     assert_equal(x, y)
 
@@ -305,10 +306,10 @@ class TestZipfian:
         # cdf <- pzipf(k, N = n, shape = a)
         # print(pmf)
         # print(cdf)
-        np.random.seed(0)
-        k = np.random.randint(1, 20, size=10)
-        a = np.random.rand(10)*10 + 1
-        n = np.random.randint(1, 100, size=10)
+        rng = np.random.RandomState(0)
+        k = rng.randint(1, 20, size=10)
+        a = rng.rand(10)*10 + 1
+        n = rng.randint(1, 100, size=10)
         pmf = [8.076972e-03, 2.950214e-05, 9.799333e-01, 3.216601e-06,
                3.158895e-04, 3.412497e-05, 4.350472e-10, 2.405773e-06,
                5.860662e-06, 1.053948e-04]
@@ -318,9 +319,9 @@ class TestZipfian:
         assert_allclose(zipfian.pmf(k, a, n)[1:], pmf[1:], rtol=1e-6)
         assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
 
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
     naive_tests = np.vstack((np.logspace(-2, 1, 10),
-                             np.random.randint(2, 40, 10))).T
+                             rng.randint(2, 40, 10))).T
 
     @pytest.mark.parametrize("a, n", naive_tests)
     def test_zipfian_naive(self, a, n):
@@ -424,17 +425,17 @@ class TestNCH:
     def test_nchypergeom_wallenius_naive(self):
         # test against a very simple implementation
 
-        np.random.seed(2)
+        rng = np.random.RandomState(2)
         shape = (2, 4, 3)
         max_m = 100
-        m1 = np.random.randint(1, max_m, size=shape)
-        m2 = np.random.randint(1, max_m, size=shape)
+        m1 = rng.randint(1, max_m, size=shape)
+        m2 = rng.randint(1, max_m, size=shape)
         N = m1 + m2
-        n = randint.rvs(0, N, size=N.shape)
+        n = randint.rvs(0, N, size=N.shape, random_state=rng)
         xl = np.maximum(0, n-m2)
         xu = np.minimum(n, m1)
-        x = randint.rvs(xl, xu, size=xl.shape)
-        w = np.random.rand(*x.shape)*2
+        x = randint.rvs(xl, xu, size=xl.shape, random_state=rng)
+        w = rng.rand(*x.shape)*2
 
         def support(N, m1, n, w):
             m2 = N - m1
@@ -452,8 +453,8 @@ class TestNCH:
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
                             mean(N, m1, n, w), rtol=2e-2)
@@ -466,8 +467,8 @@ class TestNCH:
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(
                 nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),

@@ -52,10 +52,22 @@ r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
 
 class ArffError(OSError):
+    """
+    Base exception for errors when reading ARFF files.
+    
+    Raised when an ARFF file cannot be read due to file access issues,
+    corruption, or unsupported features.
+    """
     pass
 
 
 class ParseArffError(ArffError):
+    """
+    Exception for syntax and parsing errors in ARFF files.
+    
+    Raised when an ARFF file has invalid syntax, malformed attributes,
+    or data that doesn't match the expected format.
+    """
     pass
 
 

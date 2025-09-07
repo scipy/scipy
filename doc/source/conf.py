@@ -51,6 +51,7 @@ extensions = [
     'matplotlib.sphinxext.plot_directive',
     'myst_nb',
     'jupyterlite_sphinx',
+    'array_api_capabilities_table',
 ]
 
 
@@ -131,6 +132,7 @@ nitpick_ignore = [
     ("py:class", "None.  Remove all items from D."),
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "None.  Update D from mapping/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
 ]
 
@@ -359,7 +361,6 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
@@ -408,6 +409,7 @@ myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
     "substitution",
+    "linkify",
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
@@ -481,7 +483,7 @@ def linkcode_resolve(domain, info):
         obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
-    if isinstance(obj, (rv_generic, multi_rv_generic)):
+    if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
@@ -501,7 +503,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = f"#L{0}-L{1}".format(lineno, lineno + len(source) - 1)
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
     else:
         linespec = ""
 

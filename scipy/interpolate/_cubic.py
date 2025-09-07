@@ -70,7 +70,7 @@ def prepare_input(x, y, axis, dydx=None):
 
 
 class CubicHermiteSpline(PPoly):
-    """Piecewise-cubic interpolator matching values and first derivatives.
+    """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
     The result is represented as a `PPoly` instance.
 
@@ -115,6 +115,7 @@ class CubicHermiteSpline(PPoly):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -157,7 +158,7 @@ class CubicHermiteSpline(PPoly):
 
 
 class PchipInterpolator(CubicHermiteSpline):
-    r"""PCHIP 1-D monotonic cubic interpolation.
+    r"""PCHIP shape-preserving interpolator (C1 smooth).
 
     ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
@@ -186,7 +187,9 @@ class PchipInterpolator(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
+
 
     See Also
     --------
@@ -232,6 +235,9 @@ class PchipInterpolator(CubicHermiteSpline):
            :doi:`10.1137/1.9780898717952`
 
     """
+
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
@@ -328,12 +334,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in
-            SciPy 1.15.0. If you are trying to use the real components of
-            the passed array, use ``np.real`` on `yi`.
-
     x : scalar or array_like
         Of length M.
     der : int or list, optional
@@ -379,8 +379,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    r"""
-    Akima interpolator
+    r"""Akima "visually pleasing" interpolator (C1 smooth).
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
     method by Akima uses a continuously differentiable sub-spline built from
@@ -415,6 +414,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -491,6 +491,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -541,13 +544,25 @@ class Akima1DInterpolator(CubicHermiteSpline):
             else:
                 f1 = dm[2:]
                 f2 = dm[:-2]
+
+            # makima is more numerically stable for small f12,
+            # so a finite cutoff should not improve any behavior
+            # however, akima has a qualitative discontinuity near f12=0
+            # a finite cutoff moves it, but cannot remove it.
+            # the cutoff break_mult could be made a keyword argument
+            # method='akima' also benefits from a check for m2=m3
+            break_mult = 1.e-9
+
             f12 = f1 + f2
+
             # These are the mask of where the slope at breakpoint is defined:
-            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            ind = np.nonzero(f12 > break_mult * np.max(f12, initial=-np.inf))
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
-            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            t[ind] = m[(x_ind + 1,) + y_ind] + (
+                (f2[ind] / f12[ind])
+                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -570,7 +585,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
 
 class CubicSpline(CubicHermiteSpline):
-    """Cubic spline data interpolator.
+    """Piecewise cubic interpolator to fit values (C2 smooth).
 
     Interpolate data with a piecewise cubic polynomial which is twice
     continuously differentiable [1]_. The result is represented as a `PPoly`
@@ -646,6 +661,7 @@ class CubicSpline(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also

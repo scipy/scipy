@@ -5,8 +5,10 @@ from copy import deepcopy
 import platform
 import sys
 import math
+import warnings
+
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
@@ -171,9 +173,9 @@ def test_random_state(method, kwargs):
     assert_equal(rng1.rvs(100), rng2.rvs(100))
 
     # global seed
-    np.random.seed(123)
+    rng = np.random.RandomState(123)
     rng1 = Method(**kwargs)
-    rvs1 = rng1.rvs(100)
+    rvs1 = rng1.rvs(100, random_state=rng)
     np.random.seed(None)
     rng2 = Method(**kwargs, random_state=123)
     rvs2 = rng2.rvs(100)
@@ -375,6 +377,7 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
         w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
@@ -502,10 +505,11 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     def test_basic(self, dist, mv_ex):
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # filter the warnings thrown by UNU.RAN
-            sup.filter(RuntimeWarning)
+            warnings.simplefilter("ignore", RuntimeWarning)
             rng = TransformedDensityRejection(dist, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
 
@@ -600,13 +604,12 @@ class TestTransformedDensityRejection:
                                           max_squeeze_hat_ratio=0.9999)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in greater")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "greater_equal")
-            sup.filter(RuntimeWarning, "invalid value encountered in less")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "less_equal")
+        with warnings.catch_warnings():
+            msg = "invalid value encountered in "
+            warnings.filterwarnings("ignore", msg + "greater", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "greater_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less_equal", RuntimeWarning)
             res = rng.ppf_hat(u)
             expected = stats.norm.ppf(u)
         assert_allclose(res, expected, rtol=1e-3, atol=1e-5)
@@ -809,6 +812,7 @@ class TestNumericalInversePolynomial:
     mv3 = [-0.45/np.pi, 0.2 * 250/3 * 0.5 - 0.45**2/np.pi**2]
     mvs = [mv0, mv1, mv2, mv3]
 
+    @pytest.mark.thread_unsafe(reason="deadlocks for unknown reasons")
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
     def test_basic(self, dist, mv_ex):
@@ -842,8 +846,8 @@ class TestNumericalInversePolynomial:
                 if isinstance(distname, str)
                 else distname)
         dist = dist(*params)
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             rng = NumericalInversePolynomial(dist, random_state=42)
         if distname in skip_sample_moment_check:
             return
@@ -893,13 +897,12 @@ class TestNumericalInversePolynomial:
         rng = NumericalInversePolynomial(dist, u_resolution=1e-14)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in greater")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "greater_equal")
-            sup.filter(RuntimeWarning, "invalid value encountered in less")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "less_equal")
+        with warnings.catch_warnings():
+            msg = "invalid value encountered in "
+            warnings.filterwarnings("ignore", msg + "greater", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "greater_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less_equal", RuntimeWarning)
             res = rng.ppf(u)
             expected = stats.norm.ppf(u)
         assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
@@ -915,13 +918,12 @@ class TestNumericalInversePolynomial:
         rng = NumericalInversePolynomial(dist, u_resolution=1e-14)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in greater")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "greater_equal")
-            sup.filter(RuntimeWarning, "invalid value encountered in less")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "less_equal")
+        with warnings.catch_warnings():
+            msg = "invalid value encountered in "
+            warnings.filterwarnings("ignore", msg + "greater", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "greater_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less_equal", RuntimeWarning)
             res = rng.cdf(x)
             expected = stats.norm.cdf(x)
         assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
@@ -1065,6 +1067,7 @@ class TestNumericalInverseHermite:
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
     @pytest.mark.parametrize("order", [3, 5])
+    @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex, order):
         rng = NumericalInverseHermite(dist, order=order, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
@@ -1089,12 +1092,12 @@ class TestNumericalInverseHermite:
             # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
             pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
 
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
 
         dist = getattr(stats, distname)(*shapes)
         fni = NumericalInverseHermite(dist)
 
-        x = np.random.rand(10)
+        x = rng.random(10)
         p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
         u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
 
@@ -1111,6 +1114,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.parallel_threads(4)  # Very slow
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
 
@@ -1134,6 +1138,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.parametrize('rng', rngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
+    @pytest.mark.thread_unsafe
     def test_RVS(self, rng, size_in, size_out):
         dist = StandardNormal()
         fni = NumericalInverseHermite(dist)
@@ -1193,13 +1198,12 @@ class TestNumericalInverseHermite:
         rng = NumericalInverseHermite(dist, u_resolution=1e-12)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in greater")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "greater_equal")
-            sup.filter(RuntimeWarning, "invalid value encountered in less")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "less_equal")
+        with warnings.catch_warnings():
+            msg = "invalid value encountered in "
+            warnings.filterwarnings("ignore", msg + "greater", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "greater_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less_equal", RuntimeWarning)
             res = rng.ppf(u)
             expected = stats.norm.ppf(u)
         assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
@@ -1212,9 +1216,9 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-10
         assert mae <= max_error
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # ignore warning about u-resolution being too small.
-            sup.filter(RuntimeWarning)
+            warnings.simplefilter("ignore", RuntimeWarning)
             rng = NumericalInverseHermite(dist, u_resolution=1e-14)
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
@@ -1297,14 +1301,12 @@ class TestDiscreteGuideTable:
 
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in greater")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "greater_equal")
-            sup.filter(RuntimeWarning, "invalid value encountered in less")
-            sup.filter(RuntimeWarning, "invalid value encountered in "
-                                       "less_equal")
-
+        with warnings.catch_warnings():
+            msg = "invalid value encountered in "
+            warnings.filterwarnings("ignore", msg + "greater", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "greater_equal", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less", RuntimeWarning)
+            warnings.filterwarnings("ignore", msg + "less_equal", RuntimeWarning)
             res = rng.ppf(u)
             expected = stats.binom.ppf(u, n, p)
         assert_equal(res.shape, expected.shape)
@@ -1356,6 +1358,7 @@ class TestSimpleRatioUniforms:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
+    @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex):
         rng = SimpleRatioUniforms(dist, mode=dist.mode, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
@@ -1426,8 +1429,8 @@ class TestRatioUniforms:
         umax = np.sqrt(f(0))
         gen1 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=1234)
         r1 = gen1.rvs(10)
-        np.random.seed(1234)
-        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v)
+        rng = np.random.RandomState(1234)
+        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=rng)
         r2 = gen2.rvs(10)
         assert_equal(r1, r2)
 

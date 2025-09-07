@@ -10,6 +10,7 @@ from scipy._lib._array_api import (
     xp_size,
     np_compat,
     is_array_api_strict,
+    make_xp_test_case,
 )
 from scipy.integrate import cubature
 from scipy.integrate._cubature import _InfiniteLimitsTransform
@@ -21,6 +22,7 @@ from scipy.integrate._rules import (
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 # The integrands ``genz_malik_1980_*`` come from the paper:
 #   A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
@@ -221,7 +223,9 @@ def _eval_indefinite_integral(F, a, b, xp):
 
     out = 0
     for ind in itertools.product(range(2), repeat=ndim):
-        selected_points = xp.asarray([points[i, j] for i, j in zip(ind, range(ndim))])
+        selected_points = xp.asarray(
+            [float(points[i, j]) for i, j in zip(ind, range(ndim))]
+        )
         out += pow(-1, sum(ind) + ndim) * F(selected_points)
 
     return out
@@ -369,6 +373,7 @@ def f_with_problematic_points(x_arr, points, xp):
     return xp.ones(x_arr.shape[0])
 
 
+@make_xp_test_case(cubature)
 class TestCubature:
     """
     Tests related to the interface of `cubature`.
@@ -394,9 +399,7 @@ class TestCubature:
             atol=0,
         )
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
-    def test_pass_array_like_not_array(self, xp):
+    def test_pass_array_like_not_array(self):
         n = np_compat.arange(5, dtype=np_compat.float64)
         a = [0]
         b = [2]
@@ -405,12 +408,12 @@ class TestCubature:
             basic_1d_integrand,
             a,
             b,
-            args=(n, xp)
+            args=(n, np_compat)
         )
 
         xp_assert_close(
             res.estimate,
-            basic_1d_integrand_exact(n, xp),
+            basic_1d_integrand_exact(n, np_compat),
             rtol=1e-8,
             atol=0,
         )
@@ -518,6 +521,7 @@ class TestCubature:
         assert result_dtype == xp.float64
 
 
+@make_xp_test_case(cubature)
 @pytest.mark.parametrize("rtol", [1e-4])
 @pytest.mark.parametrize("atol", [1e-5])
 @pytest.mark.parametrize("rule", [
@@ -530,6 +534,8 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
@@ -776,6 +782,8 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
@@ -963,10 +971,8 @@ class TestCubatureProblems:
                    f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1113,10 +1119,8 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1320,10 +1324,8 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@skip_xp_backends(
-    "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
-)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (

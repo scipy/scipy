@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import inspect
 from warnings import warn
 
 import numpy as np
@@ -46,7 +47,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -166,8 +167,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' and 'cobyqa' are defined as a single object
-        or a list of objects specifying constraints to the optimization problem.
+        Constraints for 'trust-constr', 'cobyqa', and 'cobyla' are defined as a single
+        object or a list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
         - `LinearConstraint`
@@ -187,7 +188,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
 
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected
@@ -210,17 +210,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC, SLSQP, and COBYLA support a callable with
+        All methods except TNC and SLSQP support a callable with
         the signature::
 
             callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function. Note that the name
-        of the parameter must be ``intermediate_result`` for the callback
-        to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises ``StopIteration``.
+        of the parameter vector and objective function. Not all attributes of
+        `OptimizeResult` may be present. The name of the parameter must be
+        ``intermediate_result`` for the callback to be passed an `OptimizeResult`.
+        These methods will also terminate if the callback raises ``StopIteration``.
 
         All methods except trust-constr (also) support a signature like::
 
@@ -338,13 +338,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Constrained Minimization**
 
-    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
+    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the PRIMA
+    implementation [19]_ of the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
-    approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
-    constraints functions 'fun' may return either a single number
-    or an array or list of numbers.
+    approximations to the objective function and each constraint.
 
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
@@ -488,6 +486,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         and Software*. PhD thesis, Department of Applied Mathematics, The Hong
         Kong Polytechnic University, Hong Kong, China, 2022. URL:
         https://theses.lib.polyu.edu.hk/handle/200/12294.
+    .. [19] Zhang, Z. "PRIMA: Reference Implementation for Powell's Methods with
+        Modernization and Amelioration", https://www.libprima.net,
+        :doi:`10.5281/zenodo.8052654`
+    .. [20] Karush-Kuhn-Tucker conditions,
+        https://en.wikipedia.org/wiki/Karush%E2%80%93Kuhn%E2%80%93Tucker_conditions
 
     Examples
     --------
@@ -527,7 +530,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         [ 0.09495377,  0.18996269,  0.38165151,  0.7664427,   1.53713523]
     ])
 
-
     Next, consider a minimization problem with several constraints (namely
     Example 16.4 from [5]_). The objective function is:
 
@@ -545,10 +547,42 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     The optimization problem is solved using the SLSQP method as:
 
-    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                constraints=cons)
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
 
-    It should converge to the theoretical solution (1.4 ,1.7).
+    It should converge to the theoretical solution ``[1.4 ,1.7]``. *SLSQP* also
+    returns the multipliers that are used in the solution of the problem. These
+    multipliers, when the problem constraints are linear, can be thought of as the
+    Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
+    of Lagrange multipliers to inequality-constrained optimization problems ([20]_).
+
+    Notice that at the solution, the first constraint is active. Let's evaluate the
+    function at solution:
+
+    >>> cons[0]['fun'](res.x)
+    np.float64(1.4901224698604665e-09)
+
+    Also, notice that at optimality there is a non-zero multiplier:
+
+    >>> res.multipliers
+    array([0.8, 0. , 0. ])
+
+    This can be understood as the local sensitivity of the optimal value of the
+    objective function with respect to changes in the first constraint. If we
+    tighten the constraint by a small amount ``eps``:
+
+    >>> eps = 0.01
+    >>> cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+
+    we expect the optimal value of the objective function to increase by
+    approximately ``eps * res.multipliers[0]``:
+
+    >>> eps * res.multipliers[0]  # Expected change in f0
+    np.float64(0.008000000027153205)
+    >>> f0 = res.fun  # Keep track of the previous optimal value
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
+    >>> f1 = res.fun  # New optimal value
+    >>> f1 - f0
+    np.float64(0.008019998807885509)
 
     """
     x0 = np.atleast_1d(np.asarray(x0))
@@ -701,25 +735,37 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 x_fixed = (bounds.lb)[i_fixed]
                 x0 = x0[~i_fixed]
                 bounds = _remove_from_bounds(bounds, i_fixed)
-                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                fun = _Remove_From_Func(fun, i_fixed, x_fixed)
+
                 if callable(callback):
-                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                    sig = inspect.signature(callback)
+                    if set(sig.parameters) == {'intermediate_result'}:
+                        # callback(intermediate_result)
+                        print(callback)
+                        callback = _Patch_Callback_Equal_Variables(
+                            callback, i_fixed, x_fixed
+                        )
+                    else:
+                        # callback(x)
+                        callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+
                 if callable(jac):
-                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                    jac = _Remove_From_Func(jac, i_fixed, x_fixed, remove=1)
 
                 # make a copy of the constraints so the user's version doesn't
                 # get changed. (Shallow copy is ok)
                 constraints = [con.copy() for con in constraints]
                 for con in constraints:  # yes, guaranteed to be a list
-                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                    con['fun'] = _Remove_From_Func(con['fun'], i_fixed,
                                                    x_fixed, min_dim=1,
                                                    remove=0)
                     if callable(con.get('jac', None)):
-                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                        con['jac'] = _Remove_From_Func(con['jac'], i_fixed,
                                                        x_fixed, min_dim=2,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    # selects whether to use callback(x) or callback(intermediate_result)
     callback = _wrap_callback(callback, meth)
 
     if meth == 'nelder-mead':
@@ -1000,27 +1046,49 @@ def _remove_from_bounds(bounds, i_fixed):
     return Bounds(lb, ub)  # don't mutate original Bounds object
 
 
-def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+class _Patch_Callback_Equal_Variables:
+    # Patches a callback that accepts an intermediate_result
+    def __init__(self, callback, i_fixed, x_fixed):
+        self.callback = callback
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+
+    def __call__(self, intermediate_result):
+        x_in = intermediate_result.x
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        intermediate_result.x = x_out
+        return self.callback(intermediate_result)
+
+
+class _Remove_From_Func:
     """Wraps a function such that fixed variables need not be passed in"""
-    def fun_out(x_in, *args, **kwargs):
-        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
-        x_out[i_fixed] = x_fixed
-        x_out[~i_fixed] = x_in
-        y_out = fun_in(x_out, *args, **kwargs)
+    def __init__(self, fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+        self.fun_in = fun_in
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+        self.min_dim = min_dim
+        self.remove = remove
+
+    def __call__(self, x_in, *args, **kwargs):
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        y_out = self.fun_in(x_out, *args, **kwargs)
         y_out = np.array(y_out)
 
-        if min_dim == 1:
+        if self.min_dim == 1:
             y_out = np.atleast_1d(y_out)
-        elif min_dim == 2:
+        elif self.min_dim == 2:
             y_out = np.atleast_2d(y_out)
 
-        if remove == 1:
-            y_out = y_out[..., ~i_fixed]
-        elif remove == 2:
-            y_out = y_out[~i_fixed, ~i_fixed]
+        if self.remove == 1:
+            y_out = y_out[..., ~self.i_fixed]
+        elif self.remove == 2:
+            y_out = y_out[~self.i_fixed, ~self.i_fixed]
 
         return y_out
-    return fun_out
 
 
 def _add_to_array(x_in, i_fixed, x_fixed):
@@ -1074,7 +1142,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'cobyqa', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new', 'cobyla']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

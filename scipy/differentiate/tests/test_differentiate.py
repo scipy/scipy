@@ -4,19 +4,17 @@ import pytest
 import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
+import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch, xp_size
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
-array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
-jax_skip_reason = 'JAX arrays do not support item assignment.'
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@make_xp_test_case(derivative)
 class TestDerivative:
 
     def f(self, x):
@@ -34,9 +32,8 @@ class TestDerivative:
         if not is_torch(xp):
             xp_assert_less(xp.abs(res.df - ref), res.error)
 
-    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
-    def test_accuracy(self, case, xp):
+    def test_accuracy(self, case):
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
@@ -211,12 +208,13 @@ class TestDerivative:
         # test that `step_direction` works as expected
         def f(x):
             y = xp.exp(x)
-            y[(x < 0) + (x > 2)] = xp.nan
+            y = xpx.at(y)[(x < 0) + (x > 2)].set(xp.nan)
             return y
 
         x = xp.linspace(0, 2, 10)
         step_direction = xp.zeros_like(x)
-        step_direction[x < 0.6], step_direction[x > 1.4] = 1, -1
+        step_direction = xpx.at(step_direction)[x < 0.6].set(1)
+        step_direction = xpx.at(step_direction)[x > 1.4].set(-1)
         res = derivative(f, x, step_direction=step_direction)
         xp_assert_close(res.df, xp.exp(x))
         assert xp.all(res.success)
@@ -299,11 +297,8 @@ class TestDerivative:
 
     @pytest.mark.parametrize("hdir", (-1, 0, 1))
     @pytest.mark.parametrize("x", (0.65, [0.65, 0.7]))
-    @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
+    @pytest.mark.parametrize("dtype", ('float32', 'float64'))
     def test_dtype(self, hdir, x, dtype, xp):
-        if dtype == 'float16' and not is_numpy(xp):
-            pytest.skip('float16 not tested for alternative backends')
-
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
         x = xp.asarray(x, dtype=dtype)
@@ -470,8 +465,7 @@ class JacobianHessianTest:
             jh_func(func, x, maxiter=-1)
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@make_xp_test_case(jacobian)
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 
@@ -583,8 +577,8 @@ class TestJacobian(JacobianHessianTest):
         res = jacobian(df1, z, initial_step=10)
         # FIXME https://github.com/scipy/scipy/pull/22320#discussion_r1914898175
         if not is_torch(xp):
-            assert xp_size(xp.unique_values(res.nit)) == 4
-            assert xp_size(xp.unique_values(res.nfev)) == 4
+            assert xpx.nunique(res.nit) == 4
+            assert xpx.nunique(res.nfev) == 4
 
         res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
@@ -597,7 +591,7 @@ class TestJacobian(JacobianHessianTest):
             ref[attr] = xp.squeeze(
                 ref_attr,
                 axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
-            )            
+            )
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 
@@ -609,10 +603,10 @@ class TestJacobian(JacobianHessianTest):
         eps = 1e-7  # torch needs wiggle room?
 
         def f(x):
-            x[0, x[0] < b[0]] = xp.nan
-            x[0, x[0] > b[0] + 0.25] = xp.nan
-            x[1, x[1] > b[1]] = xp.nan
-            x[1, x[1] < b[1] - 0.1-eps] = xp.nan
+            x = xpx.at(x)[0, x[0] < b[0]].set(xp.nan)
+            x = xpx.at(x)[0, x[0] > b[0] + 0.25].set(xp.nan)
+            x = xpx.at(x)[1, x[1] > b[1]].set(xp.nan)
+            x = xpx.at(x)[1, x[1] < b[1] - 0.1-eps].set(xp.nan)
             return TestJacobian.f5(x, xp)
 
         dir = [1, -1, 0]
@@ -625,8 +619,7 @@ class TestJacobian(JacobianHessianTest):
         assert xp.all(xp.isfinite(ref))
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
+@make_xp_test_case(hessian)
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
@@ -684,7 +677,6 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skip_xp_backends(np_only=True,
                                   reason='Python list input uses NumPy backend')
     def test_small_rtol_warning(self, xp):

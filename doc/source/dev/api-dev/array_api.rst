@@ -89,37 +89,31 @@ More strict array input validation will reject ``np.matrix`` and
     TypeError: object arrays are not supported
 
 
-Currently supported functionality
-`````````````````````````````````
+Example capabilities table
+--------------------------
 
-The following modules provide array API standard support when the environment
-variable is set:
+=========  =========  =========
+Library    CPU        GPU
+=========  =========  =========
+NumPy      ✅         n/a
+CuPy       n/a        ✅
+PyTorch    ✅         ✅
+JAX        ⚠️ no JIT  ⛔
+Dask       ⛔         n/a
+=========  =========  =========
 
-- `scipy.cluster`
-- `scipy.constants`
-- `scipy.datasets`
-- `scipy.fft`
-- `scipy.io`
-- `scipy.ndimage`
+In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
+arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
+support multiple devices (CPU and GPU), but SciPy support for such arrays may be
+limited; for instance, this SciPy feature is only expected to work with JAX arrays
+located on the CPU. Additionally, some backends can have major caveats; in the example
+the function will fail when running inside ``jax.jit``.
+Additional caveats may be listed in the docstring of the function.
 
-Support is provided in `scipy.special` for the following functions:
-`scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
-`scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
-`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
-`scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
-`scipy.special.logit`, `scipy.special.expit`, `scipy.special.entr`,
-`scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
-and `scipy.special.chdtrc`.
-
-Support is provided in `scipy.stats` for the following functions:
-`scipy.stats.describe`, `scipy.stats.moment`, `scipy.stats.skew`,
-`scipy.stats.kurtosis`, `scipy.stats.kstat`, `scipy.stats.kstatvar`,
-`scipy.stats.circmean`, `scipy.stats.circvar`, `scipy.stats.circstd`,
-`scipy.stats.entropy`, `scipy.stats.variation` , `scipy.stats.sem`,
-`scipy.stats.ttest_1samp`, `scipy.stats.pearsonr`, `scipy.stats.chisquare`,
-`scipy.stats.skewtest`, `scipy.stats.kurtosistest`, `scipy.stats.normaltest`,
-`scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
-and `scipy.stats.monte_carlo_test`.
+While the elements of the table marked with "n/a" are inherently out of scope, we are
+continually working on filling in the rest.
+Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
+but it may change in the future.
 
 Please see `the tracker issue`_ for updates.
 
@@ -237,15 +231,15 @@ Adding tests
 ------------
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to it,
-which is valued to the currently tested array namespace. 
+which is valued to the currently tested array namespace.
 
 The following pytest markers are available:
 
-* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to skip tests.
-* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   xfail certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to xfail tests.
@@ -264,7 +258,7 @@ The following pytest markers are available:
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
-    python dev.py test -b all -m array_api_backends
+    spin test -b all -m array_api_backends
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
@@ -296,36 +290,31 @@ The following examples demonstrate how to use the markers::
   def test_toto_masked_array(self):
       ...
 
-Passing a custom reason to ``reason`` when ``cpu_only=True`` is unsupported
-since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
-the reason for using ``cpu_only`` is likely just that compiled code is used
-in the function(s) being tested.
-
 Passing names of backends into ``exceptions`` means that they will not be skipped
-by ``cpu_only=True``. This is useful when delegation is implemented for some,
-but not all, non-CPU backends, and the CPU code path requires conversion to NumPy
-for compiled code::
+by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
+is implemented for some, but not all, non-CPU backends, and the CPU code path
+requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['jax.numpy'])
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   def test_toto(self, xp):
       ...
 
-After applying these markers, ``dev.py test`` can be used with the new option
+After applying these markers, ``spin test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b torch -s cluster
+  spin test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
+backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
@@ -343,7 +332,7 @@ To properly test scipy with JAX, you need to wrap the tested scipy functions
 with `@jax.jit` before they are called by the unit tests.
 To achieve this, you should tag them as follows in your test module::
 
-  from scipy._lib._lazy_testing import lazy_xp_function
+  from scipy._lib.array_api_extra.testing import lazy_xp_function
   from scipy.mymodule import toto
 
   lazy_xp_function(toto)
@@ -354,7 +343,7 @@ To achieve this, you should tag them as follows in your test module::
       # When xp==jax.numpy, toto is wrapped with @jax.jit
       xp_assert_close(toto(a, b), a)
 
-See full documentation in `scipy/_lib/_lazy_testing.py`.
+See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
 
 Additional information
@@ -375,3 +364,161 @@ helped during the development phase:
 
 .. _RFC: https://github.com/scipy/scipy/issues/18286
 .. _the tracker issue: https://github.com/scipy/scipy/issues/18867
+
+
+API Coverage
+------------
+The below tables show the current state of alternative backend support across
+SciPy's modules. Currently only public functions and function-like callable
+objects are included in the tables, but it is planned to eventually also include
+relevant public classes. Functions which are deemed out-of-scope are excluded
+from consideration. If a module or submodule contains no in-scope functions, it
+is excluded from the tables. For example, `scipy.spatial.transform` is currently
+excluded because it's API contains no functions, but may be included in the future
+when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
+because their contents are considered out-of-scope.
+
+There is not yet a formal policy for which functions should be considered
+out-of-scope for alternative backend support. Some general rules of thumb
+that are being followed are to exclude:
+
+* functions which do not operate on arrays such as :doc:`scipy.constants.value <../../reference/generated/scipy.constants.value>`
+* functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
+* functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
+
+As an example. The contents of `scipy.odr` are considered out-of-scope for a
+combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
+wrapper of the monolithic ODRPACK Fortran library, and it's API is tied to the
+structure of this monolithic library. Creation of an efficient GPU accelerated
+implementation of nonlinear weighted orthogonal distance regression is also a
+challenging problem in its own right. Nevertheless, considerations of what to
+consider in-scope are evolving, and something which is now considered out-of-scope
+may be decided to be in-scope in the future if sufficient user interest and
+feasability are demonstrated.
+
+.. note::
+    The coverage percentages shown below may be below the
+    true values due to alternative backend support being added for some functions
+    before the infrastructure for registering this support was developed. This
+    situation is denoted by placing asterisks next to the percentages.
+    Documentation of alternative backend support is currently a work in progress.
+
+
+.. toctree::
+   :hidden:
+
+   array_api_modules_tables/cluster_vq
+   array_api_modules_tables/cluster_hierarchy
+   array_api_modules_tables/constants
+   array_api_modules_tables/differentiate
+   array_api_modules_tables/fft
+   array_api_modules_tables/integrate
+   array_api_modules_tables/interpolate
+   array_api_modules_tables/io
+   array_api_modules_tables/linalg
+   array_api_modules_tables/linalg_interpolative
+   array_api_modules_tables/ndimage
+   array_api_modules_tables/optimize
+   array_api_modules_tables/optimize_elementwise
+   array_api_modules_tables/signal
+   array_api_modules_tables/signal_windows
+   array_api_modules_tables/sparse
+   array_api_modules_tables/sparse_linalg
+   array_api_modules_tables/sparse_csgraph
+   array_api_modules_tables/spatial
+   array_api_modules_tables/spatial_distance
+   array_api_modules_tables/special
+   array_api_modules_tables/stats
+   array_api_modules_tables/stats_contingency
+   array_api_modules_tables/stats_qmc
+
+Support on CPU
+``````````````
+
+.. array-api-support-per-module::
+   :backend_type: cpu
+   :cluster.vq: array_api_support_cluster_vq_cpu
+   :cluster.hierarchy: array_api_support_cluster_hierarchy_cpu
+   :constants: array_api_support_constants_cpu
+   :differentiate: array_api_support_differentiate_cpu
+   :fft: array_api_support_fft_cpu
+   :integrate: array_api_support_integrate_cpu
+   :interpolate: array_api_support_interpolate_cpu
+   :io: array_api_support_io_cpu
+   :linalg: array_api_support_linalg_cpu
+   :linalg.interpolative: array_api_support_linalg_interpolative_cpu
+   :ndimage: array_api_support_ndimage_cpu
+   :optimize: array_api_support_optimize_cpu
+   :optimize.elementwise: array_api_support_optimize_elementwise_cpu
+   :signal: array_api_support_signal_cpu
+   :signal.windows: array_api_support_signal_windows_cpu
+   :sparse: array_api_support_sparse_cpu
+   :sparse.linalg: array_api_support_sparse_linalg_cpu
+   :sparse.csgraph: array_api_support_sparse_csgraph_cpu
+   :spatial: array_api_support_spatial_cpu
+   :spatial.distance: array_api_support_spatial_distance_cpu
+   :special: array_api_support_special_cpu
+   :stats: array_api_support_stats_cpu
+   :stats.contingency: array_api_support_stats_contingency_cpu
+   :stats.qmc: array_api_support_stats_qmc_cpu
+
+Support on GPU
+``````````````
+
+.. array-api-support-per-module::
+   :backend_type: gpu
+   :cluster.vq: array_api_support_cluster_vq_gpu
+   :cluster.hierarchy: array_api_support_cluster_hierarchy_gpu
+   :constants: array_api_support_constants_gpu
+   :differentiate: array_api_support_differentiate_gpu
+   :fft: array_api_support_fft_gpu
+   :integrate: array_api_support_integrate_gpu
+   :interpolate: array_api_support_interpolate_gpu
+   :io: array_api_support_io_gpu
+   :linalg: array_api_support_linalg_gpu
+   :linalg.interpolative: array_api_support_linalg_interpolative_gpu
+   :ndimage: array_api_support_ndimage_gpu
+   :optimize: array_api_support_optimize_gpu
+   :optimize.elementwise: array_api_support_optimize_elementwise_gpu
+   :signal: array_api_support_signal_gpu
+   :signal.windows: array_api_support_signal_windows_gpu
+   :sparse: array_api_support_sparse_gpu
+   :sparse.linalg: array_api_support_sparse_linalg_gpu
+   :sparse.csgraph: array_api_support_sparse_csgraph_gpu
+   :spatial: array_api_support_spatial_gpu
+   :spatial.distance: array_api_support_spatial_distance_gpu
+   :special: array_api_support_special_gpu
+   :stats: array_api_support_stats_gpu
+   :stats.contingency: array_api_support_stats_contingency_gpu
+   :stats.qmc: array_api_support_stats_qmc_gpu
+
+Support with JIT
+````````````````
+
+.. array-api-support-per-module::
+   :backend_type: jit
+   :cluster.vq: array_api_support_cluster_vq_jit
+   :cluster.hierarchy: array_api_support_cluster_hierarchy_jit
+   :constants: array_api_support_constants_jit
+   :differentiate: array_api_support_differentiate_jit
+   :fft: array_api_support_fft_jit
+   :integrate: array_api_support_integrate_jit
+   :interpolate: array_api_support_interpolate_jit
+   :io: array_api_support_io_jit
+   :linalg: array_api_support_linalg_jit
+   :linalg.interpolative: array_api_support_linalg_interpolative_jit
+   :ndimage: array_api_support_ndimage_jit
+   :optimize: array_api_support_optimize_jit
+   :optimize.elementwise: array_api_support_optimize_elementwise_jit
+   :signal: array_api_support_signal_jit
+   :signal.windows: array_api_support_signal_windows_jit
+   :sparse: array_api_support_sparse_jit
+   :sparse.linalg: array_api_support_sparse_linalg_jit
+   :sparse.csgraph: array_api_support_sparse_csgraph_jit
+   :spatial: array_api_support_spatial_jit
+   :spatial.distance: array_api_support_spatial_distance_jit
+   :special: array_api_support_special_jit
+   :stats: array_api_support_stats_jit
+   :stats.contingency: array_api_support_stats_contingency_jit
+   :stats.qmc: array_api_support_stats_qmc_jit
+

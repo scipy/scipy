@@ -5,10 +5,10 @@ from numpy import inf
 
 from scipy import special
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, _RealDomain, _RealParameter, _Parameterization,
-    _combine_docs)
+    ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
+    _RealParameter, _Parameterization, _combine_docs)
 
-__all__ = ['Normal', 'Uniform']
+__all__ = ['Normal', 'Uniform', 'Binomial']
 
 
 class Normal(ContinuousDistribution):
@@ -25,9 +25,9 @@ class Normal(ContinuousDistribution):
     # `ShiftedScaledDistribution` allows this to be generated automatically from
     # an instance of `StandardNormal`, but the normal distribution is so frequently
     # used that it's worth a bit of code duplication to get better performance.
-    _mu_domain = _RealDomain(endpoints=(-inf, inf))
-    _sigma_domain = _RealDomain(endpoints=(0, inf))
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _mu_domain = _RealInterval(endpoints=(-inf, inf))
+    _sigma_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
 
     _mu_param = _RealParameter('mu',  symbol=r'\mu', domain=_mu_domain,
                                typical=(-1, 1))
@@ -114,7 +114,7 @@ class Normal(ContinuousDistribution):
             # exact is faster (and obviously more accurate) for reasonable orders
             return sigma**order * special.factorial2(int(order) - 1, exact=True)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, *, mu, sigma, **kwargs):
+    def _sample_formula(self, full_shape, rng, *, mu, sigma, **kwargs):
         return rng.normal(loc=mu, scale=sigma, size=full_shape)[()]
 
 
@@ -132,7 +132,7 @@ class StandardNormal(Normal):
         f(x) = \frac{1}{\sqrt{2 \pi}} \exp \left( -\frac{1}{2} x^2 \right)
 
     """
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
     _variable = _x_param
     _parameterizations = []
@@ -196,7 +196,7 @@ class StandardNormal(Normal):
     def _moment_standardized_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, **kwargs):
+    def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
 
 
@@ -217,11 +217,11 @@ class _LogUniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(0, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _log_a_domain = _RealDomain(endpoints=(-inf, inf))
-    _log_b_domain = _RealDomain(endpoints=('log_a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _log_a_domain = _RealInterval(endpoints=(-inf, inf))
+    _log_b_domain = _RealInterval(endpoints=('log_a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -279,9 +279,9 @@ class Uniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(-inf, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
+    _a_domain = _RealInterval(endpoints=(-inf, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -345,7 +345,7 @@ class Uniform(ContinuousDistribution):
 
     _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
 
-    def _sample_formula(self, sample_shape, full_shape, rng, a, b, ab, **kwargs):
+    def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
         try:
             return rng.uniform(a, b, size=full_shape)[()]
         except OverflowError:  # happens when there are NaNs
@@ -354,8 +354,8 @@ class Uniform(ContinuousDistribution):
 
 class _Gamma(ContinuousDistribution):
     # Gamma distribution for testing only
-    _a_domain = _RealDomain(endpoints=(0, inf))
-    _x_support = _RealDomain(endpoints=(0, inf), inclusive=(False, False))
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(0, inf), inclusive=(False, False))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(0.1, 10))
     _x_param = _RealParameter('x', domain=_x_support, typical=(0.1, 10))
@@ -365,6 +365,83 @@ class _Gamma(ContinuousDistribution):
 
     def _pdf_formula(self, x, *, a, **kwargs):
         return x ** (a - 1) * np.exp(-x) / special.gamma(a)
+
+
+class Binomial(DiscreteDistribution):
+    r"""Binomial distribution with prescribed success probability and number of trials
+
+    The probability density function of the binomial distribution is:
+
+    .. math::
+
+        f(x) = {n \choose x} p^x (1 - p)^{n-x}
+
+    """
+    _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
+    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(False, False))
+    _x_support = _IntegerInterval(endpoints=(0, 'n'), inclusive=(True, True))
+
+    _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
+    _p_param = _RealParameter('p', domain=_p_domain, typical=(0.25, 0.75))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 10))
+
+    _parameterizations = [_Parameterization(_n_param, _p_param)]
+    _variable = _x_param
+
+    def __init__(self, *, n, p, **kwargs):
+        super().__init__(n=n, p=p, **kwargs)
+
+    def _pmf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_pmf(x, n, p)
+
+    def _logpmf_formula(self, x, *, n, p, **kwargs):
+        # This implementation is from the ``scipy.stats.binom`` and could be improved
+        # by using a more numerically sound implementation of the absolute value of
+        # the binomial coefficient.
+        combiln = (
+            special.gammaln(n+1) - (special.gammaln(x+1) + special.gammaln(n-x+1))
+        )
+        return combiln + special.xlogy(x, p) + special.xlog1py(n-x, -p)
+
+    def _cdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_cdf(x, n, p)
+
+    def _ccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_sf(x, n, p)
+
+    def _icdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_ppf(x, n, p)
+
+    def _iccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_isf(x, n, p)
+
+    def _mode_formula(self, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Mode
+        mode = np.floor((n+1)*p)
+        mode = np.where(p == 1, mode - 1, mode)
+        return mode[()]
+
+    def _moment_raw_formula(self, order, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
+        if order == 1:
+            return n*p
+        if order == 2:
+            return n*p*(1 - p + n*p)
+        return None
+    _moment_raw_formula.orders = [1, 2]  # type: ignore[attr-defined]
+
+    def _moment_central_formula(self, order, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
+        if order == 1:
+            return np.zeros_like(n)
+        if order == 2:
+            return n*p*(1 - p)
+        if order == 3:
+            return n*p*(1 - p)*(1 - 2*p)
+        if order == 4:
+            return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
+        return None
+    _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
 
 
 # Distribution classes need only define the summary and beginning of the extended

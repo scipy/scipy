@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """Tests for the linalg._isolve.gcrotmk module
 """
-
 import threading
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+import warnings
+
+from numpy.testing import (assert_, assert_allclose, assert_equal)
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -51,8 +51,9 @@ def do_solve(**kw):
         count.c = [0]
 
     count.c[0] = 0
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", ".*called without specifying.*", DeprecationWarning)
         x0, flag = gcrotmk(A, b, x0=zeros(A.shape[0]), rtol=1e-14, **kw)
     count_0 = count.c[0]
     assert_(allclose(A@x0, b, rtol=1e-12, atol=1e-12), norm(A@x0-b))
@@ -81,8 +82,9 @@ class TestGCROTMK:
         b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             x0, flag0 = gcrotmk(A, b, x0=zeros(A.shape[0]), m=10, k=0, maxiter=1)
             x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
@@ -102,8 +104,9 @@ class TestGCROTMK:
         for n in [3, 5, 10, 100]:
             A = 2*eye_array(n)
 
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", ".*called without specifying.*", DeprecationWarning)
                 b = np.ones(n)
                 x, info = gcrotmk(A, b, maxiter=10)
                 assert_equal(info, 0)
@@ -127,8 +130,9 @@ class TestGCROTMK:
         A[1,1] = np.nan
         b = np.ones(3)
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             x, info = gcrotmk(A, b, rtol=0, maxiter=10)
             assert_equal(info, 1)
 
@@ -138,8 +142,9 @@ class TestGCROTMK:
         b = np.random.rand(30)
 
         for truncate in ['oldest', 'smallest']:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", ".*called without specifying.*", DeprecationWarning)
                 x, info = gcrotmk(A, b, m=10, k=10, truncate=truncate,
                                   rtol=1e-4, maxiter=200)
             assert_equal(info, 0)
@@ -175,8 +180,9 @@ class TestGCROTMK:
 
         b = np.array([1, 1])
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             xp, info = gcrotmk(A, b)
 
         if info == 0:

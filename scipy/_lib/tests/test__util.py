@@ -2,30 +2,26 @@ from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import re
 import math
+import functools
 from fractions import Fraction
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
-import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
-                                   is_array_api_strict)
-from scipy._lib._lazy_testing import lazy_xp_function
+from scipy._lib._array_api import xp_assert_equal, is_numpy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere)
+                              _contains_nan, _rng_html_rewrite, _workers_wrapper)
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
-lazy_xp_function(_contains_nan, static_argnames=("nan_policy", "xp_omit_okay", "xp"))
-# FIXME @jax.jit fails: complex bool mask
-lazy_xp_function(_lazywhere, jax_jit=False, static_argnames=("f", "f2"))
+lazy_xp_function(_contains_nan)
 
 
 @pytest.mark.slow
@@ -150,6 +146,36 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
+
+
+@_workers_wrapper
+def user_of_workers(x, b=1, workers=None):
+    assert workers is not None
+    assert isinstance(workers, MapWrapper)
+    return np.array(list(workers(np.sin, x * b)))
+
+
+def test__workers_wrapper():
+    arr = np.linspace(0, np.pi)
+    req = np.sin(arr * 2.0)
+
+    with Pool(2) as p:
+        v = user_of_workers(arr, workers=p.map, b=2)
+        assert_equal(v, req)
+
+    v = user_of_workers(arr, workers=None, b=2)
+    assert_equal(v, req)
+
+    v = user_of_workers(arr, workers=2, b=2)
+    assert_equal(v, req)
+
+    # assess if decorator works with partial functions
+    part_f = functools.partial(user_of_workers, b=2)
+    assert_equal(part_f(arr), req)
+
+    with Pool(2) as p:
+        part_f = functools.partial(user_of_workers, b=2, workers=p.map)
+        assert_equal(part_f(arr), req)
 
 
 def test_rng_integers():
@@ -349,7 +375,8 @@ class TestContainsNaN:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
+    @pytest.mark.skip_xp_backends(eager_only=True,
+                                  reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
@@ -382,11 +409,10 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(False))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(False))
         # Lazy arrays don't support "omit" and "raise" policies
-        # TODO test that we're emitting a user-friendly error message.
-        #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
-        with pytest.raises(TypeError):
+        match = "not supported for lazy arrays"
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
         x = xpx.at(x)[1, 2, 1].set(np.nan)
@@ -394,9 +420,9 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(True))
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
 
@@ -613,62 +639,3 @@ class TestTransitionToRNG:
         res3 = method(self, **{arg_name: None})
         assert_equal(res2, res1)
         assert_equal(res3, res1)
-
-
-class TestLazywhere:
-    n_arrays = strategies.integers(min_value=1, max_value=3)
-    rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
-    dtype = strategies.sampled_from((np.float32, np.float64))
-    p = strategies.floats(min_value=0, max_value=1)
-    data = strategies.data()
-
-    @pytest.mark.fail_slow(10)
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
-    @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
-    @pytest.mark.thread_unsafe
-    def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
-        mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1, min_side=0)
-        input_shapes, result_shape = data.draw(mbs)
-        cond_shape, *shapes = input_shapes
-        elements = {'allow_subnormal': False}  # cupy/cupy#8382
-        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple(),
-                                                     elements=elements)))
-        float_fillvalue = float(fillvalue)
-        arrays = [xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=shape)))
-                  for shape in shapes]
-
-        def f(*args):
-            return sum(arg for arg in args)
-
-        def f2(*args):
-            return sum(arg for arg in args) / 2
-
-        rng = np.random.default_rng(rng_seed)
-        cond = xp.asarray(rng.random(size=cond_shape) > p)
-
-        res1 = _lazywhere(cond, arrays, f, fillvalue)
-        res2 = _lazywhere(cond, arrays, f, f2=f2)
-        if not is_array_api_strict(xp):
-            res3 = _lazywhere(cond, arrays, f, float_fillvalue)
-
-        # Ensure arrays are at least 1d to follow sane type promotion rules.
-        # This can be removed when minimum supported NumPy is 2.0
-        if is_numpy(xp):
-            cond, fillvalue, *arrays = xp.atleast_1d(cond, fillvalue, *arrays)
-
-        ref1 = xp.where(cond, f(*arrays), fillvalue)
-        ref2 = xp.where(cond, f(*arrays), f2(*arrays))
-        if not is_array_api_strict(xp):
-            # Array API standard doesn't currently define behavior when fillvalue is a
-            # Python scalar. When it does, test can be run with array_api_strict, too.
-            ref3 = xp.where(cond, f(*arrays), float_fillvalue)
-
-        if is_numpy(xp):  # because we ensured arrays are at least 1d
-            ref1 = ref1.reshape(result_shape)
-            ref2 = ref2.reshape(result_shape)
-            ref3 = ref3.reshape(result_shape)
-
-        xp_assert_close(res1, ref1, rtol=2e-16)
-        xp_assert_equal(res2, ref2)
-        if not is_array_api_strict(xp):
-            xp_assert_equal(res3, ref3)

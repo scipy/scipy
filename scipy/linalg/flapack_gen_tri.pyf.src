@@ -316,7 +316,7 @@ end subroutine <prefix2>stemr
 subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
     ! LWORK=-1, LIWORK=-1 call for STEMR
 
-    fortranname <prefix2c>stemr
+    fortranname <prefix2>stemr
     callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,&work,&lwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
@@ -336,9 +336,30 @@ subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,
     integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
     integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
     integer intent(hide) :: tryrac = 1
-    integer depend(n),intent(hide) :: lwork = -1
+    integer intent(hide) :: lwork = -1
     <ftype2> intent(out) :: work
     integer intent(hide) :: liwork = -1
     integer intent(out) :: iwork
     integer intent(out) :: info
 end subroutine <prefix2>stemr_lwork
+
+
+subroutine <prefix2>stevd(d,e,compute_v,n,z,ldz,work,lwork,iwork,liwork,info)
+    ! ?STEVD computes all eigenvalues and, optionally, eigenvectors of a
+    ! real symmetric tridiagonal matrix A. If eigenvectors are desired, it
+    ! uses a divide and conquer algorithm.
+    callstatement (*f2py_func)((compute_v?"V":"N"),&n,d,e,z,&ldz,work,&lwork,iwork,&liwork,&info)
+    callprotoargument char*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+
+    integer optional,intent(in):: compute_v = 1
+    integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
+    <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+    <ftype2> depend(n),dimension(MAX(n-1,1)),intent(in,copy) :: e
+    <ftype2> dimension(ldz,(compute_v?n:1)),intent(out),depend(n,ldz) :: z
+    integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
+    <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
+    integer depend(n),optional,intent(in),check(lwork>=(compute_v?1+4*n+n*n:1)) :: lwork = (compute_v?1+4*n+n*n:1)
+    integer dimension(liwork),depend(liwork),intent(hide) :: iwork
+    integer depend(n),optional,intent(in),check(liwork>=(compute_v?3+5*n:1)) :: liwork = (compute_v?3+5*n:1)
+    integer intent(out) :: info
+end subroutine <prefix2>stevd

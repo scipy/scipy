@@ -11,9 +11,9 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, assert_warns, assert_allclose)
+                           assert_equal, assert_, assert_allclose)
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns as assert_warns
 
 import numpy as np
 from numpy import array
@@ -29,7 +29,6 @@ from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
     EmptyStructMarker)
 import scipy.io.matlab._mio5_params as mio5p
-from scipy._lib._util import VisibleDeprecationWarning
 
 
 test_data_path = pjoin(dirname(__file__), 'data')
@@ -39,7 +38,7 @@ pytestmark = pytest.mark.thread_unsafe
 def mlarr(*args, **kwargs):
     """Convenience function to return matlab-compatible 2-D array."""
     arr = np.array(*args, **kwargs)
-    arr.shape = matdims(arr)
+    arr = arr.reshape(matdims(arr))
     return arr
 
 
@@ -1324,13 +1323,10 @@ def test_gh_17992(tmp_path):
     array_one = rng.random((5,3))
     array_two = rng.random((6,3))
     list_of_arrays = [array_one, array_two]
-    # warning suppression only needed for NumPy < 1.24.0
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning)
-        savemat(outfile,
-                {'data': list_of_arrays},
-                long_field_names=True,
-                do_compression=True)
+    savemat(outfile,
+            {'data': list_of_arrays},
+            long_field_names=True,
+            do_compression=True)
     # round trip check
     new_dict = {}
     loadmat(outfile,
@@ -1364,6 +1360,7 @@ def test_large_m4():
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
 
+
 def test_gh_19223():
     from scipy.io.matlab import varmats_from_mat  # noqa: F401
 
@@ -1390,3 +1387,13 @@ def check_mat_write_warning(names_vars):
     with pytest.warns(MatWriteWarning, match='Starting field name with'):
         savemat(stream, C())
 
+
+def test_corrupt_files():
+    # Test we can detect truncated or corrupt (all zero) files.
+    for n in (2, 4, 10, 19):
+        with pytest.raises(MatReadError,
+                           match="Mat file appears to be truncated"):
+            loadmat(BytesIO(b'\x00' * n))
+    with pytest.raises(MatReadError,
+                       match="Mat file appears to be corrupt"):
+        loadmat(BytesIO(b'\x00' * 20))

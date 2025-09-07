@@ -1,8 +1,13 @@
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy._lib._util import _RichResult
+from scipy._lib._array_api import xp_capabilities
 
 
+@xp_capabilities(
+    skip_backends=[('dask.array', 'boolean indexing assignment'),
+                   ('array_api_strict', 'Currently uses fancy indexing assignment.'),
+                   ('jax.numpy', 'JAX arrays do not support item assignment.')])
 def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=None):
     """Find the root of a monotonic, real-valued function of a real variable.
 
@@ -231,6 +236,10 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     return reformat_result(res)
 
 
+@xp_capabilities(
+    skip_backends=[('dask.array', 'boolean indexing assignment'),
+                   ('array_api_strict', 'Currently uses fancy indexing assignment.'),
+                   ('jax.numpy', 'JAX arrays do not support item assignment.')])
 def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
     """Find the minimum of an unimodal, real-valued function of a real variable.
 
@@ -342,11 +351,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     (where one of the inequalities is strict) are the values of `f` evaluated
     at those points, then the algorithm is considered to have converged when:
 
-    - ``xr - xl <= abs(xm)*xrtol + xatol`` or
+    - ``abs(xr - xm)/2 <= abs(xm)*xrtol + xatol`` or
     - ``(fl - 2*fm + fr)/2 <= abs(fm)*frtol + fatol``.
-
-    Note that first of these differs from the termination conditions described
-    in [1]_.
 
     The default value of `xrtol` is the square root of the precision of the
     appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
@@ -459,6 +465,10 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     return reformat_result(res)
 
 
+@xp_capabilities(
+    skip_backends=[('dask.array', 'boolean indexing assignment'),
+                   ('array_api_strict', 'Currently uses fancy indexing assignment.'),
+                   ('jax.numpy', 'JAX arrays do not support item assignment.')])
 def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=(),
                  maxiter=1000):
     """Bracket the root of a monotonic, real-valued function of a real variable.
@@ -524,7 +534,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
             - ``-3`` : A non-finite value was encountered.
             - ``-4`` : Iteration was terminated by `callback`.
             - ``-5``: The initial bracket does not satisfy`xmin <= xl0 < xr0 < xmax`.
-            
+
         bracket : 2-tuple of float arrays
             The lower and upper endpoints of the bracket, if the algorithm
             terminated successfully.
@@ -560,10 +570,10 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
 
     If two brackets are found - that is, a bracket is found on both sides in
     the same iteration, the smaller of the two is returned.
-    
+
     If roots of the function are found, both `xl` and `xr` are set to the
     leftmost root.
-    
+
     See Also
     --------
     find_root
@@ -624,6 +634,11 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     return res
 
 
+@xp_capabilities(
+    skip_backends=[('dask.array', 'boolean indexing assignment'),
+                   ('array_api_strict', 'Currently uses fancy indexing assignment.'),
+                   ('jax.numpy', 'JAX arrays do not support item assignment.'),
+                   ('torch', 'data-apis/array-api-compat#271')])
 def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      factor=None, args=(), maxiter=1000):
     """Bracket the minimum of a unimodal, real-valued function of a real variable.

@@ -433,7 +433,8 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
             ux = axpy(u, ux, ux.shape[0], -byc)  # ux -= u*byc
 
         # cx := V H y
-        hy = Q.dot(R.dot(y))
+        with np.errstate(invalid="ignore"):
+            hy = Q.dot(R.dot(y))
         cx = vs[0] * hy[0]
         for v, hyc in zip(vs[1:], hy[1:]):
             cx = axpy(v, cx, cx.shape[0], hyc)  # cx += v*hyc

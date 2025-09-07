@@ -1,6 +1,7 @@
 import os
+import warnings
+
 import numpy as np
-import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 from scipy import stats
@@ -42,7 +43,8 @@ mle_failing_fits = [
 
 # these pass but are XSLOW (>1s)
 mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
-                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
+                  'jf_skew_t', 'nct', 'recipinvgauss', 'rel_breitwigner',
+                  'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -129,10 +131,10 @@ def test_cont_fit(distname, arg, method):
 
     for fit_size in fit_sizes:
         # Note that if a fit succeeds, the other fit_sizes are skipped
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         with np.errstate(all='ignore'):
-            rvs = distfn.rvs(size=fit_size, *arg)
+            rvs = distfn.rvs(size=fit_size, *arg, random_state=rng)
             if method == 'MLE' and distfn.name in mle_use_floc0:
                 kwds = {'floc': 0}
             else:
@@ -520,8 +522,8 @@ class TestFit:
         if getattr(dist, 'pdf', False):
             data = dist.rvs(*ref, size=N, random_state=rng)
 
-        with npt.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "overflow encountered", RuntimeWarning)
             res = stats.fit(dist, data, bounds, method=method,
                             optimizer=self.opt)
 

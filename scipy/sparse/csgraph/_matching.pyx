@@ -482,6 +482,9 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
 
     a = np.arange(np.min(biadjacency.shape))
 
+    if biadjacency.format not in ("csc", "csr"):
+        biadjacency = biadjacency.tocsc(copy=False) if j < i else biadjacency.tocsr(copy=False)
+
     indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
     if indices is not biadjacency.indices:
         # create a new object without copying data

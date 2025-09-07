@@ -13,7 +13,8 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, _lazywhere
+from scipy._lib._util import check_random_state
+import scipy._lib.array_api_extra as xpx
 
 from scipy.special import comb, entr
 
@@ -26,7 +27,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy._lib._finite_differences import _derivative
+from scipy.stats._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
@@ -504,6 +505,9 @@ def _sum_finite(x):
 # Frozen RV class
 class rv_frozen:
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
@@ -828,6 +832,10 @@ class rv_generic:
 
     def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         tempdict = docdict.copy()
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
@@ -870,6 +878,10 @@ class rv_generic:
     def _construct_default_doc(self, longname=None,
                                docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         if longname is None:
             longname = 'A'
         self.__doc__ = ''.join([f'{longname} {discrete} random variable.',
@@ -2020,16 +2032,18 @@ class rv_continuous(rv_generic):
     def _logcdf(self, x, *args):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
-            return _lazywhere(x < median, (x,) + args,
-                              f=lambda x, *args: np.log(self._cdf(x, *args)),
-                              f2=lambda x, *args: np.log1p(-self._sf(x, *args)))
+            return xpx.apply_where(
+                x < median, (x,) + args,
+                lambda x, *args: np.log(self._cdf(x, *args)),
+                lambda x, *args: np.log1p(-self._sf(x, *args)))
 
     def _logsf(self, x, *args):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
-            return _lazywhere(x > median, (x,) + args,
-                              f=lambda x, *args: np.log(self._sf(x, *args)),
-                              f2=lambda x, *args: np.log1p(-self._cdf(x, *args)))
+            return xpx.apply_where(
+                x > median, (x,) + args,
+                lambda x, *args: np.log(self._sf(x, *args)),
+                lambda x, *args: np.log1p(-self._cdf(x, *args)))
 
     # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic
@@ -3058,7 +3072,7 @@ class rv_continuous(rv_generic):
         cdf1 = self.cdf(x1, *args, loc=loc, scale=scale)
         # Possible optimizations (needs investigation-these might not be
         # better):
-        # * Use _lazywhere instead of np.where
+        # * Use xpx.apply_where instead of np.where
         # * Instead of cdf1 > 0.5, compare x1 to the median.
         result = np.where(cdf1 > 0.5,
                           (self.sf(x1, *args, loc=loc, scale=scale)
@@ -3743,6 +3757,13 @@ class rv_discrete(rv_generic):
         k : array_like
             Quantile corresponding to the lower tail probability, q.
 
+        Notes
+        -----
+        For discrete distributions, the `cdf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `cdf` at `k` is at
+        least `q`. There is one exception:  the `ppf` of ``0`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
+
         """
         args, loc, _ = self._parse_args(*args, **kwds)
         q, loc = map(asarray, (q, loc))
@@ -3782,6 +3803,13 @@ class rv_discrete(rv_generic):
         -------
         k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
+
+        Notes
+        -----
+        For discrete distributions, the `sf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `sf` at `k` is
+        no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
 
         """
         args, loc, _ = self._parse_args(*args, **kwds)

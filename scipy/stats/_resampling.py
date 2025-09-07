@@ -7,7 +7,12 @@ import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    xp_capabilities,
+    xp_result_type,
+)
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -183,20 +188,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
-    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
-               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
-               "explicitly broadcast elements of `data` to the same shape (ignoring "
-               "`axis`) before performing the calculation. To avoid this warning in "
-               "the meantime, ensure that all samples have the same shape (except "
-               "potentially along `axis`).")
-    data = [np.atleast_1d(sample) for sample in data]
-    reduced_shapes = set()
-    for sample in data:
-        reduced_shape = list(sample.shape)
-        reduced_shape.pop(axis)
-        reduced_shapes.add(tuple(reduced_shape))
-    if len(reduced_shapes) != 1:
-        warnings.warn(message, FutureWarning, stacklevel=3)
+    data = _broadcast_arrays(data, axis_int)
 
     data_iv = []
     for sample in data:
@@ -290,6 +282,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -331,15 +324,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
          Each element of `data` is a sample containing scalar observations from an
          underlying distribution. Elements of `data` must be broadcastable to the
          same shape (with the possible exception of the dimension specified by `axis`).
-
-         .. versionchanged:: 1.14.0
-             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
-             elements of `data` are not the same (with the exception of the dimension
-             specified by `axis`).
-             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
-             elements to the same shape (except along `axis`) before performing
-             the calculation.
-
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -720,6 +704,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in signature
 
     xp = array_namespace(*data)
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
 
     if not vectorized:
         if is_numpy(xp):
@@ -735,7 +720,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -753,10 +738,6 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     alternative = alternative.lower()
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
-
-    # Infer the desired p-value dtype based on the input types
-    min_float = getattr(xp, 'float16', xp.float32)
-    dtype = xp.result_type(*data_iv, min_float)
 
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int, dtype, xp)
@@ -781,6 +762,7 @@ class MonteCarloTestResult:
     null_distribution: np.ndarray
 
 
+@xp_capabilities()
 @_rename_parameter('sample', 'data')
 def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
@@ -967,7 +949,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = xp.concat(null_distribution)
-    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
+    null_distribution = xp.reshape(null_distribution, (-1,) + (1,)*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
@@ -1108,6 +1090,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             n_resamples_int, batch_iv, vals, keys, shape[1:])
 
 
+@xp_capabilities(np_only=True)
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1630,6 +1613,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
             batch_iv, alternative, axis_int, rng)
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=None, n_resamples=9999, batch=None,

@@ -13,7 +13,6 @@ from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
 
 
 class TestC2D:
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     def test_zoh(self):
         ac = np.eye(2, dtype=np.float64)
         bc = np.full((2, 1), 0.5, dtype=np.float64)
@@ -354,18 +353,26 @@ class TestC2dLti:
         B = np.array([[0], [1]])
         C = np.array([[1, 0]])
         D = 0
+        dt = 0.05
 
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
 
         sys_ssc = lti(A, B, C, D)
-        sys_ssd = sys_ssc.to_discrete(0.05)
+        sys_ssd = sys_ssc.to_discrete(dt=dt)
 
         xp_assert_close(sys_ssd.A, A_res)
         xp_assert_close(sys_ssd.B, B_res)
         xp_assert_close(sys_ssd.C, C)
         xp_assert_close(sys_ssd.D, np.zeros_like(sys_ssd.D))
+
+        sys_ssd2 = c2d(sys_ssc, dt=dt)
+
+        xp_assert_close(sys_ssd2.A, A_res)
+        xp_assert_close(sys_ssd2.B, B_res)
+        xp_assert_close(sys_ssd2.C, C)
+        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd2.D))
 
     def test_c2d_tf(self):
 

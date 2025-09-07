@@ -1,14 +1,15 @@
+import itertools as it
 import math
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
+                                   xp_default_dtype, xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
-from scipy.special import logsumexp, softmax
+from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
 
 
@@ -21,10 +22,17 @@ def test_wrap_radians(xp):
                     0, 1e-300, 1, math.pi, math.pi+1])
     ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, -math.pi+1])
-    res = _wrap_radians(x, xp)
+    res = _wrap_radians(x, xp=xp)
     xp_assert_close(res, ref, atol=0)
 
 
+# numpy warning filters don't work for dask (dask/dask#3245)
+# (also we should not expect the numpy warning filter to work for any Array API
+# library)
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
+@make_xp_test_case(logsumexp)
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
@@ -160,14 +168,12 @@ class TestLogSumExp:
         logsumexp(a, b=b)
 
     @pytest.mark.parametrize('arg', (1, [1, 2, 3]))
-    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
-    def test_xp_invalid_input(self, arg, xp):
+    def test_xp_invalid_input(self, arg):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
-    def test_list(self, xp):
+    def test_array_like(self):
         a = [1000, 1000]
-        desired = xp.asarray(1000.0 + math.log(2.0), dtype=np.float64)
+        desired = np.asarray(1000.0 + math.log(2.0))
         xp_assert_close(logsumexp(a), desired)
 
     @pytest.mark.parametrize('dtype', dtypes)
@@ -224,7 +230,7 @@ class TestLogSumExp:
 
         res = logsumexp(x, axis=1)
         ref = xp.log(xp.sum(xp.exp(x), axis=1))
-        max = xp.full_like(xp.imag(res), xp.asarray(xp.pi))
+        max = xp.full_like(xp.imag(res), xp.pi)
         xp_assert_less(xp.abs(xp.imag(res)), max)
         xp_assert_close(res, ref)
 
@@ -248,56 +254,216 @@ class TestLogSumExp:
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
+    @pytest.mark.parametrize('x,y', it.product(
+        [
+            -np.inf,
+            np.inf,
+            complex(-np.inf, 0.),
+            complex(-np.inf, -0.),
+            complex(-np.inf, np.inf),
+            complex(-np.inf, -np.inf),
+            complex(np.inf, 0.),
+            complex(np.inf, -0.),
+            complex(np.inf, np.inf),
+            complex(np.inf, -np.inf),
+            # Phase in each quadrant.
+            complex(-np.inf, 0.7533),
+            complex(-np.inf, 2.3562),
+            complex(-np.inf, 3.9270),
+            complex(-np.inf, 5.4978),
+            complex(np.inf, 0.7533),
+            complex(np.inf, 2.3562),
+            complex(np.inf, 3.9270),
+            complex(np.inf, 5.4978),
+        ], repeat=2)
+    )
+    def test_gh22601_infinite_elements(self, x, y, xp):
+        # Test that `logsumexp` does reasonable things in the presence of
+        # real and complex infinities.
+        res = logsumexp(xp.asarray([x, y]))
+        ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
+        xp_assert_equal(res, ref)
+
+    def test_no_writeback(self, xp):
+        """Test that logsumexp doesn't accidentally write back to its parameters."""
+        a = xp.asarray([5., 4.])
+        b = xp.asarray([3., 2.])
+        logsumexp(a)
+        logsumexp(a, b=b)
+        xp_assert_equal(a, xp.asarray([5., 4.]))
+        xp_assert_equal(b, xp.asarray([3., 2.]))
+
+    @pytest.mark.parametrize("x_raw", [1.0, 1.0j, []])
+    def test_device(self, x_raw, xp, devices):
+        """Test input device propagation to output."""
+        for d in devices:
+            x = xp.asarray(x_raw, device=d)
+            assert xp_device(logsumexp(x)) == xp_device(x)
+            assert xp_device(logsumexp(x, b=x)) == xp_device(x)
+
+    def test_gh22903(self, xp):
+        # gh-22903 reported that `logsumexp` produced NaN where the weight associated
+        # with the max magnitude element was negative and `return_sign=False`, even if
+        # the net result should be the log of a positive number.
+
+        # result is log of positive number
+        a = xp.asarray([3.06409428, 0.37251854, 3.87471931])
+        b = xp.asarray([1.88190708, 2.84174795, -0.85016884])
+        xp_assert_close(logsumexp(a, b=b), logsumexp(a, b=b, return_sign=True)[0])
+
+        # result is log of negative number
+        b = xp.asarray([1.88190708, 2.84174795, -3.85016884])
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(xp.nan))
+
+
+@make_xp_test_case(softmax)
 class TestSoftmax:
-    def test_softmax_fixtures(self):
-        assert_allclose(softmax([1000, 0, 0, 0]), np.array([1, 0, 0, 0]),
-                        rtol=1e-13)
-        assert_allclose(softmax([1, 1]), np.array([.5, .5]), rtol=1e-13)
-        assert_allclose(softmax([0, 1]), np.array([1, np.e])/(1 + np.e),
+    def test_softmax_fixtures(self, xp):
+        xp_assert_close(softmax(xp.asarray([1000., 0., 0., 0.])),
+                        xp.asarray([1., 0., 0., 0.]), rtol=1e-13)
+        xp_assert_close(softmax(xp.asarray([1., 1.])),
+                        xp.asarray([.5, .5]), rtol=1e-13)
+        xp_assert_close(softmax(xp.asarray([0., 1.])),
+                        xp.asarray([1., np.e])/(1 + np.e),
                         rtol=1e-13)
 
         # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
         # converted to float.
-        x = np.arange(4)
-        expected = np.array([0.03205860328008499,
-                            0.08714431874203256,
-                            0.23688281808991013,
-                            0.6439142598879722])
+        x = xp.arange(4, dtype=xp.float64)
+        expected = xp.asarray([0.03205860328008499,
+                               0.08714431874203256,
+                               0.23688281808991013,
+                               0.6439142598879722], dtype=xp.float64)
 
-        assert_allclose(softmax(x), expected, rtol=1e-13)
+        xp_assert_close(softmax(x), expected, rtol=1e-13)
 
         # Translation property.  If all the values are changed by the same amount,
         # the softmax result does not change.
-        assert_allclose(softmax(x + 100), expected, rtol=1e-13)
+        xp_assert_close(softmax(x + 100), expected, rtol=1e-13)
 
         # When axis=None, softmax operates on the entire array, and preserves
         # the shape.
-        assert_allclose(softmax(x.reshape(2, 2)), expected.reshape(2, 2),
-                        rtol=1e-13)
+        xp_assert_close(softmax(xp.reshape(x, (2, 2))),
+                        xp.reshape(expected, (2, 2)), rtol=1e-13)
 
-
-    def test_softmax_multi_axes(self):
-        assert_allclose(softmax([[1000, 0], [1000, 0]], axis=0),
-                        np.array([[.5, .5], [.5, .5]]), rtol=1e-13)
-        assert_allclose(softmax([[1000, 0], [1000, 0]], axis=1),
-                        np.array([[1, 0], [1, 0]]), rtol=1e-13)
+    def test_softmax_multi_axes(self, xp):
+        xp_assert_close(softmax(xp.asarray([[1000., 0.], [1000., 0.]]), axis=0),
+                        xp.asarray([[.5, .5], [.5, .5]]), rtol=1e-13)
+        xp_assert_close(softmax(xp.asarray([[1000., 0.], [1000., 0.]]), axis=1),
+                        xp.asarray([[1., 0.], [1., 0.]]), rtol=1e-13)
 
         # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
         # converted to float.
-        x = np.array([[-25, 0, 25, 50],
-                    [1, 325, 749, 750]])
-        expected = np.array([[2.678636961770877e-33,
-                            1.9287498479371314e-22,
-                            1.3887943864771144e-11,
-                            0.999999999986112],
-                            [0.0,
-                            1.9444526359919372e-185,
-                            0.2689414213699951,
-                            0.7310585786300048]])
-        assert_allclose(softmax(x, axis=1), expected, rtol=1e-13)
-        assert_allclose(softmax(x.T, axis=0), expected.T, rtol=1e-13)
+        x = xp.asarray([[-25.,   0.,  25.,  50.],
+                        [  1., 325., 749., 750.]])
+        expected = xp.asarray([[2.678636961770877e-33,
+                                1.9287498479371314e-22,
+                                1.3887943864771144e-11,
+                                0.999999999986112],
+                               [0.0,
+                                1.9444526359919372e-185,
+                                0.2689414213699951,
+                                0.7310585786300048]])
+        xp_assert_close(softmax(x, axis=1), expected, rtol=1e-13)
+        xp_assert_close(softmax(x.T, axis=0), expected.T, rtol=1e-13)
 
         # 3-d input, with a tuple for the axis.
-        x3d = x.reshape(2, 2, 2)
-        assert_allclose(softmax(x3d, axis=(1, 2)), expected.reshape(2, 2, 2),
-                        rtol=1e-13)
+        x3d = xp.reshape(x, (2, 2, 2))
+        xp_assert_close(softmax(x3d, axis=(1, 2)),
+                        xp.reshape(expected, (2, 2, 2)), rtol=1e-13)
+
+    @pytest.mark.xfail_xp_backends("array_api_strict", reason="int->float promotion")
+    def test_softmax_int_array(self, xp):
+        xp_assert_close(softmax(xp.asarray([1000, 0, 0, 0])),
+                        xp.asarray([1., 0., 0., 0.]), rtol=1e-13)
+
+    def test_softmax_scalar(self):
+        xp_assert_close(softmax(1000), np.asarray(1.), rtol=1e-13)
+
+    def test_softmax_array_like(self):
+        xp_assert_close(softmax([1000, 0, 0, 0]),
+                        np.asarray([1., 0., 0., 0.]), rtol=1e-13)
+
+
+@make_xp_test_case(log_softmax)
+class TestLogSoftmax:
+    def test_log_softmax_basic(self, xp):
+        xp_assert_close(log_softmax(xp.asarray([1000., 1.])),
+                        xp.asarray([0., -999.]), rtol=1e-13)
+
+    @pytest.mark.xfail_xp_backends("array_api_strict", reason="int->float promotion")
+    def test_log_softmax_int_array(self, xp):
+        xp_assert_close(log_softmax(xp.asarray([1000, 1])),
+                        xp.asarray([0., -999.]), rtol=1e-13)
+
+    def test_log_softmax_scalar(self):
+        xp_assert_close(log_softmax(1.0), 0.0, rtol=1e-13)
+
+    def test_log_softmax_array_like(self):
+        xp_assert_close(log_softmax([1000, 1]),
+                        np.asarray([0., -999.]), rtol=1e-13)
+
+    @staticmethod
+    def data_1d(xp):
+        x = xp.arange(4, dtype=xp.float64)
+        # Expected value computed using mpmath (with mpmath.mp.dps = 200)
+        expect = [-3.4401896985611953,
+                  -2.4401896985611953,
+                  -1.4401896985611953,
+                  -0.44018969856119533]
+        return x, xp.asarray(expect, dtype=xp.float64)
+
+    @staticmethod
+    def data_2d(xp):
+        x = xp.reshape(xp.arange(8, dtype=xp.float64), (2, 4))
+
+        # Expected value computed using mpmath (with mpmath.mp.dps = 200)
+        expect = [[-3.4401896985611953,
+                   -2.4401896985611953,
+                   -1.4401896985611953,
+                   -0.44018969856119533],
+                  [-3.4401896985611953,
+                   -2.4401896985611953,
+                   -1.4401896985611953,
+                   -0.44018969856119533]]
+        return x, xp.asarray(expect, dtype=xp.float64)
+
+    @pytest.mark.parametrize("offset", [0, 100])
+    def test_log_softmax_translation(self, offset, xp):
+        # Translation property.  If all the values are changed by the same amount,
+        # the softmax result does not change.
+        x, expect = self.data_1d(xp)
+        x += offset
+        xp_assert_close(log_softmax(x), expect, rtol=1e-13)
+
+    def test_log_softmax_noneaxis(self, xp):
+        # When axis=None, softmax operates on the entire array, and preserves
+        # the shape.
+        x, expect = self.data_1d(xp)
+        x = xp.reshape(x, (2, 2))
+        expect = xp.reshape(expect, (2, 2))
+        xp_assert_close(log_softmax(x), expect, rtol=1e-13)
+
+    @pytest.mark.parametrize('axis_2d, expected_2d', [
+        (0, np.log(0.5) * np.ones((2, 2))),
+        (1, [[0., -999.], [0., -999.]]),
+    ])
+    def test_axes(self, axis_2d, expected_2d, xp):
+        x = xp.asarray([[1000., 1.], [1000., 1.]])
+        xp_assert_close(log_softmax(x, axis=axis_2d),
+                        xp.asarray(expected_2d, dtype=x.dtype), rtol=1e-13)
+
+    def test_log_softmax_2d_axis1(self, xp):
+        x, expect = self.data_2d(xp)
+        xp_assert_close(log_softmax(x, axis=1), expect, rtol=1e-13)
+
+    def test_log_softmax_2d_axis0(self, xp):
+        x, expect = self.data_2d(xp)
+        xp_assert_close(log_softmax(x.T, axis=0), expect.T, rtol=1e-13)
+
+    def test_log_softmax_3d(self, xp):
+        # 3D input, with a tuple for the axis.
+        x, expect = self.data_2d(xp)
+        x = xp.reshape(x, (2, 2, 2))
+        expect = xp.reshape(expect, (2, 2, 2))
+        xp_assert_close(log_softmax(x, axis=(1, 2)), expect, rtol=1e-13)

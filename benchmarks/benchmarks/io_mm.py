@@ -46,7 +46,7 @@ class MemUsage(Benchmark):
     def params(self):
         return [
             list(self._get_size().keys()),
-            ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],
+            ['scipy.io'],
             ['dense', 'coo']  # + ['csr']
         ]
 
@@ -54,8 +54,12 @@ class MemUsage(Benchmark):
         size = {
             '1M': int(1e6),
             '10M': int(10e6),
-            '100M': int(100e6),
-            '300M': int(300e6),
+            '25M': int(10e6),
+            # Note: the below sizes should work locally but cause issues on CircleCI
+            #       it fails to allocate memory even though there is easily enough
+            #       available (see gh-22574).
+            #'100M': int(100e6),
+            #'300M': int(300e6),
             # '500M': int(500e6),
             # '1000M': int(1000e6),
         }

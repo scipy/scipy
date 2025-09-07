@@ -5,7 +5,9 @@ from copy import deepcopy
 
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
-from scipy._lib._array_api import array_namespace, is_cupy, is_numpy, xp_ravel, xp_size
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._array_api import (array_namespace, is_cupy, is_numpy, xp_ravel,
+                                   xp_size, make_xp_test_case)
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
@@ -184,10 +186,7 @@ cases = [
 ]
 
 
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
+@make_xp_test_case(find_minimum)
 class TestChandrupatlaMinimize:
 
     def f(self, x, loc):
@@ -280,7 +279,7 @@ class TestChandrupatlaMinimize:
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
         p = xp.asarray(rng.random(size=3))
-        bracket = (xp.asarray(-5), xp.asarray(0), xp.asarray(5))
+        bracket = (xp.asarray(-5, dtype=xp.float64), xp.asarray(0), xp.asarray(5))
         args = (p,)
         kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
 
@@ -481,7 +480,7 @@ class TestChandrupatlaMinimize:
         loc = xp.linspace(-1, 1, 6)[:, xp.newaxis]
         brackets = xp.asarray(list(permutations([-5, 0, 5]))).T
         res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
-        assert xp.all(xp.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
+        assert xp.all(xpx.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
         ref = res.x[:, 0]  # all columns should be the same
         xp_assert_close(*xp.broadcast_arrays(res.x.T, ref), rtol=1e-15)
 
@@ -543,12 +542,7 @@ class TestChandrupatlaMinimize:
         assert f(res.xl) == f(res.xm) == f(res.xr)
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason='Currently uses fancy indexing assignment.')
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
+@make_xp_test_case(find_root)
 class TestFindRoot:
 
     def f(self, q, p):
@@ -581,7 +575,8 @@ class TestFindRoot:
             return self.f(*args, **kwargs)
         f.f_evals = 0
 
-        res = find_root(f, (xp.asarray(-5.), xp.asarray(5.)), args=args_xp)
+        bracket = xp.asarray(-5., dtype=xp.float64), xp.asarray(5., dtype=xp.float64)
+        res = find_root(f, bracket, args=args_xp)
         refs = find_root_single(p).ravel()
 
         ref_x = [ref.x for ref in refs]

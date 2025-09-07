@@ -234,6 +234,8 @@ Ideas for new features:
 
 - Add type-generic wrappers in the Cython BLAS and LAPACK
 - Make many of the linear algebra routines into gufuncs
+- Complete support for batched operations (see
+  `gh-21466 <https://github.com/scipy/scipy/issues/21466>`__)
 
 **BLAS and LAPACK**
 
@@ -241,20 +243,15 @@ The Python and Cython interfaces to BLAS and LAPACK in ``scipy.linalg`` are one
 of the most important things that SciPy provides. In general ``scipy.linalg``
 is in good shape, however we can make a number of improvements:
 
-1. Library support. Our released wheels now ship with OpenBLAS, which is
-   currently the only feasible performant option (ATLAS is too slow, MKL cannot
-   be the default due to licensing issues, Accelerate support is dropped
-   because Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable
-   though, sometimes its releases break things and it has issues with threading
-   (currently the only issue for using SciPy with PyPy3).  We need at the very
-   least better support for debugging OpenBLAS issues, and better documentation
-   on how to build SciPy with it.  An option is to use BLIS for a BLAS
-   interface (see `numpy gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
-
-2. Support for newer LAPACK features.  In SciPy 1.2.0 we increased the minimum
-   supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we
-   can increase that version further (MKL + Python 2.7 was the blocker for
-   >3.4.0 previously) and start adding support for new features in LAPACK.
+1. Add support for ILP64 (64-bit) BLAS and LAPACK (see
+   `gh-21889 <https://github.com/scipy/scipy/issues/21889>`__)
+2. Unify the two sets of low-level BLAS/LAPACK wrappers, probably dropping the
+   ``f2py``-based ones (see
+   `gh-20682 <https://github.com/scipy/scipy/issues/20682>`__)
+3. Improve and document the various ways we link to BLAS and LAPACK from C
+   and C++ code internally in SciPy (see
+   `gh-20002 <https://github.com/scipy/scipy/issues/20002>`__ and
+   `gh-21130 <https://github.com/scipy/scipy/pull/21130>`__)
 
 
 misc
@@ -349,20 +346,24 @@ some point).
 
 What we want is sparse arrays that act like ``numpy.ndarray``. Initial
 support for a new set of classes (``csr_array`` et al.) was added in SciPy
-``1.8.0`` and stabilized in ``1.12.0`` when construction functions for
-arrays were added. Support for 1-D array is expected in ``1.13.0``.
+``1.8.0`` and stabilized in ``1.12.0`` with construction functions for
+arrays, ``1.14.0`` with 1D array support and ``1.15.0`` with 1D indexing.
+The sparse array codebase now supports all sparse matrix features and in
+addition supports 1D arrays and the first steps toward nD arrays.
+There is a transition guide to help users and libraries convert their code
+to sparse arrays.
 
-Next steps toward sparse array support:
+Next steps toward sparse array conversion:
 
-- Extend sparse array API to 1-D arrays.
+- Extend sparse array API to nD arrays.
     - Support for COO, CSR and DOK formats.
-    - CSR 1D support for min-max, indexing, arithmetic.
+    - Some COO features exist in 1.15.
+- Introduce support for broadcasting in operations where sparse formats
+  can effectively do that.
 - Help other libraries convert to sparse arrays from sparse matrices.
-  Create transition guide and helpful scripts to flag code that needs
-  further examination. NetworkX, scikit-learn and scikit-image are in
+  NetworkX, dipy, scikit-image, pyamg, cvxpy and scikit-learn are in
   progress or have completed conversion to sparse arrays.
-- After sparse array code is mature (~1 release cycle?) add deprecation
-  warnings for sparse matrix.
+- Add deprecation warnings for sparse matrix.
 - Work with NumPy on deprecation/removal of ``numpy.matrix``.
 - Deprecate and then remove sparse matrix in favor of sparse array.
 - Start API shift of construction function names (``diags``, ``block``, etc.)

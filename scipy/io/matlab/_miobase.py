@@ -225,13 +225,19 @@ def matfile_version(file_name, *, appendmat=True):
 get_matfile_version = matfile_version
 
 
+_HDR_N_BYTES = 20
+
+
 def _get_matfile_version(fileobj):
     # Mat4 files have a zero somewhere in first 4 bytes
     fileobj.seek(0)
-    mopt_bytes = fileobj.read(4)
-    if len(mopt_bytes) == 0:
-        raise MatReadError("Mat file appears to be empty")
-    mopt_ints = np.ndarray(shape=(4,), dtype=np.uint8, buffer=mopt_bytes)
+    hdr_bytes = fileobj.read(_HDR_N_BYTES)
+    if len(hdr_bytes) < _HDR_N_BYTES:
+        raise MatReadError("Mat file appears to be truncated")
+    if hdr_bytes.count(0) == _HDR_N_BYTES:
+        raise MatReadError("Mat file appears to be corrupt "
+                           f"(first {_HDR_N_BYTES} bytes == 0)")
+    mopt_ints = np.ndarray(shape=(4,), dtype=np.uint8, buffer=hdr_bytes[:4])
     if 0 in mopt_ints:
         fileobj.seek(0)
         return (0,0)

@@ -1166,6 +1166,17 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     This is really just `rfftn` with different default behavior.
     For more details see `rfftn`.
 
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.broadcast_to([1, 0, -1, 0], (4, 4))
+    >>> scipy.fft.rfft2(x)
+    array([[0.+0.j, 8.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j]])
+
     """
     return (Dispatchable(x, np.ndarray),)
 
@@ -1483,6 +1494,15 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     -----
     This is really just `hfftn` with different default behavior.
     For more details see `hfftn`.
+
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = np.array([[1+0j, 2+0j], [2+0j, 1+0j]])  # Hermitian-symmetric input
+    >>> scipy.fft.hfft2(x, s=(2, 2))
+    array([[ 6.,  0.],
+           [ 0., -2.]])
 
     """
     return (Dispatchable(x, np.ndarray),)

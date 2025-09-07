@@ -3,6 +3,11 @@
 Signal processing (:mod:`scipy.signal`)
 =======================================
 
+.. toctree::
+   :hidden:
+
+   signal.windows
+
 Convolution
 ===========
 
@@ -87,11 +92,12 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   firwin_2d        -- Windowed FIR filter design, with frequency response for 
+   firwin_2d        -- Windowed FIR filter design, with frequency response for
                     -- 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   sosfreqz      -- Digital filter frequency response for SOS format filter (legacy).
    freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    gammatone     -- FIR and IIR gammatone filter design.
@@ -122,7 +128,7 @@ Lower-level filter design functions:
 .. autosummary::
    :toctree: generated/
 
-   abcd_normalize -- Check state-space matrices and ensure they are rank-2.
+   abcd_normalize -- Check state-space matrices compatibility and ensure they are 2d.
    band_stop_obj  -- Band Stop Objective Function for order minimization.
    besselap       -- Return (z,p,k) for analog prototype of Bessel filter.
    buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
@@ -236,7 +242,7 @@ obtain these windows by name:
 .. autosummary::
    :toctree: generated/
 
-   get_window -- Return a window of a given length and type.
+   get_window -- Convenience function for creating various windows.
 
 Peak finding
 ============
@@ -268,9 +274,11 @@ Spectral analysis
    ShortTimeFFT   -- Interface for calculating the \
                      :ref:`Short Time Fourier Transform <tutorial_stft>` and \
                      its inverse.
+   closest_STFT_dual_window -- Calculate the STFT dual window of a given window \
+                               closest to a desired dual window.
    stft           -- Compute the Short Time Fourier Transform (legacy).
    istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
-   check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction (legacy).
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 Chirp Z-transform and Zoom FFT

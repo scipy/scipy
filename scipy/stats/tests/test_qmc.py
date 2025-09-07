@@ -4,7 +4,7 @@ from itertools import combinations, product
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, 
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal,
     assert_array_less)
 
 from scipy.spatial import distance
@@ -228,6 +228,7 @@ class TestUtils:
             reason="minimum_spanning_tree ignores zero distances (#18892)",
             strict=True,
     )
+    @pytest.mark.thread_unsafe
     def test_geometric_discrepancy_mst_with_zero_distances(self):
         sample = np.array([[0, 0], [0, 0], [0, 1]])
         assert_allclose(qmc.geometric_discrepancy(sample, method='mst'), 0.5)
@@ -596,11 +597,14 @@ class QMCEngineTests:
         "rng",
         (
             170382760648021597650530316304495310428,
-            np.random.default_rng(170382760648021597650530316304495310428),
-            None,
+            lambda: np.random.default_rng(170382760648021597650530316304495310428),
+            pytest.param(None, marks=pytest.mark.thread_unsafe),
         ),
     )
     def test_reset(self, scramble, rng):
+        if callable(rng):
+            # Initialize local RNG here to make it thread-local in pytest-run-parallel
+            rng = rng()
         engine = self.engine(d=2, scramble=scramble, rng=rng)
         ref_sample = engine.random(n=8)
 
@@ -951,8 +955,8 @@ class TestPoisson(QMCEngineTests):
         sample = engine.random(30)
 
         for point in sample:
-            assert_array_less(point, u_bounds) 
-            assert_array_less(l_bounds, point) 
+            assert_array_less(point, u_bounds)
+            assert_array_less(l_bounds, point)
 
     @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [1, 2, 1]])
     def test_sample_inside_upper_bounds(self, u_bounds):
@@ -964,15 +968,15 @@ class TestPoisson(QMCEngineTests):
         sample = engine.random(30)
 
         for point in sample:
-            assert_array_less(point, u_bounds) 
-            assert_array_less(l_bounds, point) 
+            assert_array_less(point, u_bounds)
+            assert_array_less(l_bounds, point)
 
     def test_inconsistent_bound_value(self):
         radius = 0.2
         l_bounds=[3, 2, 1]
         u_bounds=[-1, -2, -1]
         with pytest.raises(
-            ValueError, 
+            ValueError,
             match="Bounds are not consistent 'l_bounds' < 'u_bounds'"):
             self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
 
@@ -981,14 +985,14 @@ class TestPoisson(QMCEngineTests):
     def test_inconsistent_bounds(self, u_bounds, l_bounds):
         radius = 0.2
         with pytest.raises(
-            ValueError, 
-            match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
+            ValueError,
+            match="'l_bounds' and 'u_bounds' must be broadcastable and respect"
             " the sample dimension"):
             self.qmce(
-                d=3, radius=radius, 
+                d=3, radius=radius,
                 l_bounds=l_bounds, u_bounds=u_bounds
             )
-        
+
     def test_raises(self):
         message = r"'toto' is not a valid hypersphere sampling"
         with pytest.raises(ValueError, match=message):

@@ -4,13 +4,14 @@ import operator
 import numpy as np
 
 from math import prod
+from types import GenericAlias
 
-from . import _bspl   # type: ignore[attr-defined]
+from . import _dierckx  # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
 
-from ._bsplines import _not_a_knot
+from ._bsplines import _not_a_knot, BSpline
 
 __all__ = ["NdBSpline"]
 
@@ -66,6 +67,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    derivative
     design_matrix
 
     See Also
@@ -74,6 +76,10 @@ class NdBSpline:
     NdPPoly : an N-dimensional piecewise tensor product polynomial
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, t, c, k, *, extrapolate=None):
         self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
 
@@ -139,9 +145,9 @@ class NdBSpline:
         extrapolate = bool(extrapolate)
 
         if nu is None:
-            nu = np.zeros((ndim,), dtype=np.intc)
+            nu = np.zeros((ndim,), dtype=np.int64)
         else:
-            nu = np.asarray(nu, dtype=np.intc)
+            nu = np.asarray(nu, dtype=np.int64)
             if nu.ndim != 1 or nu.shape[0] != ndim:
                 raise ValueError(
                     f"invalid number of derivative orders {nu = } for "
@@ -173,12 +179,10 @@ class NdBSpline:
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
         _strides_c1 = np.asarray([s // c1.dtype.itemsize
-                                  for s in c1.strides], dtype=np.intp)
+                                  for s in c1.strides], dtype=np.int64)
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
-        out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
-
-        _bspl.evaluate_ndbspline(xi,
+        out = _dierckx.evaluate_ndbspline(xi,
                                  self._t,
                                  self._len_t,
                                  self._k,
@@ -188,7 +192,7 @@ class NdBSpline:
                                  num_c_tr,
                                  _strides_c1,
                                  self._indices_k1d,
-                                 out,)
+        )
         out = out.view(self.c.dtype)
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
 
@@ -235,17 +239,85 @@ class NdBSpline:
         # The strides of the coeffs array: the computation is equivalent to
         # >>> cstrides = [s // 8 for s in np.empty(c_shape).strides]
         cs = c_shape[1:] + (1,)
-        cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
+        cstrides = np.cumprod(cs[::-1], dtype=np.int64)[::-1].copy()
 
         # heavy lifting happens here
-        data, indices, indptr = _bspl._colloc_nd(xvals,
-                                                _t,
-                                                len_t,
-                                                k,
-                                                _indices_k1d,
-                                                cstrides)
+        data, indices, indptr = _dierckx._coloc_nd(xvals,
+                _t, len_t, k, _indices_k1d, cstrides)
+
         return csr_array((data, indices, indptr))
 
+    def _bspline_derivative_along_axis(self, c, t, k, axis, nu=1):
+        # Move the selected axis to front
+        c = np.moveaxis(c, axis, 0)
+        n = c.shape[0]
+        trailing_shape = c.shape[1:]
+        c_flat = c.reshape(n, -1)
+
+        new_c_list = []
+        new_t = None
+
+        for i in range(c_flat.shape[1]):
+            if k >= nu:
+                b = BSpline.construct_fast(t, c_flat[:, i], k)
+                db = b.derivative(nu)
+                # truncate coefficients to match new knot/degree size
+                db.c = db.c[:len(db.t) - db.k - 1]
+            else:
+                db = BSpline.construct_fast(t, np.zeros(len(t) - 1), 0)
+
+            if new_t is None:
+                new_t = db.t
+
+            new_c_list.append(db.c)
+
+        new_c = np.stack(new_c_list, axis=1).reshape(
+            (len(new_c_list[0]),) + trailing_shape)
+        new_c = np.moveaxis(new_c, 0, axis)
+
+        return new_c, new_t
+
+    def derivative(self, nu):
+        """
+        Construct a new NdBSpline representing the partial derivative.
+
+        Parameters
+        ----------
+        nu : array_like of shape (ndim,)
+            Orders of the partial derivatives to compute along each dimension.
+
+        Returns
+        -------
+        NdBSpline
+            A new NdBSpline representing the partial derivative of the original spline.
+
+        """
+        nu_arr = np.asarray(nu, dtype=np.int64)
+        ndim = len(self.t)
+
+        if nu_arr.ndim != 1 or nu_arr.shape[0] != ndim:
+            raise ValueError(
+                f"invalid number of derivative orders {nu = } for "
+                f"ndim = {len(self.t)}.")
+
+        if any(nu_arr < 0):
+            raise ValueError(f"derivative orders must be positive, got {nu = }")
+
+        t_new = list(self.t)
+        k_new = list(self.k)
+        c_new = self.c.copy()
+
+        for axis, n in enumerate(nu_arr):
+            if n == 0:
+                continue
+
+            c_new, t_new[axis] = self._bspline_derivative_along_axis(
+                c_new, t_new[axis], k_new[axis], axis, nu=n
+            )
+            k_new[axis] = max(k_new[axis] - n, 0)
+
+        return NdBSpline(tuple(t_new), c_new,
+                         tuple(k_new), extrapolate=self.extrapolate)
 
 def _preprocess_inputs(k, t_tpl):
     """Helpers: validate and preprocess NdBSpline inputs.
@@ -271,7 +343,7 @@ def _preprocess_inputs(k, t_tpl):
         # make k a tuple
         k = (k,)*ndim
 
-    k = np.asarray([operator.index(ki) for ki in k], dtype=np.int32)
+    k = np.asarray([operator.index(ki) for ki in k], dtype=np.int64)
 
     if len(k) != ndim:
         raise ValueError(f"len(t) = {len(t_tpl)} != {len(k) = }.")
@@ -305,7 +377,7 @@ def _preprocess_inputs(k, t_tpl):
     # non-zero b-spline elements
     shape = tuple(kd + 1 for kd in k)
     indices = np.unravel_index(np.arange(prod(shape)), shape)
-    _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
+    _indices_k1d = np.asarray(indices, dtype=np.int64).T.copy()
 
     # 5. pack the knots into a single array:
     #    ([1, 2, 3, 4], [5, 6], (7, 8, 9)) -->
@@ -318,7 +390,7 @@ def _preprocess_inputs(k, t_tpl):
     _t.fill(np.nan)
     for d in range(ndim):
         _t[d, :len(t_tpl[d])] = t_tpl[d]
-    len_t = np.asarray(len_t, dtype=np.int32)
+    len_t = np.asarray(len_t, dtype=np.int64)
 
     return k, _indices_k1d, (_t, len_t)
 
@@ -355,7 +427,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
         The points defining the regular grid in N dimensions. The points in
         each dimension (i.e. every element of the `points` tuple) must be
-        strictly ascending or descending.      
+        strictly ascending or descending.
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
     k : int, optional
@@ -417,4 +489,3 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     coef = solver(matr, vals, **solver_args)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
     return NdBSpline(t, coef, k)
-

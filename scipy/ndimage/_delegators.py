@@ -25,7 +25,7 @@ for func in funcs:
 """
 import numpy as np
 from scipy._lib._array_api import array_namespace
-from scipy.ndimage._ni_support import _skip_if_dtype, _skip_if_int
+from scipy.ndimage._ni_support import _skip_if_dtype
 
 
 def affine_transform_signature(
@@ -202,7 +202,7 @@ uniform_filter1d_signature = maximum_filter1d_signature
 
 
 def maximum_signature(input, labels=None, index=None):
-    return array_namespace(input, labels, _skip_if_int(index))
+    return array_namespace(input, labels, index)
 
 minimum_signature = maximum_signature
 median_signature = maximum_signature
@@ -286,6 +286,12 @@ def uniform_filter_signature(input, size=3, output=None, *args, **kwds):
 
 def value_indices_signature(arr, *args, **kwds):
     return array_namespace(arr)
+
+
+def vectorized_filter_signature(
+    input, function, size=None, footprint=None, output=None, *args, **kwds
+):
+    return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
 def watershed_ift_signature(input, markers, structure=None, output=None):

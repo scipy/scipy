@@ -7,13 +7,16 @@ Authors:
 
 """
 import itertools
+import inspect
 import platform
 import threading
+import warnings
+
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
-                           assert_no_warnings, assert_warns,
-                           assert_array_less, suppress_warnings)
+                           assert_no_warnings,
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 
@@ -34,8 +37,10 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._util import MapWrapper
 
-skip_xp_backends = pytest.mark.skip_xp_backends
+lazy_xp_modules = [optimize]
 
 
 def test_check_grad():
@@ -774,7 +779,6 @@ def test_neldermead_adaptive():
     assert_equal(res.success, True)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
     # should still be within the bounds (provided that the user doesn't make a
@@ -785,7 +789,7 @@ def test_bounded_powell_outsidebounds():
     x0 = [-4, .5, -.8]
 
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
     assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
     assert_equal(res.success, True)
@@ -797,7 +801,7 @@ def test_bounded_powell_outsidebounds():
     # parameter cannot be updated!
     direc = [[0, 0, 0], [0, 1, 0], [0, 0, 1]]
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0,
                                 bounds=bounds, method="Powell",
                                 options={'direc': direc})
@@ -806,7 +810,6 @@ def test_bounded_powell_outsidebounds():
     assert_equal(res.status, 4)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
     # will return a different result than the standard Powell
@@ -876,7 +879,7 @@ def test_bounded_powell_vs_powell():
     x0 = [45.46254415, -26.52351498, 31.74830248]
     bounds = [(-2, 5)] * 3
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res_bounded_powell = optimize.minimize(func, x0,
                                                bounds=bounds,
                                                method="Powell")
@@ -1123,7 +1126,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
-        opts = {'disp': False, 'maxiter': self.maxiter}
+        opts = {'maxiter': self.maxiter}
         r = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
                               options=opts)
@@ -1153,7 +1156,7 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
         v0 = None
         for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
-            opts = {'disp': False, 'maxiter': self.maxiter, 'ftol': tol}
+            opts = {'maxiter': self.maxiter, 'ftol': tol}
             sol = optimize.minimize(self.func, self.startparams,
                                     method='L-BFGS-B', jac=self.grad,
                                     options=opts)
@@ -1170,7 +1173,7 @@ class TestOptimizeSimple(CheckOptimize):
         # check that the maxls is passed down to the Fortran routine
         sol = optimize.minimize(optimize.rosen, np.array([-1.2, 1.0]),
                                 method='L-BFGS-B', jac=optimize.rosen_der,
-                                options={'disp': False, 'maxls': 1})
+                                options={'maxls': 1})
         assert not sol.success
 
     def test_minimize_l_bfgs_b_maxfun_interruption(self):
@@ -1317,6 +1320,8 @@ class TestOptimizeSimple(CheckOptimize):
 
             if method == 'tnc':
                 kwargs['options'] = dict(maxfun=100)
+            elif method == 'cobyla':
+                kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -1425,7 +1430,6 @@ class TestOptimizeSimple(CheckOptimize):
         elif method == 'cobyqa':
             assert sol.status == 6  # Iteration limit reached
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
     def test_runtime_warning(self, method):
@@ -1551,7 +1555,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'cobyqa', 'slsqp',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method, num_parallel_threads):
@@ -1591,10 +1595,12 @@ class TestOptimizeSimple(CheckOptimize):
         hesss = [hess] if needs_hess else [hess, None]
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
@@ -1617,9 +1623,9 @@ class TestOptimizeSimple(CheckOptimize):
                       'dogleg'):
             hess = self.hess
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
             # for trust-constr
-            sup.filter(UserWarning, "delta_grad == 0.*")
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
             optimize.minimize(self.func, self.startparams,
                               method=method, jac=jac, hess=hess)
 
@@ -1682,6 +1688,23 @@ class TestOptimizeSimple(CheckOptimize):
         if method == 'cobyqa':
             ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
             assert res.nfev == ref.nfev == maxiter
+        elif method == 'cobyla':
+            # COBYLA calls the callback once per iteration, not once per function
+            # evaluation, so this test is not applicable. However we can test
+            # the COBYLA status to verify that res stopped back on the callback
+            # and ref stopped based on the iteration limit.
+            # COBYLA requires at least n+2 function evaluations
+            maxiter = max(maxiter, len(kwargs['x0'])+2)
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.status == 30
+            assert res.message == ("Return from COBYLA because the callback function "
+                                   "requested termination")
+            assert ref.status == 3
+            assert ref.message == ("Return from COBYLA because the objective function "
+                                   "has been evaluated MAXFUN times.")
+            # Return early because res/ref will be unequal for COBYLA for the reasons
+            # mentioned above.
+            return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
             assert res.nit == ref.nit == maxiter
@@ -1714,7 +1737,6 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
     def test_minimize_warnings_gh1953(self, method):
         # test that minimize methods produce warnings rather than just using
@@ -2026,10 +2048,12 @@ class TestOptimizeScalar:
         bracket = (-1, 0, 1)
         bounds = (-1, 1)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             count = [0]
 
@@ -2088,7 +2112,6 @@ class TestOptimizeScalar:
         res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])
     def test_minimize_scalar_warnings_gh1953(self, method):
         # test that minimize_scalar methods produce warnings rather than just
@@ -2453,21 +2476,20 @@ def test_powell_output():
 
 
 class TestRosen:
+    @make_xp_test_case(optimize.rosen)
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
         x = xp.asarray([1, 1, 1])
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+    @make_xp_test_case(optimize.rosen_der)
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+    @make_xp_test_case(optimize.rosen_hess, optimize.rosen_hess_prod)
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 
@@ -2547,10 +2569,10 @@ class TestOptimizeResultAttributes:
                       'message']
         skip = {'cobyla': ['nit']}
         for method in MINIMIZE_METHODS:
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
                            ("Method .+ does not use (gradient|Hessian.*)"
-                            " information"))
+                            " information"), RuntimeWarning)
                 res = optimize.minimize(self.func, self.x0, method=method,
                                         jac=self.jac, hess=self.hess,
                                         hessp=self.hessp)
@@ -2643,7 +2665,6 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-    @pytest.mark.thread_unsafe
     def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
@@ -2663,7 +2684,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.thread_unsafe
+
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
@@ -2903,6 +2924,10 @@ def setup_test_equal_bounds():
     def callback(x, *args):
         check_x(x)
 
+    def callback2(intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        check_x(intermediate_result.x)
+
     def constraint1(x):
         check_x(x, check_values=False)
         return x[0:1] - 1
@@ -2953,7 +2978,7 @@ def setup_test_equal_bounds():
                    ([c1b, c2b], [c1b, c2b]))
 
     # test with and without callback function
-    callbacks = (None, callback)
+    callbacks = (None, callback, callback2)
 
     data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
             "constraints": constraints, "callbacks": callbacks,
@@ -2992,6 +3017,12 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     test_constraints, reference_constraints = constraints
     if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
+
+    if method in ['SLSQP', 'TNC'] and callable(callback):
+        sig = inspect.signature(callback)
+        if 'intermediate_result' in set(sig.parameters):
+            pytest.skip("SLSQP, TNC don't support intermediate_result")
+
     # reference constraints always have analytical jacobian
     # if test constraints are not the same, we'll need finite differences
     fd_needed = (test_constraints != reference_constraints)
@@ -3008,7 +3039,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=1.5e-6)
+    assert_allclose(res.fun, expected.fun, rtol=2e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
@@ -3136,6 +3167,15 @@ def test_bounds_with_list():
     )
 
 
+@pytest.mark.parametrize('method', (
+    'slsqp', 'cg', 'cobyqa', 'powell','nelder-mead', 'bfgs', 'l-bfgs-b',
+    'trust-constr'))
+def test_minimize_maxiter_noninteger(method):
+    # Regression test for gh-23430
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    optimize.minimize(rosen, x0, method=method, options={'maxiter': 100.1})
+
+
 def test_x_overwritten_user_function():
     # if the user overwrites the x-array in the user function it's likely
     # that the minimizer stops working properly.
@@ -3226,6 +3266,137 @@ def test_gh12594():
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
 
+def test_gh12513_trustregion_exact_infinite_loop():
+    # gh-12513 reported that optimize.minimize might hang when
+    # method='trust-exact', using the option ``subproblem_maxiter``,
+    # this can be avoided.
+    H = np.array(
+        [[3.67335930e01, -2.52334820e02, 1.15477558e01, -1.19933725e-03,
+          -2.06408851e03, -2.05821411e00, -2.52334820e02, -6.52076924e02,
+          -2.71362566e-01, -1.98885126e00, 1.22085415e00, 2.30220713e00,
+          -9.71278532e-02, -5.11210123e-01, -1.00399562e00, 1.43319679e-01,
+          6.03815471e00, -6.38719934e-02, 1.65623929e-01],
+         [-2.52334820e02, 1.76757312e03, -9.92814996e01, 1.06533600e-02,
+          1.44442941e04, 1.43811694e01, 1.76757312e03, 4.56694461e03,
+          2.22263363e00, 1.62977318e01, -7.81539315e00, -1.24938012e01,
+          6.74029088e-01, 3.22802671e00, 5.14978971e00, -9.58561209e-01,
+          -3.92199895e01, 4.47201278e-01, -1.17866744e00],
+         [1.15477558e01, -9.92814996e01, 3.63872363e03, -4.40007197e-01,
+          -9.55435081e02, -1.13985105e00, -9.92814996e01, -2.58307255e02,
+          -5.21335218e01, -3.77485107e02, -6.75338369e01, -1.89457169e02,
+          5.67828623e00, 5.82402681e00, 1.72734354e01, -4.29114840e00,
+          -7.84885258e01, 3.17594634e00, 2.45242852e00],
+         [-1.19933725e-03, 1.06533600e-02, -4.40007197e-01, 5.73576663e-05,
+          1.01563710e-01, 1.18838745e-04, 1.06533600e-02, 2.76535767e-02,
+          6.25788669e-03, 4.50699620e-02, 8.64152333e-03, 2.27772377e-02,
+          -8.51026855e-04, 1.65316383e-04, 1.38977551e-03, 5.51629259e-04,
+          1.38447755e-02, -5.17956723e-04, -1.29260347e-04],
+         [-2.06408851e03, 1.44442941e04, -9.55435081e02, 1.01563710e-01,
+          1.23101825e05, 1.26467259e02, 1.44442941e04, 3.74590279e04,
+          2.18498571e01, 1.60254460e02, -7.52977260e01, -1.17989623e02,
+          6.58253160e00, 3.14949206e01, 4.98527190e01, -9.33338661e00,
+          -3.80465752e02, 4.33872213e00, -1.14768816e01],
+         [-2.05821411e00, 1.43811694e01, -1.13985105e00, 1.18838745e-04,
+          1.26467259e02, 1.46226198e-01, 1.43811694e01, 3.74509252e01,
+          2.76928748e-02, 2.03023837e-01, -8.84279903e-02, -1.29523344e-01,
+          8.06424434e-03, 3.83330661e-02, 5.81579023e-02, -1.12874980e-02,
+          -4.48118297e-01, 5.15022284e-03, -1.41501894e-02],
+         [-2.52334820e02, 1.76757312e03, -9.92814996e01, 1.06533600e-02,
+          1.44442941e04, 1.43811694e01, 1.76757312e03, 4.56694461e03,
+          2.22263363e00, 1.62977318e01, -7.81539315e00, -1.24938012e01,
+          6.74029088e-01, 3.22802671e00, 5.14978971e00, -9.58561209e-01,
+          -3.92199895e01, 4.47201278e-01, -1.17866744e00],
+         [-6.52076924e02, 4.56694461e03, -2.58307255e02, 2.76535767e-02,
+          3.74590279e04, 3.74509252e01, 4.56694461e03, 1.18278398e04,
+          5.82242837e00, 4.26867612e01, -2.03167952e01, -3.22894255e01,
+          1.75705078e00, 8.37153730e00, 1.32246076e01, -2.49238529e00,
+          -1.01316422e02, 1.16165466e00, -3.09390862e00],
+         [-2.71362566e-01, 2.22263363e00, -5.21335218e01, 6.25788669e-03,
+          2.18498571e01, 2.76928748e-02, 2.22263363e00, 5.82242837e00,
+          4.36278066e01, 3.14836583e02, -2.04747938e01, -3.05535101e01,
+          -1.24881456e-01, 1.15775394e01, 4.06907410e01, -1.39317748e00,
+          -3.90902798e01, -9.71716488e-02, 1.06851340e-01],
+         [-1.98885126e00, 1.62977318e01, -3.77485107e02, 4.50699620e-02,
+          1.60254460e02, 2.03023837e-01, 1.62977318e01, 4.26867612e01,
+          3.14836583e02, 2.27255216e03, -1.47029712e02, -2.19649109e02,
+          -8.83963155e-01, 8.28571708e01, 2.91399776e02, -9.97382920e00,
+          -2.81069124e02, -6.94946614e-01, 7.38151960e-01],
+         [1.22085415e00, -7.81539315e00, -6.75338369e01, 8.64152333e-03,
+          -7.52977260e01, -8.84279903e-02, -7.81539315e00, -2.03167952e01,
+          -2.04747938e01, -1.47029712e02, 7.83372613e01, 1.64416651e02,
+          -4.30243758e00, -2.59579610e01, -6.25644064e01, 6.69974667e00,
+          2.31011701e02, -2.68540084e00, 5.44531151e00],
+         [2.30220713e00, -1.24938012e01, -1.89457169e02, 2.27772377e-02,
+          -1.17989623e02, -1.29523344e-01, -1.24938012e01, -3.22894255e01,
+          -3.05535101e01, -2.19649109e02, 1.64416651e02, 3.75893031e02,
+          -7.42084715e00, -4.56437599e01, -1.11071032e02, 1.18761368e01,
+          4.78724142e02, -5.06804139e00, 8.81448081e00],
+         [-9.71278532e-02, 6.74029088e-01, 5.67828623e00, -8.51026855e-04,
+          6.58253160e00, 8.06424434e-03, 6.74029088e-01, 1.75705078e00,
+          -1.24881456e-01, -8.83963155e-01, -4.30243758e00, -7.42084715e00,
+          9.62009425e-01, 1.53836355e00, 2.23939458e00, -8.01872920e-01,
+          -1.92191084e01, 3.77713908e-01, -8.32946970e-01],
+         [-5.11210123e-01, 3.22802671e00, 5.82402681e00, 1.65316383e-04,
+          3.14949206e01, 3.83330661e-02, 3.22802671e00, 8.37153730e00,
+          1.15775394e01, 8.28571708e01, -2.59579610e01, -4.56437599e01,
+          1.53836355e00, 2.63851056e01, 7.34859767e01, -4.39975402e00,
+          -1.12015747e02, 5.11542219e-01, -2.64962727e00],
+         [-1.00399562e00, 5.14978971e00, 1.72734354e01, 1.38977551e-03,
+          4.98527190e01, 5.81579023e-02, 5.14978971e00, 1.32246076e01,
+          4.06907410e01, 2.91399776e02, -6.25644064e01, -1.11071032e02,
+          2.23939458e00, 7.34859767e01, 2.36535458e02, -1.09636675e01,
+          -2.72152068e02, 6.65888059e-01, -6.29295273e00],
+         [1.43319679e-01, -9.58561209e-01, -4.29114840e00, 5.51629259e-04,
+          -9.33338661e00, -1.12874980e-02, -9.58561209e-01, -2.49238529e00,
+          -1.39317748e00, -9.97382920e00, 6.69974667e00, 1.18761368e01,
+          -8.01872920e-01, -4.39975402e00, -1.09636675e01, 1.16820748e00,
+          3.00817252e01, -4.51359819e-01, 9.82625204e-01],
+         [6.03815471e00, -3.92199895e01, -7.84885258e01, 1.38447755e-02,
+          -3.80465752e02, -4.48118297e-01, -3.92199895e01, -1.01316422e02,
+          -3.90902798e01, -2.81069124e02, 2.31011701e02, 4.78724142e02,
+          -1.92191084e01, -1.12015747e02, -2.72152068e02, 3.00817252e01,
+          1.13232557e03, -1.33695932e01, 2.22934659e01],
+         [-6.38719934e-02, 4.47201278e-01, 3.17594634e00, -5.17956723e-04,
+          4.33872213e00, 5.15022284e-03, 4.47201278e-01, 1.16165466e00,
+          -9.71716488e-02, -6.94946614e-01, -2.68540084e00, -5.06804139e00,
+          3.77713908e-01, 5.11542219e-01, 6.65888059e-01, -4.51359819e-01,
+          -1.33695932e01, 4.27994168e-01, -5.09020820e-01],
+         [1.65623929e-01, -1.17866744e00, 2.45242852e00, -1.29260347e-04,
+          -1.14768816e01, -1.41501894e-02, -1.17866744e00, -3.09390862e00,
+          1.06851340e-01, 7.38151960e-01, 5.44531151e00, 8.81448081e00,
+          -8.32946970e-01, -2.64962727e00, -6.29295273e00, 9.82625204e-01,
+          2.22934659e01, -5.09020820e-01, 4.09964606e00]]
+    )
+    J = np.array([
+        -2.53298102e-07, 1.76392040e-06, 1.74776130e-06, -4.19479903e-10,
+        1.44167498e-05, 1.41703911e-08, 1.76392030e-06, 4.96030153e-06,
+        -2.35771675e-07, -1.68844985e-06, 4.29218258e-07, 6.65445159e-07,
+        -3.87045830e-08, -3.17236594e-07, -1.21120169e-06, 4.59717313e-08,
+        1.67123246e-06, 1.46624675e-08, 4.22723383e-08
+    ])
+
+    def fun(x):
+        return np.dot(np.dot(x, H), x) / 2 + np.dot(x, J)
+
+    def jac(x):
+        return np.dot(x, H) + J
+
+    def hess(x):
+        return H
+
+    x0 = np.zeros(19)
+
+    res = optimize.minimize(
+        fun,
+        x0,
+        jac=jac,
+        hess=hess,
+        method="trust-exact",
+        options={"gtol": 1e-6, "subproblem_maxiter": 10},
+    )
+    assert res.success
+    assert abs(fun(res.x)) < 1e-5
+
 
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
@@ -3251,3 +3422,54 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nfev == res_sparse.nfev
     assert res_dense.njev == res_sparse.njev
     assert res_dense.nhev == res_sparse.nhev
+
+
+@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize(
+    'method',
+    ['l-bfgs-b',
+     'bfgs',
+     'slsqp',
+     'trust-constr',
+     'Newton-CG',
+     'CG',
+     'tnc',
+     'trust-ncg',
+     'trust-krylov'])
+class TestWorkers:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 2.0, 3.0])
+
+    def test_smoke(self, workers, method):
+        # checks parallelised optimization output is same as serial
+        workers = workers or map
+
+        kwds = {'jac': None, 'hess': None}
+        if method in ['Newton-CG', 'trust-ncg', 'trust-krylov']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der
+            kwds['hess'] = '2-point'
+
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, options={"workers":mf}, method=method, **kwds
+            )
+        res_default = optimize.minimize(
+            rosen, self.x0, method=method, **kwds
+        )
+        assert_equal(res.x, res_default.x)
+        assert_equal(res.nfev, res_default.nfev)
+
+    def test_equal_bounds(self, workers, method):
+        workers = workers or map
+        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr', 'tnc']:
+            pytest.skip(f"{method} cannot use bounds")
+
+        bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
+            )
+        assert res.success
+        assert_allclose(res.x[1], 2.0)

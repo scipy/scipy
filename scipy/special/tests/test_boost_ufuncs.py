@@ -59,3 +59,6 @@ def test_landau():
     assert_allclose(ppf, x)
     isf = scu._landau_isf(sf, *args)
     assert_allclose(isf, x, rtol=1e-6)
+
+def test_gh22956():
+    _ = scu._ncx2_pdf(30, 1e307, 16)
