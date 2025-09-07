@@ -330,7 +330,7 @@ array-api-cpu = { features = [
   "jax-cpu",
   "torch-cpu",
 ], solve-group = "mkl" }
-py311-system-libs-osx = { features = ["py311", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
+py311-system-libs-osx = { features = ["py311", "build", "test", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
 accelerate-lp64 = ["build", "test", "accelerate", "accelerate-lp64"]
 accelerate-ilp64 = ["build", "test", "accelerate", "accelerate-ilp64"]
 aarch64-fail-slow = ["aarch64", "build", "test", "fail-slow"]
