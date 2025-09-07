@@ -249,6 +249,7 @@ platforms = ["osx-arm64", "linux-64"]
 [feature.umfpack.dependencies]
 # scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564p
 scikit-umfpack = "==0.3.3"
+setuptools = "<80"
 
 
 [feature.scikit-sparse]
