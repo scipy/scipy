@@ -10,16 +10,14 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     is_numpy,
     xp_assert_close,
-    make_xp_pytest_marks,
+    lazy_xp_function,
     make_xp_test_case,
     xp_assert_equal,
     xp_promote
 )
 import scipy._lib.array_api_extra as xpx
 
-lazy_xp_modules = [RigidTransform, normalize_dual_quaternion]
-
-pytestmark = make_xp_pytest_marks(RigidTransform.as_matrix)
+lazy_xp_modules = [RigidTransform]
 
 
 def rotation_to_xp(r: Rotation, xp):
@@ -32,6 +30,7 @@ def rigid_transform_to_xp(r: RigidTransform, xp):
     return RigidTransform.from_matrix(xp.asarray(r.as_matrix(), dtype=dtype))
 
 
+@make_xp_test_case(RigidTransform.as_matrix)
 def test_repr(xp):
     actual = repr(RigidTransform.from_matrix(xp.eye(4)))
     expected = """\
@@ -128,7 +127,7 @@ def test_from_translation_array_like():
     assert not tf.single
 
 
-@make_xp_test_case(RigidTransform.from_matrix)
+@make_xp_test_case(RigidTransform.from_matrix, RigidTransform.as_matrix)
 def test_from_matrix(xp):
     atol = 1e-12
 
@@ -636,8 +635,8 @@ def test_as_dual_quat(xp):
 
 @make_xp_test_case(RigidTransform.from_components, RigidTransform.as_components,
                    RigidTransform.from_exp_coords, RigidTransform.as_exp_coords,
-                   RigidTransform.from_matrix, RigidTransform.from_dual_quat,
-                   RigidTransform.as_dual_quat)
+                   RigidTransform.from_matrix, RigidTransform.as_matrix,
+                   RigidTransform.from_dual_quat, RigidTransform.as_dual_quat)
 def test_from_as_internal_consistency(xp):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12
@@ -916,6 +915,7 @@ def test_inverse(xp):
     xp_assert_close(composed.as_matrix(), expected, atol=atol)
 
 
+@make_xp_test_case(RigidTransform.as_matrix)
 def test_properties(xp):
     atol = 1e-12
 
@@ -1188,6 +1188,7 @@ def test_setitem_validation(xp):
 
 @pytest.mark.skip_xp_backends("jax.numpy",
                               reason="JAX does not support memory sharing")
+@make_xp_test_case(RigidTransform.as_matrix)
 def test_copy_flag(xp):
     # Test that copy=True creates new memory
     matrix = xp.eye(4)
@@ -1325,6 +1326,7 @@ def test_empty_transform_inv_and_pow(xp):
     assert len(tf ** 0.5) == 0
 
 
+@make_xp_test_case(RigidTransform.__getitem__)
 def test_empty_transform_indexing(xp):
     tf_many = rigid_transform_to_xp(RigidTransform.identity(3), xp=xp)
     tf_zero = tf_many[xp.asarray([], dtype=xp.int32)]
@@ -1358,7 +1360,7 @@ def test_pickling(xp):
     xp_assert_close(tf.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-@make_xp_test_case(RigidTransform.__iter__)
+@make_xp_test_case(RigidTransform.as_matrix)
 def test_rigid_transform_iter(xp):
     r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
     for i, r_i in enumerate(r):
@@ -1366,3 +1368,19 @@ def test_rigid_transform_iter(xp):
         xp_assert_equal(r_i.as_matrix(), r[i].as_matrix())
         if i > len(r):
             raise RuntimeError("Iteration exceeded length of transforms")
+
+
+def jitted_list(x):
+    """Test x.__iter__ inside jax.jit."""
+    return list(x)
+
+
+lazy_xp_function(jitted_list)
+
+
+@make_xp_test_case(RigidTransform.from_translation)
+def test_iter_jit(xp):
+    tf = RigidTransform.from_translation(xp.ones((2, 3)))
+    actual = jitted_list(tf)
+    assert isinstance(actual, list)
+    assert isinstance(actual[0], RigidTransform)

@@ -26,11 +26,15 @@ __all__ = ["RigidTransform"]
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
+def select_backend(xp: ModuleType):
+    return backend_registry.get(xp, xp_backend)
+
+
 @xp_capabilities()
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
-    return backend_registry.get(xp, xp_backend).normalize_dual_quaternion(dual_quat)
+    return select_backend(xp).normalize_dual_quaternion(dual_quat)
 
 
 class RigidTransform:
@@ -1772,7 +1776,6 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return (self.__class__.from_matrix, (matrix,))
 
-    @xp_capabilities(jax_jit=False)
     def __iter__(self) -> Iterator[RigidTransform]:
         """Iterate over transforms."""
         if self._single or self._matrix.ndim == 2:

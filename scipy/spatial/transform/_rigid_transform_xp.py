@@ -180,7 +180,9 @@ def inv(matrix: Array) -> Array:
     r_inv = xp.matrix_transpose(matrix[..., :3, :3])
     # Matrix multiplication of r_inv and translation vector
     t_inv = -(r_inv @ matrix[..., :3, 3][..., None])[..., 0]
-    matrix = xp.zeros((*matrix.shape[:-2], 4, 4), dtype=matrix.dtype)
+    matrix = xp.zeros(
+        (*matrix.shape[:-2], 4, 4), dtype=matrix.dtype, device=xp_device(matrix)
+    )
     matrix = xpx.at(matrix)[..., :3, :3].set(r_inv)
     matrix = xpx.at(matrix)[..., :3, 3].set(t_inv)
     matrix = xpx.at(matrix)[..., 3, 3].set(1)
@@ -249,7 +251,9 @@ def pow(matrix: Array, n: float | Array) -> Array:
 
 
 def setitem(
-    matrix: Array, indexer: Array | int | slice | EllipsisType | None, value: Array
+    matrix: Array,
+    indexer: Array | int | tuple | slice | EllipsisType | None,
+    value: Array,
 ) -> Array:
     xp = array_namespace(matrix)
     if isinstance(indexer, EllipsisType):
