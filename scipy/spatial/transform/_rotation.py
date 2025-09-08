@@ -2418,8 +2418,8 @@ class Rotation:
             Note that the result will also be weighted by the vectors'
             magnitudes, so perfectly aligned vector pairs will have nonzero
             `rssd` if they are not of the same length. This can be avoided by
-            normalizing them to unit length prior to calling this method, and
-            scaling the weights by the original vector magnitudes.
+            normalizing them to unit length prior to calling this method,
+            though note that doing this will change the resulting rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
