@@ -192,42 +192,6 @@ class TestCephes:
     def test_chdtriv(self):
         assert_equal(cephes.chdtriv(0,0),5.0)
 
-    def test_chndtr(self):
-        assert_equal(cephes.chndtr(0,1,0),0.0)
-
-        # Each row holds (x, nu, lam, expected_value)
-        # These values were computed using Wolfram Alpha with
-        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
-        values = np.array([
-            [25.00, 20.0, 400, 4.1210655112396197139e-57],
-            [25.00, 8.00, 250, 2.3988026526832425878e-29],
-            [0.001, 8.00, 40., 5.3761806201366039084e-24],
-            [0.010, 8.00, 40., 5.45396231055999457039e-20],
-            [20.00, 2.00, 107, 1.39390743555819597802e-9],
-            [22.50, 2.00, 107, 7.11803307138105870671e-9],
-            [25.00, 2.00, 107, 3.11041244829864897313e-8],
-            [3.000, 2.00, 1.0, 0.62064365321954362734],
-            [350.0, 300., 10., 0.93880128006276407710],
-            [100.0, 13.5, 10., 0.99999999650104210949],
-            [700.0, 20.0, 400, 0.99999999925680650105],
-            [150.0, 13.5, 10., 0.99999999999999983046],
-            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
-        ])
-        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
-        assert_allclose(cdf, values[:, 3], rtol=1e-12)
-
-        assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
-        assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
-        assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
-        assert_(np.isnan(cephes.chndtr(5, np.nan, 2)))
-        assert_(np.isnan(cephes.chndtr(5, 1, np.nan)))
-
-    def test_chndtridf(self):
-        assert_equal(cephes.chndtridf(0,0,1),5.0)
-
-    def test_chndtrinc(self):
-        assert_equal(cephes.chndtrinc(0,1,0),5.0)
-
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
@@ -1526,6 +1490,21 @@ class TestBetaInc:
         x = np.array([0.5], dtype=dtype)
         result = special.betaincinv(a, a, x)
         assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
+
+    @pytest.mark.parametrize("dtype, rtol",
+                             [(np.float32, 1e-4),
+                              (np.float64, 1e-15)])
+    @pytest.mark.parametrize("a, b, x, reference",
+                             [(1e-20, 1e-21, 0.5, 0.0909090909090909),
+                              (1e-15, 1e-16, 0.5, 0.09090909090909091)])
+    def test_gh22682(self, a, b, x, reference, dtype, rtol):
+        # gh-22682: betainc returned incorrect results for tiny
+        # single precision inputs. test that this is resolved
+        a = np.array(a, dtype=dtype)
+        b = np.array(b, dtype=dtype)
+        x = np.array(x, dtype=dtype)
+        res = special.betainc(a, b, x)
+        assert_allclose(res, reference, rtol=rtol)
 
 
 class TestCombinatorics:

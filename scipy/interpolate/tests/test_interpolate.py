@@ -2507,7 +2507,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     V = np.vander(diff, N=K)
     values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
-    res.shape = saveshape
+    res = res.reshape(saveshape)
     return res
 
 

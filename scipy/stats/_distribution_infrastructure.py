@@ -5726,7 +5726,7 @@ def log(X, /):
     Returns
     -------
     Y : `ContinuousDistribution`
-        A random variable :math:`Y = \exp(X)`.
+        A random variable :math:`Y = \log(X)`.
 
     Examples
     --------
