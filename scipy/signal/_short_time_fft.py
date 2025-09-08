@@ -20,7 +20,7 @@
 # Provides typing union operator ``|`` in Python 3.9:
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator, Callable
-from functools import cache, lru_cache, partial
+from functools import lru_cache, partial, cached_property
 from types import GenericAlias
 from typing import get_args, Literal
 
@@ -1611,7 +1611,7 @@ class ShortTimeFFT:
         """
         return self.m_num // 2
 
-    @cache
+    @cached_property
     def _pre_padding(self) -> tuple[int, int]:
         """Smallest signal index and slice index due to padding.
 
@@ -1650,7 +1650,7 @@ class ShortTimeFFT:
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
         """
-        return self._pre_padding()[0]
+        return self._pre_padding[0]
 
     @property
     def p_min(self) -> int:
@@ -1675,7 +1675,7 @@ class ShortTimeFFT:
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this property belongs to.
         """
-        return self._pre_padding()[1]
+        return self._pre_padding[1]
 
     @lru_cache(maxsize=256)
     def _post_padding(self, n: int) -> tuple[int, int]:
