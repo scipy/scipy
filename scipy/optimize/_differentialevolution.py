@@ -3,6 +3,7 @@ differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
 import warnings
+from functools import partial
 
 import numpy as np
 
@@ -169,12 +170,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Alternatively supply a callable that has a `minimize`-like signature,
         ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
         allows the user to have fine control over how the polishing occurs.
-        `bounds` and `constraints` will be present in `kwds`. Extra keywords
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
         could be supplied to `polish_func` using `functools.partial`. It is the
         user's responsibility to ensure that the polishing function obeys
         bounds, any constraints (including integrality constraints), and that
-        appropriate attributes are set in the `OptimizeResult`, such as `fun`,
-        `x`, `nfev`, `jac`.
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ``x``, ``nfev``, ``jac``.
 
         .. versionchanged:: 1.15.0
             If `workers` is specified then the map-like callable that wraps
@@ -688,12 +689,12 @@ class DifferentialEvolutionSolver:
         Alternatively supply a callable that has a `minimize`-like signature,
         ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
         allows the user to have fine control over how the polishing occurs.
-        `bounds` and `constraints` will be present in `kwds`. Extra keywords
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
         could be supplied to `polish_func` using `functools.partial`. It is the
         user's responsibility to ensure that the polishing function obeys
         bounds, any constraints (including integrality constraints), and that
-        appropriate attributes are set in the `OptimizeResult`, such as `fun`,
-        `x`, `nfev`, `jac`.
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ```x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -1284,27 +1285,26 @@ class DifferentialEvolutionSolver:
                                   "infeasible solution",
                                   UserWarning, stacklevel=2)
 
-            if callable(self.polish):
-                result = self.polish(
-                    self.original_func,
-                    np.copy(DE_result.x),
-                    bounds=self.limits.T,
-                    constraints=self.constraints
-                )
-                if not isinstance(result, OptimizeResult):
-                    raise ValueError(
-                        "The result from a user defined polishing function "
-                         "should return an OptimizeResult."
-                    )
-            else:
+            pf = self.polish
+            _f = self.original_func
+            if not callable(pf):
+                pf = partial(minimize, method=polish_method)
+                _f = lambda x: list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
+
                 if self.disp:
                     print(f"Polishing solution with '{polish_method}'")
-                result = minimize(
-                    lambda x: list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
-                    np.copy(DE_result.x),
-                    method=polish_method,
-                    bounds=self.limits.T,
-                    constraints=self.constraints
+
+            result = pf(
+                _f,
+                np.copy(DE_result.x),
+                bounds=self.limits.T,
+                constraints=self.constraints
+            )
+
+            if not isinstance(result, OptimizeResult):
+                raise ValueError(
+                    "The result from a user defined polishing function "
+                     "should return an OptimizeResult."
                 )
 
             self._nfev += result.get("nfev", 0)
