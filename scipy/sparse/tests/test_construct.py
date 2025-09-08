@@ -406,13 +406,15 @@ class TestConstructUtils:
             construct.kron([[0], [1]], [[[0, 1]]])
         with pytest.raises(TypeError, match="expected 2D array or matrix"):
             construct.kron([[[1, 1]]], [[1], [1]])
+
         # no exception for 3D if any sparse arrays input
         construct.kron(coo_array([[[0, 1]]]), [[[0], [1]]])
         construct.kron([[[0, 1]]], coo_array([[[0], [1]]]))
+
         # no exception for 1D if either sparray or spmatrix
-        construct.kron([[0], [1]], [0, 1, 0])
+        construct.kron([[0], [1]], [0, 1, 0])  # spmatrix b/c lists; 1d-list -> 2d
         construct.kron([1, 1], [[1], [1]])
-        construct.kron([[0], [1]], coo_array([0, 1, 0]))
+        construct.kron([[0], [1]], coo_array([0, 1, 0]))  # sparray 1d-list -> 1d
         construct.kron(coo_array([1, 1]), [[1], [1]])
 
     def test_kron_large(self):

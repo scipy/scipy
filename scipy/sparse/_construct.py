@@ -553,8 +553,8 @@ def kron(A, B, format=None):
     """Sparse representation of the Kronecker product of `A` and `B`
 
     Computes the Kronecker product, a composite sparse array
-    made of blocks consisting of the second array scaled by each
-    element of the first array.
+    made of blocks consisting of the second input array multiplied
+    by each element of the first input array.
 
     Parameters
     ----------
@@ -625,26 +625,31 @@ def kron(A, B, format=None):
             return bsr_sparse((data, A.indices, A.indptr), shape=output_shape)
 
     # use COO
-    A = coo_sparse(A)
+    A = coo_sparse(A, copy=True)
 
     if coo_sparse is coo_matrix:
         output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
+        ndim_diff = 0
     else:
         ndim_diff = A.ndim - B.ndim
+        A_shape = A.shape if ndim_diff >= 0 else (1,) * (-ndim_diff) + A.shape
         B_shape = B.shape if ndim_diff <= 0 else (1,) * ndim_diff + B.shape
-        if ndim_diff < 0:
-            A = A.reshape((1,) * (-ndim_diff) + A.shape)
-        output_shape = tuple(a * b for a, b in zip(A.shape, B_shape))
+        output_shape = tuple(a * b for a, b in zip(A_shape, B_shape))
 
     if A.nnz == 0 or B.nnz == 0:
         # kronecker product is the zero matrix
         return coo_sparse(output_shape).asformat(format)
 
     # expand entries of a into blocks
+    data = A.data.repeat(B.nnz)
     idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
     coords = [np.asarray(co, dtype=idx_dtype).repeat(B.nnz) for co in A.coords]
-    data = A.data.repeat(B.nnz)
+    if ndim_diff < 0:
+        new_co = np.zeros_like(coords[0])
+        coords = [new_co] + [new_co.copy() for _ in range(-ndim_diff - 1)] + coords
 
+    # The last B.ndim coords need to be updated. Any previous columns in B are from
+    # prepending (1,)s, so coord from A is what we need (B coord axis is all 0)
     for co, B_shape_i in zip(coords[-B.ndim:], B.shape):
         co *= B_shape_i
 
