@@ -1123,6 +1123,16 @@ class TestFligner:
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
+    def test_trimmed_nonregression(self):
+        # This is a non-regression test
+        # Expected results are *not* from an external gold standard,
+        # we're just making sure the results remain consistent
+        # in the future in case of changes
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        assert_almost_equal(W, 15.953569890010614, 7)
+        assert_almost_equal(pval, 0.06785752327432863, 7)
+
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
     # there are ties, while in the other (because of normal rounding
