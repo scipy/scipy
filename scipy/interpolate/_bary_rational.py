@@ -40,8 +40,9 @@ class _BarycentricRational:
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
 
-    _axis = 0
-    def __init__(self, x, y, **kwargs):
+    def __init__(self, x, y, axis=0, **kwargs):
+        self._axis = axis
+
         # input validation
         z = np.asarray(x)
         f = np.asarray(y)
@@ -712,17 +713,16 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> plt.show()
     """
     def __init__(self, points, values, *, d=3, axis=0):
-        self._axis = axis
         super().__init__(points, values, d=d, axis=axis)
 
-    def _input_validation(self, x, y, d, axis):
+    def _input_validation(self, x, y, d):
         d = operator.index(d)
         if not (0 <= d < len(x)):
             raise ValueError("`d` must satisfy 0 <= d < n")
 
         super()._input_validation(x, y)
 
-    def _compute_weights(self, z, f, d, **_):
+    def _compute_weights(self, z, f, d):
         # Floater and Hormann 2007 Eqn. (18) 3 equations later
         w = np.zeros_like(z, dtype=np.result_type(z, 1.0))
         n = w.size
