@@ -457,6 +457,7 @@ class AAA(_BarycentricRational):
         errors = np.empty(max_terms, dtype=A.real.dtype)
         R = np.repeat(np.mean(f), M)
         ill_conditioned = False
+        ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
 
         # AAA iteration
         for m in range(max_terms):
@@ -486,8 +487,8 @@ class AAA(_BarycentricRational):
                     _, s, V = scipy.linalg.svd(
                         A[mask, : m + 1], full_matrices=False, check_finite=False,
                     )
-                    with np.errstate(invalid="ignore"):
-                        if s[0]/s[-1] > 1/(3*np.finfo(dtype).eps):
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        if s[0]/s[-1] > ill_conditioned_tol:
                             ill_conditioned = True
                 if ill_conditioned:
                     col_norm = np.linalg.norm(A[mask, : m + 1], axis=0)
