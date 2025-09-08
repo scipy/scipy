@@ -1289,7 +1289,8 @@ class DifferentialEvolutionSolver:
             _f = self.original_func
             if not callable(pf):
                 pf = partial(minimize, method=polish_method)
-                _f = lambda x: list(self._mapwrapper(self.func, np.atleast_2d(x)))[0]
+                def _f(x):
+                    return list(self._mapwrapper(self.func, np.atleast_2d(x)))[0]
 
                 if self.disp:
                     print(f"Polishing solution with '{polish_method}'")
