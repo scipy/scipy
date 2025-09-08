@@ -126,25 +126,6 @@ cdef inline double bdtrin(double s, double p, double pr) noexcept nogil:
     return get_result("btdtrin", argnames, result, status, bound, 1)
 
 
-cdef inline double chdtriv(double p, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[3]
-
-    if isnan(p) or isnan(x):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-
-    ret = cdfchi_which3(p, q, x)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("chdtriv", argnames, result, status, bound, 1)
-
-
 cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:
     cdef:
         double q = 1.0 - p
