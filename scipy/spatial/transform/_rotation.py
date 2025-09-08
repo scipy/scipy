@@ -2363,6 +2363,11 @@ class Rotation:
         The rotation is estimated with Kabsch algorithm [1]_, and solves what
         is known as the "pointing problem", or "Wahba's problem" [2]_.
 
+        Note that the length of each vector in this formulation acts as an
+        implicit weight. So for use cases where all vectors need to be
+        weighted equally, you should normalize them to unit length prior to
+        calling this method.
+
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
         `b` to `a` is returned.
@@ -2412,9 +2417,9 @@ class Rotation:
             optimal rotation.
             Note that the result will also be weighted by the vectors'
             magnitudes, so perfectly aligned vector pairs will have nonzero
-            `rssd` if they are not of the same length. So, depending on the
-            use case it may be desirable to normalize the input vectors to unit
-            length before calling this method.
+            `rssd` if they are not of the same length. This can be avoided by
+            normalizing them to unit length prior to calling this method, and
+            scaling the weights by the original vector magnitudes.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
