@@ -107,18 +107,21 @@ def lombscargle(
     Notes
     -----
     The algorithm used will not automatically account for any unknown y offset, unless
-    floating_mean is True. Therefore, for most use cases, if there is a possibility of
-    a y offset, it is recommended to set floating_mean to True. Furthermore,
-    floating_mean accounts for sample weights, and will also correct for any bias due
-    to consistently missing observations at peaks and/or troughs. The legacy concept of
-    "pre-centering" entails removing the mean from parameter `y` before processing,
-    i.e., passing ``y - y.mean()`` instead of setting the parameter `floating_mean` to
-    ``True``. When the normalize parameter is "amplitude", for any frequency in freqs
-    that is below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend
-    towards infinity. The concept of a "Nyquist frequency" limit (see Nyquist-Shannon
-    sampling theorem) is not generally applicable to unevenly sampled data. Therefore,
-    with unevenly sampled data, valid frequencies in freqs can often be much higher
-    than expected for those familiar with methods like FFT.
+    `floating_mean` is ``True``. Therefore, for most use cases, if there is a
+    possibility of a y offset, it is recommended to set `floating_mean` to True.
+    Furthermore, `floating_mean` accounts for sample weights, and will also correct for
+    any bias due to consistently missing observations at peaks and/or troughs.
+
+    The legacy concept of "pre-centering" entails removing the mean from parameter `y`
+    before processing, i.e., passing ``y - y.mean()`` instead of setting the parameter
+    `floating_mean` to ``True``.
+
+    When the normalize parameter is "amplitude", for any frequency in freqs that is
+    below ``(2*pi)/(x.max() - x.min())``, the predicted amplitude will tend towards
+    infinity. The concept of a "Nyquist frequency" limit (see Nyquist-Shannon sampling
+    theorem) is not generally applicable to unevenly sampled data. Therefore, with
+    unevenly sampled data, valid frequencies in freqs can often be much higher than
+    expected for those familiar with methods like FFT.
 
     References
     ----------
