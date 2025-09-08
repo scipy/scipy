@@ -55,7 +55,7 @@ cpdef double cbrt(double x0) noexcept nogil
 cpdef double chdtr(double x0, double x1) noexcept nogil
 cpdef double chdtrc(double x0, double x1) noexcept nogil
 cpdef double chdtri(double x0, double x1) noexcept nogil
-cpdef double chdtriv(double x0, double x1) noexcept nogil
+cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil

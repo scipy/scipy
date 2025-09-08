@@ -2155,4 +2155,51 @@ f_sf_double(double dfn, double dfd, double x)
 {
     return f_sf_wrap(dfn, dfd, x);
 }
+
+template<typename Real>
+Real
+chdtriv_wrap(const Real p, const Real x)
+{
+    if (std::isnan(p) || std::isnan(x)) {
+    return NAN;
+    }
+    if ((x <= 0) || (p < 0) || (p > 1)) {
+    sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+    y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+chdtriv_float(float p, float x)
+{
+    return chdtriv_wrap(p, x);
+}
+
+double
+chdtriv_double(double p, double x)
+{
+    return chdtriv_wrap(p, x);
+}
+
 #endif
