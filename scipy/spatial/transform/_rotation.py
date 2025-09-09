@@ -2611,7 +2611,7 @@ class Rotation:
         m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
         return "Rotation.from_matrix(" + "\n".join(m) + ")"
 
-    @xp_capabilities(jax_jit=False)
+    @xp_capabilities()
     def __iter__(self) -> Iterator[Rotation]:
         """Iterate over rotations."""
         if self._single or self._quat.ndim == 1:
