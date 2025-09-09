@@ -3450,6 +3450,7 @@ class TestHilbert2:
     @pytest.mark.parametrize('sh1', [6, 7])
     @pytest.mark.parametrize('sh2', [8, 9])
     @pytest.mark.parametrize('not_axis', [0, 1, 2])
+    @skip_xp_backends("cupy", reason="cupy implementation does not have axes kwarg")
     def test_3d_vs_slice(self, sh0, sh1, sh2, not_axis, xp):
         """2d transform on 3d array is equal to 2d transform on 2d slices."""
         x = xp.reshape(xp.arange(sh0 * sh1 * sh2, dtype=xp.float64), (sh0, sh1, sh2))
@@ -3461,6 +3462,7 @@ class TestHilbert2:
         x_as_2d = xp.stack(x_as_2d, axis=not_axis)
         xp_assert_close(x_as_3d, x_as_2d)
 
+    @skip_xp_backends("cupy", reason="cupy implementation does not have axes kwarg")
     def test_3d_axis_order(self, xp):
         """2d transform on equal arrays with moved axis are equal."""
         x0 = xp.reshape(xp.arange(5 * 7 * 9, dtype=xp.float64), (5, 7, 9))
