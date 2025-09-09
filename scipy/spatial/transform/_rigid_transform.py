@@ -1780,6 +1780,7 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return (self.__class__.from_matrix, (matrix,))
 
+    @xp_capabilities()
     def __iter__(self) -> Iterator[RigidTransform]:
         """Iterate over transforms."""
         if self._single or self._matrix.ndim == 2:

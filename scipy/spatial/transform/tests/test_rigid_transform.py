@@ -10,7 +10,6 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     is_numpy,
     xp_assert_close,
-    lazy_xp_function,
     make_xp_test_case,
     xp_assert_equal,
     xp_promote
@@ -1365,7 +1364,7 @@ def test_pickling(xp):
     xp_assert_close(tf.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-@make_xp_test_case(RigidTransform.as_matrix)
+@make_xp_test_case(RigidTransform.as_matrix, RigidTransform.__iter__)
 def test_rigid_transform_iter(xp):
     r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
     for i, r_i in enumerate(r):
@@ -1373,19 +1372,3 @@ def test_rigid_transform_iter(xp):
         xp_assert_equal(r_i.as_matrix(), r[i].as_matrix())
         if i > len(r):
             raise RuntimeError("Iteration exceeded length of transforms")
-
-
-def jitted_list(x):
-    """Test x.__iter__ inside jax.jit."""
-    return list(x)
-
-
-lazy_xp_function(jitted_list)
-
-
-@make_xp_test_case(RigidTransform.from_translation)
-def test_iter_jit(xp):
-    tf = RigidTransform.from_translation(xp.ones((2, 3)))
-    actual = jitted_list(tf)
-    assert isinstance(actual, list)
-    assert isinstance(actual[0], RigidTransform)
