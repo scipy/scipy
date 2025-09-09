@@ -805,8 +805,8 @@ class TestLevene:
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.levene(*args, center="mean")
-        assert_almost_equal(W, 2.15945985647285, 7)
-        assert_almost_equal(pval, 0.032236826559783, 7)
+        assert_allclose(W, 2.15945985647285, rtol=5e-14)
+        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
 
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
@@ -821,8 +821,8 @@ class TestLevene:
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
-        assert_almost_equal(W, 2.07712845686874, 7)
-        assert_almost_equal(pval, 0.0397269688035377, 7)
+        assert_allclose(W, 2.07712845686874, rtol=5e-14)
+        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
@@ -1130,8 +1130,8 @@ class TestFligner:
         # in the future in case of changes
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
-        assert_almost_equal(W, 15.953569890010614, 7)
-        assert_almost_equal(pval, 0.06785752327432863, 7)
+        assert_allclose(W, 15.953569890010614, rtol=5e-14)
+        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
 
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
