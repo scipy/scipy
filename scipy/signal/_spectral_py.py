@@ -108,7 +108,7 @@ def lombscargle(
     -----
     The algorithm used will not automatically account for any unknown y offset, unless
     `floating_mean` is ``True``. Therefore, for most use cases, if there is a
-    possibility of a y offset, it is recommended to set `floating_mean` to True.
+    possibility of a y offset, it is recommended to set `floating_mean` to ``True``.
     Furthermore, `floating_mean` accounts for sample weights, and will also correct for
     any bias due to consistently missing observations at peaks and/or troughs.
 
