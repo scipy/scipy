@@ -2136,7 +2136,11 @@ class _TestLinearFilter:
         self.base_bad_size_zi([1, 1, 1], [1], x2, 0, [[0, 1, 2, 3], [4, 5, 6, 7]], xp)
 
         self.base_bad_size_zi([1], [1, 1], x2, 0, [0, 1, 2], xp)
-        self.base_bad_size_zi([1], [1, 1], x2, 0, [[[0, 1, 2]]], xp)
+        # this case is disabled on the release branch
+        # because of:
+        # https://github.com/scipy/scipy/pull/23543#issuecomment-3276286172
+        # https://github.com/numpy/numpy/issues/29721
+        #self.base_bad_size_zi([1], [1, 1], x2, 0, [[[0, 1, 2]]], xp)
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[0], [1], [2]], xp)
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[0, 1]], xp)
         self.base_bad_size_zi([1], [1, 1], x2, 0, [[0, 1, 2, 3]], xp)
