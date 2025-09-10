@@ -2084,7 +2084,9 @@ class _TestLinearFilter:
         a = self.convert_dtype(a, xp)
         x = self.convert_dtype(x, xp)
         zi = self.convert_dtype(zi, xp)
-        assert_raises(ValueError, lfilter, b, a, x, axis, zi)
+        # NOTE: MemoryError is currently allowed below because of:
+        # https://github.com/numpy/numpy/issues/29721
+        assert_raises((ValueError, MemoryError), lfilter, b, a, x, axis, zi)
 
     @skip_xp_backends('cupy', reason='cupy does not raise')
     def test_bad_size_zi(self, xp):
