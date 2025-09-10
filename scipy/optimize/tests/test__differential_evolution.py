@@ -1654,11 +1654,31 @@ class TestDifferentialEvolutionSolver:
         def original_obj(x):
             return rosen(x - 2) + 2
 
-        res = differential_evolution(original_obj, self.bounds, polish=True)
-        res2 = differential_evolution(original_obj, self.bounds, polish=pf)
+        res = differential_evolution(original_obj, [(0, 10)] * 2, polish=True)
+        res2 = differential_evolution(original_obj, [(0, 10)] * 2, polish=pf)
 
-        assert_allclose(res.x - res2.fun, 2, rtol=1e-5)
-        assert_allclose(res.x - res2.x, np.ones(N), rtol=5e-5)
+        assert_allclose(res.fun - res2.fun, 2, rtol=1e-5)
+        assert_allclose(res2.x, res.x - 2, rtol=5e-5)
+
+        # check that output of polish==False followed by a manual polish
+        # is the same as a callable(polish). Limit maxiter on DE so polisher
+        # has to do all the work.
+        def pf(func, x, **kwds):
+            return minimize(func, x, method='L-BFGS-B', **kwds)
+
+        rng = np.random.default_rng(110980928209)
+        res = differential_evolution(
+            rosen, self.bounds, polish=False, rng=rng, maxiter=1
+        )
+        res = minimize(rosen, res.x, bounds=self.bounds, method='L-BFGS-B')
+        rng = np.random.default_rng(110980928209)
+        res2 = differential_evolution(
+            rosen, self.bounds, polish=pf, rng=rng, maxiter=1
+        )
+        # could possibly do assert_allequal, but not sure about bitwise exactness
+        # for repeated runs from same starting point
+        assert_allclose(res.x, res2.x)
+        assert_allclose(res.fun, res2.fun)
 
     def test_constraint_violation_error_message(self):
 
