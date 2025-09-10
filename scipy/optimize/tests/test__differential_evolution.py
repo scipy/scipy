@@ -1610,6 +1610,8 @@ class TestDifferentialEvolutionSolver:
 
     def test_polish_function(self):
         # the polishing may be done by a callable
+        N = len(self.bounds)
+
         pf = partial(
             minimize,
             jac=rosen_der,
@@ -1626,12 +1628,12 @@ class TestDifferentialEvolutionSolver:
         # The solution produced by DE would be bad after only one iteration.
         # However, we still expect a good answer if the polishing worked
         assert res.jac is not None
-        assert_allclose(res.x, np.ones(len(self.bounds)), atol=1e-6)
+        assert_allclose(res.x, np.ones(N), atol=1e-6)
 
         def dummy_pf(func, x, **kwds):
             assert "bounds" in kwds
             assert "constraints" in kwds
-            return np.ones(len(self.bounds))
+            return np.ones(N)
 
         with assert_raises(
             ValueError,
@@ -1643,6 +1645,20 @@ class TestDifferentialEvolutionSolver:
                 polish=dummy_pf,
                 maxiter=1
             )
+        # check that output of polish==True and callable(polish) has different outputs
+        # we can do that by swapping the objective function in the polishing
+        # routine
+        def pf(func, x, **kwds):
+            return minimize(rosen, x, **kwds)
+
+        def original_obj(x):
+            return rosen(x - 2) + 2
+
+        res = differential_evolution(original_obj, self.bounds, polish=True)
+        res2 = differential_evolution(original_obj, self.bounds, polish=pf)
+
+        assert_allclose(res.x - res2.fun, 2, rtol=1e-5)
+        assert_allclose(res.x - res2.x, np.ones(N), rtol=5e-5)
 
     def test_constraint_violation_error_message(self):
 
