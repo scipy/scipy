@@ -673,7 +673,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         else:
             doc['Parameters'].append(_keepdims_parameter_doc)
         doc['Notes'] += _standard_note_addition
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         axis_nan_policy_wrapper.__doc__ = str(doc)
 
         sig = inspect.signature(axis_nan_policy_wrapper)
