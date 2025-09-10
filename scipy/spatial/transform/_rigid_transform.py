@@ -387,7 +387,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = backend_registry.get(xp, xp_backend)
+        self._backend = select_backend(xp)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -546,7 +546,7 @@ class RigidTransform:
             raise ValueError(
                 "Rotations with more than 1 leading dimension are not supported."
             )
-        backend = backend_registry.get(xp, xp_backend)
+        backend = select_backend(xp)
         matrix = backend.from_rotation(quat)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -617,7 +617,7 @@ class RigidTransform:
         2
         """
         xp = array_namespace(translation)
-        backend = backend_registry.get(xp, xp_backend)
+        backend = select_backend(xp)
         matrix = backend.from_translation(translation)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -783,7 +783,7 @@ class RigidTransform:
                 "Expected `exp_coords` to have shape (6,), or (N, 6), "
                 f"got {exp_coords.shape}."
             )
-        backend = backend_registry.get(xp, xp_backend)
+        backend = select_backend(xp)
         matrix = backend.from_exp_coords(exp_coords)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -840,7 +840,7 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        backend = backend_registry.get(xp, xp_backend)
+        backend = select_backend(xp)
         matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -956,7 +956,9 @@ class RigidTransform:
                [3., 0., 0.]])
         """
         if isinstance(transforms, RigidTransform):
-            return RigidTransform(transforms.as_matrix(), normalize=False, copy=True)
+            return RigidTransform._from_raw_matrix(
+                transforms.as_matrix(), transforms._xp
+            )
         if not all(isinstance(x, RigidTransform) for x in transforms):
             raise TypeError("input must contain RigidTransform objects only")
 
@@ -1809,6 +1811,6 @@ class RigidTransform:
         tf._matrix = matrix
         tf._xp = xp
         if backend is None:
-            backend = backend_registry.get(xp, xp_backend)
+            backend = select_backend(xp)
         tf._backend = backend
         return tf
