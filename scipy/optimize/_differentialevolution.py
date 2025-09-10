@@ -1298,7 +1298,7 @@ class DifferentialEvolutionSolver:
             result = pf(
                 _f,
                 np.copy(DE_result.x),
-                bounds=self.limits.T,
+                bounds=Bounds(lb=self.limits[0], ub=self.limits[1]),
                 constraints=self.constraints
             )
 

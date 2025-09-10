@@ -1632,6 +1632,7 @@ class TestDifferentialEvolutionSolver:
 
         def dummy_pf(func, x, **kwds):
             assert "bounds" in kwds
+            assert isinstance(kwds["bounds"], Bounds)
             assert "constraints" in kwds
             return np.ones(N)
 
