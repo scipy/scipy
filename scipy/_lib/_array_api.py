@@ -777,7 +777,7 @@ def xp_capabilities(
         note = _make_capabilities_note(f.__name__, sphinx_capabilities)
         doc = FunctionDoc(f)
         doc['Notes'].append(note)
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc
         except AttributeError:
