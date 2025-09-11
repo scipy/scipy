@@ -135,6 +135,8 @@ depends-on = [{ task = "build", environment = "build" }]
 
 [feature.cuda]
 platforms = ["linux-64"]
+# XXX: JAX needs cuda 12 right now, CuPy seems to need cuda 13
+# so this feature is not included in the CuPy environment
 system-requirements = { cuda = "12" }
 
 [feature.cuda.dependencies]
@@ -178,9 +180,11 @@ depends-on = [{ task = "build", environment = "build" }]
 
 [feature.cupy]
 platforms = ["linux-64"]
+system-requirements = { cuda = "13" }
 
 [feature.cupy.dependencies]
 cupy = ">=13.6.0,<14"
+cuda-version = ">=13.0,<14"
 
 [feature.cupy.tasks.test-cupy]
 cmd = "spin test --no-build -b cupy -m 'array_api_backends and not slow'"
@@ -250,7 +254,7 @@ platforms = ["osx-arm64", "linux-64"]
 [feature.umfpack.dependencies]
 # scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564p
 scikit-umfpack = "==0.3.3"
-setuptools = "<67.5.0"
+setuptools = "<67"
 
 
 [feature.scikit-sparse]
@@ -343,7 +347,7 @@ depends-on = [{ task = "build", environment = "build" }]
 build = { features = ["build"], solve-group = "default-build" }
 lint = ["lint"]
 torch-cuda = { features = ["test", "cuda", "torch-cuda", "mkl"], solve-group = "cuda" }
-cupy = { features = ["test", "cupy"], solve-group = "cuda" }
+cupy = { features = ["test", "cupy"] }
 jax-cuda = { features = ["test", "cuda", "jax-cuda"], solve-group = "cuda" }
 torch = { features = ["test", "torch-cpu", "mkl"], solve-group = "mkl" }
 array-api-cpu = { features = [
