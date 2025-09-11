@@ -1326,8 +1326,8 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/idna-3.10-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/importlib-metadata-8.7.0-pyhe01879c_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/iniconfig-2.0.0-pyhd8ed1ab_1.conda
-      - conda: https://prefix.dev/conda-forge/noarch/jax-0.7.0-pyhd8ed1ab_0.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/jaxlib-0.7.0-cuda129py312h050a67a_200.conda
+      - conda: https://prefix.dev/conda-forge/noarch/jax-0.6.0-pyhd8ed1ab_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/jaxlib-0.6.0-cuda126py312hbc630d6_200.conda
       - conda: https://prefix.dev/conda-forge/linux-64/ld_impl_linux-64-2.44-h1423503_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libabseil-20250127.1-cxx17_hbbce691_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/libblas-3.9.0-35_hfdb39a5_mkl.conda
@@ -1848,7 +1848,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/scikit-sparse-0.4.14-py311ha630429_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/scikit-umfpack-0.3.3-py311ha9fec0b_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/scipy-1.16.1-py311h1e13796_1.conda
-      - conda: https://prefix.dev/conda-forge/noarch/setuptools-79.0.1-pyhff2d567_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/setuptools-67.4.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/sortedcontainers-2.4.0-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/spin-0.14-pyh574b699_2.conda
       - conda: https://prefix.dev/conda-forge/linux-64/suitesparse-5.10.1-h5a4f163_3.conda
@@ -1984,7 +1984,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/scikit-sparse-0.4.14-py311h5efcadd_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/scikit-umfpack-0.3.3-py311hefe60d2_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/scipy-1.16.1-py311h0a08e73_1.conda
-      - conda: https://prefix.dev/conda-forge/noarch/setuptools-79.0.1-pyhff2d567_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/setuptools-67.4.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/sigtool-0.1.3-h44b9a77_0.tar.bz2
       - conda: https://prefix.dev/conda-forge/noarch/sortedcontainers-2.4.0-pyhd8ed1ab_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/spin-0.14-pyh574b699_2.conda
@@ -5170,6 +5170,23 @@ packages:
   license_family: MIT
   size: 819937
   timestamp: 1680649567633
+- conda: https://prefix.dev/conda-forge/noarch/jax-0.6.0-pyhd8ed1ab_0.conda
+  sha256: 573a5582dfba84a8f67c351b6218cb9579cb8d0f6d4b4186a806852111d4a6f1
+  md5: bd364feb12c744cf5c60e1e5b586171b
+  depends:
+  - importlib-metadata >=4.6
+  - jaxlib >=0.6.0,<=0.6.0
+  - ml_dtypes >=0.5.0
+  - numpy >=1.25
+  - opt_einsum
+  - python >=3.10
+  - scipy >=1.11.1
+  constrains:
+  - cudnn >=9.8,<10.0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 1538293
+  timestamp: 1748688029463
 - conda: https://prefix.dev/conda-forge/noarch/jax-0.7.0-pyhd8ed1ab_0.conda
   sha256: c9dfa0d2fd5e42de88c8d2f62f495b6747a7d08310c4bbf94d0fa7e0dcaad573
   md5: cf9f37f6340f024ff8e3c3666de41bf5
@@ -5187,6 +5204,48 @@ packages:
   license_family: APACHE
   size: 1836006
   timestamp: 1753869796115
+- conda: https://prefix.dev/conda-forge/linux-64/jaxlib-0.6.0-cuda126py312hbc630d6_200.conda
+  sha256: d67fd06908390d26f5f507702d2260b0bd75cf27596bf6311e06c7020f710078
+  md5: 3de8a21a60c5cc5775f5feb1ddcda18b
+  depends:
+  - __cuda
+  - __glibc >=2.17,<3.0.a0
+  - cuda-cudart >=12.6.77,<13.0a0
+  - cuda-cupti >=12.6.80,<13.0a0
+  - cuda-cupti-dev
+  - cuda-nvcc-tools
+  - cuda-nvtx >=12.6.77,<13.0a0
+  - cuda-version >=12.6,<13
+  - cudnn >=9.10.1.4,<10.0a0
+  - libabseil * cxx17*
+  - libabseil >=20250127.1,<20250128.0a0
+  - libcublas >=12.6.4.1,<13.0a0
+  - libcublas-dev
+  - libcufft >=11.3.0.4,<12.0a0
+  - libcufft-dev
+  - libcurand >=10.3.7.77,<11.0a0
+  - libcurand-dev
+  - libcusolver >=11.7.1.2,<12.0a0
+  - libcusolver-dev
+  - libcusparse >=12.5.4.2,<13.0a0
+  - libcusparse-dev
+  - libgcc >=13
+  - libgrpc >=1.71.0,<1.72.0a0
+  - libstdcxx >=13
+  - libzlib >=1.3.1,<2.0a0
+  - ml_dtypes >=0.2.0
+  - nccl >=2.26.6.1,<3.0a0
+  - numpy >=1.19,<3
+  - openssl >=3.5.0,<4.0a0
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  - scipy >=1.9
+  constrains:
+  - jax >=0.6.0
+  license: Apache-2.0
+  license_family: APACHE
+  size: 147507034
+  timestamp: 1748663899155
 - conda: https://prefix.dev/conda-forge/linux-64/jaxlib-0.7.0-cpu_py312h73730d4_0.conda
   sha256: c656c067f62f8a02b12c269c329a2e6d8d6b627d4cce20e492607c83cab7d5ff
   md5: ea806e4824b4bf4f39ea2a2473552189
@@ -5210,48 +5269,6 @@ packages:
   license_family: APACHE
   size: 67334239
   timestamp: 1753586875514
-- conda: https://prefix.dev/conda-forge/linux-64/jaxlib-0.7.0-cuda129py312h050a67a_200.conda
-  sha256: 050a623696df4608511444c553ecc5bcfb91138bee7300dbf1818a9f46f737eb
-  md5: 26e23d94cfcbee0f9941fe26a073adba
-  depends:
-  - __cuda
-  - __glibc >=2.17,<3.0.a0
-  - cuda-cudart >=12.9.79,<13.0a0
-  - cuda-cupti >=12.9.79,<13.0a0
-  - cuda-cupti-dev
-  - cuda-nvcc-tools
-  - cuda-nvtx >=12.9.79,<13.0a0
-  - cuda-version >=12.9,<13
-  - cudnn >=9.10.1.4,<10.0a0
-  - libabseil * cxx17*
-  - libabseil >=20250127.1,<20250128.0a0
-  - libcublas >=12.9.1.4,<13.0a0
-  - libcublas-dev
-  - libcufft >=11.4.1.4,<12.0a0
-  - libcufft-dev
-  - libcurand >=10.3.10.19,<11.0a0
-  - libcurand-dev
-  - libcusolver >=11.7.5.82,<12.0a0
-  - libcusolver-dev
-  - libcusparse >=12.5.10.65,<13.0a0
-  - libcusparse-dev
-  - libgcc >=14
-  - libgrpc >=1.71.0,<1.72.0a0
-  - libstdcxx >=14
-  - libzlib >=1.3.1,<2.0a0
-  - ml_dtypes >=0.2.0
-  - nccl >=2.27.7.1,<3.0a0
-  - numpy >=1.23,<3
-  - openssl >=3.5.1,<4.0a0
-  - python >=3.12,<3.13.0a0
-  - python_abi 3.12.* *_cp312
-  - scipy >=1.9
-  constrains:
-  - jax >=0.7.0
-  license: Apache-2.0
-  license_family: APACHE
-  size: 164415101
-  timestamp: 1753595563368
 - conda: https://prefix.dev/conda-forge/osx-arm64/jaxlib-0.7.0-cpu_py313h3e4434d_0.conda
   sha256: f5e9f1e068e8689c11cf3d7045165c10277db41eb10b6ad5fa5d4b62802c141f
   md5: a14f6f9dcc4c030f549931f5a879cf59
@@ -9851,15 +9868,15 @@ packages:
   license_family: BSD
   size: 13967703
   timestamp: 1756530201442
-- conda: https://prefix.dev/conda-forge/noarch/setuptools-79.0.1-pyhff2d567_0.conda
-  sha256: 5ebc4bb71fbdc8048b08848519150c8d44b8eb18445711d3258c9d402ba87a2c
-  md5: fa6669cc21abd4b7b6c5393b7bc71914
+- conda: https://prefix.dev/conda-forge/noarch/setuptools-67.4.0-pyhd8ed1ab_0.conda
+  sha256: 7c58de8c7d98b341bd9be117feec64782e704fec5c30f6e14713ebccaab9b5d8
+  md5: c6f4b87020c72e2700e3e94c1fc93b70
   depends:
-  - python >=3.9
+  - python >=3.7
   license: MIT
   license_family: MIT
-  size: 787541
-  timestamp: 1745484086827
+  size: 580795
+  timestamp: 1677073500261
 - conda: https://prefix.dev/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
   sha256: 972560fcf9657058e3e1f97186cc94389144b46dbdf58c807ce62e83f977e863
   md5: 4de79c071274a53dcaf2a8c749d1499e

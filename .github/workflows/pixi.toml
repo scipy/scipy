@@ -201,8 +201,9 @@ jaxlib = { version = "*", build = "*cpu*" }
 platforms = ["linux-64"]
 
 [feature.jax-cuda.dependencies]
-jax = ">=0.7.0,<0.8"
-jaxlib = { version = ">=0.7.0,<0.8", build = "*cuda*" }
+# JAX 0.6.2 and 0.7.0 segfault on CUDA
+jaxlib = { version = ">=0.6.0,!=0.6.2,!=0.7.0", build = "cuda12*" }
+jax = ">=0.6.0"
 
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
 [feature.jax-cpu.target.unix.tasks.test-jax]
@@ -249,7 +250,7 @@ platforms = ["osx-arm64", "linux-64"]
 [feature.umfpack.dependencies]
 # scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564p
 scikit-umfpack = "==0.3.3"
-setuptools = "<80"
+setuptools = "<67.5.0"
 
 
 [feature.scikit-sparse]
