@@ -4,6 +4,7 @@
 
 from functools import reduce
 import random
+import sysconfig
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -503,7 +504,7 @@ class TestDlasd4:
             roots.append(res[1])
 
             assert_(
-                (res[3] <= 0), 
+                (res[3] <= 0),
                 f"LAPACK root finding dlasd4 failed to find the singular value {i}"
             )
         roots = np.array(roots)[::-1]
@@ -3495,6 +3496,9 @@ def test_sy_hetrs(mtype, dtype, lower):
 def test_sy_he_tri(dtype, lower, mtype):
     if mtype == 'he' and dtype in REAL_DTYPES:
         pytest.skip("hetri not for real dtypes.")
+    if sysconfig.get_platform() == 'win-arm64' and dtype in COMPLEX_DTYPES:
+        pytest.skip("Test segfaulting on win-arm64 in CI, see gh-23133")
+
     rng = np.random.default_rng(1723059677121834)
     n = 20
     A = rng.random((n, n)) + rng.random((n, n))*1j

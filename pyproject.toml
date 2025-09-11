@@ -84,7 +84,7 @@ classifiers = [
 
 [project.optional-dependencies]
 test = [
-    "pytest",
+    "pytest>=8.0.0",
     "pytest-cov",
     "pytest-timeout",
     "pytest-xdist",
