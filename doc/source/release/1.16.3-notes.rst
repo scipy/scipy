@@ -1,0 +1,23 @@
+==========================
+SciPy 1.16.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.16.3 is a bug-fix release with no new features
+compared to 1.16.2.
+
+
+
+Authors
+=======
+* Name (commits)
+
+
+Issues closed for 1.16.3
+------------------------
+
+
+
+Pull requests for 1.16.3
+------------------------
