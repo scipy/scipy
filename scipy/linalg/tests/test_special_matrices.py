@@ -186,8 +186,9 @@ class TestBlockDiag:
         # regression test for gh-4596: check the shape of the result
         # for empty matrix inputs. Empty matrices are no longer ignored
         # (gh-4908) it is viewed as a shape (1, 0) matrix.
+        dtype = xp.asarray(1).dtype
         a = block_diag(xp.asarray([[1, 0], [0, 1]]),
-                       xp.asarray([], dtype=xp.int64),
+                       xp.asarray([], dtype=dtype),
                        xp.asarray([[2, 3], [4, 5], [6, 7]]))
         xp_assert_equal(a, xp.asarray([[1, 0, 0, 0],
                                        [0, 1, 0, 0],
