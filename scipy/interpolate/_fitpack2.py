@@ -1416,8 +1416,9 @@ class SmoothBivariateSpline(BivariateSpline):
     and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
     of `bisplrep`.
 
-    For linear interpolation, prefer `LinearNDInterpolator`.
-    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
+    For linear interpolation, `LinearNDInterpolator` is preferred.
+    See `here
+    <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
     for discussion.
 
     """
