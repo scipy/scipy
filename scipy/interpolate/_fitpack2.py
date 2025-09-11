@@ -1418,7 +1418,7 @@ class SmoothBivariateSpline(BivariateSpline):
 
     For linear interpolation, `LinearNDInterpolator` is preferred.
     See `here
-    <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
+    <https://docs.scipy.org/doc/scipy/tutorial/interpolate/interp_transition_guide.html>`_
     for discussion.
 
     """
