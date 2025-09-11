@@ -147,7 +147,8 @@ class TestCompanion:
 @make_xp_test_case(block_diag)
 class TestBlockDiag:
     def test_basic(self, xp):
-        x = block_diag(xp.eye(2, dtype=xp.int64), xp.asarray([[1, 2], [3, 4], [5, 6]]),
+        dtype = xp.asarray(1).dtype
+        x = block_diag(xp.eye(2, dtype=dtype), xp.asarray([[1, 2], [3, 4], [5, 6]]),
                        xp.asarray([[1, 2, 3]]))
         xp_assert_equal(x, xp.asarray([[1, 0, 0, 0, 0, 0, 0],
                                        [0, 1, 0, 0, 0, 0, 0],
@@ -199,10 +200,11 @@ class TestBlockDiag:
         # test for gh-4908: check the shape of the result for
         # zero-sized matrix inputs, i.e. matrices with shape (0,n) or (n,0).
         # note that [[]] takes shape (1,0)
+        dtype = xp.asarray(1).dtype
         a = block_diag(xp.asarray([[1, 0], [0, 1]]),
-                       xp.asarray([[]], dtype=xp.int32),
+                       xp.asarray([[]], dtype=dtype),
                        xp.asarray([[2, 3], [4, 5], [6, 7]]),
-                       xp.zeros([0, 2], dtype=xp.int32))
+                       xp.zeros([0, 2], dtype=dtype))
         xp_assert_equal(a, xp.asarray([[1, 0, 0, 0, 0, 0],
                                        [0, 1, 0, 0, 0, 0],
                                        [0, 0, 0, 0, 0, 0],
