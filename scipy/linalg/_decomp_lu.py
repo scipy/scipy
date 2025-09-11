@@ -240,7 +240,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     Returns
     -------
-    **(If `permute_l` is ``False``)**
+    **(If** `permute_l` **is** ``False`` **)**
 
     p : (..., M, M) ndarray
         Permutation arrays or vectors depending on `p_indices`
@@ -250,7 +250,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     u : (..., K, N) ndarray
         Upper triangular or trapezoidal array
 
-    **(If `permute_l` is ``True``)**
+    **(If** `permute_l` **is** ``True`` **)**
 
     pl : (..., M, K) ndarray
         Permuted L matrix.
