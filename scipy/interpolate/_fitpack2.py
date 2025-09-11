@@ -1417,8 +1417,7 @@ class SmoothBivariateSpline(BivariateSpline):
     of `bisplrep`.
 
     For linear interpolation, `LinearNDInterpolator` is preferred.
-    See `here
-    <https://docs.scipy.org/doc/scipy/tutorial/interpolate/interp_transition_guide.html>`_
+    See :ref:`interp-transition-guide`.
     for discussion.
 
     """
