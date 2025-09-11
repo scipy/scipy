@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 
 import pytest
-from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal)
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
@@ -22,10 +22,14 @@ class TestLegendre:
         leg5 = special.legendre(5)
         assert_equal(leg0.c, [1])
         assert_equal(leg1.c, [1,0])
-        assert_almost_equal(leg2.c, np.array([3,0,-1])/2.0, decimal=13)
-        assert_almost_equal(leg3.c, np.array([5,0,-3,0])/2.0)
-        assert_almost_equal(leg4.c, np.array([35,0,-30,0,3])/8.0)
-        assert_almost_equal(leg5.c, np.array([63,0,-70,0,15,0])/8.0)
+        assert_allclose(leg2.c, np.array([3, 0, -1])/2.0,
+                        atol=1.5e-13, rtol=0)
+        assert_allclose(leg3.c, np.array([5, 0, -3, 0])/2.0,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(leg4.c, np.array([35, 0, -30, 0, 3])/8.0,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(leg5.c, np.array([63, 0, -70, 0, 15, 0])/8.0,
+                        atol=1.5e-7, rtol=0)
 
 class TestLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
@@ -675,10 +679,10 @@ class TestLegendreFunctions:
     """
 
     def test_lpmv(self):
-        lp = special.lpmv(0,2,.5)
-        assert_almost_equal(lp,-0.125,7)
-        lp = special.lpmv(0,40,.001)
-        assert_almost_equal(lp,0.1252678976534484,7)
+        lp = special.lpmv(0, 2, .5)
+        assert_allclose(lp, -0.125, atol=1.5e-7, rtol=0)
+        lp = special.lpmv(0, 40, .001)
+        assert_allclose(lp, 0.1252678976534484, atol=1.5e-7, rtol=0)
 
         # XXX: this is outside the domain of the current implementation,
         #      so ensure it returns a NaN rather than a wrong answer.
@@ -687,10 +691,10 @@ class TestLegendreFunctions:
         assert lp != 0 or np.isnan(lp)
 
     def test_lqmn(self):
-        lqmnf = special.lqmn(0,2,.5)
-        lqf = special.lqn(2,.5)
-        assert_array_almost_equal(lqmnf[0][0],lqf[0],4)
-        assert_array_almost_equal(lqmnf[1][0],lqf[1],4)
+        lqmnf = special.lqmn(0, 2, .5)
+        lqf = special.lqn(2, .5)
+        assert_allclose(lqmnf[0][0], lqf[0], atol=1.5e-4, rtol=0)
+        assert_allclose(lqmnf[1][0], lqf[1], atol=1.5e-4, rtol=0)
 
     def test_lqmn_gt1(self):
         """algorithm for real arguments changes at 1.0001
@@ -701,7 +705,7 @@ class TestLegendreFunctions:
         for x in (x0-delta, x0+delta):
             lq = special.lqmn(2, 1, x)[0][-1, -1]
             expected = 2/(x*x-1)
-            assert_almost_equal(lq, expected)
+            assert_allclose(lq, expected, atol=1.5e-7, rtol=0)
 
     def test_lqmn_shape(self):
         a, b = special.lqmn(4, 4, 1.1)
@@ -713,9 +717,10 @@ class TestLegendreFunctions:
         assert_equal(b.shape, (5, 1))
 
     def test_lqn(self):
-        lqf = special.lqn(2,.5)
-        assert_array_almost_equal(lqf,(np.array([0.5493, -0.7253, -0.8187]),
-                                       np.array([1.3333, 1.216, -0.8427])),4)
+        lqf = special.lqn(2, .5)
+        assert_allclose(lqf, (np.array([0.5493, -0.7253, -0.8187]),
+                              np.array([1.3333, 1.216, -0.8427])),
+                        atol=1.5e-4, rtol=0)
 
     @pytest.mark.parametrize("function", [special.lqn])
     @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
