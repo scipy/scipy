@@ -331,7 +331,7 @@ def leslie(f, s):
     return a
 
 
-@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
+@xp_capabilities(jax_jit=False)
 def block_diag(*arrs):
     """
     Create a block diagonal array from provided arrays.
@@ -413,7 +413,7 @@ def block_diag(*arrs):
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(block_shapes):
-        out[..., r:r + rr, c:c + cc] = arrs[i]
+        out = xpx.at(out)[..., r:r+rr, c:c+cc].set(arrs[i])
         r += rr
         c += cc
     return out
