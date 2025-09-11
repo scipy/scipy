@@ -331,7 +331,7 @@ def leslie(f, s):
     return a
 
 
-@xp_capabilities(jax_jit=False)
+@xp_capabilities(jax_jit=False, allow_dask_compute=1)
 def block_diag(*arrs):
     """
     Create a block diagonal array from provided arrays.
