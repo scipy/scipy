@@ -1838,6 +1838,7 @@ class _TestLinearFilter:
                      else self.dtype)
             return xp.asarray(arr, dtype=dtype)
 
+    @skip_xp_backends('cupy', reason='XXX https://github.com/scipy/scipy/issues/23539')
     def test_invalid_params(self, xp):
         """Verify all exceptions are raised. """
         b, a, x = xp.asarray([1]), xp.asarray([2]), xp.asarray([3, 4])
