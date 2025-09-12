@@ -1402,7 +1402,7 @@ cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.chdtriv"""
     if df_number_t is float:
         return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_float)(x0, x1)
-    if df_number_t is double:
+    elif df_number_t is double:
         return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_double)(x0, x1)
     else:
         return NAN
