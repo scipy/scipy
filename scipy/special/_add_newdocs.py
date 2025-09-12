@@ -1267,9 +1267,14 @@ add_newdoc("chdtriv",
     --------
     chdtr, chdtrc, chdtri
 
+    Notes
+    -----
+    This function wraps routines from the Boost Math C++ library [1]_.
+
     References
     ----------
-    .. [1] Chi-Square distribution,
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [2] Chi-Square distribution,
         https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
 
     Examples
