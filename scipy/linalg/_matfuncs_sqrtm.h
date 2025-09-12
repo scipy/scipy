@@ -13,6 +13,13 @@ void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, i
 
 static PyObject* sqrtm_error;
 
+// A simple destructor for buffer attached to a NumPy array via a capsule.
+static void
+capsule_destructor(PyObject *capsule) {
+    void *ptr = PyCapsule_GetPointer(capsule, NULL);
+    free(ptr);
+}
+
 /*
  * This function accepts an nD NumPy array of size (..., n, n) and, if possible,
  * computes the matrix square root for each (n, n) slice. The input must be at
@@ -117,9 +124,22 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
         // Quite unlikely but still allowed to fail
         if (!mem_ret_half) {
             free(mem_ret);
-            PYERR(sqrtm_error, "Memory reallocation failed.");
+            PYERR(sqrtm_error, "Memory reallocation failed in scipy.linalg.sqrtm.");
         }
         PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret_half);
+        if (ap_ret == NULL) {
+            free(mem_ret_half);
+            PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create numpy array from data.");
+        }
+
+        // Attach the buffer to a capsule
+        PyObject* capsule = PyCapsule_New(mem_ret_half, NULL, capsule_destructor);
+        if (capsule == NULL) {
+            Py_DECREF(ap_ret);
+            free(mem_ret_half);
+            PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create capsule.");
+        }
+        PyArray_SetBaseObject((PyArrayObject *)ap_ret, capsule);
         return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
 
     } else if ((input_type == NPY_FLOAT32) || (input_type == NPY_FLOAT64)) {
