@@ -175,7 +175,7 @@ def solve(a, b, lower=None, overwrite_a=False,
            [ 5. , -4.5]])
     """
     if assume_a in [
-        'sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded'
+        'sym', 'her', 'symmetric', 'hermitian', 'tridiagonal', 'banded'
     ]:
         # TODO: handle these structures in this function
         if lower is None:
@@ -189,7 +189,7 @@ def solve(a, b, lower=None, overwrite_a=False,
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
-        # 'diagonal': 11,
+        'diagonal': 11,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101, 'positive definite': 101,
@@ -1320,6 +1320,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
 
     =============================  ================================
      general                        'general' (or 'gen')
+     diagonal                       'diagonal'
      upper triangular               'upper triangular'
      lower triangular               'lower triangular'
      symmetric positive definite    'pos', 'pos upper', 'pos lower'
@@ -1327,6 +1328,8 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
 
     For the 'pos upper' and 'pos lower' options, only the specified
     triangle of the input matrix is used, and the other triangle is not referenced.
+    Likewise, an explicit `assume_a='diagonal'` means that off-diagonal elements
+    are not referenced.
 
     Parameters
     ----------
@@ -1400,8 +1403,8 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     # keep the numbers in sync with C
     structure = {
         None: -1,
-        'general': 0,
-        # 'diagonal': 11,
+        'general': 0, 'gen': 0,
+        'diagonal': 11,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101,
