@@ -1417,8 +1417,7 @@ class SmoothBivariateSpline(BivariateSpline):
     of `bisplrep`.
 
     For linear interpolation, `LinearNDInterpolator` is preferred.
-    See :ref:`interp-transition-guide`.
-    for discussion.
+    Consult the :ref:`interp-transition-guide` for discussion.
 
     """
 
