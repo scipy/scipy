@@ -48,8 +48,8 @@ jobs:
         shell: bash -l {0}
         working-directory: .github/workflows
         run: |
-          rm -rf subprojects/boost_math  # so will fail if system boost doesn't work
-          rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
+          rm -rf ../../subprojects/boost_math  # so will fail if system boost doesn't work
+          rm -rf ../../subprojects/qhull_r  # so will fail if system qhull doesn't work
           export OMP_NUM_THREADS=2
           pixi run test-system-libs -j2
 
