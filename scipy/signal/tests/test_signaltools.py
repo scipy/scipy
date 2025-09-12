@@ -4438,14 +4438,21 @@ class TestDeconvolve:
     def test_n_dimensional_signal(self, xp):
         recorded = xp.asarray([[0, 0], [0, 0]])
         impulse_response = xp.asarray([0, 0])
-        with pytest.raises(ValueError, match="signal must be 1-D."):
+        with pytest.raises(ValueError, match="^Parameter signal must be non-empty"):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_n_dimensional_divisor(self, xp):
         recorded = xp.asarray([0, 0])
         impulse_response = xp.asarray([[0, 0], [0, 0]])
-        with pytest.raises(ValueError, match="divisor must be 1-D."):
+        with pytest.raises(ValueError, match="^Parameter divisor must be non-empty"):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
+
+    def test_divisor_greater_signal(self, xp):
+        """Return signal as `remainder` when ``len(divisior) > len(signal)``. """
+        sig, div = xp.asarray([0, 1, 2]), xp.asarray([0, 1, 2, 4, 5])
+        quotient, remainder = signal.deconvolve(sig, div)
+        xp_assert_equal(remainder, sig)
+        assert xp_size(xp.asarray(quotient)) == 0
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])

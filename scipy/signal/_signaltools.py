@@ -2382,16 +2382,19 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
+    >>> remainder
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
     """
     xp = array_namespace(signal, divisor)
 
     num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
     den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
-    if num.ndim > 1:
-        raise ValueError("signal must be 1-D.")
-    if den.ndim > 1:
-        raise ValueError("divisor must be 1-D.")
+    if not (num.ndim == 1 and xp_size(num) > 0):
+        raise ValueError("Parameter signal must be non-empty 1d array, " +
+                         f"but its shape is {num.shape}!")
+    if not (den.ndim == 1 and xp_size(den) > 0):
+        raise ValueError("Parameter divisor must be non-empty 1d array, " +
+                         f"but its shape is {den.shape}!")
     N = num.shape[0]
     D = den.shape[0]
     if D > N:
