@@ -2178,14 +2178,17 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if zi is not None:
        zi = np.asarray(zi)
 
+    if not (b.ndim == 1 and xp_size(b) > 0):
+        raise ValueError(f"Parameter b is not a non-empty 1d array, since {b.shape=}!")
+    if not (a.ndim == 1 and xp_size(a) > 0):
+        raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
-        if b.ndim != 1 and a.ndim != 1:
-            raise ValueError('object of too small depth for desired array')
         x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
@@ -2193,7 +2196,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
             # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
-                raise ValueError('object of too small depth for desired array')
+                raise ValueError("Dimensions of parameters x and zi must match, but " +
+                                 f"{x.ndim=}, {zi.ndim=}!")
             expected_shape = list(x.shape)
             expected_shape[axis] = b.shape[0] - 1
             expected_shape = tuple(expected_shape)
@@ -2210,7 +2214,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     elif k != axis and zi.shape[k] == 1:
                         strides[k] = 0
                     else:
-                        raise ValueError('Unexpected shape for zi: expected '
+                        raise ValueError('Unexpected shape for parameter zi: expected '
                                          f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
@@ -2218,7 +2222,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError(f"input type '{dtype}' not supported")
+            raise NotImplementedError("Parameter's dtypes produced result type " +
+                                      f"'{dtype}', which is not supported!")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
