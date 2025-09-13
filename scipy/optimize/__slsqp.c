@@ -1,4 +1,5 @@
 #include "__slsqp.h"
+#include <stdio.h>
 
 void __nnls(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, int* restrict indices, const int maxiter, double* rnorm, int* info);
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
@@ -240,10 +241,18 @@ MODE1:
     }
     S->h1 = S->t - S->t0;
 
-    if ((S->h1 > (S->h3 / 10.0)) && (S->line <= 10))
+    if ((S->h1 > (S->h3 / 10.0) || S-> fnc_failure) && (S->line <= 10))
     {
         S->alpha = fmax(S->h3/(2.0*(S->h3 - S->h1)), alfmin);
         goto LINE_SEARCH;
+    } else if (S->line == 11 && S-> fnc_failure) {
+        // Prevents termination at a step when a fnc_failure occured &
+        //   reset to last viable point before linesearch started so
+        //   that the optimization does not exit to a point that can't
+        //   be evaluated
+        for (int i = 0; i < n; i++) { sol[i] = x0[i]; }
+        S->mode = 9;
+        return;
     }
 
     // Check convergence

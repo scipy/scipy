@@ -8,8 +8,9 @@ import pytest
 import numpy as np
 import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
-
+from scipy.optimize import (
+    fmin_slsqp, minimize, Bounds, NonlinearConstraint, AnalysisError
+)
 
 class MyCallBack:
     """pass a custom callback function
@@ -610,6 +611,103 @@ class TestSLSQP:
         # old Fortran code.
         res = minimize(f, x0, method='SLSQP', bounds=bounds)
         assert res.success
+    
+    def test_func_with_invalid_obj_region(self):
+        # Test where the objective function has regions where evaluation
+        # is not possible. The objective function is based on the Bean
+        # function defined in Engineering Design Optimization by Dr.
+        # Martins and Dr. Ning. The invalid regions is a periodic set of
+        # holes in the design space. The minima is in the valid design
+        # space.
+
+        # Tracks the number of invalid steps to ensure the test is valid
+        invalid_step_count = [0]
+
+        def fun(x):
+            if np.cos(2.0*x[0]) + np.cos(2.0*x[1]) > 0.5:
+                invalid_step_count[0] += 1
+                raise AnalysisError("Invalid Region")
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+        
+        res = minimize(fun, [2.0, 2.0], method="SLSQP")
+
+        # Ensures the optimization converges
+        assert res.success
+        np.testing.assert_allclose(res.fun, 0.09194, rtol=1e-3)
+        np.testing.assert_allclose(res.x, [1.2134, 0.82414], rtol=1e-3)
+
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert invalid_step_count[0] > 0
+
+    def test_func_with_value_error_fails(self):
+        # Test to ensure ValueError causes `minimize` to fail
+
+        def fun(x):
+            if x < 10:
+                raise ValueError()
+            return x**2
+        
+        with pytest.raises(ValueError):
+            minimize(fun, [10.0], method="SLSQP")
+
+    def test_func_with_invalid_con_region(self):
+        # Test where the constraint function has regions where evaluation
+        # is not possible. The objective function is based on the Bean
+        # function defined in Engineering Design Optimization by Dr.
+        # Martins and Dr. Ning. The invalid regions is a periodic set of
+        # holes in the design space. The minima is in the valid design
+        # space. The constraint is intentionally inactive.
+
+        # Tracks the number of invalid steps to ensure the test is valid
+        invalid_step_count = [0]
+
+        def fun(x):
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+        
+        def con(x):
+            if np.cos(2.0*x[0]) + np.cos(2.0*x[1]) > 0.5:
+                invalid_step_count[0] += 1
+                raise AnalysisError("Invalid Region")
+            return x[0] + 5
+        
+        res = minimize(fun, [2.0, 2.0], method="SLSQP", constraints=[
+            {"type": "ineq", "fun": con}
+        ])
+
+        # Ensures the optimization converges
+        assert res.success
+        np.testing.assert_allclose(res.fun, 0.09194, rtol=1e-3)
+        np.testing.assert_allclose(res.x, [1.2134, 0.82414], rtol=1e-3)
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert invalid_step_count[0] > 0
+
+    def test_func_with_minima_in_invalid_region(self):
+        # Test where the objective function has regions where evaluation
+        # is not possible anf the minima lies within this region. In this
+        # case, the optimization will fail and exit to the last point where
+        # the function evaluation was possible. The objective function is 
+        # based on the Bean function defined in Engineering Design
+        # Optimization by Dr. Martins and Dr. Ning.
+
+        def fun(x):
+            if x[0] < 2.0:
+                raise AnalysisError("Invalid Region")
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+
+        res = minimize(fun, [5.0, 10.0], method="SLSQP")
+
+        # Ensure optimization fails
+        assert not res.success
+        assert res.status == 9  # Iteration limit failure
+
+        # Check final point
+        assert res.x[0] >= 2  # Does not end in invalid region
+        fun(res.x)  # Ensure func can be evaluated without error at final point
+
+        # Check that the optimization exits near the border of the invalid region
+        assert res.x[0] < 2.1
 
 
 def test_slsqp_segfault_wrong_workspace_computation():
