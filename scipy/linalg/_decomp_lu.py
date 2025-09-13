@@ -240,23 +240,19 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     Returns
     -------
-    **(If `permute_l` is ``False``)**
+    (p, l, u) | (pl, u):
+        The tuple `(p, l, u)` is returned if `permute_l` is ``False`` (default) else
+        the tuple `(pl, u)` is returned, where:
 
-    p : (..., M, M) ndarray
-        Permutation arrays or vectors depending on `p_indices`
-    l : (..., M, K) ndarray
-        Lower triangular or trapezoidal array with unit diagonal.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
-
-    **(If `permute_l` is ``True``)**
-
-    pl : (..., M, K) ndarray
-        Permuted L matrix.
-        ``K = min(M, N)``
-    u : (..., K, N) ndarray
-        Upper triangular or trapezoidal array
+        p : (..., M, M) ndarray
+            Permutation arrays or vectors depending on `p_indices`.
+        l : (..., M, K) ndarray
+            Lower triangular or trapezoidal array with unit diagonal, where the last
+            dimension is ``K = min(M, N)``.
+        pl : (..., M, K) ndarray
+            Permuted L matrix with last dimension being ``K = min(M, N)``.
+        u : (..., K, N) ndarray
+            Upper triangular or trapezoidal array.
 
     Notes
     -----

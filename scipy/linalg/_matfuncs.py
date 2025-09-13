@@ -245,7 +245,7 @@ def expm(A):
 
     Notes
     -----
-    Implements the algorithm given in [1], which is essentially a Pade
+    Implements the algorithm given in [1]_, which is essentially a Pade
     approximation with a variable order that is decided based on the array
     data.
 
@@ -255,7 +255,7 @@ def expm(A):
 
     For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
     1-norm estimation and from that point on the estimation scheme given in
-    [2] is used to decide on the approximation order.
+    [2]_ is used to decide on the approximation order.
 
     References
     ----------
@@ -320,7 +320,7 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]_). However, without
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
     # here until we have a more stable implementation.
 
@@ -365,7 +365,7 @@ def expm(A):
         if s != 0:  # squaring needed
 
             if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
-                # This branch implements Code Fragment 2.1 of [1]
+                # This branch implements Code Fragment 2.1 of [1]_
 
                 diag_aw = np.diag(aw)
                 # einsum returns a writable view
