@@ -214,11 +214,15 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create capsule.");
     }
 
-    PyArray_SetBaseObject((PyArrayObject *)ap_ret, capsule);
+    // For ref counting of the memory
+    if (PyArray_SetBaseObject(ap_ret, capsule) == -1) {
+        Py_DECREF(ap_ret);
+        free(mem_ret);
+        PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to set array's base.");
+    }
 
     // Return the result
     return Py_BuildValue("Ndi", PyArray_Return(ap_ret), rnorm, info);
-
 }
 
 
