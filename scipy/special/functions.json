@@ -152,8 +152,10 @@
         }
     },
     "chdtriv": {
-        "_cdflib_wrappers.pxd": {
-            "chdtriv": "dd->d"        }
+        "boost_special_functions.h++": {
+            "chdtriv_float": "ff->f",
+            "chdtriv_double": "dd->d"
+        }
     },
     "chndtr": {
         "boost_special_functions.h++": {
