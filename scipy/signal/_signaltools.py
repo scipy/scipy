@@ -2222,9 +2222,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            p_types = tuple(p_.dtype.char for p_ in inputs)
-            raise NotImplementedError("Parameter dtypes must be convertible to one of "
-                                      f"'fdgFDGO'! Given input dtypes are {p_types}.")
+            raise NotImplementedError("Parameter's dtypes produced result type " +
+                                      f"'{dtype}', which is not supported!")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)

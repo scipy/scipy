@@ -1850,7 +1850,7 @@ class _TestLinearFilter:
             lfilter(b, xp.eye(2), x)  # a not one-dimensional
         with pytest.raises(ValueError, match="^Parameter a is not"):
             lfilter(b, xp.asarray([]), x)  # a empty
-        with pytest.raises(NotImplementedError, match="^Parameter dtypes must be "):
+        with pytest.raises(NotImplementedError, match="^Parameter's dtypes produced "):
             b, a, x = (xp.astype(v_, xp.uint64, copy=False) for v_ in (b, a, x))
             lfilter(b, a, x)  # fails with uint64 dtype
 
