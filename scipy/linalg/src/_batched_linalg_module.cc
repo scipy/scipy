@@ -10,19 +10,23 @@
 static PyObject* _linalg_inv_error;
 
 
+PyObject* 
+convert_vec_status(SliceStatusVec& vec_status);
+
+
 static PyObject*
 _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject* ap_Am = NULL;
     PyArrayObject *ap_Ainv = NULL;
-    CBLAS_INT info = 0;
-    int isIllconditioned = 0;
-    int isSingular = 0;
+    int info = 0;
+    SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a;
+    int lower;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, ("O!|np"), &PyArray_Type, (PyObject **)&ap_Am, &structure, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, ("O!|npp"), &PyArray_Type, (PyObject **)&ap_Am, &structure, &overwrite_a, &lower)) {
         return NULL;
     }
 
@@ -63,28 +67,29 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_Ainv);
     switch(typenum) {
         case(NPY_FLOAT32):
-            _inverse<float>(ap_Am, (float *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _inverse<float>(ap_Am, (float *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            _inverse<double>(ap_Am, (double *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _inverse<double>(ap_Am, (double *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, lower, overwrite_a, vec_status);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
     }
 
-    if(info < 0) {
+    if (info < 0) {
         // Either OOM or internal LAPACK error.
         Py_DECREF(ap_Ainv);
-        PYERR(PyExc_RuntimeError, "Internal LAPACK failure in scipy.linalg.inv.")
+        PYERR(PyExc_RuntimeError, "Memory error in scipy.linalg.inv.")
     }
+    PyObject *ret_lst = convert_vec_status(vec_status);
 
-    return Py_BuildValue("Niii", PyArray_Return(ap_Ainv), isIllconditioned, isSingular, info);
+    return Py_BuildValue("NN", PyArray_Return(ap_Ainv), ret_lst);
 }
 
 
@@ -96,8 +101,7 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     PyArrayObject *ap_x = NULL;
     int info = 0;
-    int isIllconditioned = 0;
-    int isSingular = 0;
+    SliceStatusVec vec_status;
     St structure = St::NONE;
     int overwrite_a = 0;
     int transposed = 0;
@@ -155,29 +159,62 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
         case(NPY_FLOAT32):
-            _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _solve<float>(ap_Am, ap_b, (float *)buf, structure, lower, transposed, overwrite_a, vec_status);
             break;
         case(NPY_FLOAT64):
-            _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _solve<double>(ap_Am, ap_b, (double *)buf, structure, lower, transposed, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX64):
-            _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, lower, transposed, overwrite_a, vec_status);
             break;
         case(NPY_COMPLEX128):
-            _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+            info = _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, lower, transposed, overwrite_a, vec_status);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
     }
 
-    if(info < 0) {
+    if (info < 0) {
         // Either OOM or internal LAPACK error.
         Py_DECREF(ap_x);
-        PYERR(PyExc_RuntimeError, "Internal LAPACK failure in scipy.linalg.solve.")
+        PYERR(PyExc_RuntimeError, "Memory error in scipy.linalg.solve.")
     }
+    PyObject *ret_lst = convert_vec_status(vec_status);
+
+    return Py_BuildValue("NN", PyArray_Return(ap_x), ret_lst);
+}
 
 
-    return Py_BuildValue("Niii", PyArray_Return(ap_x), isIllconditioned, isSingular, info);
+
+/*
+ * Helper: convert a vector of slice error statuses to list of dicts
+ */
+PyObject* 
+convert_vec_status(SliceStatusVec& vec_status) {
+    PyObject *ret_dct = NULL;
+    PyObject *ret_lst = NULL;
+
+    if (vec_status.empty()) {
+        ret_lst = PyList_New(0);
+    } else {
+        // Problems detected in some slices, report.
+
+        ret_lst = PyList_New(0);
+        for (size_t i=0; i<vec_status.size(); i++) {
+            SliceStatus status = vec_status[i];
+            ret_dct = Py_BuildValue(
+                "{s:n,s:n,s:i,s:i,s:d,s:n}",
+                "num", status.slice_num,
+                "structure", status.structure,
+                "is_singular", status.is_singular,
+                "is_ill_conditioned", status.is_ill_conditioned,
+                "rcond", status.rcond,
+                "lapack_info", status.lapack_info
+            );
+            PyList_Append(ret_lst, ret_dct);
+        }
+    }
+    return ret_lst;
 }
 
 
