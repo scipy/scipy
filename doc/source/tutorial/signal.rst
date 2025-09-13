@@ -1477,7 +1477,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
        :label: eq_STFT_windowing
 
        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
-                \quad m = 0, \ldots M-1\ ,
+                \quad m = 0, \ldots, M-1\ ,
 
    where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e., it is
    the mid point of the window (`m_num_mid`). For notational convenience,

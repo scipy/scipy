@@ -991,9 +991,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     Parameters
     ----------
     func : {callable, scipy.LowLevelCallable}
-        The function to be integrated. Has arguments of ``x0, ... xn``,
-        ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
-        which must be floats.  Where ``t0, ... tm`` are extra arguments
+        The function to be integrated. Has arguments of ``x0, ..., xn``,
+        ``t0, ..., tm``, where integration is carried out over ``x0, ..., xn``,
+        which must be floats.  Where ``t0, ..., tm`` are extra arguments
         passed in args.
         Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
         Integration is carried out in order.  That is, integration over ``x0``
@@ -1017,7 +1017,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
         either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ... tn``, required by ``func``, ``ranges``,
+        Additional arguments ``t0, ..., tn``, required by ``func``, ``ranges``,
         and ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or

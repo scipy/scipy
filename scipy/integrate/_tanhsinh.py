@@ -109,7 +109,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
         of `a`, `b`, and all elements of `args` (which is conceptually
-        distinct from ``xi` and ``argsi`` passed into `f`).
+        distinct from ``xi`` and ``argsi`` passed into `f`).
 
         - When ``preserve_shape=False`` (default), `f` must accept arguments
           of *any* broadcastable shapes.
@@ -149,12 +149,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         status : int array
             An integer representing the exit status of the algorithm.
 
-            ``0`` : The algorithm converged to the specified tolerances.
-            ``-1`` : (unused)
-            ``-2`` : The maximum number of iterations was reached.
-            ``-3`` : A non-finite value was encountered.
-            ``-4`` : Iteration was terminated by `callback`.
-            ``1`` : The algorithm is proceeding normally (in `callback` only).
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : (unused)
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : Iteration was terminated by `callback`.
+            - ``1`` : The algorithm is proceeding normally (in `callback` only).
 
         integral : float array
             An estimate of the integral.

@@ -3012,7 +3012,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
         The sample data, possibly with different lengths. Only one-dimensional
         samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
-        Which function of the data to use in the test.  The default
+        Which statistics to use to center data points within each sample.  Default
         is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
@@ -3102,11 +3102,10 @@ def levene(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+
 
     for j in range(k):
         Ni[j] = len(samples[j])
@@ -3167,8 +3166,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     sample1, sample2, ... : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
-        Keyword argument controlling which function of the data is used in
-        computing the test statistic.  The default is 'median'.
+        Which statistics to use to center data points within each sample. Default
+        is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
@@ -3201,19 +3200,14 @@ def fligner(*samples, center='median', proportiontocut=0.05):
 
     References
     ----------
-    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
+    .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized 
+           estimating equations using quadratic inference functions. 
+           Biometrika, 87(4), 823-836. 
+           :doi:`10.1093/biomet/87.4.823`
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. Journal of the American Statistical Association.
            71(353), 210-213.
-    .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-    .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
+    .. [3] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
            applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
@@ -3269,11 +3263,9 @@ def fligner(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(sample, proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
 
     Ni = asarray([len(samples[j]) for j in range(k)])
     Yci = asarray([func(samples[j]) for j in range(k)])
