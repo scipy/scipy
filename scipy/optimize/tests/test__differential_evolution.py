@@ -1612,23 +1612,22 @@ class TestDifferentialEvolutionSolver:
         # the polishing may be done by a callable
         N = len(self.bounds)
 
-        pf = partial(
-            minimize,
-            jac=rosen_der,
-            bounds=self.bounds,
-            method='trust-constr',
-        )
-        res = differential_evolution(
-            rosen,
-            self.bounds,
-            polish=pf,
-            maxiter=1
-        )
+        def pf(fun, x, **kwds):
+            pf.res = minimize(fun, x, jac=rosen_der, method='trust-constr', **kwds)
+            return pf.res
+        pf.res = None
+
+        res = differential_evolution(rosen, self.bounds, polish=pf, maxiter=1, rng=0)
+        ref = differential_evolution(rosen, self.bounds, polish=True, maxiter=1, rng=0)
+
         # res.success will be False because of the small number of iterations
         # The solution produced by DE would be bad after only one iteration.
         # However, we still expect a good answer if the polishing worked
         assert res.jac is not None
         assert_allclose(res.x, np.ones(N), atol=1e-6)
+        # test that the `pf` callable is really used; it's not just truthy
+        assert res.fun == pf.res.fun
+        assert ref.fun != res.fun
 
         def dummy_pf(func, x, **kwds):
             assert "bounds" in kwds
@@ -1646,20 +1645,6 @@ class TestDifferentialEvolutionSolver:
                 polish=dummy_pf,
                 maxiter=1
             )
-        # check that output of polish==True and callable(polish) has different outputs
-        # we can do that by swapping the objective function in the polishing
-        # routine
-        def pf(func, x, **kwds):
-            return minimize(rosen, x, **kwds)
-
-        def original_obj(x):
-            return rosen(x - 2) + 2
-
-        res = differential_evolution(original_obj, [(0, 10)] * 2, polish=True)
-        res2 = differential_evolution(original_obj, [(0, 10)] * 2, polish=pf)
-
-        assert_allclose(res.fun - res2.fun, 2, rtol=1e-5)
-        assert_allclose(res2.x, res.x - 2, rtol=5e-5)
 
         # check that output of polish==False followed by a manual polish
         # is the same as a callable(polish). Limit maxiter on DE so polisher
