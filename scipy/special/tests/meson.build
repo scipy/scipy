@@ -18,6 +18,7 @@ python_sources = [
   'test_faddeeva.py',
   'test_gamma.py',
   'test_gammainc.py',
+  'test_gen_harmonic.py',
   'test_hyp2f1.py',
   'test_hypergeometric.py',
   'test_iv_ratio.py',
