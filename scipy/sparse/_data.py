@@ -27,7 +27,7 @@ class _data_matrix(_spbase):
 
     @dtype.setter
     def dtype(self, newtype):
-        self.data.dtype = newtype
+        self.data = self.data.view(newtype)
 
     def _deduped_data(self):
         if hasattr(self, 'sum_duplicates'):
