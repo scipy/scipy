@@ -8,7 +8,7 @@ from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
     _RealParameter, _Parameterization, _combine_docs)
 
-__all__ = ['Normal', 'Uniform', 'Binomial']
+__all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial']
 
 
 class Normal(ContinuousDistribution):
@@ -198,6 +198,76 @@ class StandardNormal(Normal):
 
     def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
+
+
+class Logistic(ContinuousDistribution):
+    r"""Standard logistic distribution.
+
+    The probability density function of the standard logistic distribution is:
+
+    .. math::
+
+        f(x) = \frac{1}{\left( e^{x / 2} + e^{-x / 2} \right)^2}
+
+    """
+    _x_support = _RealInterval(endpoints=(-inf, inf))
+    _variable = _x_param = _RealParameter('x', domain=_x_support, typical=(-9, 9))
+    _parameterizations = ()
+
+    _scale = np.pi / np.sqrt(3)
+
+    def _logpdf_formula(self, x, **kwargs):
+        y = -np.abs(x)
+        return y - 2 * special.log1p(np.exp(y))
+
+    def _pdf_formula(self, x, **kwargs):
+        # f(x) = sech(x / 2)**2 / 4
+        return (.5 / np.cosh(x / 2))**2
+
+    def _logcdf_formula(self, x, **kwargs):
+        return special.log_expit(x)
+
+    def _cdf_formula(self, x, **kwargs):
+        return special.expit(x)
+
+    def _logccdf_formula(self, x, **kwargs):
+        return special.log_expit(-x)
+
+    def _ccdf_formula(self, x, **kwargs):
+        return special.expit(-x)
+
+    def _icdf_formula(self, x, **kwargs):
+        return special.logit(x)
+
+    def _iccdf_formula(self, x, **kwargs):
+        return -special.logit(x)
+
+    def _entropy_formula(self, **kwargs):
+        return 2.0
+
+    def _logentropy_formula(self, **kwargs):
+        return np.log(2)
+
+    def _median_formula(self, **kwargs):
+        return 0
+
+    def _mode_formula(self, **kwargs):
+        return 0
+
+    def _moment_raw_formula(self, order, **kwargs):
+        n = int(order)
+        if n % 2:
+            return 0.0
+        return np.pi**n * abs((2**n - 2) * float(special.bernoulli(n)[-1]))
+
+    def _moment_central_formula(self, order, **kwargs):
+        return self._moment_raw_formula(order, **kwargs)
+
+    def _moment_standardized_formula(self, order, **kwargs):
+        return self._moment_raw_formula(order, **kwargs) / self._scale**order
+
+    def _sample_formula(self, full_shape, rng, **kwargs):
+        return rng.logistic(size=full_shape)[()]
 
 
 # currently for testing only
