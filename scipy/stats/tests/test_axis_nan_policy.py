@@ -812,7 +812,7 @@ def test_check_empty_inputs():
                 if output is not None:
                     with warnings.catch_warnings():
                         warnings.filterwarnings(
-                            "ignore", "Mean of empty slice.", RuntimeWarning)
+                            "ignore", "Mean of empty slice", RuntimeWarning)
                         warnings.filterwarnings(
                             "ignore", "invalid value encountered", RuntimeWarning)
                         reference = samples[0].mean(axis=axis)
