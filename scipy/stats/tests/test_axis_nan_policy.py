@@ -783,7 +783,7 @@ def test_check_empty_inputs():
                                                                     axis)
                 if output is not None:
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(RuntimeWarning, "Mean of empty slice.")
+                        sup.filter(RuntimeWarning, "Mean of empty slice")
                         sup.filter(RuntimeWarning, "invalid value encountered")
                         reference = samples[0].mean(axis=axis)
                     np.testing.assert_equal(output, reference)
