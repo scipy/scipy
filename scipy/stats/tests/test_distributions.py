@@ -6127,6 +6127,23 @@ class TestLevyStable:
                     verbose=False
                 )
 
+    @pytest.mark.parametrize(
+        "param, alpha, beta, xs, expected",
+        [
+            (0, 1.6, 1.0, [-15.0, -14.0, -13.0], [-187.14442, -157.14116, -130.35267]),
+            (1, 1.6, 1.0, [-15.0, -14.0, -13.0], [-165.02031, -137.36717, -112.82235]),
+            (0, 1.4, -1.0, [13.0, 14.0, 15.0], [-367.19433, -464.70496, -579.43993]),
+            (1, 1.4, -1.0, [13.0, 14.0, 15.0], [-258.12165, -334.61399, -426.07241]),
+        ],
+    )
+    def test_logpdf_tail(self, param, alpha, beta, xs, expected):
+        # gh-20636
+        # Test levy_stable.logpdf accuracy in the tails when beta=1 or beta=-1
+        # for both S0/S1 parameterizations.
+        stats.levy_stable.parameterization = f"S{param}"
+        logpdfs = stats.levy_stable(alpha=alpha, beta=beta).logpdf(xs)
+        assert_allclose(logpdfs, expected, rtol=1e-5)
+
     @pytest.mark.parametrize("param", [0, 1])
     @pytest.mark.parametrize("case", ["pdf", "cdf"])
     def test_location_scale(
