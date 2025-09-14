@@ -75,7 +75,8 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
 
 @pytest.mark.parametrize('ctor', (np.array, csr_array, csc_array))
-@pytest.mark.parametrize('dtype', _dtypes)
+@pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                   np.complex64, np.complex128])
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
 def test_svdp(ctor, dtype, irl, which):

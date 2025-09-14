@@ -2,7 +2,7 @@
 
 #include <float.h>
 #include <math.h>
-
+#include <stdio.h>
 #include "common.h"
 #include "getu0.h"
 #include "lanbpro.h"
