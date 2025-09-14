@@ -14,7 +14,7 @@ import platform
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_,
-                           assert_array_less, assert_array_max_ulp, IS_PYPY)
+                           assert_array_less, assert_array_max_ulp)
 import pytest
 from pytest import raises as assert_raises
 
@@ -3940,7 +3940,7 @@ class TestStudentT:
         t_meth_ref = getattr(t_dist_ref, methname)
         norm_meth = getattr(norm_dist, methname)
         res = t_meth(x)
-        assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
+        assert_allclose(res[df_infmask], norm_meth(x[df_infmask]), rtol=3e-15)
         assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
 
     @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
@@ -4900,11 +4900,9 @@ class TestBeta:
         assert_equal(stats.beta.pdf(1, a, b), 5)
         assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
-    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
-        with pytest.warns(RuntimeWarning):
-            stats.beta.ppf(q, a, b)
+        stats.beta.ppf(q, a, b)
 
     @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
     @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])

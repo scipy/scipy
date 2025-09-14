@@ -10,7 +10,7 @@ from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
 from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
-from scipy.optimize import rosen, minimize
+from scipy.optimize import rosen, minimize, rosen_der
 from scipy.sparse import csr_array
 from scipy import stats
 
@@ -1606,6 +1606,64 @@ class TestDifferentialEvolutionSolver:
                                       polish=False)
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
+
+    def test_polish_function(self):
+        # the polishing may be done by a callable
+        N = len(self.bounds)
+
+        def pf(fun, x, **kwds):
+            pf.res = minimize(fun, x, jac=rosen_der, method='trust-constr', **kwds)
+            return pf.res
+        pf.res = None
+
+        res = differential_evolution(rosen, self.bounds, polish=pf, maxiter=1, rng=0)
+        ref = differential_evolution(rosen, self.bounds, polish=True, maxiter=1, rng=0)
+
+        # res.success will be False because of the small number of iterations
+        # The solution produced by DE would be bad after only one iteration.
+        # However, we still expect a good answer if the polishing worked
+        assert res.jac is not None
+        assert_allclose(res.x, np.ones(N), atol=1e-6)
+        # test that the `pf` callable is really used; it's not just truthy
+        assert res.fun == pf.res.fun
+        assert ref.fun != res.fun
+
+        def dummy_pf(func, x, **kwds):
+            assert "bounds" in kwds
+            assert isinstance(kwds["bounds"], Bounds)
+            assert "constraints" in kwds
+            return np.ones(N)
+
+        with assert_raises(
+            ValueError,
+            match="The result from a user defined polishing"
+        ):
+            differential_evolution(
+                rosen,
+                self.bounds,
+                polish=dummy_pf,
+                maxiter=1
+            )
+
+        # check that output of polish==False followed by a manual polish
+        # is the same as a callable(polish). Limit maxiter on DE so polisher
+        # has to do all the work.
+        def pf(func, x, **kwds):
+            return minimize(func, x, method='L-BFGS-B', **kwds)
+
+        rng = np.random.default_rng(110980928209)
+        res = differential_evolution(
+            rosen, self.bounds, polish=False, rng=rng, maxiter=1
+        )
+        res = minimize(rosen, res.x, bounds=self.bounds, method='L-BFGS-B')
+        rng = np.random.default_rng(110980928209)
+        res2 = differential_evolution(
+            rosen, self.bounds, polish=pf, rng=rng, maxiter=1
+        )
+        # could possibly do assert_allequal, but not sure about bitwise exactness
+        # for repeated runs from same starting point
+        assert_allclose(res.x, res2.x)
+        assert_allclose(res.fun, res2.fun)
 
     def test_constraint_violation_error_message(self):
 

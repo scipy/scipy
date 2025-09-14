@@ -1838,6 +1838,22 @@ class _TestLinearFilter:
                      else self.dtype)
             return xp.asarray(arr, dtype=dtype)
 
+    @skip_xp_backends('cupy', reason='XXX https://github.com/scipy/scipy/issues/23539')
+    def test_invalid_params(self, xp):
+        """Verify all exceptions are raised. """
+        b, a, x = xp.asarray([1]), xp.asarray([2]), xp.asarray([3, 4])
+        with pytest.raises(ValueError, match="^Parameter b is not"):
+            lfilter(xp.eye(2), a, x)  # b not one-dimensional
+        with pytest.raises(ValueError, match="^Parameter b is not"):
+            lfilter(xp.asarray([]), a, x)  # b empty
+        with pytest.raises(ValueError, match="^Parameter a is not"):
+            lfilter(b, xp.eye(2), x)  # a not one-dimensional
+        with pytest.raises(ValueError, match="^Parameter a is not"):
+            lfilter(b, xp.asarray([]), x)  # a empty
+        with pytest.raises(NotImplementedError, match="^Parameter's dtypes produced "):
+            b, a, x = (xp.astype(v_, xp.uint64, copy=False) for v_ in (b, a, x))
+            lfilter(b, a, x)  # fails with uint64 dtype
+
     def test_rank_1_IIR(self, xp):
         x = self.generate((6,), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -4438,14 +4454,21 @@ class TestDeconvolve:
     def test_n_dimensional_signal(self, xp):
         recorded = xp.asarray([[0, 0], [0, 0]])
         impulse_response = xp.asarray([0, 0])
-        with pytest.raises(ValueError, match="signal must be 1-D."):
+        with pytest.raises(ValueError, match="^Parameter signal must be non-empty"):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
     def test_n_dimensional_divisor(self, xp):
         recorded = xp.asarray([0, 0])
         impulse_response = xp.asarray([[0, 0], [0, 0]])
-        with pytest.raises(ValueError, match="divisor must be 1-D."):
+        with pytest.raises(ValueError, match="^Parameter divisor must be non-empty"):
             quotient, remainder = signal.deconvolve(recorded, impulse_response)
+
+    def test_divisor_greater_signal(self, xp):
+        """Return signal as `remainder` when ``len(divisior) > len(signal)``. """
+        sig, div = xp.asarray([0, 1, 2]), xp.asarray([0, 1, 2, 4, 5])
+        quotient, remainder = signal.deconvolve(sig, div)
+        xp_assert_equal(remainder, sig)
+        assert xp_size(xp.asarray(quotient)) == 0
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])

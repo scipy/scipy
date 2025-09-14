@@ -161,7 +161,7 @@ def findfreqs(num, den, N, kind='ba'):
     )
 
     # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
-    # depending on the the floating-point jitter in -1.5
+    # depending on the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
     lfreq = xp.round(
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge

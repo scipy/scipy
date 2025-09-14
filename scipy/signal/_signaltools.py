@@ -2178,14 +2178,17 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if zi is not None:
        zi = np.asarray(zi)
 
+    if not (b.ndim == 1 and xp_size(b) > 0):
+        raise ValueError(f"Parameter b is not a non-empty 1d array, since {b.shape=}!")
+    if not (a.ndim == 1 and xp_size(a) > 0):
+        raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
-        if b.ndim != 1 and a.ndim != 1:
-            raise ValueError('object of too small depth for desired array')
         x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
@@ -2193,7 +2196,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
             # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
-                raise ValueError('object of too small depth for desired array')
+                raise ValueError("Dimensions of parameters x and zi must match, but " +
+                                 f"{x.ndim=}, {zi.ndim=}!")
             expected_shape = list(x.shape)
             expected_shape[axis] = b.shape[0] - 1
             expected_shape = tuple(expected_shape)
@@ -2210,7 +2214,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     elif k != axis and zi.shape[k] == 1:
                         strides[k] = 0
                     else:
-                        raise ValueError('Unexpected shape for zi: expected '
+                        raise ValueError('Unexpected shape for parameter zi: expected '
                                          f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
@@ -2218,7 +2222,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError(f"input type '{dtype}' not supported")
+            raise NotImplementedError("Parameter's dtypes produced result type " +
+                                      f"'{dtype}', which is not supported!")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -2382,16 +2387,19 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
+    >>> remainder
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
     """
     xp = array_namespace(signal, divisor)
 
     num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
     den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
-    if num.ndim > 1:
-        raise ValueError("signal must be 1-D.")
-    if den.ndim > 1:
-        raise ValueError("divisor must be 1-D.")
+    if not (num.ndim == 1 and xp_size(num) > 0):
+        raise ValueError("Parameter signal must be non-empty 1d array, " +
+                         f"but its shape is {num.shape}!")
+    if not (den.ndim == 1 and xp_size(den) > 0):
+        raise ValueError("Parameter divisor must be non-empty 1d array, " +
+                         f"but its shape is {den.shape}!")
     N = num.shape[0]
     D = den.shape[0]
     if D > N:
@@ -4072,8 +4080,11 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data : bool, optional
-        If True, perform in place detrending and avoid a copy. Default is False
+    overwrite_data: bool, optional
+        If True, allow in place detrending and avoid a copy. Default is
+        False. In place modification applies only if ``type == 'linear'``
+        and `data` is of the floating point dtype ``float32``, ``float64``,
+        ``complex64`` or ``complex128``.
 
     Returns
     -------
@@ -4940,10 +4951,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape = x_shape
+    x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
-        zi.shape = zi_shape
+        zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
@@ -5055,7 +5066,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
-    zi.shape = [n_sections] + zi_shape
+    zi = zi.reshape([n_sections] + zi_shape)
     x_0 = axis_slice(ext, stop=1, axis=axis)
     (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)
