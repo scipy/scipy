@@ -137,8 +137,9 @@ To run only a single benchmark, such as ``KleeMinty`` from
    asv run --bench optimize_linprog.KleeMinty
 
 .. note::
+
     Support for ``asv.conf.jsonc`` as a default config file path was added in
-    ``asv v0.6.5`` (TBC). If developers must use an older version of ``asv``, they should
+    ``asv v0.6.5``. If developers must use an older version of ``asv``, they should
     include ``--config=asv.conf.jsonc`` in their commands.
 
 .. note::

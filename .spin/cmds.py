@@ -797,8 +797,9 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             bold=True, fg="bright_green"
         )
         cmd = [
-            'asv', 'run',
-            '--dry-run', '--show-stderr', '--python=same', '--config=asv.conf.jsonc'
+            'asv', 'run', '--dry-run', '--show-stderr',
+            # https://github.com/airspeed-velocity/asv/issues/1537
+            # '--python=same',
         ] + bench_args
         _run_asv(cmd)
     else:

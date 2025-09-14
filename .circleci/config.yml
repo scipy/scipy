@@ -76,8 +76,7 @@ jobs:
           command: |
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
-            pip install git+https://github.com/airspeed-velocity/asv.git
-            pip install py-rattler
+            pip install py-rattler asv
             pip install mpmath gmpy2 pooch threadpoolctl spin
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -152,12 +151,13 @@ jobs:
           command: |
             export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
             cd benchmarks
-            asv machine --machine CircleCI --config asv.conf.jsonc
+            asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.jsonc run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            asv --config asv.conf.jsonc publish
+            # https://github.com/airspeed-velocity/asv/issues/1537
+            time asv run -m CircleCI --quick --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            asv publish
 
       - store_artifacts:
           path: benchmarks/html
