@@ -4,7 +4,6 @@ Unit tests for the differential global minimization algorithm.
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
 import warnings
-from functools import partial
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)

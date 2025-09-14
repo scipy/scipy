@@ -2,6 +2,7 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
+from functools import partial
 import warnings
 
 import numpy as np
