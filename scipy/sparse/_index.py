@@ -2,7 +2,7 @@
 """
 import numpy as np
 from ._sputils import isintlike
-from ._base import _spbase, sparray, issparse
+from ._base import sparray, issparse
 
 INT_TYPES = (int, np.integer)
 
