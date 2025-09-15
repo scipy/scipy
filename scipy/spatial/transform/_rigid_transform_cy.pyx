@@ -34,9 +34,9 @@ def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
     # not accumulate floating point error during composition.
     last_row_ok = np.all(mat[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
     if np.any(~last_row_ok):
-        ind = np.where(~last_row_ok)[0][0]
-        raise ValueError(f"Expected last row of transformation matrix {ind} to be "
-                            f"exactly [0, 0, 0, 1], got {mat[ind, 3, :]}.")
+        raise ValueError(
+            "Expected last row of transformation matrix to be exactly [0, 0, 0, 1]."
+        )
 
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
@@ -75,8 +75,9 @@ def from_translation(translation):
     translation = np.asarray(translation, dtype=float)
 
     if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
-        raise ValueError("Expected `translation` to have shape (3,), or (N, 3), "
-                            f"got {translation.shape}.")
+        raise ValueError(
+            f"Expected `translation` to have shape (..., 3), got {translation.shape}."
+        )
 
     # If a single translation vector is given, convert it to a 2D 1 x 3 matrix
     single = False

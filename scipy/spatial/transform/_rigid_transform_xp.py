@@ -37,12 +37,8 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     # We delay lazy branch checks until after normalization to avoid overwriting nans
     # with the rotation matrix
     if not lazy and xp.any(~last_row_ok):
-        last_row_ok = xpx.atleast_nd(last_row_ok, ndim=1, xp=xp)
-        matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
-        ind = int(xp.nonzero(~last_row_ok)[0][0])
         raise ValueError(
-            f"Expected last row of transformation matrix {ind} to be "
-            f"exactly [0, 0, 0, 1], got {matrix[ind, 3, xp.arange(4)]}."
+            "Expected last row of transformation matrix to be exactly [0, 0, 0, 1]."
         )
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
@@ -72,10 +68,9 @@ def from_rotation(quat: Array) -> Array:
 def from_translation(translation: Array) -> Array:
     xp = array_namespace(translation)
 
-    if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
+    if translation.shape[-1] != 3:
         raise ValueError(
-            "Expected `translation` to have shape (3,), or (N, 3), "
-            f"got {translation.shape}."
+            f"Expected `translation` to have shape (..., 3), got {translation.shape}."
         )
     device = xp_device(translation)
     dtype = xp_result_type(translation, force_floating=True, xp=xp)
