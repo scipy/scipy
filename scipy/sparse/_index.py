@@ -2,7 +2,7 @@
 """
 import numpy as np
 from ._sputils import isintlike
-from ._base import sparray, issparse
+from ._base import _spbase, sparray, issparse
 
 INT_TYPES = (int, np.integer)
 
@@ -165,7 +165,10 @@ class IndexMixin:
         row, col = index
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
-            x = np.asarray(x, dtype=self.dtype)
+            if isinstance(x, _spbase | sparray):
+                x = x.toarray()
+            else:
+                x = np.asarray(x, dtype=self.dtype)
             if x.size != 1:
                 raise ValueError('Trying to assign a sequence to an item')
             self._set_intXint(row, col, x.flat[0])
