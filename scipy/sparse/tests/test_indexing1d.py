@@ -76,7 +76,11 @@ class TestGetSet1D:
         with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
             A.__getitem__((4,))
 
-    @pytest.mark.parametrize("scalar_container", [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x], ids=["sparse", "dense", "scalar"])
+    @pytest.mark.parametrize(
+        "scalar_container",
+        [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x],
+        ids=["sparse", "dense", "scalar"]
+    )
     def test_setelement(self, spcreator, scalar_container):
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
