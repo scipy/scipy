@@ -3024,7 +3024,7 @@ class TestVectorizedFilter:
         res = ndimage.vectorized_filter(input, xp.mean, size=1)
         xp_assert_equal(res, input)
 
-    @pytest.mark.filterwarnings("ignore:Mean of empty slice.:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:Mean of empty slice:RuntimeWarning")
     def test_edge_cases(self, xp):
         rng = np.random.default_rng(4835982345234982)
         function = xp.mean
