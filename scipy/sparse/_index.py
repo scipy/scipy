@@ -165,7 +165,7 @@ class IndexMixin:
         row, col = index
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
-            if isinstance(x, _spbase | sparray):
+            if issparse(x):
                 x = x.toarray()
             else:
                 x = np.asarray(x, dtype=self.dtype)
