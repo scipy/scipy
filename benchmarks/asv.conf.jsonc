@@ -50,7 +50,9 @@
         "pytest": [ ],
         "pythran": [ ],
         "pybind11": [ ],
-        "meson-python": [ ]
+        "meson-python": [ ],
+        "pyfftw": [ ],
+        "cffi": [ ]
     },
 
     // The directory (relative to the current directory) that benchmarks are
