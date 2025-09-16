@@ -395,7 +395,7 @@ interface is self-documenting, so please see ``spin --help`` and
 
     Editable installs are supported via ``spin install``.
     When making changes to SciPy code, including to compiled code, there is no
-    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    need to manually rebuild or reinstall. However, should you need to run ``git clean -xdf``,
     which removes the built extension modules, remember to also uninstall SciPy
     with ``pip uninstall scipy``.
 
