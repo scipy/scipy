@@ -249,24 +249,20 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
 
     ioption = np.array((int(bool(cgs)), int(bool(elr))), dtype='i')
 
-    # If computing `u` or `v` (left and right singular vectors,
-    # respectively), `blocksize` controls how large a fraction of the
-    # work is done via fast BLAS level 3 operations.  A larger blocksize
-    # may lead to faster computation at the expense of greater memory
-    # consumption.  `blocksize` must be ``>= 1``.  Choosing blocksize
-    # of 16, but docs don't specify; it's almost surely a
-    # power of 2.
-    blocksize = 32
+    # PROPACK uses a few LAPACK functions that require sufficiently large
+    # work arrays to utilize BLAS level 3 operations. In almost all relevant
+    # architectures, the blocksize is 32 or 64. We use 32 here to be on
+    # the conservative side.
+    NB = 32
 
     # Determine lwork & liwork:
     # the required lengths are specified in the PROPACK documentation
     if compute_u or compute_v:
-        lwork = m + n + 9*kmax + 5*kmax*kmax + 4 + max(
-            3*kmax*kmax + 4*kmax + 4,
-            blocksize*max(m, n))
+        lwork = m + n + 5*kmax**2 + 9*kmax + 4
+        lwork += max(3*kmax**2 + 4*kmax + 4, NB*max(m, n))
         liwork = 8*kmax
     else:
-        lwork = m + n + 9*kmax + 2*kmax*kmax + 4 + max(m + n, 4*kmax + 4)
+        lwork = m + n + 9*kmax + 2*kmax**2 + 4 + max(m + n, 4*kmax + 4)
         liwork = 2*kmax + 2
     work = np.empty(lwork, dtype=typ.lower())
     iwork = np.empty(liwork, dtype=np.int32)
@@ -276,17 +272,14 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     iparm = np.empty(1, dtype=np.int32)
 
     if typ.isupper():
-        # PROPACK documentation is unclear on the required length of zwork.
-        # Use the same length Julia's wrapper uses
-        # see https://github.com/JuliaSmoothOptimizers/PROPACK.jl/
-        zwork = np.empty(m + n + 32*m, dtype=typ)
+        zwork = np.empty(m + n + kmax, dtype=typ)
         works = work, zwork, iwork
     else:
         works = work, iwork
 
     # Generate the seed for the PROPACK random float generator.
-    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max, size=4,
-                             dtype=np.uint64)
+    rng_state = rng.integers(low=0, high=np.iinfo(np.int64).max,
+                             size=4, dtype=np.uint64)
 
     if irl_mode:
         info = lansvd_irl(_which_converter[which], jobu,
