@@ -4,11 +4,9 @@
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
 	url = https://github.com/scipy/PROPACK.git
-	shallow = true
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
-	shallow = true
 [submodule "scipy/_lib/array_api_compat"]
 	path = scipy/_lib/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
@@ -27,12 +25,10 @@
 [submodule "subprojects/highs"]
 	path = subprojects/highs
 	url = https://github.com/scipy/HiGHs
-	shallow = true
 
 [submodule "subprojects/boost_math/math"]
 	path = subprojects/boost_math/math
 	url = https://github.com/boostorg/math.git
-	shallow = true
 
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
