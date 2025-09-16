@@ -19,3 +19,7 @@ jobs:
       - name: Setup compiler cache
         id: cache-ccache
         uses: actions/cache@5a3ec84eff66
+        with:
+          path: ${{ steps.prep-ccache.outputs.dir }}
+          key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+          restore-keys: ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
