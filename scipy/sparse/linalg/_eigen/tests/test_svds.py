@@ -175,8 +175,8 @@ class SVDSCommonTests:
                                   shape=(n - 1, n))
         n = 100
         diff0_func_aslo = diff0_func_aslo_def(n)
-        # preserve a use of legacy keyword `random_state` during SPEC 7 transition
-        u, s, _ = svds(diff0_func_aslo, k=3, which='SM', random_state=0)
+        rng = np.random.default_rng(1758043640965324)
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM', rng=rng)
         se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
         ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
                                      np.arange(1, 4)) / n)
