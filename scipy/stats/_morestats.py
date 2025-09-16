@@ -3200,9 +3200,9 @@ def fligner(*samples, center='median', proportiontocut=0.05):
 
     References
     ----------
-    .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized 
-           estimating equations using quadratic inference functions. 
-           Biometrika, 87(4), 823-836. 
+    .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized
+           estimating equations using quadratic inference functions.
+           Biometrika, 87(4), 823-836.
            :doi:`10.1093/biomet/87.4.823`
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. Journal of the American Statistical Association.
@@ -4480,7 +4480,6 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     ----------
     ps : 1D array_like
         The p-values to adjust. Elements must be real numbers between 0 and 1.
-        Inputs do not need to be sorted.
     axis : int
         The axis along which to perform the adjustment. The adjustment is
         performed independently along each axis-slice. If `axis` is None, `ps`
@@ -4497,7 +4496,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     ps_adusted : array_like
         The adjusted p-values. If the null hypothesis is rejected where these
         fall below a specified level, the false discovery rate is controlled
-        at that level. Will be in same order as `ps`.
+        at that level.
 
     See Also
     --------
@@ -4608,6 +4607,13 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     of the fourth null hypothesis was particularly important to the original
     study as it led to the conclusion that the new treatment had a
     "substantially lower in-hospital mortality rate."
+
+    For simplicity of exposition, the p-values in the example above were given in
+    sorted order, but this is not required; `false_discovery_control` returns
+    adjusted p-values in order corresponding with the input `ps`.
+
+    >>> stats.false_discovery_control([0.5, 0.6, 0.1, 0.001])
+    array([0.6  , 0.6  , 0.2  , 0.004])
 
     """
     # Input Validation and Special Cases
