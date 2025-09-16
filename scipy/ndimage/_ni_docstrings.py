@@ -109,7 +109,7 @@ _mode_interp_constant_doc = (
     'grid-wrap' (`a b c d | a b c d | a b c d`)
         The input is extended by wrapping around to the opposite edge.
 
-    'wrap' (`d b c d | a b c d | b c a b`)
+    'wrap' (`c d b c | a b c d | b c a b`)
         The input is extended by wrapping around to the opposite edge, but in a
         way such that the last point and initial point exactly overlap. In this
         case it is not well defined which sample will be chosen at the point of
