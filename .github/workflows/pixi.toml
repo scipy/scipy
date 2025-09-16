@@ -112,7 +112,7 @@ cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
 [feature.accelerate-ilp64.tasks.build-accelerate]
-cmd = "spin build --build-dir=build-accelerate S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cmd = "spin build --build-dir=build-accelerate -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
 cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 
