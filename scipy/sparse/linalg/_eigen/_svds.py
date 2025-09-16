@@ -1,10 +1,9 @@
 import math
 import numbers
-from random import seed
 import numpy as np
 from . import eigsh
 
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import _transition_to_rng
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
@@ -193,7 +192,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     singular vectors are computed as the eigenvalues and eigenvectors of the
     corresponding Gram matrix, either ``A.conj().T @ A`` or ``A @ A.conj().T``,
     depending on which one is computationally cheaper. It is then followed by
-    the Rayleigh-Ritz method as postprocessing; see Using the normal matrix, 
+    the Rayleigh-Ritz method as postprocessing; see Using the normal matrix,
     in Rayleigh-Ritz method, (2022, Nov. 19), Wikipedia, https://w.wiki/4zms.
 
     Alternatively, the PROPACK solver can be called.
