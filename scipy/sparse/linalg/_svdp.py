@@ -1,18 +1,3 @@
-"""
-Python wrapper for PROPACK
---------------------------
-
-PROPACK is a collection of Fortran routines for iterative computation
-of partial SVDs of large matrices or linear operators.
-
-Based on BSD licensed pypropack project:
-  http://github.com/jakevdp/pypropack
-  Author: Jake Vanderplas <vanderplas@astro.washington.edu>
-
-PROPACK source is BSD licensed, and available at
-  http://soi.stanford.edu/~rmunk/PROPACK/
-"""
-
 __all__ = ['_svdp']
 
 import numpy as np
@@ -21,6 +6,7 @@ from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
 from . import _propack  # type: ignore[attr-defined]
+
 
 _lansvd_dict = {
     'f': _propack.slansvd,
@@ -36,6 +22,7 @@ _lansvd_irl_dict = {
     'F': _propack.clansvd_irl,
     'D': _propack.zlansvd_irl,
 }
+
 
 _which_converter = {
     'LM': 1,
@@ -181,9 +168,9 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
     except KeyError:
         # work with non-supported types using native system precision
         if np.iscomplexobj(np.empty(0, dtype=typ)):
-            typ = np.dtype(complex).char
+            typ = 'D'
         else:
-            typ = np.dtype(float).char
+            typ = 'd'
         lansvd_irl = _lansvd_irl_dict[typ]
         lansvd = _lansvd_dict[typ]
 
