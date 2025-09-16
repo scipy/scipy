@@ -651,9 +651,18 @@ class levy_stable_gen(rv_continuous):
     .. math::
 
         \varphi(t, \alpha, \beta, c, \mu) =
-        e^{it\mu -|ct|^{\alpha}(1-i\beta\operatorname{sign}(t)\Phi(\alpha, t))}
+        e^{it\mu -|ct|^{\alpha}(1-i\beta\operatorname{sign}(t)\Phi)}
 
-    where two different parameterizations are supported. The first :math:`S_1`:
+    where
+
+    - :math:`\alpha` is the stability parameter (:math:`0 < \alpha \le 2`),
+    - :math:`\beta` is the skewness parameter (:math:`-1 \le \beta \le 1`),
+    - :math:`c` is the scale parameter (:math:`c > 0`),
+    - :math:`\mu` is the location parameter (:math:`-\infty < \mu < \infty`).
+
+    Two parameterizations of :math:`\Phi` are supported.
+
+    The :math:`S_1` parameterization (default):
 
     .. math::
 
@@ -662,7 +671,7 @@ class levy_stable_gen(rv_continuous):
                 -{\frac {2}{\pi }}\log |t|&\alpha =1
                 \end{cases}
 
-    The second :math:`S_0`:
+    The :math:`S_0` parameterization:
 
     .. math::
 
@@ -679,7 +688,7 @@ class levy_stable_gen(rv_continuous):
 
         f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
 
-    where :math:`-\infty < t < \infty`. This integral does not have a known
+    where :math:`-\infty < x < \infty`. This integral does not have a known
     closed form.
 
     `levy_stable` generalizes several distributions.  Where possible, they

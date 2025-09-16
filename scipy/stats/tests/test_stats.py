@@ -3552,7 +3552,7 @@ class TestMoments:
         else:
             with warnings.catch_warnings():  # needed by array_api_strict
                 warnings.filterwarnings(
-                    "ignore", "Mean of empty slice.", RuntimeWarning)
+                    "ignore", "Mean of empty slice", RuntimeWarning)
                 warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
                 test_cases()
 
