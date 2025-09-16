@@ -1,4 +1,6 @@
 import math
+import numbers
+from random import seed
 import numpy as np
 from . import eigsh
 
@@ -87,13 +89,24 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
     if return_singular not in rs_options:
         raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
-    rng = check_random_state(rng)
+    if isinstance(rng, numbers.Integral | np.integer):
+        rng = np.random.default_rng(rng)
+    elif isinstance(rng, np.random.RandomState):
+        rng = np.random.default_rng(rng)
+    elif rng is None:
+        rng = np.random.default_rng()
+    elif isinstance(rng, np.random.Generator):
+        pass
+    else:
+        raise ValueError(f"'{rng}' is neither a NumPy Generator nor an integer seed"
+                         " to instantiate one. For future-proofing, prefer to use a"
+                         " NumPy Generator.")
 
     return (A, k, ncv, tol, which, v0, maxiter,
             return_singular, solver, rng)
 
 
-@_transition_to_rng("random_state", position_num=9)
+@_transition_to_rng("random_state", position_num=9, end_version="1.19.0")
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
          solver='arpack', rng=None, options=None):
@@ -176,21 +189,17 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Notes
     -----
-    This is a naive implementation using ARPACK or LOBPCG as an eigensolver
-    on the matrix ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on
-    which one is smaller size, followed by the Rayleigh-Ritz method
-    as postprocessing; see
-    Using the normal matrix, in Rayleigh-Ritz method, (2022, Nov. 19),
-    Wikipedia, https://w.wiki/4zms.
+    When ARPACK or LOBPCG is selected as the method, the singular values and
+    singular vectors are computed as the eigenvalues and eigenvectors of the
+    corresponding Gram matrix, either ``A.conj().T @ A`` or ``A @ A.conj().T``,
+    depending on which one is computationally cheaper. It is then followed by
+    the Rayleigh-Ritz method as postprocessing; see Using the normal matrix, 
+    in Rayleigh-Ritz method, (2022, Nov. 19), Wikipedia, https://w.wiki/4zms.
 
     Alternatively, the PROPACK solver can be called.
 
-    Choices of the input matrix `A` numeric dtype may be limited.
-    Only ``solver="lobpcg"`` supports all floating point dtypes
-    real: 'np.float32', 'np.float64', 'np.longdouble' and
-    complex: 'np.complex64', 'np.complex128', 'np.clongdouble'.
-    The ``solver="arpack"`` supports only
-    'np.float32', 'np.float64', and 'np.complex128'.
+    Dtype of `A` is mapped, if possible, to float(32,64) and complex(64,128)
+    for internal computations.
 
     Examples
     --------
