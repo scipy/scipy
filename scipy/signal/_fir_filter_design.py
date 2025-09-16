@@ -279,10 +279,12 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         that this is different from the behavior of `~scipy.signal.iirdesign`,
         where the cutoff is the half-power point (-3 dB).
     width : float or None, optional
-        If `width` is not ``None``, then assume it is the approximate width
-        of the transition region (expressed in the same units as `fs`)
-        for use in Kaiser FIR filter design. In this case, the `window`
-        argument is ignored.
+        If not ``None``, then a `~scipy.signal.windows.kaiser` window is calculated
+        where `width` specifies the approximate width of the transition region
+        (expressed in the same unit as `fs`). This is achieved by utilizing
+        `~scipy.signal.kaiser_atten` to calculate an attenuation which is passed to
+        `~scipy.signal.kaiser_beta` for determining the β parameter for the kaiser
+        window. In this case, the `window` argument is ignored.
     window : string or tuple of string and parameter values, optional
         Desired window to use. Default is ``'hamming'``. The window will be symmetric,
         unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
@@ -325,11 +327,11 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     See Also
     --------
-    firwin2
-    firwin_2d
-    firls
-    minimum_phase
-    remez
+    firwin2:  Window method FIR filter design specifying gain-freque.ncy pairs
+    firwin_2d: 2D FIR filter design using the window method.
+    firls: FIR filter design using least-squares error minimization.
+    minimum_phase: Convert a FIR filter to minimum phase
+    remez: Calculate the minimax optimal filter using the Remez exchange algorithm.
 
     Examples
     --------
@@ -348,7 +350,8 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     ...
     >>> fg, (ax0, ax1) = plt.subplots(2, 1, sharex='all', tight_layout=True,
     ...                               figsize=(5, 4))
-    >>> ax0.set_title(rf"Response of ${f_c}\,$Hz low-pass Filter")
+    >>> ax0.set_title(rf"Response of ${f_c}\,$Hz low-pass Filter with " +
+    ...               rf"${width}\,$Hz transition region")
     >>> ax0.set(ylabel="Gain in dB", xlim=(0, fs/2))
     >>> ax1.set(xlabel=rf"Frequency $f\,$ in hertz (sampling frequency $f_S={fs}\,$Hz)",
     ...         ylabel="Phase in Degrees")
@@ -372,7 +375,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     signal delay in the filter. Note that the plots contain numeric artifacts caused by
     the limited frequency resolution: The phase jumps are not real---in reality the
     phase is a straight line with a constant negative slope. Furthermore, the gains
-    contain zero values (i.e., :math:`-\infty` dB), which are also not depicted.
+    contain zero values (i.e., -∞ dB), which are also not depicted.
 
     The second example determines the frequency responses of a 30 Hz low-pass filter
     with 40 taps. This time the width of the transition region varies:
@@ -394,7 +397,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> for width in widths:  # calculate filter and plot response:
     ...     bb = signal.firwin(n, f_c, width=width, fs=fs)
     ...     f, H = signal.freqz(bb, fs=fs)  # calculate frequency response
-    ...     H_dB= 20 * np.log10(abs(H))  # convert todB
+    ...     H_dB= 20 * np.log10(abs(H))  # convert to dB
     ...     ax.plot(f, H_dB, alpha=.5, label=rf"width$={width}\,$Hz")
     ...
     >>> ax.grid()
@@ -454,13 +457,16 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     ...                        figsize=(5, 4))
     >>> for ax, (cutoff, pass_zero) in zip(axx, product(cutoffs, (True, False))):
     ...     ax.set(title=f"firwin(41, {cutoff=}, {pass_zero=}, fs=2)", ylabel="Gain")
+    ...     ax.set_yticks([0.5], minor=True)  # mark gain of 0.5 (= -6 dB)
+    ...     ax.grid(which='minor', axis='y')
     ...
     ...     bb = signal.firwin(41, cutoff, pass_zero=pass_zero, fs=2)
     ...     ff, HH = signal.freqz(bb, fs=2)
     ...     ax.plot(ff, abs(HH), 'C0-', label="FIR Response")
     ...
     ...     f_d = np.hstack(([0], np.atleast_1d(cutoff), [1]))
-    ...     H_d = np.tile([1, 0] if pass_zero else [0, 1], 3)[:len(f_d)]
+    ...     H_d = np.tile([1, 0] if pass_zero else [0, 1], 2)[:len(f_d)]
+    ...     H_d[-1] = H_d[-2] # account for symmetry at Nyquist frequency
     ...     ax.step(f_d, H_d, 'k--', where='post', alpha=.3, label="Desired Response")
     >>> axx[-1].set(xlabel=r"Frequency $f\,$ in hertz (sampling frequency $f_S=2\,$Hz)",
     ...             xlim=(0, 1))
