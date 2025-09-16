@@ -729,12 +729,13 @@ def test_from_euler_single_rotation(xp):
 
 
 @make_xp_test_case(Rotation.from_euler)
-def test_from_euler_single_seq_rotation(xp):
-    angles = xp.asarray([0, 90])
-    quat = Rotation.from_euler("X", angles, degrees=True).as_quat()
-    expected_quat = xp.asarray([[0.0, 0, 0, 1], 
-                                [1 / math.sqrt(2), 0, 0, 1 / math.sqrt(2)]])
-    xp_assert_close(quat, expected_quat)
+def test_from_euler_input_validation(xp):
+    # Single sequence with multiple angles
+    with pytest.raises(ValueError, match="Expected last dimension of `angles` to be"):
+        Rotation.from_euler("X", xp.asarray([0, 90]))
+    # Multiple sequences with single angle
+    with pytest.raises(ValueError, match="Expected last dimension of `angles` to be"):
+        Rotation.from_euler("XYZ", xp.asarray([90]))
 
 
 @make_xp_test_case(Rotation.from_euler)
