@@ -46,23 +46,7 @@ jobs:
             build
             array-api-cpu
 
-      - name: Prepare compiler cache
-        id: prep-ccache
-        shell: bash
-        run: |
-          mkdir -p "${CCACHE_DIR}"
-          echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
-          NOW=$(date -u +"%F-%T")
-          echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
-
-      - name: Setup compiler cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        id: cache-ccache
-        with:
-          path: ${{ steps.prep-ccache.outputs.dir }}
-          key: ${{ github.workflow }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-          restore-keys: |
-            ${{ github.workflow }}-ccache-linux-
+      - uses: .github/workflows/ccache.yml
 
       - name: Test SciPy
         working-directory: .github/workflows
