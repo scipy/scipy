@@ -796,7 +796,11 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
+        cmd = [
+            'asv', 'run', '--dry-run', '--show-stderr',
+            # https://github.com/airspeed-velocity/asv/issues/1537
+            # '--python=same',
+        ] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
