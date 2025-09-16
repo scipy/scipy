@@ -367,6 +367,11 @@ class RotationSpline:
         if rotations.single:
             raise ValueError("`rotations` must be a sequence of rotations.")
 
+        if rotations.as_quat().ndim > 2:
+            raise ValueError(
+                "Rotations with more than 1 leading dimension are not supported."
+            )
+
         if len(rotations) == 1:
             raise ValueError("`rotations` must contain at least 2 rotations.")
 

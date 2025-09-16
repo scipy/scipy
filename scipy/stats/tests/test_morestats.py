@@ -26,7 +26,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy, is_torch
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -741,6 +741,7 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@make_xp_test_case(stats.bartlett)
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -800,6 +801,13 @@ class TestLevene:
         assert_almost_equal(W, 1.7059176930008939, 7)
         assert_almost_equal(pval, 0.0990829755522, 7)
 
+    def test_mean(self):
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="mean")
+        assert_allclose(W, 2.15945985647285, rtol=5e-14)
+        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
@@ -810,22 +818,11 @@ class TestLevene:
         assert_almost_equal(pval1, pval2)
 
     def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
-
-        # Use center='trimmed'
-        W0, pval0 = stats.levene(x, y, center='trimmed',
-                                 proportiontocut=0.125)
-        W1, pval1 = stats.levene(x2, y, center='trimmed',
-                                 proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(W0, W2)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 2.07712845686874, rtol=5e-14)
+        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
@@ -1126,17 +1123,15 @@ class TestFligner:
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
-    def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
-                                    proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
+    def test_trimmed_nonregression(self):
+        # This is a non-regression test
+        # Expected results are *not* from an external gold standard,
+        # we're just making sure the results remain consistent
+        # in the future in case of changes
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 15.953569890010614, rtol=5e-14)
+        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
 
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
@@ -1278,10 +1273,8 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1)
-        x2 = np.array(x2)
-        x1.shape = (10, 2)
-        x2.shape = (15, 2)
+        x1 = np.array(x1).reshape((10,2))
+        x2 = np.array(x2).reshape((15,2))
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 
@@ -1802,6 +1795,7 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@make_xp_test_case(stats.kstat)
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
@@ -1860,6 +1854,7 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
+@make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -1998,6 +1993,7 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@make_xp_test_case(stats.boxcox_llf)
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2674,6 +2670,7 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
+@make_xp_test_case(stats.circmean, stats.circvar, stats.circstd)
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -3062,6 +3059,8 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
+
+@make_xp_test_case(stats.directional_stats)
 class TestDirectionalStats:
     # Reference implementations are not available
     def test_directional_stats_correctness(self, xp):

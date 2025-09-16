@@ -9,7 +9,7 @@ from scipy.fft import irfft, fft, ifft
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 from scipy.signal._arraytools import _validate_fs
-
+from .windows import get_window
 from . import _sigtools
 
 from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
@@ -271,13 +271,13 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         Nyquist frequency.
     cutoff : float or 1-D array_like
         Cutoff frequency of filter (expressed in the same units as `fs`)
-        OR an array of cutoff frequencies (that is, band edges). In the 
-        former case, as a float, the cutoff frequency should correspond 
-        with the half-amplitude point, where the attenuation will be -6dB. 
-        In the latter case, the frequencies in `cutoff` should be positive 
-        and monotonically increasing between 0 and `fs/2`. The values 0 
-        and `fs/2` must not be included in `cutoff`. It should be noted 
-        that this is different than the behavior of `scipy.signal.iirdesign`, 
+        OR an array of cutoff frequencies (that is, band edges). In the
+        former case, as a float, the cutoff frequency should correspond
+        with the half-amplitude point, where the attenuation will be -6dB.
+        In the latter case, the frequencies in `cutoff` should be positive
+        and monotonically increasing between 0 and `fs/2`. The values 0
+        and `fs/2` must not be included in `cutoff`. It should be noted
+        that this is different from the behavior of `scipy.signal.iirdesign`,
         where the cutoff is the half-power point (-3dB).
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
@@ -285,8 +285,10 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         for use in Kaiser FIR filter design. In this case, the `window`
         argument is ignored.
     window : string or tuple of string and parameter values, optional
-        Desired window to use. See `scipy.signal.get_window` for a list
-        of windows and required parameters.
+        Desired window to use. Default is ``'hamming'``. The window will be symmetric,
+        unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters.
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         If True, the gain at the frequency 0 (i.e., the "DC gain") is 1.
         If False, the DC gain is 0. Can also be a string argument for the
@@ -452,7 +454,6 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
-    from .windows import get_window
     win = get_window(window, numtaps, fftbins=False, xp=xp)
     h *= win
 
@@ -508,9 +509,10 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
         power of 2 that is not less than `numtaps`. `nfreqs` must be greater
         than `numtaps`.
     window : string or (string, float) or float, or None, optional
-        Window function to use. Default is "hamming". See
-        `scipy.signal.get_window` for the complete list of possible values.
-        If None, no window function is applied.
+        Desired window to use. Default is ``'hamming'``. The window will be symmetric,
+        unless a suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``) Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters. If ``None``, no window function is applied.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -664,7 +666,6 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        from .windows import get_window
         wind = get_window(window, numtaps, fftbins=False, xp=xp)
     else:
         wind = 1
@@ -989,7 +990,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
         raise ValueError("bands must contain frequency pairs.")
     if (bands < 0).any() or (bands > 1).any():
         raise ValueError("bands must be between 0 and 1 relative to Nyquist")
-    bands.shape = (-1, 2)
+    bands = bands.reshape((-1, 2))
 
     # check remaining params
     desired = np.asarray(desired).flatten()
@@ -998,7 +999,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
             f"desired must have one entry per frequency, got {desired.size} "
             f"gains for {bands.size} frequencies."
         )
-    desired.shape = (-1, 2)
+    desired = desired.reshape((-1, 2))
     if (np.diff(bands) <= 0).any() or (np.diff(bands[:, 0]) < 0).any():
         raise ValueError("bands must be monotonically nondecreasing and have "
                          "width > 0.")
@@ -1322,7 +1323,7 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     filter. The filter is separable with linear phase; it will be designed
     as a product of two 1D filters with dimensions defined by `hsize`.
     Additionally, it can create approximately circularly symmetric 2-D windows.
-    
+
     Parameters
     ----------
     hsize : tuple or list of length 2
@@ -1330,17 +1331,18 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         number of coefficients in the row direction and `hsize[1]` specifies
         the number of coefficients in the column direction.
     window : tuple or list of length 2 or string
-        Desired window to use for each 1D filter or a single window type 
-        for creating circularly symmetric 2-D windows. Each element should be
-        a string or tuple of string and parameter values. See
-        `~scipy.signal.get_window` for a list of windows and required
-        parameters.
+        Desired window to use for each 1D filter or a single window type for creating
+        circularly symmetric 2-D windows. Each element should be a string or tuple of
+        string and parameter values. The generated windows will be symmetric, unless a
+        suffix ``'_periodic'`` is appended to the window name (e.g.,
+        ``'hamming_perodic'``). Consult `~scipy.signal.get_window` for a list of windows
+        and required parameters.
     fc : float or 1-D array_like, optional
         Cutoff frequency of the filter in the same units as `fs`. This defines
         the frequency at which the filter's gain drops to approximately -6 dB
         (half power) in a low-pass or high-pass filter. For multi-band filters,
-        `fc` can be an array of cutoff frequencies (i.e., band edges) in the 
-        range [0, fs/2], with each band specified in pairs. Required if 
+        `fc` can be an array of cutoff frequencies (i.e., band edges) in the
+        range [0, fs/2], with each band specified in pairs. Required if
         `circular` is False.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.
@@ -1349,17 +1351,17 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
     pass_zero : {True, False, 'bandpass', 'lowpass', 'highpass', 'bandstop'}, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Hence, if ``True``, the DC gain, i.e., the gain at frequency (0, 0), is 1.
-        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``. 
+        If ``False``, the DC gain is 0 at frequency (0, 0) if `circular` is ``True``.
         If `circular` is ``False`` the frequencies (0, f1) and (f0, 0) will
         have gain 0.
-        It can also be a string argument for the desired filter type 
+        It can also be a string argument for the desired filter type
         (equivalent to ``btype`` in IIR design functions).
     scale : bool, optional
         This parameter is directly passed to `firwin` for each scalar frequency axis.
         Set to ``True`` to scale the coefficients so that the frequency
         response is exactly unity at a certain frequency on one frequency axis.
         That frequency is either:
-        
+
         - 0 (DC) if the first passband starts at 0 (i.e. pass_zero is ``True``)
         - `fs`/2 (the Nyquist frequency) if the first passband ends at `fs`/2
           (i.e., the filter is a single band highpass filter);
@@ -1438,9 +1440,9 @@ def firwin_2d(hsize, window, *, fc=None, fs=2, circular=False,
         if fc is None:
             raise ValueError("Cutoff frequency `fc` must be "
                              "provided when `circular` is True")
-        
+
         n_r = max(hsize[0], hsize[1]) * 8  # oversample 1d window by factor 8
-        
+
         win_r = firwin(n_r, cutoff=fc, window=window, fs=fs)
 
         f1, f2 = np.meshgrid(np.linspace(-1, 1, hsize[0]), np.linspace(-1, 1, hsize[1]))

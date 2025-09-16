@@ -973,14 +973,26 @@ const char *ellipeinc_doc = R"(
     .. [3] NIST Digital Library of Mathematical
            Functions. http://dlmf.nist.gov/, Release 1.0.28 of
            2020-09-15. See Sec. 19.25(i) https://dlmf.nist.gov/19.25#i
+
+    Examples
+    --------
+    The elliptic integral of the second kind can be used to find the circumference of an
+    ellipse with semi-major axis ``a`` and semi-minor axis ``b``.
+
+    >>> import numpy as np
+    >>> from scipy.special import ellipeinc
+    >>> a, b = 3.5, 2.1
+    >>> e = np.sqrt(1.0 - b**2/a**2)  # eccentricity
+    >>> 4*a*ellipeinc(np.pi/2, e**2)
+    np.float64(17.86889920437869)
     )";
 
 const char *ellipj_doc = R"(
     ellipj(u, m, out=None)
 
-    Jacobian elliptic functions
+    Jacobi elliptic functions
 
-    Calculates the Jacobian elliptic functions of parameter `m` between
+    Calculates the Jacobi elliptic functions of parameter `m` between
     0 and 1, and real argument `u`.
 
     Parameters
@@ -2535,8 +2547,7 @@ const char *hankel1_doc = R"(
 
     See Also
     --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
+    hankel1e : This function with leading exponential behavior stripped off.
 
     Notes
     -----
@@ -2558,6 +2569,38 @@ const char *hankel1_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    boundary conditions, the Green's function is given by
+
+    .. math::
+
+        G(\mathbf{x}, \mathbf{x}^\prime) =
+        \frac{1}{4i} H^{(1)}_0(k|\mathbf{x} - \mathbf{x^\prime}|)
+
+    where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
+    of the first kind and of order zero. In the following example, we will solve the
+    Helmholtz equation with two Dirac sources.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hankel1
+    >>> k = 10  # Wavenumber
+    >>> sources = [0.5, -0.5]  # Location of two point sources
+    >>> x, y = np.linspace(-3, 3, 300), np.linspace(-3, 3, 300)
+    >>> Z = np.add.outer(1j*y, x)
+    >>> U = np.zeros_like(Z)
+    >>> for sz in sources:
+    ...     r = np.abs(Z - sz)
+    ...     U += (1j/4)*hankel1(0, k*r)
+
+    Finally, we will plot the real part of the solution.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(np.real(Z), np.imag(Z), np.real(U))
+    >>> plt.show()
     )";
 
 const char *hankel1e_doc = R"(
@@ -5025,6 +5068,29 @@ const char *loggamma_doc = R"(
     .. [hare1997] D.E.G. Hare,
       *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import loggamma, gamma
+
+    >>> z = 1.5 + 2j
+    >>> loggamma(z)
+    np.complex128(-1.4991963725850939+0.7332806816909994j)
+
+    Verify :math:`\exp(\log \Gamma(z)) = \Gamma(z)`:
+
+    >>> np.exp(loggamma(z))
+    np.complex128(0.165915108938991+0.14946347326641998j)
+    >>> gamma(z)
+    np.complex128(0.165915108938991+0.14946347326641998j)
+
+    Verify the recurrence :math:`\log \Gamma(z+1) = \log(z) + \log \Gamma(z)`:
+
+    >>> loggamma(z + 1)
+    np.complex128(-0.5829056407109388+1.6605758996926108j)
+    >>> np.log(z) + loggamma(z)
+    np.complex128(-0.5829056407109388+1.6605758996926117j)
     )";
 
 const char *logit_doc = R"(
@@ -5581,7 +5647,7 @@ const char *modfresnelm_doc = R"(
     fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km : scalar or ndarray
-        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fm``
 
     See Also
     --------

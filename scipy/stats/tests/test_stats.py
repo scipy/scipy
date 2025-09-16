@@ -46,6 +46,7 @@ import scipy._lib.array_api_extra as xpx
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -3551,7 +3552,7 @@ class TestMoments:
         else:
             with warnings.catch_warnings():  # needed by array_api_strict
                 warnings.filterwarnings(
-                    "ignore", "Mean of empty slice.", RuntimeWarning)
+                    "ignore", "Mean of empty slice", RuntimeWarning)
                 warnings.filterwarnings("ignore", "invalid value", RuntimeWarning)
                 test_cases()
 
@@ -7050,6 +7051,7 @@ class TestGSTD:
         gstd_actual = stats.gstd(a, axis=1)
         xp_assert_close(gstd_actual, xp.asarray([4, np.nan]))
 
+    @xfail_xp_backends("jax.numpy", reason="returns subnormal instead of nan")
     def test_ddof_equal_to_number_of_observations(self, xp):
         x = xp.asarray(self.array_1d)
         res = stats.gstd(x, ddof=x.shape[0])

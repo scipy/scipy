@@ -23,7 +23,7 @@ dependencies:
   # ---
   - pythran
   # For testing and benchmarking
-  - pytest
+  - pytest>=8.0.0
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
@@ -58,5 +58,5 @@ dependencies:
   # For CLI
   - spin
   # For linting
-  - ruff>=0.0.292
+  - ruff>=0.12.0
   - cython-lint

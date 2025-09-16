@@ -13,22 +13,51 @@ from scipy._lib._array_api import (
     Array,
     is_numpy,
     ArrayLike,
-    xp_result_type,
     is_lazy_array,
     xp_capabilities,
+    xp_promote,
 )
 from scipy._lib.array_api_compat import device as xp_device
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._util import _transition_to_rng
+from scipy._lib._util import _transition_to_rng, broadcastable
 
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
-    """Check if two shapes are broadcastable."""
-    return all(
-        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
-    )
+def _select_backend(xp: ModuleType, cython_compatible: bool):
+    """Select the backend for the given array library.
+
+    We need this selection function because the Cython backend for numpy does not
+    support quaternions of arbitrary dimensions. We therefore only use the Array API
+    backend for numpy if we are dealing with rotations of more than one leading
+    dimension.
+    """
+    if is_numpy(xp) and not cython_compatible:
+        return xp_backend
+    return backend_registry.get(xp, xp_backend)
+
+
+@xp_capabilities()
+def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
+    """Promote arrays to float64 for numpy, else according to the Array API spec.
+
+    The return array dtype follows the following rules:
+    - If quat is an ArrayLike or NumPy array, we always promote to float64
+    - If quat is an Array from frameworks other than NumPy, we preserve the precision
+      of the input array dtype.
+
+    The first rule is required by the cython backend signatures that expect
+    cython.double views. The second rule is necessary to promote non-floating arrays
+    to the correct type in frameworks that may not support double precision (e.g.
+    jax by default).
+    """
+    if is_numpy(xp):
+        args += (np.empty(0, dtype=np.float64),)  # Force float64 conversion
+        out = xp_promote(*args, force_floating=True, xp=xp)
+        if len(args) == 2:  # One argument was passed  + the added empty array
+            return out[0]
+        return out[:-1]
+    return xp_promote(*args, force_floating=True, xp=xp)
 
 
 class Rotation:
@@ -320,15 +349,20 @@ class Rotation:
         scalar_first: bool = False,
     ):
         xp = array_namespace(quat)
-        quat = self._to_array(quat, xp)
-        # Legacy behavior for cython backend: Differentiate between single quat and
-        # batched quats. We only use this for the cython backend. The Array API backend
-        # uses broadcasting by default and hence returns the correct shape without
-        # additional logic
+        self._xp = xp
+        quat = _promote(quat, xp=xp)
+        if quat.shape[-1] != 4:
+            raise ValueError(
+                f"Expected `quat` to have shape (..., 4), got {quat.shape}."
+            )
+        # Single NumPy quats or list of quats are accelerated by the cython backend.
+        # This backend needs inputs with fixed ndim, so we always expand to 2D and
+        # select the 0th element if quat was single to get the correct shape. For other
+        # frameworks and quaternion tensors we use the generic array API backend.
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = backend_registry.get(xp, xp_backend)
+        self._backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -542,9 +576,12 @@ class Rotation:
 
         .. versionadded:: 1.4.0
         """
-        backend = backend_registry.get(array_namespace(matrix), xp_backend)
+        xp = array_namespace(matrix)
+        matrix = _promote(matrix, xp=xp)
+        # Resulting quat will have 1 less dimension than matrix
+        backend = _select_backend(xp, cython_compatible=matrix.ndim < 4)
         quat = backend.from_matrix(matrix)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -614,9 +651,11 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(rotvec), xp_backend)
+        xp = array_namespace(rotvec)
+        rotvec = _promote(rotvec, xp=xp)
+        backend = _select_backend(xp, cython_compatible=rotvec.ndim < 3)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -715,9 +754,11 @@ class Rotation:
         (2, 4)
 
         """
-        backend = backend_registry.get(array_namespace(angles), xp_backend)
+        xp = array_namespace(angles)
+        angles = _promote(angles, xp=xp)
+        backend = _select_backend(xp, cython_compatible=angles.ndim < 3)
         quat = backend.from_euler(seq, angles, degrees=degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -842,9 +883,12 @@ class Rotation:
         >>> r.as_quat()
         [ 0.701057,  0.430459, -0.092296,  0.560986]
         """  # noqa: E501
-        backend = backend_registry.get(array_namespace(axes), xp_backend)
+        xp = array_namespace(axes)
+        axes, angles = _promote(axes, angles, xp=xp)
+        cython_compatible = axes.ndim < 3 and angles.ndim < 2
+        backend = _select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
     @xp_capabilities(
@@ -914,9 +958,11 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(mrp), xp_backend)
+        xp = array_namespace(mrp)
+        mrp = _promote(mrp, xp=xp)
+        backend = _select_backend(xp, cython_compatible=mrp.ndim < 3)
         quat = backend.from_mrp(mrp)
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -1149,7 +1195,13 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def as_euler(self, seq: str, degrees: bool = False) -> Array:
+    def as_euler(
+        self,
+        seq: str,
+        degrees: bool = False,
+        *,
+        suppress_warnings: bool = False
+    ) -> Array:
         """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1162,8 +1214,9 @@ class Rotation:
         Euler angles suffer from the problem of gimbal lock [3]_, where the
         representation loses a degree of freedom and it is not possible to
         determine the first and third angles uniquely. In this case,
-        a warning is raised, and the third angle is set to zero. Note however
-        that the returned angles still represent the correct rotation.
+        a warning is raised (unless the ``suppress_warnings`` option is used),
+        and the third angle is set to zero. Note however that the returned
+        angles still represent the correct rotation.
 
         Parameters
         ----------
@@ -1176,6 +1229,8 @@ class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        suppress_warnings : boolean, optional
+            Disable warnings about gimbal lock. Default is False.
 
         Returns
         -------
@@ -1235,7 +1290,9 @@ class Rotation:
         (3, 3)
 
         """
-        euler = self._backend.as_euler(self._quat, seq, degrees=degrees)
+        euler = self._backend.as_euler(
+            self._quat, seq, degrees=degrees, suppress_warnings=suppress_warnings
+        )
         if self._single:
             return euler[0, ...]
         return euler
@@ -1246,7 +1303,14 @@ class Rotation:
             ("cupy", "missing .mT attribute in cupy<14.*"),
         ]
     )
-    def as_davenport(self, axes: ArrayLike, order: str, degrees: bool = False) -> Array:
+    def as_davenport(
+        self,
+        axes: ArrayLike,
+        order: str,
+        degrees: bool = False,
+        *,
+        suppress_warnings: bool = False,
+    ) -> Array:
         """Represent as Davenport angles.
 
         Any orientation can be expressed as a composition of 3 elementary
@@ -1270,7 +1334,8 @@ class Rotation:
         Davenport angles, just like Euler angles, suffer from the problem of
         gimbal lock [3]_, where the representation loses a degree of freedom
         and it is not possible to determine the first and third angles
-        uniquely. In this case, a warning is raised, and the third angle is set
+        uniquely. In this case, a warning is raised (unless the
+        ``suppress_warnings`` option is used), and the third angle is set
         to zero. Note however that the returned angles still represent the
         correct rotation.
 
@@ -1288,6 +1353,8 @@ class Rotation:
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
+        suppress_warnings : boolean, optional
+            Disable warnings about gimbal lock. Default is False.
 
         Returns
         -------
@@ -1352,9 +1419,12 @@ class Rotation:
         >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (2, 3)
         """
-        xp = array_namespace(self._quat)
-        axes = xp.asarray(axes, dtype=self._quat.dtype, device=xp_device(self._quat))
-        davenport = self._backend.as_davenport(self._quat, axes, order, degrees)
+        axes = self._xp.asarray(
+            axes, dtype=self._quat.dtype, device=xp_device(self._quat)
+        )
+        davenport = self._backend.as_davenport(
+            self._quat, axes, order, degrees, suppress_warnings=suppress_warnings
+        )
         if self._single:
             return davenport[0, ...]
         return davenport
@@ -1486,7 +1556,7 @@ class Rotation:
         quats = xp.concat(
             [xpx.atleast_nd(x.as_quat(), ndim=2, xp=xp) for x in rotations]
         )
-        return Rotation(quats, normalize=False)
+        return Rotation._from_raw_quat(quats, xp=xp)
 
     @xp_capabilities(
         skip_backends=[
@@ -1612,20 +1682,19 @@ class Rotation:
                [ 1.09533535, -0.8365163 ,  0.3169873 ]])
 
         """
-        xp = array_namespace(self._quat)
-        vectors = xp.asarray(
+        vectors = self._xp.asarray(
             vectors, device=xp_device(self._quat), dtype=self._quat.dtype
         )
         single_vector = vectors.ndim == 1
         # Numpy optimization: The Cython backend typing requires us to have fixed
         # dimensions, so for the Numpy case we always broadcast the vector to 2D.
-        if vectors.ndim > 2 or vectors.shape[-1] != 3:
-            raise ValueError(
-                f"Expected input of shape (3,) or (P, 3), got {vectors.shape}."
-            )
-        if is_numpy(xp):
-            vectors = xpx.atleast_nd(vectors, ndim=2, xp=xp)
-        result = self._backend.apply(self._quat, vectors, inverse=inverse)
+        if vectors.shape[-1] != 3:
+            raise ValueError(f"Expected input of shape (..., 3), got {vectors.shape}.")
+        if is_numpy(self._xp):
+            vectors = xpx.atleast_nd(vectors, ndim=2, xp=self._xp)
+        cython_compatible = self._quat.ndim < 3 and vectors.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        result = backend.apply(self._quat, vectors, inverse=inverse)
         if self._single and single_vector:
             return result[0, ...]
         return result
@@ -1709,11 +1778,12 @@ class Rotation:
             return NotImplemented
         if not broadcastable(self._quat.shape, other._quat.shape):
             raise ValueError(
-                "Expected equal number of rotations in both or a single "
-                f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
-                f"first and {other._quat.shape[:-1]} rotations in second object."
+                f"Cannot broadcast {self._quat.shape[:-1]} rotations in "
+                f"first to {other._quat.shape[:-1]} rotations in second object."
             )
-        quat = self._backend.compose_quat(self._quat, other._quat)
+        cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        quat = backend.compose_quat(self._quat, other._quat)
         if self._single and other._single:
             quat = quat[0]
         return Rotation(quat, normalize=True, copy=False)
@@ -1791,7 +1861,7 @@ class Rotation:
         quat = self._backend.pow(self._quat, n)
         if self._single:
             quat = quat[0]
-        return Rotation(quat, normalize=False, copy=False)
+        return Rotation._from_raw_quat(quat, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "cannot handle zero-length rotations")]
@@ -1831,7 +1901,7 @@ class Rotation:
         q_inv = self._backend.inv(self._quat)
         if self._single:
             q_inv = q_inv[0, ...]
-        return Rotation(q_inv, normalize=False, copy=False)
+        return Rotation._from_raw_quat(q_inv, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -1919,9 +1989,9 @@ class Rotation:
         >>> p.approx_equal(q[0])
         False
         """
-        return self._backend.approx_equal(
-            self._quat, other._quat, atol=atol, degrees=degrees
-        )
+        cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
+        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        return backend.approx_equal(self._quat, other._quat, atol=atol, degrees=degrees)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -1971,7 +2041,7 @@ class Rotation:
         array([0.24945696, 0.25054542, 0.24945696])
         """
         mean = self._backend.mean(self._quat, weights=weights)
-        return Rotation(mean, normalize=False)
+        return Rotation._from_raw_quat(mean, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -2019,7 +2089,7 @@ class Rotation:
         )
         if self._single:
             reduced = reduced[0, ...]
-        rot = Rotation(reduced, normalize=False, copy=False)
+        rot = Rotation._from_raw_quat(reduced, xp=self._xp, backend=self._backend)
         if return_indices:
             left_idx = left_idx if left is not None else None
             right_idx = right_idx if right is not None else None
@@ -2138,20 +2208,17 @@ class Rotation:
             raise TypeError("Single rotation is not subscriptable.")
         is_array = isinstance(indexer, type(self._quat))
         # Masking is only specified in the Array API when the array is the sole index
-        # TODO: Getting xp on every call may be expensive. Check if we can make access
-        # to xp more efficient. Should we store a self._xp attribute?
         # TODO: This special case handling is mainly a result of Array API limitations.
         # Ideally we would get rid of them altogether and converge to [indexer, ...]
         # indexing.
-        xp = array_namespace(self._quat)
-        if is_array and indexer.dtype == xp.bool:
+        if is_array and indexer.dtype == self._xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
-        if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
-            # Array API limitation: Integer index arrays are only allowed with integer
-            # indices
-            all_ind = xp.arange(4)
-            indexer = xp.reshape(indexer, (indexer.shape[0], 1))
-            return Rotation(self._quat[indexer, all_ind], normalize=False)
+        if is_array and self._xp.isdtype(indexer.dtype, "integral"):
+            # xp.take is implementation-defined for zero-dim arrays, hence we raise
+            # pre-emptively to have consistent behavior across frameworks.
+            if self._quat.shape[0] == 0:
+                raise IndexError("cannot do a non-empty take from an empty axes.")
+            return Rotation(self._xp.take(self._quat, indexer, axis=0), normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
     @xp_capabilities(
@@ -2187,8 +2254,8 @@ class Rotation:
 
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
-    @classmethod
-    def identity(cls, num: int | None = None) -> Rotation:
+    @staticmethod
+    def identity(num: int | None = None) -> Rotation:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -2204,7 +2271,8 @@ class Rotation:
         identity : Rotation object
             The identity rotation.
         """
-        return cls(cython_backend.identity(num), normalize=False, copy=False)
+        quat = cython_backend.identity(num)
+        return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
     @classmethod
     @_transition_to_rng("random_state", position_num=2)
@@ -2259,7 +2327,6 @@ class Rotation:
         scipy.stats.special_ortho_group
 
         """
-        # DECISION: How do we handle random numbers in other frameworks?
         # TODO: The array API does not have a unified random interface. This method only
         # creates numpy arrays. If we do want to support other frameworks, we need a way
         # to handle other rng implementations.
@@ -2476,11 +2543,16 @@ class Rotation:
         array([[0., 1., 0.],
                [0., 1., 2.]])
         """
-        backend = backend_registry.get(array_namespace(a), xp_backend)
+        xp = array_namespace(a)
+        a, b, weights = _promote(a, b, weights, xp=xp)
+        cython_compatible = (
+            (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
+        )
+        backend = _select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
-            return Rotation(q, normalize=False, copy=False), rssd, sensitivity
-        return Rotation(q, normalize=False, copy=False), rssd
+            return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd, sensitivity
+        return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd
 
     def __getstate__(self) -> tuple[Array, bool]:
         return (self._quat, self._single)
@@ -2488,14 +2560,22 @@ class Rotation:
     def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
-        self._backend = backend_registry.get(xp, xp_backend)
+        self._xp = xp
         self._quat = xp.asarray(quat, copy=True)
+        self._backend = _select_backend(xp, cython_compatible=self._quat.ndim < 3)
         self._single = single
 
     @property
     def single(self) -> bool:
         """Whether this instance represents a single rotation."""
         return self._single or self._quat.ndim == 1
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """The shape of the rotation's leading dimensions."""
+        if self._single:
+            return ()
+        return self._quat.shape[:-1]
 
     def __bool__(self) -> bool:
         """Comply with Python convention for objects to be True.
@@ -2532,33 +2612,6 @@ class Rotation:
         return "Rotation.from_matrix(" + "\n".join(m) + ")"
 
     @xp_capabilities()
-    def _to_array(self, quat: ArrayLike, xp: ModuleType) -> Array:
-        """Convert the quaternion to an array.
-
-        The return array dtype follows the following rules:
-        - If quat is an ArrayLike or NumPy array, we always promote to float64
-        - If quat is an Array from frameworks other than NumPy, we preserve the dtype if
-          it is float32. Otherwise, we promote to the result type of combining float32
-          and float64
-
-        The first rule is required by the cython backend signatures that expect
-        cython.double views. The second rule is necessary to promote non-floating arrays
-        to the correct type in frameworks that may not support double precision (e.g.
-        jax by default).
-        """
-        # Legacy behavior: NumPy rotations always use float64. The cython backend uses
-        # float64 views and will raise on Buffer dtype mismatches.
-        if is_numpy(xp):
-            dtype = np.float64
-        else:
-            dtype = xp_result_type(quat, xp=xp, force_floating=True)
-        quat = xp.asarray(quat, dtype=dtype)
-        # TODO: Remove this once we properly support broadcasting
-        if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
-            raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
-        return quat
-
-    @xp_capabilities(jax_jit=False)
     def __iter__(self) -> Iterator[Rotation]:
         """Iterate over rotations."""
         if self._single or self._quat.ndim == 1:
@@ -2569,6 +2622,26 @@ class Rotation:
         # indices.
         for i in range(self._quat.shape[0]):
             yield Rotation(self._quat[i, ...], normalize=False, copy=False)
+
+    @staticmethod
+    def _from_raw_quat(
+        quat: Array, xp: ModuleType, backend: ModuleType | None = None
+    ) -> Rotation:
+        """Create a Rotation skipping all sanitization steps.
+
+        This method is intended for internal, performant creation of Rotations with
+        quaternions that are guaranteed to be valid.
+        """
+        rot = Rotation.__new__(Rotation)
+        rot._single = quat.ndim == 1 and is_numpy(xp)
+        if rot._single:
+            quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        rot._quat = quat
+        rot._xp = xp
+        if backend is None:
+            backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
+        rot._backend = backend
+        return rot
 
 
 class Slerp:
@@ -2660,6 +2733,11 @@ class Slerp:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         q = rotations.as_quat()
+        if q.ndim > 2:
+            raise ValueError(
+                "Rotations with more than 1 leading dimension are not supported."
+            )
+
         xp = array_namespace(q)
         times = xp.asarray(times, device=xp_device(q), dtype=q.dtype)
         if times.ndim != 1:
