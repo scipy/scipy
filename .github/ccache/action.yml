@@ -18,7 +18,7 @@ runs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses: actions/cache@5a3ec84eff66
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key: ${{ inputs.workflow_name }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
