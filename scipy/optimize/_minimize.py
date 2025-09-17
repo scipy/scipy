@@ -210,7 +210,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC and SLSQP support a callable with
+        All methods except TNC support a callable with
         the signature::
 
             callback(intermediate_result: OptimizeResult)
