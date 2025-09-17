@@ -46,7 +46,8 @@ jobs:
             build
             array-api-cpu
 
-      - uses: ./.github/ccache
+      - name: Set up ccache
+        uses: ./.github/ccache
         with:
           workflow_name: ${{ github.workflow }}
 
