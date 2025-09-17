@@ -14,7 +14,8 @@ f1, H1 = signal.freqz(b1, fs=fs)
 H0_dB, H1_dB = (20 * np.log10(np.abs(H_)) for H_ in (H0, H1))  # convert to dB
 
 # do the plotting:
-fg0, (ax0, ax1) = plt.subplots(2, 1, sharex='all', tight_layout=True, figsize=(6, 4))
+fg0, (ax0, ax1) = plt.subplots(2, 1, sharex='all', layout="constrained",
+                               figsize=(6, 4))
 ax0.set(title=f"Frequency Response of {n0}-tap Low-pass FIR-Filter", xlim=(0, fs/2))
 ax0.plot(f0, H0_dB, 'C0', label="Response $|H_0(f)|$")
 ax0.axvline(f0_c, color='C2', linestyle='--', label=rf"$f_0={f0_c}\,$Hz")
