@@ -327,7 +327,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     See Also
     --------
-    firwin2:  Window method FIR filter design specifying gain-freque.ncy pairs
+    firwin2:  Window method FIR filter design specifying gain-frequency pairs.
     firwin_2d: 2D FIR filter design using the window method.
     firls: FIR filter design using least-squares error minimization.
     minimum_phase: Convert a FIR filter to minimum phase
@@ -348,7 +348,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> f_c, width = 30, 20  # corner frequency (-6 dB gain)
     >>> taps = [20, 40, 60]  # number of taps
     ...
-    >>> fg, (ax0, ax1) = plt.subplots(2, 1, sharex='all', tight_layout=True,
+    >>> fg, (ax0, ax1) = plt.subplots(2, 1, sharex='all', layout="constrained",
     ...                               figsize=(5, 4))
     >>> ax0.set_title(rf"Response of ${f_c}\,$Hz low-pass Filter with " +
     ...               rf"${width}\,$Hz transition region")
@@ -388,7 +388,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> n, f_c = 40, 30  # number of taps and corner frequency (-6 dB gain)
     >>> widths = (2, 10, 25)  # width of transition region
     ...
-    >>> fg, ax = plt.subplots(1, 1, tight_layout=True)
+    >>> fg, ax = plt.subplots(1, 1, layout="constrained",)
     >>> ax.set(title=rf"Response of {n}-tap ${f_c}\,$Hz low-pass Filter",
     ...        xlabel=rf"Frequency $f\,$ in hertz (sampling frequency $f_S={fs}\,$Hz)",
     ...        ylabel="Gain in dB", xlim=(0, fs/2))
@@ -421,7 +421,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> cutoff = [40, 60]  # corner frequencies (-6 dB gain)
     >>> windows = ('boxcar', 'hamming', 'hann', 'blackman')
     ...
-    >>> fg, ax = plt.subplots(1, 1, tight_layout=True)  # set up plotting
+    >>> fg, ax = plt.subplots(1, 1, layout="constrained")  # set up plotting
     >>> ax.set(title=rf"Response of {n}-tap Filter with ${cutoff}\,$Hz passband",
     ...        xlabel=rf"Frequency $f\,$ in hertz (sampling frequency $f_S={fs}\,$Hz)",
     ...        ylabel="Gain in dB", xlim=(0, fs/2))
@@ -453,7 +453,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     >>> import scipy.signal as signal
     ...
     >>> cutoffs = [0.5, (.25, .75)]  # cutoff parameters
-    >>> fg, axx = plt.subplots(4, 1, sharex='all', tight_layout=True,
+    >>> fg, axx = plt.subplots(4, 1, sharex='all', layout="constrained",
     ...                        figsize=(5, 4))
     >>> for ax, (cutoff, pass_zero) in zip(axx, product(cutoffs, (True, False))):
     ...     ax.set(title=f"firwin(41, {cutoff=}, {pass_zero=}, fs=2)", ylabel="Gain")
