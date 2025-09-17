@@ -2,6 +2,10 @@ name: Setup Compiler Cache
 
 on:
   workflow_call:
+    inputs:
+      workflow_name:
+        required: true
+        type: string
 
 jobs:
   ccache:
@@ -21,5 +25,5 @@ jobs:
         uses: actions/cache@5a3ec84eff66
         with:
           path: ${{ steps.prep-ccache.outputs.dir }}
-          key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-          restore-keys: ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
+          key: ${{ inputs.workflow_name }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+          restore-keys: ${{ inputs.workflow_name }}-ccache-linux-
