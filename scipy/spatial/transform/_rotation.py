@@ -272,7 +272,7 @@ class Rotation:
 
     Finally, it is also possible to invert rotations:
 
-    >>> r1 = R.from_euler('z', [90, 45], degrees=True)
+    >>> r1 = R.from_euler('z', [[90], [45]], degrees=True)
     >>> r2 = r1.inv()
     >>> r2.as_euler('zyx', degrees=True)
     array([[-90.,   0.,   0.],
@@ -719,7 +719,7 @@ class Rotation:
 
         Initialize a stack with a single rotation around a single axis:
 
-        >>> r = R.from_euler('x', [90], degrees=True)
+        >>> r = R.from_euler('x', [[90]], degrees=True)
         >>> r.as_quat().shape
         (1, 4)
 
@@ -731,7 +731,7 @@ class Rotation:
 
         Initialize multiple elementary rotations in one object:
 
-        >>> r = R.from_euler('x', [90, 45, 30], degrees=True)
+        >>> r = R.from_euler('x', [[90], [45], [30]], degrees=True)
         >>> r.as_quat().shape
         (3, 4)
 
