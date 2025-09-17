@@ -214,39 +214,34 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     elif alpha == 1.0 and beta == 0.0:
         # cauchy
         return 1 / (1 + x0 ** 2) / np.pi
-    elif 1 < alpha < 2:
-        in_tail_region = (beta == 1.0 and x0 < 0.0) or (beta == -1.0 and x0 > 0.0)
-        if in_tail_region:
-            result = _levy_stable_tail_asymptotic(x0, alpha, beta)
-            if result is not None:
-                return result
+    elif 1 < alpha < 2 and ((beta == 1.0 and x0 < 0.0) or (beta == -1.0 and x0 > 0.0)):
+        result = _levy_stable_tail_asymptotic_Z0(x0, alpha, beta)
+        if result is not None:
+            return result
 
     return _pdf_single_value_piecewise_post_rounding_Z0(
         x0, alpha, beta, quad_eps, x_tol_near_zeta
     )
 
-def _levy_stable_tail_asymptotic(x0, alpha, beta, cutoff_exponent=8.0):
+def _levy_stable_tail_asymptotic_Z0(x0, alpha, beta, cutoff_exponent=8.0):
     """
-    Handle tail asymptotic for beta=-1 (right-tail) or beta=1 (left-tail), 1<alpha<=2.
-    Returns None if not in asymptotic region.
-    Nolan (Proposition 3.1).
+    Handle tail asymptotic for beta=-1 (right-tail) or beta=1 (left-tail), 1<alpha<2, as
+    detailed in [NO] Proposition 3.1 (pg 100). Returns None if not in asymptotic region.
     """
-    if not (1.0 < alpha < 2.0) or beta not in (-1.0, 1.0):
-        return None
-    x0 += beta * np.tan(np.pi * alpha / 2)
+    x0 += beta * np.tan(np.pi * alpha / 2)  # Convert to Z1
     if beta == 1:
         x0 = -x0
-    # Constants (same for both tails)
-    p = alpha / (alpha - 1)
-    a = (2.0 - alpha) / (2.0 * alpha - 2.0)
-    cosa = np.cos(np.pi * alpha / 2)
-    c2 = np.abs(1 - alpha) * (alpha**alpha / np.abs(cosa)) ** (1 / (1 - alpha))
-    c1 = (alpha / abs(cosa)) ** (1 / (2 - 2 * alpha))
-    c1 /= (2 * np.pi * np.abs(1 - alpha)) ** 0.5
 
-    if c2 * x0**p >= cutoff_exponent:
-        # far enough in the tail
-        return c1 * x0**a * np.exp(-c2 * (x0**p))
+    # Use abs rather than assuming alpha > 1 to facilitate future generalization
+    abs_cos = np.abs(np.cos(np.pi * alpha / 2))
+    c1 = (alpha / abs_cos) ** (1 / (2 - 2 * alpha))
+    c1 /= (2 * np.pi * np.abs(1 - alpha)) ** 0.5
+    c2 = np.abs(1 - alpha) * (alpha**alpha / abs_cos) ** (1 / (1 - alpha))
+
+    exponent = c2 * x0**(alpha / (alpha - 1))
+    if exponent >= cutoff_exponent:  # far enough in the tail (empirically)
+        a = (2.0 - alpha) / (2.0 * alpha - 2.0)
+        return c1 * x0**a * np.exp(-exponent)
     return None
 
 
