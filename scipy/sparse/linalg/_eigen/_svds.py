@@ -89,7 +89,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
     if isinstance(rng, numbers.Integral | np.integer):
-        rng = np.random.default_rng(rng)
+        rng = np.random.default_rng(np.random.RandomState(rng))
     elif isinstance(rng, np.random.RandomState):
         rng = np.random.default_rng(rng)
     elif rng is None:
@@ -98,7 +98,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
         pass
     else:
         raise ValueError(f"'{rng}' is neither a NumPy Generator nor an integer seed"
-                         " to instantiate one. For future-proofing, prefer to use a"
+                         " to instantiate one. For future-proofing, prefer using a"
                          " NumPy Generator.")
 
     return (A, k, ncv, tol, which, v0, maxiter,
