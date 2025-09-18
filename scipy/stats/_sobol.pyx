@@ -442,3 +442,8 @@ def _test_find_index(p_cumulative, size, value):
     # type: (np.ndarray, int, float) -> int
     """Wrapper for testing in python"""
     return _find_index(p_cumulative, size, value)
+
+cpdef _test_low_0_bit(uint_32_64 x):
+    # type: (int,) -> int
+    """Wrapper for testing in python"""
+    return low_0_bit(x)
