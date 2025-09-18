@@ -434,11 +434,15 @@ def from_euler(seq, angles, bint degrees=False):
     seq = seq.lower()
     
     angles = np.asarray(angles, dtype=float)
+
+    if angles.ndim > 2:  # The backend should never be called with these inputs
+        raise ValueError("Cython backend is only compatible with up to 2D inputs")
+
     if degrees:
         angles = np.deg2rad(angles)
 
     is_single = angles.ndim < 2
-    angles = np.atleast_2d(angles)
+    angles = np.atleast_2d(angles)  # Ensure 0, 1 and 2D arrays are 2D
     
     if angles.shape[1] != num_axes:
         raise ValueError("Expected last dimension of `angles` to match number of"
