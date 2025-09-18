@@ -94,7 +94,7 @@ jobs:
 
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          pixi-version: v0.39.2
+          pixi-version: v0.55.0
           manifest-path: .github/workflows/pixi.toml
           cache: false
 
