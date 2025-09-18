@@ -195,7 +195,7 @@ cdef int low_0_bit(uint_32_64 x) noexcept nogil:
 
     """
     cdef int i = 0
-    while x & (1 << i) != 0:
+    while x & (1L << i) != 0:
         i += 1
     return i + 1
 

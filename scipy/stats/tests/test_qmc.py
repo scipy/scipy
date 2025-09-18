@@ -894,9 +894,10 @@ class TestLow0Bit:
             (0b0101, 2),
             (0b0111, 4),
             # gh-23409
-            # (2 ** 32 - 1, 33),
-            # (2 ** 32, 1),
-            # (2 ** 33 - 1, 34),
+            (2 ** 32 - 1, 33),
+            (2 ** 32, 1),
+            (2 ** 33 - 1, 34),
+            # TODO: fix infinite loop for this input
             # (2 ** 64 - 1, 65),
         ]
         for in_, out in test_vector:
