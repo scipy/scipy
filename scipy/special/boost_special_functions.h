@@ -2255,6 +2255,9 @@ chdtriv_wrap(const Real p, const Real x)
         sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+    if ((p == 1)) {
+        return 0.0;
+    }
     Real y;
     try {
         y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
