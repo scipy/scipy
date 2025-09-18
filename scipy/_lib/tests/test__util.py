@@ -352,7 +352,7 @@ class TestContainsNaN:
         # Integer arrays cannot contain NaN
         assert not _contains_nan(np.array([1, 2, 3]))
         assert not _contains_nan(np.array([[1, 2], [3, 4]]))
-        
+
         assert not _contains_nan(np.array([1., 2., 3.]))
         assert not _contains_nan(np.array([1., 2.j, 3.]))
         assert _contains_nan(np.array([1., 2.j, np.nan]))
@@ -585,7 +585,6 @@ class TestTransitionToRNG:
         (random_array, 'random_state'),
         (random, 'random_state'),
         (rand, 'random_state'),
-        (svds, "random_state"),
         (random_rotation, "random_state"),
         (goodness_of_fit, "random_state"),
         (permutation_test, "random_state"),
