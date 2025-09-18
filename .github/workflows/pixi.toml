@@ -1,149 +1,270 @@
-[project]
-name = "scipy"
-version = "1.16.0.dev0"
-description = "Fundamental algorithms for scientific computing in Python"
+[workspace]
+name = "scipy-ci"
+description = "Environment and task management for SciPy CI"
 authors = ["SciPy Developers <scipy-dev@python.org>"]
-channels = ["conda-forge"]
-platforms = ["linux-64"]
+channels = ["https://prefix.dev/conda-forge"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
 
 [dependencies]
-compilers = ">=1.7.0,<2"
+spin = ">=0.14,<0.15"
+python = ">=3.13.7,<3.14"
+
+
+### Basic building ###
+
+[feature.build.dependencies]
+compilers = ">=1.11.0,<2"
 pkg-config = ">=0.29.2,<0.30"
-ninja = ">=1.12.1,<2"
-python = ">=3.12.0,<3.13"
-meson = ">=1.5.1,<2"
-meson-python = ">=0.16.0"
-cython = ">=3.0.10,<4"
-python-build = "*"
-pip = "*"
-blas-devel = "*"
-numpy = ">=2.0.0"
-pybind11 = ">=2.13.1"
-pythran = ">=0.15.0"
-spin = "*"
-# Add test dependencies to default list of dependencies so they show up in every
-# environment without having to also see the test task in those other envs
-pytest = "*"
-hypothesis = "*"
-pytest-xdist = "*"
-threadpoolctl = "*"
-pooch = "*"
-mpmath = "*"
-gmpy2 = "*"
-ccache = ">=4.10.1,<5"
+ninja = ">=1.13.1,<2"
+meson = ">=1.9.0,<2"
+meson-python = ">=0.18.0,<0.19"
+cython = ">=3.1.4,<4"
+python-build = ">=1.3.0,<2"
+pip = ">=25.2,<26"
+blas-devel = ">=3.9.0,<4"
+numpy = ">=2.3.3,<3"
+pybind11 = ">=3.0.1,<4"
+pythran = ">=0.18.0,<0.19"
 
-[feature.build.tasks]
-build = { cmd = "spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }
-wheel = { cmd = "python -m build -wnx -Cbuild-dir=build-whl && cp dist/*.whl ../../wheelhouse/", cwd = "../.." }
+[feature.build.tasks.build]
+cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (default settings)"
 
-[feature.test.tasks]
-test = { cmd = "spin test", cwd = "../.." }
 
-# BLAS/LAPACK features
-[feature.openblas.dependencies]
-libblas = { version = "*", build = "*openblas" }
-openblas = ">=0.3.27,<0.4"
+### Basic testing ###
+
+[feature.test.dependencies]
+pytest = ">=8.4.2,<9"
+hypothesis = ">=6.139.2,<7"
+pytest-cov = ">=7.0.0,<8"
+pytest-timeout = ">=2.4.0,<3"
+pytest-xdist = ">=3.8.0,<4"
+threadpoolctl = ">=3.6.0,<4"
+pooch = ">=1.8.2,<2"
+mpmath = ">=1.3.0,<2"
+gmpy2 = ">=2.2.1,<3"
+ccache = ">=4.11.3,<5"
+marray-python = ">=0.0.11,<0.0.12"
+
+[feature.test.tasks.test]
+cmd = "spin test --no-build"
+cwd = "../.."
+depends-on = [{ task = "build", environment = "build" }]
+description = "Test SciPy (default settings)"
+
+
+### Linting ###
+
+# [feature.lint]
+# platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.lint.dependencies]
+ruff = ">=0.13.0,<0.14"
+tach = ">=0.29.0,<0.30"
+cython-lint = ">=0.16.7,<0.17"
+packaging = ">=25.0,<26"
+
+[feature.lint.tasks.lint]
+cmd = "spin lint"
+cwd = "../.."
+description = "Run main lint checks"
+
+[feature.lint.tasks.tach]
+cmd = "tach check --exact"
+cwd = "../.."
+description = "Check module interdependencies with tach"
+
+[feature.lint.tasks.check-python-h]
+cmd = "python check_python_h_first.py"
+cwd = "../../tools"
+description = "Check that `Python.h` is included before any stdlib headers"
+
+
+### BLAS/LAPACK features ###
+
+# [feature.openblas.dependencies]
+# libblas = { version = "*", build = "*openblas" }
+# openblas = ">=0.3.27,<0.4"
+
 
 [feature.mkl.target.linux-64.dependencies]
-libblas = { version = "*", build = "*mkl" }
-mkl = ">=2023.2.0,<2025"
+libblas = { version = ">=3.9.0,<4", build = "*mkl" }
+mkl = ">=2024.2.2,<2025"
+
+[feature.mkl.tasks.build-mkl]
+cmd = "spin build --build-dir=build-mkl --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+cwd = "scipy"
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build with MKL BLAS"
 
 
-# CPU/CUDA features
-[feature.cpu.tasks]
-test-cpu = { cmd = "spin test -b all", cwd = "../.." }
+# [feature.accelerate]
+# platforms = ["osx-arm64"]
+
+# [feature.accelerate.dependencies]
+# libblas = { version = ">=3.9.0,<4", build = "*accelerate" }
+
+# [feature.accelerate-lp64.tasks.build-accelerate]
+# cmd = "spin build --build-dir=build-accelerate --with-accelerate"
+# cwd = "../.."
+# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+
+# [feature.accelerate-ilp64.tasks.build-accelerate]
+# cmd = "spin build --build-dir=build-accelerate -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+# cwd = "../.."
+# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+
+# [feature.accelerate.tasks.test-accelerate-full]
+# cmd = "spin test --no-build --build-dir=build-accelerate -m full"
+# cwd = "../.."
+# depends-on = "build-accelerate"
+
+
+### CPU/CUDA features ###
+
+# [feature.cpu]
+# platforms = ["osx-arm64", "linux-64", "win-64"]
+
+# [feature.cpu.tasks.test-cpu]
+# cmd = "spin test --no-build -b all -m 'array_api_backends and not slow'"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
+
 
 [feature.cuda]
 platforms = ["linux-64"]
+# XXX: JAX needs cuda 12 right now, CuPy seems to need cuda 13
+# so this feature is not included in the CuPy environment
 system-requirements = { cuda = "12" }
 
 [feature.cuda.dependencies]
-cuda-version = ">=12.0,<13"
+cuda-version = ">=12.9,<13"
 
-[feature.cuda.tasks]
-test-cuda = { cmd = "spin test -b all", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+[feature.cuda.tasks.test-cuda]
+cmd = "spin test --no-build -b cupy -b torch -b jax.numpy -m 'array_api_backends and not slow'"
+cwd = "../.."
+env.SCIPY_DEVICE = "cuda"
+depends-on = [{ task = "build", environment = "build" }]
+description = "Test with all CUDA array backends"
 
 
-# Array libraries we have support for
-[feature.torch-base]
-platforms = ["linux-64"]
+### Array libraries ###
 
-[feature.torch-base.tasks]
-test-torch = { cmd = "spin test -b torch", cwd = "../.." }
+# [feature.torch-cpu]
+# platforms = ["osx-arm64", "linux-64", "win-64"]
 
-[feature.torch-cpu.dependencies]
-pytorch-cpu = "*"
+# [feature.torch-cpu.dependencies]
+# pytorch-cpu = ">=2.7.1,<3"
 
 [feature.torch-cuda.dependencies]
-pytorch-gpu = "*"
+pytorch-gpu = ">=2.7.1,<3"
 
-[feature.torch-cuda.tasks]
-test-torch-cuda = { cmd = "spin test -b torch", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+# [feature.torch-cpu.tasks.test-torch]
+# cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
+
+# [feature.torch-cpu.tasks.test-torch-float32]
+# cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+# env.SCIPY_DEFAULT_DTYPE = "float32"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
+
+[feature.torch-cuda.tasks.test-torch-cuda]
+cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+cwd = "../.."
+env.SCIPY_DEVICE = "cuda"
+depends-on = [{ task = "build", environment = "build" }]
+description = "Test with PyTorch on CUDA"
 
 
 [feature.cupy]
 platforms = ["linux-64"]
+system-requirements = { cuda = "13" }
 
 [feature.cupy.dependencies]
-cupy = "*"
+cupy = ">=13.6.0,<14"
+cuda-version = ">=13.0,<14"
 
-[feature.cupy.tasks]
-test-cupy = { cmd = "spin test -b cupy", cwd = "../.." }
+[feature.cupy.tasks.test-cupy]
+cmd = "spin test --no-build -b cupy -m 'array_api_backends and not slow'"
+cwd = "../.."
+depends-on = [{ task = "build", environment = "build" }]
+description = "Test with CuPy"
 
 
-[feature.jax-cpu]
-# Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
-platforms = ["linux-64"]
+# [feature.jax-cpu]
+# # include windows so the array-api env can use the jax-cpu feature
+# platforms = ["linux-64", "osx-arm64", "win-64"]
 
-[feature.jax-cpu.dependencies]
-jax = "!=0.6.2"  # https://github.com/jax-ml/jax/issues/29537
-jaxlib = { version = "!=0.6.2", build = "*cpu*" }
+# # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
+# [feature.jax-cpu.target.unix.dependencies]
+# jax = ">=0.6.0"
+# jaxlib = { version = "*", build = "*cpu*" }
 
 [feature.jax-cuda]
 platforms = ["linux-64"]
 
 [feature.jax-cuda.dependencies]
-jax = "*"
-jaxlib = { version = "*", build = "*cuda*" }
+# JAX 0.6.2 and 0.7.0 segfault on CUDA
+jaxlib = { version = ">=0.6.0,!=0.6.2,!=0.7.0", build = "cuda12*" }
+jax = ">=0.6.0"
 
-[feature.jax-base.tasks]
-test-jax = { cmd = "spin test -b jax.numpy", cwd = "../.." }
+# # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
+# [feature.jax-cpu.target.unix.tasks.test-jax]
+# cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
 
-[feature.jax-cuda.tasks]
-test-jax-cuda = { cmd = "spin test -b jax.numpy", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+[feature.jax-cuda.tasks.test-jax-cuda]
+cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
+cwd = "../.."
+env.SCIPY_DEVICE = "cuda"
+depends-on = [{ task = "build", environment = "build" }]
+description = "Test with JAX on CUDA"
 
-[feature.array_api_strict.dependencies]
-array-api-strict = "*"
 
-[feature.array_api_strict.tasks]
-test-strict = { cmd = "spin test -b array_api_strict", cwd = "../.." }
+# [feature.array_api_strict]
+# platforms = ["osx-arm64", "linux-64", "win-64"]
+
+# [feature.array_api_strict.dependencies]
+# array-api-strict = ">=2.4.1,<3"
+
+# [feature.array_api_strict.tasks.test-strict]
+# cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not slow'"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
+
+
+# [feature.dask]
+# platforms = ["osx-arm64", "linux-64", "win-64"]
+
+# [feature.dask.dependencies]
+# dask-core = ">=2025.7.0,<2026" # Don't install distributed, tornado, etc.
+
+# [feature.dask.tasks.test-dask]
+# cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
+# cwd = "../.."
+# depends-on = [{ task = "build", environment = "build" }]
 
 
 [environments]
-default = ["build", "test", "openblas"]
-torch = ["torch-base", "torch-cpu", "mkl"]
-torch-cuda = ["torch-base", "torch-cuda", "mkl", "cuda"]
-cupy = ["cupy"]
-jax = ["jax-base", "jax-cpu"]
-jax-cuda = ["jax-base", "jax-cuda", "cuda"]
-array-api-strict = ["array_api_strict"]
-array-api = [
-    "cpu",
-    "array_api_strict",
-    "jax-base",
-    "jax-cpu",
-    "mkl",
-    "torch-base",
-    "torch-cpu",
-]
-array-api-cuda = [
-    "cuda",
-    "array_api_strict",
-    "cupy",
-    "jax-base",
-    "jax-cuda",
-    "mkl",
-    "torch-base",
-    "torch-cuda",
-    "test",
-]
+build = { features = ["build"], solve-group = "default-build" }
+lint = ["lint"]
+torch-cuda = { features = ["test", "cuda", "torch-cuda", "mkl"], solve-group = "cuda" }
+cupy = { features = ["test", "cupy"] }
+jax-cuda = { features = ["test", "cuda", "jax-cuda"], solve-group = "cuda" }
+# torch = { features = ["test", "torch-cpu", "mkl"], solve-group = "mkl" }
+# array-api-cpu = { features = [
+#   "test",
+#   "cpu",
+#   "mkl",
+#   # array libraries
+#   "array_api_strict",
+#   "dask",
+#   "jax-cpu",
+#   "torch-cpu",
+# ], solve-group = "mkl" }
