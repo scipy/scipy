@@ -1,0 +1,55 @@
+name: Update lock file
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 1"
+
+jobs:
+  update_lock_file:
+    if: github.repository == 'scipy/scipy'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: prefix-dev/setup-pixi@v0.9.0
+        with:
+          pixi-version: v0.55.0
+
+      - name: Remove the current lock file
+        working-directory: .github/workflows
+        run: rm -f pixi.lock
+
+      - name: Update the pixi lock files
+        working-directory: .github/workflows
+        run: pixi update
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7.0.8
+        with:
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          push-to-fork: scipy-lock-bot/scipy
+          commit-message: "CI: update Pixi lock file"
+          committer: "Lock file bot <noreply@github.com>"
+          author: "Lock file bot <noreply@github.com>"
+          delete-branch: true
+          branch: auto-update-pixi-lock-file
+          title: "CI: update Pixi lock file :lock:"
+          body: |
+            Update the Pixi lock file.
+
+            ### Note
+            If CI fails, create a new branch based on this PR and add the required fixes to that branch.
+
+      - name: Check Pull Request
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          echo "### :rocket: Pull-Request Summary" >> ${GITHUB_STEP_SUMMARY}
+          echo "" >> ${GITHUB_STEP_SUMMARY}
+          echo "The following lock file pull-request has been auto-generated:"
+          echo "- **PR** #${{ steps.cpr.outputs.pull-request-number }}" >> ${GITHUB_STEP_SUMMARY}
+          echo "- **URL** ${{ steps.cpr.outputs.pull-request-url }}" >> ${GITHUB_STEP_SUMMARY}
+          echo "- **Operation** [${{ steps.cpr.outputs.pull-request-operation }}]" >> ${GITHUB_STEP_SUMMARY}
+          echo "- **SHA** ${{ steps.cpr.outputs.pull-request-head-sha }}" >> ${GITHUB_STEP_SUMMARY}
