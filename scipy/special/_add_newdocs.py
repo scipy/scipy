@@ -1285,10 +1285,10 @@ add_newdoc("chdtriv",
 
     >>> p, x = 0.5, 1
     >>> sc.chdtr(sc.chdtriv(p, x), x)
-    0.5000000000202172
+    0.5000000000000003
     >>> v = 1
     >>> sc.chdtriv(sc.chdtr(v, x), v)
-    1.0000000000000013
+    1.0
 
     """)
 
