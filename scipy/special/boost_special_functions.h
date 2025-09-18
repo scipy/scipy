@@ -2249,15 +2249,15 @@ Real
 chdtriv_wrap(const Real p, const Real x)
 {
     if (std::isnan(p) || std::isnan(x)) {
-    return NAN;
+        return NAN;
     }
     if ((x <= 0) || (p < 0) || (p > 1)) {
-    sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        return NAN;
     }
     Real y;
     try {
-    y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
+        y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
         y = NAN;
