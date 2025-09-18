@@ -105,7 +105,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
             return_singular, solver, rng)
 
 
-@_transition_to_rng("random_state", position_num=9, end_version="1.19.0")
+@_transition_to_rng("random_state", position_num=9)
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
          solver='arpack', rng=None, options=None):
