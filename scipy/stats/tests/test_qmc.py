@@ -897,14 +897,10 @@ class TestLow0Bit:
             (2 ** 32 - 1, 33),
             (2 ** 32, 1),
             (2 ** 33 - 1, 34),
-            # TODO: fix infinite loop for this input
-            # (2 ** 64 - 1, 65),
+            (2 ** 64 - 1, 65),
         ]
         for in_, out in test_vector:
-            # Try both specializations of this function if the argument fits
-            if in_ <= 2 ** 32 - 1:
-                assert_equal(_test_low_0_bit['uint32_t'](in_), out)
-            assert_equal(_test_low_0_bit['uint64_t'](in_), out)
+            assert_equal(_test_low_0_bit(in_), out)
 
 
 class TestPoisson(QMCEngineTests):
