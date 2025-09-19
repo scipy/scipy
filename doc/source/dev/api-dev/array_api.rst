@@ -226,6 +226,7 @@ conversion will raise an exception. The reason for that is that silent data
 transfer between devices is considered bad practice, as it is likely to be a
 large and hard-to-detect performance bottleneck.
 
+.. _dev-arrayapi_adding_tests:
 
 Adding tests
 ------------
@@ -521,4 +522,3 @@ Support with JIT
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit
    :stats.qmc: array_api_support_stats_qmc_jit
-

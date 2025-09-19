@@ -1,5 +1,44 @@
+.. _array_api_support_signal:
+
 Array API Standard Support: ``signal``
 ======================================
+This page explains some caveats of the `~scipy.signal` module and provides (currently
+incomplete) tables about the
+:ref:`CPU <array_api_support_signal_cpu>`,
+:ref:`GPU <array_api_support_signal_gpu>` and
+:ref:`JIT <array_api_support_signal_jit>` support.
+
+
+.. _array_api_support_signal_caveats:
+
+Caveats
+-------
+The functions in the `~scipy.signal` module are decorated to call their counterparts in
+`JAX <https://docs.jax.dev/en/latest/jax.scipy.html>`__ and `CuPy
+<https://docs.cupy.dev/en/stable/reference/scipy_signal.html>`__ when the environment
+variable ``SCIPY_ARRAY_API`` is set. This works around incompatibilities in those
+backends.
+
+Hence, there can be, especially during CI testing, discrepancies in behavior between
+SciPy and the JAX and CuPy backends. Skipping the incompatible backends in unit tests,
+as described in the :ref:`dev-arrayapi_adding_tests` section, is the currently
+recommended workaround.
+
+The functions are decorated by the code in file
+``scipy/signal/_support_alternative_backends.py``:
+
+.. literalinclude:: ../../../../../scipy/signal/_support_alternative_backends.py
+    :lineno-match:
+
+Note that the function will only be decorated if its signature is listed in the file
+``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
+function looks like this:
+
+.. literalinclude:: ../../../../../scipy/signal/_delegators.py
+    :pyobject: firwin_signature
+    :lineno-match:
+
+
 
 .. _array_api_support_signal_cpu:
 
