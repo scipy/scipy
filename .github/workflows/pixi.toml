@@ -58,8 +58,8 @@ description = "Test SciPy (default settings)"
 
 ### Linting ###
 
-# [feature.lint]
-# platforms = ["linux-64", "osx-arm64", "win-64"]
+[feature.lint]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.lint.dependencies]
 ruff = ">=0.13.0,<0.14"
