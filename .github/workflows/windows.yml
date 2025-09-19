@@ -50,7 +50,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
@@ -93,7 +93,7 @@ jobs:
       - name: pip-packages
         run: |
           # 1.26.4 is currently our oldest supported NumPy version
-          python -m pip install numpy==1.26.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          python -m pip install numpy==1.26.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
@@ -195,7 +195,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
