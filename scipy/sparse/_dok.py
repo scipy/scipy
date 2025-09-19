@@ -65,8 +65,6 @@ class _dok_base(_spbase, IndexMixin, dict):
         """
         if isinstance(val, dict):
             inputs = val.items()
-        elif issparse(val) and val.format == "dok":
-            inputs = val._dict.items()
         else:
             inputs = val
 
@@ -86,7 +84,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                         raise IndexError(f'negative index {key} not allowed in update')
                     if idx >= max_idx:
                         raise IndexError(f'index {key} is too large for self.shape')
-        # actually update
+        # do the update
         self._dict.update(inputs)
 
     def _getnnz(self, axis=None):
