@@ -62,7 +62,7 @@ description = "Test SciPy (default settings)"
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.lint.dependencies]
-ruff = ">=0.13.0,<0.14"
+ruff = ">=0.13.1,<0.14"
 cython-lint = ">=0.16.7,<0.17"
 packaging = ">=25.0,<26"
 
@@ -242,7 +242,7 @@ description = "Test with array-api-strict"
 platforms = ["osx-arm64", "linux-64", "win-64"]
 
 [feature.dask.dependencies]
-dask-core = ">=2025.7.0,<2026" # Don't install distributed, tornado, etc.
+dask-core = ">=2025.9.1,<2026" # Don't install distributed, tornado, etc.
 
 [feature.dask.tasks.test-dask]
 cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
