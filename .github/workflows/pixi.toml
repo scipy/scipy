@@ -63,7 +63,6 @@ description = "Test SciPy (default settings)"
 
 [feature.lint.dependencies]
 ruff = ">=0.13.0,<0.14"
-tach = ">=0.29.0,<0.30"
 cython-lint = ">=0.16.7,<0.17"
 packaging = ">=25.0,<26"
 
@@ -71,11 +70,6 @@ packaging = ">=25.0,<26"
 cmd = "spin lint"
 cwd = "../.."
 description = "Run main lint checks"
-
-[feature.lint.tasks.tach]
-cmd = "tach check --exact"
-cwd = "../.."
-description = "Check module interdependencies with tach"
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
