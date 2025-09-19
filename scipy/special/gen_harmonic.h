@@ -48,11 +48,11 @@ gen_harmonic(int64_t n, double a)
                  "n >= 1 is required, but got n = %" PRId64, n);
         return NAN;
     }
+    if (n == 1) {
+        // IEEE: pow(1.0, _) is 1.0.
+        return 1.0;
+    }
     if (std::isnan(a)) {
-        if (n == 1) {
-            // IEEE: pow(1.0, nan) is 1.0.
-            return 1.0;
-        }
         return NAN;
     }
     if (std::isinf(a)) {
@@ -62,13 +62,7 @@ gen_harmonic(int64_t n, double a)
         }
         else {
             // a = -inf
-            if (n == 1) {
-                // IEEE: pow(1.0, inf) = 1
-                return 1.0;
-            }
-            else {
-                return INFINITY;
-            }
+            return INFINITY;
         }
     }
     if (a == 0) {
@@ -78,7 +72,7 @@ gen_harmonic(int64_t n, double a)
         return sum_powers(1, n, a);
     }
     else {
-        // If here, we know a is finite and a > 1, and n >= 1.
+        // If here, we know a is finite and a > 1, and n > 1.
         //
         // For a > 1, we can use the formula zeta(a, 1) - zeta(a, n + 1),
         // where zeta(a, k) is the Hurwitiz zeta function.
