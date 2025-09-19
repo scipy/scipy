@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <xsf/zeta.h>  // for xsf::cephes::zeta(a, n)
 #include "sf_error.h"
 
@@ -46,14 +47,14 @@ gen_harmonic(int64_t n, double a)
     if (n < 1) {
         sf_error("_gen_harmonic", SF_ERROR_DOMAIN,
                  "n >= 1 is required, but got n = %" PRId64, n);
-        return NAN;
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (n == 1) {
         // IEEE: pow(1.0, _) is 1.0.
         return 1.0;
     }
     if (std::isnan(a)) {
-        return NAN;
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (std::isinf(a)) {
         if (a > 0) {
@@ -62,7 +63,7 @@ gen_harmonic(int64_t n, double a)
         }
         else {
             // a = -inf
-            return INFINITY;
+            return std::numeric_limits<double>::infinity();
         }
     }
     if (a == 0) {
@@ -145,7 +146,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
         sf_error("_normalized_gen_harmonic", SF_ERROR_DOMAIN,
                  "1 <= j <= k <= n is required, but got j = %" PRId64 ", "
                  "k = %" PRId64 ", and n = %" PRId64, j, k, n);
-        return NAN;
+        return std::numeric_limits<double>::quiet_NaN();
     }
     //
     // Now we know 1 <= j <= k <= n
@@ -156,7 +157,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
         return 1.0;
     }
     if (std::isnan(a)) {
-        return NAN;
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (std::isinf(a)) {
         if (a > 0) {
@@ -178,7 +179,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
             }
             else {
                 // Numerator and denominator are both +inf.
-                return NAN;
+                return std::numeric_limits<double>::quiet_NaN();
             }
         }
     }
