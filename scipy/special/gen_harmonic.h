@@ -150,12 +150,12 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
     //
     // Now we know 1 <= j <= k <= n
     //
+    if (n == 1) {
+        // IEEE: pow(1.0, _) is 1.0.
+        // n == 1 implies j == k == 1.
+        return 1.0;
+    }
     if (std::isnan(a)) {
-        if (n == 1) {
-            // n == 1 implies j == k == 1.
-            // IEEE: pow(1.0, nan) is 1.0.
-            return 1.0;
-        }
         return NAN;
     }
     if (std::isinf(a)) {
@@ -172,11 +172,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
         }
         else {
             // a = -inf
-            if (n == 1) {
-                // Numerator and denominator are both 1.
-                return 1.0;
-            }
-            else if (k == 1) {
+            if (k == 1) {
                 // Numerator is 1, denominator is +inf.
                 return 0.0;
             }
@@ -193,7 +189,7 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
         return normalized_sum_powers(j, k, n, a);
     }
     else {
-        // If here, we know a is finite and a > 1, and 1 <= j <= k <= n.
+        // If here, we know a is finite and a > 1, n > 1, and 1 <= j <= k <= n.
         // See the comments in _gen_harmonic() for an explanation of why
         // we check the ratios of the zeta functions before using them
         // to compute the result.
