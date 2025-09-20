@@ -10476,7 +10476,7 @@ class truncpareto_gen(rv_continuous):
     """
 
     def _shape_info(self):
-        ib = _ShapeInfo("b", False, (0.0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         ic = _ShapeInfo("c", False, (1.0, np.inf), (False, False))
         return [ib, ic]
 
