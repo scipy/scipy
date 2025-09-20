@@ -839,3 +839,8 @@ class TestNoncentralChiSquaredFunctions:
     )
     def test_chndtr_edge_cases(self, x, df, nc, expected):
         assert_allclose(sp.chndtr(x, df, nc), expected, rtol=1e-15)
+
+
+@pytest.mark.parametrize("x", [0.1, 100])
+def test_chdtriv_p_equals_1_returns_0(x):
+    assert sp.chdtriv(1, x) == 0

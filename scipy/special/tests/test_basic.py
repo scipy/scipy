@@ -188,9 +188,6 @@ class TestCephes:
     def test_chdtri(self):
         assert_equal(cephes.chdtri(1,1),0.0)
 
-    def test_chdtriv(self):
-        assert_equal(cephes.chdtriv(0,0),5.0)
-
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
