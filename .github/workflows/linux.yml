@@ -52,8 +52,6 @@ jobs:
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: 'environment.yml'
         allow-prereleases: true
 
     - name: Install Ubuntu dependencies
@@ -103,7 +101,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror
+        spin build --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -169,7 +167,7 @@ jobs:
         source ../venvs/scipy-venv/bin/activate
         # Note that this uses build isolation. That's why we don't need build
         # dependencies to be installed in the venv itself.
-        python -m pip install . -vv
+        python -m pip install . -vv -Csetup-args=--werror
 
     - name: Basic imports and tests
       run: |
@@ -217,7 +215,7 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
       - name: Build SciPy
@@ -313,13 +311,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran lcov
 
-    - name: Caching Python dependencies
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-prerelease
-
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
@@ -349,7 +340,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        spin build --gcov --with-scipy-openblas
+        spin build --gcov --with-scipy-openblas --release
 
     - name: Ccache performance
       shell: bash -l {0}
