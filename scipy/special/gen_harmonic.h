@@ -7,7 +7,7 @@
 
 //
 // If zeta(a, n + 1) / zeta(a, 1) exceeds zeta_ratio_threshold, the two
-// values are close enough that the loss of precision in the subraction
+// values are close enough that the loss of precision in the subtraction
 // zeta(a, 1) - zeta(a, n + 1) should be avoided by using the direct
 // sum of powers instead.  The most conservative value would 0.5, but
 // experimentation shows that 0.9 maintains a relative error of less
