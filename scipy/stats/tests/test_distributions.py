@@ -7955,6 +7955,30 @@ class TestTrapezoid:
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
+    def test_trapezoid_fit_convergence_gh23503(self):
+        # gh-23503 reported that trapezoid.fit would consistently converge to a
+        # triangular distribution unless starting values were provided. Check that this
+        # is resolved.
+
+        # Generate test data from a trapezoidal distribution
+        rng = np.random.default_rng(23842359234598263956)
+        true_args = 0.3, 0.7, -1, 2
+        true_dist = stats.trapezoid(*true_args)
+        x = true_dist.rvs(1000, random_state=rng)
+
+        # fit to data
+        fitted_args = stats.trapezoid.fit(x)
+
+        # Should not converge to triangular distribution (c=d=1)
+        fitted_c, fitted_d = fitted_args[:2]
+        assert not np.allclose(fitted_c, 1, atol=0.1)
+        assert not np.allclose(fitted_d, 1, atol=0.1)
+
+        # objective function is better than with true values of parameters
+        true_llf = stats.trapezoid.nnlf(true_args, x)
+        fitted_llf = stats.trapezoid.nnlf(fitted_args, x)
+        assert fitted_llf < true_llf
+
 
 class TestTriang:
     def test_edge_cases(self):

@@ -36,7 +36,6 @@ mle_failing_fits = [
         'tukeylambda',
         'vonmises',
         'levy_stable',
-        'trapezoid',
         'truncweibull_min',
         'studentized_range',
 ]
@@ -71,7 +70,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'rel_breitwigner', 'skewcauchy', 't', 'triang',
                    'truncpareto', 'truncweibull_min', 'tukeylambda',
                    'studentized_range']
 
@@ -259,7 +258,7 @@ def cases_test_fit_mle():
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
-                       'skellam', 'trapezoid', 'triang',
+                       'skellam', 'triang',
                        'tukeylambda', 'vonmises', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
@@ -317,7 +316,7 @@ def cases_test_fit_mse():
                        'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlognorm',
                        'reciprocal', 'rel_breitwigner', 'rice',
-                       'trapezoid', 'truncnorm', 'truncweibull_min',
+                       'truncnorm', 'truncweibull_min',
                        'vonmises_line', 'zipfian'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
