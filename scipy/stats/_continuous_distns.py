@@ -8595,8 +8595,6 @@ class powerlaw_gen(rv_continuous):
 
     `powerlaw` takes ``a`` as a shape parameter for :math:`a`.
 
-    For a
-
     %(after_notes)s
 
     For example, the support of `powerlaw` can be adjusted from the default
