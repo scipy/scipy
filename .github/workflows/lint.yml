@@ -32,8 +32,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           manifest-path: .github/workflows/pixi.toml
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          environments: lint
+          cache: false
 
       - name: Spin Lint
         working-directory: .github/workflows

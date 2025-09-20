@@ -8,7 +8,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [dependencies]
 spin = ">=0.14,<0.15"
-python = ">=3.13.7,<3.14"
+python = ">=3.12.11,<3.14"
 
 
 ### Basic building ###
@@ -95,26 +95,45 @@ env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build with MKL BLAS"
 
 
-# [feature.accelerate]
-# platforms = ["osx-arm64"]
+[feature.accelerate]
+platforms = ["osx-arm64"]
 
-# [feature.accelerate.dependencies]
-# libblas = { version = ">=3.9.0,<4", build = "*accelerate" }
+[feature.accelerate.dependencies]
+libblas = { version = ">=3.9.0,<4", build = "*accelerate" }
 
-# [feature.accelerate-lp64.tasks.build-accelerate]
-# cmd = "spin build --build-dir=build-accelerate --with-accelerate"
-# cwd = "../.."
-# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+[feature.accelerate-lp64.tasks.build-accelerate]
+cmd = "spin build --build-dir=build-accelerate --with-accelerate"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with accelerate (lp64)"
 
-# [feature.accelerate-ilp64.tasks.build-accelerate]
-# cmd = "spin build --build-dir=build-accelerate -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
-# cwd = "../.."
-# env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+[feature.accelerate-ilp64.tasks.build-accelerate]
+cmd = "spin build --build-dir=build-accelerate -S-Dblas=accelerate -S-Duse-ilp64=true -S-Dblas-symbol-suffix='$NEWLAPACK$ILP64'"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with accelerate (ilp64)"
 
-# [feature.accelerate.tasks.test-accelerate-full]
-# cmd = "spin test --no-build --build-dir=build-accelerate -m full"
-# cwd = "../.."
-# depends-on = "build-accelerate"
+[feature.accelerate.tasks.test-accelerate-full]
+cmd = "spin test --no-build --build-dir=build-accelerate -m full"
+cwd = "../.."
+depends-on = "build-accelerate"
+description = "Test SciPy with accelerate (and `-m full`)"
+
+
+[feature.scipy-openblas.pypi-dependencies]
+scipy-openblas32 = ">=0.3.30.0.2, <0.4"
+
+[feature.scipy-openblas.tasks.build-scipy-openblas]
+cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with scipy-openblas32"
+
+[feature.scipy-openblas.tasks.test-scipy-openblas]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas"
+cwd = "../.."
+depends-on = "build-scipy-openblas"
+description = "Test SciPy with scipy-openblas32"
 
 
 ### CPU/CUDA features ###
@@ -251,6 +270,84 @@ depends-on = [{ task = "build", environment = "build" }]
 description = "Test with Dask"
 
 
+### Optional dependencies ###
+
+[feature.umfpack]
+platforms = ["osx-arm64", "linux-64"]
+
+[feature.umfpack.dependencies]
+# scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564
+scikit-umfpack = "==0.3.3"
+setuptools = "<67"
+
+
+[feature.scikit-sparse]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.scikit-sparse.dependencies]
+scikit-sparse = ">=0.4.14,<0.5"
+
+
+[feature.system-libs]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.system-libs.dependencies]
+libboost-headers = "==1.89.0"
+qhull = "==2020.2"
+
+[feature.system-libs.activation.env]
+BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/include/boost"
+BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/lib"
+
+[feature.system-libs.tasks.build-system-libs]
+cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with system libs (e.g. boost, qhull)"
+
+[feature.system-libs.tasks.test-system-libs]
+cmd = "spin test --no-build"
+cwd = "../.."
+depends-on = "build-system-libs"
+description = "Test SciPy with system libs"
+
+
+### Alternative python versions ###
+
+[feature.py311-test]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.py311-test.dependencies]
+# Build and test dependencies with Python 3.11
+python = ">=3.11.13,<3.12"
+spin = ">=0.15,<0.16"
+compilers = ">=1.11.0,<2"
+pkg-config = ">=0.29.2,<0.30"
+ninja = ">=1.13.1,<2"
+meson = ">=1.9.0,<2"
+meson-python = ">=0.18.0,<0.19"
+cython = ">=3.1.4,<4"
+python-build = ">=1.3.0,<2"
+pip = ">=25.2,<26"
+blas-devel = ">=3.9.0,<4"
+numpy = ">=1.26.4,<2"
+pybind11 = ">=3.0.1,<4"
+pythran = ">=0.18.0,<0.19"
+pytest = ">=8.4.2,<9"
+hypothesis = ">=6.139.2,<7"
+pytest-cov = ">=7.0.0,<8"
+pytest-timeout = ">=2.4.0,<3"
+pytest-xdist = ">=3.8.0,<4"
+threadpoolctl = ">=3.6.0,<4"
+pooch = ">=1.8.2,<2"
+mpmath = ">=1.3.0,<2"
+gmpy2 = ">=2.2.1,<3"
+ccache = ">=4.11.3,<5"
+marray-python = ">=0.0.12,<0.0.13"
+
+
+### Environments ###
+
 [environments]
 build = { features = ["build"], solve-group = "default-build" }
 lint = ["lint"]
@@ -268,3 +365,7 @@ array-api-cpu = { features = [
   "jax-cpu",
   "torch-cpu",
 ], solve-group = "mkl" }
+py311-system-libs-osx = { features = ["py311-test", "umfpack", "scikit-sparse", "system-libs"], no-default-feature = true }
+accelerate-lp64 = ["build", "test", "accelerate", "accelerate-lp64"]
+accelerate-ilp64 = ["build", "test", "accelerate", "accelerate-ilp64"]
+scipy-openblas = ["build", "test", "scipy-openblas"]
