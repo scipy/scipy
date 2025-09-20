@@ -47,7 +47,7 @@ pooch = ">=1.8.2,<2"
 mpmath = ">=1.3.0,<2"
 gmpy2 = ">=2.2.1,<3"
 ccache = ">=4.11.3,<5"
-marray-python = ">=0.0.11,<0.0.12"
+marray-python = ">=0.0.12,<0.0.13"
 
 [feature.test.tasks.test]
 cmd = "spin test --no-build"

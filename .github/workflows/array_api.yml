@@ -48,11 +48,15 @@ jobs:
         with:
           workflow_name: ${{ github.workflow }}
 
+      - name: Build SciPy
+        working-directory: .github/workflows
+        run: pixi run build
+
       - name: Test SciPy
         working-directory: .github/workflows
         run: |
           export OMP_NUM_THREADS=2
-          pixi run test-cpu -- --durations 3 --timeout=60
+          pixi run --skip-deps test-cpu -- --durations 3 --timeout=60
 
       - name: Test SciPy with torch/float32
         working-directory: .github/workflows
