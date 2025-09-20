@@ -10,7 +10,7 @@ on:
       - maintenance/**
 
 permissions:
-   contents: read  # to fetch code (actions/checkout)
+  contents: read # to fetch code (actions/checkout)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -22,35 +22,26 @@ jobs:
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: ['3.11']
-
     steps:
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      with:
-        fetch-depth: 0  # previous commits used in tools/lint.py
-        submodules: recursive
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # previous commits used in tools/lint.py
+          submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
-      with:
-        python-version: ${{ matrix.python-version }}
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.55.0
+          manifest-path: .github/workflows/pixi.toml
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          environments: lint
 
-    - name: Install Python packages
-      run: |
-        python -m pip install ruff cython-lint packaging tach spin
+      - name: Spin Lint
+        working-directory: .github/workflows
+        run: |
+          set -euo pipefail
+          pixi run lint --diff-against origin/$GITHUB_BASE_REF
 
-    - name: Lint
-      run: |
-        set -euo pipefail
-        spin lint --diff-against origin/$GITHUB_BASE_REF
-
-    - name: Check that Python.h is first in any file including it.
-      shell: bash
-      run: |
-        python tools/check_python_h_first.py
-
-    - name: Check module interdependencies
-      run: |
-        tach check --exact
+      - name: Check that Python.h is first in any file including it.
+        shell: bash
+        working-directory: .github/workflows
+        run: pixi run check-python-h
