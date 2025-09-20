@@ -10222,6 +10222,14 @@ class TestTruncPareto:
         ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
         assert_allclose(res, ref)
 
+    def test_pdf_negative(self):
+        # PDF is that of the truncated pareto distribution
+        b, c = -1.8, 5.3
+        x = np.linspace(1.8, 5.3)
+        res = stats.truncpareto(b, c).pdf(x)
+        ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
+        assert_allclose(res, ref)
+
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])
     @pytest.mark.parametrize('fix_b', [True, False])
