@@ -99,7 +99,8 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
        True to append the .mat extension to the end of the given
        filename, if not already present. Default is True.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
+        Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
         Only relevant for sparse variables.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
@@ -234,10 +235,11 @@ def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
     if spmatrix:
-        from scipy.sparse import issparse, coo_matrix
+        from scipy.sparse import issparse, coo_matrix, csc_matrix
         for name, var in list(matfile_dict.items()):
             if issparse(var):
-                matfile_dict[name] = coo_matrix(var)
+                fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
+                matfile_dict[name] = fmt_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)

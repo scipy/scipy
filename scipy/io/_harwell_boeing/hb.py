@@ -467,7 +467,7 @@ def hb_read(path_or_open_file, *, spmatrix=True):
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------
