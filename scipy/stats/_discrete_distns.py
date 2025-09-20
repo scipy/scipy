@@ -5,7 +5,8 @@
 from functools import partial
 
 from scipy import special
-from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+import scipy.special._ufuncs as scu
 from scipy._lib._util import rng_integers
 import scipy._lib.array_api_extra as xpx
 from scipy.interpolate import interp1d
@@ -22,9 +23,6 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 from ._stats_pythran import _poisson_binom
-
-import scipy.special._ufuncs as scu
-
 
 
 class binom_gen(rv_discrete):
@@ -1361,32 +1359,6 @@ class zipf_gen(rv_discrete):
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
-def _gen_harmonic_gt1(n, a):
-    """Generalized harmonic number, a > 1"""
-    # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    return zeta(a, 1) - zeta(a, n+1)
-
-
-def _gen_harmonic_leq1(n, a):
-    """Generalized harmonic number, a <= 1"""
-    if not np.size(n):
-        return n
-    n_max = np.nanmax(n)  # loop starts at maximum of all n
-    out = np.zeros_like(a, dtype=float)
-    # add terms of harmonic series; starting from smallest to avoid roundoff
-    for i in np.arange(n_max, 0, -1, dtype=float):
-        mask = i <= n  # don't add terms after nth
-        out[mask] += 1/i**a[mask]
-    out[np.isnan(n)] = np.nan
-    return out
-
-
-def _gen_harmonic(n, a):
-    """Generalized harmonic number"""
-    n, a = np.broadcast_arrays(n, a)
-    return xpx.apply_where(a > 1, (n, a), _gen_harmonic_gt1, _gen_harmonic_leq1)
-
-
 class zipfian_gen(rv_discrete):
     r"""A Zipfian discrete random variable.
 
@@ -1440,32 +1412,34 @@ class zipfian_gen(rv_discrete):
 
     def _argcheck(self, a, n):
         # we need np.asarray here because moment (maybe others) don't convert
-        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
+        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=np.int_))
 
     def _get_support(self, a, n):
-        return 1, n
+        return 1, np.floor(n).astype(np.int_)
 
     def _pmf(self, k, a, n):
-        k = k.astype(np.float64)
-        return 1.0 / _gen_harmonic(n, a) * k**-a
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(k, k, n, a)
 
     def _cdf(self, k, a, n):
-        k = np.floor(k)
-        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(1, k, n, a)
 
     def _sf(self, k, a, n):
-        k = np.floor(k + 1)  # # to match SciPy convention
-        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
-                / (k**a*_gen_harmonic(n, a)))
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(k + 1, n, n, a)
 
     def _stats(self, a, n):
-        # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        Hna = _gen_harmonic(n, a)
-        Hna1 = _gen_harmonic(n, a-1)
-        Hna2 = _gen_harmonic(n, a-2)
-        Hna3 = _gen_harmonic(n, a-3)
-        Hna4 = _gen_harmonic(n, a-4)
+        n = np.floor(n).astype(np.int_)
+        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        Hna = scu._gen_harmonic(n, a)
+        Hna1 = scu._gen_harmonic(n, a-1)
+        Hna2 = scu._gen_harmonic(n, a-2)
+        Hna3 = scu._gen_harmonic(n, a-3)
+        Hna4 = scu._gen_harmonic(n, a-4)
         mu1 = Hna1/Hna
         mu2n = (Hna2*Hna - Hna1**2)
         mu2d = Hna**2
