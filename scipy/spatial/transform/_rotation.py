@@ -2279,7 +2279,7 @@ class Rotation:
     def random(
         cls, num: int | None = None, rng: np.random.Generator | None = None
     ) -> Rotation:
-        """Generate uniformly distributed rotations.
+        r"""Generate rotations that are Haar uniformly distributed over the SO(3) group.
 
         Parameters
         ----------
