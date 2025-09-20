@@ -6,6 +6,16 @@
 
 
 //
+// If zeta(a, n + 1) / zeta(a, 1) exceeds zeta_ratio_threshold, the two
+// values are close enough that the loss of precision in the subraction
+// zeta(a, 1) - zeta(a, n + 1) should be avoided by using the direct
+// sum of powers instead.  The most conservative value would 0.5, but
+// experimentation shows that 0.9 maintains a relative error of less
+// than 5e-15.
+//
+static const double zeta_ratio_threshold = 0.9;
+
+//
 // Compute sum_{i=m}^{n} i**-a.
 //
 // This function assumes 1 <= m <= n and `a` is finite.
@@ -79,11 +89,11 @@ gen_harmonic(int64_t n, double a)
         // where zeta(a, k) is the Hurwitiz zeta function.
         // But if zeta(a, 1) and zeta(a, n + 1) are close, precision is lost
         // in the subtraction, so we use the explicit sum instead. We consider
-        // the values "close" if zeta(a, n + 1)/zeta(a, 1) > 0.5.
+        // the values "close" if zeta(a, n + 1)/zeta(a, 1) > zeta_ratio_threshold.
         //
         double z1 = xsf::cephes::zeta(a, static_cast<double>(1));
         double znp1 =  xsf::cephes::zeta(a, static_cast<double>(n + 1));
-        if (znp1 / z1 <= 0.5) {
+        if (znp1 / z1 <= zeta_ratio_threshold) {
             return z1 - znp1;
         }
         else {
@@ -198,8 +208,8 @@ normalized_gen_harmonic(int64_t j, int64_t k, int64_t n, double a)
         double zkp1 =  xsf::cephes::zeta(a, static_cast<double>(k + 1));
         double z1  = xsf::cephes::zeta(a, static_cast<double>(1));
         double znp1 = xsf::cephes::zeta(a, static_cast<double>(n + 1));
-        bool zeta_numer_ok = zkp1 / zj < 0.5;
-        bool zeta_denom_ok = znp1 / z1 < 0.5;
+        bool zeta_numer_ok = zkp1 / zj < zeta_ratio_threshold;
+        bool zeta_denom_ok = znp1 / z1 < zeta_ratio_threshold;
         if (zeta_numer_ok) {
             if (zeta_denom_ok) {
                 // OK to use the zeta formula for the numerator
