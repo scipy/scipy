@@ -1,6 +1,7 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
+from types import GenericAlias
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -593,6 +594,9 @@ class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
@@ -825,8 +829,8 @@ class PPoly(_PPolyBase):
 
     Parameters
     ----------
-    c : ndarray, shape (k, m, ...)
-        Polynomial coefficients, order `k` and `m` intervals.
+    c : ndarray, shape (k+1, m, ...)
+        Polynomial coefficients, degree `k` and `m` intervals.
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. Must be sorted in either increasing or
         decreasing order.

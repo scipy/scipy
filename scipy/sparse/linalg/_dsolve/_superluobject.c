@@ -109,6 +109,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
+        "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -156,8 +158,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_r;
     }
     else if (strcmp(name, "perm_c") == 0) {
@@ -171,8 +176,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_c;
     }
     else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {

@@ -1,10 +1,12 @@
+import warnings
+
 import pytest
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
@@ -756,6 +758,7 @@ def test_gh_20850():
 
 # --- Test Monte Carlo Hypothesis Test --- #
 
+@make_xp_test_case(monte_carlo_test)
 class TestMonteCarloHypothesisTest:
     atol = 2.5e-2  # for comparing p-value
 
@@ -1044,8 +1047,8 @@ class TestMonteCarloHypothesisTest:
             x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
             expected = stats.anderson(x, dist_name)
             return expected.statistic - expected.critical_values[i]
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             sol = root(fun, x0=0)
         assert sol.success
 
@@ -1063,8 +1066,8 @@ class TestMonteCarloHypothesisTest:
             return stats.anderson(x, dist_name).statistic
 
         dist_rvs = self.get_rvs(getattr(stats, dist_name).rvs, rng)
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             res = monte_carlo_test(x, dist_rvs,
                                    statistic1d, n_resamples=1000,
                                    vectorized=False, alternative='greater')
@@ -1840,8 +1843,9 @@ class TestPermutationTest:
         def statistic1d(x, y):
             return stats.ansari(x, y).statistic
 
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic", UserWarning)
             res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
                                    alternative='less')
             res2 = permutation_test((x, y), statistic1d, n_resamples=np.inf,

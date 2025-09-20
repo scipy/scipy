@@ -5,7 +5,7 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_promote)
+                                   xp_promote, xp_capabilities)
 
 
 __all__ = ['nsum']
@@ -27,6 +27,10 @@ __all__ = ['nsum']
 #  make public?
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
              atol=None, rtol=None, preserve_shape=False, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
@@ -105,7 +109,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
         of `a`, `b`, and all elements of `args` (which is conceptually
-        distinct from ``xi` and ``argsi`` passed into `f`).
+        distinct from ``xi`` and ``argsi`` passed into `f`).
 
         - When ``preserve_shape=False`` (default), `f` must accept arguments
           of *any* broadcastable shapes.
@@ -145,12 +149,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         status : int array
             An integer representing the exit status of the algorithm.
 
-            ``0`` : The algorithm converged to the specified tolerances.
-            ``-1`` : (unused)
-            ``-2`` : The maximum number of iterations was reached.
-            ``-3`` : A non-finite value was encountered.
-            ``-4`` : Iteration was terminated by `callback`.
-            ``1`` : The algorithm is proceeding normally (in `callback` only).
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : (unused)
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : Iteration was terminated by `callback`.
+            - ``1`` : The algorithm is proceeding normally (in `callback` only).
 
         integral : float array
             An estimate of the integral.
@@ -955,6 +959,11 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol, xp
 
 
+@xp_capabilities(skip_backends=[('torch', 'data-apis/array-api-compat#271'),
+                                ('array_api_strict', 'No fancy indexing.'),
+                                ('jax.numpy', 'No mutation.'),
+                                ('dask.array',
+                                 'Data-dependent shapes in boolean index assignment')])
 def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent finite or infinite series.
 

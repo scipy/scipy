@@ -440,7 +440,6 @@ class _spbase(SparseABC):
         else:
             raise ValueError("The truth value of an array with more than one "
                              "element is ambiguous. Use a.any() or a.all().")
-    __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  But for some uses the number of
@@ -494,7 +493,10 @@ class _spbase(SparseABC):
             return self._mul_scalar(other)
 
         if self.ndim < 3:
-            return self.tocsr()._multiply_2d_with_broadcasting(other)
+            try:
+                return self._multiply_2d_with_broadcasting(other)
+            except AttributeError:
+                return self.tocsr()._multiply_2d_with_broadcasting(other)
 
         if not (issparse(other) or isdense(other)):
             # If it's a list or whatever, treat it like an array
@@ -914,15 +916,14 @@ class _spbase(SparseABC):
     # Other Arithmetic #
     ####################
 
-    def _divide(self, other, true_divide=False, rdivide=False):
-        # Do we need to continue to support true_divide and divide?
+    def _divide(self, other, *, rdivide=False):
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 # numpy creates a 0d object array if all else fails.
                 # Not interpretable as an array; return NotImplemented so that
-                # other's __rdiv__ can kick in if that's implemented.
+                # other's __rtruediv__ can kick in if that's implemented.
                 return NotImplemented
             # Allow custom sparse class indicated by attr sparse gh-6520
             try:
@@ -932,15 +933,12 @@ class _spbase(SparseABC):
 
         if isscalarlike(other):
             if rdivide:
-                if true_divide:
-                    return np.true_divide(other, self.todense())
-                else:
-                    return np.divide(other, self.todense())
+                return np.divide(other, self.todense())
 
-            if true_divide and np.can_cast(self.dtype, np.float64):
-                return self.astype(np.float64)._mul_scalar(1./other)
+            if np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1 / other)
             else:
-                r = self._mul_scalar(1./other)
+                r = self._mul_scalar(1 / other)
 
                 scalar_dtype = np.asarray(other).dtype
                 if (np.issubdtype(self.dtype, np.integer) and
@@ -950,45 +948,31 @@ class _spbase(SparseABC):
                     return r
 
         elif isdense(other):
-            if not rdivide:
-                if true_divide:
-                    recip = np.true_divide(1., other)
-                else:
-                    recip = np.divide(1., other)
-                return self.multiply(recip)
-            else:
-                if true_divide:
-                    return np.true_divide(other, self.todense())
-                else:
-                    return np.divide(other, self.todense())
+            if rdivide:
+                return np.divide(other, self.todense())
+
+            return self.multiply(np.divide(1, other))
+
         elif issparse(other):
             if rdivide:
-                return other._divide(self, true_divide, rdivide=False)
+                return other._divide(self, rdivide=False)
 
             csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
             csr_other = (other if self.ndim < 3 else other.reshape(1, -1)).tocsr()
-            if true_divide and np.can_cast(self.dtype, np.float64):
+            if np.can_cast(self.dtype, np.float64):
                 result = csr_self.astype(np.float64)._divide_sparse(csr_other)
             else:
                 result = csr_self._divide_sparse(csr_other)
             return result if self.ndim < 3 else result.reshape(self.shape)
         else:
             # not scalar, dense or sparse. Return NotImplemented so
-            # other's __rdiv__ can kick in if that's implemented.
+            # other's __rtruediv__ can kick in if that's implemented.
             return NotImplemented
 
     def __truediv__(self, other):
-        return self._divide(other, true_divide=True)
-
-    def __div__(self, other):
-        # Always do true division
-        return self._divide(other, true_divide=True)
+        return self._divide(other)
 
     def __rtruediv__(self, other):
-        # Implementing this as the inverse would be too magical -- bail out
-        return NotImplemented
-
-    def __rdiv__(self, other):
         # Implementing this as the inverse would be too magical -- bail out
         return NotImplemented
 
@@ -1003,9 +987,6 @@ class _spbase(SparseABC):
 
     def __imul__(self, other):
         return NotImplemented
-
-    def __idiv__(self, other):
-        return self.__itruediv__(other)
 
     def __itruediv__(self, other):
         return NotImplemented

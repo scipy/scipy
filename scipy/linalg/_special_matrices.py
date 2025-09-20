@@ -1,9 +1,10 @@
 import math
-import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 from scipy._lib._util import _apply_over_batch
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size
+import scipy._lib.array_api_extra as xpx
 
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
@@ -35,12 +36,6 @@ def toeplitz(c, r=None):
         r[0] is ignored; the first row of the returned matrix is
         ``[c[0], r[1:]]``.
 
-        .. warning::
-
-            Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-            before passing them to `toeplitz`.
-
     Returns
     -------
     A : (len(c), len(r)) ndarray
@@ -71,19 +66,16 @@ def toeplitz(c, r=None):
            [ 4.-1.j,  2.+3.j,  1.+0.j]])
 
     """
-    c = np.asarray(c)
+    c = np.atleast_1d(c)
     if r is None:
         r = c.conjugate()
     else:
-        r = np.asarray(r)
+        r = np.atleast_1d(r)
+    return _toeplitz(c, r)
 
-    if c.ndim > 1 or r.ndim > 1:
-        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
-               "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` arguments before passing them to `toeplitz`.")
-        warnings.warn(msg, FutureWarning, stacklevel=2)
 
-    c, r = c.ravel(), r.ravel()
+@_apply_over_batch(("c", 1), ("r", 1))
+def _toeplitz(c, r):
     # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
     vals = np.concatenate((c[::-1], r[1:]))
@@ -915,6 +907,7 @@ def dft(n, scale=None):
     return m
 
 
+@xp_capabilities()
 def fiedler(a):
     """Returns a symmetric Fiedler matrix
 
@@ -983,17 +976,15 @@ def fiedler(a):
     15409152
 
     """
-    a = np.atleast_1d(a)
+    xp = array_namespace(a)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
-    if a.ndim > 1:
-        return np.apply_along_axis(fiedler, -1, a)
-
-    if a.size == 0:
-        return np.array([], dtype=float)
-    elif a.size == 1:
-        return np.array([[0.]])
+    if xp_size(a) == 0:
+        return xp.asarray([], dtype=xp.float64)
+    elif xp_size(a) == 1:
+        return xp.asarray([[0.]])
     else:
-        return np.abs(a[:, None] - a)
+        return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
 
 def fiedler_companion(a):

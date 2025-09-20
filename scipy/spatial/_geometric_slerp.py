@@ -52,10 +52,13 @@ def geometric_slerp(
         object. `n` must be greater than 1.
     t : float or (n_points,) 1D array-like
         A float or 1D array-like of doubles representing interpolation
-        parameters, with values required in the inclusive interval
-        between 0 and 1. A common approach is to generate the array
+        parameters. A common approach is to generate the array
         with ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
         Ascending, descending, and scrambled orders are permitted.
+
+        .. versionchanged:: 1.17.0
+            Extrapolation is permitted, allowing values below `0`
+            and above `1`.
     tol : float
         The absolute tolerance for determining if the start and end
         coordinates are antipodes.
@@ -73,7 +76,7 @@ def geometric_slerp(
     Raises
     ------
     ValueError
-        If ``start`` and ``end`` are antipodes, not on the
+        If ``start`` or ``end`` are not on the
         unit n-sphere, or for a variety of degenerate conditions.
 
     See Also
@@ -127,9 +130,10 @@ def geometric_slerp(
     Nonetheless, one of the ambiguous paths is returned along
     with a warning:
 
+    >>> import warnings
     >>> opposite_pole = np.array([-1, 0])
-    >>> with np.testing.suppress_warnings() as sup:
-    ...     sup.filter(UserWarning)
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore", UserWarning)
     ...     geometric_slerp(start,
     ...                     opposite_pole,
     ...                     t_vals)
@@ -170,6 +174,23 @@ def geometric_slerp(
     ...         result[...,1],
     ...         result[...,2],
     ...         c='k')
+    >>> plt.show()
+
+    It is also possible to perform extrapolations outside
+    the interpolation interval by using interpolation parameter
+    values below 0 or above 1. For example, the above example
+    may be adjusted to extrapolate to an antipodal position:
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.plot_surface(x, y, z, color='y', alpha=0.1)
+    >>> start = np.array([1, 0, 0])
+    >>> end = np.array([0, 0, 1])
+    >>> t_vals = np.linspace(0, 2, 400)
+    >>> result = geometric_slerp(start,
+    ...                          end,
+    ...                          t_vals)
+    >>> ax.plot(result[...,0], result[...,1], result[...,2], c='k')
     >>> plt.show()
     """
 
@@ -224,9 +245,6 @@ def geometric_slerp(
 
     if t.size == 0:
         return np.empty((0, start.size))
-
-    if t.min() < 0 or t.max() > 1:
-        raise ValueError("interpolation parameter must be in [0, 1]")
 
     if t.ndim == 0:
         return _geometric_slerp(start,

@@ -13,6 +13,7 @@ from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._lib._array_api import make_xp_test_case, xp_assert_equal, xp_size
 
 
 class TestToeplitz:
@@ -503,19 +504,22 @@ def test_dft():
     assert_array_almost_equal(mx, fx)
 
 
-def test_fiedler():
-    f = fiedler([])
-    assert_equal(f.size, 0)
-    f = fiedler([123.])
-    assert_array_equal(f, np.array([[0.]]))
-    f = fiedler(np.arange(1, 7))
-    des = np.array([[0, 1, 2, 3, 4, 5],
-                    [1, 0, 1, 2, 3, 4],
-                    [2, 1, 0, 1, 2, 3],
-                    [3, 2, 1, 0, 1, 2],
-                    [4, 3, 2, 1, 0, 1],
-                    [5, 4, 3, 2, 1, 0]])
-    assert_array_equal(f, des)
+@make_xp_test_case(fiedler)
+def test_fiedler(xp):
+    f = fiedler(xp.asarray([]))
+    assert xp_size(f) == 0
+
+    f = fiedler(xp.asarray([123.]))
+    xp_assert_equal(f, xp.asarray([[0.]]))
+
+    f = fiedler(xp.arange(1, 7))
+    des = xp.asarray([[0, 1, 2, 3, 4, 5],
+                      [1, 0, 1, 2, 3, 4],
+                      [2, 1, 0, 1, 2, 3],
+                      [3, 2, 1, 0, 1, 2],
+                      [4, 3, 2, 1, 0, 1],
+                      [5, 4, 3, 2, 1, 0]])
+    xp_assert_equal(f, des)
 
 
 def test_fiedler_companion():
@@ -592,12 +596,6 @@ def test_batch(f, args):
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
-
-    if f in {toeplitz}:
-        message = "Beginning in SciPy 1.17, multidimensional input will be..."
-        with pytest.warns(FutureWarning, match=message):
-            f(A, *args)
-        return
 
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])

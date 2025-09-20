@@ -1,12 +1,13 @@
 """Filter design."""
 import math
+import cmath
 import operator
 import warnings
 import builtins
 
+from math import pi
+
 import numpy as np
-from numpy import (atleast_1d, asarray,
-                   pi, absolute, concatenate, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
 from scipy import special, optimize, fft as sp_fft
@@ -40,7 +41,7 @@ class BadCoefficients(UserWarning):
     pass
 
 
-abs = absolute
+abs = np.absolute
 
 
 def _is_int_type(x):
@@ -160,7 +161,7 @@ def findfreqs(num, den, N, kind='ba'):
     )
 
     # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
-    # depending on the the floating-point jitter in -1.5
+    # depending on the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
     lfreq = xp.round(
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
@@ -526,7 +527,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
                 and n_fft > 0):  # TODO: review threshold acc. to benchmark?
- 
+
             if (xp.isdtype(b.dtype, "real floating") and
                 xp.isdtype(a.dtype, "real floating")
             ):
@@ -771,6 +772,9 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    xp = array_namespace(*system, w)
+    b, a = map(np.atleast_1d, system)
+
     if w is None:
         # For backwards compatibility
         w = 512
@@ -786,7 +790,6 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = np.atleast_1d(w)
         w = 2*pi*w/fs
 
-    b, a = map(np.atleast_1d, system)
     c = np.convolve(b, np.conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
@@ -812,9 +815,9 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             stacklevel=2
         )
 
-    w = w*(fs/(2*pi))
+    w = w * (fs / (2 * xp.pi))
 
-    return w, gd
+    return xp.asarray(w), xp.asarray(gd)
 
 
 def _validate_sos(sos, xp=None):
@@ -888,9 +891,9 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     Notes
     -----
     This function used to be called ``sosfreqz`` in older versions (≥ 0.19.0)
-    
+
     .. versionadded:: 1.15.0
-        
+
     Examples
     --------
     Design a 15th-order bandpass filter in SOS format.
@@ -968,11 +971,11 @@ def sosfreqz(*args, **kwargs):
     Compute the frequency response of a digital filter in SOS format (legacy).
 
    .. legacy:: function
-        
-        This function is an alias, provided for backward compatibility. 
+
+        This function is an alias, provided for backward compatibility.
         New code should use the function :func:`scipy.signal.freqz_sos`.
         This function became obsolete from version 1.15.0.
-        
+
     """
     return freqz_sos(*args, **kwargs)
 
@@ -1028,7 +1031,7 @@ def _cplxreal(z, tol=None):
     [ 1.  3.  4.]
     """
 
-    z = atleast_1d(z)
+    z = np.atleast_1d(z)
     if z.size == 0:
         return z, z
     elif z.ndim != 1:
@@ -1047,7 +1050,7 @@ def _cplxreal(z, tol=None):
 
     if len(zr) == len(z):
         # Input is entirely real
-        return array([]), zr
+        return np.array([]), zr
 
     # Split positive and negative halves of conjugates
     z = z[~real_indices]
@@ -1060,7 +1063,7 @@ def _cplxreal(z, tol=None):
 
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
-    diffs = np.diff(concatenate(([0], same_real, [0])))
+    diffs = np.diff(np.concatenate(([0], same_real, [0])))
     run_starts = np.nonzero(diffs > 0)[0]
     run_stops = np.nonzero(diffs < 0)[0]
 
@@ -1135,7 +1138,7 @@ def _cplxpair(z, tol=None):
       3.+0.j  4.+0.j]
     """
 
-    z = atleast_1d(z)
+    z = np.atleast_1d(z)
     if z.size == 0 or np.isrealobj(z):
         return np.sort(z)
 
@@ -1285,12 +1288,13 @@ def zpk2tf(z, p, k):
         k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
-        temp = _pu.poly(z[0], xp=xp)
+        temp = _pu.poly(z[0, ...], xp=xp)
         b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
         if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            b[i] = k[i] * _pu.poly(z[i], xp=xp)
+            k_i = xp.asarray(k[i], dtype=xp.int64)
+            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
     else:
         b = k * _pu.poly(z, xp=xp)
 
@@ -2441,6 +2445,9 @@ def bilinear(b, a, fs=1.0):
     called "frequency warping". [1]_ describes a method called "pre-warping" to
     reduce those deviations.
     """
+    xp = array_namespace(b, a)
+
+    b, a = map(np.asarray, (b, a))
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
     if not a.ndim == 1:
         raise ValueError(f"Parameter a is not a 1d array since {a.shape=}")
@@ -2459,7 +2466,11 @@ def bilinear(b, a, fs=1.0):
     N = max(len(a), len(b)) - 1
     numerator   = sum(b_ * zp1**(N-q) * zm1**q for q, b_ in enumerate(b[::-1]))
     denominator = sum(a_ * zp1**(N-p) * zm1**p for p, a_ in enumerate(a[::-1]))
-    return normalize(numerator.coef[::-1], denominator.coef[::-1])
+
+    return normalize(
+        xp.asarray(numerator.coef[::-1].copy()),
+        xp.asarray(denominator.coef[::-1].copy())
+    )
 
 
 def _validate_gpass_gstop(gpass, gstop):
@@ -2498,7 +2509,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g., rad/s).
         Note, that for bandpass and bandstop filters passband must lie strictly
-        inside stopband or vice versa. Also note that the cutoff at the band edges 
+        inside stopband or vice versa. Also note that the cutoff at the band edges
         for IIR filters is defined as half-power, so -3dB, not half-amplitude (-6dB)
         like for `scipy.signal.fiwin`.
     gpass : float
@@ -2599,6 +2610,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     >>> ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
@@ -2609,8 +2623,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     _validate_gpass_gstop(gpass, gstop)
 
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
+    wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
+    ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=True)
 
@@ -2618,14 +2632,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         raise ValueError("wp and ws must have one or two elements each, and "
                          f"the same shape, got {wp.shape} and {ws.shape}")
 
-    if any(wp <= 0) or any(ws <= 0):
+    if xp.any(wp <= 0) or xp.any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
 
     if not analog:
         if fs is None:
-            if any(wp >= 1) or any(ws >= 1):
+            if xp.any(wp >= 1) or xp.any(ws >= 1):
                 raise ValueError("Values for wp, ws must be less than 1")
-        elif any(wp >= fs/2) or any(ws >= fs/2):
+        elif xp.any(wp >= fs/2) or xp.any(ws >= fs/2):
             raise ValueError("Values for wp, ws must be less than fs/2 "
                              f"(fs={fs} -> fs/2={fs/2})")
 
@@ -2635,7 +2649,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             raise ValueError("Passband must lie strictly inside stopband "
                              "or vice versa")
 
-    band_type = 2 * (len(wp) - 1)
+    band_type = 2 * (wp.shape[0] - 1)
     band_type += 1
     if wp[0] >= ws[0]:
         band_type += 1
@@ -2783,9 +2797,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     """
     xp = array_namespace(Wn)
-    Wn = xp.asarray(Wn)
-    if xp.isdtype(Wn.dtype, 'integral'):
-        Wn = xp.astype(Wn, xp_default_dtype(xp))
+    Wn = xp_promote(Wn, force_floating=True, xp=xp)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -2868,7 +2880,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
-            wo =xp.sqrt(warped[0] * warped[1])
+            wo = xp.sqrt(warped[0] * warped[1])
         except IndexError as e:
             raise ValueError('Wn must specify start and stop frequencies for '
                              'bandpass or bandstop filter') from e
@@ -4042,7 +4054,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     to pass through. The order of a filter often determines its complexity and
     accuracy. Determining the right order can be a challenge. This function
     aims to provide an appropriate order for an analog band stop filter.
-    
+
     Examples
     --------
 
@@ -4748,14 +4760,12 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     else:
         m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
 
-    z = -xp.conj(1j / xp.sin(m * xp.pi / (2.0 * N)))
+    z = 1j / xp.sin(m * xp.pi / (2 * N))
 
     # Poles around the unit circle like Butterworth
     m1 = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
-    p = -xp.exp(1j * xp.pi * m1 / (2 * N))
-    # Warp into Chebyshev II
-    p = math.sinh(mu) * xp.real(p) + 1j * math.cosh(mu) * xp.imag(p)
-    p = 1.0 / p
+    theta1 = xp.pi * m1 / (2 * N)
+    p = -1 / xp.sinh(mu + 1j*theta1)
 
     k = xp.real(xp.prod(-p, axis=0) / xp.prod(-z, axis=0))
     return z, p, k
@@ -5069,7 +5079,7 @@ def _campos_zeros(n):
     `n` using polynomial fit (Campos-Calderon 2011)
     """
     if n == 1:
-        return asarray([-1+0j])
+        return np.asarray([-1+0j])
 
     s = npp_polyval(n, [0, 0, 2, 0, -3, 1])
     b3 = npp_polyval(n, [16, -8]) / s
@@ -5101,7 +5111,7 @@ def _aberth(f, fp, x0, tol=1e-15, maxiter=50):
 
     N = len(x0)
 
-    x = array(x0, complex)
+    x = np.array(x0, complex)
     beta = np.empty_like(x0)
 
     for iteration in range(maxiter):
@@ -5133,7 +5143,7 @@ def _bessel_zeros(N):
     modified Bessel function of the second kind
     """
     if N == 0:
-        return asarray([])
+        return np.asarray([])
 
     # Generate starting points
     x0 = _campos_zeros(N)
@@ -5306,11 +5316,11 @@ def besselap(N, norm='phase', *, xp=None, device=None):
 
     z = xp.asarray([], device=device)
     cdtype = xp.complex128 if z.dtype == xp.float64 else xp.complex64
-    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device), 
+    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device),
             float(k))
 
 
-def iirnotch(w0, Q, fs=2.0):
+def iirnotch(w0, Q, fs=2.0, *, xp=None, device=None):
     """
     Design second-order IIR notch digital filter.
 
@@ -5333,6 +5343,8 @@ def iirnotch(w0, Q, fs=2.0):
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.2.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5388,10 +5400,10 @@ def iirnotch(w0, Q, fs=2.0):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "notch", fs)
+    return _design_notch_peak_filter(w0, Q, "notch", fs, xp=xp, device=device)
 
 
-def iirpeak(w0, Q, fs=2.0):
+def iirpeak(w0, Q, fs=2.0, *, xp=None, device=None):
     """
     Design second-order IIR peak (resonant) digital filter.
 
@@ -5414,6 +5426,8 @@ def iirpeak(w0, Q, fs=2.0):
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.2.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5469,10 +5483,10 @@ def iirpeak(w0, Q, fs=2.0):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "peak", fs)
+    return _design_notch_peak_filter(w0, Q, "peak", fs, xp=xp, device=device)
 
 
-def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
+def _design_notch_peak_filter(w0, Q, ftype, fs=2.0, *, xp=None, device=None):
     """
     Design notch or peak digital filter.
 
@@ -5503,12 +5517,15 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
         Numerator (``b``) and denominator (``a``) polynomials
         of the IIR filter.
     """
+    if xp is None:
+        xp = np_compat
+
     fs = _validate_fs(fs, allow_none=False)
 
     # Guarantee that the inputs are floats
     w0 = float(w0)
     Q = float(Q)
-    w0 = 2*w0/fs
+    w0 = 2 * w0 / fs
 
     # Checks if w0 is within the range
     if w0 > 1.0 or w0 < 0.0:
@@ -5518,8 +5535,8 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = w0/Q
 
     # Normalize inputs
-    bw = bw*np.pi
-    w0 = w0*np.pi
+    bw = bw * xp.pi
+    w0 = w0 * xp.pi
 
     if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
@@ -5529,24 +5546,24 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     # gb = 1 / np.sqrt(2), the following terms simplify to:
     #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
     #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
-    beta = np.tan(bw/2.0)
+    beta = math.tan(bw / 2.0)
 
     # Compute gain: formula 11.3.6 (p.575) from reference [1]
-    gain = 1.0/(1.0+beta)
+    gain = 1.0 / (1.0 + beta)
 
     # Compute numerator b and denominator a
     # formulas 11.3.7 (p.575) and 11.3.21 (p.579)
     # from reference [1]
     if ftype == "notch":
-        b = gain*np.array([1.0, -2.0*np.cos(w0), 1.0])
+        b = gain * xp.asarray([1.0, -2.0*math.cos(w0), 1.0], device=device)
     else:
-        b = (1.0-gain)*np.array([1.0, 0.0, -1.0])
-    a = np.array([1.0, -2.0*gain*np.cos(w0), (2.0*gain-1.0)])
+        b = (1.0 - gain) * xp.asarray([1.0, 0.0, -1.0], device=device)
+    a = xp.asarray([1.0, -2.0 * gain * math.cos(w0), (2.0*gain - 1.0)], device=device)
 
     return b, a
 
 
-def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
+def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None):
     """
     Design IIR notching or peaking digital comb filter.
 
@@ -5572,17 +5589,19 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
         frequency, ``Q = w0/bw``.
     ftype : {'notch', 'peak'}
         The type of comb filter generated by the function. If 'notch', then
-        the Q factor applies to the notches. If 'peak', then the Q factor
+        the Q factor applies to the notches. If 'peak', then the `Q` factor
         applies to the peaks.  Default is 'notch'.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.0.
     pass_zero : bool, optional
         If False (default), the notches (nulls) of the filter are centered on
-        frequencies [0, w0, 2*w0, ...], and the peaks are centered on the
-        midpoints [w0/2, 3*w0/2, 5*w0/2, ...].  If True, the peaks are centered
-        on [0, w0, 2*w0, ...] (passing zero frequency) and vice versa.
+        frequencies ``[0, w0, 2*w0, ...]``, and the peaks are centered on the
+        midpoints ``[w0/2, 3*w0/2, 5*w0/2, ...]``.  If True, the peaks are centered
+        on ``[0, w0, 2*w0, ...]`` (passing zero frequency) and vice versa.
 
         .. versionadded:: 1.9.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5641,7 +5660,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> ax[0].set_xlim([0, 100])
     >>> ax[0].set_ylim([-30, 10])
     >>> ax[0].grid(True)
-    >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
+    >>> ax[1].plot(freq, np.mod(np.angle(h, deg=True) + 180, 360) - 180, color='green')
     >>> ax[1].set_ylabel("Phase [deg]", color='green')
     >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 100])
@@ -5672,7 +5691,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> ax[0].set_xlim([0, 500])
     >>> ax[0].set_ylim([-80, 10])
     >>> ax[0].grid(True)
-    >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
+    >>> ax[1].plot(freq, np.mod(np.angle(h)*180/np.pi + 180, 360) - 180, color='green')
     >>> ax[1].set_ylabel("Phase [deg]", color='green')
     >>> ax[1].set_xlabel("Frequency [Hz]")
     >>> ax[1].set_xlim([0, 500])
@@ -5681,6 +5700,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> ax[1].grid(True)
     >>> plt.show()
     """
+    if xp is None:
+        xp = np_compat
 
     # Convert w0, Q, and fs to float
     w0 = float(w0)
@@ -5704,7 +5725,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
 
     # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
-    w0 = (2 * np.pi * w0) / fs
+    w0 = (2 * xp.pi * w0) / fs
     w_delta = w0 / Q
 
     # Define base gain values depending on notch or peak filter
@@ -5719,7 +5740,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # assuming a -3 dB attenuation value, i.e, assuming GB = 1 / np.sqrt(2),
     # the following term simplifies to:
     #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
-    beta = np.tan(N * w_delta / 4)
+    beta = math.tan(N * w_delta / 4)
 
     # Compute filter coefficients
     # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]
@@ -5735,22 +5756,17 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Compute numerator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # b - cz^-N or b + cz^-N
-    b = np.zeros(N + 1)
-    b[0] = bx
-    if negative_coef:
-        b[-1] = -cx
-    else:
-        b[-1] = +cx
+    b = xp.zeros(N + 1, device=device)
+    sgn = -1. if negative_coef else 1
+    xpx.at(b, 0).set(bx)
+    xpx.at(b, -1).set(sgn * cx)
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
-    a = np.zeros(N + 1)
-    a[0] = 1
-    if negative_coef:
-        a[-1] = -ax
-    else:
-        a[-1] = +ax
+    a = xp.zeros(N + 1, device=device)
+    xpx.at(a, 0).set(1.)
+    xpx.at(a, -1).set(sgn * ax)
 
     return b, a
 
@@ -5766,7 +5782,7 @@ def _hz_to_erb(hz):
     return hz / EarQ + minBW
 
 
-def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
+def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None):
     """
     Gammatone filter design.
 
@@ -5794,6 +5810,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     fs : float, optional
         The sampling frequency of the signal. `freq` must be between
         0 and ``fs/2``. Default is 2.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5848,6 +5865,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     >>> plt.axvline(fc, color='green') # cutoff frequency
     >>> plt.show()
     """
+    if xp is None:
+        xp = np_compat
+
     # Converts freq to float
     freq = float(freq)
 
@@ -5881,19 +5901,19 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
-        t = np.arange(numtaps) / fs
+        t = xp.arange(numtaps, device=device, dtype=xp_default_dtype(xp)) / fs
         bw = 1.019 * _hz_to_erb(freq)
 
         # Calculate the FIR gammatone filter
-        b = (t ** (order - 1)) * np.exp(-2 * np.pi * bw * t)
-        b *= np.cos(2 * np.pi * freq * t)
+        b = (t ** (order - 1)) * xp.exp(-2 * xp.pi * bw * t)
+        b = b * xp.cos(2 * xp.pi * freq * t)
 
         # Scale the FIR filter so the frequency response is 1 at cutoff
-        scale_factor = 2 * (2 * np.pi * bw) ** (order)
+        scale_factor = 2 * (2 * xp.pi * bw) ** (order)
         scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
-        b *= scale_factor
-        a = [1.0]
+        b = b * scale_factor
+        a = xp.asarray([1.0], device=device)
 
     # Calculate IIR gammatone filter
     elif ftype == 'iir':
@@ -5905,50 +5925,50 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
         # Gammatone impulse response settings
         T = 1./fs
-        bw = 2 * np.pi * 1.019 * _hz_to_erb(freq)
-        fr = 2 * freq * np.pi * T
+        bw = 2 * math.pi * 1.019 * _hz_to_erb(freq)
+        fr = 2 * freq * math.pi * T
         bwT = bw * T
 
         # Calculate the gain to normalize the volume at the center frequency
-        g1 = -2 * np.exp(2j * fr) * T
-        g2 = 2 * np.exp(-(bwT) + 1j * fr) * T
-        g3 = np.sqrt(3 + 2 ** (3 / 2)) * np.sin(fr)
-        g4 = np.sqrt(3 - 2 ** (3 / 2)) * np.sin(fr)
-        g5 = np.exp(2j * fr)
+        g1 = -2 * cmath.exp(2j * fr) * T
+        g2 = 2 * cmath.exp(-(bwT) + 1j * fr) * T
+        g3 = math.sqrt(3 + 2 ** (3 / 2)) * math.sin(fr)
+        g4 = math.sqrt(3 - 2 ** (3 / 2)) * math.sin(fr)
+        g5 = cmath.exp(2j * fr)
 
-        g = g1 + g2 * (np.cos(fr) - g4)
-        g *= (g1 + g2 * (np.cos(fr) + g4))
-        g *= (g1 + g2 * (np.cos(fr) - g3))
-        g *= (g1 + g2 * (np.cos(fr) + g3))
-        g /= ((-2 / np.exp(2 * bwT) - 2 * g5 + 2 * (1 + g5) / np.exp(bwT)) ** 4)
-        g = np.abs(g)
+        g = g1 + g2 * (math.cos(fr) - g4)
+        g *= (g1 + g2 * (math.cos(fr) + g4))
+        g *= (g1 + g2 * (math.cos(fr) - g3))
+        g *= (g1 + g2 * (math.cos(fr) + g3))
+        g /= ((-2 / math.exp(2 * bwT) - 2 * g5 + 2 * (1 + g5) / math.exp(bwT)) ** 4)
+        g = math.hypot(g.real, g.imag)
 
         # Create empty filter coefficient lists
-        b = np.empty(5)
-        a = np.empty(9)
+        b = [None] * 5  #np.empty(5)
+        a = [None] * 9  # np.empty(9)
 
         # Calculate the numerator coefficients
         b[0] = (T ** 4) / g
-        b[1] = -4 * T ** 4 * np.cos(fr) / np.exp(bw * T) / g
-        b[2] = 6 * T ** 4 * np.cos(2 * fr) / np.exp(2 * bw * T) / g
-        b[3] = -4 * T ** 4 * np.cos(3 * fr) / np.exp(3 * bw * T) / g
-        b[4] = T ** 4 * np.cos(4 * fr) / np.exp(4 * bw * T) / g
+        b[1] = -4 * T ** 4 * math.cos(fr) / math.exp(bw * T) / g
+        b[2] = 6 * T ** 4 * math.cos(2 * fr) / math.exp(2 * bw * T) / g
+        b[3] = -4 * T ** 4 * math.cos(3 * fr) / math.exp(3 * bw * T) / g
+        b[4] = T ** 4 * math.cos(4 * fr) / math.exp(4 * bw * T) / g
 
         # Calculate the denominator coefficients
         a[0] = 1
-        a[1] = -8 * np.cos(fr) / np.exp(bw * T)
-        a[2] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(2 * bw * T)
-        a[3] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
-        a[3] /= np.exp(3 * bw * T)
-        a[4] = 2 * (18 + 16 * np.cos(2 * fr) + np.cos(4 * fr))
-        a[4] /= np.exp(4 * bw * T)
-        a[5] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
-        a[5] /= np.exp(5 * bw * T)
-        a[6] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(6 * bw * T)
-        a[7] = -8 * np.cos(fr) / np.exp(7 * bw * T)
-        a[8] = np.exp(-8 * bw * T)
+        a[1] = -8 * math.cos(fr) / math.exp(bw * T)
+        a[2] = 4 * (4 + 3 * math.cos(2 * fr)) / math.exp(2 * bw * T)
+        a[3] = -8 * (6 * math.cos(fr) + math.cos(3 * fr))
+        a[3] /= math.exp(3 * bw * T)
+        a[4] = 2 * (18 + 16 * math.cos(2 * fr) + math.cos(4 * fr))
+        a[4] /= math.exp(4 * bw * T)
+        a[5] = -8 * (6 * math.cos(fr) + math.cos(3 * fr))
+        a[5] /= math.exp(5 * bw * T)
+        a[6] = 4 * (4 + 3 * math.cos(2 * fr)) / math.exp(6 * bw * T)
+        a[7] = -8 * math.cos(fr) / math.exp(7 * bw * T)
+        a[8] = math.exp(-8 * bw * T)
 
-    return b, a
+    return xp.asarray(b, device=device), xp.asarray(a, device=device)
 
 
 filter_dict = {'butter': [buttap, buttord],
@@ -6013,7 +6033,9 @@ device: any
 }
 
 
-_names = [x for x in ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap"]]
+_names = ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap",
+          "iirnotch", "iirpeak", "iircomb", "gammatone",
+]
 for name in _names:
     window = vars()[name]
     window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)

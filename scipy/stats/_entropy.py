@@ -9,11 +9,12 @@ import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
-                                   is_marray, _share_masks)
+                                   is_marray, _share_masks, xp_capabilities)
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x,
     n_samples=lambda kwgs: (
@@ -167,13 +168,15 @@ def entropy(pk: np.typing.ArrayLike,
 def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
     values = samples[0]
     n = values.shape[axis]
-    window_length = kwargs.get("window_length",
-                               math.floor(math.sqrt(n) + 0.5))
+    window_length = kwargs.get("window_length")
+    if window_length is None:
+        window_length = math.floor(math.sqrt(n) + 0.5)
     if not 2 <= 2 * window_length < n:
         return True
     return False
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
     too_small=_differential_entropy_is_too_small

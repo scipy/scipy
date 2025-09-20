@@ -1507,6 +1507,10 @@ def yen(
     csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
 
     cdef int N = csgraph.shape[0]
+    if source < 0 or source >= N or sink < 0 or sink >= N:
+        msg = ("For csgraph with shape (N, N), must have 0 <= source < N and "
+               f"0 <= sink < N. Got {N=}, {source=}, {sink=}.")
+        raise ValueError(msg)
     cdef int has_negative_weights = False
     dist_array = np.full(K, INFINITY, dtype=DTYPE)
 

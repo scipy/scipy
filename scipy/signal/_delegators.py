@@ -118,20 +118,22 @@ def czt_points_signature(m, w=None, a=(1+0j)):
     return np
 
 
-def gammatone_signature(freq, ftype, order=None, numtaps=None, fs=None):
-    return np
+def gammatone_signature(
+    freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None
+    ):
+    return np_compat if xp is None else xp
 
 
-def iircomb_signature(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
-    return np
+def iircomb_signature(
+    w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None
+):
+    return np_compat if xp is None else xp
 
 
-def iirnotch_signature(w0, Q, fs=2.0):
-    return np
+def iirnotch_signature(w0, Q, fs=2.0, *, xp=None, device=None):
+    return np if xp is None else xp
 
-
-def iirpeak_signature(w0, Q, fs=2.0):
-    return np
+iirpeak_signature = iirnotch_signature
 
 
 def savgol_coeffs_signature(
@@ -236,11 +238,11 @@ convolve2d_signature = convolve_signature
 correlate2d_signature = convolve_signature
 
 
-def coherence_signature(x, y, fs=1.0, window='hann', *args, **kwds):
+def coherence_signature(x, y, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
-def csd_signature(x, y, fs=1.0, window='hann', *args, **kwds):
+def csd_signature(x, y, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
@@ -248,19 +250,19 @@ def periodogram_signature(x, fs=1.0, window='boxcar'):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def welch_signature(x, fs=1.0, window='hann', *args, **kwds):
+def welch_signature(x, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def spectrogram_signature(x, fs=1.0, window=('tukey', 0.25), *args, **kwds):
+def spectrogram_signature(x, fs=1.0, window=('tukey_periodic', 0.25), *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def stft_signature(x, fs=1.0, window='hann', *args, **kwds):
+def stft_signature(x, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
-def istft_signature(Zxx, fs=1.0, window='hann', *args, **kwds):
+def istft_signature(Zxx, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(Zxx, _skip_if_str_or_tuple(window))
 
 
@@ -364,7 +366,7 @@ def gausspulse_signature(t, *args, **kwds):
 
 
 def group_delay_signature(system, w=512, whole=False, fs=6.283185307179586):
-    return array_namespace(_skip_if_str_or_tuple(system), w)
+    return array_namespace(*system, w)
 
 
 def hilbert_signature(x, N=None, axis=-1):
@@ -421,7 +423,7 @@ tf2zpk_signature = lp2bp_signature
 tf2sos_signature = lp2bp_signature
 
 normalize_signature = lp2bp_signature
-residue_signature = lp2bp_signature 
+residue_signature = lp2bp_signature
 residuez_signature = residue_signature
 
 
@@ -560,4 +562,3 @@ def wiener_signature(im, mysize=None, noise=None):
 
 def zoom_fft_signature(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     return array_namespace(x, fn)
-
