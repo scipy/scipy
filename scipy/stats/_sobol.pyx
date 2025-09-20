@@ -168,7 +168,7 @@ cdef int bit_length(uint_32_64 n) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) noexcept nogil:
+cdef int low_0_bit(cnp.uint64_t x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -195,7 +195,10 @@ cdef int low_0_bit(uint_32_64 x) noexcept nogil:
 
     """
     cdef int i = 0
-    while x & (1 << i) != 0:
+    if (~x) == 0:
+        # If number is all 1s, the first 0 is at one after the last 1
+        return 65
+    while x & (1L << i) != 0:
         i += 1
     return i + 1
 
@@ -442,3 +445,8 @@ def _test_find_index(p_cumulative, size, value):
     # type: (np.ndarray, int, float) -> int
     """Wrapper for testing in python"""
     return _find_index(p_cumulative, size, value)
+
+cpdef _test_low_0_bit(cnp.uint64_t x):
+    # type: (int,) -> int
+    """Wrapper for testing in python"""
+    return low_0_bit(x)
