@@ -10223,11 +10223,22 @@ class TestTruncPareto:
         assert_allclose(res, ref)
 
     def test_pdf_negative(self):
-        # PDF is that of the truncated pareto distribution
-        b, c = -1.8, 5.3
-        x = np.linspace(1.8, 5.3)
-        res = stats.truncpareto(b, c).pdf(x)
-        ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
+        # truncpareto is equivalent to more general powerlaw from gh-23648
+        # exponent of truncpareto is negative in this case
+        a, xmin, xmax = 4, 3, 5
+        x = np.linspace(xmin, xmax)
+
+        # compute reference using PDF from gh-23648
+        C = a / (xmax ** a - xmin ** a)
+        ref = C * x ** (a - 1)
+
+        # compute using `truncpareto` with negative exponent
+        b = -a
+        c = xmax / xmin
+        scale = xmin
+        loc = 0
+        res = stats.truncpareto(b, c, loc, scale).pdf(x)
+
         assert_allclose(res, ref)
 
     @pytest.mark.parametrize('fix_loc', [True, False])
