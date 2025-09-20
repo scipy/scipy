@@ -1052,7 +1052,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     def cy_linkage(y, validate):
         if validate and not np.all(np.isfinite(y)):
             raise ValueError("The condensed distance matrix must contain only "
-                            "finite values.")            
+                            "finite values.")
 
         if method == 'single':
             return _hierarchy.mst_single_linkage(y, n)
@@ -1693,12 +1693,12 @@ def cophenet(Z, Y=None):
         zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
         _hierarchy.cophenetic_distances(Z, zz, n)
         return zz
-    
+
     n = Z.shape[0] + 1
     zz = xpx.lazy_apply(cy_cophenet, Z, validate=is_lazy_array(Z),
                         shape=((n * (n-1)) // 2, ), dtype=xp.float64,
                         as_numpy=True, xp=xp)
-                        
+
     if Y is None:
         return zz
 
@@ -3230,7 +3230,7 @@ def _reorder_leaves(Z, leaves_order, xp):
                 new_node_number += 1
             else:
                 new_Z[cnt, ...] = xp.asarray(
-                    [left_pair, v, height[p[v]-n], num_leaves[p[v]]]    
+                    [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
                 )
             cnt += 1
             _right = v
@@ -3443,7 +3443,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         color_threshold. The default is ``'C0'``.
     leaves_order : iterable, optional
         Plots the leaves in the order specified by a vector of
-        original observation indices. Indices should start from 0. 
+        original observation indices. Indices should start from 0.
         If the vector contains duplicates or results in a crossing, an exception
         will be thrown. Passing None orders leaf nodes based on the order they
         appear in the pre-order traversal.
@@ -3527,8 +3527,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     """
     xp = array_namespace(Z, leaves_order)
     Z = _asarray(Z, order='C', xp=xp)
-    leaves_order = _asarray(leaves_order, dtype=xp.int64, xp=xp)
     if leaves_order is not None:
+        leaves_order = _asarray(leaves_order, dtype=xp.int64, xp=xp)
         Z = _reorder_leaves(Z, leaves_order, xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
@@ -4201,7 +4201,7 @@ def maxinconsts(Z, R):
     if Z.shape[0] != R.shape[0]:
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
-    
+
     def cy_maxinconsts(Z, R, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
