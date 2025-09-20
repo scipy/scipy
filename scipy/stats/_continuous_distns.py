@@ -10481,6 +10481,7 @@ class truncpareto_gen(rv_continuous):
         return [ib, ic]
 
     def _argcheck(self, b, c):
+        b = float(b)  # ensure float
         return (b != 0.) & (c > 1.)
 
     def _get_support(self, b, c):
