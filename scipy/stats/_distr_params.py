@@ -114,6 +114,7 @@ distcont = [
     ['truncnorm', (0.1, 2.)],
     ['truncpareto', (1.8, 5.3)],
     ['truncpareto', (2, 5)],
+    ['truncpareto', (-2, 5)]
     ['truncweibull_min', (2.5, 0.25, 1.75)],
     ['tukeylambda', (3.1321477856738267,)],
     ['uniform', ()],
