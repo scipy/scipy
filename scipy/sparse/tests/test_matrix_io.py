@@ -80,7 +80,8 @@ def test_nd_coo_format(ndim, value, tmpdir):
 
     #save/load array
     with tmpdir.as_cwd():
-        tmpfile = "f.npz"
+        # make name depend on parameters to keep threadsafe
+        tmpfile = f"value{value}{ndim}f.npz"
 
         save_npz(tmpfile, A)
         loaded_A = load_npz(tmpfile)
