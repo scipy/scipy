@@ -41,10 +41,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           manifest-path: .github/workflows/pixi.toml
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          environments: >-
-            build
-            array-api-cpu
+          cache: false
 
       - name: Set up ccache
         uses: ./.github/ccache
