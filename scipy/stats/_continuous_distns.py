@@ -3231,7 +3231,7 @@ class genpareto_gen(rv_continuous):
         if 'k' in moments:
             k = xpx.apply_where(
                 c < 1/4, c,
-                lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3) 
+                lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3)
                            / (1 - 3*xi) / (1 - 4*xi) - 3,
                 fill_value=np.nan)
 
@@ -3375,7 +3375,7 @@ class genextreme_gen(rv_continuous):
         # Returns log(-log(cdf(x, c)))
         return xpx.apply_where(
             (x == x) & (c != 0), (x, c),
-            lambda x, c: sc.log1p(-c*x)/c, 
+            lambda x, c: sc.log1p(-c*x)/c,
             fill_value=-x)
 
     def _pdf(self, x, c):
@@ -3442,7 +3442,7 @@ class genextreme_gen(rv_continuous):
 
         # mean
         m = np.where(c < -1.0, np.nan, -gamk)
-        
+
         # variance
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
@@ -3450,12 +3450,12 @@ class genextreme_gen(rv_continuous):
         def sk1_eval(c, *args):
             def sk1_eval_f(c, g1, g2, g3, g2mg12):
                 return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
-            return xpx.apply_where(c >= -1./3, (c, *args), 
+            return xpx.apply_where(c >= -1./3, (c, *args),
                                    sk1_eval_f, fill_value=np.nan)
 
         sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
         args = (g1, g2, g3, g2mg12)
-        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args), 
+        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args),
                              sk1_eval, fill_value=sk_fill)
 
         # kurtosis
@@ -3465,7 +3465,7 @@ class genextreme_gen(rv_continuous):
             return xpx.apply_where(c >= -1./4, args, ku1_eval_f, fill_value=np.nan)
 
         args = (g1, g2, g3, g4, g2mg12)
-        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args), 
+        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args),
                              ku1_eval, fill_value=12.0/5.0)
 
         return m, v, sk, ku
@@ -6650,7 +6650,7 @@ class loggamma_gen(rv_continuous):
         return xpx.apply_where(
             g < _XMIN, (g, q, c),
             lambda g, q, c: (np.log(q) + sc.gammaln(c+1))/c,
-            lambda g, q, c: np.log(g))            
+            lambda g, q, c: np.log(g))
 
     def _sf(self, x, c):
         # See the comments for _cdf() for how x < _LOGXMIN is handled.
@@ -8600,7 +8600,13 @@ class powerlaw_gen(rv_continuous):
     For example, the support of `powerlaw` can be adjusted from the default
     interval ``[0, 1]`` to the interval ``[c, c+d]`` by setting ``loc=c`` and
     ``scale=d``. For a power-law distribution with infinite support, see
-    `pareto`.
+    `pareto`. For a power-law distribution described by PDF:
+
+    .. math::
+
+        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}}
+
+    with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 
     `powerlaw` is a special case of `beta` with ``b=1``.
 
@@ -9365,7 +9371,7 @@ class irwinhall_gen(rv_continuous):
     Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
     distribution ``bates = irwinhall(10, scale=1/10)`` represents the
     distribution of the mean of 10 uniformly distributed random variables.
-    
+
     %(after_notes)s
 
     References
@@ -9380,7 +9386,7 @@ class irwinhall_gen(rv_continuous):
             with special reference to Pearson's Type II,
             Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
             :doi:`0.1093/biomet/19.3-4.225`.
-    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
+    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf,
             "Sidelobe behavior and bandwidth characteristics
             of distributed antenna arrays,"
             2018 United States National Committee of
@@ -9389,7 +9395,7 @@ class irwinhall_gen(rv_continuous):
             https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
     .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
             https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
-    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun.
             Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
 
     %(example)s
@@ -10450,7 +10456,7 @@ class truncpareto_gen(rv_continuous):
 
         f(x, b, c) = \frac{b}{1 - c^{-b}} \frac{1}{x^{b+1}}
 
-    for :math:`b > 0`, :math:`c > 1` and :math:`1 \le x \le c`.
+    for :math:`b \neq 0`, :math:`c > 1` and :math:`1 \le x \le c`.
 
     `truncpareto` takes `b` and `c` as shape parameters for :math:`b` and
     :math:`c`.
@@ -10462,6 +10468,21 @@ class truncpareto_gen(rv_continuous):
     then ``c = (u_r - loc) / scale``. In other words, the support of the
     distribution becomes ``(scale + loc) <= x <= (c*scale + loc)`` when
     `scale` and/or `loc` are provided.
+
+    The ``fit`` method assumes that :math:`b` is positive; it does not produce
+    good results when the data is more consistent with negative :math:`b`.
+
+   `truncpareto` can also be used to model a general power law distribution
+    with PDF:
+
+    .. math::
+
+        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}}
+
+    for :math:`a \neq 0` and :math:`0 < l < x < h`. Suppose :math:`a`,
+    :math:`l`, and :math:`h` are represented in code as ``a``, ``l``, and
+    ``h``, respectively. In this case, use `truncpareto` with parameters
+    ``b = -a``, ``c = h / l``, ``scale = l``, and ``loc = 0``.
 
     %(after_notes)s
 
@@ -10481,34 +10502,40 @@ class truncpareto_gen(rv_continuous):
         return [ib, ic]
 
     def _argcheck(self, b, c):
-        b = float(b)  # ensure float
         return (b != 0.) & (c > 1.)
 
     def _get_support(self, b, c):
         return self.a, c
 
     def _pdf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return (1 - x**-b) / (1 - 1/c**b)
 
     def _logcdf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
+        b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
         return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return (x**-b - 1/c**b) / (1 - 1/c**b)
 
     def _logsf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
+        b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
         return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
@@ -10516,6 +10543,10 @@ class truncpareto_gen(rv_continuous):
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
+        # the output is forcibly coerced to `np.float64` regardless of whether
+        # we're careful to preserve dtype here. To avoid int to negative int
+        # power gotcha:
+        b = np.asarray(b, dtype=np.float64)
         if (n == b).all():
             return b*np.log(c) / (1 - 1/c**b)
         else:
