@@ -104,12 +104,12 @@ jobs:
 
       - name: Run PyTorch GPU tests
         working-directory: .github/workflows
-        run: pixi run test-torch-cuda -v
+        run: pixi run --skip-deps test-torch-cuda -v
 
       - name: Run JAX GPU tests
         working-directory: .github/workflows
-        run: pixi run test-jax-cuda -v
+        run: pixi run --skip-deps test-jax-cuda -v
 
       - name: Run CuPy tests
         working-directory: .github/workflows
-        run: pixi run test-cupy -v
+        run: pixi run --skip-deps test-cupy -v

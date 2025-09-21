@@ -9,29 +9,57 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 ### Environments ###
 
 [environments.build]
+# tasks: build
 features = ["build-deps", "build-task"]
 solve-group = "default"
 
 [environments.test]
+# tasks: test
 features = ["build-deps", "test-deps", "test-task"]
 solve-group = "default"
 
 [environments.lint]
+# tasks: lint, check-python-h
 features = ["lint"]
 
+[environments.array-api-strict]
+# tasks: test-strict
+features = ["build-deps", "test-deps", "array_api_strict", "array_api_strict-tasks"]
+solve-group = "array-api-cpu"
+
+[environments.dask-cpu]
+# tasks: test-dask
+features = ["build-deps", "test-deps", "dask", "dask-tasks"]
+solve-group = "array-api-cpu"
+
+[environments.jax-cpu]
+# tasks: test-jax
+features = ["build-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
+solve-group = "array-api-cpu"
+
+[environments.torch-cpu]
+# tasks: test-torch, test-torch-float32
+features = ["build-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
+solve-group = "array-api-cpu"
+
+[environments.array-api-cpu]
+# tasks: test-cpu
+features = ["build-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "torch-cpu"]
+solve-group = "array-api-cpu"
+
 [environments.cupy]
+# tasks: test-cupy
 features = ["build-deps", "test-deps", "cupy"]
 
-[environments.torch-cuda]
-features = ["build-deps", "test-deps", "cuda", "mkl", "torch-cuda"]
-solve-group = "cuda12"
-
 [environments.jax-cuda]
+# tasks: test-jax-cuda
 features = ["build-deps", "test-deps", "cuda", "mkl", "jax-cuda"]
 solve-group = "cuda12"
 
-[environments.array-api-cpu]
-features = ["build-deps", "test-deps", "cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "torch-cpu"]
+[environments.torch-cuda]
+# tasks: test-torch-cuda
+features = ["build-deps", "test-deps", "cuda", "mkl", "torch-cuda"]
+solve-group = "cuda12"
 
 
 ### Default dependencies (included in all environments) ###
@@ -142,10 +170,10 @@ description = "Build with MKL BLAS"
 
 ### CPU/CUDA features ###
 
-[feature.cpu]
+[feature.test-cpu]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
-[feature.cpu.tasks.test-cpu]
+[feature.test-cpu.tasks.test-cpu]
 cmd = "spin test --no-build -b all -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
@@ -177,13 +205,13 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [feature.torch-cpu.dependencies]
 pytorch-cpu = "*"
 
-[feature.torch-cpu.tasks.test-torch]
+[feature.torch-cpu-tasks.tasks.test-torch]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
 description = "Test with PyTorch on CPU"
 
-[feature.torch-cpu.tasks.test-torch-float32]
+[feature.torch-cpu-tasks.tasks.test-torch-float32]
 cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
 env.SCIPY_DEFAULT_DTYPE = "float32"
 cwd = "../.."
@@ -226,8 +254,11 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 jax = "*"
 jaxlib = { version = "*", build = "*cpu*" }
 
+[feature.jax-cpu-tasks]
 # Windows support pending: https://github.com/conda-forge/jaxlib-feedstock/issues/161
-[feature.jax-cpu.target.unix.tasks.test-jax]
+platforms = ["linux-64", "osx-arm64"]
+
+[feature.jax-cpu-tasks.tasks.test-jax]
 cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
@@ -255,7 +286,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [feature.array_api_strict.dependencies]
 array-api-strict = "*"
 
-[feature.array_api_strict.tasks.test-strict]
+[feature.array_api_strict-tasks.tasks.test-strict]
 cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
@@ -268,7 +299,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [feature.dask.dependencies]
 dask-core = "*" # Don't install distributed, tornado, etc.
 
-[feature.dask.tasks.test-dask]
+[feature.dask-tasks.tasks.test-dask]
 cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
 cwd = "../.."
 depends-on = "build"
