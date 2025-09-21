@@ -193,6 +193,13 @@ cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy (for CPU environments)"
 
+# XXX: workaround for meson mkl blas detection
+[feature.build-cpu.target.linux-64.tasks.build-cpu]
+cmd = "spin build --build-dir=build-cpu --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (for CPU environments)"
+
 [feature.test-cpu]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
