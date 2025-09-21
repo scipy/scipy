@@ -10513,7 +10513,8 @@ class truncpareto_gen(rv_continuous):
 
     def _logpdf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
-        return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
+        pdf = b * x**-(b+1) / (1 - 1/c**b)
+        return np.log(pdf)
 
     def _cdf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
@@ -10521,7 +10522,8 @@ class truncpareto_gen(rv_continuous):
 
     def _logcdf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
-        return np.log1p(-x**-b) - np.log1p(-1/c**b)
+        cdf = (1 - x**-b) / (1 - 1/c**b)
+        return np.log(cdf)
 
     def _ppf(self, q, b, c):
         b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
@@ -10533,7 +10535,8 @@ class truncpareto_gen(rv_continuous):
 
     def _logsf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
-        return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
+        sf = (x**-b - 1/c**b) / (1 - 1/c**b)
+        return np.log(sf)
 
     def _isf(self, q, b, c):
         b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
