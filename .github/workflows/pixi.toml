@@ -38,6 +38,7 @@ features = ["build-deps", "test-deps", "cpu", "mkl", "array_api_strict", "dask",
 
 [dependencies]
 spin = "*"
+python = "*"
 
 
 ### Default building ###
