@@ -27,7 +27,8 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
+    xp_swapaxes
 
 )
 from scipy._lib.array_api_compat import is_array_api_obj
@@ -818,14 +819,7 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
-def _swapaxes(x, ax1, ax2, xp):
-    """np.swapaxes"""
-    shp = list(range(x.ndim))
-    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
-    return xp.permute_dims(x, shp)
-
-
-# may want to look at moving _swapaxes and this to array-api-extra,
+# may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
     """A simplified version of np.split, with `indices` being an list.
@@ -838,11 +832,11 @@ def _split(x, indices_or_sections, axis, xp):
     div_points = [0] + list(indices_or_sections) + [Ntotal]    
 
     sub_arys = []
-    sary = _swapaxes(x, axis, 0, xp=xp)
+    sary = xp_swapaxes(x, axis, 0, xp=xp)
     for i in range(Nsections):
         st = div_points[i]
         end = div_points[i + 1]
-        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+        sub_arys.append(xp_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
 
     return sub_arys
 
