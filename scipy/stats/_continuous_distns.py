@@ -8604,7 +8604,7 @@ class powerlaw_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}}
+        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}
 
     with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 
@@ -10477,7 +10477,7 @@ class truncpareto_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
+        f(x; a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
 
     for :math:`a \neq 0` and :math:`0 < l < x < h`. Suppose :math:`a`,
     :math:`l`, and :math:`h` are represented in code as ``a``, ``l``, and
