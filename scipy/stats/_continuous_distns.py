@@ -10512,6 +10512,7 @@ class truncpareto_gen(rv_continuous):
         return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
+        b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
