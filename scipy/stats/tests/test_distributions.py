@@ -10241,6 +10241,12 @@ class TestTruncPareto:
 
         assert_allclose(res, ref)
 
+        X = stats.truncpareto(b, c, loc, scale)
+        assert_allclose(X.logpdf(x), np.log(X.pdf(x)))
+        # indexing avoids RuntimeWarning with `np.log(0)`
+        assert_allclose(X.logcdf(x[1:]), np.log(X.cdf(x[1:])))
+        assert_allclose(X.logsf(x[:-1]), np.log(X.sf(x[:-1])))
+
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])
     @pytest.mark.parametrize('fix_b', [True, False])

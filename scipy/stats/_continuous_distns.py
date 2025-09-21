@@ -10513,6 +10513,9 @@ class truncpareto_gen(rv_continuous):
 
     def _logpdf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
+        return xpx.apply_where(b > 0, (x, b, c), self._logpdf_pos_b, super()._logpdf)
+
+    def _logpdf_pos_b(self, x, b, c):
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
@@ -10521,10 +10524,13 @@ class truncpareto_gen(rv_continuous):
 
     def _logcdf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
+        return xpx.apply_where(b > 0, (x, b, c), self._logcdf_pos_b, super()._logcdf)
+
+    def _logcdf_pos_b(self, x, b, c):
         return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
-        b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
+        b = np.asarray(b, dtype=np.float64)  # avoid int to negative int power
         return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
@@ -10533,10 +10539,13 @@ class truncpareto_gen(rv_continuous):
 
     def _logsf(self, x, b, c):
         b = np.asarray(b, dtype=x.dtype)  # avoid int to negative int power
+        return xpx.apply_where(b > 0, (x, b, c), self._logsf_pos_b, super()._logsf)
+
+    def _logsf_pos_b(self, x, b, c):
         return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
-        b = np.asarray(b, dtype=q.dtype)  # avoid int to negative int power
+        b = np.asarray(b, dtype=np.float64)  # avoid int to negative int power
         return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
