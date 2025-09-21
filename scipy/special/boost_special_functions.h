@@ -2255,7 +2255,7 @@ chdtriv_wrap(const Real p, const Real x)
         sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
-    if ((p == 1)) {
+    if (p == 1) {
         return 0.0;
     }
     Real y;
@@ -2274,6 +2274,8 @@ chdtriv_wrap(const Real p, const Real x)
         sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
+    // In theory, y should never be negative, but with an overabundance of caution
+    // we check and return NAN if it happens.
     if (y < 0) {
         sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
