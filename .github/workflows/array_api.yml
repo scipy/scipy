@@ -50,7 +50,7 @@ jobs:
 
       - name: Build SciPy
         working-directory: .github/workflows
-        run: pixi run build
+        run: pixi run build-cpu
 
       - name: Test SciPy
         working-directory: .github/workflows

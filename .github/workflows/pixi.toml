@@ -7,6 +7,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 
 ### Environments ###
+# We include one build task (and a corresponding environment) per solve group
 
 [environments.build]
 # tasks: build
@@ -21,6 +22,11 @@ solve-group = "default"
 [environments.lint]
 # tasks: lint, check-python-h
 features = ["lint"]
+
+[environments.build-cpu]
+# tasks: build-cpu
+features = ["build-deps", "build-cpu"]
+solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
 # tasks: test-strict
@@ -47,18 +53,24 @@ solve-group = "array-api-cpu"
 features = ["build-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "torch-cpu"]
 solve-group = "array-api-cpu"
 
+[environments.build-cuda]
+# tasks: build-cuda
+# note: py-cuda feature ensures compatibility with both cuda12 and cuda13 solve groups
+features = ["build-deps", "build-cuda", "py-cuda"]
+
 [environments.cupy]
 # tasks: test-cupy
-features = ["build-deps", "test-deps", "cupy"]
+features = ["build-deps", "test-deps", "cuda13", "py-cuda", "cupy"]
+solve-group = "cuda13"
 
 [environments.jax-cuda]
 # tasks: test-jax-cuda
-features = ["build-deps", "test-deps", "cuda", "mkl", "jax-cuda"]
+features = ["build-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
 solve-group = "cuda12"
 
 [environments.torch-cuda]
 # tasks: test-torch-cuda
-features = ["build-deps", "test-deps", "cuda", "mkl", "torch-cuda"]
+features = ["build-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
 solve-group = "cuda12"
 
 
@@ -83,6 +95,7 @@ numpy = "*"
 pybind11 = "*"
 pythran = "*"
 
+# XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
 cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 cwd = "../.."
@@ -105,6 +118,7 @@ gmpy2 = "*"
 ccache = "*"
 marray-python = "*"
 
+# XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-task.tasks.test]
 cmd = "spin test --no-build"
 cwd = "../.."
@@ -170,31 +184,54 @@ description = "Build with MKL BLAS"
 
 ### CPU/CUDA features ###
 
+[feature.build-cpu]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.build-cpu.tasks.build-cpu]
+cmd = "spin build --build-dir=build-cpu --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (for CPU environments)"
+
 [feature.test-cpu]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.test-cpu.tasks.test-cpu]
-cmd = "spin test --no-build -b all -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b all -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with all CPU array backends"
 
 
-[feature.cuda]
+# XXX: the purpose of this feature is to enforce the same minor Python version
+# over both the cuda12 and cuda13 solve groups
+[feature.py-cuda.dependencies]
+python = "3.13.*"
+
+[feature.build-cuda]
 platforms = ["linux-64"]
-# XXX: JAX needs cuda 12 right now, CuPy seems to need cuda 13
-# so this feature is not included in the CuPy environment
+
+[feature.build-cuda.tasks.build-cuda]
+cmd = "spin build --build-dir=build-cuda --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy (for CUDA environments)"
+
+# JAX needs cuda 12 right now
+[feature.cuda12]
+platforms = ["linux-64"]
 system-requirements = { cuda = "12" }
 
-[feature.cuda.dependencies]
+[feature.cuda12.dependencies]
 cuda-version = "12.*"
 
-[feature.cuda.tasks.test-cuda]
-cmd = "spin test --no-build -b cupy -b torch -b jax.numpy -m 'array_api_backends and not slow'"
-cwd = "../.."
-env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
-description = "Test with all CUDA array backends"
+# CuPy seems to need cuda13, possibly related to discussion in scipy/scipy#23458
+[feature.cuda13]
+platforms = ["linux-64"]
+system-requirements = { cuda = "13" }
+
+[feature.cuda13.dependencies]
+cuda-version = "13.*"
 
 
 ### Array libraries ###
@@ -206,42 +243,36 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 pytorch-cpu = "*"
 
 [feature.torch-cpu-tasks.tasks.test-torch]
-cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b torch -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with PyTorch on CPU"
 
 [feature.torch-cpu-tasks.tasks.test-torch-float32]
-cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b torch -m 'array_api_backends and not slow'"
 env.SCIPY_DEFAULT_DTYPE = "float32"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with PyTorch and `SCIPY_DEFAULT_DTYPE=float32` on CPU"
 
 [feature.torch-cuda.dependencies]
 pytorch-gpu = "*"
 
 [feature.torch-cuda.tasks.test-torch-cuda]
-cmd = "spin test --no-build -b torch -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cuda -b torch -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
+depends-on = "build-cuda"
 description = "Test with PyTorch on CUDA"
 
 
-[feature.cupy]
-platforms = ["linux-64"]
-# XXX: CuPy seems to need cuda13, possibly related to discussion in scipy/scipy#23458
-system-requirements = { cuda = "13" }
-
 [feature.cupy.dependencies]
 cupy = "*"
-cuda-version = "13.*"
 
 [feature.cupy.tasks.test-cupy]
-cmd = "spin test --no-build -b cupy -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cuda -b cupy -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cuda"
 description = "Test with CuPy"
 
 
@@ -259,9 +290,9 @@ jaxlib = { version = "*", build = "*cpu*" }
 platforms = ["linux-64", "osx-arm64"]
 
 [feature.jax-cpu-tasks.tasks.test-jax]
-cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with JAX on CPU"
 
 [feature.jax-cuda]
@@ -273,10 +304,10 @@ jaxlib = { version = "!=0.6.2,!=0.7.0", build = "cuda12*" }
 jax = "*"
 
 [feature.jax-cuda.tasks.test-jax-cuda]
-cmd = "spin test --no-build -b jax.numpy -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cuda -b jax.numpy -m 'array_api_backends and not slow'"
 cwd = "../.."
 env.SCIPY_DEVICE = "cuda"
-depends-on = "build"
+depends-on = "build-cuda"
 description = "Test with JAX on CUDA"
 
 
@@ -287,9 +318,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 array-api-strict = "*"
 
 [feature.array_api_strict-tasks.tasks.test-strict]
-cmd = "spin test --no-build -b array_api_strict -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b array_api_strict -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with array-api-strict"
 
 
@@ -300,7 +331,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 dask-core = "*" # Don't install distributed, tornado, etc.
 
 [feature.dask-tasks.tasks.test-dask]
-cmd = "spin test --no-build -b dask.array -m 'array_api_backends and not slow'"
+cmd = "spin test --no-build --build-dir=build-cpu -b dask.array -m 'array_api_backends and not slow'"
 cwd = "../.."
-depends-on = "build"
+depends-on = "build-cpu"
 description = "Test with Dask"

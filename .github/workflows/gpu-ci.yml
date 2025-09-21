@@ -100,7 +100,7 @@ jobs:
 
       - name: Build SciPy
         working-directory: .github/workflows
-        run: pixi run build
+        run: pixi run build-cuda
 
       - name: Run PyTorch GPU tests
         working-directory: .github/workflows
