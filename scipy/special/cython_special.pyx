@@ -1398,9 +1398,14 @@ from ._boxcox cimport boxcox1p as _func_boxcox1p
 ctypedef double _proto_boxcox1p_t(double, double) noexcept nogil
 cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
 
-from ._cdflib_wrappers cimport chdtriv as _func_chdtriv
-ctypedef double _proto_chdtriv_t(double, double) noexcept nogil
-cdef _proto_chdtriv_t *_proto_chdtriv_t_var = &_func_chdtriv
+cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.chdtriv"""
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_chdtriv_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.chndtr"""
@@ -1765,17 +1770,9 @@ from ._spence cimport cspence as _func_cspence
 ctypedef double complex _proto_cspence_t(double complex) noexcept nogil
 cdef _proto_cspence_t *_proto_cspence_t_var = &_func_cspence
 
-from ._cdflib_wrappers cimport stdtr as _func_stdtr
-ctypedef double _proto_stdtr_t(double, double) noexcept nogil
-cdef _proto_stdtr_t *_proto_stdtr_t_var = &_func_stdtr
-
 from ._cdflib_wrappers cimport stdtridf as _func_stdtridf
 ctypedef double _proto_stdtridf_t(double, double) noexcept nogil
 cdef _proto_stdtridf_t *_proto_stdtridf_t_var = &_func_stdtridf
-
-from ._cdflib_wrappers cimport stdtrit as _func_stdtrit
-ctypedef double _proto_stdtrit_t(double, double) noexcept nogil
-cdef _proto_stdtrit_t *_proto_stdtrit_t_var = &_func_stdtrit
 
 from ._legacy cimport yn_unsafe as _func_yn_unsafe
 ctypedef double _proto_yn_unsafe_t(double, double) noexcept nogil
@@ -2022,10 +2019,6 @@ cpdef double chdtrc(double x0, double x1) noexcept nogil:
 cpdef double chdtri(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtri"""
     return xsf_chdtri(x0, x1)
-
-cpdef double chdtriv(double x0, double x1) noexcept nogil:
-    """See the documentation for scipy.special.chdtriv"""
-    return _func_chdtriv(x0, x1)
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""
@@ -3542,17 +3535,27 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
         else:
             return NAN
 
-cpdef double stdtr(double x0, double x1) noexcept nogil:
+cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
-    return _func_stdtr(x0, x1)
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_double)(x0, x1)
+    else:
+        return NAN
+
+cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil:
+    """See the documentation for scipy.special.stdtrit"""
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_ppf_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef double stdtridf(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtridf"""
     return _func_stdtridf(x0, x1)
-
-cpdef double stdtrit(double x0, double x1) noexcept nogil:
-    """See the documentation for scipy.special.stdtrit"""
-    return _func_stdtrit(x0, x1)
 
 cpdef double struve(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.struve"""

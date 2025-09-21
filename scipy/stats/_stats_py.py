@@ -3774,7 +3774,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         If False, perform Welch's ANOVA test, which does not assume
         equal population variances [4]_.
 
-        .. versionadded:: 1.15.0
+        .. versionadded:: 1.16.0
 
     Returns
     -------
@@ -4781,7 +4781,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
     # data-apis/array-api-extra#196
-    mxp = array_namespace(r._meta) if is_dask(xp) else xp    
+    mxp = array_namespace(r._meta) if is_dask(xp) else xp
     def special_case(r):
         return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
     r = xpx.apply_where(mask, r, mxp.round, fill_value=r)

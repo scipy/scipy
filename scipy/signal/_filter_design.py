@@ -161,7 +161,7 @@ def findfreqs(num, den, N, kind='ba'):
     )
 
     # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
-    # depending on the the floating-point jitter in -1.5
+    # depending on the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
     lfreq = xp.round(
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
@@ -4760,14 +4760,12 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     else:
         m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
 
-    z = -xp.conj(1j / xp.sin(m * xp.pi / (2.0 * N)))
+    z = 1j / xp.sin(m * xp.pi / (2 * N))
 
     # Poles around the unit circle like Butterworth
     m1 = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
-    p = -xp.exp(1j * xp.pi * m1 / (2 * N))
-    # Warp into Chebyshev II
-    p = math.sinh(mu) * xp.real(p) + 1j * math.cosh(mu) * xp.imag(p)
-    p = 1.0 / p
+    theta1 = xp.pi * m1 / (2 * N)
+    p = -1 / xp.sinh(mu + 1j*theta1)
 
     k = xp.real(xp.prod(-p, axis=0) / xp.prod(-z, axis=0))
     return z, p, k
