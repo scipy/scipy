@@ -87,7 +87,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'cauchy', 'chi', 'chi2', 'cosine',
                'logistic', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
                'powerlaw', 'rdist', 'reciprocal', 'rice',
-               'skewnorm', 't', 'truncweibull_min',
+               'skewnorm', 't', 'truncpareto', 'truncweibull_min',
                'tukeylambda', 'vonmises', 'vonmises_line',
                'rv_histogram_instance', 'truncnorm', 'studentized_range',
                'johnsonsb', 'halflogistic', 'rel_breitwigner'}
