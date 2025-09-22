@@ -16,13 +16,16 @@ solve-group = "default"
 
 [environments.test]
 # tasks: test
-features = ["build-deps", "test-deps", "test-task"]
+features = ["run-deps", "test-deps", "test-task"]
 solve-group = "default"
 
 [environments.lint]
 # tasks: lint, check-python-h
 features = ["lint"]
 
+# TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
+# and create a non-default solve group with minimal dependencies
+# to more reliably test the very latest versions of core dependencies
 [environments.build-cpu]
 # tasks: build-cpu
 features = ["build-deps", "build-cpu"]
@@ -30,27 +33,27 @@ solve-group = "array-api-cpu"
 
 [environments.array-api-strict]
 # tasks: test-strict
-features = ["build-deps", "test-deps", "array_api_strict", "array_api_strict-tasks"]
+features = ["run-deps", "test-deps", "array_api_strict", "array_api_strict-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
 # tasks: test-dask
-features = ["build-deps", "test-deps", "dask", "dask-tasks"]
+features = ["run-deps", "test-deps", "dask", "dask-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.jax-cpu]
 # tasks: test-jax
-features = ["build-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
+features = ["run-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.torch-cpu]
 # tasks: test-torch, test-torch-float32
-features = ["build-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
+features = ["run-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-cpu]
 # tasks: test-cpu
-features = ["build-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "torch-cpu"]
+features = ["run-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
@@ -60,17 +63,17 @@ features = ["build-deps", "build-cuda", "py-cuda"]
 
 [environments.cupy]
 # tasks: test-cupy
-features = ["build-deps", "test-deps", "cuda13", "py-cuda", "cupy"]
+features = ["run-deps", "test-deps", "cuda13", "py-cuda", "cupy"]
 solve-group = "cuda13"
 
 [environments.jax-cuda]
 # tasks: test-jax-cuda
-features = ["build-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
+features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
 solve-group = "cuda12"
 
 [environments.torch-cuda]
 # tasks: test-torch-cuda
-features = ["build-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
+features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
 solve-group = "cuda12"
 
 
@@ -81,19 +84,28 @@ spin = "*"
 python = "*"
 
 
+### Default run dependencies (for environments which run SciPy itself) ###
+
+[feature.run-deps.dependencies]
+numpy = "*"
+blas-devel = "*"
+
+
 ### Default building ###
 
 [feature.build-deps.dependencies]
 compilers = "*"
+ccache = "*"
 pkg-config = "*"
 ninja = "*"
 meson = "*"
 meson-python = "*"
 cython = "*"
-blas-devel = "*"
-numpy = "*"
-pybind11 = "*"
 pythran = "*"
+pybind11 = "*"
+# needed at build-time as well as run-time
+numpy = "*"
+blas-devel = "*"
 
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
@@ -108,15 +120,12 @@ description = "Build SciPy (default settings)"
 [feature.test-deps.dependencies]
 pytest = "*"
 hypothesis = "*"
-pytest-cov = "*"
 pytest-timeout = "*"
 pytest-xdist = "*"
 threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
 gmpy2 = "*"
-ccache = "*"
-marray-python = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-task.tasks.test]
@@ -342,3 +351,10 @@ cmd = "spin test --no-build --build-dir=build-cpu -b dask.array -m 'array_api_ba
 cwd = "../.."
 depends-on = "build-cpu"
 description = "Test with Dask"
+
+
+[feature.marray]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
+[feature.marray.dependencies]
+marray-python = "*"
