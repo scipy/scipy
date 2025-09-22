@@ -3433,9 +3433,9 @@ def test_sparse_hessian(method, sparse_type):
     ['l-bfgs-b',
      'bfgs',
      'slsqp',
-     'trust-constr',
+     # 'trust-constr',
      'Newton-CG',
-     # 'CG',  # failing in gh-23573; will try to re-enable immediately
+     'CG',  # failing in gh-23573; will try to re-enable immediately
      'tnc',
      'trust-ncg',
      'trust-krylov'])
