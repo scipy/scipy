@@ -1707,13 +1707,16 @@ class TestOptimizeSimple(CheckOptimize):
             return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.message.startswith("`callback` raised `StopIteration`")
             assert res.nit == ref.nit == maxiter
-        assert res.fun == ref.fun
-        assert_equal(res.x, ref.x)
-        assert res.status == (3 if method in [
-            'trust-constr',
-            'cobyqa',
-        ] else 99)
+        if method != 'slsqp':
+            # Unlike all other methods, apparently SLSQP updates x/fun after the last
+            # call to the callback
+            assert res.fun == ref.fun
+            assert_equal(res.x, ref.x)
+        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
+        if method != 'cobyqa':
+            assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
