@@ -205,16 +205,12 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     if inverse:
         matrix = inv(matrix)
 
-    # TODO: We raise a ValueError manually here because letting the function run its
-    # course would raise heterogeneous error types and messages for different
-    # frameworks. However, the error only mimics numpy's error message and does not
-    # provide the same amount of context.
+    # We raise a ValueError manually here because letting the function run its course
+    # would raise heterogeneous error types and messages for different frameworks.
+    # However, the error only mimics numpy's error message and does not provide the
+    # same amount of context.
     if not broadcastable(matrix.shape, vec.shape):
         raise ValueError("operands could not be broadcast together")
-
-    # This einsum performs matrix multiplication of each of the (..., 4, 4) matrices in
-    # `matrix` with the (..., 4) vectors in `vec`, with proper broadcasting for
-    # different dimensions.
     return (matrix @ vec)[..., :3, 0]
 
 

@@ -703,7 +703,7 @@ def test_apply(xp):
     xp_assert_close(tf.apply(vecs), expected, atol=atol)
 
     ## Multiple transforms
-    r = Rotation.from_euler('z', xp.asarray([90, 0]), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray([[90], [0]]), degrees=True)
     t = xp.asarray([[2.0, 3, 4], [5, 6, 7]])
     tf = RigidTransform.from_components(t, r)
 
