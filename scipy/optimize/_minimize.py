@@ -47,7 +47,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla', 'slsqp']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
