@@ -10472,7 +10472,7 @@ class truncpareto_gen(rv_continuous):
     The ``fit`` method assumes that :math:`b` is positive; it does not produce
     good results when the data is more consistent with negative :math:`b`.
 
-   `truncpareto` can also be used to model a general power law distribution
+    `truncpareto` can also be used to model a general power law distribution
     with PDF:
 
     .. math::
