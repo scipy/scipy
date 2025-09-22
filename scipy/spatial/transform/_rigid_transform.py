@@ -785,12 +785,12 @@ class RigidTransform:
         """
         xp = array_namespace(exp_coords)
         exp_coords = xp_promote(exp_coords, force_floating=True, xp=xp)
-        if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
+        if  exp_coords.shape[-1] != 6:
             raise ValueError(
-                "Expected `exp_coords` to have shape (6,), or (N, 6), "
-                f"got {exp_coords.shape}."
+                "Expected `exp_coords` to have shape (..., 6), got "
+                f"{exp_coords.shape}."
             )
-        backend = select_backend(xp)
+        backend = select_backend(xp, cython_compatible=exp_coords.ndim < 3)
         matrix = backend.from_exp_coords(exp_coords)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -1782,6 +1782,13 @@ class RigidTransform:
             otherwise.
         """
         return self._single or self._matrix.ndim == 2
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """The shape of the transform's leading dimensions."""
+        if self._single or self._matrix.ndim == 2:
+            return ()
+        return self._matrix.shape[:-2]
 
     def __reduce__(self) -> tuple[Callable, tuple]:
         """Reduce the RigidTransform for pickling.
