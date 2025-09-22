@@ -284,7 +284,7 @@ invdistcont = [
     ['triang', (2, )],
     ['truncexpon', (-1, )],
     ['truncnorm', (10, 5)],
-    ['truncpareto', (-1, 5)],
+    ['truncpareto', (-1, -5)],
     ['truncpareto', (1.8, .5)],
     ['truncweibull_min', (-2.5, 0.25, 1.75)],
     ['tukeylambda', (np.nan, )],
