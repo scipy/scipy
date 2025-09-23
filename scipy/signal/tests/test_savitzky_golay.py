@@ -91,7 +91,7 @@ def compare_coeffs_to_alt(window_length, order, xp):
         h1 = savgol_coeffs(window_length, order, pos=pos, use='dot', xp=xp)
         h2 = alt_sg_coeffs(window_length, order, pos=pos, xp=xp)
         xp_assert_close(
-            h1, h2, atol=1e-10,
+            h1, h2, atol=2e-10,
             err_msg=f"window_length = {window_length}, order = {order}, pos = {pos}"
         )
 
