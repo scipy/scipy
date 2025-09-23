@@ -747,6 +747,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         a10  a21  a32  a43  a54   *
         a20  a31  a42  a53   *    *
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     (l, u) : (integer, integer)
@@ -1005,6 +1010,11 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
@@ -1121,6 +1131,11 @@ def solve_circulant(c, b, singular='raise', tol=None,
     respectively. For a large vector `c`, this is *much* faster than
     solving the system with the full circulant matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    
     Parameters
     ----------
     c : array_like
