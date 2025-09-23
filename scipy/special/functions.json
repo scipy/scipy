@@ -9,16 +9,6 @@
             "cosine_invcdf": "d->d"
         }
     },
-    "_gen_harmonic": {
-        "gen_harmonic.h++": {
-            "gen_harmonic": "qd->d"
-        }
-    },
-    "_normalized_gen_harmonic": {
-        "gen_harmonic.h++": {
-            "normalized_gen_harmonic": "qqqd->d"
-        }
-    },
     "_ellip_harm": {
         "_ellip_harm.pxd": {
             "ellip_harmonic": "ddiiddd->d"
