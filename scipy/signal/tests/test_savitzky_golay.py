@@ -104,6 +104,7 @@ def test_sg_coeffs_compare(xp):
             compare_coeffs_to_alt(window_length, order, xp=xp)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_exact(xp):
     polyorder = 4
@@ -221,6 +222,7 @@ def test_sg_coeffs_even_window_length(xp):
 # savgol_filter tests
 #--------------------------------------------------------------------
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_trivial(xp):
     """ Test some trivial edge cases for savgol_filter()."""
@@ -244,6 +246,7 @@ def test_sg_filter_trivial(xp):
     assert_almost_equal(y, xp.asarray([1.0, 1.0, 1.0]), decimal=15)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_basic(xp):
     # Some basic test cases for savgol_filter().
@@ -258,6 +261,7 @@ def test_sg_filter_basic(xp):
     xp_assert_close(y, xp.asarray([4.0 / 3, 4.0 / 3, 4.0 / 3]))
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_2d(xp):
     x = xp.asarray([[1.0, 2.0, 1.0],
@@ -271,6 +275,7 @@ def test_sg_filter_2d(xp):
     xp_assert_close(y, expected.T)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_interp_edges(xp):
     # Another test with low degree polynomial data, for which we can easily
@@ -321,6 +326,7 @@ def test_sg_filter_interp_edges(xp):
     xp_assert_close(y2, d2x, atol=1e-12)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_interp_edges_3d(xp):
     # Test mode='interp' with a 3-D array.
@@ -364,6 +370,7 @@ def test_sg_filter_interp_edges_3d(xp):
     xp_assert_close(dy, dz, atol=1e-10)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
 @skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_valid_window_length_3d(xp):
     """Tests that the window_length check is using the correct axis."""
