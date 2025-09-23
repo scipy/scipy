@@ -178,7 +178,7 @@ def polyfit(x, y, deg, *, xp, rcond=None):
     s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
 
     sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
-    c = vt.mT @ sigma @ u.mT @ y
+    c = vt.T @ sigma @ u.T @ y
     c = (c.T / scale).T  # broadcast scale coefficients
 
     # warn on rank reduction, which indicates an ill conditioned matrix
