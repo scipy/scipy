@@ -36,8 +36,11 @@ def delegate_xp(delegator, module_name):
                 xp = delegator(*args, **kwds)
             except TypeError:
                 # object arrays
-                import numpy as np
-                xp = np
+                if func.__name__ == "tf2ss":
+                    import numpy as np
+                    xp = np
+                else:
+                    raise
 
             # try delegating to a cupyx/jax namesake
             if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:

@@ -1378,7 +1378,7 @@ class TestResample:
         # window.shape must equal to sig.shape[0]
         sig = xp.arange(128, dtype=xp.float64)
         num = 256
-        win = signal.get_window(('kaiser', 8.0), 160)
+        win = signal.get_window(('kaiser', 8.0), 160, xp=xp)
         assert_raises(ValueError, signal.resample, sig, num, window=win)
         assert_raises(ValueError, signal.resample, sig, num, domain='INVALID')
 
@@ -1390,7 +1390,7 @@ class TestResample:
         assert_raises(ValueError, signal.resample_poly, sig, 2, 1, padtype='')
         assert_raises(ValueError, signal.resample_poly, sig, 2, 1,
                       padtype='mean', cval=10)
-        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, window=np.eye(2))
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, window=xp.eye(2))
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
         sig2 = xp.tile(xp.arange(160, dtype=xp.float64), (2, 1))
@@ -1525,6 +1525,7 @@ class TestResample:
                     half_len = 10 * max_rate
                     window = signal.firwin(2 * half_len + 1, f_c,
                                            window=('kaiser', 5.0))
+                    window = xp.asarray(window)
                     polyargs = {'window': window, 'padtype': padtype}
                 else:
                     polyargs = {'padtype': padtype}
