@@ -2225,6 +2225,11 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
