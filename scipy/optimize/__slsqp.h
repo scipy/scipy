@@ -75,7 +75,7 @@ void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, do
 // The SLSQP_vars struct holds the state of the algorithm and passed to Python
 // and back such that it is thread-safe.
 struct SLSQP_vars {
-    double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol;
+    double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol, optimal, feas;
     int exact, inconsistent, reset, iter, itermax, line, m, meq, mode, n;
 };
 
@@ -265,7 +265,7 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Some helper x macros to pack and unpack the SLSQP_vars struct and
     // the Python dictionary.
 
-    #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol)
+    #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol) X(optimal) X(feas)
     #define STRUCT_INT_FIELD_NAMES X(exact) X(inconsistent) X(reset) X(iter) X(itermax) X(line) X(m) X(meq) X(mode) X(n)
     #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_DOUBLE_FIELD_NAMES
 
