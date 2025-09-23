@@ -227,9 +227,13 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     ``True`` then ``L`` is returned already permuted and hence satisfying
     ``A = L @ U``.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Array to decompose
     permute_l : bool, optional
         Perform the multiplication P*L (Default: do not permute)
