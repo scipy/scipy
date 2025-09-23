@@ -17,7 +17,6 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
 from ._slsqplib import slsqp
-from scipy.linalg import norm as lanorm
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x, _wrap_callback)
@@ -221,25 +220,29 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                     maxiter=100, ftol=1.0E-6, iprint=1, disp=False,
                     eps=_epsilon, callback=None, finite_diff_rel_step=None,
                     workers=None, **unknown_options):
-    """
+    r"""
     Minimize a scalar function of one or more variables using Sequential
     Least Squares Programming (SLSQP).
 
     Parameters
     ----------
+    maxiter : int, optional
+        Maximum number of iterations. Default value is 100.
     ftol : float
         Precision target for the value of f in the stopping criterion. This value
         controls the final accuracy for checking various optimality conditions;
         gradient of the lagrangian and absolute sum of the constraint violations
         should be lower than ``ftol``. Similarly, computed step size and the
         objective function changes are checked against this value. Default is 1e-6.
-    eps : float
-        Step size used for numerical approximation of the Jacobian.
+    iprint : int
+        Set to 1 to print a post-optimization summary. Set to 2 to print the
+        progress of the optimization at each iteration. `disp` must be set
+        `True` for this parameter to function.
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
-    maxiter : int, optional
-        Maximum number of iterations. Default value is 100.
+    eps : float
+        Step size used for numerical approximation of the Jacobian.
     finite_diff_rel_step : None or array_like, optional
         If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of `jac`. The absolute step
@@ -285,6 +288,28 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     within a single constraint, then the returned list of multipliers will have
     a different length than the original new-style constraints.
 
+    SLSQP tracks optimality and feasibility as two parameters that tend towards
+    zero over the course of the optimization:
+
+        .. math::
+
+            \begin{align}
+                \textit{optimal} &= \bigl|\nabla f^T \mathbf{p}\bigr| + \sum_{j \in \mathcal{M}} \bigl| \lambda_j c_j(x)\bigr|,\\
+                \text{and}\quad \textit{feas} &= \sum_{j \in \mathcal{M}_{\text{eq}}} \bigl|c_j(x)\bigr| + \sum_{j \in \mathcal{M}_{\text{ineq}}} \max\!\bigl(0,
+                -c_j(x)\bigr)
+            \end{align}
+
+    respectively, where :math:`\nabla f` is the gradient of the objective function,
+    :math:`x` are the design variables, :math:`\mathbf{p}` is the search direction vector,
+    :math:`c` are the constraint functions, :math:`\lambda` are the lagrange multipliers,
+    :math:`\mathcal{M}` are the indices of all constraints,
+    :math:`\mathcal{M}_{\text{eq}}` are the indices of the equality constraints and
+    :math:`\mathcal{M}_{\text{ineq}}` are the indices of the inequality constraints.
+    ``optimal`` is a variation of the lagrangian function and ``feas`` is the sum of the 
+    constraint violation. These can be printed at each iteration by setting ``iprint = 2``
+    and are included in the ``intermediate_results`` object as the terms ``optimality``
+    and ``constr_violation`` respectively which can be accessed in a callback function.
+
     References
     ----------
     .. [1] Nocedal, J., and S J Wright, 2006, "Numerical Optimization", Springer,
@@ -294,7 +319,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     .. [3] Lawson, C. L., and R. J. Hanson, 1995, "Solving Least Squares Problems",
        SIAM, Philadelphia, PA.
 
-    """
+    """  # noqa: E501
     _check_unknown_options(unknown_options)
     acc = ftol
     epsilon = eps
@@ -432,7 +457,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # This dictionary is passed to the SLSQP matching the C struct defined as
     #
     # struct SLSQP_static_vars {
-    #     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol;
+    #     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol, optimal, feas;
     #     int exact, inconsistent, reset, iter, itermax, line, mode, meq;
     # };
     #
@@ -442,9 +467,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     #               while the original nonlinear problem is still solvable. Then
     #               the problem is augmented with a regularizing dummy variable.
     # reset: holds the count of resetting bfgs to identity matrix.
-    # iter  : the current and itermax is the maximum number of iterations.
-    # line  : the current line search iteration.
-    # mode  : the exit mode of the solver.
+    # iter    : the current and itermax is the maximum number of iterations.
+    # line    : the current line search iteration.
+    # mode    : the exit mode of the solver.
+    # optimal : current optimality where optim <= acc for convergence
+    # feas    : current feasibility, computed as the sum of the constraint
+    #           violation where feas <= acc for convergence
     # alpha, f0, gs, h1, h2, h3, h4, t, t0 : internal variables used by the solver.
     #
     # The dict holds the intermediate state of the solver. The keys are the same
@@ -470,12 +498,15 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "m": m,
         "meq": meq,
         "mode": 0,
-        "n": n
+        "n": n,
+        "optimal": 0.0,
+        "feas": 0.0,
     }
 
     # Print the header if iprint >= 2
     if iprint >= 2:
-        print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
+        print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} "
+              f"{'OPTIMALITY':>16} {'FEASIBILITY':>16}")
 
     # Internal buffer and int array
     indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
@@ -533,15 +564,22 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             if callback is not None:
                 intermediate_result = OptimizeResult(
                     x=np.copy(x),
-                    fun=fx
+                    fun=fx,
+                    optimality=state_dict['optimal'],
+                    constr_violation=state_dict['feas'],
                 )
                 if _call_callback_maybe_halt(callback, intermediate_result):
                     break
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print(f"{state_dict['iter']:5d} {sf.nfev:5d} "
-                      f"{fx:16.6E} {lanorm(g):16.6E}")
+                print(
+                    f"{state_dict['iter']:5d} "         # Iteration Count
+                    f"{sf.nfev:5d} "                    # Function Eval. Count
+                    f"{fx:16.6E} "                      # Obj Value
+                    f"{state_dict['optimal']:16.6E} "   # Optimality
+                    f"{state_dict['feas']:16.6E} "      # Feasibility (Sum of Con Viol)
+                )
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(state_dict['mode']) != 1:
@@ -562,7 +600,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(
         x=x, fun=fx, jac=g, nit=state_dict['iter'], nfev=sf.nfev, njev=sf.ngev,
         status=state_dict['mode'], message=exit_modes[state_dict['mode']],
-        success=(state_dict['mode'] == 0), multipliers=mult[:m]
+        success=(state_dict['mode'] == 0), multipliers=mult[:m],
+        optimality=state_dict['optimal'], constr_violation=state_dict['feas'],
     )
 
 # The following functions modify their first input argument in-place.
