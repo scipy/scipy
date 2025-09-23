@@ -1451,6 +1451,10 @@ def det(a, overwrite_a=False, check_finite=True):
     The determinant is a scalar that is a function of the associated square
     matrix coefficients. The determinant value is zero for singular matrices.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : (..., M, M) array_like
