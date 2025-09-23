@@ -58,7 +58,7 @@ solve-group = "array-api-cpu"
 
 [environments.build-cuda]
 # tasks: build-cuda
-# note: py-cuda feature ensures compatibility with both cuda12 and cuda13 solve groups
+# note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
 features = ["build-deps", "build-cuda", "py-cuda"]
 
 [environments.cupy]
