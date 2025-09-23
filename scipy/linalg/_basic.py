@@ -86,6 +86,10 @@ def solve(a, b, lower=None, overwrite_a=False,
      general                        'general' (or 'gen')
     =============================  ================================
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : array_like, shape (..., N, N)
