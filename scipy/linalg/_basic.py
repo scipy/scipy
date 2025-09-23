@@ -1347,6 +1347,10 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     For the 'pos upper' and 'pos lower' options, only the specified
     triangle of the input matrix is used, and the other triangle is not referenced.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    
     Parameters
     ----------
     a : array_like, shape (..., M, M)
