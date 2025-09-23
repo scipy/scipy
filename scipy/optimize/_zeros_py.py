@@ -220,7 +220,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
       the roots.
     * Some or all of the extra arguments, `args`, are also arrays so that a
       class of similar problems can be solved together.
-    * The size of the initial guesses, `x0`, is larger than 100 elements.
+    * The size of the initial guesses, `x0`, is larger than
+      the order of 100 elements.
       Otherwise, a naive loop may perform as well or better than a vector.
 
     Examples
