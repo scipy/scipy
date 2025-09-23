@@ -26,6 +26,11 @@ def toeplitz(c, r=None):
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     c : array_like
@@ -341,6 +346,11 @@ def block_diag(*arrs):
         [[A, 0, 0],
          [0, B, 0],
          [0, 0, C]]
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
