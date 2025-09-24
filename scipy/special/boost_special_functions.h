@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include "sf_error.h"
 
-
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
@@ -1348,8 +1347,8 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
     }
     Real y;
     try {
-	y = boost::math::quantile(
-        boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+        y = boost::math::quantile(
+            boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
     }
     catch (const std::domain_error& e) {
         sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
@@ -1474,6 +1473,95 @@ nct_kurtosis_excess_double(double v, double l)
 {
     RETURN_NAN(v, 4.0);
     return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<double, StatsPolicy>(v, l));
+}
+
+template<typename Real>
+Real
+t_cdf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+        return NAN;
+    }
+    if (v <= 0) {
+        sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (std::isinf(x)) {
+        return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::cdf(
+                boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+        /* Result must be between 0 and 1 to be a valid CDF value.
+           Return NAN if the result is out of bounds because the answer cannot be trusted. */
+        sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_cdf_float(float v, float x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+double
+t_cdf_double(double v, double x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+template<typename Real>
+Real
+t_ppf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+        return NAN;
+    }
+    if (v <= 0 || x < 0 || x > 1) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(
+            boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtrit", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_ppf_float(float v, float x)
+{
+    return t_ppf_wrap(v, x);
+}
+
+double
+t_ppf_double(double v, double x)
+{
+    return t_ppf_wrap(v, x);
 }
 
 template<typename Real>
@@ -2155,4 +2243,56 @@ f_sf_double(double dfn, double dfd, double x)
 {
     return f_sf_wrap(dfn, dfd, x);
 }
+
+template<typename Real>
+Real
+chdtriv_wrap(const Real p, const Real x)
+{
+    if (std::isnan(p) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (p == 1) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // In theory, y should never be negative, but with an overabundance of caution
+    // we check and return NAN if it happens.
+    if (y < 0) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+chdtriv_float(float p, float x)
+{
+    return chdtriv_wrap(p, x);
+}
+
+double
+chdtriv_double(double p, double x)
+{
+    return chdtriv_wrap(p, x);
+}
+
 #endif

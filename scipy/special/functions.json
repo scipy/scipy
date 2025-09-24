@@ -152,8 +152,10 @@
         }
     },
     "chdtriv": {
-        "_cdflib_wrappers.pxd": {
-            "chdtriv": "dd->d"        }
+        "boost_special_functions.h++": {
+            "chdtriv_float": "ff->f",
+            "chdtriv_double": "dd->d"
+        }
     },
     "chndtr": {
         "boost_special_functions.h++": {
@@ -696,17 +698,20 @@
         }
     },
     "stdtr": {
-        "_cdflib_wrappers.pxd": {
-            "stdtr": "dd->d"        }
+        "boost_special_functions.h++": {
+            "t_cdf_float": "ff->f",
+            "t_cdf_double": "dd->d"
+        }
     },
     "stdtridf": {
         "_cdflib_wrappers.pxd": {
             "stdtridf": "dd->d"
         }
     },
-    "stdtrit": {
-        "_cdflib_wrappers.pxd": {
-            "stdtrit": "dd->d"
+    "stdtrit":{
+        "boost_special_functions.h++": {
+            "t_ppf_float": "ff->f",
+            "t_ppf_double": "dd->d"
         }
     },
     "_stirling2_inexact": {
