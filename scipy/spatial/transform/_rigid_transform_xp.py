@@ -104,10 +104,9 @@ def from_exp_coords(exp_coords: Array) -> Array:
 def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
     xp = array_namespace(dual_quat)
 
-    if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
+    if dual_quat.shape[-1] != 8:
         raise ValueError(
-            "Expected `dual_quat` to have shape (8,), or (N, 8), "
-            f"got {dual_quat.shape}."
+            f"Expected `dual_quat` to have shape (..., 8), got {dual_quat.shape}."
         )
 
     real_part = dual_quat[..., :4]

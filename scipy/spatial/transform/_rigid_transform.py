@@ -847,7 +847,8 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        backend = select_backend(xp)
+        dual_quat = _promote(dual_quat, xp=xp)
+        backend = select_backend(xp, dual_quat.ndim < 3)
         matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
