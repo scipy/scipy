@@ -21,16 +21,16 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
                 extra_args=None):
     if extra_args is None:
         extra_args = {}
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
 
     x = [-1, 0, 1, 2, 3, 4]
     s = list(range(1, len(y_shape)+1))
     s.insert(axis % (len(y_shape)+1), 0)
-    y = np.random.rand(*((6,) + y_shape)).transpose(s)
+    y = rng.rand(*((6,) + y_shape)).transpose(s)
 
     xi = np.zeros(x_shape)
     if interpolator_cls is CubicHermiteSpline:
-        dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
+        dydx = rng.rand(*((6,) + y_shape)).transpose(s)
         yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
     else:
         yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
@@ -345,11 +345,12 @@ class TestBarycentric:
         self.ys = self.true_poly(self.xs)
 
     def test_lagrange(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        # Ensure backwards compatible post SPEC7
+        P = BarycentricInterpolator(self.xs, self.ys, random_state=1)
         xp_assert_close(P(self.test_xs), self.true_poly(self.test_xs))
 
     def test_scalar(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys, rng=1)
         xp_assert_close(P(7), self.true_poly(7), check_0d=False)
         xp_assert_close(P(np.array(7)), self.true_poly(np.array(7)), check_0d=False)
 
@@ -466,13 +467,13 @@ class TestBarycentric:
         assert np.shape(P.derivatives([0, 1])) == (n, 2, 3)
 
     def test_wrapper(self):
-        P = BarycentricInterpolator(self.xs, self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys, rng=1)
         bi = barycentric_interpolate
-        xp_assert_close(P(self.test_xs), bi(self.xs, self.ys, self.test_xs))
+        xp_assert_close(P(self.test_xs), bi(self.xs, self.ys, self.test_xs, rng=1))
         xp_assert_close(P.derivative(self.test_xs, 2),
-                            bi(self.xs, self.ys, self.test_xs, der=2))
+                        bi(self.xs, self.ys, self.test_xs, der=2, rng=1))
         xp_assert_close(P.derivatives(self.test_xs, 2),
-                            bi(self.xs, self.ys, self.test_xs, der=[0, 1]))
+                        bi(self.xs, self.ys, self.test_xs, der=[0, 1], rng=1))
 
     def test_int_input(self):
         x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
@@ -536,9 +537,9 @@ class TestBarycentric:
 
 class TestPCHIP:
     def _make_random(self, npts=20):
-        np.random.seed(1234)
-        xi = np.sort(np.random.random(npts))
-        yi = np.random.random(npts)
+        rng = np.random.RandomState(1234)
+        xi = np.sort(rng.random(npts))
+        yi = rng.random(npts)
         return pchip(xi, yi), xi, yi
 
     def test_overshoot(self):

@@ -22,7 +22,7 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufunc_or_ufuncs, doc=None, *,
+    def __init__(self, ufunc_or_ufuncs, name=None, doc=None, *,
                  force_complex_output=False, **default_kwargs):
         if not isinstance(ufunc_or_ufuncs, np.ufunc):
             if isinstance(ufunc_or_ufuncs, collections.abc.Mapping):
@@ -44,11 +44,13 @@ class MultiUFunc:
             if len(seen_input_types) > 1:
                 raise ValueError("All ufuncs must take the same input types.")
 
+        self.__name__ = name
         self._ufunc_or_ufuncs = ufunc_or_ufuncs
         self.__doc = doc
         self.__force_complex_output = force_complex_output
         self._default_kwargs = default_kwargs
         self._resolve_out_shapes = None
+        self._finalize_out = None
         self._key = None
         self._ufunc_default_args = lambda *args, **kwargs: ()
         self._ufunc_default_kwargs = lambda *args, **kwargs: {}
@@ -76,6 +78,9 @@ class MultiUFunc:
         func.__name__ = "resolve_out_shapes"
         self._resolve_out_shapes = func
 
+    def _override_finalize_out(self, func):
+        self._finalize_out = func
+
     def _resolve_ufunc(self, **kwargs):
         """Resolve to a ufunc based on keyword arguments."""
 
@@ -100,7 +105,8 @@ class MultiUFunc:
         if (self._resolve_out_shapes is not None):
             ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
             ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin],
-                                                        *ufunc_arg_shapes, ufunc.nout)
+                                                        *ufunc_arg_shapes, ufunc.nout,
+                                                        **kwargs)
 
             ufunc_arg_dtypes = tuple(ufunc_arg.dtype if hasattr(ufunc_arg, 'dtype')
                                      else np.dtype(type(ufunc_arg))
@@ -127,11 +133,16 @@ class MultiUFunc:
 
             ufunc_kwargs['out'] = out
 
-        return ufunc(*ufunc_args, **ufunc_kwargs)
+        out = ufunc(*ufunc_args, **ufunc_kwargs)
+        if (self._finalize_out is not None):
+            out = self._finalize_out(out)
+
+        return out
 
 
 sph_legendre_p = MultiUFunc(
     sph_legendre_p,
+    "sph_legendre_p",
     r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
     Spherical Legendre polynomial of the first kind.
@@ -179,16 +190,24 @@ def _(diff_n):
     return diff_n
 
 
+@sph_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 sph_legendre_p_all = MultiUFunc(
     sph_legendre_p_all,
+    "sph_legendre_p_all",
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree ``n``, order ``m``, and all derivatives up
+    to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+    ``-m <= k <= m``.
 
     See Also
     --------
@@ -210,19 +229,25 @@ def _(diff_n):
 
 @sph_legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [()] + [(0, 1, -1)]}
 
 
 @sph_legendre_p_all._override_resolve_out_shapes
-def _(n, m, theta_shape, nout):
+def _(n, m, theta_shape, nout, diff_n):
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1) + theta_shape,)
+    return ((n + 1, 2 * abs(m) + 1) + theta_shape + (diff_n + 1,),)
+
+
+@sph_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 assoc_legendre_p = MultiUFunc(
     assoc_legendre_p,
+    "assoc_legendre_p",
     r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
@@ -279,16 +304,24 @@ def _(branch_cut, norm, diff_n):
     return branch_cut,
 
 
+@assoc_legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 assoc_legendre_p_all = MultiUFunc(
     assoc_legendre_p_all,
+    "assoc_legendre_p_all",
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree ``n``, order ``m``, and all derivatives up
+    to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+    ``-m <= k <= m``.
 
     See Also
     --------
@@ -319,22 +352,30 @@ def _(branch_cut, norm, diff_n):
 
 @assoc_legendre_p_all._override_ufunc_default_kwargs
 def _(branch_cut, norm, diff_n):
-    return {'axes': [(), ()] + (diff_n + 1) * [(0, 1)]}
+    return {'axes': [(), ()] + [(0, 1, -1)]}
 
 
 @assoc_legendre_p_all._override_resolve_out_shapes
-def _(n, m, z_shape, branch_cut_shape, nout):
+def _(n, m, z_shape, branch_cut_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not isinstance(m, numbers.Integral) or (m < 0):
         raise ValueError("m must be a non-negative integer.")
 
-    return nout * ((n + 1, 2 * abs(m) + 1)
-                   + np.broadcast_shapes(z_shape, branch_cut_shape),)
+    return ((n + 1, 2 * abs(m) + 1) +
+        np.broadcast_shapes(z_shape, branch_cut_shape) + (diff_n + 1,),)
+
+
+@assoc_legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 legendre_p = MultiUFunc(
     legendre_p,
+    "legendre_p",
     """legendre_p(n, z, *, diff_n=0)
 
     Legendre polynomial of the first kind.
@@ -381,15 +422,22 @@ def _(diff_n):
     return diff_n
 
 
+@legendre_p._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
+
+
 legendre_p_all = MultiUFunc(
     legendre_p_all,
+    "legendre_p_all",
     """legendre_p_all(n, z, *, diff_n=0)
 
-    All Legendre polynomials of the first kind up to the
-    specified degree ``n``.
+    All Legendre polynomials of the first kind up to the specified degree
+    ``n`` and all derivatives up to order ``diff_n``.
 
-    Output shape is ``(n + 1, ...)``. The entry at ``j``
-    corresponds to degree ``j`` for all  ``0 <= j <= n``.
+    Output shape is ``(diff_n + 1, n + 1, ...)``. The entry at ``(i, j)``
+    corresponds to the ``i``-th derivative and degree ``j`` for all
+    ``0 <= i <= diff_n`` and ``0 <= j <= n``.
 
     See Also
     --------
@@ -411,18 +459,24 @@ def _(diff_n):
 
 @legendre_p_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [()] + (diff_n + 1) * [(0,)]}
+    return {'axes': [(), (0, -1)]}
 
 
 @legendre_p_all._override_resolve_out_shapes
-def _(n, z_shape, nout):
+def _(n, z_shape, nout, diff_n):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return nout * ((n + 1,) + z_shape,)
+    return nout * ((n + 1,) + z_shape + (diff_n + 1,),)
+
+
+@legendre_p_all._override_finalize_out
+def _(out):
+    return np.moveaxis(out, -1, 0)
 
 
 sph_harm_y = MultiUFunc(
     sph_harm_y,
+    "sph_harm_y",
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
     Spherical harmonics. They are defined as
@@ -499,23 +553,34 @@ def _(diff_n):
     return diff_n
 
 
-@sph_harm_y._override_ufunc_default_kwargs
-def _(diff_n):
-    if (diff_n > 0):
-        return {'axes': [(), ()] + [tuple(range(2, 2 + i)) for i in range(diff_n + 1)]}
+@sph_harm_y._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
 
-    return {}
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])
 
 
 sph_harm_y_all = MultiUFunc(
     sph_harm_y_all,
+    "sph_harm_y_all",
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
-    All spherical harmonics up to the specified degree ``n`` and order ``m``.
+    All spherical harmonics up to the specified degree ``n``, order ``m``,
+    and all derivatives up to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Returns a tuple of length ``diff_n + 1`` (if ``diff_n > 0``). The first
+    entry corresponds to the spherical harmonics, the second entry
+    (if ``diff_n >= 1``) to the gradient, and the third entry
+    (if ``diff_n >= 2``)  to the Hessian matrix. Each entry is an array of
+    shape ``(n + 1, 2 * m + 1, ...)``, where the entry at ``(i, j)``
+    corresponds to degree ``i`` and order ``j`` for all ``0 <= i <= n``
+    and ``-m <= j <= m``.
 
     See Also
     --------
@@ -537,14 +602,28 @@ def _(diff_n):
 
 @sph_harm_y_all._override_ufunc_default_kwargs
 def _(diff_n):
-    return {'axes': [(), ()] + [tuple(range(axis)) for axis in range(2, diff_n + 3)]}
+    return {'axes': [(), ()] + [(0, 1, -2, -1)]}
 
 
 @sph_harm_y_all._override_resolve_out_shapes
-def _(n, m, theta_shape, phi_shape, nout):
+def _(n, m, theta_shape, phi_shape, nout, **kwargs):
+    diff_n = kwargs['diff_n']
+
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    return tuple(diff_ndims * (2,) + (n + 1, 2 * abs(m) + 1)
-                 + np.broadcast_shapes(theta_shape, phi_shape)
-                 for diff_ndims in range(nout))
+    return ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(theta_shape, phi_shape) +
+        (diff_n + 1, diff_n + 1),)
+
+
+@sph_harm_y_all._override_finalize_out
+def _(out):
+    if (out.shape[-1] == 1):
+        return out[..., 0, 0]
+
+    if (out.shape[-1] == 2):
+        return out[..., 0, 0], out[..., [1, 0], [0, 1]]
+
+    if (out.shape[-1] == 3):
+        return (out[..., 0, 0], out[..., [1, 0], [0, 1]],
+            out[..., [[2, 1], [1, 0]], [[0, 1], [1, 2]]])

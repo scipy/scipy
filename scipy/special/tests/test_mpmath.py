@@ -27,6 +27,9 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
+pytestmark = pytest.mark.thread_unsafe(
+    reason=("mpmath gmpy2 backend is not thread-safe, "
+            "see https://github.com/mpmath/mpmath/issues/974"))
 
 # ------------------------------------------------------------------------------
 # expi
@@ -321,6 +324,7 @@ def test_lpmv():
 # beta
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow
 @check_version(mpmath, '0.15')
 def test_beta():
     np.random.seed(1234)
@@ -1321,7 +1325,7 @@ class TestSystematic:
         assert_mpmath_equal(
             sc.gamma,
             exception_to_nan(mpmath.gamma),
-            [ComplexArg()], 
+            [ComplexArg()],
             rtol=5e-13,
         )
 
@@ -1656,113 +1660,6 @@ class TestSystematic:
             [IntArg(), FixedArg(np.logspace(-30, -4, 20))],
         )
 
-    def test_legenp(self):
-        def lpnm(n, m, z):
-            try:
-                v = sc.lpmn(m, n, z)[0][-1,-1]
-            except ValueError:
-                return np.nan
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def lpnm_2(n, m, z):
-            v = sc.lpmv(m, n, z)
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = np.inf * np.sign(v.real)
-            return v
-
-        def legenp(n, m, z):
-            if (z == 1 or z == -1) and int(n) == n:
-                # Special case (mpmath may give inf, we take the limit by
-                # continuity)
-                if m == 0:
-                    if n < 0:
-                        n = -n - 1
-                    return mpmath.power(mpmath.sign(z), n)
-                else:
-                    return 0
-
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-
-            typ = 2 if abs(z) <= 1 else 3
-            v = exception_to_nan(mpmath.legenp)(n, m, z, type=typ)
-
-            if abs(v) > 1e306:
-                # harmonize overflow to inf
-                v = mpmath.inf * mpmath.sign(v.real)
-
-            return v
-
-        assert_mpmath_equal(lpnm, legenp, [IntArg(-100, 100), IntArg(-100, 100), Arg()])
-
-        assert_mpmath_equal(
-            lpnm_2,
-            legenp,
-            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
-            atol=1e-10,
-        )
-
-    def test_legenp_complex_2(self):
-        def clpnm(n, m, z):
-            try:
-                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
-    def test_legenp_complex_3(self):
-        def clpnm(n, m, z):
-            try:
-                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
     @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):
@@ -2005,20 +1902,6 @@ class TestSystematic:
             rtol=1e-14,
         )
 
-    def test_spherharm(self):
-        def spherharm(l, m, theta, phi):
-            if m > l:
-                return np.nan
-            return sc.sph_harm(m, l, phi, theta)
-        assert_mpmath_equal(
-            spherharm,
-            mpmath.spherharm,
-            [IntArg(0, 100), IntArg(0, 100), Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
-            atol=1e-8,
-            n=6000,
-            dps=150,
-        )
-
     def test_struveh(self):
         assert_mpmath_equal(
             sc.struve,
@@ -2152,6 +2035,8 @@ class TestSystematic:
             exception_to_nan(mp_spherical_jn),
             [IntArg(0, 200), Arg(-1e8, 1e8)],
             dps=300,
+            # underflow of `spherical_jn` is a bit premature; see gh-21629
+            param_filter=(None, lambda z: np.abs(z) > 1e-20),
         )
 
     def test_spherical_jn_complex(self):
@@ -2239,8 +2124,9 @@ class TestSystematic:
 
     def test_spherical_kn(self):
         def mp_spherical_kn(n, z):
-            out = (mpmath.besselk(n + mpmath.mpf(1)/2, z) *
-                   mpmath.sqrt(mpmath.pi/(2*mpmath.mpmathify(z))))
+            arg = mpmath.mpmathify(z)
+            out = (mpmath.besselk(n + mpmath.mpf(1)/2, arg) /
+                   mpmath.sqrt(2*arg/mpmath.pi))
             if mpmath.mpmathify(z).imag == 0:
                 return out.real
             else:

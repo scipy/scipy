@@ -47,10 +47,10 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         sp_mat = mat
         mat = sp_mat.toarray()
     else:
-        sp_mat = sparse.csr_matrix(mat)
+        sp_mat = sparse.csr_array(mat)
 
     mat_copy = np.copy(mat)
-    sp_mat_copy = sparse.csr_matrix(sp_mat, copy=True)
+    sp_mat_copy = sparse.csr_array(sp_mat, copy=True)
 
     n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
@@ -81,9 +81,9 @@ def test_symmetric_graph_laplacian():
         'np.arange(10) * np.arange(10)[:, np.newaxis]',
         'np.ones((7, 7))',
         'np.eye(19)',
-        'sparse.diags([1, 1], [-1, 1], shape=(4, 4))',
-        'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).toarray()',
-        'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).todense()',
+        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4))',
+        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4)).toarray()',
+        'sparse.diags([1.0, 1.0], [-1, 1], shape=(4, 4)).todense()',
         'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
     )
     for mat in symmetric_mats:
@@ -241,7 +241,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("copy", [True, False])
 def test_sparse_formats(fmt, normed, copy):
-    mat = sparse.diags([1, 1], [-1, 1], shape=(4, 4), format=fmt)
+    mat = sparse.diags_array([1.0, 1.0], offsets=[-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy)
 
 

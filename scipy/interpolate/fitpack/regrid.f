@@ -1,5 +1,5 @@
       recursive subroutine regrid(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,
-     * nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+     * nxest,nyest,maxit,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
       implicit none
 c given the set of values z(i,j) on the rectangular grid (x(i),y(j)),
 c i=1,...,mx;j=1,...,my, subroutine regrid determines a smooth bivar-
@@ -267,7 +267,7 @@ c
 c  ..
 c  ..scalar arguments..
       real*8 xb,xe,yb,ye,s,fp
-      integer iopt,mx,my,kx,ky,nxest,nyest,nx,ny,lwrk,kwrk,ier
+      integer iopt,mx,my,kx,ky,nxest,nyest,maxit,nx,ny,lwrk,kwrk,ier
 c  ..array arguments..
       real*8 x(mx),y(my),z(mx*my),tx(nxest),ty(nyest),
      * c((nxest-kx-1)*(nyest-ky-1)),wrk(lwrk)
@@ -275,14 +275,13 @@ c  ..array arguments..
 c  ..local scalars..
       real*8 tol
       integer i,j,jwrk,kndx,kndy,knrx,knry,kwest,kx1,kx2,ky1,ky2,
-     * lfpx,lfpy,lwest,lww,maxit,nc,nminx,nminy,mz
+     * lfpx,lfpy,lwest,lww,nc,nminx,nminy,mz
 c  ..function references..
       integer max0
 c  ..subroutine references..
 c    fpregr,fpchec
 c  ..
 c  we set up the parameters tol and maxit.
-      maxit = 20
       tol = 0.1e-02
 c  before starting computations a data check is made. if the input data
 c  are invalid, control is immediately repassed to the calling program.
@@ -351,4 +350,3 @@ c  we partition the working space and determine the spline approximation
      * iwrk(knry),iwrk(kndx),iwrk(kndy),wrk(lww),jwrk,ier)
   70  return
       end
-

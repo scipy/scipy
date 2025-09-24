@@ -1,3 +1,5 @@
+from scipy._lib._array_api import array_namespace, np_compat
+
 from functools import cached_property
 
 from scipy.special import roots_legendre
@@ -13,6 +15,10 @@ class GaussLegendreQuadrature(FixedRule):
     ----------
     npoints : int
         Number of nodes for the higher-order rule.
+
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
 
     Examples
     --------
@@ -32,7 +38,7 @@ class GaussLegendreQuadrature(FixedRule):
      array([1.11022302e-16])
     """
 
-    def __init__(self, npoints):
+    def __init__(self, npoints, xp=None):
         if npoints < 2:
             raise ValueError(
                 "At least 2 nodes required for Gauss-Legendre cubature"
@@ -40,6 +46,17 @@ class GaussLegendreQuadrature(FixedRule):
 
         self.npoints = npoints
 
+        if xp is None:
+            xp = np_compat
+
+        self.xp = array_namespace(xp.empty(0))
+
     @cached_property
     def nodes_and_weights(self):
-        return roots_legendre(self.npoints)
+        # TODO: current converting to/from numpy
+        nodes, weights = roots_legendre(self.npoints)
+
+        return (
+            self.xp.asarray(nodes, dtype=self.xp.float64),
+            self.xp.asarray(weights, dtype=self.xp.float64)
+        )

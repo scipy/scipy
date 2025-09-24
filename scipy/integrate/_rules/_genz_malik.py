@@ -1,8 +1,9 @@
 import math
 import itertools
-import numpy as np
 
 from functools import cached_property
+
+from scipy._lib._array_api import array_namespace, np_compat
 
 from scipy.integrate._rules import NestedFixedRule
 
@@ -18,6 +19,10 @@ class GenzMalikCubature(NestedFixedRule):
     ndim : int
         The spatial dimension of the integrand.
 
+    xp : array_namespace, optional
+        The namespace for the node and weight arrays. Default is None, where NumPy is
+        used.
+
     Attributes
     ----------
     higher : Cubature
@@ -28,7 +33,7 @@ class GenzMalikCubature(NestedFixedRule):
 
     References
     ----------
-    [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
+    .. [1] A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
         numerical integration over an N-dimensional rectangular region, Journal of
         Computational and Applied Mathematics, Volume 6, Issue 4, 1980, Pages 295-302,
         ISSN 0377-0427, https://doi.org/10.1016/0771-050X(80)90039-X.
@@ -51,7 +56,7 @@ class GenzMalikCubature(NestedFixedRule):
      np.float64(1.378269656626685e-06)
     """
 
-    def __init__(self, ndim, degree=7, lower_degree=5):
+    def __init__(self, ndim, degree=7, lower_degree=5, xp=None):
         if ndim < 2:
             raise ValueError("Genz-Malik cubature is only defined for ndim >= 2")
 
@@ -62,6 +67,11 @@ class GenzMalikCubature(NestedFixedRule):
         self.ndim = ndim
         self.degree = degree
         self.lower_degree = lower_degree
+
+        if xp is None:
+            xp = np_compat
+
+        self.xp = array_namespace(xp.empty(0))
 
     @cached_property
     def nodes_and_weights(self):
@@ -85,15 +95,13 @@ class GenzMalikCubature(NestedFixedRule):
         )
 
         nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim) + 2**self.ndim
-        count = nodes_size * self.ndim
 
-        nodes = np.fromiter(
-            itertools.chain.from_iterable(zip(*its)),
-            dtype=float,
-            count=count,
+        nodes = self.xp.asarray(
+            list(zip(*its)),
+            dtype=self.xp.float64,
         )
 
-        nodes.shape = (self.ndim, nodes_size)
+        nodes = self.xp.reshape(nodes, (self.ndim, nodes_size))
 
         # It's convenient to generate the nodes as a sequence of evaluation points
         # as an array of shape (npoints, ndim), but nodes needs to have shape
@@ -108,16 +116,16 @@ class GenzMalikCubature(NestedFixedRule):
         w_4 = (2**self.ndim) * (200 / 19683)
         w_5 = 6859 / 19683
 
-        weights = np.repeat(
-            [w_1, w_2, w_3, w_4, w_5],
-            [
-                1,
-                2 * self.ndim,
-                2*self.ndim,
-                2*(self.ndim - 1)*self.ndim,
-                2**self.ndim,
-            ]
-        )
+        weights = self.xp.concat([
+            self.xp.asarray([w_1] * 1, dtype=self.xp.float64),
+            self.xp.asarray([w_2] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray([w_3] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray(
+                [w_4] * (2 * (self.ndim - 1) * self.ndim),
+                dtype=self.xp.float64,
+            ),
+            self.xp.asarray([w_5] * (2**self.ndim), dtype=self.xp.float64),
+        ])
 
         return nodes, weights
 
@@ -144,15 +152,9 @@ class GenzMalikCubature(NestedFixedRule):
         )
 
         nodes_size = 1 + (2 * (self.ndim + 1) * self.ndim)
-        count = nodes_size * self.ndim
 
-        nodes = np.fromiter(
-            itertools.chain.from_iterable(zip(*its)),
-            dtype=float,
-            count=count,
-        )
-
-        nodes.shape = (self.ndim, nodes_size)
+        nodes = self.xp.asarray(list(zip(*its)), dtype=self.xp.float64)
+        nodes = self.xp.reshape(nodes, (self.ndim, nodes_size))
         nodes = nodes.T
 
         # Weights are different from those in the full rule.
@@ -161,10 +163,15 @@ class GenzMalikCubature(NestedFixedRule):
         w_3 = (2**self.ndim) * (265 - 100*self.ndim) / 1458
         w_4 = (2**self.ndim) * (25 / 729)
 
-        weights = np.repeat(
-            [w_1, w_2, w_3, w_4],
-            [1, 2 * self.ndim, 2*self.ndim, 2*(self.ndim - 1)*self.ndim],
-        )
+        weights = self.xp.concat([
+            self.xp.asarray([w_1] * 1, dtype=self.xp.float64),
+            self.xp.asarray([w_2] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray([w_3] * (2 * self.ndim), dtype=self.xp.float64),
+            self.xp.asarray(
+                [w_4] * (2 * (self.ndim - 1) * self.ndim),
+                dtype=self.xp.float64,
+            ),
+        ])
 
         return nodes, weights
 

@@ -7,12 +7,10 @@ from numpy.random import random
 from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    array_namespace, xp_size, xp_assert_close, xp_assert_equal
+    is_numpy, xp_size, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
@@ -50,8 +48,8 @@ class TestFFT:
         for i in [1, 2, 16, 128, 512, 53, 149, 281, 397]:
             xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
-    
-    @skip_xp_backends(np_only=True, reasons=['significant overhead for some backends'])
+
+    @skip_xp_backends(np_only=True, reason='significant overhead for some backends')
     def test_identity_extensive(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -70,7 +68,7 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
-    @skip_xp_backends(np_only=True, reasons=['some backends allow `n=0`'])
+    @skip_xp_backends(np_only=True, reason='some backends allow `n=0`')
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
@@ -230,10 +228,10 @@ class TestFFT:
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((30, 20, 10)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
-        xp_test = array_namespace(x)
+
         for a in axes:
-            op_tr = op(xp_test.permute_dims(x, axes=a))
-            tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
+            op_tr = op(xp.permute_dims(x, axes=a))
+            tr_op = xp.permute_dims(op(x, axes=a), axes=a)
             xp_assert_close(op_tr, tr_op)
 
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
@@ -250,15 +248,15 @@ class TestFFT:
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
-        xp_test = array_namespace(x)
+
         for a in axes:
             # different shape on the first two axes
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(xp_test.permute_dims(x, axes=a),
+            op_tr = op(xp.permute_dims(x, axes=a),
                        s=shape[:2], axes=(0, 1))
-            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]),
+            tr_op = xp.permute_dims(op(x, s=shape[:2], axes=a[:2]),
                                          axes=a)
             xp_assert_close(op_tr, tr_op)
 
@@ -270,21 +268,21 @@ class TestFFT:
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
-        xp_test = array_namespace(x)
+
         for a in axes:
             # different shape on the first two axes
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
-            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            op_tr = op(xp.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
+            tr_op = xp.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
             xp_assert_close(op_tr, tr_op)
 
     def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
         x = xp.asarray(random(30), dtype=xp.float64)
-        xp_test = array_namespace(x)
-        x_norm = xp_test.linalg.vector_norm(x)
+
+        x_norm = xp.linalg.vector_norm(x)
         n = xp_size(x) * 2
         func_pairs = [(fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
@@ -296,16 +294,16 @@ class TestFFT:
         for forw, back in func_pairs:
             if forw == fft.fft:
                 x = xp.asarray(x, dtype=xp.complex128)
-                x_norm = xp_test.linalg.vector_norm(x)
+                x_norm = xp.linalg.vector_norm(x)
             for n in [xp_size(x), 2*xp_size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
-                    xp_assert_close(xp_test.linalg.vector_norm(tmp), x_norm)
+                    xp_assert_close(xp.linalg.vector_norm(tmp), x_norm)
 
     @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
-    def test_dtypes_nonstandard(self, dtype):
+    def test_dtypes_nonstandard(self, dtype, xp):
         x = random(30).astype(dtype)
         out_dtypes = {np.float16: np.complex64, np.longdouble: np.clongdouble}
         x_complex = x.astype(out_dtypes[dtype])
@@ -333,14 +331,15 @@ class TestFFT:
 
     @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
     def test_dtypes_complex(self, dtype, xp):
-        x = xp.asarray(random(30), dtype=getattr(xp, dtype))
+        rng = np.random.default_rng(1234)
+        x = xp.asarray(rng.random(30), dtype=getattr(xp, dtype))
 
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
         xp_assert_close(res_fft, x)
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only supported for NumPy backend'])
+                      reason='array-likes only supported for NumPy backend')
     @pytest.mark.parametrize("op", [fft.fft, fft.ifft,
                                     fft.fft2, fft.ifft2,
                                     fft.fftn, fft.ifftn,
@@ -367,7 +366,7 @@ class TestFFT:
         "fft",
         [fft.fft, fft.fft2, fft.fftn,
          fft.ifft, fft.ifft2, fft.ifftn])
-def test_fft_with_order(dtype, order, fft):
+def test_fft_with_order(dtype, order, fft, xp):
     # Check that FFT/IFFT produces identical results for C, Fortran and
     # non contiguous arrays
     rng = np.random.RandomState(42)
@@ -449,7 +448,7 @@ class TestFFTThreadSafe:
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
-def test_multiprocess(func):
+def test_multiprocess(func, xp):
     # Test that fft still works after fork (gh-10422)
 
     with multiprocessing.Pool(2) as p:
@@ -482,13 +481,17 @@ def test_non_standard_params(func, xp):
     else:
         dtype = xp.complex128
 
-    if xp.__name__ != 'numpy':
-        x = xp.asarray([1, 2, 3], dtype=dtype)
-        # func(x) should not raise an exception
-        func(x)
+    x = xp.asarray([1, 2, 3], dtype=dtype)
+    # func(x) should not raise an exception
+    func(x)
+
+    if is_numpy(xp):
+        func(x, workers=2)
+    else:
         assert_raises(ValueError, func, x, workers=2)
-        # `plan` param is not tested since SciPy does not use it currently
-        # but should be tested if it comes into use
+
+    # `plan` param is not tested since SciPy does not use it currently
+    # but should be tested if it comes into use
 
 
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])

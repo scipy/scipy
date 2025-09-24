@@ -1,7 +1,7 @@
 import numpy as np
-from numpy.testing import \
-                          assert_array_almost_equal, assert_almost_equal, \
-                          assert_allclose, assert_equal
+from scipy._lib._array_api import (
+    assert_array_almost_equal, assert_almost_equal, xp_assert_close
+)
 
 import pytest
 from scipy.signal import cont2discrete as c2d
@@ -14,8 +14,8 @@ from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
 
 class TestC2D:
     def test_zoh(self):
-        ac = np.eye(2)
-        bc = np.full((2, 1), 0.5)
+        ac = np.eye(2, dtype=np.float64)
+        bc = np.full((2, 1), 0.5, dtype=np.float64)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
@@ -260,8 +260,8 @@ class TestC2D:
         # Compute the discrete tf using cont2discrete.
         c2dnum, c2dden, dt = c2d((cnum, cden), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dnum, c2dnum)
-        assert_allclose(dden, c2dden)
+        xp_assert_close(dnum, c2dnum)
+        xp_assert_close(dden, c2dden)
 
         # Convert explicit solution to zpk.
         dz, dp, dk = ss2zpk(Ad, Bd, Cd, Dd)
@@ -269,9 +269,9 @@ class TestC2D:
         # Compute the discrete zpk using cont2discrete.
         c2dz, c2dp, c2dk, dt = c2d((cz, cp, ck), h, method='gbt', alpha=alpha)
 
-        assert_allclose(dz, c2dz)
-        assert_allclose(dp, c2dp)
-        assert_allclose(dk, c2dk)
+        xp_assert_close(dz, c2dz)
+        xp_assert_close(dp, c2dp)
+        xp_assert_close(dk, c2dk)
 
     def test_discrete_approx(self):
         """
@@ -311,16 +311,16 @@ class TestC2D:
         # actually approximates.
         ymid = 0.5 * (yout[:-1] + yout[1:])
 
-        assert_allclose(yd2.ravel(), ymid, rtol=1e-4)
+        xp_assert_close(yd2.ravel(), ymid, rtol=1e-4)
 
     def test_simo_tf(self):
         # See gh-5753
         tf = ([[1, 0], [1, 1]], [1, 1])
         num, den, dt = c2d(tf, 0.01)
 
-        assert_equal(dt, 0.01)  # sanity check
-        assert_allclose(den, [1, -0.990404983], rtol=1e-3)
-        assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
+        assert dt == 0.01  # sanity check
+        xp_assert_close(den, [1, -0.990404983], rtol=1e-3)
+        xp_assert_close(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
 
     def test_multioutput(self):
         ts = 0.01  # time step
@@ -335,16 +335,16 @@ class TestC2D:
         num2, den2, dt2 = c2d(tf2, ts)
 
         # Sanity checks
-        assert_equal(dt, dt1)
-        assert_equal(dt, dt2)
+        assert dt == dt1
+        assert dt == dt2
 
         # Check that we get the same results
-        assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
+        xp_assert_close(num, np.vstack((num1, num2)), rtol=1e-13)
 
         # Single input, so the denominator should
         # not be multidimensional like the numerator
-        assert_allclose(den, den1, rtol=1e-13)
-        assert_allclose(den, den2, rtol=1e-13)
+        xp_assert_close(den, den1, rtol=1e-13)
+        xp_assert_close(den, den2, rtol=1e-13)
 
 class TestC2dLti:
     def test_c2d_ss(self):
@@ -353,18 +353,26 @@ class TestC2dLti:
         B = np.array([[0], [1]])
         C = np.array([[1, 0]])
         D = 0
+        dt = 0.05
 
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
 
         sys_ssc = lti(A, B, C, D)
-        sys_ssd = sys_ssc.to_discrete(0.05)
+        sys_ssd = sys_ssc.to_discrete(dt=dt)
 
-        assert_allclose(sys_ssd.A, A_res)
-        assert_allclose(sys_ssd.B, B_res)
-        assert_allclose(sys_ssd.C, C)
-        assert_allclose(sys_ssd.D, D)
+        xp_assert_close(sys_ssd.A, A_res)
+        xp_assert_close(sys_ssd.B, B_res)
+        xp_assert_close(sys_ssd.C, C)
+        xp_assert_close(sys_ssd.D, np.zeros_like(sys_ssd.D))
+
+        sys_ssd2 = c2d(sys_ssc, dt=dt)
+
+        xp_assert_close(sys_ssd2.A, A_res)
+        xp_assert_close(sys_ssd2.B, B_res)
+        xp_assert_close(sys_ssd2.C, C)
+        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd2.D))
 
     def test_c2d_tf(self):
 
@@ -376,8 +384,8 @@ class TestC2dLti:
         den_res = np.array([1.0, -0.980198673306755])
 
         # Somehow a lot of numerical errors
-        assert_allclose(sys.den, den_res, atol=0.02)
-        assert_allclose(sys.num, num_res, atol=0.02)
+        xp_assert_close(sys.den, den_res, atol=0.02)
+        xp_assert_close(sys.num, num_res, atol=0.02)
 
 
 class TestC2dInvariants:
@@ -397,7 +405,7 @@ class TestC2dInvariants:
         _, yout_cont = impulse(sys, T=time)
         _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'),
                                 n=len(time))
-        assert_allclose(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
+        xp_assert_close(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
 
     # Step invariant should hold for ZOH discretized systems
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
@@ -405,7 +413,7 @@ class TestC2dInvariants:
         time = np.arange(samples_number) * sample_time
         _, yout_cont = step(sys, T=time)
         _, yout_disc = dstep(c2d(sys, sample_time, method='zoh'), n=len(time))
-        assert_allclose(yout_cont.ravel(), yout_disc[0].ravel())
+        xp_assert_close(yout_cont.ravel(), yout_disc[0].ravel())
 
     # Linear invariant should hold for FOH discretized systems
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
@@ -413,4 +421,4 @@ class TestC2dInvariants:
         time = np.arange(samples_number) * sample_time
         _, yout_cont, _ = lsim(sys, T=time, U=time)
         _, yout_disc, _ = dlsim(c2d(sys, sample_time, method='foh'), u=time)
-        assert_allclose(yout_cont.ravel(), yout_disc.ravel())
+        xp_assert_close(yout_cont.ravel(), yout_disc.ravel())

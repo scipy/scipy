@@ -8,7 +8,8 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 
 from numpy.testing import (
     assert_, assert_array_almost_equal,
-    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+    assert_allclose, assert_array_equal, assert_equal)
+import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
@@ -157,12 +158,14 @@ class TestOde(TestODEClass):
 
             assert_raises(RuntimeError, r.integrate, r.t + 0.1)
 
-    def test_concurrent_ok(self):
+    def test_concurrent_ok(self, num_parallel_threads):
         def f(t, y):
             return 1.0
 
         for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
+                if sol in {'vode', 'zvode', 'lsoda'} and num_parallel_threads > 1:
+                    continue
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
 
@@ -207,6 +210,7 @@ class TestComplexOde(TestODEClass):
                 self._do_problem(problem, 'vode', 'bdf')
 
     def test_lsoda(self):
+
         # Check the lsoda solver
         for problem_cls in PROBLEMS:
             problem = problem_cls()
@@ -636,7 +640,8 @@ class ODECheckParameterUse:
         solver.set_integrator(self.solver_name, nsteps=1)
         ic = [1.0, 0.0]
         solver.set_initial_value(ic, 0.0)
-        assert_warns(UserWarning, solver.integrate, pi)
+        with pytest.warns(UserWarning):
+            solver.integrate(pi)
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):

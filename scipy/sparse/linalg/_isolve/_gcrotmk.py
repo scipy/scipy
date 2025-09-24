@@ -184,11 +184,11 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """
-    Solve a matrix equation using flexible GCROT(m,k) algorithm.
+    Solve ``Ax = b`` with the flexible GCROT(m,k) algorithm.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -205,7 +205,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved. The
         default is ``1000``.
-    M : {sparse matrix, ndarray, LinearOperator}, optional
+    M : {sparse array, ndarray, LinearOperator}, optional
         Preconditioner for `A`.  The preconditioner should approximate the
         inverse of `A`. gcrotmk is a 'flexible' algorithm and the preconditioner
         can vary from iteration to iteration. Effective preconditioning
@@ -261,10 +261,10 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import gcrotmk
     >>> R = np.random.randn(5, 5)
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.random.randn(5)
     >>> x, exit_code = gcrotmk(A, b, atol=1e-5)
     >>> print(exit_code)
@@ -273,7 +273,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     True
 
     """
-    A,M,x,b,postprocess = make_system(A,M,x0,b)
+    A,M,x,b = make_system(A,M,x0,b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
@@ -306,7 +306,7 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
 
     if b_norm == 0:
         x = b
-        return (postprocess(x), 0)
+        return (x, 0)
 
     if discard_C:
         CU[:] = [(None, u) for c, u in CU]
@@ -433,7 +433,8 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
             ux = axpy(u, ux, ux.shape[0], -byc)  # ux -= u*byc
 
         # cx := V H y
-        hy = Q.dot(R.dot(y))
+        with np.errstate(invalid="ignore"):
+            hy = Q.dot(R.dot(y))
         cx = vs[0] * hy[0]
         for v, hyc in zip(vs[1:], hy[1:]):
             cx = axpy(v, cx, cx.shape[0], hyc)  # cx += v*hyc
@@ -499,4 +500,4 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
     if discard_C:
         CU[:] = [(None, uz) for cz, uz in CU]
 
-    return postprocess(x), j_outer + 1
+    return x, j_outer + 1

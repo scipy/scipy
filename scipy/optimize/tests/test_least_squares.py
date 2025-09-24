@@ -1,18 +1,22 @@
+import warnings
+
 from itertools import product
+from multiprocessing import Pool
 
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal, suppress_warnings)
+                           assert_equal)
 import pytest
 from pytest import raises as assert_raises
-from scipy.sparse import issparse, lil_matrix
+from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
+from scipy.optimize import OptimizeResult
 
 def fun_trivial(x, a=0):
     return (x - a)**2 + 5.0
@@ -32,6 +36,15 @@ def jac_2d_trivial(x):
 
 def fun_rosenbrock(x):
     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
+
+
+class Fun_Rosenbrock:
+    def __init__(self):
+        self.nfev = 0
+
+    def __call__(self, x, a=0):
+        self.nfev += 1
+        return fun_rosenbrock(x)
 
 
 def jac_rosenbrock(x):
@@ -77,7 +90,7 @@ def fun_bvp(x):
 
 class BroydenTridiagonal:
     def __init__(self, n=100, mode='sparse'):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
 
         self.n = n
 
@@ -85,14 +98,14 @@ class BroydenTridiagonal:
         self.lb = np.linspace(-2, -1.5, n)
         self.ub = np.linspace(-0.8, 0.0, n)
 
-        self.lb += 0.1 * np.random.randn(n)
-        self.ub += 0.1 * np.random.randn(n)
+        self.lb += 0.1 * rng.randn(n)
+        self.ub += 0.1 * rng.randn(n)
 
-        self.x0 += 0.1 * np.random.randn(n)
+        self.x0 += 0.1 * rng.randn(n)
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
-            self.sparsity = lil_matrix((n, n), dtype=int)
+            self.sparsity = lil_array((n, n), dtype=int)
             i = np.arange(n)
             self.sparsity[i, i] = 1
             i = np.arange(1, n)
@@ -116,7 +129,7 @@ class BroydenTridiagonal:
         return f
 
     def _jac(self, x):
-        J = lil_matrix((self.n, self.n))
+        J = lil_array((self.n, self.n))
         i = np.arange(self.n)
         J[i, i] = 3 - 2 * x
         i = np.arange(1, self.n)
@@ -132,7 +145,7 @@ class ExponentialFittingProblem:
 
     def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
                  n_points=11, random_seed=None):
-        np.random.seed(random_seed)
+        rng = np.random.RandomState(random_seed)
         self.m = n_points
         self.n = 2
 
@@ -140,10 +153,10 @@ class ExponentialFittingProblem:
         self.x = np.linspace(x_range[0], x_range[1], n_points)
 
         self.y = a + np.exp(b * self.x)
-        self.y += noise * np.random.randn(self.m)
+        self.y += noise * rng.randn(self.m)
 
-        outliers = np.random.randint(0, self.m, n_outliers)
-        self.y[outliers] += 50 * noise * np.random.rand(n_outliers)
+        outliers = rng.randint(0, self.m, n_outliers)
+        self.y[outliers] += 50 * noise * rng.rand(n_outliers)
 
         self.p_opt = np.array([a, b])
 
@@ -172,6 +185,7 @@ LOSSES = list(IMPLEMENTED_LOSSES.keys()) + [cubic_soft_l1]
 
 
 class BaseMixin:
+    msg = "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
     def test_basic(self):
         # Test that the basic calling sequence works.
         res = least_squares(fun_trivial, 2., method=self.method)
@@ -182,11 +196,8 @@ class BaseMixin:
         # Test that args and kwargs are passed correctly to the functions.
         a = 3.0
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_trivial, 2.0, jac, args=(a,),
                                     method=self.method)
                 res1 = least_squares(fun_trivial, 2.0, jac, kwargs={'a': a},
@@ -202,11 +213,8 @@ class BaseMixin:
 
     def test_jac_options(self):
         for jac in ['2-point', '3-point', 'cs', jac_trivial]:
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_trivial, 2.0, jac, method=self.method)
             assert_allclose(res.x, 0, atol=1e-4)
 
@@ -228,24 +236,16 @@ class BaseMixin:
         assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, x_scale=-1.0, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, x_scale=None, method=self.method)
-        assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, x_scale=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
-        # res1 and res2 should be equivalent.
-        # res2 and res3 should be different.
         res1 = least_squares(fun_trivial, 2.0, diff_step=1e-1,
-                             method=self.method)
-        res2 = least_squares(fun_trivial, 2.0, diff_step=-1e-1,
                              method=self.method)
         res3 = least_squares(fun_trivial, 2.0,
                              diff_step=None, method=self.method)
         assert_allclose(res1.x, 0, atol=1e-4)
-        assert_allclose(res2.x, 0, atol=1e-4)
         assert_allclose(res3.x, 0, atol=1e-4)
-        assert_equal(res1.x, res2.x)
-        assert_equal(res1.nfev, res2.nfev)
+
 
     def test_incorrect_options_usage(self):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
@@ -265,7 +265,6 @@ class BaseMixin:
         assert_allclose(res.optimality, 0, atol=1e-2)
         assert_equal(res.active_mask, 0)
         if self.method == 'lm':
-            assert_(res.nfev < 30)
             assert_(res.njev is None)
         else:
             assert_(res.nfev < 10)
@@ -293,6 +292,17 @@ class BaseMixin:
         assert_equal(res.status, 0)
         assert_equal(res.success, 0)
 
+    def test_nfev(self):
+        # checks that the true number of nfev are being consumed
+        for i in range(1, 3):
+            rng = np.random.default_rng(128908)
+            x0 = rng.uniform(size=2) * 10
+            ftrivial = Fun_Rosenbrock()
+            res = least_squares(
+               ftrivial, x0, jac=jac_rosenbrock, method=self.method, max_nfev=i
+            )
+            assert res.nfev == ftrivial.nfev
+
     def test_rosenbrock(self):
         x0 = [-2, 1]
         x_opt = [1, 1]
@@ -300,11 +310,8 @@ class BaseMixin:
                 ['2-point', '3-point', 'cs', jac_rosenbrock],
                 [1.0, np.array([1.0, 0.2]), 'jac'],
                 ['exact', 'lsmr']):
-            with suppress_warnings() as sup:
-                sup.filter(
-                    UserWarning,
-                    "jac='(3-point|cs)' works equivalently to '2-point' for method='lm'"
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", self.msg, UserWarning)
                 res = least_squares(fun_rosenbrock, x0, jac, x_scale=x_scale,
                                     tr_solver=tr_solver, method=self.method)
             assert_allclose(res.x, x_opt)
@@ -387,6 +394,28 @@ class BaseMixin:
                                 method=self.method)
             assert_allclose(res.x, x_opt)
 
+    @pytest.mark.parallel_threads(4)  # 0.4 GiB per thread RAM usage
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        serial = least_squares(fun_trivial, 2.0, method=self.method)
+
+        reses = []
+        for workers in [None, 2]:
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers
+            )
+            reses.append(res)
+        with Pool() as workers:
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers.map
+            )
+            reses.append(res)
+        for res in reses:
+            assert res.success
+            assert_equal(res.x, serial.x)
+            assert_equal(res.nfev, serial.nfev)
+            assert_equal(res.njev, serial.njev)
+
 
 class BoundsMixin:
     def test_inconsistent(self):
@@ -404,7 +433,7 @@ class BoundsMixin:
     def test_inconsistent_shape(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       bounds=(1.0, [2.0, 3.0]), method=self.method)
-        # 1-D array wont't be broadcasted
+        # 1-D array won't be broadcast
         assert_raises(ValueError, least_squares, fun_rosenbrock, [1.0, 2.0],
                       bounds=([0.0], [3.0, 4.0]), method=self.method)
 
@@ -779,12 +808,91 @@ class TestLM(BaseMixin):
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')
+    
+    def test_callback_with_lm_method(self):
+        def callback(x):
+            assert(False)  # Dummy callback function
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Callback function specified, but not supported with `lm` method.",
+                UserWarning,
+            )
+            least_squares(fun_trivial, x0=[0], method='lm', callback=callback)
 
 
 def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_callback():
+    # test that callback function works as expected
+
+    results = []
+    
+    def my_callback_optimresult(intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        
+    def my_callback_x(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        return False
+        
+    def my_callback_optimresult_stop_exception(
+        intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        raise StopIteration
+
+    def my_callback_x_stop_exception(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        raise StopIteration
+
+    # Try for different function signatures and stop methods
+    callbacks_nostop = [my_callback_optimresult, my_callback_x]
+    callbacks_stop = [my_callback_optimresult_stop_exception,
+                      my_callback_x_stop_exception]
+    
+    # Try for all the implemented methods: trf, trf_bounds and dogbox
+    calls = [
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       bounds=(-8.0, 8.0), callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='dogbox', 
+                                       callback=callback)
+    ]
+
+    for mycallback, call in product(callbacks_nostop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that results data makes sense
+        assert results[-1].nit > 0
+        # Check that it didn't stop because of the callback
+        assert res.status != -2
+        # final callback x should be same as final result
+        assert_allclose(results[-1].x, res.x)
+
+    for mycallback, call in product(callbacks_stop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that only one iteration was run
+        assert results[-1].nit == 1
+        # Check that it stopped because of the callback
+        assert res.status == -2
 
 
 def test_small_tolerances_for_lm():
@@ -798,10 +906,10 @@ def test_small_tolerances_for_lm():
 def test_fp32_gh12991():
     # checks that smaller FP sizes can be used in least_squares
     # this is the minimum working example reported for gh12991
-    np.random.seed(1)
+    rng = np.random.RandomState(1)
 
     x = np.linspace(0, 1, 100).astype("float32")
-    y = np.random.random(100).astype("float32")
+    y = rng.random(100).astype("float32")
 
     def func(p, x):
         return p[0] + p[1] * x

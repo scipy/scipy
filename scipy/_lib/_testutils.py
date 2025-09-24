@@ -95,8 +95,12 @@ class PytestTester:
 
         pytest_args = ['--showlocals', '--tb=short']
 
-        if extra_argv:
-            pytest_args += list(extra_argv)
+        if extra_argv is None:
+            extra_argv = []
+        pytest_args += extra_argv
+        if any(arg == "-m" or arg == "--markers" for arg in extra_argv):
+            # Likely conflict with default --mode=fast
+            raise ValueError("Must specify -m before --")
 
         if verbose and int(verbose) > 1:
             pytest_args += ["-" + "v"*(int(verbose)-1)]
@@ -283,6 +287,9 @@ def _test_cython_extension(tmp_path, srcdir):
         subprocess.check_call(["meson", "--version"])
     except FileNotFoundError:
         pytest.skip("No usable 'meson' found")
+
+    # Make safe for being called by multiple threads within one test
+    tmp_path = tmp_path / str(threading.get_ident())
 
     # build the examples in a temporary directory
     mod_name = os.path.split(srcdir)[1]

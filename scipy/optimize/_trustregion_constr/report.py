@@ -1,7 +1,5 @@
 """Progress report printers."""
 
-from __future__ import annotations
-
 class ReportBase:
     COLUMN_NAMES: list[str] = NotImplemented
     COLUMN_WIDTHS: list[int] = NotImplemented

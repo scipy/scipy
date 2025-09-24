@@ -31,6 +31,13 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ----------
     fun : callable
         A vector function to find a root of.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray
         Initial guess.
     args : tuple, optional
@@ -125,8 +132,9 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
        1980. User Guide for MINPACK-1.
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
        Equations. Society for Industrial and Applied Mathematics.
-       <https://archive.siam.org/books/kelley/fr16/>
-    .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
+       :doi:`10.1137/1.9781611970944`
+    .. [3] W. La Cruz, J.M. Martinez, M. Raydan.
+       Math. Comp. 75, 1429 (2006).
 
     Examples
     --------
@@ -705,9 +713,17 @@ def _root_krylov_doc():
             be called as ``update(x, f)`` after each nonlinear step,
             with ``x`` giving the current point, and ``f`` the current
             function value.
-        inner_tol, inner_maxiter, ...
+        inner_rtol, inner_atol, inner_callback, ...
             Parameters to pass on to the "inner" Krylov solver.
-            See `scipy.sparse.linalg.gmres` for details.
+
+            For a full list of options, see the documentation for the
+            solver you are using. By default this is `scipy.sparse.linalg.lgmres`.
+            If the solver has been overridden through `method`, see the documentation
+            for that solver instead.
+            To use an option for that solver, prepend ``inner_`` to it.
+            For example, to control the ``rtol`` argument to the solver,
+            set the `inner_rtol` option here.
+
         outer_k : int, optional
             Size of the subspace kept across LGMRES nonlinear
             iterations.

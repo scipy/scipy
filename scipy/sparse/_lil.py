@@ -161,16 +161,6 @@ class _lil_base(_spbase, IndexMixin):
         # Everything else takes the normal path.
         return IndexMixin.__getitem__(self, key)
 
-    def _asindices(self, idx, N):
-        # LIL routines handle bounds-checking for us, so don't do it here.
-        try:
-            x = np.asarray(idx)
-        except (ValueError, TypeError, MemoryError) as e:
-            raise IndexError('invalid index') from e
-        if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be <= 2')
-        return x
-
     def _get_intXint(self, row, col):
         v = _csparsetools.lil_get1(self.shape[0], self.shape[1], self.rows,
                                    self.data, row, col)
@@ -181,8 +171,10 @@ class _lil_base(_spbase, IndexMixin):
         return self._get_row_ranges(row, slice(col, col+1))
 
     def _get_arrayXint(self, row, col):
-        row = row.squeeze()
-        return self._get_row_ranges(row, slice(col, col+1))
+        res = self._get_row_ranges(row.ravel(), slice(col, col+1))
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_intXslice(self, row, col):
         return self._get_row_ranges((row,), col)

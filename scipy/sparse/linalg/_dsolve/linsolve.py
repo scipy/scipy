@@ -2,11 +2,13 @@ from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (issparse,
-                          SparseEfficiencyWarning, csc_matrix, eye, diags)
-from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
+from scipy.sparse import (issparse, SparseEfficiencyWarning,
+                          csr_array, csc_array, eye_array, diags_array)
+from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
+                                   get_index_dtype, safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
 import copy
+import threading
 
 from . import _superlu
 
@@ -16,13 +18,15 @@ try:
 except ImportError:
     noScikit = True
 
-useUmfpack = not noScikit
+useUmfpack = threading.local()
+
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
-           'MatrixRankWarning', 'spsolve_triangular']
+           'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 class MatrixRankWarning(UserWarning):
+    """Warning for exactly singular matrices."""
     pass
 
 
@@ -77,9 +81,9 @@ def use_solver(**kwargs):
     --------
     >>> import numpy as np
     >>> from scipy.sparse.linalg import use_solver, spsolve
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> R = np.random.randn(5, 5)
-    >>> A = csc_matrix(R)
+    >>> A = csc_array(R)
     >>> b = np.random.randn(5)
     >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
     >>> x = spsolve(A, b)
@@ -87,9 +91,10 @@ def use_solver(**kwargs):
     True
     >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
+    global useUmfpack
     if 'useUmfpack' in kwargs:
-        globals()['useUmfpack'] = kwargs['useUmfpack']
-    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        useUmfpack.u = kwargs['useUmfpack']
+    if useUmfpack.u and 'assumeSortedIndices' in kwargs:
         umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
@@ -126,29 +131,14 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def _safe_downcast_indices(A):
-    # check for safe downcasting
-    max_value = np.iinfo(np.intc).max
-
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for SuperLU")
-
-    if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for SuperLU")
-
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
-    return indices, indptr
-
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
     ----------
-    A : ndarray or sparse matrix
+    A : ndarray or sparse array or matrix
         The square matrix A will be converted into CSC or CSR form
-    b : ndarray or sparse matrix
+    b : ndarray or sparse array or matrix
         The matrix or vector representing the right hand side of the equation.
         If a vector, b.shape must be (n,) or (n, 1).
     permc_spec : str, optional
@@ -167,7 +157,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     Returns
     -------
-    x : ndarray or sparse matrix
+    x : ndarray or sparse array or matrix
         the solution of the sparse linear equation.
         If b is a vector, then x is a vector of size A.shape[1]
         If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
@@ -215,10 +205,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import spsolve
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
-    >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> B = csc_array([[2, 0], [-1, 0], [2, 0]], dtype=float)
     >>> x = spsolve(A, B)
     >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
@@ -229,7 +219,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     b = convert_pydata_sparse_to_scipy(b)
 
     if not (issparse(A) and A.format in ("csc", "csr")):
-        A = csc_matrix(A)
+        A = csc_array(A)
         warn('spsolve requires A be CSC or CSR matrix format',
              SparseEfficiencyWarning, stacklevel=2)
 
@@ -256,7 +246,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if M != b.shape[0]:
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
-    use_umfpack = use_umfpack and useUmfpack
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    use_umfpack = use_umfpack and useUmfpack.u
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
@@ -270,7 +263,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -305,7 +298,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 warn('spsolve is more efficient when sparse b '
                      'is in the CSC matrix format',
                      SparseEfficiencyWarning, stacklevel=2)
-                b = csc_matrix(b)
+                b = csc_array(b)
 
             # Create a sparse output matrix by repeatedly applying
             # the sparse factorization to solve columns of b.
@@ -321,8 +314,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 col_segs.append(np.full(segment_length, j, dtype=int))
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
             sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
+            idx_dtype = get_index_dtype(maxval=max(b.shape))
+            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
+            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
@@ -339,8 +333,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Parameters
     ----------
-    A : sparse matrix
-        Sparse matrix to factorize. Most efficient when provided in CSC
+    A : sparse array or matrix
+        Sparse array to factorize. Most efficient when provided in CSC
         format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
@@ -378,6 +372,10 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()``
+    method is used with complex arguments an error is generated. Instead, cast the
+    initial array to complex and then factorize.
+
     This function uses the SuperLU library.
 
     References
@@ -387,9 +385,9 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import splu
-    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
     >>> B = splu(A)
     >>> x = np.array([1., 2., 3.], dtype=float)
     >>> B.solve(x)
@@ -403,13 +401,13 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if is_pydata_spmatrix(A):
         A_cls = type(A)
         def csc_construct_func(*a, cls=A_cls):
-            return cls.from_scipy_sparse(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_array(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
-        csc_construct_func = csc_matrix
+        csc_construct_func = csc_array
 
     if not (issparse(A) and A.format == "csc"):
-        A = csc_matrix(A)
+        A = csc_array(A)
         warn('splu converted its input to CSC format',
              SparseEfficiencyWarning, stacklevel=2)
 
@@ -421,7 +419,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -447,7 +445,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Sparse array to factorize. Most efficient when provided in CSC format.
         Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
@@ -475,6 +473,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()`` method
+    is used with complex arguments an error is generated. Instead, cast the initial 
+    array to complex and then factorize.
+
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
 
@@ -483,9 +485,9 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import spilu
-    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
     >>> B = spilu(A)
     >>> x = np.array([1., 2., 3.], dtype=float)
     >>> B.solve(x)
@@ -499,13 +501,13 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if is_pydata_spmatrix(A):
         A_cls = type(A)
         def csc_construct_func(*a, cls=A_cls):
-            return cls.from_scipy_sparse(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_array(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
-        csc_construct_func = csc_matrix
+        csc_construct_func = csc_array
 
     if not (issparse(A) and A.format == "csc"):
-        A = csc_matrix(A)
+        A = csc_array(A)
         warn('spilu converted its input to CSC format',
              SparseEfficiencyWarning, stacklevel=2)
 
@@ -517,7 +519,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -555,11 +557,11 @@ def factorized(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse.linalg import factorized
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> A = np.array([[ 3. ,  2. , -1. ],
     ...               [ 2. , -2. ,  4. ],
     ...               [-1. ,  0.5, -1. ]])
-    >>> solve = factorized(csc_matrix(A)) # Makes LU decomposition.
+    >>> solve = factorized(csc_array(A)) # Makes LU decomposition.
     >>> rhs1 = np.array([1, -2, 0])
     >>> solve(rhs1) # Uses the LU factors.
     array([ 1., -2., -2.])
@@ -568,12 +570,15 @@ def factorized(A):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if useUmfpack:
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    if useUmfpack.u:
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
         if not (issparse(A) and A.format == "csc"):
-            A = csc_matrix(A)
+            A = csc_array(A)
             warn('splu converted its input to CSC format',
                  SparseEfficiencyWarning, stacklevel=2)
 
@@ -581,7 +586,7 @@ def factorized(A):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -608,7 +613,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     Parameters
     ----------
-    A : (M, M) sparse matrix
+    A : (M, M) sparse array or matrix
         A sparse square triangular matrix. Should be in CSR or CSC format.
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``A x = b``
@@ -659,17 +664,17 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
-    
+
     trans = "N"
     if issparse(A) and A.format == "csr":
         A = A.T
         trans = "T"
         lower = not lower
 
-    if not (issparse(A) and A.format == "csc"): 
+    if not (issparse(A) and A.format == "csc"):
         warn('CSC or CSR matrix format is required. Converting to CSC matrix.',
              SparseEfficiencyWarning, stacklevel=2)
-        A = csc_matrix(A)
+        A = csc_array(A)
     elif not overwrite_A:
         A = A.copy()
 
@@ -690,9 +695,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                 'A is singular: zero entry on diagonal.')
         invdiag = 1/diag
         if trans == "N":
-            A = A @ diags(invdiag)
+            A = A @ diags_array(invdiag)
         else:
-            A = (A.T @ diags(invdiag)).T
+            A = (A.T @ diags_array(invdiag)).T
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -719,9 +724,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     if lower:
         L = A
-        U = csc_matrix((N, N), dtype=result_dtype)
+        U = csc_array((N, N), dtype=result_dtype)
     else:
-        L = eye(N, dtype=result_dtype, format='csc')
+        L = eye_array(N, dtype=result_dtype, format='csc')
         U = A
         U.setdiag(0)
 
@@ -738,3 +743,140 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
 
     return x
 
+
+def is_sptriangular(A):
+    """Returns 2-tuple indicating lower/upper triangular structure for sparse ``A``
+
+    Checks for triangular structure in ``A``. The result is summarized in
+    two boolean values ``lower`` and ``upper`` to designate whether ``A`` is
+    lower triangular or upper triangular respectively. Diagonal ``A`` will
+    result in both being True. Non-triangular structure results in False for both.
+
+    Only the sparse structure is used here. Values are not checked for zeros.
+
+    This function will convert a copy of ``A`` to CSC format if it is not already
+    CSR or CSC format. So it may be more efficient to convert it yourself if you
+    have other uses for the CSR/CSC version.
+
+    If ``A`` is not square, the portions outside the upper left square of the
+    matrix do not affect its triangular structure. You probably want to work
+    with the square portion of the matrix, though it is not requred here.
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    lower, upper : 2-tuple of bool
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> from scipy.sparse.linalg import is_sptriangular
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> is_sptriangular(A)
+    (True, False)
+    >>> D = eye_array(3, format='csr')
+    >>> is_sptriangular(D)
+    (True, True)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
+        warn('is_sptriangular needs sparse and not BSR format. Converting to CSR.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csr_array(A)
+
+    # bsr is better off converting to csr
+    if A.format == "dia":
+        return A.offsets.max() <= 0, A.offsets.min() >= 0
+    elif A.format == "coo":
+        rows, cols = A.coords
+        return (cols <= rows).all(), (cols >= rows).all()
+    elif A.format == "dok":
+        return all(c <= r for r, c in A.keys()), all(c >= r for r, c in A.keys())
+    elif A.format == "lil":
+        lower = all(col <= row for row, cols in enumerate(A.rows) for col in cols)
+        upper = all(col >= row for row, cols in enumerate(A.rows) for col in cols)
+        return lower, upper
+    # format in ("csc", "csr")
+    indptr, indices = A.indptr, A.indices
+    N = len(indptr) - 1
+
+    lower, upper = True, True
+    # check middle, 1st, last col (treat as CSC and switch at end if CSR)
+    for col in [N // 2, 0, -1]:
+        rows = indices[indptr[col]:indptr[col + 1]]
+        upper = upper and (col >= rows).all()
+        lower = lower and (col <= rows).all()
+        if not upper and not lower:
+            return False, False
+    # check all cols
+    cols = np.repeat(np.arange(N), np.diff(indptr))
+    rows = indices
+    upper = upper and (cols >= rows).all()
+    lower = lower and (cols <= rows).all()
+    if A.format == 'csr':
+        return upper, lower
+    return lower, upper
+
+
+def spbandwidth(A):
+    """Return the lower and upper bandwidth of a 2D numeric array.
+
+    Computes the lower and upper limits on the bandwidth of the
+    sparse 2D array ``A``. The result is summarized as a 2-tuple
+    of positive integers ``(lo, hi)``. A zero denotes no sub/super
+    diagonal entries on that side (tringular). The maximum value
+    for ``lo``(``hi``) is one less than the number of rows(cols).
+
+    Only the sparse structure is used here. Values are not checked for zeros.
+
+    Parameters
+    ----------
+    A : SciPy sparse array or matrix
+        A sparse matrix preferrably in CSR or CSC format.
+
+    Returns
+    -------
+    below, above : 2-tuple of int
+        The distance to the farthest non-zero diagonal below/above the
+        main diagonal.
+
+        .. versionadded:: 1.15.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.linalg import spbandwidth
+    >>> from scipy.sparse import csc_array, eye_array
+    >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> spbandwidth(A)
+    (2, 0)
+    >>> D = eye_array(3, format='csr')
+    >>> spbandwidth(D)
+    (0, 0)
+    """
+    if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):
+        warn('spbandwidth needs sparse format not LIL and BSR. Converting to CSR.',
+             SparseEfficiencyWarning, stacklevel=2)
+        A = csr_array(A)
+
+    # bsr and lil are better off converting to csr
+    if A.format == "dia":
+        return max(0, -A.offsets.min().item()), max(0, A.offsets.max().item())
+    if A.format in ("csc", "csr"):
+        indptr, indices = A.indptr, A.indices
+        N = len(indptr) - 1
+        gap = np.repeat(np.arange(N), np.diff(indptr)) - indices
+        if A.format == 'csr':
+            gap = -gap
+    elif A.format == "coo":
+        gap = A.coords[1] - A.coords[0]
+    elif A.format == "dok":
+        gap = [(c - r) for r, c in A.keys()] + [0]
+        return -min(gap), max(gap)
+    return max(-np.min(gap).item(), 0), max(np.max(gap).item(), 0)

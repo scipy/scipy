@@ -3,10 +3,10 @@ Unit tests for optimization routines from minpack.py.
 """
 import warnings
 import pytest
+import threading
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal, assert_allclose,
-                           assert_warns, suppress_warnings)
+                           assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 import numpy as np
 from numpy import array, float64
@@ -260,8 +260,13 @@ class TestRootLM:
 
 
 class TestNfev:
+    def setup_method(self):
+        self.nfev = threading.local()
+
     def zero_f(self, y):
-        self.nfev += 1
+        if not hasattr(self.nfev, 'c'):
+            self.nfev.c = 0
+        self.nfev.c += 1
         return y**2-3
 
     @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
@@ -270,14 +275,14 @@ class TestNfev:
                                         'excitingmixing', 'krylov',
                                         'df-sane'])
     def test_root_nfev(self, method):
-        self.nfev = 0
+        self.nfev.c = 0
         solution = optimize.root(self.zero_f, 100, method=method)
-        assert solution.nfev == self.nfev
+        assert solution.nfev == self.nfev.c
 
     def test_fsolve_nfev(self):
-        self.nfev = 0
+        self.nfev.c = 0
         x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
-        assert info['nfev'] == self.nfev
+        assert info['nfev'] == self.nfev.c
 
 
 class TestLeastSq:
@@ -302,7 +307,7 @@ class TestLeastSq:
         p0 = array([0,0,0])
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x))
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -311,7 +316,7 @@ class TestLeastSq:
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x),
                                   Dfun=self.residuals_jacobian)
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -399,7 +404,7 @@ class TestLeastSq:
         p0 = array([0,0,0])
         params_fit, ier = leastsq(func, p0,
                                   args=(self.y_meas, self.x))
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -412,7 +417,7 @@ class TestLeastSq:
         params_fit, ier = leastsq(self.residuals, p0,
                                   args=(self.y_meas, self.x),
                                   Dfun=deriv_func)
-        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        assert_(ier in (1, 2, 3, 4), f'solution not found (ier={ier})')
         # low precision due to random
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
@@ -536,9 +541,11 @@ class TestCurveFit:
 
         pcov_expected = np.array([np.inf]*4).reshape(2, 2)
 
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning,
-                       "Covariance of the parameters could not be estimated")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Covariance of the parameters could not be estimated",
+                OptimizeWarning)
             popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
             popt1, pcov1 = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
 
@@ -561,8 +568,8 @@ class TestCurveFit:
         # Test that a warning is returned when pcov is indeterminate
         xdata = np.array([1, 2, 3, 4, 5, 6])
         ydata = np.array([1, 2, 3, 4, 5.5, 6])
-        assert_warns(OptimizeWarning, curve_fit,
-                     lambda x, a, b: a*x, xdata, ydata)
+        with pytest.warns(OptimizeWarning):
+            curve_fit(lambda x, a, b: a*x, xdata, ydata)
 
     def test_NaN_handling(self):
         # Test for correct handling of NaNs in input data: gh-3422
@@ -804,6 +811,61 @@ class TestCurveFit:
         assert_allclose(popt1, 2, atol=1e-14)
         assert_allclose(popt2, 2, atol=1e-14)
 
+    @pytest.mark.parametrize("sigma_dim", [0, 1, 2])
+    def test_curvefit_omitnan(self, sigma_dim):
+        def exponential(x, a, b):
+            return b * np.exp(a * x)
+
+        rng = np.random.default_rng(578285731148908)
+        N = 100
+        x = np.linspace(1, 10, N)
+        y = exponential(x, 0.2, 0.5)
+
+        if (sigma_dim == 0):
+            sigma = 0.05
+            y += rng.normal(0, sigma, N)
+
+        elif (sigma_dim == 1):
+            sigma = x * 0.05
+            y += rng.normal(0, sigma, N)
+
+        elif (sigma_dim == 2):
+            # The covariance matrix must be symmetric positive-semidefinite
+            a = rng.normal(0, 2, (N, N))
+            sigma = a @ a.T
+            y += rng.multivariate_normal(np.zeros_like(x), sigma)
+        else:
+            assert False, "The sigma must be a scalar, 1D array or 2D array."
+
+        p0 = [0.1, 1.0]
+
+        # Choose indices to place NaNs.
+        i_x = rng.integers(N, size=5)
+        i_y = rng.integers(N, size=5)
+
+        # Add NaNs and compute result using `curve_fit`
+        x[i_x] = np.nan
+        y[i_y] = np.nan
+        res_opt, res_cov = curve_fit(exponential, x, y, p0=p0, sigma=sigma,
+                                     nan_policy="omit")
+
+        # Manually remove elements that should be eliminated, and
+        # calculate reference using `curve_fit`
+        i_delete = np.unique(np.concatenate((i_x, i_y)))
+        x = np.delete(x, i_delete, axis=0)
+        y = np.delete(y, i_delete, axis=0)
+
+        sigma = np.asarray(sigma)
+        if sigma.ndim == 1:
+            sigma = np.delete(sigma, i_delete)
+        elif sigma.ndim == 2:
+            sigma = np.delete(sigma, i_delete, axis=0)
+            sigma = np.delete(sigma, i_delete, axis=1)
+        ref_opt, ref_cov = curve_fit(exponential, x, y, p0=p0, sigma=sigma)
+
+        assert_allclose(res_opt, ref_opt, atol=1e-14)
+        assert_allclose(res_cov, ref_cov, atol=1e-14)
+
     def test_curvefit_simplecovariance(self):
 
         def func(x, a, b):
@@ -853,10 +915,10 @@ class TestCurveFit:
             e = np.exp(-b*x)
             return np.vstack((e, -a * x * e)).T
 
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         xdata = np.arange(1, 4)
         y = func(xdata, 2.5, 1.0)
-        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+        ydata = y + 0.2 * rng.normal(size=len(xdata))
         sigma = np.zeros(len(xdata)) + 0.2
         covar = np.diag(sigma**2)
         # Get a rotation matrix, and obtain ydatap = R ydata
@@ -1047,7 +1109,7 @@ class TestCurveFit:
 
     @pytest.mark.parametrize('method', ['trf', 'dogbox'])
     def test_gh20155_error_mentions_x0(self, method):
-        # `curve_fit` produced an error message that refered to an undocumented
+        # `curve_fit` produced an error message that referred to an undocumented
         # variable `x0`, which was really `p0`. Check that this is resolved.
         def func(x,a):
             return x**a
@@ -1118,7 +1180,7 @@ class TestFixedPoint:
         assert_allclose(xxroot, lambertw(1)/2)
 
     def test_no_acceleration(self):
-        # github issue 5460
+        # GitHub issue 5460
         ks = 2
         kl = 6
         m = 1.3

@@ -9,11 +9,11 @@ __all__ = ['tfqmr']
 def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
           callback=None, show=False):
     """
-    Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
+    Solve ``Ax = b`` with the Transpose-Free Quasi-Minimal Residual method.
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -30,7 +30,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
         Default is ``min(10000, ndofs * 10)``, where ``ndofs = A.shape[0]``.
-    M : {sparse matrix, ndarray, LinearOperator}
+    M : {sparse array, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
         preconditioning dramatically improves the rate of convergence,
@@ -78,9 +78,9 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import tfqmr
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = tfqmr(A, b, atol=0.0)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -97,12 +97,12 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     if np.issubdtype(b.dtype, np.int64):
         b = b.astype(dtype)
 
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
 
     # Check if the R.H.S is a zero vector
     if np.linalg.norm(b) == 0.:
         x = b.copy()
-        return (postprocess(x), 0)
+        return (x, 0)
 
     ndofs = A.shape[0]
     if maxiter is None:
@@ -125,7 +125,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     r0norm = np.sqrt(rho)
     tau = r0norm
     if r0norm == 0:
-        return (postprocess(x), 0)
+        return (x, 0)
 
     # we call this to get the right atol and raise errors as necessary
     atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol)
@@ -136,7 +136,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
             vtrstar = np.inner(rstar.conjugate(), v)
             # Check breakdown
             if vtrstar == 0.:
-                return (postprocess(x), -1)
+                return (x, -1)
             alpha = rho / vtrstar
             uNext = u - alpha * v  # [1]-(5.6)
         w -= alpha * uhat  # [1]-(5.8)
@@ -158,7 +158,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
             if (show):
                 print("TFQMR: Linear solve converged due to reach TOL "
                       f"iterations {iter+1}")
-            return (postprocess(x), 0)
+            return (x, 0)
 
         if (not even):
             # [1]-(5.7)
@@ -176,4 +176,4 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     if (show):
         print("TFQMR: Linear solve not converged due to reach MAXIT "
               f"iterations {iter+1}")
-    return (postprocess(x), maxiter)
+    return (x, maxiter)

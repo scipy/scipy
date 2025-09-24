@@ -1,12 +1,15 @@
 """
 Tests for line search routines
 """
+import warnings
+
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-                           assert_array_almost_equal_nulp, assert_warns,
-                           suppress_warnings)
+                           assert_array_almost_equal_nulp)
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
+import pytest
+import threading
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
@@ -54,19 +57,25 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
 class TestLineSearch:
     # -- scalar functions; must have dphi(0.) < 0
     def _scalar_func_1(self, s):  # skip name check
-        self.fcount += 1
+        if not hasattr(self.fcount, 'c'):
+            self.fcount.c = 0
+        self.fcount.c += 1
         p = -s - s**3 + s**4
         dp = -1 - 3*s**2 + 4*s**3
         return p, dp
 
     def _scalar_func_2(self, s):  # skip name check
-        self.fcount += 1
+        if not hasattr(self.fcount, 'c'):
+            self.fcount.c = 0
+        self.fcount.c += 1
         p = np.exp(-4*s) + s**2
         dp = -4*np.exp(-4*s) + 2*s
         return p, dp
 
     def _scalar_func_3(self, s):  # skip name check
-        self.fcount += 1
+        if not hasattr(self.fcount, 'c'):
+            self.fcount.c = 0
+        self.fcount.c += 1
         p = -np.sin(10*s)
         dp = -10*np.cos(10*s)
         return p, dp
@@ -74,13 +83,17 @@ class TestLineSearch:
     # -- n-d functions
 
     def _line_func_1(self, x):  # skip name check
-        self.fcount += 1
+        if not hasattr(self.fcount, 'c'):
+            self.fcount.c = 0
+        self.fcount.c += 1
         f = np.dot(x, x)
         df = 2*x
         return f, df
 
     def _line_func_2(self, x):  # skip name check
-        self.fcount += 1
+        if not hasattr(self.fcount, 'c'):
+            self.fcount.c = 0
+        self.fcount.c += 1
         f = np.dot(x, np.dot(self.A, x)) + 1
         df = np.dot(self.A + self.A.T, x)
         return f, df
@@ -91,7 +104,7 @@ class TestLineSearch:
         self.scalar_funcs = []
         self.line_funcs = []
         self.N = 20
-        self.fcount = 0
+        self.fcount = threading.local()
 
         def bind_index(func, idx):
             # Remember Python's closure semantics!
@@ -116,16 +129,17 @@ class TestLineSearch:
                 yield name, phi, derphi, old_phi0
 
     def line_iter(self):
+        rng = np.random.RandomState(1234)
         for name, f, fprime in self.line_funcs:
             k = 0
             while k < 9:
-                x = np.random.randn(self.N)
-                p = np.random.randn(self.N)
+                x = rng.randn(self.N)
+                p = rng.randn(self.N)
                 if np.dot(p, fprime(x)) >= 0:
                     # always pick a descent direction
                     continue
                 k += 1
-                old_fv = float(np.random.randn())
+                old_fv = float(rng.randn())
                 yield name, f, fprime, x, p, old_fv
 
     # -- Generic scalar searches
@@ -197,11 +211,11 @@ class TestLineSearch:
         for name, f, fprime, x, p, old_f in self.line_iter():
             f0 = f(x)
             g0 = fprime(x)
-            self.fcount = 0
+            self.fcount.c = 0
             s, fc, gc, fv, ofv, gv = ls.line_search_wolfe1(f, fprime, x, p,
                                                            g0, f0, old_f,
                                                            amax=smax)
-            assert_equal(self.fcount, fc+gc)
+            assert_equal(self.fcount.c, fc+gc)
             assert_fp_equal(ofv, f(x))
             if s is None:
                 continue
@@ -219,16 +233,20 @@ class TestLineSearch:
         for name, f, fprime, x, p, old_f in self.line_iter():
             f0 = f(x)
             g0 = fprime(x)
-            self.fcount = 0
-            with suppress_warnings() as sup:
-                sup.filter(LineSearchWarning,
-                           "The line search algorithm could not find a solution")
-                sup.filter(LineSearchWarning,
-                           "The line search algorithm did not converge")
+            self.fcount.c = 0
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "The line search algorithm could not find a solution",
+                    LineSearchWarning)
+                warnings.filterwarnings(
+                    "ignore",
+                    "The line search algorithm did not converge",
+                    LineSearchWarning)
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
                                                                g0, f0, old_f,
                                                                amax=smax)
-            assert_equal(self.fcount, fc+gc)
+            assert_equal(self.fcount.c, fc+gc)
             assert_fp_equal(ofv, f(x))
             assert_fp_equal(fv, f(x + s*p))
             if gv is not None:
@@ -257,24 +275,24 @@ class TestLineSearch:
         s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p, amax=30, c2=c2)
         assert_line_wolfe(x, p, s, f, fp)
 
-        s, _, _, _, _, _ = assert_warns(LineSearchWarning,
-                                        ls.line_search_wolfe2, f, fp, x, p,
-                                        amax=29, c2=c2)
+        with pytest.warns(LineSearchWarning):
+            s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p,
+                                                     amax=29, c2=c2)
         assert s is None
 
         # s=30 will only be tried on the 6th iteration, so this won't converge
-        assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
-                     c2=c2, maxiter=5)
+        with pytest.warns(LineSearchWarning):
+            ls.line_search_wolfe2(f, fp, x, p, c2=c2, maxiter=5)
 
     def test_line_search_armijo(self):
         c = 0
         for name, f, fprime, x, p, old_f in self.line_iter():
             f0 = f(x)
             g0 = fprime(x)
-            self.fcount = 0
+            self.fcount.c = 0
             s, fc, fv = ls.line_search_armijo(f, x, p, g0, f0)
             c += 1
-            assert_equal(self.fcount, fc)
+            assert_equal(self.fcount.c, fc)
             assert_fp_equal(fv, f(x + s*p))
             assert_line_armijo(x, p, s, f, err_msg=name)
         assert c >= 9

@@ -29,7 +29,7 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     directed : bool, optional
@@ -63,7 +63,7 @@ def connected_components(csgraph, directed=True, connection='weak',
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import connected_components
 
     >>> graph = [
@@ -73,9 +73,9 @@ def connected_components(csgraph, directed=True, connection='weak',
     ... [0, 0, 0, 0, 1],
     ... [0, 0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 4 stored elements and shape (5, 5)>
     	Coords	Values
     	(0, 1)	1
@@ -134,7 +134,7 @@ def breadth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     i_start : int
@@ -176,12 +176,12 @@ def breadth_first_tree(csgraph, i_start, directed=True):
 
     In compressed sparse representation, the solution looks like this:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import breadth_first_tree
-    >>> X = csr_matrix([[0, 8, 0, 3],
-    ...                 [0, 0, 2, 5],
-    ...                 [0, 0, 0, 6],
-    ...                 [0, 0, 0, 0]])
+    >>> X = csr_array([[0, 8, 0, 3],
+    ...                [0, 0, 2, 5],
+    ...                [0, 0, 0, 6],
+    ...                [0, 0, 0, 0]])
     >>> Tcsr = breadth_first_tree(X, 0, directed=False)
     >>> Tcsr.toarray().astype(int)
     array([[0, 8, 0, 3],
@@ -210,7 +210,7 @@ def depth_first_tree(csgraph, i_start, directed=True):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N matrix representing the compressed sparse graph.  The input
         csgraph will be converted to csr format for the calculation.
     i_start : int
@@ -252,12 +252,12 @@ def depth_first_tree(csgraph, i_start, directed=True):
 
     In compressed sparse representation, the solution looks like this:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import depth_first_tree
-    >>> X = csr_matrix([[0, 8, 0, 3],
-    ...                 [0, 0, 2, 5],
-    ...                 [0, 0, 0, 6],
-    ...                 [0, 0, 0, 0]])
+    >>> X = csr_array([[0, 8, 0, 3],
+    ...                [0, 0, 2, 5],
+    ...                [0, 0, 0, 6],
+    ...                [0, 0, 0, 0]])
     >>> Tcsr = depth_first_tree(X, 0, directed=False)
     >>> Tcsr.toarray().astype(int)
     array([[0, 8, 0, 0],
@@ -290,7 +290,7 @@ cpdef breadth_first_order(csgraph, i_start,
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N compressed sparse graph.  The input csgraph will be
         converted to csr format for the calculation.
     i_start : int
@@ -324,7 +324,7 @@ cpdef breadth_first_order(csgraph, i_start,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import breadth_first_order
 
     >>> graph = [
@@ -333,9 +333,9 @@ cpdef breadth_first_order(csgraph, i_start,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -499,7 +499,7 @@ cpdef depth_first_order(csgraph, i_start,
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix
+    csgraph : array_like or sparse array or matrix
         The N x N compressed sparse graph.  The input csgraph will be
         converted to csr format for the calculation.
     i_start : int
@@ -533,7 +533,7 @@ cpdef depth_first_order(csgraph, i_start,
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import depth_first_order
 
     >>> graph = [
@@ -542,9 +542,9 @@ cpdef depth_first_order(csgraph, i_start,
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
     	with 5 stored elements and shape (4, 4)>
     	Coords	Values
     	(0, 1)	1
@@ -736,7 +736,7 @@ cdef int _connected_components_directed2(
     """
     Uses an iterative version of Tarjan's algorithm to find the
     strongly connected components of a directed graph represented as a
-    sparse matrix (scipy.sparse.csc_matrix or scipy.sparse.csr_matrix).
+    sparse array (scipy.sparse.csc_array or scipy.sparse.csr_array).
 
     The algorithmic complexity is for a graph with E edges and V
     vertices is O(E + V).

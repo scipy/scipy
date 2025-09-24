@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import (overload, Any, SupportsFloat, Literal, Protocol, SupportsIndex)
 
 import numpy as np
@@ -35,12 +34,10 @@ _MetricKind = Literal[
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
-    'kulczynski1',
     'mahalanobis', 'mahal', 'mah',
     'rogerstanimoto',
     'russellrao',
     'seuclidean', 'se', 's',
-    'sokalmichener',
     'sokalsneath',
     'sqeuclidean', 'sqe', 'sqeuclid',
     'yule',
@@ -139,10 +136,6 @@ def jensenshannon(
     p: ArrayLike, q: ArrayLike, base: float | None = ...
 ) -> np.float64: ...
 
-def kulczynski1(
-    u: ArrayLike, v: ArrayLike, w: ArrayLike | None = ...
-) -> np.float64: ...
-
 def mahalanobis(
     u: ArrayLike, v: ArrayLike, VI: ArrayLike
 ) -> np.float64: ...
@@ -178,10 +171,6 @@ def pdist(
 
 def seuclidean(
     u: ArrayLike, v: ArrayLike, V: ArrayLike
-) -> float: ...
-
-def sokalmichener(
-    u: ArrayLike, v: ArrayLike, w: ArrayLike | None = ...
 ) -> float: ...
 
 def sokalsneath(

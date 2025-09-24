@@ -3,6 +3,8 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_cython_tree += fs.copyfile('__init__.pxd')
+
 _generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
@@ -26,6 +28,7 @@ cython_linalg = custom_target('cython_linalg',
   install_tag: 'devel'
 )
 cython_blas_pxd = cython_linalg[2]
+cython_lapack_pxd = cython_linalg[3]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -37,7 +40,7 @@ linalg_init_cython_gen = generator(cython,
 linalg_init_utils_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd, cython_lapack_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython,
@@ -47,9 +50,9 @@ linalg_cython_gen = generator(cython,
 
 # fblas
 fblas_module = custom_target('fblas_module',
-  output: ['_fblasmodule.c'],
+  output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
   input: 'fblas.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'fblas_l1.pyf.src',
@@ -64,7 +67,7 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   fblas_module,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [lapack_lp64_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -73,7 +76,7 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'flapack_user.pyf.src',
@@ -93,19 +96,89 @@ py3.extension_module('_flapack',
   flapack_module,
   c_args: [Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  dependencies: [lapack_lp64_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
+
+# Add _fblas_64 and _flapack_64 if we're building with ILP64 support
+#
+# NOTE: what happened in the setup.py build was that we were linking LP64
+# libopenblas.so to `_fblas` and ILP64 `libopenblas64_.so` to `_fblas_64`
+# and used both at the same time. We never shipped wheels that way, it only
+# worked in a CI job. We are re-exporting the LP64 symbols in
+# `cython_blas`/`cython_lapack`, so we can't use only ILP64 even if we support
+# it in all SciPy code.
+# TODO: right now we're only detecting one BLAS library (like NumPy does), but
+#       we need two blas and two lapack dependency objects here.
+#       The ILP64 CI job in the 1.10.x branch downloads two OpenBLAS tarballs
+#       and then uses both in the build (search for `Download-OpenBLAS('1'))
+#       in azure-pipelines.yml if you want to check that).
+if use_ilp64
+  fblas64_module = custom_target('fblas64_module',
+    output: ['_fblas_64module.c', '_fblas_64-f2pywrappers.f'],
+    input: 'fblas_64.pyf.src',
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
+    depend_files:
+      [
+        'fblas_l1.pyf.src',
+        'fblas_l2.pyf.src',
+        'fblas_l3.pyf.src',
+      ]
+  )
+
+  py3.extension_module('_fblas_64',
+    fblas64_module,
+    link_args: version_link_args,
+    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
+    dependencies: [lapack_dep, fortranobject_dep],  # lapack_dep is ILP64 if use_ilp64==true
+    install: true,
+    link_language: 'fortran',
+    subdir: 'scipy/linalg'
+  )
+
+  flapack64_module = custom_target('flapack64_module',
+    output: ['_flapack_64module.c', '_flapack_64-f2pywrappers.f'],
+    input: 'flapack_64.pyf.src',
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
+  )
+
+  py3.extension_module('_flapack_64',
+    flapack64_module,
+    c_args: [Wno_empty_body],
+    link_args: version_link_args,
+    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
+    dependencies: [lapack_dep, fortranobject_dep],
+    install: true,
+    link_language: 'fortran',
+    subdir: 'scipy/linalg'
+  )
+endif
+
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
-  linalg_init_cython_gen.process('_decomp_interpolative.pyx'),
+  linalg_cython_gen.process('_decomp_interpolative.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
+# batched linalg inv module
+py3.extension_module('_batched_linalg',
+  [
+    'src/_common_array_utils.hh',
+    'src/_linalg_inv.hh',
+    'src/_linalg_solve.hh',
+    'src/_npymath.hh',
+    'src/_batched_linalg_module.cc'
+  ],
+  dependencies: [np_dep, lapack_dep],
+  include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -137,7 +210,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -150,7 +223,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -180,18 +253,23 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-# _matfuncs_expm:
-_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
-  output: '_matfuncs_expm.pyx',
-  input: '_matfuncs_expm.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
+py3.extension_module('_matfuncs_expm',
+  [
+    '_matfuncs_expm.h',
+    '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_lp64_dep],
+  install: true,
+  subdir: 'scipy/linalg'
 )
 
-py3.extension_module('_matfuncs_expm',
-  linalg_cython_gen.process(_matfuncs_expm_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
+py3.extension_module('_matfuncs_schur_sqrtm',
+  [
+    '_common_array_utils.h',
+    '_matfuncs_sqrtm.h',
+    '_matfuncs_sqrtm.c',
+  ],
+  dependencies: [np_dep, lapack_lp64_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -224,6 +302,7 @@ endif
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',

@@ -906,6 +906,50 @@ class TestAkima1DInterpolator:
         yi[:, 1, 1] = 4. * yi_
         xp_assert_close(ak(xi), yi)
 
+    def test_linear_interpolant_edge_case_1d(self):
+        x = np.array([0.0, 1.0], dtype=float)
+        y = np.array([0.5, 1.0])
+        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
+        xp_assert_close(akima(0.45), np.array(0.725))
+
+    def test_linear_interpolant_edge_case_2d(self):
+        x = np.array([0., 1.])
+        y = np.column_stack((x, 2. * x, 3. * x, 4. * x))
+
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0.5, 1.])
+        yi = np.array([[0.5, 1., 1.5, 2. ],
+                       [1., 2., 3., 4.]])
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.T, axis=1)
+        xp_assert_close(ak(xi), yi.T)
+
+    def test_linear_interpolant_edge_case_3d(self):
+        x = np.arange(0., 2.)
+        y_ = np.array([0., 1.])
+        y = np.empty((2, 2, 2))
+        y[:, 0, 0] = y_
+        y[:, 1, 0] = 2. * y_
+        y[:, 0, 1] = 3. * y_
+        y[:, 1, 1] = 4. * y_
+        ak = Akima1DInterpolator(x, y)
+        yi_ = np.array([0.5, 1.])
+        yi = np.empty((2, 2, 2))
+        yi[:, 0, 0] = yi_
+        yi[:, 1, 0] = 2. * yi_
+        yi[:, 0, 1] = 3. * yi_
+        yi[:, 1, 1] = 4. * yi_
+        xi = yi_
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.transpose(1, 0, 2), axis=1)
+        xp_assert_close(ak(xi), yi.transpose(1, 0, 2))
+
+        ak = Akima1DInterpolator(x, y.transpose(2, 1, 0), axis=2)
+        xp_assert_close(ak(xi), yi.transpose(2, 1, 0))
+
+
     def test_degenerate_case_multidimensional(self):
         # This test is for issue #5683.
         x = np.array([0, 1, 2])
@@ -948,6 +992,21 @@ class TestAkima1DInterpolator:
         xp_assert_close(ak_false(x_ext, extrapolate=True), ak_true(x_ext), atol=1e-15)
         # Testing extrapoation to actual function.
         xp_assert_close(y_ext, ak_true(x_ext), atol=1e-15)
+
+
+    def test_no_overflow(self):
+        # check a large jump does not cause a float overflow
+        x = np.arange(1, 10)
+        y = 1.e6*np.sqrt(np.finfo(float).max)*np.heaviside(x-4, 0.5)
+
+        ak1 = Akima1DInterpolator(x, y, method='makima')
+        ak2 = Akima1DInterpolator(x, y, method='akima')
+
+        y_eval1 = ak1(x)
+        y_eval2 = ak2(x)
+
+        assert np.isfinite(y_eval1).all()
+        assert np.isfinite(y_eval2).all()
 
 
 @pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])
@@ -1216,12 +1275,12 @@ class TestPPoly:
             B = binom(n, k)
             return B[::-1, ::-1]
 
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
 
         power = 3
         for m in [10, 20, 30]:
-            x = np.sort(np.random.uniform(0, 10, m + 1))
-            ca = np.random.uniform(-2, 2, size=(power + 1, m))
+            x = np.sort(rng.uniform(0, 10, m + 1))
+            ca = rng.uniform(-2, 2, size=(power + 1, m))
 
             h = np.diff(x)
             h_powers = h[None, :] ** np.arange(power + 1)[::-1, None]
@@ -1233,7 +1292,7 @@ class TestPPoly:
             pa = PPoly(ca, x, extrapolate=True)
             pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
 
-            x_test = np.random.uniform(-10, 20, 100)
+            x_test = rng.uniform(-10, 20, 100)
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1247,7 +1306,7 @@ class TestPPoly:
             # equal.
             pa_i = pa.antiderivative()
             pd_i = pd.antiderivative()
-            for a, b in np.random.uniform(-10, 20, (5, 2)):
+            for a, b in rng.uniform(-10, 20, (5, 2)):
                 int_a = pa.integrate(a, b)
                 int_d = pd.integrate(a, b)
                 xp_assert_close(int_a, int_d, rtol=1e-13)
@@ -1282,9 +1341,9 @@ class TestPPoly:
         xp_assert_close(p(0.7), np.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
 
     def test_vs_alternative_implementations(self):
-        np.random.seed(1234)
-        c = np.random.rand(3, 12, 22)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
+        rng = np.random.RandomState(1234)
+        c = rng.rand(3, 12, 22)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
 
         p = PPoly(c, x)
 
@@ -1296,9 +1355,9 @@ class TestPPoly:
         xp_assert_close(p(xp)[:, 0], expected)
 
     def test_from_spline(self):
-        np.random.seed(1234)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
-        y = np.random.rand(len(x))
+        rng = np.random.RandomState(1234)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
+        y = rng.rand(len(x))
 
         spl = splrep(x, y, s=0)
         pp = PPoly.from_spline(spl)
@@ -1333,9 +1392,9 @@ class TestPPoly:
         xp_assert_close(pp.derivative(2).c, ddpp.c)
 
     def test_derivative_eval(self):
-        np.random.seed(1234)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
-        y = np.random.rand(len(x))
+        rng = np.random.RandomState(1234)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
+        y = rng.rand(len(x))
 
         spl = splrep(x, y, s=0)
         pp = PPoly.from_spline(spl)
@@ -1345,17 +1404,16 @@ class TestPPoly:
             xp_assert_close(pp(xi, dx), splev(xi, spl, dx))
 
     def test_derivative(self):
-        np.random.seed(1234)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
-        y = np.random.rand(len(x))
+        rng = np.random.RandomState(1234)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
+        y = rng.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
         pp = PPoly.from_spline(spl)
 
         xi = np.linspace(0, 1, 200)
         for dx in range(0, 10):
-            xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi),
-                            err_msg="dx=%d" % (dx,))
+            xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi), err_msg=f"dx={dx}")
 
     def test_antiderivative_of_constant(self):
         # https://github.com/scipy/scipy/issues/4216
@@ -1398,9 +1456,9 @@ class TestPPoly:
         xp_assert_close(iipp2.c.T, iic.T)
 
     def test_antiderivative_vs_derivative(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         x = np.linspace(0, 1, 30)**2
-        y = np.random.rand(len(x))
+        y = rng.rand(len(x))
         spl = splrep(x, y, s=0, k=5)
         pp = PPoly.from_spline(spl)
 
@@ -1418,13 +1476,14 @@ class TestPPoly:
                 r = 1e-13
                 endpoint = r*pp2.x[:-1] + (1 - r)*pp2.x[1:]
 
-                xp_assert_close(pp2(pp2.x[1:]), pp2(endpoint),
-                                rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
+                xp_assert_close(
+                    pp2(pp2.x[1:]), pp2(endpoint), rtol=1e-7, err_msg=f"dx={dx} k={k}"
+                )
 
     def test_antiderivative_vs_spline(self):
-        np.random.seed(1234)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
-        y = np.random.rand(len(x))
+        rng = np.random.RandomState(1234)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
+        y = rng.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
         pp = PPoly.from_spline(spl)
@@ -1452,9 +1511,9 @@ class TestPPoly:
         xp_assert_close(p2.c, p.c)
 
     def test_integrate(self):
-        np.random.seed(1234)
-        x = np.sort(np.r_[0, np.random.rand(11), 1])
-        y = np.random.rand(len(x))
+        rng = np.random.RandomState(1234)
+        x = np.sort(np.r_[0, rng.rand(11), 1])
+        y = rng.rand(len(x))
 
         spl = splrep(x, y, s=0, k=5)
         pp = PPoly.from_spline(spl)
@@ -1587,17 +1646,17 @@ class TestPPoly:
 
     def test_roots_random(self):
         # Check high-order polynomials with random coefficients
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         num = 0
 
         for extrapolate in (True, False):
             for order in range(0, 20):
-                x = np.unique(np.r_[0, 10 * np.random.rand(30), 10])
-                c = 2*np.random.rand(order+1, len(x)-1, 2, 3) - 1
+                x = np.unique(np.r_[0, 10 * rng.rand(30), 10])
+                c = 2*rng.rand(order+1, len(x)-1, 2, 3) - 1
 
                 pp = PPoly(c, x)
-                for y in [0, np.random.random()]:
+                for y in [0, rng.random()]:
                     r = pp.solve(y, discontinuity=False, extrapolate=extrapolate)
 
                     for i in range(2):
@@ -1619,16 +1678,16 @@ class TestPPoly:
 
     def test_roots_croots(self):
         # Test the complex root finding algorithm
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         for k in range(1, 15):
-            c = np.random.rand(k, 1, 130)
+            c = rng.rand(k, 1, 130)
 
             if k == 3:
                 # add a case with zero discriminant
                 c[:,0,0] = 1, 2, 1
 
-            for y in [0, np.random.random()]:
+            for y in [0, rng.random()]:
                 w = np.empty(c.shape, dtype=complex)
                 _ppoly._croots_poly1(c, w, y)
 
@@ -1725,19 +1784,19 @@ class TestBPoly:
         xp_assert_close(bp(-1.3, 1), np.asarray(2 * (0.7/2)))
 
     def test_descending(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
 
         power = 3
         for m in [10, 20, 30]:
-            x = np.sort(np.random.uniform(0, 10, m + 1))
-            ca = np.random.uniform(-0.1, 0.1, size=(power + 1, m))
+            x = np.sort(rng.uniform(0, 10, m + 1))
+            ca = rng.uniform(-0.1, 0.1, size=(power + 1, m))
             # We need only to flip coefficients to get it right!
             cd = ca[::-1].copy()
 
             pa = BPoly(ca, x, extrapolate=True)
             pd = BPoly(cd[:, ::-1], x[::-1], extrapolate=True)
 
-            x_test = np.random.uniform(-10, 20, 100)
+            x_test = rng.uniform(-10, 20, 100)
             xp_assert_close(pa(x_test), pd(x_test), rtol=1e-13)
             xp_assert_close(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
 
@@ -1751,7 +1810,7 @@ class TestBPoly:
             # equal.
             pa_i = pa.antiderivative()
             pd_i = pd.antiderivative()
-            for a, b in np.random.uniform(-10, 20, (5, 2)):
+            for a, b in rng.uniform(-10, 20, (5, 2)):
                 int_a = pa.integrate(a, b)
                 int_d = pd.integrate(a, b)
                 xp_assert_close(int_a, int_d, rtol=1e-12)
@@ -1759,13 +1818,14 @@ class TestBPoly:
                                 rtol=1e-12)
 
     def test_multi_shape(self):
-        c = np.random.rand(6, 2, 1, 2, 3)
+        rng = np.random.RandomState(1234)
+        c = rng.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
         p = BPoly(c, x)
         assert p.x.shape == x.shape
         assert p.c.shape == c.shape
         assert p(0.3).shape == c.shape[2:]
-        assert p(np.random.rand(5, 6)).shape == (5, 6) + c.shape[2:]
+        assert p(rng.rand(5, 6)).shape == (5, 6) + c.shape[2:]
 
         dp = p.derivative()
         assert dp.c.shape == (5, 2, 1, 2, 3)
@@ -1823,10 +1883,10 @@ class TestBPolyCalculus:
 
     def test_derivative_ppoly(self):
         # make sure it's consistent w/ power basis
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         m, k = 5, 8   # number of intervals, order
-        x = np.sort(np.random.random(m))
-        c = np.random.random((k, m-1))
+        x = np.sort(rng.random(m))
+        c = rng.random((k, m-1))
         bp = BPoly(c, x)
         pp = PPoly.from_bernstein_basis(bp)
 
@@ -1837,10 +1897,10 @@ class TestBPolyCalculus:
             xp_assert_close(bp(xp), pp(xp))
 
     def test_deriv_inplace(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         m, k = 5, 8   # number of intervals, order
-        x = np.sort(np.random.random(m))
-        c = np.random.random((k, m-1))
+        x = np.sort(rng.random(m))
+        c = rng.random((k, m-1))
 
         # test both real and complex coefficients
         for cc in [c.copy(), c*(1. + 2.j)]:
@@ -1870,9 +1930,9 @@ class TestBPolyCalculus:
                         atol=1e-12, rtol=1e-12)
 
     def test_der_antider(self):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(11))
-        c = np.random.random((4, 10, 2, 3))
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(11))
+        c = rng.random((4, 10, 2, 3))
         bp = BPoly(c, x)
 
         xx = np.linspace(x[0], x[-1], 100)
@@ -1880,9 +1940,9 @@ class TestBPolyCalculus:
                         bp(xx), atol=1e-12, rtol=1e-12)
 
     def test_antider_ppoly(self):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(11))
-        c = np.random.random((4, 10, 2, 3))
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(11))
+        c = rng.random((4, 10, 2, 3))
         bp = BPoly(c, x)
         pp = PPoly.from_bernstein_basis(bp)
 
@@ -1892,9 +1952,9 @@ class TestBPolyCalculus:
                         pp.antiderivative(2)(xx), atol=1e-12, rtol=1e-12)
 
     def test_antider_continuous(self):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(11))
-        c = np.random.random((4, 10))
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(11))
+        c = rng.random((4, 10))
         bp = BPoly(c, x).antiderivative()
 
         xx = bp.x[1:-1]
@@ -1902,9 +1962,9 @@ class TestBPolyCalculus:
                         bp(xx + 1e-14), atol=1e-12, rtol=1e-12)
 
     def test_integrate(self):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(11))
-        c = np.random.random((4, 10))
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(11))
+        c = rng.random((4, 10))
         bp = BPoly(c, x)
         pp = PPoly.from_bernstein_basis(bp)
         xp_assert_close(bp.integrate(0, 1),
@@ -1976,10 +2036,10 @@ class TestPolyConversions:
         xp_assert_close(pp(xp), pp1(xp))
 
     def test_bp_from_pp_random(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         m, k = 5, 8   # number of intervals, order
-        x = np.sort(np.random.random(m))
-        c = np.random.random((k, m-1))
+        x = np.sort(rng.random(m))
+        c = rng.random((k, m-1))
         pp = PPoly(c, x)
         bp = BPoly.from_power_basis(pp)
         pp1 = PPoly.from_bernstein_basis(bp)
@@ -2043,9 +2103,9 @@ class TestBPolyFromDerivatives:
         xp_assert_close(c3, [1., 5./3, 3., 4.])
 
     def test_make_poly_12(self):
-        np.random.seed(12345)
-        ya = np.r_[0, np.random.random(5)]
-        yb = np.r_[0, np.random.random(5)]
+        rng = np.random.RandomState(12345)
+        ya = np.r_[0, rng.random(5)]
+        yb = np.r_[0, rng.random(5)]
 
         c = BPoly._construct_from_derivatives(0, 1, ya, yb)
         pp = BPoly(c[:, None], [0, 1])
@@ -2055,10 +2115,10 @@ class TestBPolyFromDerivatives:
             pp = pp.derivative()
 
     def test_raise_degree(self):
-        np.random.seed(12345)
+        rng = np.random.RandomState(12345)
         x = [0, 1]
         k, d = 8, 5
-        c = np.random.random((k, 1, 2, 3, 4))
+        c = rng.random((k, 1, 2, 3, 4))
         bp = BPoly(c, x)
 
         c1 = BPoly._raise_degree(c, d)
@@ -2089,9 +2149,9 @@ class TestBPolyFromDerivatives:
 
     def _make_random_mk(self, m, k):
         # k derivatives at each breakpoint
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         xi = np.asarray([1. * j**2 for j in range(m+1)])
-        yi = [np.random.random(k) for j in range(m+1)]
+        yi = [rng.random(k) for j in range(m+1)]
         return xi, yi
 
     def test_random_12(self):
@@ -2154,9 +2214,10 @@ class TestBPolyFromDerivatives:
             assert not np.allclose(pp(x - 1e-12), pp(x + 1e-12))
 
     def test_yi_trailing_dims(self):
+        rng = np.random.RandomState(1234)
         m, k = 7, 5
-        xi = np.sort(np.random.random(m+1))
-        yi = np.random.random((m+1, k, 6, 7, 8))
+        xi = np.sort(rng.random(m+1))
+        yi = rng.random((m+1, k, 6, 7, 8))
         pp = BPoly.from_derivatives(xi, yi)
         assert pp.c.shape == (2*k, m, 6, 7, 8)
 
@@ -2180,12 +2241,12 @@ class TestBPolyFromDerivatives:
 
 class TestNdPPoly:
     def test_simple_1d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5)
+        c = rng.rand(4, 5)
         x = np.linspace(0, 1, 5+1)
 
-        xi = np.random.rand(200)
+        xi = rng.rand(200)
 
         p = NdPPoly(c, (x,))
         v1 = p((xi,))
@@ -2194,14 +2255,14 @@ class TestNdPPoly:
         xp_assert_close(v1, v2)
 
     def test_simple_2d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5, 6, 7)
+        c = rng.rand(4, 5, 6, 7)
         x = np.linspace(0, 1, 6+1)
         y = np.linspace(0, 1, 7+1)**2
 
-        xi = np.random.rand(200)
-        yi = np.random.rand(200)
+        xi = rng.rand(200)
+        yi = rng.rand(200)
 
         v1 = np.empty([len(xi), 1], dtype=c.dtype)
         v1.fill(np.nan)
@@ -2223,16 +2284,16 @@ class TestNdPPoly:
             xp_assert_close(v1, v2, err_msg=repr(nu))
 
     def test_simple_3d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        c = rng.rand(4, 5, 6, 7, 8, 9)
         x = np.linspace(0, 1, 7+1)
         y = np.linspace(0, 1, 8+1)**2
         z = np.linspace(0, 1, 9+1)**3
 
-        xi = np.random.rand(40)
-        yi = np.random.rand(40)
-        zi = np.random.rand(40)
+        xi = rng.rand(40)
+        yi = rng.rand(40)
+        zi = rng.rand(40)
 
         p = NdPPoly(c, (x, y, z))
 
@@ -2243,18 +2304,18 @@ class TestNdPPoly:
             xp_assert_close(v1, v2, err_msg=repr(nu))
 
     def test_simple_4d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5, 6, 7, 8, 9, 10, 11)
+        c = rng.rand(4, 5, 6, 7, 8, 9, 10, 11)
         x = np.linspace(0, 1, 8+1)
         y = np.linspace(0, 1, 9+1)**2
         z = np.linspace(0, 1, 10+1)**3
         u = np.linspace(0, 1, 11+1)**4
 
-        xi = np.random.rand(20)
-        yi = np.random.rand(20)
-        zi = np.random.rand(20)
-        ui = np.random.rand(20)
+        xi = rng.rand(20)
+        yi = rng.rand(20)
+        zi = rng.rand(20)
+        ui = rng.rand(20)
 
         p = NdPPoly(c, (x, y, z, u))
         v1 = p((xi, yi, zi, ui))
@@ -2263,9 +2324,9 @@ class TestNdPPoly:
         xp_assert_close(v1, v2)
 
     def test_deriv_1d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5)
+        c = rng.rand(4, 5)
         x = np.linspace(0, 1, 5+1)
 
         p = NdPPoly(c, (x,))
@@ -2283,9 +2344,9 @@ class TestNdPPoly:
         xp_assert_close(dp.c, dp1.c)
 
     def test_deriv_3d(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
-        c = np.random.rand(4, 5, 6, 7, 8, 9)
+        c = rng.rand(4, 5, 6, 7, 8, 9)
         x = np.linspace(0, 1, 7+1)
         y = np.linspace(0, 1, 8+1)**2
         z = np.linspace(0, 1, 9+1)**3
@@ -2315,6 +2376,7 @@ class TestNdPPoly:
 
     def test_deriv_3d_simple(self):
         # Integrate to obtain function x y**2 z**4 / (2! 4!)
+        rng = np.random.RandomState(1234)
 
         c = np.ones((1, 1, 1, 3, 4, 5))
         x = np.linspace(0, 1, 3+1)**1
@@ -2325,16 +2387,16 @@ class TestNdPPoly:
         ip = p.antiderivative((1, 0, 4))
         ip = ip.antiderivative((0, 2, 0))
 
-        xi = np.random.rand(20)
-        yi = np.random.rand(20)
-        zi = np.random.rand(20)
+        xi = rng.rand(20)
+        yi = rng.rand(20)
+        zi = rng.rand(20)
 
         xp_assert_close(ip((xi, yi, zi)),
                         xi * yi**2 * zi**4 / (gamma(3)*gamma(5)))
 
     def test_integrate_2d(self):
-        np.random.seed(1234)
-        c = np.random.rand(4, 5, 16, 17)
+        rng = np.random.RandomState(1234)
+        c = rng.rand(4, 5, 16, 17)
         x = np.linspace(0, 1, 16+1)**1
         y = np.linspace(0, 1, 17+1)**2
 
@@ -2366,8 +2428,8 @@ class TestNdPPoly:
                             err_msg=repr(ranges))
 
     def test_integrate_1d(self):
-        np.random.seed(1234)
-        c = np.random.rand(4, 5, 6, 16, 17, 18)
+        rng = np.random.RandomState(1234)
+        c = rng.rand(4, 5, 6, 16, 17, 18)
         x = np.linspace(0, 1, 16+1)**1
         y = np.linspace(0, 1, 17+1)**2
         z = np.linspace(0, 1, 18+1)**3
@@ -2375,8 +2437,8 @@ class TestNdPPoly:
         # Check 1-D integration
         p = NdPPoly(c, (x, y, z))
 
-        u = np.random.rand(200)
-        v = np.random.rand(200)
+        u = rng.rand(200)
+        v = rng.rand(200)
         a, b = 0.2, 0.7
 
         px = p.integrate_1d(a, b, axis=0)
@@ -2390,7 +2452,6 @@ class TestNdPPoly:
         pz = p.integrate_1d(a, b, axis=2)
         paz = p.antiderivative((0, 0, 1))
         xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
-
 
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
@@ -2446,7 +2507,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     V = np.vander(diff, N=K)
     values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
-    res.shape = saveshape
+    res = res.reshape(saveshape)
     return res
 
 

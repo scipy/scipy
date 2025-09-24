@@ -23,19 +23,20 @@ dependencies:
   # ---
   - pythran
   # For testing and benchmarking
-  - pytest
+  - pytest>=8.0.0
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
   - asv >=0.6
+  - conda-build
   - hypothesis
-  - array-api-strict
+  - array-api-strict>=2.3.1
   # For type annotations
   - mypy
   - typing_extensions
   - types-psutil
   # For building docs
-  - sphinx<8.0.0
+  - sphinx<8.2.0
   - intersphinx-registry
   - numpydoc
   - ipython
@@ -45,18 +46,18 @@ dependencies:
   - sphinx-copybutton
   - sphinx-design
   - jupytext
-  - myst-nb
-  - jupyterlite-sphinx>=0.16.5
+  - myst-nb>=1.2.0
+  - linkify-it-py
+  - jupyterlite-sphinx>=0.19.1
   - jupyterlite-pyodide-kernel
+  - tabulate
   # Some optional test dependencies
   - mpmath
   - gmpy2
   - threadpoolctl
   # For CLI
-  - rich-click
-  - click
-  - doit>=0.36.0
-  - pydevtool
+  - spin
+  - click<8.3.0  # transitive dependency of `spin`, 8.3.0 is breaking (see gh-23642)
   # For linting
-  - ruff>=0.0.292
+  - ruff>=0.12.0
   - cython-lint

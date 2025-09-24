@@ -2,7 +2,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy.testing import assert_, assert_equal, IS_PYPY
+from numpy.testing import assert_, assert_equal, HAS_REFCOUNT
 import pytest
 from pytest import raises as assert_raises
 
@@ -19,7 +19,8 @@ _sf_error_code_map = {
     'no_result': 6,
     'domain': 7,
     'arg': 8,
-    'other': 9
+    'other': 9,
+    'memory': 10,
 }
 
 _sf_error_actions = [
@@ -71,7 +72,8 @@ def test_seterr():
         sc.seterr(**entry_err)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
+@pytest.mark.thread_unsafe(reason="module refcounts are not stable in multiple threads")
+@pytest.mark.skipif(not HAS_REFCOUNT, reason="Python lacks refcounts")
 def test_sf_error_special_refcount():
     # Regression test for gh-16233.
     # Check that the reference count of scipy.special is not increased
@@ -140,3 +142,12 @@ def test_errstate_all_but_one():
         with assert_raises(sc.SpecialFunctionError):
             sc.spence(-1.0)
     assert_equal(olderr, sc.geterr())
+
+
+def test_check_overflow_message():
+    # Regression test for a bug where the overflow and underflow
+    # messages were switched.
+    with pytest.raises(sc.SpecialFunctionError, match="overflow"):
+        with sc.errstate(all='raise'):
+            # This should trigger an overflow:
+            sc.yn(3, 1e-105)

@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from scipy._lib._array_api import xp_assert_close
 from scipy.stats.qmc import Halton
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 from scipy.interpolate._rbfinterp import (
     _AVAILABLE, _SCALE_INVARIANT, _NAME_TO_MIN_DEGREE, _monomial_powers,
     RBFInterpolator

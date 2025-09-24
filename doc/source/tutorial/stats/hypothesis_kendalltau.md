@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_kendalltau.ipynb
+.. notebooklite:: hypothesis_kendalltau.md
    :new_tab: True
 ```
 
 (hypothesis_kendalltau)=
+
++++
+
 # Kendall's tau test
 
 Kendall's tau is a measure of the correspondence between two rankings.
@@ -150,7 +155,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 bins = np.linspace(-1.25, 1.25, 25)
 ax.hist(ref.null_distribution, bins=bins, density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'exact null distribution'])
 plot(ax)
 plt.show()

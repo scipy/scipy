@@ -10,6 +10,7 @@ from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve, LinAlgError
 from scipy.sparse._sputils import matrix
+from scipy.conftest import skip_xp_invalid_arg
 
 
 # dtypes for testing size-0 case following precedent set in gh-20295
@@ -109,6 +110,7 @@ class TestSolveLyapunov:
         assert_array_almost_equal(
                       np.dot(np.dot(a, x), a.conj().transpose()) - x, -1.0*q)
 
+    @skip_xp_invalid_arg
     def test_cases(self):
         for case in self.cases:
             self.check_continuous_case(case[0], case[1])
@@ -761,7 +763,7 @@ class TestSolveSylvester:
         (np.array([[1, 2], [0, 4]]),
          np.array([[5, 6], [0, 8]]),
          np.array([[9, 10], [11, 12]])),
-        # a, b, c all real, 4x4. a and b have non-trival 2x2 blocks in their
+        # a, b, c all real, 4x4. a and b have non-trivial 2x2 blocks in their
         # quasi-triangular form.
         (np.array([[1.0, 0, 0, 0],
                    [0, 1.0, 2.0, 0.0],

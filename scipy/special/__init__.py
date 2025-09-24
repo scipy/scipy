@@ -5,6 +5,11 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
+.. toctree::
+   :hidden:
+
+   special.cython_special
+
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
@@ -23,8 +28,9 @@ Error handling
 
 Errors are handled by returning NaNs or other appropriate values.
 Some of the special function routines can emit warnings or raise
-exceptions when an error occurs. By default this is disabled; to
-query and control the current error handling state the following
+exceptions when an error occurs. By default this is disabled, except
+for memory allocation errors, which result in an exception being raised.
+To query and control the current error handling state the following
 functions are provided.
 
 .. autosummary::
@@ -231,10 +237,8 @@ Beta distribution
 .. autosummary::
    :toctree: generated/
 
-   btdtr        -- Cumulative distribution function of the beta distribution.
-   btdtri       -- The `p`-th quantile of the beta distribution.
-   btdtria      -- Inverse of `btdtr` with respect to `a`.
-   btdtrib      -- btdtria(a, p, x).
+   btdtria      -- Inverse of `betainc` with respect to `a`.
+   btdtrib      -- Inverse of `betainc` with respect to `b`.
 
 F distribution
 ^^^^^^^^^^^^^^
@@ -485,11 +489,7 @@ which provide a more flexible and consistent interface.
    :toctree: generated/
 
    lpmv                       -- Associated Legendre function of integer order and real degree.
-   sph_harm                   -- Compute spherical harmonics.
-   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
-   lpn                        -- Legendre function of the first kind.
    lqn                        -- Legendre function of the second kind.
-   lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
@@ -541,7 +541,7 @@ orthogonal polynomials:
    roots_jacobi      -- Gauss-Jacobi quadrature.
    roots_laguerre    -- Gauss-Laguerre quadrature.
    roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
-   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermite     -- Gauss-Hermite (physicist's) quadrature.
    roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
    roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
    roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
@@ -750,6 +750,7 @@ Other special functions
    spence      -- Spence's function, also known as the dilogarithm.
    zeta        -- Riemann zeta function.
    zetac       -- Riemann zeta function minus 1.
+   softplus    -- Softplus function.
 
 Convenience functions
 ---------------------
@@ -778,53 +779,18 @@ Convenience functions
 
 """  # noqa: E501
 
-import os
-import warnings
-
-
-def _load_libsf_error_state():
-    """Load libsf_error_state.dll shared library on Windows
-
-    libsf_error_state manages shared state used by
-    ``scipy.special.seterr`` and ``scipy.special.geterr`` so that these
-    can work consistently between special functions provided by different
-    extension modules. This shared library is installed in scipy/special
-    alongside this __init__.py file. Due to lack of rpath support, Windows
-    cannot find shared libraries installed within wheels. To circumvent this,
-    we pre-load ``lib_sf_error_state.dll`` when on Windows.
-
-    The logic for this function was borrowed from the function ``make_init``
-    in `scipy/tools/openblas_support.py`:
-    https://github.com/scipy/scipy/blob/bb92c8014e21052e7dde67a76b28214dd1dcb94a/tools/openblas_support.py#L239-L274
-    """  # noqa: E501
-    if os.name == "nt":
-        try:
-            from ctypes import WinDLL
-            basedir = os.path.dirname(__file__)
-        except:  # noqa: E722
-            pass
-        else:
-            dll_path = os.path.join(basedir, "libsf_error_state.dll")
-            if os.path.exists(dll_path):
-                WinDLL(dll_path)
-
-
-_load_libsf_error_state()
-
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
 
-# Replace some function definitions from _ufuncs to add Array API support
-from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr)
-
 from . import _basic
 from ._basic import *
+
+# Replace some function definitions from _ufuncs and _basic
+# to add Array API support
+from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -834,7 +800,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -875,34 +840,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
-             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
-
-
-def btdtr(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtr(*args, **kwargs)
-
-
-btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
-
-
-def btdtri(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
-                  stacklevel=2)
-    return _ufuncs.btdtri(*args, **kwargs)
-
-
-btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
-
-
-def _get_include():
-    """This function is for development purposes only.
-
-    This function could disappear or its behavior could change at any time.
-    """
-    import os
-    return os.path.dirname(__file__)
-

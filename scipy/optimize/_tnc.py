@@ -36,7 +36,8 @@ from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from scipy._lib._array_api import xp_atleast_nd, array_namespace
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
 
 from numpy import inf, array, zeros
 
@@ -286,6 +287,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   maxCGit=-1, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
                   callback=None, finite_diff_rel_step=None, maxfun=None,
+                  workers=None,
                   **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
@@ -350,13 +352,19 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     maxfun : int
         Maximum number of function evaluations. If None, `maxfun` is
         set to max(100, 10*len(x0)). Defaults to None.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
     """
     _check_unknown_options(unknown_options)
     fmin = minfev
     pgtol = gtol
 
     xp = array_namespace(x0)
-    x0 = xp_atleast_nd(x0, ndim=1, xp=xp)
+    x0 = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
     dtype = xp.float64
     if xp.isdtype(x0.dtype, "real floating"):
         dtype = x0.dtype
@@ -380,7 +388,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
-                                  bounds=new_bounds)
+                                  bounds=new_bounds, workers=workers)
     func_and_grad = sf.fun_and_grad
 
     """

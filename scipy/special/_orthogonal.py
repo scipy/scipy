@@ -78,7 +78,6 @@ References
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
-from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
@@ -172,6 +171,8 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
+    # lazy import to prevent to prevent linalg dependency for whole module (gh-23420)
+    from scipy import linalg
     k = np.arange(n, dtype='d')
     c = np.zeros((2, n))
     c[0,1:] = bn_func(k[1:])
@@ -1616,8 +1617,10 @@ def gegenbauer(n, alpha, monic=False):
     >>> plt.show()
 
     """
+    if not np.isfinite(alpha) or alpha <= -0.5 :
+        raise ValueError("`alpha` must be a finite number greater than -1/2")
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
-    if monic:
+    if monic or n == 0:
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
@@ -2397,7 +2400,7 @@ def roots_legendre(n, mu=False):
 
     with inverse::
 
-        t = (b - a)/2 * x + (a + 2)/2
+        t = (b - a)/2 * x + (a + b)/2
 
     Then::
 

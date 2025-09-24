@@ -7,7 +7,7 @@ Examples::
 
         install_directory_name:
             the relative path from the root of the repo to the directory where
-            SciPy is installed (for dev.py usually "build-install")
+            SciPy is installed (for `spin` usually "build-install")
 
 Notes
 =====
@@ -21,6 +21,7 @@ meant for use in CI so it's not like many files will be missing at once.
 import os
 import glob
 import sys
+from get_submodule_paths import get_submodule_paths
 
 
 CUR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
@@ -28,11 +29,7 @@ ROOT_DIR = os.path.dirname(CUR_DIR)
 SCIPY_DIR = os.path.join(ROOT_DIR, 'scipy')
 
 
-# Get the submodule paths so that we can ignore any tests in them or their submodules
-with open(os.path.join(ROOT_DIR, '.gitmodules')) as gitmodules:
-    data = gitmodules.read().split('\n')
-    submodule_paths = [datum.split(' = ')[1] for datum in data if \
-                       datum.startswith('\tpath = ')]
+submodule_paths = get_submodule_paths()
 
 
 # Files whose installation path will be different from original one

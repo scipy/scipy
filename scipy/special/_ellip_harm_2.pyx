@@ -7,6 +7,8 @@ from numpy import nan
 
 from scipy._lib._ccallback import LowLevelCallable
 from ._ellip_harm cimport ellip_harmonic, ellip_harm_eval, lame_coefficients
+from . cimport sf_error
+
 
 ctypedef struct _ellip_data_t:
     double *eval
@@ -197,3 +199,9 @@ cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
     this avoids messing with the UNIQUE_SYMBOL #defines
     """
     return PyUFunc_getfperr()
+
+
+cdef void _set_action(
+    sf_error.sf_error_t code, sf_error.sf_action_t action
+) noexcept nogil:
+    sf_error.set_action(code, action)

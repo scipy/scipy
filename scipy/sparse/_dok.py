@@ -5,7 +5,6 @@ __docformat__ = "restructuredtext en"
 __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
-from warnings import warn
 import numpy as np
 
 from ._matrix import spmatrix
@@ -17,13 +16,13 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
+    _allow_nd = (1, 2)
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
         _spbase.__init__(self, arg1, maxprint=maxprint)
 
-        is_array = isinstance(self, sparray)
-        if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
-            self._shape = check_shape(arg1, allow_1d=is_array)
+        if isinstance(arg1, tuple) and isshape(arg1, allow_nd=self._allow_nd):
+            self._shape = check_shape(arg1, allow_nd=self._allow_nd)
             self._dict = {}
             self.dtype = getdtype(dtype, default=float)
         elif issparse(arg1):  # Sparse ctor
@@ -36,7 +35,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 arg1 = arg1.astype(dtype, copy=False)
 
             self._dict = arg1._dict
-            self._shape = check_shape(arg1.shape, allow_1d=is_array)
+            self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
             self.dtype = getdtype(arg1.dtype)
         else:  # Dense ctor
             try:
@@ -45,7 +44,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 raise TypeError('Invalid input format.') from e
 
             if arg1.ndim > 2:
-                raise TypeError('Expected rank <=2 dense array or matrix.')
+                raise ValueError(f"DOK arrays don't yet support {arg1.ndim}D input.")
 
             if arg1.ndim == 1:
                 if dtype is not None:
@@ -56,11 +55,37 @@ class _dok_base(_spbase, IndexMixin, dict):
                 d = self._coo_container(arg1, shape=shape, dtype=dtype).todok()
                 self._dict = d._dict
                 self.dtype = getdtype(d.dtype)
-            self._shape = check_shape(arg1.shape, allow_1d=is_array)
+            self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
 
     def update(self, val):
-        # Prevent direct usage of update
-        raise NotImplementedError("Direct update to DOK sparse format is not allowed.")
+        """Update values from a dict, sparse dok or iterable of 2-tuples like .items()
+
+        Keys of the input must be sequences of nonnegative integers less than the shape
+        for each axis.
+        """
+        if isinstance(val, dict):
+            inputs = val.items()
+        else:
+            inputs = val
+
+        for key, value in inputs:
+            index = (key,) if isintlike(key) else tuple(key)
+            if len(index) != self.ndim:
+                raise IndexError(f'Index {key} length needs to match self.shape')
+            if not all(
+                isintlike(idx) and 0 <= idx < max_idx
+                for idx, max_idx in zip(index, self.shape)
+            ):
+                # Error handling. Re-search to find which error occured
+                for idx, max_idx in zip(index, self.shape):
+                    if not isintlike(idx):
+                        raise IndexError(f'integer keys required for update. Got {key}')
+                    if idx < 0:
+                        raise IndexError(f'negative index {key} not allowed in update')
+                    if idx >= max_idx:
+                        raise IndexError(f'index {key} is too large for self.shape')
+        # do the update
+        self._dict.update(inputs)
 
     def _getnnz(self, axis=None):
         if axis is not None:
@@ -206,12 +231,13 @@ class _dok_base(_spbase, IndexMixin, dict):
         return newdok
 
     def _get_intXarray(self, row, col):
-        col = col.squeeze()
-        return self._get_columnXarray([row], col)
+        return self._get_columnXarray([row], col.ravel())
 
     def _get_arrayXint(self, row, col):
-        row = row.squeeze()
-        return self._get_columnXarray(row, [col])
+        res = self._get_columnXarray(row.ravel(), [col])
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_sliceXarray(self, row, col):
         row = list(range(*row.indices(self.shape[0])))
@@ -316,7 +342,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         return new
 
     def __radd__(self, other):
-        return self + other  # addition is comutative
+        return self + other  # addition is commutative
 
     def __neg__(self):
         if self.dtype.kind == 'b':
@@ -420,28 +446,6 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     transpose.__doc__ = _spbase.transpose.__doc__
 
-    def conjtransp(self):
-        """DEPRECATED: Return the conjugate transpose.
-
-        .. deprecated:: 1.14.0
-
-            `conjtransp` is deprecated and will be removed in v1.16.0.
-            Use ``.T.conj()`` instead.
-        """
-        msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
-                   "Use `.T.conj()` instead.")
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        if self.ndim == 1:
-            new = self.tocoo()
-            new.data = new.data.conjugate()
-            return new
-
-        M, N = self.shape
-        new = self._dok_container((N, M), dtype=self.dtype)
-        new._dict = {(right, left): np.conj(val) for (left, right), val in self.items()}
-        return new
-
     def copy(self):
         new = self._dok_container(self.shape, dtype=self.dtype)
         new._dict.update(self._dict)
@@ -491,8 +495,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def resize(self, *shape):
-        is_array = isinstance(self, sparray)
-        shape = check_shape(shape, allow_1d=is_array)
+        shape = check_shape(shape, allow_nd=self._allow_nd)
         if len(shape) != len(self.shape):
             # TODO implement resize across dimensions
             raise NotImplementedError

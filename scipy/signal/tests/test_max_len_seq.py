@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
 from numpy.fft import fft, ifft
 
@@ -18,7 +18,9 @@ class TestMLS:
                       state=np.ones(3))
         # wrong length
         assert_raises(ValueError, max_len_seq, 10, length=-1)
-        assert_array_equal(max_len_seq(10, length=0)[0], [])
+        xp_assert_equal(max_len_seq(10, length=0)[0],
+                        np.asarray([], dtype=np.int8)
+        )
         # unknown taps
         assert_raises(ValueError, max_len_seq, 64)
         # bad taps
@@ -39,7 +41,7 @@ class TestMLS:
                     m = 2. * orig_m - 1.  # convert to +/- 1 representation
                     # First, make sure we got all 1's or -1
                     err_msg = "mls had non binary terms"
-                    assert_array_equal(np.abs(m), np.ones_like(m),
+                    xp_assert_equal(np.abs(m), np.ones_like(m),
                                        err_msg=err_msg)
                     # Test via circular cross-correlation, which is just mult.
                     # in the frequency domain with one signal conjugated
@@ -47,10 +49,14 @@ class TestMLS:
                     out_len = 2**nbits - 1
                     # impulse amplitude == test_len
                     err_msg = "mls impulse has incorrect value"
-                    assert_allclose(tester[0], out_len, err_msg=err_msg)
+                    xp_assert_close(tester[0],
+                                    float(out_len),
+                                    err_msg=err_msg
+                    )
                     # steady-state is -1
                     err_msg = "mls steady-state has incorrect value"
-                    assert_allclose(tester[1:], np.full(out_len - 1, -1),
+                    xp_assert_close(tester[1:],
+                                    np.full(out_len - 1, -1, dtype=tester.dtype),
                                     err_msg=err_msg)
                     # let's do the split thing using a couple options
                     for n in (1, 2**(nbits - 1)):
@@ -61,5 +67,5 @@ class TestMLS:
                         m3, s3 = max_len_seq(nbits, state=s2, taps=taps,
                                              length=out_len - n - 1)
                         new_m = np.concatenate((m1, m2, m3))
-                        assert_array_equal(orig_m, new_m)
+                        xp_assert_equal(orig_m, new_m)
 

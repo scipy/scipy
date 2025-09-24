@@ -29,7 +29,6 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
         Gradient norm must be less than ``gtol`` before successful
         termination.
     """
-
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
@@ -55,7 +54,7 @@ def estimate_smallest_singular_value(U):
     s_min : float
         Estimated smallest singular value of the provided matrix.
     z_min : ndarray
-        Estimatied right singular vector.
+        Estimated right singular vector.
 
     Notes
     -----
@@ -172,7 +171,7 @@ def singular_leading_submatrix(A, U, k):
 
     n = len(A)
 
-    # Inicialize v
+    # Initialize v
     v = np.zeros(n)
     v[k-1] = 1
 
@@ -208,10 +207,18 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     # As recommended there it value is fixed in 0.01.
     UPDATE_COEFF = 0.01
 
+    # The subproblem may iterate infinitely for problematic
+    # cases (see https://github.com/scipy/scipy/issues/12513).
+    # When the `maxiter` setting is None, we need to apply a
+    # default. An ad-hoc number (though tested quite extensively)
+    # is 25, which is set below. To restore the old behavior (which
+    # potentially hangs), this parameter may be changed to zero:
+    MAXITER_DEFAULT = 25  # use np.inf for infinite number of iterations
+
     EPS = np.finfo(float).eps
 
     def __init__(self, x, fun, jac, hess, hessp=None,
-                 k_easy=0.1, k_hard=0.2):
+                 k_easy=0.1, k_hard=0.2, maxiter=None):
 
         super().__init__(x, fun, jac, hess)
 
@@ -233,6 +240,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.k_easy = k_easy
         self.k_hard = k_hard
 
+        # ``maxiter`` optionally limits the number of iterations
+        # the solve method may perform. Useful for poorly conditioned
+        # problems which may otherwise hang.
+        self.maxiter = self.MAXITER_DEFAULT if maxiter is None else maxiter
+        if self.maxiter < 0:
+            raise ValueError("maxiter must not be set to a negative number"
+                             ", use np.inf to mean infinite.")
+
         # Get Lapack function for cholesky decomposition.
         # The implemented SciPy wrapper does not return
         # the incomplete factorization needed by the method.
@@ -246,7 +261,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.hess_fro = norm(self.hess, 'fro')
 
         # A constant such that for vectors smaller than that
-        # backward substituition is not reliable. It was stabilished
+        # backward substitution is not reliable. It was established
         # based on Golub, G. H., Van Loan, C. F. (2013).
         # "Matrix computations". Forth Edition. JHU press., p.165.
         self.CLOSE_TO_ZERO = self.dimension * self.EPS * self.hess_inf
@@ -291,7 +306,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         already_factorized = False
         self.niter = 0
 
-        while True:
+        while self.niter < self.maxiter:
 
             # Compute Cholesky factorization
             if already_factorized:
@@ -350,7 +365,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         p += step_len * z_min
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_ub = lambda_current
                     lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
@@ -367,12 +382,12 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         lambda_current = lambda_new
                         already_factorized = True
                     else:  # Unsuccessful factorization
-                        # Update uncertanty bounds
+                        # Update uncertainty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
                         lambda_current = max(
-                            np.sqrt(lambda_lb * lambda_ub),
+                            np.sqrt(np.abs(lambda_lb * lambda_ub)),
                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                         )
 
@@ -382,7 +397,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     if relative_error <= self.k_easy:
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_lb = lambda_current
 
                     # Update damping factor
@@ -400,13 +415,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 s_min, z_min = estimate_smallest_singular_value(U)
                 step_len = tr_radius
 
+                p = step_len * z_min
                 # Check stop criteria
                 if (step_len**2 * s_min**2
                     <= self.k_hard * lambda_current * tr_radius**2):
-                    p = step_len * z_min
                     break
 
-                # Update uncertanty bounds
+                # Update uncertainty bounds
                 lambda_ub = lambda_current
                 lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
@@ -422,12 +437,12 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 delta, v = singular_leading_submatrix(H, U, info)
                 v_norm = norm(v)
 
-                # Update uncertanty interval
+                # Update uncertainty interval
                 lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
 
                 # Update damping factor
                 lambda_current = max(
-                    np.sqrt(lambda_lb * lambda_ub),
+                    np.sqrt(np.abs(lambda_lb * lambda_ub)),
                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                 )
 

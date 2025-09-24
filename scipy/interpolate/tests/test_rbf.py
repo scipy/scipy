@@ -3,9 +3,10 @@
 
 import numpy as np
 
+
 from scipy._lib._array_api import assert_array_almost_equal, assert_almost_equal
 
-from numpy import linspace, sin, cos, random, exp, allclose
+from numpy import linspace, sin, cos, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
 
@@ -26,24 +27,26 @@ def check_rbf1d_interpolation(function):
 
 def check_rbf2d_interpolation(function):
     # Check that the Rbf function interpolates through the nodes (2D).
-    x = random.rand(50,1)*4-2
-    y = random.rand(50,1)*4-2
+    rng = np.random.RandomState(1234)
+    x = rng.rand(50,1)*4-2
+    y = rng.rand(50,1)*4-2
     z = x*exp(-x**2-1j*y**2)
     rbf = Rbf(x, y, z, epsilon=2, function=function)
     zi = rbf(x, y)
-    zi.shape = x.shape
+    zi = zi.reshape(x.shape)
     assert_array_almost_equal(z, zi)
 
 
 def check_rbf3d_interpolation(function):
     # Check that the Rbf function interpolates through the nodes (3D).
-    x = random.rand(50, 1)*4 - 2
-    y = random.rand(50, 1)*4 - 2
-    z = random.rand(50, 1)*4 - 2
+    rng = np.random.RandomState(1234)
+    x = rng.rand(50, 1)*4 - 2
+    y = rng.rand(50, 1)*4 - 2
+    z = rng.rand(50, 1)*4 - 2
     d = x*exp(-x**2 - y**2)
     rbf = Rbf(x, y, z, d, epsilon=2, function=function)
     di = rbf(x, y, z)
-    di.shape = x.shape
+    di = di.reshape(x.shape)
     assert_array_almost_equal(di, d)
 
 
@@ -68,28 +71,30 @@ def check_2drbf1d_interpolation(function):
 
 def check_2drbf2d_interpolation(function):
     # Check that the 2-D Rbf function interpolates through the nodes (2D).
-    x = random.rand(50, ) * 4 - 2
-    y = random.rand(50, ) * 4 - 2
+    rng = np.random.RandomState(1234)
+    x = rng.rand(50, ) * 4 - 2
+    y = rng.rand(50, ) * 4 - 2
     z0 = x * exp(-x ** 2 - 1j * y ** 2)
     z1 = y * exp(-y ** 2 - 1j * x ** 2)
     z = np.vstack([z0, z1]).T
     rbf = Rbf(x, y, z, epsilon=2, function=function, mode='N-D')
     zi = rbf(x, y)
-    zi.shape = z.shape
+    zi = zi.reshape(z.shape)
     assert_array_almost_equal(z, zi)
 
 
 def check_2drbf3d_interpolation(function):
     # Check that the 2-D Rbf function interpolates through the nodes (3D).
-    x = random.rand(50, ) * 4 - 2
-    y = random.rand(50, ) * 4 - 2
-    z = random.rand(50, ) * 4 - 2
+    rng = np.random.RandomState(1234)
+    x = rng.rand(50, ) * 4 - 2
+    y = rng.rand(50, ) * 4 - 2
+    z = rng.rand(50, ) * 4 - 2
     d0 = x * exp(-x ** 2 - y ** 2)
     d1 = y * exp(-y ** 2 - x ** 2)
     d = np.vstack([d0, d1]).T
     rbf = Rbf(x, y, z, d, epsilon=2, function=function, mode='N-D')
     di = rbf(x, y, z)
-    di.shape = d.shape
+    di = di.reshape(d.shape)
     assert_array_almost_equal(di, d)
 
 
@@ -159,9 +164,9 @@ def check_rbf1d_stability(function):
     # to overshoot. Regression for issue #4523.
     #
     # Generate some data (fixed random seed hence deterministic)
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     x = np.linspace(0, 10, 50)
-    z = x + 4.0 * np.random.randn(len(x))
+    z = x + 4.0 * rng.randn(len(x))
 
     rbf = Rbf(x, z, function=function)
     xi = np.linspace(0, 10, 1000)

@@ -6,22 +6,22 @@ from scipy._lib._array_api import (
     assert_array_almost_equal,
     assert_almost_equal,
     is_cupy,
+    make_xp_test_case,
+    make_xp_pytest_param,
 )
 
 import pytest
 
 from scipy import ndimage
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 
 class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 6), ("float64", 14)])
+    @make_xp_test_case(ndimage.fourier_gaussian)
     def test_fourier_gaussian_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -39,6 +39,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("complex64", 6), ("complex128", 14)])
+    @make_xp_test_case(ndimage.fourier_gaussian)
     def test_fourier_gaussian_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -56,6 +57,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 6), ("float64", 14)])
+    @make_xp_test_case(ndimage.fourier_uniform)
     def test_fourier_uniform_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -73,6 +75,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("complex64", 6), ("complex128", 14)])
+    @make_xp_test_case(ndimage.fourier_uniform)
     def test_fourier_uniform_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -90,6 +93,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 4), ("float64", 11)])
+    @make_xp_test_case(ndimage.fourier_shift)
     def test_fourier_shift_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -105,6 +109,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("complex64", 4), ("complex128", 11)])
+    @make_xp_test_case(ndimage.fourier_shift)
     def test_fourier_shift_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -121,6 +126,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec', [("float32", 5), ("float64", 14)])
+    @make_xp_test_case(ndimage.fourier_ellipsoid)
     def test_fourier_ellipsoid_real01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -138,6 +144,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec', [("complex64", 5), ("complex128", 14)])
+    @make_xp_test_case(ndimage.fourier_ellipsoid)
     def test_fourier_ellipsoid_complex01(self, shape, dtype, dec, xp):
         fft = getattr(xp, 'fft')
 
@@ -153,12 +160,14 @@ class TestNdimageFourier:
         assert_almost_equal(ndimage.sum(xp.real(a)), xp.asarray(1.0), decimal=dec,
                             check_0d=False)
 
+    @make_xp_test_case(ndimage.fourier_ellipsoid)
     def test_fourier_ellipsoid_unimplemented_ndim(self, xp):
         # arrays with ndim > 3 raise NotImplementedError
         x = xp.ones((4, 6, 8, 10), dtype=xp.complex128)
         with pytest.raises(NotImplementedError):
             ndimage.fourier_ellipsoid(x, 3)
 
+    @make_xp_test_case(ndimage.fourier_ellipsoid)
     def test_fourier_ellipsoid_1d_complex(self, xp):
         # expected result of 1d ellipsoid is the same as for fourier_uniform
         for shape in [(32, ), (31, )]:
@@ -172,16 +181,16 @@ class TestNdimageFourier:
     @pytest.mark.parametrize('dtype', ["float32", "float64",
                                        "complex64", "complex128"])
     @pytest.mark.parametrize('test_func',
-                             [ndimage.fourier_ellipsoid,
-                              ndimage.fourier_gaussian,
-                              ndimage.fourier_uniform])
+                             [make_xp_pytest_param(ndimage.fourier_ellipsoid),
+                              make_xp_pytest_param(ndimage.fourier_gaussian),
+                              make_xp_pytest_param(ndimage.fourier_uniform)])
     def test_fourier_zero_length_dims(self, shape, dtype, test_func, xp):
-        if is_cupy(xp):
-           if (test_func.__name__ == "fourier_ellipsoid" and
-               math.prod(shape) == 0):
-               pytest.xfail(
-                   "CuPy's fourier_ellipsoid does not accept size==0 arrays"
-               )
+        if (
+            is_cupy(xp)
+            and test_func.__name__ == "fourier_ellipsoid" 
+            and math.prod(shape) == 0
+        ):
+            pytest.xfail("CuPy's fourier_ellipsoid does not accept size==0 arrays")
         dtype = getattr(xp, dtype)
         a = xp.ones(shape, dtype=dtype)
         b = test_func(a, 3)

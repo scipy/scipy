@@ -10,7 +10,8 @@ from contextlib import contextmanager
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           break_cycles, suppress_warnings, IS_PYPY)
+                           break_cycles, IS_PYPY)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy.io import netcdf_file
@@ -20,6 +21,9 @@ TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 
 N_EG_ELS = 11  # number of elements for example variable
 VARTYPE_EG = 'b'  # var type for example variable
+
+
+pytestmark = pytest.mark.thread_unsafe
 
 
 @contextmanager
@@ -108,10 +112,13 @@ def test_read_write_files():
                 check_simple(f)
 
         # Read file from fileobj, with mmap
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if IS_PYPY:
-                sup.filter(RuntimeWarning,
-                           "Cannot close a netcdf_file opened with mmap=True.*")
+                warnings.filterwarnings(
+                    "ignore",
+                    "Cannot close a netcdf_file opened with mmap=True.*",
+                    RuntimeWarning
+                )
             with open('simple.nc', 'rb') as fobj:
                 with netcdf_file(fobj, mmap=True) as f:
                     assert_(f.use_mmap)
@@ -243,10 +250,10 @@ def test_itemset_no_segfault_on_readonly():
     # Open the test file in read-only mode.
 
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
-    with suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = ("Cannot close a netcdf_file opened with mmap=True, when "
                    "netcdf_variables or arrays referring to its data still exist")
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
@@ -346,10 +353,10 @@ def test_mmaps_segfault():
             return f.variables['lat'][:]
 
     # should not crash
-    with suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = ("Cannot close a netcdf_file opened with mmap=True, when "
                    "netcdf_variables or arrays referring to its data still exist")
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         x = doit()
     x.sum()
 

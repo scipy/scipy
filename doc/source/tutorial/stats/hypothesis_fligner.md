@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_fligner.ipynb
+.. notebooklite:: hypothesis_fligner.md
    :new_tab: True
 ```
 
 (hypothesis_fligner)=
+
++++
+
 # Fligner-Killeen test for equality of variance
 
 In [^1], the influence of vitamin C on the tooth growth of guinea pigs was
@@ -139,7 +144,7 @@ bins = np.linspace(0, 8, 25)
 ax.hist(
     ref.null_distribution, bins=bins, density=True, facecolor="C1"
 )
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'randomized null distribution'])
 plot(ax)
 plt.show()

@@ -1,7 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode
+from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -629,7 +629,7 @@ class KDTree(cKDTree):
         -------
         results : set or ndarray
             Set of pairs ``(i,j)``, with ``i < j``, for which the corresponding
-            positions are close. If output_type is 'ndarray', an ndarry is
+            positions are close. If output_type is 'ndarray', an ndarray is
             returned instead of a set.
 
         Examples
@@ -673,8 +673,8 @@ class KDTree(cKDTree):
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-            If the count is non-cumulative(``cumulative=False``), ``r`` defines
-            the edges of the bins, and must be non-decreasing.
+            If the count is non-cumulative (``cumulative=False``), ``r``
+            defines the edges of the bins, and must be non-decreasing.
         p : float, optional
             1<=p<=infinity.
             Which Minkowski p-norm to use.

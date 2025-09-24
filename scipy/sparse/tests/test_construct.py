@@ -7,7 +7,6 @@ from numpy.testing import (assert_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
-from scipy._lib._util import check_random_state
 
 from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
@@ -24,20 +23,19 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 #TODO check whether format=XXX is respected
 
 
-def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def _sprandn(m, n, density=0.01, format="coo", dtype=None, rng=None):
     # Helper function for testing.
-    random_state = check_random_state(random_state)
-    data_rvs = random_state.standard_normal
-    return construct.random(m, n, density, format, dtype,
-                            random_state, data_rvs)
+    rng = np.random.default_rng(rng)
+    data_rvs = rng.standard_normal
+    return construct.random(m, n, density, format, dtype, rng, data_rvs)
 
 
-def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
     # Helper function for testing.
-    random_state = check_random_state(random_state)
-    data_sampler = random_state.standard_normal
+    rng = np.random.default_rng(rng)
+    data_sampler = rng.standard_normal
     return construct.random_array((m, n), density=density, format=format, dtype=dtype,
-                                  random_state=random_state, data_sampler=data_sampler)
+                                  rng=rng, data_sampler=data_sampler)
 
 
 class TestConstructUtils:
@@ -55,7 +53,7 @@ class TestConstructUtils:
             )
         ):
             cls(0)
-    
+
     @pytest.mark.parametrize("cls", [
         csc_matrix, csr_matrix, coo_matrix,
         bsr_matrix, dia_matrix, lil_matrix
@@ -127,9 +125,9 @@ class TestConstructUtils:
             assert_equal(construct.spdiags(d, o, (m, n)).toarray(), result)
 
     def test_diags(self):
-        a = array([1, 2, 3, 4, 5])
-        b = array([6, 7, 8, 9, 10])
-        c = array([11, 12, 13, 14, 15])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
+        b = array([6.0, 7.0, 8.0, 9.0, 10.0])
+        c = array([11.0, 12.0, 13.0, 14.0, 15.0])
 
         cases = []
         cases.append((a[:1], 0, (1, 1), [[1]]))
@@ -181,16 +179,16 @@ class TestConstructUtils:
         cases.append(([a], [0], (1, 1), [[1]]))
         cases.append(([a[:3],b], [0,2], (3, 3), [[1, 0, 6], [0, 2, 0], [0, 0, 3]]))
         cases.append((
-            np.array([[1, 2, 3], [4, 5, 6]]),
+            np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]),
             [0,-1],
             (3, 3),
             [[1, 0, 0], [4, 2, 0], [0, 5, 3]]
         ))
 
         # scalar case: broadcasting
-        cases.append(([1,-2,1], [1,0,-1], (3, 3), [[-2, 1, 0],
-                                                    [1, -2, 1],
-                                                    [0, 1, -2]]))
+        cases.append(([1.0,-2.0,1.0], [1,0,-1], (3, 3), [[-2, 1, 0],
+                                                         [1, -2, 1],
+                                                         [0, 1, -2]]))
 
         for d, o, shape, result in cases:
             err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
@@ -201,11 +199,11 @@ class TestConstructUtils:
                 and hasattr(d[0], '__len__')
                 and len(d[0]) <= max(shape)):
                 # should be able to find the shape automatically
-                assert_equal(construct.diags(d, offsets=o).toarray(), result,
-                             err_msg=err_msg)
+                assert_equal(construct.diags(d, offsets=o).toarray(),
+                             result, err_msg=err_msg)
 
     def test_diags_default(self):
-        a = array([1, 2, 3, 4, 5])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
         assert_equal(construct.diags(a).toarray(), np.diag(a))
 
     def test_diags_default_bad(self):
@@ -213,9 +211,9 @@ class TestConstructUtils:
         assert_raises(ValueError, construct.diags, a)
 
     def test_diags_bad(self):
-        a = array([1, 2, 3, 4, 5])
-        b = array([6, 7, 8, 9, 10])
-        c = array([11, 12, 13, 14, 15])
+        a = array([1.0, 2.0, 3.0, 4.0, 5.0])
+        b = array([6.0, 7.0, 8.0, 9.0, 10.0])
+        c = array([11.0, 12.0, 13.0, 14.0, 15.0])
 
         cases = []
         cases.append(([a[:0]], 0, (1, 1)))
@@ -223,7 +221,7 @@ class TestConstructUtils:
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], None))
         cases.append(([], [-4,2,-1], None))
-        cases.append(([1], [-5], (4, 4)))
+        cases.append(([1.0], [-5], (4, 4)))
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
@@ -237,16 +235,16 @@ class TestConstructUtils:
         #    diags([a, b, ...], [i, j, ...]) == diag(a, i) + diag(b, j) + ...
         #
 
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         for n_diags in [1, 2, 3, 4, 5, 10]:
-            n = 1 + n_diags//2 + np.random.randint(0, 10)
+            n = 1 + n_diags//2 + rng.randint(0, 10)
 
             offsets = np.arange(-n+1, n-1)
-            np.random.shuffle(offsets)
+            rng.shuffle(offsets)
             offsets = offsets[:n_diags]
 
-            diagonals = [np.random.rand(n - abs(q)) for q in offsets]
+            diagonals = [rng.rand(n - abs(q)) for q in offsets]
 
             mat = construct.diags(diagonals, offsets=offsets)
             dense_mat = sum([np.diag(x, j) for x, j in zip(diagonals, offsets)])
@@ -264,7 +262,7 @@ class TestConstructUtils:
         assert_equal(x.toarray(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
-        d = list(range(5))
+        d = [0.0, 1.0, 2.0, 3.0, 4.0]
         for k in range(-5, 6):
             assert_equal(construct.diags(d, offsets=k).toarray(),
                          construct.diags([d], offsets=[k]).toarray())
@@ -399,8 +397,8 @@ class TestConstructUtils:
 
     def test_kron_large(self):
         n = 2**16
-        a = construct.diags_array([1], shape=(1, n), offsets=n-1)
-        b = construct.diags_array([1], shape=(n, 1), offsets=1-n)
+        a = construct.diags_array([1], shape=(1, n), offsets=n-1, dtype=None)
+        b = construct.diags_array([1], shape=(n, 1), offsets=1-n, dtype=None)
 
         construct.kron(a, a)
         construct.kron(b, b)
@@ -466,6 +464,25 @@ class TestConstructUtils:
         assert_equal(result.dtype, np.float32)
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
+
+    def test_vstack_maintain64bit_idx_dtype(self):
+        # see gh-20389 v/hstack returns int32 idx_dtype with input int64 idx_dtype
+        X = csr_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = csc_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.vstack([X, X]).coords[0].dtype == np.int64
+        assert construct.hstack([X, X]).coords[0].dtype == np.int64
 
     def test_vstack_matrix_or_array(self):
         A = [[1,2],[3,4]]
@@ -656,7 +673,7 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
@@ -684,7 +701,14 @@ class TestConstructUtils:
                           [0, 0, 6, 0],
                           [0, 0, 0, 7]])
 
-        assert_equal(construct.block_diag((A, B, C)).toarray(), expected)
+        ABC = construct.block_diag((A, B, C))
+        assert_equal(ABC.toarray(), expected)
+        assert ABC.coords[0].dtype == np.int32
+
+    def test_block_diag_idx_dtype(self):
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
@@ -696,7 +720,6 @@ class TestConstructUtils:
         B = coo_array([0,4])
         assert_array_equal(construct.block_diag([A, B]).toarray(),
                            [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
-
 
     def test_block_diag_1(self):
         """ block_diag with one matrix """
@@ -740,11 +763,10 @@ class TestConstructUtils:
                 assert_equal(x.shape, (5, 10))
                 assert_equal(x.nnz, 5)
 
-            x1 = f(5, 10, density=0.1, random_state=4321)
+            x1 = f(5, 10, density=0.1, rng=4321)
             assert_equal(x1.dtype, np.float64)
 
-            x2 = f(5, 10, density=0.1,
-                   random_state=np.random.RandomState(4321))
+            x2 = f(5, 10, density=0.1, rng=np.random.default_rng(4321))
 
             assert_array_equal(x1.data, x2.data)
             assert_array_equal(x1.row, x2.row)
@@ -761,45 +783,48 @@ class TestConstructUtils:
             assert_raises(ValueError, lambda: f(5, 10, 1.1))
             assert_raises(ValueError, lambda: f(5, 10, -0.1))
 
-    def test_rand(self):
+    @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
+    def test_rand(self, rng):
         # Simple distributional checks for sparse.rand.
-        random_states = [None, 4321, np.random.RandomState()]
-        try:
-            gen = np.random.default_rng()
-            random_states.append(gen)
-        except AttributeError:
-            pass
+        x = sprand(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.all(np.less_equal(0, x.data)))
+        assert_(np.all(np.less_equal(x.data, 1)))
 
-        for random_state in random_states:
-            x = sprand(10, 20, density=0.5, dtype=np.float64,
-                       random_state=random_state)
-            assert_(np.all(np.less_equal(0, x.data)))
-            assert_(np.all(np.less_equal(x.data, 1)))
-
-    def test_randn(self):
+    @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
+    def test_randn(self, rng):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        random_states = [None, 4321, np.random.RandomState()]
-        try:
-            gen = np.random.default_rng()
-            random_states.append(gen)
-        except AttributeError:
-            pass
-
-        for rs in random_states:
-            x = _sprandn(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
-            x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
+        x = _sprandn(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
+        x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
 
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
         construct.random_array((10, 10), dtype='d')
+        construct.random_array((10, 10, 10), dtype='d')
+        construct.random_array((10, 10, 10, 10, 10), dtype='d')
+
+    def test_random_array_maintains_array_shape(self):
+        # preserve use of old random_state during SPEC 7 transition
+        arr = construct.random_array((0, 4), density=0.3, dtype=int, random_state=0)
+        assert arr.shape == (0, 4)
+
+        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int, rng=0)
+        assert arr.shape == (10, 10, 10)
+
+        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int,
+                                     rng=0)
+        assert arr.shape == (10, 10, 10, 10, 10)
+
+    def test_random_array_idx_dtype(self):
+        A = construct.random_array((10, 10))
+        assert A.coords[0].dtype == np.int32
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
@@ -815,22 +840,58 @@ class TestConstructUtils:
         sparse_array = construct.random_array(shape, density=2.7105e-17)
         assert_equal(sparse_array.count_nonzero(),2000)
 
+        # for n-D
+        # check random_array
+        sparse_array = construct.random_array((10, 10, 10, 10), density=0.12658)
+        assert_equal(sparse_array.count_nonzero(),1266)
+        assert isinstance(sparse_array, sparray)
+        # check big size
+        shape = (2**33, 2**33, 2**33)
+        sparse_array = construct.random_array(shape, density=2.7105e-28)
+        assert_equal(sparse_array.count_nonzero(),172)
+
 
 def test_diags_array():
     """Tests of diags_array that do not rely on diags wrapper."""
-    diag = np.arange(1, 5)
+    diag = np.arange(1.0, 5.0)
 
-    assert_array_equal(construct.diags_array(diag).toarray(), np.diag(diag))
+    assert_array_equal(construct.diags_array(diag, dtype=None).toarray(), np.diag(diag))
 
     assert_array_equal(
-        construct.diags_array(diag, offsets=2).toarray(), np.diag(diag, k=2)
+        construct.diags_array(diag, offsets=2, dtype=None).toarray(), np.diag(diag, k=2)
     )
 
     assert_array_equal(
-        construct.diags_array(diag, offsets=2, shape=(4, 4)).toarray(),
+        construct.diags_array(diag, offsets=2, shape=(4, 4), dtype=None).toarray(),
         np.diag(diag, k=2)[:4, :4]
     )
 
     # Offset outside bounds when shape specified
     with pytest.raises(ValueError, match=".*out of bounds"):
-        construct.diags(np.arange(1, 5), 5, shape=(4, 4))
+        construct.diags(np.arange(1.0, 5.0), 5, shape=(4, 4))
+
+
+@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+def test_diags_int(func):
+    d = [[3], [1, 2], [4]]
+    offsets = [-1, 0, 1]
+    # Until the deprecation period is over, `dtype=None` must be given
+    # explicitly to avoid the warning and the cast to an inexact type
+    # in diags_array() (gh-23102).
+    arr = func(d, offsets=offsets, dtype=None)
+    expected = np.array([[1, 4], [3, 2]])
+    assert_array_equal(arr.toarray(), expected, strict=True)
+
+
+@pytest.mark.parametrize('func', [construct.diags_array, construct.diags])
+def test_diags_int_to_float64(func):
+    d = [[3], [1, 2], [4]]
+    offsets = [-1, 0, 1]
+    # Until the deprecation period is over, diags and diag_array will cast
+    # integer inputs to float64 by default.  A warning will be generated
+    # that indicates this behavior is deprecated.
+    # See gh-23102.
+    with pytest.warns(FutureWarning, match="output has been cast to"):
+        arr = func(d, offsets=offsets)
+    expected = np.array([[1.0, 4.0], [3.0, 2.0]])
+    assert_array_equal(arr.toarray(), expected, strict=True)

@@ -127,8 +127,6 @@ change is made.
   - `scipy.linalg.cython_lapack`
   - `scipy.linalg.interpolative`
 
-* `scipy.misc`
-
 * `scipy.ndimage`
 
 * `scipy.odr`
@@ -177,7 +175,6 @@ change is made.
    scipy.interpolate <interpolate>
    scipy.io <io>
    scipy.linalg <linalg>
-   scipy.misc <misc>
    scipy.ndimage <ndimage>
    scipy.odr <odr>
    scipy.optimize <optimize>

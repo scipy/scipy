@@ -5,12 +5,6 @@ Clustering package (:mod:`scipy.cluster`)
 
 .. currentmodule:: scipy.cluster
 
-.. toctree::
-   :hidden:
-
-   cluster.vq
-   cluster.hierarchy
-
 Clustering algorithms are useful in information theory, target detection,
 communications, compression, and other areas. The `vq` module only
 supports vector quantization and the k-means algorithms.
@@ -20,6 +14,12 @@ agglomerative clustering.  Its features include generating hierarchical
 clusters from distance matrices,
 calculating statistics on clusters, cutting linkages
 to generate flat clusters, and visualizing clusters with dendrograms.
+
+.. toctree::
+   :maxdepth: 1
+
+   cluster.vq
+   cluster.hierarchy
 
 """
 __all__ = ['vq', 'hierarchy']

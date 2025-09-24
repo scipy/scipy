@@ -190,7 +190,7 @@ class TestLUFactor:
         self.b = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         self.cb = np.array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
 
-        # Reectangular matrices
+        # Rectangular matrices
         self.hrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
         self.chrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8],
                                 [9, 10, 12, 12]]) * 1.j

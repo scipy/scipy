@@ -1,12 +1,13 @@
-import pytest
+import warnings
 
 from functools import lru_cache
 
-from numpy.testing import (assert_warns, assert_,
+import pytest
+
+from numpy.testing import (assert_,
                            assert_allclose,
                            assert_equal,
-                           assert_array_equal,
-                           suppress_warnings)
+                           assert_array_equal)
 import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
@@ -225,6 +226,10 @@ class TestBracketMethods(TestScalarRootFinders):
         assert r.converged
         assert_allclose(root, 0)
 
+    def test_gh_22934(self):
+        with pytest.raises(ValueError, match="maxiter must be >= 0"):
+            zeros.brentq(lambda x: x**2 - 1, -2, 0, maxiter=-1)
+
 
 class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):
@@ -364,8 +369,8 @@ class TestNewton(TestScalarRootFinders):
 
     def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
-        assert_warns(RuntimeWarning, zeros.newton,
-                     lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
+        with pytest.warns(RuntimeWarning):
+            zeros.newton(lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
         # test failures and zero_der
         with pytest.warns(RuntimeWarning):
             results = zeros.newton(lambda y: y**2 - 2, [0., 0.],
@@ -427,7 +432,7 @@ class TestNewton(TestScalarRootFinders):
             if derivs == 1:
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
-                msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+                msg = f'Failed to converge after {iters} iterations, value is .*'
                 with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
@@ -436,7 +441,8 @@ class TestNewton(TestScalarRootFinders):
             return x ** 2 - 2.0
         def dfunc(x):
             return 2 * x
-        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
+        with pytest.warns(RuntimeWarning):
+            zeros.newton(func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
             zeros.newton(func, 0.0, dfunc)
 
@@ -495,7 +501,7 @@ class TestNewton(TestScalarRootFinders):
     @pytest.mark.parametrize('method', ['secant', 'newton'])
     def test_int_x0_gh19280(self, method):
         # Originally, `newton` ensured that only floats were passed to the
-        # callable. This was indadvertently changed by gh-17669. Check that
+        # callable. This was inadvertently changed by gh-17669. Check that
         # it has been changed back.
         def f(x):
             # an integer raised to a negative integer power would fail
@@ -505,6 +511,18 @@ class TestNewton(TestScalarRootFinders):
         assert res.converged
         assert_allclose(abs(res.root), 2**-0.5)
         assert res.root.dtype == np.dtype(np.float64)
+
+    def test_newton_special_parameters(self):
+        # give zeros.newton() some strange parameters
+        # and check whether an exception appears
+        with pytest.raises(ValueError, match="tol too small"):
+            zeros.newton(f1, 3, tol=-1e-6)
+
+        with pytest.raises(ValueError, match="maxiter must be greater than 0"):
+            zeros.newton(f1, 3, tol=1e-6, maxiter=-50)
+
+        with pytest.raises(ValueError, match="x1 and x0 must be different" ):
+            zeros.newton(f1, 3, x1=3)
 
 
 def test_gh_5555():
@@ -613,21 +631,21 @@ def test_zero_der_nz_dp(capsys):
     # 100 - p0 = p1 - 100 = p0 * (1 + dx) + dx - 100
     # -> 200 = p0 * (2 + dx) + dx
     p0 = (200.0 - dx) / (2.0 + dx)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "RMS of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "RMS of", RuntimeWarning)
         x = zeros.newton(lambda y: (y - 100.0)**2, x0=[p0] * 10)
     assert_allclose(x, [100] * 10)
     # test scalar cases too
     p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "Tolerance of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Tolerance of", RuntimeWarning)
         x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, 1)
     with pytest.raises(RuntimeError, match='Tolerance of'):
         x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0, disp=True)
     p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "Tolerance of")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Tolerance of", RuntimeWarning)
         x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0, disp=False)
     assert_allclose(x, -1)
     with pytest.raises(RuntimeError, match='Tolerance of'):
@@ -806,7 +824,8 @@ def test_gh9551_raise_error_if_disp_true():
     def f_p(x):
         return 2*x
 
-    assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
+    with pytest.warns(RuntimeWarning):
+        zeros.newton(f, 1.0, f_p, disp=False)
     with pytest.raises(
             RuntimeError,
             match=r'^Derivative was zero\. Failed to converge after \d+ iterations, '
@@ -957,3 +976,20 @@ def test_maxiter_int_check_gh10236(method):
     message = "'float' object cannot be interpreted as an integer"
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
+
+@pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
+                                    zeros.brentq, zeros.brenth])
+def test_bisect_special_parameter(method):
+    # give some zeros method strange parameters
+    # and check whether an exception appears
+    root = 0.1
+    args = (1e-09, 0.004, 10, 0.27456)
+    rtolbad = 4 * np.finfo(float).eps / 2
+
+    def f(x):
+        return x - root
+
+    with pytest.raises(ValueError, match="xtol too small"):
+       method(f, -1e8, 1e7, args=args, xtol=-1e-6, rtol=TOL)
+    with pytest.raises(ValueError, match="rtol too small"):
+       method(f, -1e8, 1e7, args=args, xtol=1e-6, rtol=rtolbad)

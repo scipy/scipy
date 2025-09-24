@@ -42,6 +42,7 @@ def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
+    arrays = tuple(arrays)
     if not arrays:
         return arrays
     xp = array_namespace(*arrays) if xp is None else xp
@@ -64,10 +65,14 @@ def _broadcast_shapes(shapes, axis=None):
     # input validation
     if axis is not None:
         axis = np.atleast_1d(axis)
-        axis_int = axis.astype(int)
+        message = '`axis` must be an integer, a tuple of integers, or `None`.'
+        try:
+            with np.errstate(invalid='ignore'):
+                axis_int = axis.astype(int)
+        except ValueError as e:
+            raise AxisError(message) from e
         if not np.array_equal(axis_int, axis):
-            raise AxisError('`axis` must be an integer, a '
-                            'tuple of integers, or `None`.')
+            raise AxisError(message)
         axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.
@@ -398,7 +403,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     override.update(temp)
 
     if result_to_tuple is None:
-        def result_to_tuple(res):
+        def result_to_tuple(res, _):
             return res
 
     if not callable(too_small):
@@ -519,7 +524,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     reduced_axes = tuple(range(n_dims))
                 samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
-                samples = _broadcast_arrays(samples, axis=axis)
+                # don't ignore any axes when broadcasting if paired
+                samples = _broadcast_arrays(samples, axis=axis if not paired else None)
                 axis = np.atleast_1d(axis)
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
@@ -541,11 +547,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
                 if nan_policy != 'propagate' or override['nan_propagation']:
-                    contains_nan = [_contains_nan(sample, nan_policy)[0]
+                    contains_nan = [_contains_nan(sample, nan_policy)
                                     for sample in samples]
                 else:
                     # Behave as though there are no NaNs (even if there are)
-                    contains_nan = [False]*len(samples)
+                    contains_nan = [False] * len(samples)
 
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
@@ -571,7 +577,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return tuple_to_result(*res)
 
                 res = hypotest_fun_out(*samples, **kwds)
-                res = result_to_tuple(res)
+                res = result_to_tuple(res, n_out)
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -593,17 +599,17 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # each separate sample begins
             lengths = np.array([sample.shape[axis] for sample in samples])
             split_indices = np.cumsum(lengths)
-            x = _broadcast_concatenate(samples, axis)
+            x = _broadcast_concatenate(samples, axis, paired=paired)
 
             # Addresses nan_policy == "raise"
             if nan_policy != 'propagate' or override['nan_propagation']:
-                contains_nan, _ = _contains_nan(x, nan_policy)
+                contains_nan = _contains_nan(x, nan_policy)
             else:
                 contains_nan = False  # behave like there are no NaNs
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
-                res = result_to_tuple(res)
+                res = result_to_tuple(res, n_out)
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -618,7 +624,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         warnings.warn(too_small_nd_omit, SmallSampleWarning,
                                       stacklevel=4)
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             # Addresses nan_policy == "propagate"
             elif (contains_nan and nan_policy == 'propagate'
@@ -632,7 +638,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             else:
                 def hypotest_fun(x):
@@ -641,7 +647,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
                         return np.full(n_out, NaN)
-                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             x = np.moveaxis(x, axis, 0)
             res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
@@ -667,7 +673,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         else:
             doc['Parameters'].append(_keepdims_parameter_doc)
         doc['Notes'] += _standard_note_addition
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         axis_nan_policy_wrapper.__doc__ = str(doc)
 
         sig = inspect.signature(axis_nan_policy_wrapper)

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import scipy.special._ufuncs as scu
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate import tanhsinh
 
 
 type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
@@ -50,7 +50,7 @@ def test_landau():
     # accuracy is tested by Boost.
     x = np.linspace(-3, 10, 10)
     args = (0, 1)
-    res = _tanhsinh(lambda x: scu._landau_pdf(x, *args), -np.inf, x)
+    res = tanhsinh(lambda x: scu._landau_pdf(x, *args), -np.inf, x)
     cdf = scu._landau_cdf(x, *args)
     assert_allclose(res.integral, cdf)
     sf = scu._landau_sf(x, *args)
@@ -59,3 +59,6 @@ def test_landau():
     assert_allclose(ppf, x)
     isf = scu._landau_isf(sf, *args)
     assert_allclose(isf, x, rtol=1e-6)
+
+def test_gh22956():
+    _ = scu._ncx2_pdf(30, 1e307, 16)

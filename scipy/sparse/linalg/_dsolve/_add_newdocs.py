@@ -34,9 +34,9 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU',
     The LU decomposition can be used to solve matrix equations. Consider:
 
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import splu
-    >>> A = csc_matrix([[1,2,0,4], [1,0,0,1], [1,0,2,1], [2,2,1,0.]])
+    >>> A = csc_array([[1,2,0,4], [1,0,0,1], [1,0,2,1], [2,2,1,0.]])
 
     This can be solved for a given right-hand side:
 
@@ -70,8 +70,8 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU',
 
     The permutation matrices can be constructed:
 
-    >>> Pr = csc_matrix((np.ones(4), (lu.perm_r, np.arange(4))))
-    >>> Pc = csc_matrix((np.ones(4), (np.arange(4), lu.perm_c)))
+    >>> Pr = csc_array((np.ones(4), (lu.perm_r, np.arange(4))))
+    >>> Pc = csc_array((np.ones(4), (np.arange(4), lu.perm_c)))
 
     We can reassemble the original matrix:
 
@@ -110,14 +110,14 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('solve',
 add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('L',
     """
     Lower triangular factor with unit diagonal as a
-    `scipy.sparse.csc_matrix`.
+    `scipy.sparse.csc_array`.
 
     .. versionadded:: 0.14.0
     """))
 
 add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('U',
     """
-    Upper triangular factor as a `scipy.sparse.csc_matrix`.
+    Upper triangular factor as a `scipy.sparse.csc_array`.
 
     .. versionadded:: 0.14.0
     """))
@@ -136,18 +136,12 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_c',
     """
     Permutation Pc represented as an array of indices.
 
-    The column permutation matrix can be reconstructed via:
-
-    >>> Pc = np.zeros((n, n))
-    >>> Pc[np.arange(n), perm_c] = 1
+    See the `SuperLU` docstring for details.
     """))
 
 add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_r',
     """
     Permutation Pr represented as an array of indices.
 
-    The row permutation matrix can be reconstructed via:
-
-    >>> Pr = np.zeros((n, n))
-    >>> Pr[perm_r, np.arange(n)] = 1
+    See the `SuperLU` docstring for details.
     """))

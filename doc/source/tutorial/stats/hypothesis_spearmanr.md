@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_spearmanr.ipynb
+.. notebooklite:: hypothesis_spearmanr.md
    :new_tab: True
 ```
 
 (hypothesis_spearmanr)=
+
++++
+
 # Spearman correlation coefficient
 
 The Spearman rank-order correlation coefficient is a nonparametric measure of
@@ -175,7 +180,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 plot(ax)
 ax.hist(ref.null_distribution, np.linspace(-5, 5, 26),
         density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            f'exact \n({len(ref.null_distribution)} permutations)'])
 plt.show()
 ```

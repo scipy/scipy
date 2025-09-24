@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 
 from scipy.optimize import linear_sum_assignment
-from scipy.sparse import random
+from scipy.sparse import random_array
 from scipy.sparse._sputils import matrix
 from scipy.sparse.csgraph import min_weight_full_bipartite_matching
 from scipy.sparse.csgraph.tests.test_matching import (
@@ -93,8 +93,8 @@ def test_two_methods_give_same_result_on_many_sparse_inputs():
     for _ in range(100):
         lsa_raises = False
         mwfbm_raises = False
-        sparse = random(100, 100, density=0.06,
-                        data_rvs=lambda size: np.random.randint(1, 100, size))
+        sparse = random_array((100, 100), density=0.06,
+                              data_sampler=lambda size: np.random.randint(1, 100, size))
         # In csgraph, zeros correspond to missing edges, so we explicitly
         # replace those with infinities
         dense = np.full(sparse.shape, np.inf)

@@ -7,6 +7,13 @@ from . import _odepack
 from copy import copy
 import warnings
 
+from threading import Lock
+
+from scipy._lib._array_api import xp_capabilities
+
+
+ODE_LOCK = Lock()
+
 
 class ODEintWarning(Warning):
     """Warning raised during the execution of `odeint`."""
@@ -26,6 +33,7 @@ _msgs = {2: "Integration successful.",
          }
 
 
+@xp_capabilities(out_of_scope=True)
 def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
            ml=None, mu=None, rtol=None, atol=None, tcrit=None, h0=0.0,
            hmax=0.0, hmin=0.0, ixpr=0, mxstep=0, mxhnil=0, mxordn=12,
@@ -244,10 +252,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     t = copy(t)
     y0 = copy(y0)
-    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
-                             full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                             ixpr, mxstep, mxhnil, mxordn, mxords,
-                             int(bool(tfirst)))
+
+    with ODE_LOCK:
+        output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+                                full_output, rtol, atol, tcrit, h0, hmax, hmin,
+                                ixpr, mxstep, mxhnil, mxordn, mxords,
+                                int(bool(tfirst)))
     if output[-1] < 0:
         warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
                        f"get quantitative information.")

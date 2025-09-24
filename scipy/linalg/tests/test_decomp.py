@@ -1,6 +1,7 @@
 import itertools
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -33,6 +34,7 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 try:
     from scipy.__config__ import CONFIG
 except ImportError:
@@ -43,6 +45,7 @@ IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "was
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
+    # FIXME non-deterministic rng
     if dtype in COMPLEX_DTYPES:
         A = np.random.rand(n, n) + np.random.rand(n, n)*1.0j
         A = (A + A.conj().T)/2
@@ -377,9 +380,10 @@ class TestEig:
         # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
         # the ordering of eigenvalues also comes out different on different
         # systems depending on who knows what.
-        with np.testing.suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # isclose chokes on inf/nan values
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
@@ -404,6 +408,36 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
+    @pytest.mark.parametrize("include_B", [False, True])
+    @pytest.mark.parametrize("left", [False, True])
+    @pytest.mark.parametrize("right", [False, True])
+    @pytest.mark.parametrize("homogeneous_eigvals", [False, True])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex128])
+    def test_nd_input(self, include_B, left, right, homogeneous_eigvals, dtype):
+        batch_shape = (3, 2)
+        core_shape = (4, 4)
+        rng = np.random.default_rng(3249823598235)
+        A = rng.random(batch_shape + core_shape).astype(dtype)
+        B = rng.random(batch_shape + core_shape).astype(dtype)
+        kwargs = dict(right=right, homogeneous_eigvals=homogeneous_eigvals)
+
+        if include_B:
+            res = eig(A, b=B, left=left, **kwargs)
+        else:
+            res = eig(A, left=left, **kwargs)
+
+        for i in range(batch_shape[0]):
+            for j in range(batch_shape[1]):
+                if include_B:
+                    ref = eig(A[i, j], b=B[i, j], left=left, **kwargs)
+                else:
+                    ref = eig(A[i, j], left=left, **kwargs)
+
+                if left or right:
+                    for k in range(len(ref)):
+                        assert_allclose(res[k][i, j], ref[k])
+                else:
+                    assert_allclose(res[i, j], ref)
 
 
 class TestEigBanded:
@@ -739,11 +773,11 @@ class TestEigTridiagonal:
     def test_eigvalsh_tridiagonal(self):
         """Compare eigenvalues of eigvalsh_tridiagonal with those of eig."""
         # can't use ?STERF with subselection
-        for driver in ('sterf', 'stev', 'stebz', 'stemr', 'auto'):
+        for driver in ('sterf', 'stev', 'stevd', 'stebz', 'stemr', 'auto'):
             w = eigvalsh_tridiagonal(self.d, self.e, lapack_driver=driver)
             assert_array_almost_equal(sort(w), self.w)
 
-        for driver in ('sterf', 'stev'):
+        for driver in ('sterf', 'stev', 'stevd'):
             assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
                           lapack_driver=driver, select='i',
                           select_range=(0, 1))
@@ -776,7 +810,7 @@ class TestEigTridiagonal:
         # can't use ?STERF when eigenvectors are requested
         assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
                       lapack_driver='sterf')
-        for driver in ('stebz', 'stev', 'stemr', 'auto'):
+        for driver in ('stebz', 'stev', 'stevd', 'stemr', 'auto'):
             w, evec = eigh_tridiagonal(self.d, self.e, lapack_driver=driver)
             evec_ = evec[:, argsort(w)]
             assert_array_almost_equal(sort(w), self.w)
@@ -832,9 +866,6 @@ class TestEigTridiagonal:
 
 
 class TestEigh:
-    def setup_class(self):
-        np.random.seed(1234)
-
     def test_wrong_inputs(self):
         # Nonsquare a
         assert_raises(ValueError, eigh, np.ones([1, 2]))
@@ -896,6 +927,7 @@ class TestEigh:
         w, z = eigh(a)
         w, z = eigh(a, b)
 
+    @skip_xp_invalid_arg
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse
@@ -1185,6 +1217,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
 # Allocating an array of such a size leads to _ArrayMemoryError(s)
 # since the maximum memory that can be in 32-bit (WASM) is 4GB
 @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.parallel_threads(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
@@ -1192,6 +1225,13 @@ def test_svd_gesdd_nofegfault():
     df=np.ones((4799, 53130), dtype=np.float64)
     with assert_raises(ValueError):
         svd(df)
+
+
+def test_gesdd_nan_error_message():
+    A = np.eye(2)
+    A[0, 0] = np.nan
+    with pytest.raises(ValueError, match="NaN"):
+        svd(A, check_finite=False)
 
 
 class TestSVDVals:
@@ -1250,8 +1290,8 @@ class TestSVDVals:
 
     @pytest.mark.slow
     def test_crash_2609(self):
-        np.random.seed(1234)
-        a = np.random.rand(1500, 2800)
+        rng = np.random.default_rng(1234)
+        a = rng.random((1500, 2800))
         # Shouldn't crash:
         svdvals(a)
 
@@ -2727,7 +2767,7 @@ def test_aligned_mem_float():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=2, count=100, dtype=float32)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2742,7 +2782,7 @@ def test_aligned_mem():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2755,7 +2795,7 @@ def test_aligned_mem_complex():
 
     # Create an array with boundary offset 8
     z = np.frombuffer(a.data, offset=8, count=100, dtype=complex)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     # This does not need special handling
@@ -2771,7 +2811,7 @@ def check_lapack_misaligned(func, args, kwargs):
             aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
             aa = np.frombuffer(aa.data, offset=4, count=a[i].size,
                                dtype=a[i].dtype)
-            aa.shape = a[i].shape
+            aa = aa.reshape(a[i].shape)
             aa[...] = a[i]
             a[i] = aa
             func(*a, **kwargs)
@@ -2784,11 +2824,10 @@ def check_lapack_misaligned(func, args, kwargs):
                    reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10, dtype=float)
-    R = np.arange(100)
-    R.shape = 10, 10
+    R = np.arange(100).reshape((10, 10))
     S = np.arange(20000, dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
-    S.shape = 10, 10
+    S = S.reshape((10, 10))
     b = np.ones(10)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [
@@ -2878,16 +2917,16 @@ def _check_orth(n, dtype, skip_big=False):
 
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=tol)
+    assert_allclose(Y, Y.mean(), atol=tol, rtol=1.4e-7)
 
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))
     assert_allclose(Y, Y.mean(), atol=tol)
 
     if n > 5 and not skip_big:
-        np.random.seed(1)
-        X = np.random.rand(n, 5) @ np.random.rand(5, n)
-        X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+        rng = np.random.RandomState(1)
+        X = rng.rand(n, 5) @ rng.rand(5, n)
+        X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
         X = X.astype(dtype)
 
         Y = orth(X, rcond=1e-3)
@@ -2932,7 +2971,7 @@ def test_orth_empty(dt):
 
 class TestNullSpace:
     def test_null_space(self):
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
 
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
         sizes = [1, 2, 3, 10, 100]
@@ -2951,15 +2990,15 @@ class TestNullSpace:
             assert_equal(Y.shape, (2, 1))
             assert_allclose(X.T @ Y, 0, atol=tol)
 
-            X = np.random.randn(1 + n//2, n)
+            X = rng.randn(1 + n//2, n)
             Y = null_space(X)
             assert_equal(Y.shape, (n, n - 1 - n//2))
             assert_allclose(X @ Y, 0, atol=tol)
 
             if n > 5:
-                np.random.seed(1)
-                X = np.random.rand(n, 5) @ np.random.rand(5, n)
-                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                rng = np.random.RandomState(1)
+                X = rng.rand(n, 5) @ rng.rand(5, n)
+                X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
                 X = X.astype(dt)
 
                 Y = null_space(X, rcond=1e-3)
@@ -3101,18 +3140,19 @@ class TestCDF2RDF:
         self.assert_eig_valid(wr, vr, X)
 
     def test_random_1d_stacked_arrays(self):
+        rng = np.random.default_rng(1234)
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            np.random.seed(999999999)
-            X = np.random.rand(100, M, M)
+            X = rng.random((100, M, M))
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
 
     def test_random_2d_stacked_arrays(self):
+        rng = np.random.default_rng(1234)
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            X = np.random.rand(10, 10, M, M)
+            X = rng.random((10, 10, M, M))
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)

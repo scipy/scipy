@@ -1,14 +1,16 @@
 import pytest
 import itertools
+import warnings
 
+from scipy import stats
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
                          bernoulli, boltzmann, skellam, zipf, zipfian, binom,
                          nbinom, nchypergeom_fisher, nchypergeom_wallenius,
-                         randint)
+                         randint, poisson_binom)
 
 import numpy as np
 from numpy.testing import (
-    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+    assert_almost_equal, assert_equal, assert_allclose
 )
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
@@ -108,10 +110,10 @@ def test_nhypergeom_rvs_shape():
 def test_nhypergeom_accuracy():
     # Check that nhypergeom.rvs post-gh-13431 gives the same values as
     # inverse transform sampling
-    np.random.seed(0)
-    x = nhypergeom.rvs(22, 7, 11, size=100)
-    np.random.seed(0)
-    p = np.random.uniform(size=100)
+    rng = np.random.RandomState(0)
+    x = nhypergeom.rvs(22, 7, 11, size=100, random_state=rng)
+    rng = np.random.RandomState(0)
+    p = rng.uniform(size=100)
     y = nhypergeom.ppf(p, 22, 7, 11)
     assert_equal(x, y)
 
@@ -304,10 +306,10 @@ class TestZipfian:
         # cdf <- pzipf(k, N = n, shape = a)
         # print(pmf)
         # print(cdf)
-        np.random.seed(0)
-        k = np.random.randint(1, 20, size=10)
-        a = np.random.rand(10)*10 + 1
-        n = np.random.randint(1, 100, size=10)
+        rng = np.random.RandomState(0)
+        k = rng.randint(1, 20, size=10)
+        a = rng.rand(10)*10 + 1
+        n = rng.randint(1, 100, size=10)
         pmf = [8.076972e-03, 2.950214e-05, 9.799333e-01, 3.216601e-06,
                3.158895e-04, 3.412497e-05, 4.350472e-10, 2.405773e-06,
                5.860662e-06, 1.053948e-04]
@@ -317,9 +319,9 @@ class TestZipfian:
         assert_allclose(zipfian.pmf(k, a, n)[1:], pmf[1:], rtol=1e-6)
         assert_allclose(zipfian.cdf(k, a, n)[1:], cdf[1:], rtol=5e-5)
 
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
     naive_tests = np.vstack((np.logspace(-2, 1, 10),
-                             np.random.randint(2, 40, 10))).T
+                             rng.randint(2, 40, 10))).T
 
     @pytest.mark.parametrize("a, n", naive_tests)
     def test_zipfian_naive(self, a, n):
@@ -423,17 +425,17 @@ class TestNCH:
     def test_nchypergeom_wallenius_naive(self):
         # test against a very simple implementation
 
-        np.random.seed(2)
+        rng = np.random.RandomState(2)
         shape = (2, 4, 3)
         max_m = 100
-        m1 = np.random.randint(1, max_m, size=shape)
-        m2 = np.random.randint(1, max_m, size=shape)
+        m1 = rng.randint(1, max_m, size=shape)
+        m2 = rng.randint(1, max_m, size=shape)
         N = m1 + m2
-        n = randint.rvs(0, N, size=N.shape)
+        n = randint.rvs(0, N, size=N.shape, random_state=rng)
         xl = np.maximum(0, n-m2)
         xu = np.minimum(n, m1)
-        x = randint.rvs(xl, xu, size=xl.shape)
-        w = np.random.rand(*x.shape)*2
+        x = randint.rvs(xl, xu, size=xl.shape, random_state=rng)
+        w = rng.rand(*x.shape)*2
 
         def support(N, m1, n, w):
             m2 = N - m1
@@ -451,8 +453,8 @@ class TestNCH:
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
                             mean(N, m1, n, w), rtol=2e-2)
@@ -465,8 +467,8 @@ class TestNCH:
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(
                 nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
@@ -646,6 +648,45 @@ class TestZipf:
         pmf = dist.pmf(k)
         pmf_k_int32 = dist.pmf(k_int32)
         assert_equal(pmf, pmf_k_int32)
+
+
+def test_gh20048():
+    # gh-20048 reported an infinite loop in _drv2_ppfsingle
+    # check that the one identified is resolved
+    class test_dist_gen(stats.rv_discrete):
+        def _cdf(self, k):
+            return min(k / 100, 0.99)
+
+    test_dist = test_dist_gen(b=np.inf)
+
+    message = "Arguments that bracket..."
+    with pytest.raises(RuntimeError, match=message):
+        test_dist.ppf(0.999)
+
+
+class TestPoissonBinomial:
+    def test_pmf(self):
+        # Test pmf against R `poisbinom` to confirm that this is indeed the Poisson
+        # binomial distribution. Consistency of other methods and all other behavior
+        # should be covered by generic tests. (If not, please add a generic test.)
+        # Like many other distributions, no special attempt is made to be more
+        # accurate than the usual formulas provide, so we use default tolerances.
+        #
+        # library(poisbinom)
+        # options(digits=16)
+        # k = c(0, 1, 2, 3, 4)
+        # p = c(0.9480654803913988, 0.052428488100509374,
+        #       0.25863527358887417, 0.057764076043633206)
+        # dpoisbinom(k, p)
+        rng = np.random.default_rng(259823598254)
+        n = rng.integers(10)  # 4
+        k = np.arange(n + 1)
+        p = rng.random(n)  #  [0.9480654803913988, 0.052428488100509374,
+                           #   0.25863527358887417, 0.057764076043633206]
+        res = poisson_binom.pmf(k, p)
+        ref = [0.0343763443678060318, 0.6435428452689714307, 0.2936345519235536994,
+               0.0277036647503902354, 0.0007425936892786034]
+        assert_allclose(res, ref)
 
 
 class TestRandInt:
