@@ -13,16 +13,15 @@ incomplete) tables about the
 
 Caveats
 -------
-The functions in the `~scipy.signal` module are decorated to call their counterparts in
 `JAX <https://docs.jax.dev/en/latest/jax.scipy.html>`__ and `CuPy
-<https://docs.cupy.dev/en/stable/reference/scipy_signal.html>`__ when the environment
-variable ``SCIPY_ARRAY_API`` is set. This works around incompatibilities in those
-backends.
+<https://docs.cupy.dev/en/stable/reference/scipy_signal.html>`__ provide alternative
+implementations for some `~scipy.signal` functions. When such a function is called, a
+decorator decides which implementation to use by inspecting the `xp` parameter.
 
 Hence, there can be, especially during CI testing, discrepancies in behavior between
-SciPy and the JAX and CuPy backends. Skipping the incompatible backends in unit tests,
-as described in the :ref:`dev-arrayapi_adding_tests` section, is the currently
-recommended workaround.
+the default NumPy-based implementation and the JAX and CuPy backends. Skipping the
+incompatible backends in unit tests, as described in the
+:ref:`dev-arrayapi_adding_tests` section, is the currently recommended workaround.
 
 The functions are decorated by the code in file
 ``scipy/signal/_support_alternative_backends.py``:
@@ -30,7 +29,8 @@ The functions are decorated by the code in file
 .. literalinclude:: ../../../../../scipy/signal/_support_alternative_backends.py
     :lineno-match:
 
-Note that the function will only be decorated if its signature is listed in the file
+Note that a function will only be decorated if the environment variable
+``SCIPY_ARRAY_API`` is set and its signature is listed in the file
 ``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
 function looks like this:
 
