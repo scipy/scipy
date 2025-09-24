@@ -6,6 +6,7 @@ from numpy.testing import assert_equal, assert_allclose
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
+from scipy.sparse._csr import csr_array
 from .._coo import _block_diag, _extract_block_diag
 
 
@@ -1263,6 +1264,16 @@ keys = [
 @pytest.mark.thread_unsafe
 def test_3d_coo_set(A, D, idx):
     D[idx] = A[idx] = -99
+    assert_equal(A.toarray(), D)
+
+
+@pytest.mark.parametrize(
+    "scalar_container",
+    [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x],
+    ids=["sparse", "dense", "scalar"],
+)
+def test_3d_coo_singleton(A, D, scalar_container):
+    D[(0, 0, 0)] = A[(0, 0, 0)] = scalar_container(-99)
     assert_equal(A.toarray(), D)
 
 
