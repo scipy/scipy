@@ -233,8 +233,7 @@ def logm(A, disp=_NoValue):
 def expm(A):
     """Compute the matrix exponential of an array.
 
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
+    Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
@@ -424,8 +423,7 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     real-valued matrices the return type can be complex if, numerically, there
     is an eigenvalue on the negative real axis.
 
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
+    Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 

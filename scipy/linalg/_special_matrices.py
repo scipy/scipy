@@ -93,6 +93,10 @@ def circulant(c):
     """
     Construct a circulant matrix.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     c : (..., N,)  array_like
@@ -276,6 +280,11 @@ def leslie(f, s):
     n-1 array of survival coefficients `s`, return the associated Leslie
     matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     f : (N,) array_like
@@ -356,8 +365,7 @@ def block_diag(*arrs):
     ----------
     A, B, C, ... : array_like
         Input arrays.  A 1-D array or array_like sequence of length ``n`` is
-        treated as a 2-D array with shape ``(1, n)``. Any dimensions before
-        the last two are treated as batch dimensions; see :ref:`linalg_batch`.
+        treated as a 2-D array with shape ``(1, n)``.
 
     Returns
     -------
@@ -431,6 +439,10 @@ def companion(a):
 
     Create the companion matrix [1]_ associated with the polynomial whose
     coefficients are given in `a`.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -927,6 +939,10 @@ def fiedler(a):
     eigenvalues are negative. Although not valid generally, for certain inputs,
     the inverse and the determinant can be derived explicitly as given in [1]_.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : (..., n,) array_like
@@ -1003,6 +1019,10 @@ def fiedler_companion(a):
     Given a polynomial coefficient array ``a``, this function forms a
     pentadiagonal matrix with a special structure whose eigenvalues coincides
     with the roots of ``a``.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1086,6 +1106,10 @@ def convolution_matrix(a, n, mode='full'):
 
     Constructs the Toeplitz matrix representing one-dimensional
     convolution [1]_.  See the notes below for details.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------

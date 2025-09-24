@@ -869,7 +869,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the
     Hermitian positive-definite banded matrix defined by `ab`.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
@@ -1135,11 +1135,6 @@ def solve_circulant(c, b, singular='raise', tol=None,
     respectively. For a large vector `c`, this is *much* faster than
     solving the system with the full circulant matrix.
 
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-    
     Parameters
     ----------
     c : array_like
@@ -1350,7 +1345,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
     as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-    
+
     Parameters
     ----------
     a : array_like, shape (..., M, M)
