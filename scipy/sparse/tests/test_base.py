@@ -2533,18 +2533,23 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             check(np.dtype(dtype))
 
-    def test_setelement(self):
+    @pytest.mark.parametrize(
+        "scalar_container",
+        [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x],
+        ids=["sparse", "dense", "scalar"],
+    )
+    def test_setelement(self, scalar_container):
         def check(dtype):
             A = self.spcreator((3,4), dtype=dtype)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
-                A[0, 0] = dtype.type(0)  # bug 870
-                A[1, 2] = dtype.type(4.0)
-                A[0, 1] = dtype.type(3)
-                A[2, 0] = dtype.type(2.0)
-                A[0,-1] = dtype.type(8)
-                A[-1,-2] = dtype.type(7)
-                A[0, 1] = dtype.type(5)
+                A[0, 0] = scalar_container(dtype.type(0))  # bug 870
+                A[1, 2] = scalar_container(dtype.type(4.0))
+                A[0, 1] = scalar_container(dtype.type(3))
+                A[2, 0] = scalar_container(dtype.type(2.0))
+                A[0,-1] = scalar_container(dtype.type(8))
+                A[-1,-2] = scalar_container(dtype.type(7))
+                A[0, 1] = scalar_container(dtype.type(5))
 
             if dtype != np.bool_:
                 assert_array_equal(
