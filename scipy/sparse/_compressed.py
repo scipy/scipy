@@ -821,6 +821,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             coo._setdiag(values, k)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, _ = arrays
+            # Sort the indices (like in _insert_many)
+            if self.has_sorted_indices:
+                self.has_sorted_indices = False  # force a sort
+                self.sort_indices()
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self._shape_as_2d)
