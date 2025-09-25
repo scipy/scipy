@@ -498,7 +498,8 @@ def test_from_dual_quat(xp, ndim: int):
     dq = xp.tile(unnormalized_dual_quat, shape + (1,))
     dual_quat = RigidTransform.from_dual_quat(dq).as_dual_quat()
     
-    xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones, atol=1e-12)
+    xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
+                    atol=1e-12)
     xp_assert_close(xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:]), expected_zeros,
                     atol=atol)
 
