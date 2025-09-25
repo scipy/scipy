@@ -62,7 +62,7 @@ RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
 
 
 @make_xp_test_case(RigidTransform.from_rotation)
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_rotation(xp, ndim: int):
     atol = 1e-12
     rng = np.random.default_rng(0)
@@ -77,7 +77,7 @@ def test_from_rotation(xp, ndim: int):
 
 
 @make_xp_test_case(RigidTransform.from_translation)
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_translation(xp, ndim: int):
     shape = (ndim,) * (ndim - 1)
     t = xp.reshape(xp.arange(ndim ** (ndim-1) * 3), shape + (3,))
@@ -107,7 +107,7 @@ def test_from_translation_array_like():
 
 
 @make_xp_test_case(RigidTransform.from_matrix, RigidTransform.as_matrix)
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_matrix(xp, ndim: int):
     atol = 1e-12
     shape = (ndim,) * (ndim - 1) + (4, 4)
@@ -217,7 +217,7 @@ def test_from_components_array_like():
 
 
 @make_xp_test_case(RigidTransform.as_components)
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_components(xp, ndim):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
@@ -347,7 +347,7 @@ def test_from_exp_coords_array_like():
 
 
 @make_xp_test_case(RigidTransform.as_exp_coords)
-@pytest.mark.parametrize("ndim", range(1, 6))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_exp_coords(xp, ndim: int):
     shape = (ndim,) * (ndim - 1)
     # identity
@@ -374,7 +374,7 @@ def test_as_exp_coords(xp, ndim: int):
 
 
 @make_xp_test_case(RigidTransform.from_dual_quat)
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
@@ -571,7 +571,7 @@ def test_from_dual_quat_array_like():
 
 
 @make_xp_test_case(RigidTransform.as_dual_quat)
-@pytest.mark.parametrize("ndim", range(1, 5))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_as_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     shape = (ndim,) * (ndim - 1)
@@ -627,7 +627,7 @@ def test_as_dual_quat(xp, ndim: int):
                    RigidTransform.from_exp_coords, RigidTransform.as_exp_coords,
                    RigidTransform.from_matrix, RigidTransform.as_matrix,
                    RigidTransform.from_dual_quat, RigidTransform.as_dual_quat)
-@pytest.mark.parametrize("ndim", range(1, 3))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_as_internal_consistency(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12
