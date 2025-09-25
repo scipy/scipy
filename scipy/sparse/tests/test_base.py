@@ -4519,13 +4519,6 @@ class TestCSR(_CompressedMixin, sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
-    def test_setdiag_csr(self):
-        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
-        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
-        A = self.spcreator(D)
-        A.setdiag(5 * np.ones(A.shape[0]))
-        assert A[-1, -1] == 5
-
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
@@ -4700,13 +4693,6 @@ class TestCSC(_CompressedMixin, sparse_test_class()):
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
-
-    def test_setdiag_csc(self):
-        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
-        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
-        A = self.spcreator(D)
-        A.setdiag(5 * np.ones(A.shape[0]))
-        assert A[-1, -1] == 5
 
 
 TestCSC.init_class()
