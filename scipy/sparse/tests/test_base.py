@@ -4218,7 +4218,6 @@ class _CompressedMixin:
         D = self.dia_container((diags, offsets), shape=(N, N))
         return self._test_setdiag_sorted(D)
 
-    @pytest.mark.xfail(reason="bug in _cs_matrix._setdiag")
     def test_setdiag_cooconvert(self):
         # Test large ratio of new elements
         # see gh-23644
