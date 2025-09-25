@@ -1310,7 +1310,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
+def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 
@@ -1322,11 +1322,13 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
      general                        'general' (or 'gen')
      upper triangular               'upper triangular'
      lower triangular               'lower triangular'
-     symmetric positive definite    'pos', 'pos upper', 'pos lower'
+     symmetric positive definite    'pos'
+     symmetric                      'sym'
+     Hermitian                      'her'
     =============================  ================================
 
-    For the 'pos upper' and 'pos lower' options, only the specified
-    triangle of the input matrix is used, and the other triangle is not referenced.
+    For the 'pos', 'sym' and 'her' options, only the specified triangle of the input
+    matrix is used, and the other triangle is not referenced.
 
     Parameters
     ----------
@@ -1342,6 +1344,11 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         Valid entries are described above.
         If omitted or ``None``, checks are performed to identify structure so the
         appropriate solver can be called.
+    lower : bool, optional
+        Ignored unless assume_a is one of 'sym', 'her', or 'pos'. If True, the
+        calculation uses only the data in the lower triangle of `a`; entries above the
+        diagonal are ignored. If False (default), the calculation uses only the data in
+        the upper triangle of `a`; entries below the diagonal are ignored.
 
     Returns
     -------
@@ -1397,7 +1404,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         overwrite_a = True
         a1 = a1.copy()
 
-    # keep the numbers in sync with C
+    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
         'general': 0,
@@ -1405,20 +1412,38 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101,
-        'pos upper': 111,     # the "other" triangle is not referenced
-        'pos lower': 112,
+        'sym' : 201,
+        'her' : 211,
     }[assume_a]
 
     # a1 is well behaved, invert it.
-    result = _batched_linalg._inv(a1, structure, overwrite_a)
-    inv_a, is_ill_cond, is_singular, info = result
+    inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a, lower)
 
-    if info < 0:
-        raise ValueError("Internal LAPACK error.")
-    if is_singular:
-        raise LinAlgError("A singular matrix detected")
-    if is_ill_cond:
-        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+    # emit helpful errors/warnings
+    if err_lst:
+        singular, lapack_err, ill_cond = [], [], []
+        for i, dct in enumerate(err_lst):
+            if dct["is_singular"]:
+                singular.append(i)
+            if dct["lapack_info"] < 0:
+                lapack_err.append(f"slice {i} emits lapack info={dct['lapack_info']}")
+            if dct["is_ill_conditioned"]:
+                ill_cond.append(f"slice {i} has rcond = {dct['rcond']}")
+
+        if singular:
+            raise LinAlgError(
+                f"An ill-conditioned matrix detected: slice(s) {singular} are singular."
+            )
+
+        if lapack_err:
+            raise ValueError(f"Internal LAPACK errors: {','.join(lapack_err)}.")
+
+        if ill_cond:
+           warnings.warn(
+                f"An ill-conditioned matrix detected: {','.join(ill_cond)}.",
+                LinAlgWarning,
+                stacklevel=2
+            )
 
     return inv_a
 
