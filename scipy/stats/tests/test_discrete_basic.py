@@ -22,7 +22,7 @@ vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
-distslow = {'zipfian', 'nhypergeom'}
+distslow = {'nhypergeom'}
 
 # Override number of ULPs adjustment for `check_cdf_ppf`
 roundtrip_cdf_ppf_exceptions = {'nbinom': 30}
