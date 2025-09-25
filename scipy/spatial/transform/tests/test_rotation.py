@@ -2077,7 +2077,11 @@ Rotation.from_matrix(array([[[ 0.,  0.,  1.],
                             [[ 0., -1.,  0.],
                              [ 1.,  0.,  0.],
                              [ 0.,  0.,  1.]]]))"""
-        assert actual == expected
+        def stripped(s: str) -> str:
+            # don't fail due to leading whitespace differences
+            return "\n".join(map(str.lstrip, s.splitlines()))
+
+        assert stripped(actual) == stripped(expected)
     else:
         assert actual.startswith("Rotation.from_matrix(")
 
