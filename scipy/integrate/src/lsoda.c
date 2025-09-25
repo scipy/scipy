@@ -585,34 +585,6 @@ stoda_first_call_init(lsoda_common_struct_t* S)
 
 
 /**
- * @brief Restart initialization for stoda, label 100 - 150
- *
- * This block handles preliminaries needed when jstart = -1. ipup is set to miter to force a matrix update.
- * if an order increase is about to be considered (ialth = 1), ialth is reset to 2 to postpone consideration
- * one more step. If the caller has changed meth, cfode is called to reset the coefficients of the method.
- * If h is to be changed, yh must be rescaled. If h or meth is being changed, ialth is reset to l = nq + 1
- * to prevent further changes in h for that many steps.
- *
- * @param S Pointer to the common structure containing integrator state.
- */
-static void
-stoda_restart_init(lsoda_common_struct_t* S)
-{
-    // 100
-    S->ipup = S->miter;
-    S->lmax = S->maxord + 1;
-    if (S->ialth == 1) { S->ialth = 2; }
-
-    if (S->meth != S->mused)
-    {
-        cfode(S->meth, S->elco, S->tesco);
-        S->ialth = S->l;
-    }
-}
-
-
-
-/**
  * @brief Resets the state of the ODE integrator for a new step, label 150 - 160
  *
  * The el vector and related constants are reset whenever the order nq
@@ -634,25 +606,14 @@ stoda_reset(lsoda_common_struct_t* S)
 
 
 /**
- * @brief Step size adjustment (labels 160-178)
+ * @brief Step size adjustment (labels 175-200)
  */
 static void
-stoda_adjust_step_size(lsoda_common_struct_t* S, double* yh, int nyh, const double* sm1)
+stoda_adjust_step_size(lsoda_common_struct_t* S, double* rh, double* yh, int nyh, const double* sm1)
 {
-    // If h is being changed, the h ratio rh is checked against
-    // rmax, hmin, and hmxi, and the yh array rescaled. ialth is set to
-    // l = nq + 1 to prevent a change of h for that many steps, unless
-    // forced by a convergence or error test failure.
-    if (S->h == S->hold) { return; }
 
-    // 160-175: Step size ratio calculation and limiting
-    double rh = S->h / S->hold;
-    S->h = S->hold;
-
-    // 170-175: Apply various constraints
-    rh = fmax(rh, S->hmin / fabs(S->h));
-    rh = fmin(rh, S->rmax);
-    rh = rh / fmax(1.0, fabs(S->h) * S->hmxi * rh);
+    *rh = fmin(*rh, S->rmax);
+    *rh = *rh / fmax(1.0, fabs(S->h) * S->hmxi * (*rh));
 
     // if meth = 1, also restrict the new step size by the stability region.
     // if this reduces h, set irflag to 1 so that if there are roundoff
@@ -662,9 +623,9 @@ stoda_adjust_step_size(lsoda_common_struct_t* S, double* yh, int nyh, const doub
     {
         S->irflag = 0;
         double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-        if (rh * pdh * 1.00001 >= sm1[S->nq - 1])
+        if ((*rh) * pdh * 1.00001 >= sm1[S->nq - 1])
         {
-            rh = sm1[S->nq - 1] / pdh;
+            *rh = sm1[S->nq - 1] / pdh;
             S->irflag = 1;
         }
     }
@@ -673,14 +634,14 @@ stoda_adjust_step_size(lsoda_common_struct_t* S, double* yh, int nyh, const doub
     double r = 1.0;
     for (int j = 1; j < S->l; j++)
     {
-        r = r * rh;
+        r = r * (*rh);
         for (int i = 0; i < S->n; i++)
         {
             yh[i + j*nyh] = yh[i + j*nyh] * r;
         }
     }
-    S->h = S->h * rh;
-    S->rc = S->rc * rh;
+    S->h = S->h * (*rh);
+    S->rc = S->rc * (*rh);
     S->ialth = S->l;
 }
 
@@ -740,6 +701,7 @@ stoda_corrector_loop(
     for (int i = 0; i < S->n; i++) { acor[i] = 0.0; }
 
     // Main corrector iteration loop
+    // 270
     while (1) {
         if (S->miter == 0)
         {
@@ -758,7 +720,11 @@ stoda_corrector_loop(
                 acor[i] = savf[i];
             }
             // 300
+
+            // go to 400
+
         } else {
+            // 350
             // in the case of the chord method, compute the corrector error,
             // and solve the linear system with that as right-hand side and
             // p as coefficient matrix.
@@ -824,8 +790,8 @@ stoda_corrector_loop(
         }
         // 405
         m = m + 1;
-        if (m == S->maxcor) {
-            // Too many corrector iterations
+        if ((m == S->maxcor) || ((m >= 2) && (del > 2.0 * delp))){
+            // Too many corrector iterations or Diverging
             if (S->miter != 0 && S->jcur != 1)
             {
                 S->icf = 1;
@@ -835,21 +801,11 @@ stoda_corrector_loop(
 
             return CORRECTOR_NO_CONVERGENCE;
         }
-        if (m >= 2 && del > 2.0 * delp) {
-            // Diverging
-            if ((S->miter != 0) && (S->jcur != 1)) {
-                S->icf = 1;
-                S->ipup = S->miter;
-                return CORRECTOR_RETRY;
-            }
-            return CORRECTOR_NO_CONVERGENCE;
-        }
         delp = del;
         f(neq, &S->tn, y, savf);
         if (*neq == -1) { return CORRECTOR_ERROR; }
         S->nfe += 1;
         continue;
-
     }
 
     // The corrector has converged. jcur is set to 0  to signal that the
@@ -869,7 +825,7 @@ stoda_corrector_loop(
  * Returns 0 for successful recovery (retry), -1 for fatal error
  */
 static int
-stoda_handle_corrector_failure(double* yh, double* yh1, int nyh, int* ncf, double told, const double* sm1, lsoda_common_struct_t* S)
+stoda_handle_corrector_failure(double* yh, int nyh, int* ncf, double told, const double* sm1, lsoda_common_struct_t* S)
 {
     S->icf = 2;
     (*ncf)++;
@@ -881,7 +837,7 @@ stoda_handle_corrector_failure(double* yh, double* yh1, int nyh, int* ncf, doubl
     for (int jb = 1; jb <= S->nq; jb++) {
         i1 = i1 - nyh;  // Move to start of previous column
         for (int i = i1; i < S->nqnyh; i++) {  // 0-based: from i1 to nqnyh-1
-            yh1[i] = yh1[i] - yh1[i + nyh];
+            yh[i] = yh[i] - yh[i + S->nyh];
         }
     }
 
@@ -910,46 +866,49 @@ stoda_handle_corrector_failure(double* yh, double* yh1, int nyh, int* ncf, doubl
 
     // Apply step size reduction - use existing step adjustment logic
     rh = fmax(rh, S->hmin / fabs(S->h));
-    rh = fmin(rh, S->rmax);
-    rh = rh / fmax(1.0, fabs(S->h) * S->hmxi * rh);
-
-    // Goto 170
-    // For stability region constraint (meth=1 only)
-    if (S->meth == 1) {
-        S->irflag = 0;
-        double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-        if (rh * pdh * 1.00001 >= sm1[S->nq - 1]) {
-            rh = sm1[S->nq - 1] / pdh;
-            S->irflag = 1;
-        }
-    }
-
-    // Rescale yh array with new step size
-    double r = 1.0;
-    for (int j = 2; j <= S->l; j++) {
-        r = r * rh;
-        for (int i = 0; i < S->n; i++) {
-            yh[i + (j-1)*nyh] = yh[i + (j-1)*nyh] * r;  // yh(i,j) in FORTRAN
-        }
-    }
-    S->h = S->h * rh;
-    S->rc = S->rc * rh;
-    S->ialth = S->l;
+    stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
 
     return 0;  // Successful recovery - caller should retry
 }
 
 
 static void
+stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
+{
+    // this section computes the predicted values by effectively
+    // multiplying the yh array by the pascal triangle matrix.
+    // rc is the ratio of new to old values of the coefficient  h*el(1).
+    // when rc differs from 1 by more than ccmax, ipup is set to miter
+    // to force pjac to be called, if a jacobian is involved.
+    // in any case, pjac is called at least every msbp steps.
+
+    if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
+    if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
+
+    S->tn = S->tn + S->h;
+
+    int i1 = S->nqnyh; // First element of column nq
+    for (int jb = 0; jb < S->nq; jb++)
+    {
+        i1 -= S->nyh;  // Move to the start of previous column
+        for (int i = i1; i < S->nqnyh; i++)
+        {
+            yh1[i] = yh1[i] + yh1[i + S->nyh];
+        }
+    }
+}
+
+
+static void
 stoda(
-    int* neq, double* y, double* yh, int nyh, double* yh1, double* ewt,
+    int* neq, double* y, double* yh, int nyh, double* ewt,
     double* svaf, double* acor, double* wm, int* iwm, lsoda_func_t f,
     lsoda_jac_t jac, lsoda_common_struct_t* S)
 {
     const double sm1[12] = {0.5, 0.575, 0.55, 0.45, 0.35, 0.25, 0.20, 0.15, 0.10, 0.075, 0.050, 0.025};
     lsoda_corrector_status_t corrector_status;
     int should_reset_rmax = 0;  // Flag to track if we should go to label 690 (rmax reset + exit)
-
+    double rh = 0.0, dsm = 0.0;
     S->kflag = 0;
     double told = S->tn;
     int ncf = 0;
@@ -961,44 +920,47 @@ stoda(
     // Step 1: Initialize based on jstart
     switch (S->jstart) {
         case 0:   // First call
+        {
             stoda_first_call_init(S);
             stoda_reset(S);
             break; // Go directly to prediction
+        }
 
         case -1:  // Restart with possible method/step change
-            stoda_restart_init(S);
-            stoda_reset(S);
-            stoda_adjust_step_size(S, yh, nyh, sm1);
-            break;
+        {
+            // 100
+            S->ipup = S->miter;
+            S->lmax = S->maxord + 1;
+            if (S->ialth == 1) { S->ialth = 2; }
+
+            if (S->meth != S->mused)
+            {
+                cfode(S->meth, S->elco, S->tesco);
+                S->ialth = S->l;
+                stoda_reset(S);
+            }
+            // Fall through to 160, no break
+        }
 
         case -2:  // Step change only
-            stoda_adjust_step_size(S, yh, nyh, sm1);
+        {
+            if (S->h == S->hold) { break; }
+            rh = S->h / S->hold;
+            S->h = S->hold;
+            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
             break;
+        }
 
-        default:  // jstart > 0, normal continuation
-            break; // Go directly to prediction
+        default:  // jstart > 0, normal continuation to label 200
+            break;
     }
 
-    // Main integration loop - implements state machine to eliminate gotos
-    while (1) {
-        // Step 2: Prediction phase (200-220)
-        // Force Jacobian update if needed
-        if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
-        if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
+    // 200
+    stoda_get_predicted_values(S, yh);
+    double pnorm = vmnorm(S->n, yh, ewt);
 
-        S->tn = S->tn + S->h;
-
-        // Pascal triangle multiplication on yh (200-215)
-        int i1 = S->nqnyh;  // Start at end of column nq (0-based indexing)
-        for (int jb = 1; jb <= S->nq; jb++)
-        {
-            i1 = i1 - nyh;  // Move to start of previous column
-            for (int i = i1; i < S->nqnyh; i++)  // 0-based: from i1 to nqnyh-1
-            {
-                yh1[i] = yh1[i] + yh1[i + nyh];
-            }
-        }
-        double pnorm = vmnorm(S->n, yh1, ewt);
+    while (1)
+    {
 
         // Corrector loop (220-430)
         int m_corrector = 0;
@@ -1019,8 +981,8 @@ stoda(
                 continue;
 
             case CORRECTOR_NO_CONVERGENCE:
-
-                if (stoda_handle_corrector_failure(yh, yh1, nyh, &ncf, told, sm1, S) != 0)
+                // Goto 430 cases
+                if (stoda_handle_corrector_failure(yh, nyh, &ncf, told, sm1, S) != 0)
                 {
                     // 670/680 -> 720
                     S->hold = S->h;
@@ -1028,6 +990,9 @@ stoda(
                     return;
                 }
                 // A modified step size value found - respin loop
+                // 200
+                stoda_get_predicted_values(S, yh);
+                pnorm = vmnorm(S->n, yh, ewt);
                 continue;
 
             case CORRECTOR_ERROR:
@@ -1045,11 +1010,10 @@ stoda(
         S->jcur = 0;
 
         // Compute local error estimate (label 450)
-        double dsm;
         if (m_corrector == 0)
         {
             dsm = del_corrector / S->tesco[1 + (S->nq - 1)*3];
-        } else {
+        } else if (m_corrector > 0) {
             dsm = vmnorm(S->n, acor, ewt) / S->tesco[1 + (S->nq - 1)*3];
         }
 
@@ -1067,8 +1031,8 @@ stoda(
 
             int i1 = S->nqnyh;
             for (int jb = 1; jb <= S->nq; jb++) {
-                i1 = i1 - nyh;
-                for (int i = i1; i < S->nqnyh; i++) { yh1[i] = yh1[i] - yh1[i + nyh]; }  // 510
+                i1 = i1 - S->nyh;
+                for (int i = i1; i < S->nqnyh; i++) { yh[i] = yh[i] - yh[i + S->nyh]; }  // 510
             }
             // 515
 
@@ -1211,7 +1175,7 @@ stoda(
             S->h = S->h * rh;
             S->rc = S->rc * rh;
             S->ialth = S->l;
-            stoda_adjust_step_size(S, yh, nyh, sm1);
+            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
             continue;
         }
 
@@ -1234,11 +1198,11 @@ stoda(
         S->nqu = S->nq;
         S->mused = S->meth;
 
-        for (int j = 1; j <= S->l; j++)
+        for (int j = 0; j < S->l; j++)
         {
             for (int i = 0; i < S->n; i++)
             {
-                yh[i + (j-1)*nyh] = yh[i + (j-1)*nyh] + S->el[j-1] * acor[i];
+                yh[i + j*nyh] = yh[i + j*nyh] + S->el[j] * acor[i];
             }
         }
         // 460
@@ -1277,7 +1241,7 @@ stoda(
                     double dm1 = vmnorm(S->n, &yh[(lm1p1 - 1) * S->nyh], ewt) / S->cm1[S->mxordn - 1];  // yh(1,lm1p1) in FORTRAN, C 0-based
                     rh1 = 1.0 / (1.2 * pow(dm1, exm1) + 0.0000012);
                 }
-
+                // 486
                 double rh1it = 2.0 * rh1;
                 double pdh = S->pdnorm * fabs(S->h);
                 if (pdh * rh1 > 0.00001) {
@@ -1291,7 +1255,7 @@ stoda(
                     double dm1_test = pow(alpha, exm1) * dsm * (S->cm2[S->nq - 1] / S->cm1[S->nq - 1]);
                     if (dm1_test > 1000.0 * S->uround * pnorm) {
                         // Switch to Adams
-                        S->h = S->h * rh1;
+                        rh = rh1;
                         S->icount = 20;
                         S->meth = 1;
                         S->miter = 0;
@@ -1301,7 +1265,7 @@ stoda(
                         // 150 -> 170
                         stoda_reset(S);
                         should_reset_rmax = 0;  // Method switch resets iredo context
-                        stoda_adjust_step_size(S, yh, nyh, sm1);
+                        stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
                         continue;  // Restart integration with new method
                     }
                 }
@@ -1357,7 +1321,7 @@ stoda(
                         if (rh2 >= S->ratio * rh1)
                         {
                             // 478 switch to BDF
-                            S->h = S->h * rh2;
+                            rh = rh2;
                             S->icount = 20;
                             S->meth = 2;
                             S->miter = S->jtyp;
@@ -1367,9 +1331,10 @@ stoda(
                             // 150 -> 170
                             stoda_reset(S);
                             should_reset_rmax = 0;  // Method switch resets iredo context
-                            stoda_adjust_step_size(S, yh, nyh, sm1);
+                            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
                             continue;
                         }
+
                     } else {
                         // 470
                         if (S->irflag != 0)
@@ -2242,7 +2207,7 @@ void lsoda(
         if (fabs(S->h) <= nextafter(fabs(S->tn), 2*fabs(S->tn))-fabs(S->tn)) { S->nhnil++; }
 
         // 290
-        stoda(&neq, y, &rwork[S->lyh], S->nyh, &rwork[S->lyh], &rwork[S->lewt],
+        stoda(&neq, y, &rwork[S->lyh], S->nyh, &rwork[S->lewt],
               &rwork[S->lsavf], &rwork[S->lacor], &rwork[S->lwm], &iwork[S->liwm],
               f, jac, S);
         if (neq == -1) { return; }
