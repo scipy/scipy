@@ -214,10 +214,51 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     elif alpha == 1.0 and beta == 0.0:
         # cauchy
         return 1 / (1 + x0 ** 2) / np.pi
+    elif 1 < alpha < 2 and ((beta == 1.0 and x0 < 0.0) or (beta == -1.0 and x0 > 0.0)):
+        if kwds.get("asympt", True):
+            # tail asymptotic path for fully skewed tails when appropriate
+            result = _levy_stable_tail_asymptotic_Z0(x0, alpha, beta, **kwds)
+            if result is not None:
+                return result
 
     return _pdf_single_value_piecewise_post_rounding_Z0(
         x0, alpha, beta, quad_eps, x_tol_near_zeta
     )
+
+def _levy_stable_tail_asymptotic_Z0(
+    x0, alpha, beta, cutoff_exponent=8.0, rel_error_tol=1e-1, **kwds
+):
+    """
+    Handle tail asymptotic for beta=-1 (right-tail) or beta=1 (left-tail), 1<alpha<2, as
+    detailed in [NO] Proposition 3.1 (pg 100). Returns None if not in asymptotic region.
+    """
+    x0 += beta * np.tan(np.pi * alpha / 2)  # Convert to Z1
+    # numerical (non-asymptotic) reference computed using piecewise Z1 method
+    pdf_non_asympt_z1 = _pdf_single_value_piecewise_Z1(
+        x0, alpha, beta, asympt=False, **kwds
+    )
+    # For left-tail asymptotic (beta == 1) flip sign so x_tail is positive
+    if beta == 1:
+        x0 = -x0
+
+    # Use abs rather than assuming alpha > 1 to facilitate future generalization
+    abs_cos = np.abs(np.cos(np.pi * alpha / 2))
+    c1 = (alpha / abs_cos) ** (1 / (2 - 2 * alpha))
+    c1 /= (2 * np.pi * np.abs(1 - alpha)) ** 0.5
+    c2 = np.abs(1 - alpha) * (alpha**alpha / abs_cos) ** (1 / (1 - alpha))
+
+    exp_arg = c2 * x0 ** (alpha / (alpha - 1))
+    if exp_arg >= cutoff_exponent:  # far enough in the tail (empirically)
+        a = (2.0 - alpha) / (2.0 * alpha - 2.0)
+        pdf_asympt_z1 = c1 * x0**a * np.exp(-exp_arg)
+        # check relative error against non-asymptotic and return asymptotic if
+        # appropriate
+        rel_err = (
+            abs(pdf_non_asympt_z1 / pdf_asympt_z1 - 1) if pdf_asympt_z1 != 0 else np.inf
+        )
+        if rel_err > rel_error_tol:
+            return pdf_asympt_z1
+    return None
 
 
 def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
