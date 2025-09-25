@@ -983,7 +983,7 @@ class TestTheilslopes:
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
-        msg = "All `x` coordinates.*|Mean of empty slice.|invalid value encountered.*"
+        msg = "All `x` coordinates.*|Mean of empty slice|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))

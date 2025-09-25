@@ -19,10 +19,6 @@ pytestmark = [
             " is hidden behind SCIPY_ARRAY_API flag."
         ),
     ),
-    pytest.mark.skip_xp_backends(
-        "array_api_strict",
-        reason="scipy/#23412",
-    ),
 ]
 
 skip_backend = pytest.mark.skip_xp_backends

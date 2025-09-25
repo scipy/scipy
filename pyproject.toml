@@ -104,7 +104,11 @@ doc = [
     "linkify-it-py",
     "tabulate"
 ]
+
+# click is a dependency of spin, and not a direct SciPy dependency,
+# but click 8.3.0 is apparently broken, so use an older version.
 dev = [
+    "click<8.3.0",
     "spin",
     "mypy==1.10.0",
     "typing_extensions",

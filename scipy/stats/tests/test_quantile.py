@@ -108,8 +108,7 @@ class TestQuantile:
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    # Test with `marray` again when `asarray` supports `device`
-    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])  # 'marray'
+    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):

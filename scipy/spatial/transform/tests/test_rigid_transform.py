@@ -545,7 +545,6 @@ def test_from_dual_quat(xp, ndim: int):
         random_dual_quats).as_dual_quat()
     xp_assert_close(xp.vecdot(dual_quat_norm[..., :4], dual_quat_norm[..., 4:]),
                     expected_zeros, atol=atol)
-    print(random_dual_quats[..., :4]- dual_quat_norm[..., :4])
     xp_assert_close(random_dual_quats[..., :4], dual_quat_norm[..., :4], atol=atol)
 
 
