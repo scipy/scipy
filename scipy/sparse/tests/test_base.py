@@ -2533,7 +2533,7 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             check(np.dtype(dtype))
 
-    def test_setelement(self, ):
+    def test_setelement(self):
         scalar_containers = [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x]
         for scalar_container in scalar_containers:
             def check(dtype, scalar_container):
