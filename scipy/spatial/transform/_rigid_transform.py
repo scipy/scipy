@@ -45,7 +45,15 @@ def select_backend(xp: ModuleType, cython_compatible: bool):
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
-    return select_backend(xp).normalize_dual_quaternion(dual_quat)
+    dual_quat = _promote(dual_quat, xp=xp)
+    single = dual_quat.ndim == 1 and is_numpy(xp)
+    if single:
+        dual_quat = xpx.atleast_nd(dual_quat, ndim=2, xp=xp)
+    cython_compatible = dual_quat.ndim < 3
+    dq = select_backend(xp, cython_compatible).normalize_dual_quaternion(dual_quat)
+    if single:
+        return dq[0]
+    return dq
 
 
 class RigidTransform:
@@ -385,7 +393,7 @@ class RigidTransform:
         """
         xp = array_namespace(matrix)
         self._xp = xp
-        matrix = _promote(matrix,  xp=xp)
+        matrix = _promote(matrix, xp=xp)
         if matrix.shape[-2:] != (4, 4):
             raise ValueError(
                 f"Expected `matrix` to have shape (..., 4, 4), got {matrix.shape}."
@@ -785,10 +793,9 @@ class RigidTransform:
         """
         xp = array_namespace(exp_coords)
         exp_coords = xp_promote(exp_coords, force_floating=True, xp=xp)
-        if  exp_coords.shape[-1] != 6:
+        if exp_coords.shape[-1] != 6:
             raise ValueError(
-                "Expected `exp_coords` to have shape (..., 6), got "
-                f"{exp_coords.shape}."
+                f"Expected `exp_coords` to have shape (..., 6), got {exp_coords.shape}."
             )
         backend = select_backend(xp, cython_compatible=exp_coords.ndim < 3)
         matrix = backend.from_exp_coords(exp_coords)
@@ -1703,7 +1710,9 @@ class RigidTransform:
         vector = xp.asarray(
             vector, dtype=self._matrix.dtype, device=device(self._matrix)
         )
-        result = self._backend.apply(self._matrix, vector, inverse)
+        cython_compatible = self._matrix.ndim < 4 and vector.ndim < 3
+        backend = select_backend(xp, cython_compatible=cython_compatible)
+        result = backend.apply(self._matrix, vector, inverse)
         if self._single and vector.ndim == 1:
             result = result[0, ...]
         return result

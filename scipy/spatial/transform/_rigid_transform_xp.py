@@ -185,10 +185,8 @@ def inv(matrix: Array) -> Array:
 
 def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     xp = array_namespace(matrix)
-    if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
-        raise ValueError(
-            f"Expected vector to have shape (N, 3), or (3,), got {vector.shape}."
-        )
+    if vector.shape[-1] != 3:
+        raise ValueError(f"Expected vector to have shape (..., 3), got {vector.shape}.")
     vec = xp.empty(
         (*vector.shape[:-1], 4), dtype=vector.dtype, device=xp_device(vector)
     )
@@ -268,7 +266,6 @@ def _create_transformation_matrix(
     translations: Array, rotation_matrices: Array
 ) -> Array:
     if not translations.shape[:-1] == rotation_matrices.shape[:-2]:
-        print(translations.shape, rotation_matrices.shape)
         raise ValueError(
             "The number of rotation matrices and translations must be the same."
         )

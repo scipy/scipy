@@ -201,7 +201,7 @@ def inv(double[:, :, :] matrix):
     # This einsum performs element-wise matrix multiplication
     t_inv = -np.einsum('ijk,ik->ij', r_inv, matrix[:, :3, 3])
     matrix = _create_transformation_matrix(t_inv, r_inv, False)
-    return matrix
+    return np.asarray(matrix)
 
 
 @cython.embedsignature(True)
