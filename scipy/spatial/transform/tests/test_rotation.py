@@ -31,7 +31,7 @@ import copy
 
 lazy_xp_modules = [Rotation, Slerp]
 
-# from_quat and as_quat are used in almost all tests, so we mark them module-wide 
+# from_quat and as_quat are used in almost all tests, so we mark them module-wide
 pytestmark = make_xp_pytest_marks(Rotation.as_quat, Rotation.from_quat)
 
 
@@ -1093,7 +1093,7 @@ def test_inv(xp):
 
     xp_assert_close(result1, eye3d, atol=atol)
     xp_assert_close(result2, eye3d, atol=atol)
-    
+
     # Batched version
     batch_shape = (10, 3, 7)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
@@ -1298,9 +1298,10 @@ def test_mean(xp, ndim: int):
     desired = xp.zeros((1,) * (ndim - 1))
     if desired.ndim == 0:
         desired = desired[()]
+    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
-        xp_assert_close(r.mean().magnitude(), desired, atol=1e-10)
+        xp_assert_close(r.mean().magnitude(), desired, atol=atol)
 
 
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
@@ -1615,7 +1616,7 @@ def test_setitem_slice(xp):
     r2 = rotation_to_xp(Rotation.random(5, rng=rng), xp)
     r1[1:6] = r2
     xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
-    
+
     # Multiple dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 5, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 5, 4))))
@@ -2072,7 +2073,7 @@ def test_repr_rotation_sequence(xp):
 Rotation.from_matrix(array([[[ 0.,  0.,  1.],
                              [ 0.,  1.,  0.],
                              [-1.,  0.,  0.]],
-                     
+
                             [[ 0., -1.,  0.],
                              [ 1.,  0.,  0.],
                              [ 0.,  0.,  1.]]]))"""
@@ -2298,13 +2299,13 @@ def test_multiplication_nd(xp):
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 3, 4))))
     r3 = r1 * r2
     assert r3.as_quat().shape == (2, 3, 4)
-    
+
     # same shape len, different dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(1, 3, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 1, 4))))
     r3 = r1 * r2
     assert r3.as_quat().shape == (2, 3, 4)
-    
+
     # different shape len, different dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 1, 4, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 4, 4))))
@@ -3008,7 +3009,7 @@ def test_boolean_indexes(xp):
 
     r3 = r[xp.asarray([True, True, True])]
     assert len(r3) == 3
-    
+
     # Multiple dimensions
     r = Rotation.from_quat(xp.ones((3, 2, 4)))
     r4 = r[xp.asarray([True, False, False])]
