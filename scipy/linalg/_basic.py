@@ -86,6 +86,10 @@ def solve(a, b, lower=None, overwrite_a=False,
      general                        'general' (or 'gen')
     =============================  ================================
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : array_like, shape (..., N, N)
@@ -747,6 +751,11 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         a10  a21  a32  a43  a54   *
         a20  a31  a42  a53   *    *
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     (l, u) : (integer, integer)
@@ -860,7 +869,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the
     Hermitian positive-definite banded matrix defined by `ab`.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
@@ -1004,6 +1013,11 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     The Toeplitz matrix has constant diagonals, with ``c`` as its first column
     and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1328,6 +1342,10 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     For the 'pos upper' and 'pos lower' options, only the specified
     triangle of the input matrix is used, and the other triangle is not referenced.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : array_like, shape (..., M, M)
@@ -1431,6 +1449,10 @@ def det(a, overwrite_a=False, check_finite=True):
 
     The determinant is a scalar that is a function of the associated square
     matrix coefficients. The determinant value is zero for singular matrices.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -2209,6 +2231,11 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
