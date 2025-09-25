@@ -4189,7 +4189,52 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 # Matrix class based tests
 #------------------------------------------------------------------------------
 
-class TestCSR(sparse_test_class()):
+class _CompressedMixin:
+    def _test_setdiag_sorted(self, D):
+        A = self.spcreator(D)
+        # Force sorted indices
+        A.has_sorted_indices = False
+        A.sort_indices()
+        assert A.has_sorted_indices
+        # Set the diagonal (only 1 new entry / 1002, so _insert_many is used)
+        with check_remains_sorted(A):
+            A.setdiag(5)
+        assert np.all(A.diagonal() == 5)
+
+    def test_setdiag_noconvert(self):
+        # Test small ratio of new elements
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        # see gh-23644
+        # Create off-main-diagonal elements so that we have multiple elements
+        # per column to see if the indices are sorted or not
+        N = 1002
+        vals = np.arange(1, N + 1)
+        diags = np.c_[[-1, 2, 1]] * vals  # rows are diagonal entries
+        # Remove a small number of  diagonal elements so we have a small ratio
+        # of new ones to force _cs_matrix._setdiag to remain in CSC/CSR format
+        N_new = 3
+        diags[1, -N_new:] = 0.0
+        offsets = [-1, 0, 1]
+        D = self.dia_container((diags, offsets), shape=(N, N))
+        return self._test_setdiag_sorted(D)
+
+    @pytest.mark.xfail(reason="bug in _cs_matrix._setdiag")
+    def test_setdiag_cooconvert(self):
+        # Test large ratio of new elements
+        # see gh-23644
+        # Create off-main-diagonal elements so that we have multiple elements
+        # per column to see if the indices are sorted or not
+        N = 1002
+        vals = np.arange(1, N + 1)  # only a few non-zeros
+        diags = np.c_[[-1, 2, 1]] * vals
+        # Remove many entries so we have a large ratio of new entries
+        diags[1, 5:] = 0.0
+        offsets = [-1, 0, 1]
+        D = self.dia_container((diags, offsets), shape=(N, N))
+        return self._test_setdiag_sorted(D)
+
+
+class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
@@ -4510,7 +4555,7 @@ def test_spmatrix_subscriptable():
 TestCSRMatrix.init_class()
 
 
-class TestCSC(sparse_test_class()):
+class TestCSC(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
