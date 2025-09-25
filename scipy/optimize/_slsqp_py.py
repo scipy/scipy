@@ -20,11 +20,12 @@ from ._slsqplib import slsqp
 from scipy.linalg import norm as lanorm
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
-                        _check_clip_x)
+                        _check_clip_x, _wrap_callback)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
+from scipy._lib._util import _call_callback_maybe_halt
 from numpy.typing import NDArray
 
 __docformat__ = "restructuredtext en"
@@ -180,6 +181,9 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
+    # selects whether to use callback(x) or callback(intermediate_result)
+    callback = _wrap_callback(callback, "slsqp")
 
     opts = {'maxiter': iter,
             'ftol': acc,
@@ -527,7 +531,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if state_dict['iter'] > iter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
-                callback(np.copy(x))
+                intermediate_result = OptimizeResult(
+                    x=np.copy(x),
+                    fun=fx
+                )
+                if _call_callback_maybe_halt(callback, intermediate_result):
+                    break
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
