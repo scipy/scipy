@@ -173,7 +173,7 @@ jobs:
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
-        pip install meson cython pythran pybind11 ninja numpy spin
+        pip install meson cython pythran pybind11 ninja numpy spin "click<8.3.0"
         pip install -r requirements/openblas.txt
         spin build --with-scipy-openblas
 
@@ -212,7 +212,7 @@ jobs:
 
     - name: Install dependencies from PyPI
       run: |
-        pip install meson cython pythran pybind11 ninja numpy spin pooch pytest hypothesis
+        pip install meson cython pythran pybind11 ninja numpy spin pooch pytest hypothesis "click<8.3.0"
 
     - name: Build SciPy with Accelerate (LP64)
       if: matrix.blas-interface == 'LP64'
