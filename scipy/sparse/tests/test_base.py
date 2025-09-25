@@ -2533,47 +2533,44 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             check(np.dtype(dtype))
 
-    @pytest.mark.parametrize(
-        "scalar_container",
-        [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x],
-        ids=["sparse", "dense", "scalar"],
-    )
-    def test_setelement(self, scalar_container):
-        def check(dtype):
-            A = self.spcreator((3,4), dtype=dtype)
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
-                A[0, 0] = scalar_container(dtype.type(0))  # bug 870
-                A[1, 2] = scalar_container(dtype.type(4.0))
-                A[0, 1] = scalar_container(dtype.type(3))
-                A[2, 0] = scalar_container(dtype.type(2.0))
-                A[0,-1] = scalar_container(dtype.type(8))
-                A[-1,-2] = scalar_container(dtype.type(7))
-                A[0, 1] = scalar_container(dtype.type(5))
+    def test_setelement(self, ):
+        scalar_containers = [lambda x: csr_array(np.array([[x]])), np.array, lambda x: x]
+        for scalar_container in scalar_containers:
+            def check(dtype, scalar_container):
+                A = self.spcreator((3,4), dtype=dtype)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
+                    A[0, 0] = scalar_container(dtype.type(0))  # bug 870
+                    A[1, 2] = scalar_container(dtype.type(4.0))
+                    A[0, 1] = scalar_container(dtype.type(3))
+                    A[2, 0] = scalar_container(dtype.type(2.0))
+                    A[0,-1] = scalar_container(dtype.type(8))
+                    A[-1,-2] = scalar_container(dtype.type(7))
+                    A[0, 1] = scalar_container(dtype.type(5))
 
-            if dtype != np.bool_:
-                assert_array_equal(
-                    A.toarray(),
-                    [
-                        [0, 5, 0, 8],
-                        [0, 0, 4, 0],
-                        [2, 0, 7, 0]
-                    ]
-                )
+                if dtype != np.bool_:
+                    assert_array_equal(
+                        A.toarray(),
+                        [
+                            [0, 5, 0, 8],
+                            [0, 0, 4, 0],
+                            [2, 0, 7, 0]
+                        ]
+                    )
 
-            for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
-                assert_raises(IndexError, A.__setitem__, ij, 123.0)
+                for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+                    assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
-            for v in [[1,2,3], array([1,2,3])]:
-                assert_raises(ValueError, A.__setitem__, (0,0), v)
+                for v in [[1,2,3], array([1,2,3])]:
+                    assert_raises(ValueError, A.__setitem__, (0,0), v)
 
-            if (not np.issubdtype(dtype, np.complexfloating) and
-                    dtype != np.bool_):
-                for v in [3j]:
-                    assert_raises(TypeError, A.__setitem__, (0,0), v)
+                if (not np.issubdtype(dtype, np.complexfloating) and
+                        dtype != np.bool_):
+                    for v in [3j]:
+                        assert_raises(TypeError, A.__setitem__, (0,0), v)
 
-        for dtype in supported_dtypes:
-            check(np.dtype(dtype))
+            for dtype in supported_dtypes:
+                check(np.dtype(dtype), scalar_container)
 
     def test_negative_index_assignment(self):
         # Regression test for GitHub issue 4428.
