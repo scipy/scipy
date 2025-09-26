@@ -82,8 +82,11 @@ def test_nd_coo_format(ndim, value, tmpdir):
     with tmpdir.as_cwd():
         tmpfile = "f.npz"
 
-        save_npz(tmpfile, A)
-        loaded_A = load_npz(tmpfile)
+        try:
+            save_npz(tmpfile, A)
+            loaded_A = load_npz(tmpfile)
+        finally:
+            os.remove(tmpfile)
 
     assert isinstance(loaded_A, coo_array)
     assert_(loaded_A.shape == A.shape)
