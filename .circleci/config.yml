@@ -76,7 +76,8 @@ jobs:
           command: |
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
-            pip install mpmath gmpy2 "asv>=0.6.0" pooch threadpoolctl spin
+            # asv upper bound due to issue in gh-23611, remove when that is resolved
+            pip install mpmath gmpy2 "asv<0.6.5" pooch threadpoolctl spin
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
