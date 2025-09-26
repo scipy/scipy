@@ -219,6 +219,71 @@ your system.
         try again. The Fortran compiler should be installed as described in
         this section.
 
+  .. tab-item:: Windows on ARM64
+    :sync: windows on ARM64
+
+    A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
+    This is trickier on Windows than on other platforms, because MSVC does not
+    support Fortran, and gfortran and MSVC can't be used together. You will
+    need the following set of compilers:
+
+    1. MSVC + flang (``cl``, ``flang``)
+    2. LLVM + flang (``clang-cl``, ``flang``)
+
+    Compared to macOS and Linux, building SciPy on Windows is a little more
+    difficult, due to the need to set up these compilers. It is not possible to
+    just call a one-liner on the command prompt as you would on other
+    platforms.
+
+    First, install Microsoft Visual Studio - the 2022 Community Edition or any
+    newer version will work (see the `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__).
+    Ensure that you have installed necessary Visual Studio components for building SciPy 
+    on WoA from `here <https://gist.github.com/Mugundanmcw/331804a640764f727cd0406c23257433>`__.
+
+
+    To use flang compiler for Windows on ARM64, install Latest LLVM
+    toolchain for WoA from `here <https://github.com/llvm/llvm-project/releases>`__.
+
+    .. tab-set::
+
+      .. tab-item:: MSVC
+
+        The MSVC installer does not put the compilers on the system path, and
+        the install location may change. To query the install location, MSVC
+        comes with a ``vswhere.exe`` command-line utility. And to make the
+        C/C compilers available inside the shell you are using, you need to
+        run a ``.bat`` file for the correct bitness and architecture (e.g., for
+        ARM64-based CPUs, use ``vcvarsarm64.bat``).
+
+        For detailed guidance, see `Use the Microsoft C toolset from the command line
+        <https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170>`__.
+
+      .. tab-item:: LLVM
+
+        Similar to MSVC, LLVM does not put the compilers on the system path.
+        To set system path for LLVM compilers, users may need to use ``set``
+        command to put compilers on the system path. To check compiler's path
+        for LLVM's clang-cl, try invoking LLVM's clang-cl compiler in the shell you use
+        (``clang-cl --version``).
+
+    .. note::
+
+        Compilers should be on the system path (i.e., the ``PATH`` environment
+        variable should contain the directory in which the compiler executables
+        can be found) in order to be found, with the exception of MSVC which
+        will be found automatically if and only if there are no other compilers
+        on the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or
+        Git Bash) to invoke a build. To check that this is the case, try
+        invoking a Fortran compiler in the shell you use (e.g., ``flang
+        --version``).
+
+    .. warning::
+
+        Currently, Conda environment is not yet supported officially on `Windows
+        on ARM64 <https://github.com/conda-forge/conda-forge.github.io/issues/1940>`__.
+        The present approach uses virtualenv for building SciPy from source on
+        Windows on ARM64.
+
 
 Building SciPy from source
 --------------------------
@@ -348,6 +413,14 @@ virtual environments:
 
       .. tab-item:: Windows
         :sync: windows
+
+        ::
+
+          python -m venv venv
+          venv\Scripts\Activate.ps1
+
+      .. tab-item:: Windows on ARM64
+        :sync: Windows on ARM64
 
         ::
 
