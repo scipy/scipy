@@ -877,7 +877,7 @@ def test_inverse(xp, ndim: int):
 @make_xp_test_case(RigidTransform.as_matrix)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_properties(xp, ndim: int):
-    atol = 1e-12
+    atol = 1e-12 if xpx.default_dtype(xp) == xp.float64 else 1e-6
     shape = (ndim,) * (ndim - 1)
     dtype = xpx.default_dtype(xp)
     rng = np.random.default_rng(100)
@@ -888,7 +888,7 @@ def test_properties(xp, ndim: int):
     tf = RigidTransform.from_components(t, r)
 
     xp_assert_close(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
-    assert xp.all(tf.rotation.approx_equal(r))
+    assert xp.all(tf.rotation.approx_equal(r, atol=atol))
     xp_assert_close(tf.translation, t, atol=atol)
     # Test that we don't return views that would modify the original array
     xpx.at(tf.translation)[..., 0].set(0.0)
