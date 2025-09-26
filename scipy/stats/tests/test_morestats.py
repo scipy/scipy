@@ -25,7 +25,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
+from scipy._lib._array_api import is_torch, make_xp_test_case
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
