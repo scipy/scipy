@@ -484,8 +484,9 @@ def test_from_dual_quat(xp, ndim: int):
     expected_zeros = xp.zeros(shape) if shape != () else xp.asarray(0.0)[()]
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:]), expected_zeros,
-                    atol=atol)
+    vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
+    vecdot = vecdot[()] if vecdot.shape == () else vecdot
+    xp_assert_close(vecdot, expected_zeros, atol=atol)
 
     # real and dual quaternion are not orthogonal
     unnormalized_dual_quat = xp.asarray(
@@ -500,8 +501,9 @@ def test_from_dual_quat(xp, ndim: int):
     
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:]), expected_zeros,
-                    atol=atol)
+    vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
+    vecdot = vecdot[()] if vecdot.shape == () else vecdot
+    xp_assert_close(vecdot, expected_zeros, atol=atol)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
     unnormalized_dual_quat = xp.asarray(
@@ -512,8 +514,9 @@ def test_from_dual_quat(xp, ndim: int):
 
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:]), expected_zeros,
-                    atol=atol)
+    vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
+    vecdot = vecdot[()] if vecdot.shape == () else vecdot
+    xp_assert_close(vecdot, expected_zeros, atol=atol)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
@@ -544,8 +547,9 @@ def test_from_dual_quat(xp, ndim: int):
     assert not xp.any(xpx.isclose(q_norm, 0.0, atol=0.0001))
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
-    xp_assert_close(xp.vecdot(dual_quat_norm[..., :4], dual_quat_norm[..., 4:]),
-                    expected_zeros, atol=atol)
+    vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
+    vecdot = vecdot[()] if vecdot.shape == () else vecdot
+    xp_assert_close(vecdot, expected_zeros, atol=atol)
     xp_assert_close(random_dual_quats[..., :4], dual_quat_norm[..., :4], atol=atol)
 
 
@@ -1164,8 +1168,9 @@ def test_normalize_dual_quaternion(xp, ndim: int):
     expected = xp.ones(shape) if shape != () else xp.asarray(1.0)[()]
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected, atol=atol)
     expected = xp.zeros(shape) if shape != () else xp.asarray(0.0)[()]
-    xp_assert_close(xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:]), expected,
-                    atol=atol)
+    vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
+    vecdot = vecdot[()] if vecdot.shape == () else vecdot
+    xp_assert_close(vecdot, expected, atol=atol)
 
 
 @make_xp_test_case(RigidTransform.from_matrix, RigidTransform.from_rotation,
