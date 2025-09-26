@@ -22,8 +22,7 @@ target-version = "py311"
 # `W292` added in gh-21023 to enforce newlines at end of files.
 select = ["E", "F", "PGH004", "UP", "B006", "B008", "B028", "ICN001", "W292"]
 # E741: ignore ambiguous variable names (this ignore could be made more granular)
-# UP038 is deprecated
-ignore = ["E741", "UP038"]
+ignore = ["E741"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
