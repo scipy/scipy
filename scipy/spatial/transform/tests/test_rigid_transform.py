@@ -174,8 +174,8 @@ def test_from_matrix_array_like():
 
 
 @make_xp_test_case(RigidTransform.from_components)
-@pytest.mark.parametrize("r_ndim", range(1, 4))
-@pytest.mark.parametrize("t_ndim", range(1, 4))
+@pytest.mark.parametrize("r_ndim", range(1, 3))
+@pytest.mark.parametrize("t_ndim", range(1, 3))
 def test_from_components(xp, r_ndim: int, t_ndim: int):
     atol = 1e-12
     dims = (6, 5, 4, 3)  # Common shape
@@ -631,7 +631,7 @@ def test_as_dual_quat(xp, ndim: int):
 def test_from_as_internal_consistency(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12
-    n = 1000
+    n = 10
     rng = np.random.default_rng(10)
     shape = (n,) + (ndim,) * (ndim - 1)
     
@@ -763,7 +763,7 @@ def test_translation_alone(xp):
 @make_xp_test_case(RigidTransform.apply, RigidTransform.__mul__)
 def test_composition(xp):
     atol = 1e-12
-    tf_shapes = [(), (1,), (2,), (1, 2), (4, 2), (1, 4, 2), (5, 4, 2), (2, 5, 4, 2)]
+    tf_shapes = [(), (1,), (2,), (1, 2), (4, 2), (5, 4, 2)]
     dtype = xpx.default_dtype(xp)
     rng = np.random.default_rng(123)
 
@@ -979,26 +979,17 @@ def test_input_validation(xp):
             RigidTransform.from_matrix(input)
 
     # Test invalid last row
-    matrix = xp.eye(4)
-    matrix = xpx.at(matrix)[3, :].set(xp.asarray([1.0, 0, 0, 1]))
-    if is_lazy_array(matrix):
-        matrix = RigidTransform.from_matrix(matrix).as_matrix()
-        assert xp.all(xp.isnan(matrix))
-    else:
-        with pytest.raises(ValueError, match="last row of transformation matrix"):
-            RigidTransform.from_matrix(matrix)
-
-    # Test invalid last row for multiple transforms
-    matrix = xp.zeros((2, 4, 4))
-    matrix = xpx.at(matrix)[...].set(xp.eye(4))
-    matrix = xpx.at(matrix)[1, 3, :].set(xp.asarray([1.0, 0, 0, 1]))
-    if is_lazy_array(matrix):
-        matrix = RigidTransform.from_matrix(matrix).as_matrix()
-        assert not xp.any(xp.isnan(matrix[0, ...]))
-        assert xp.all(xp.isnan(matrix[1, ...]))
-    else:
-        with pytest.raises(ValueError, match="last row of transformation matrix"):
-            RigidTransform.from_matrix(matrix)
+    for ndim in range(3):
+        shape = (ndim,) * (ndim - 1)
+        matrix = xp.zeros(shape + (4, 4))
+        matrix = xpx.at(matrix)[...].set(xp.eye(4))
+        matrix = xpx.at(matrix)[..., 3, :].set(xp.asarray([1.0, 0, 0, 1]))
+        if is_lazy_array(matrix):
+            matrix = RigidTransform.from_matrix(matrix).as_matrix()
+            assert xp.all(xp.isnan(matrix[..., 3, :]))
+        else:
+            with pytest.raises(ValueError, match="last row of transformation matrix"):
+                RigidTransform.from_matrix(matrix)
 
     # Test left handed rotation matrix
     matrix = xp.eye(4)

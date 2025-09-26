@@ -34,9 +34,9 @@ def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
     # not accumulate floating point error during composition.
     last_row_ok = np.all(mat[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
     if np.any(~last_row_ok):
-        raise ValueError(
-            "Expected last row of transformation matrix to be exactly [0, 0, 0, 1]."
-        )
+        ind = np.where(~last_row_ok)[0][0]
+        raise ValueError(f"Expected last row of transformation matrix {ind} to be "
+                            f"exactly [0, 0, 0, 1], got {mat[ind, 3, :]}.")
 
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some

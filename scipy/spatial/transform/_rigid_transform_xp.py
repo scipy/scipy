@@ -37,9 +37,16 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     # We delay lazy branch checks until after normalization to avoid overwriting nans
     # with the rotation matrix
     if not lazy and xp.any(~last_row_ok):
+        if last_row_ok.shape == ():
+            idx = ()
+        else:
+            idx = tuple(int(i[0]) for i in xp.nonzero(~last_row_ok))
+        vals = matrix[idx + (3, ...)]
         raise ValueError(
-            "Expected last row of transformation matrix to be exactly [0, 0, 0, 1]."
+            f"Expected last row of transformation matrix {idx} to be "
+            f"exactly [0, 0, 0, 1], got {vals}"
         )
+
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
     # overhead in converting a rotation matrix to a quaternion and back, it
