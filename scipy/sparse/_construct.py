@@ -595,11 +595,9 @@ def kron(A, B, format=None):
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         bsr_sparse = bsr_array
-        csr_sparse = csr_array
         coo_sparse = coo_array
     else:  # use spmatrix
         bsr_sparse = bsr_matrix
-        csr_sparse = csr_matrix
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
