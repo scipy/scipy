@@ -1004,6 +1004,16 @@ class TestAffineTransform:
             expected,
         )
 
+    def test_affine_transform2(self):
+        x = np.zeros((100, 100, 100))
+        x[40:60, 40:60] = 1  # make rectangle
+        matrix = np.array([[1., 0., 0.],
+                                [0., 0.92, -0.38],
+                                [-0., 0.38, 0.92]])
+        shift = np.array([60, 60, 60])  # shift to corner of rectangle
+        origin = np.array([40, 40, 40])  # rotate around other corner
+        output = ndimage.affine_transform2(x, matrix, shift=shift, origin=origin)
+        assert np.abs(output.sum() - 35494.07) < 0.1
 
 @make_xp_test_case(ndimage.shift)
 class TestShift:
