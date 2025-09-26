@@ -31,7 +31,7 @@ import copy
 
 lazy_xp_modules = [Rotation, Slerp]
 
-# from_quat and as_quat are used in almost all tests, so we mark them module-wide 
+# from_quat and as_quat are used in almost all tests, so we mark them module-wide
 pytestmark = make_xp_pytest_marks(Rotation.as_quat, Rotation.from_quat)
 
 
@@ -729,12 +729,13 @@ def test_from_euler_single_rotation(xp):
 
 
 @make_xp_test_case(Rotation.from_euler)
-def test_from_euler_single_seq_rotation(xp):
-    angles = xp.asarray([0, 90])
-    quat = Rotation.from_euler("X", angles, degrees=True).as_quat()
-    expected_quat = xp.asarray([[0.0, 0, 0, 1], 
-                                [1 / math.sqrt(2), 0, 0, 1 / math.sqrt(2)]])
-    xp_assert_close(quat, expected_quat)
+def test_from_euler_input_validation(xp):
+    # Single sequence with multiple angles
+    with pytest.raises(ValueError, match="Expected last dimension of `angles` to"):
+        Rotation.from_euler("X", xp.asarray([0, 90]))
+    # Multiple sequences with single angle
+    with pytest.raises(ValueError, match="Expected last dimension of `angles` to"):
+        Rotation.from_euler("XYZ", xp.asarray([90]))
 
 
 @make_xp_test_case(Rotation.from_euler)
@@ -1092,7 +1093,7 @@ def test_inv(xp):
 
     xp_assert_close(result1, eye3d, atol=atol)
     xp_assert_close(result2, eye3d, atol=atol)
-    
+
     # Batched version
     batch_shape = (10, 3, 7)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
@@ -1297,9 +1298,10 @@ def test_mean(xp, ndim: int):
     desired = xp.zeros((1,) * (ndim - 1))
     if desired.ndim == 0:
         desired = desired[()]
+    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
-        xp_assert_close(r.mean().magnitude(), desired, atol=1e-10)
+        xp_assert_close(r.mean().magnitude(), desired, atol=atol)
 
 
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
@@ -1614,7 +1616,7 @@ def test_setitem_slice(xp):
     r2 = rotation_to_xp(Rotation.random(5, rng=rng), xp)
     r1[1:6] = r2
     xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
-    
+
     # Multiple dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 5, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 5, 4))))
@@ -2071,11 +2073,15 @@ def test_repr_rotation_sequence(xp):
 Rotation.from_matrix(array([[[ 0.,  0.,  1.],
                              [ 0.,  1.,  0.],
                              [-1.,  0.,  0.]],
-                     
+
                             [[ 0., -1.,  0.],
                              [ 1.,  0.,  0.],
                              [ 0.,  0.,  1.]]]))"""
-        assert actual == expected
+        def stripped(s: str) -> str:
+            # don't fail due to leading whitespace differences
+            return "\n".join(map(str.lstrip, s.splitlines()))
+
+        assert stripped(actual) == stripped(expected)
     else:
         assert actual.startswith("Rotation.from_matrix(")
 
@@ -2263,7 +2269,7 @@ def test_slerp_call_time_out_of_range(xp):
 def test_slerp_call_scalar_time(xp):
     dtype = xpx.default_dtype(xp)
     atol = 1e-16 if dtype == xp.float64 else 1e-7
-    r = Rotation.from_euler('X', xp.asarray([0, 80]), degrees=True)
+    r = Rotation.from_euler('X', xp.asarray([[0], [80]]), degrees=True)
     s = Slerp([0, 1], r)
 
     r_interpolated = s(0.25)
@@ -2297,13 +2303,13 @@ def test_multiplication_nd(xp):
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 3, 4))))
     r3 = r1 * r2
     assert r3.as_quat().shape == (2, 3, 4)
-    
+
     # same shape len, different dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(1, 3, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 1, 4))))
     r3 = r1 * r2
     assert r3.as_quat().shape == (2, 3, 4)
-    
+
     # different shape len, different dimensions
     r1 = Rotation.from_quat(xp.asarray(rng.normal(size=(3, 1, 4, 4))))
     r2 = Rotation.from_quat(xp.asarray(rng.normal(size=(2, 4, 4))))
@@ -2551,15 +2557,14 @@ def test_from_davenport_one_or_two_axes(xp):
     # Single rotation, single axis, axes.shape == (3, )
     rot = Rotation.from_rotvec(ez * xp.pi/4)
     rot_dav = Rotation.from_davenport(ez, 'e', xp.pi/4)
-    xp_assert_close(rot.as_quat(canonical=True),
-                    rot_dav.as_quat(canonical=True))
+    xp_assert_close(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
-    # Single rotation, single axis, axes.shape == (1, 3)
+    # Single rotation, single axis, axes.shape == (1, 3), angles.shape == (1, )
+    # -> Still single rotation
     axes = xp.reshape(ez, (1, 3))  # Torch can't create tensors from xp.asarray([ez])
-    rot = Rotation.from_rotvec(axes * xp.pi/4)
+    rot = Rotation.from_rotvec(ez * xp.pi/4)
     rot_dav = Rotation.from_davenport(axes, 'e', [xp.pi/4])
-    xp_assert_close(rot.as_quat(canonical=True),
-                    rot_dav.as_quat(canonical=True))
+    xp_assert_close(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
     # Single rotation, two axes, axes.shape == (2, 3)
     axes = xp.stack([ez, ey], axis=0)
@@ -2567,20 +2572,18 @@ def test_from_davenport_one_or_two_axes(xp):
     rot = rot[0] * rot[1]
     axes_dav = xp.stack([ey, ez], axis=0)
     rot_dav = Rotation.from_davenport(axes_dav, 'e', [xp.pi/6, xp.pi/4])
-    xp_assert_close(rot.as_quat(canonical=True),
-                    rot_dav.as_quat(canonical=True))
+    xp_assert_close(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
     # Two rotations, single axis, axes.shape == (3, )
     axes = xp.stack([ez, ez], axis=0)
     rot = Rotation.from_rotvec(axes * xp.asarray([[xp.pi/6], [xp.pi/4]]))
     axes_dav = xp.reshape(ez, (1, 3))
-    rot_dav = Rotation.from_davenport(axes_dav, 'e', [xp.pi/6, xp.pi/4])
-    xp_assert_close(rot.as_quat(canonical=True),
-                    rot_dav.as_quat(canonical=True))
+    rot_dav = Rotation.from_davenport(axes_dav, 'e', [[xp.pi/6], [xp.pi/4]])
+    xp_assert_close(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
 
 @make_xp_test_case(Rotation.from_davenport)
-@pytest.mark.parametrize("ndim", range(2, 4))
+@pytest.mark.parametrize("ndim", range(1, 4))
 def test_from_davenport_shapes(xp, ndim: int):
     # The shape rules for ND rotations are as follows:
     # axes.shape[-2] must be angles.shape[-1]
@@ -2612,8 +2615,7 @@ def test_from_davenport_shapes(xp, ndim: int):
 
 
 @make_xp_test_case(Rotation.from_davenport)
-@pytest.mark.parametrize("ndim", range(2, 4))
-def test_from_davenport_broadcast(xp, ndim: int):
+def test_from_davenport_broadcast(xp):
     rng = np.random.default_rng(0)
     # Create random, orthogonal axes
     r = Rotation.from_quat(xp.asarray(rng.normal(size=(4, 9, 1, 4))))
@@ -2648,6 +2650,10 @@ def test_from_davenport_invalid_input(xp):
         Rotation.from_davenport(xp.asarray([ez]), 'xyz', [0])
     with pytest.raises(ValueError, match="Expected `angles`"):
         Rotation.from_davenport(xp.asarray([ez, ey, ez]), 'e', [0, 1, 2, 3])
+    with pytest.raises(ValueError, match="Expected `angles`"):  # Too many angles
+        Rotation.from_davenport(xp.asarray(ez), 'e', [0, 1])
+    with pytest.raises(ValueError, match="Expected `angles`"):  # Too few angles
+        Rotation.from_davenport(xp.asarray([ez, ey, ez]), 'e', [0, 1])
 
 
 def test_from_davenport_array_like():
@@ -3007,7 +3013,7 @@ def test_boolean_indexes(xp):
 
     r3 = r[xp.asarray([True, True, True])]
     assert len(r3) == 3
-    
+
     # Multiple dimensions
     r = Rotation.from_quat(xp.ones((3, 2, 4)))
     r4 = r[xp.asarray([True, False, False])]
