@@ -3,7 +3,6 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_warns
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
@@ -334,6 +333,70 @@ class TestRegularGridInterpolator:
         # xi = [(1, 1, 1)]
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize("ndim", [1, 2, 3])
+    @pytest.mark.parametrize("method", ["linear", "nearest"])
+    def test_length_one_axis_all(self, dtype, ndim, method):
+        # gh-23171: length-1 axes in all dimensions are legal
+        # for all methods parametrized above.
+
+        # Construct test point 'x0' with coordinates[0, 1, ..., ndim-1].
+        # NOTE: choice of coordinates is arbitrary, could be random numbers,
+        # but using np.arange for convenience.
+        x0 = np.arange(ndim, dtype=dtype)
+
+        # Unpack 'x0'; loosly speaking this is the inverse of np.mgrid.
+        # By construction 'points' defines a grid of length one along all axes.
+        points = tuple(np.asarray([xi]) for xi in x0)
+
+        # Construct 'values' array of dimensions (1, 1, ...) from 0D 'val'.
+        val = np.asarray(1/7, dtype=dtype)
+        values = np.full(shape=(1, )*ndim, fill_value=val)
+
+        # Fill value, as a 0D array of correct dtype.
+        fill = np.asarray(1/42, dtype=dtype)
+
+        # method "linear" promotes results to np.float64
+        promoted_dtype = np.float64 if method == "linear" else dtype
+
+        # Create interpolator instances, with and without 'bounds_error' check.
+        interp_fill = RegularGridInterpolator(
+            points, values, method=method, bounds_error=False, fill_value=fill
+        )
+        interp_err = RegularGridInterpolator(
+            points, values, method=method, bounds_error=True,
+        )
+
+        # Check interpolator returns correct value for valid sample.
+        sample = np.asarray([x0])
+        wanted = np.asarray([val], dtype=promoted_dtype)
+        for result in [interp_fill(sample), interp_err(sample)]:
+            xp_assert_equal(result, wanted)
+
+        # Check out of bound point along first direction.
+        x0[0] += 1
+        sample = np.asarray([x0])
+        wanted = np.asarray([fill], dtype=promoted_dtype)
+        result = interp_fill(sample)
+        xp_assert_equal(result, wanted)
+        with pytest.raises(
+            ValueError,
+            match="^One of the requested xi is out of bounds in dimension 0$",
+        ):
+            interp_err(sample)
+
+        # check point with NaN in first direction
+        x0[0] = np.nan
+        sample = np.asarray([x0])
+        wanted = np.asarray([np.nan], dtype=promoted_dtype)
+        result = interp_fill(sample)
+        xp_assert_equal(result, wanted)
+        with pytest.raises(
+            ValueError,
+            match="^One of the requested xi is out of bounds in dimension 0$",
+        ):
+            interp_err(sample)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
@@ -697,7 +760,6 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         points, values = self._get_sample_4d()
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
@@ -968,7 +1030,6 @@ class TestInterpN:
 
         xp_assert_close(v1, v2)
 
-    @pytest.mark.thread_unsafe
     def test_complex_pchip(self):
         # Complex-valued data deprecated for pchip
         x, y, values = self._sample_2d_data()
@@ -980,7 +1041,6 @@ class TestInterpN:
         with pytest.raises(ValueError, match='real'):
             interpn(points, values, sample, method='pchip')
 
-    @pytest.mark.thread_unsafe
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
         x, y, values = self._sample_2d_data()
@@ -989,7 +1049,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(ComplexWarning):
+        with pytest.warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(

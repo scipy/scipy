@@ -7,6 +7,8 @@ from functools import partial
 from . import _quadpack
 import numpy as np
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
@@ -17,6 +19,7 @@ class IntegrationWarning(UserWarning):
     pass
 
 
+@xp_capabilities(np_only=True)
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50, complex_func=False):
@@ -429,6 +432,22 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     if not isinstance(args, tuple):
         args = (args,)
 
+    # Shortcut for empty interval, also works for improper integrals.
+    if a == b:
+        if full_output == 0:
+            return (0., 0.)
+        else:
+            infodict = {"neval": 0, "last": 0,
+                        "alist": np.full(limit, np.nan, dtype=np.float64),
+                        "blist": np.full(limit, np.nan, dtype=np.float64),
+                        "rlist": np.zeros(limit, dtype=np.float64),
+                        "elist": np.zeros(limit, dtype=np.float64),
+                        "iord" : np.zeros(limit, dtype=np.int32)}
+            if complex_func:
+                return (0.+0.j, 0.+0.j, {"real": infodict, "imag": infodict})
+            else:
+                return (0., 0., infodict)
+
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
 
@@ -676,6 +695,7 @@ def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                                     epsabs, epsrel, limit)
 
 
+@xp_capabilities(np_only=True)
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     Compute a double integral.
@@ -809,6 +829,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
+@xp_capabilities(np_only=True)
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             epsrel=1.49e-8):
     """
@@ -957,6 +978,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
+@xp_capabilities(np_only=True)
 def nquad(func, ranges, args=None, opts=None, full_output=False):
     r"""
     Integration over multiple variables.
@@ -969,9 +991,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     Parameters
     ----------
     func : {callable, scipy.LowLevelCallable}
-        The function to be integrated. Has arguments of ``x0, ... xn``,
-        ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
-        which must be floats.  Where ``t0, ... tm`` are extra arguments
+        The function to be integrated. Has arguments of ``x0, ..., xn``,
+        ``t0, ..., tm``, where integration is carried out over ``x0, ..., xn``,
+        which must be floats.  Where ``t0, ..., tm`` are extra arguments
         passed in args.
         Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
         Integration is carried out in order.  That is, integration over ``x0``
@@ -995,7 +1017,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
         either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ... tn``, required by ``func``, ``ranges``,
+        Additional arguments ``t0, ..., tn``, required by ``func``, ``ranges``,
         and ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or

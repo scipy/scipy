@@ -1,3 +1,6 @@
+import math
+import warnings
+
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -100,7 +103,6 @@ class TestGeometricSlerp:
                             end=end,
                             t=np.linspace(0, 1, 10))
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("start, end, expected", [
         # North and South Poles are definitely antipodes
         # but should be handled gracefully now
@@ -180,20 +182,6 @@ class TestGeometricSlerp:
                                  end=end,
                                  t=np.linspace(0, 1, 4))
         assert_allclose(actual, expected, atol=1e-16)
-
-    @pytest.mark.parametrize("t", [
-        # both interval ends clearly violate limits
-        np.linspace(-20, 20, 300),
-        # only one interval end violating limit slightly
-        np.linspace(-0.0001, 0.0001, 17),
-        ])
-    def test_t_values_limits(self, t):
-        # geometric_slerp() should appropriately handle
-        # interpolation parameters < 0 and > 1
-        with pytest.raises(ValueError, match='interpolation parameter'):
-            _ = geometric_slerp(start=np.array([1, 0]),
-                                end=np.array([0, 1]),
-                                t=t)
 
     @pytest.mark.parametrize("start, end", [
         (np.array([1]),
@@ -390,8 +378,8 @@ class TestGeometricSlerp:
         # the test should only be enforced for cases where
         # geometric_slerp determines that the input is actually
         # on the unit sphere
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(UserWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
             result = geometric_slerp(P, Q, ts, 1e-18)
             norms = np.linalg.norm(result, axis=1)
             error = np.max(np.abs(norms - 1))
@@ -415,3 +403,63 @@ class TestGeometricSlerp:
             geometric_slerp(start=arr1,
                             end=arr1,
                             t=t)
+
+
+    @pytest.mark.parametrize("start, end, t, expected", [
+        # verify intuitive cases for t > 1 or < 0 (extrapolation)
+
+        # quarter way around the unit circle, doubling to
+        # half way around (allowed antipode since non-ambiguous
+        # geodesic):
+        ([0, 1], [1, 0], 2, [0, -1]),
+        # 1/8 way around the unit circle, quadrupling to half way
+        # (another allowed non-ambiguous antipode)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 4, [0, -1]),
+        # 1/8 way around the unit circle, 6x to 3/4 way around (270 deg)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 6, [-1, 0]),
+        # 1/8 way around the unit circle, 7x to 315 deg
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], 7,
+         [-math.sqrt(2)/2, math.sqrt(2)/2]),
+        # the above three extrapolations in reverse order should be returned
+        # in that same order:
+        ([0, 1],
+         [math.sqrt(2)/2, math.sqrt(2)/2],
+         [7, 6, 4],
+         [[-math.sqrt(2)/2, math.sqrt(2)/2],
+          [-1, 0],
+          [0, -1]]),
+        # same case in 3d (sphere), in the xy plane:
+        ([0, 1, 0],
+         [math.sqrt(2)/2, math.sqrt(2)/2, 0],
+         [7, 6, 4],
+         [[-math.sqrt(2)/2, math.sqrt(2)/2, 0],
+          [-1, 0, 0],
+          [0, -1, 0]]),
+        # 1/8 way around the unit circle, moving 300 deg backwards
+        # should end up at pi/6 (since there is no forward travel with
+        # negative extrapolation)
+        ([0, 1], [math.sqrt(2)/2, math.sqrt(2)/2], (-300/45), [math.sqrt(3)/2, 0.5]),
+    ])
+    def test_extrapolation_basic(self, start, end, t, expected):
+        actual_path = geometric_slerp(start=start,
+                                      end=end,
+                                      t=t)
+        assert_allclose(actual_path, expected, atol=2e-16)
+
+    @pytest.mark.parametrize("start, end, t, expected", [
+    # cases where start and end proper are antipodes
+    # and t > 1 or < 0; these cases should issue a warning due to
+    # geodesic ambiguity
+
+    # North to South on unit sphere, then back to North again;
+    # there are an infinite number of possible routes, but they all
+    # return back to North
+    ([0, 0, 1], [0, 0, -1], -2, [0, 0, 1]),
+    # move "backwards" to South pole via an infinite number
+    # of possible routes
+    ([0, 0, 1], [0, 0, -1], -1, [0, 0, -1]),
+    ])
+    def test_extrapolation_antipodes(self, start, end, t, expected):
+        with pytest.warns(UserWarning, match='antipodes'):
+            actual_path = geometric_slerp(start=start, end=end, t=t)
+        assert_allclose(actual_path, expected, atol=2.8e-16)

@@ -193,6 +193,7 @@ Multivariate distributions
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
    vonmises_fisher        -- Von Mises-Fisher distribution
+   matrix_t               -- Matrix variate t distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -260,7 +261,6 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
-   find_repeats
    rankdata
    tiecorrect
    trim_mean

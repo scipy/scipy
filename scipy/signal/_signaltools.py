@@ -27,11 +27,11 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
+    xp_swapaxes
 
 )
 from scipy._lib.array_api_compat import is_array_api_obj
-import scipy._lib.array_api_compat.numpy as np_compat
 import scipy._lib.array_api_extra as xpx
 
 
@@ -99,22 +99,6 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
-
-
-def _reject_objects(arr, name):
-    """Warn if arr.dtype is object or longdouble.
-    """
-    dt = np.asarray(arr).dtype
-    if not (np.issubdtype(dt, np.integer)
-            or dt in [np.bool_, np.float16, np.float32, np.float64,
-                      np.complex64, np.complex128]
-    ):
-        msg = (
-            f"dtype={dt} is not supported by {name} and will raise an error in "
-            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
-            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
-        )
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -250,15 +234,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -843,14 +819,7 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
-def _swapaxes(x, ax1, ax2, xp):
-    """np.swapaxes"""
-    shp = list(range(x.ndim))
-    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
-    return xp.permute_dims(x, shp)
-
-
-# may want to look at moving _swapaxes and this to array-api-extra,
+# may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
     """A simplified version of np.split, with `indices` being an list.
@@ -863,11 +832,11 @@ def _split(x, indices_or_sections, axis, xp):
     div_points = [0] + list(indices_or_sections) + [Ntotal]    
 
     sub_arys = []
-    sary = _swapaxes(x, axis, 0, xp=xp)
+    sary = xp_swapaxes(x, axis, 0, xp=xp)
     for i in range(Nsections):
         st = div_points[i]
         end = div_points[i + 1]
-        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+        sub_arys.append(xp_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
 
     return sub_arys
 
@@ -1073,7 +1042,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = xp.reshape(ret, shape_ret)
+    ret = xp.reshape(ret, tuple(shape_ret))
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -1372,15 +1341,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'choose_conv_method')
-        _reject_objects(in2, 'choose_conv_method')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1511,15 +1472,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1668,14 +1621,6 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
-
-    Notes
-    -----
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
-
-    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
-    the specialised function `scipy.signal.medfilt2d` may be faster.
 
     """
     xp = array_namespace(volume)
@@ -2219,16 +2164,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(b, a, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(x, 'lfilter')
-        _reject_objects(a, 'lfilter')
-        _reject_objects(b, 'lfilter')
+    xp = array_namespace(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -2236,14 +2172,17 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if zi is not None:
        zi = np.asarray(zi)
 
+    if not (b.ndim == 1 and xp_size(b) > 0):
+        raise ValueError(f"Parameter b is not a non-empty 1d array, since {b.shape=}!")
+    if not (a.ndim == 1 and xp_size(a) > 0):
+        raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
-        if b.ndim != 1 and a.ndim != 1:
-            raise ValueError('object of too small depth for desired array')
         x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
@@ -2251,7 +2190,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
             # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
-                raise ValueError('object of too small depth for desired array')
+                raise ValueError("Dimensions of parameters x and zi must match, but " +
+                                 f"{x.ndim=}, {zi.ndim=}!")
             expected_shape = list(x.shape)
             expected_shape[axis] = b.shape[0] - 1
             expected_shape = tuple(expected_shape)
@@ -2268,7 +2208,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     elif k != axis and zi.shape[k] == 1:
                         strides[k] = 0
                     else:
-                        raise ValueError('Unexpected shape for zi: expected '
+                        raise ValueError('Unexpected shape for parameter zi: expected '
                                          f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
@@ -2276,7 +2216,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError(f"input type '{dtype}' not supported")
+            raise NotImplementedError("Parameter's dtypes produced result type " +
+                                      f"'{dtype}', which is not supported!")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -2347,17 +2288,7 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    try:
-        xp = array_namespace(a, b, y, x)
-    except TypeError:
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(a, 'lfiltic')
-        _reject_objects(b, 'lfiltic')
-        _reject_objects(y, 'lfiltic')
-        if x is not None:
-            _reject_objects(x, 'lfiltic')
+    xp = array_namespace(a, b, y, x)
 
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
@@ -2450,16 +2381,19 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
+    >>> remainder
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
     """
     xp = array_namespace(signal, divisor)
 
     num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
     den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
-    if num.ndim > 1:
-        raise ValueError("signal must be 1-D.")
-    if den.ndim > 1:
-        raise ValueError("divisor must be 1-D.")
+    if not (num.ndim == 1 and xp_size(num) > 0):
+        raise ValueError("Parameter signal must be non-empty 1d array, " +
+                         f"but its shape is {num.shape}!")
+    if not (den.ndim == 1 and xp_size(den) > 0):
+        raise ValueError("Parameter divisor must be non-empty 1d array, " +
+                         f"but its shape is {den.shape}!")
     N = num.shape[0]
     D = den.shape[0]
     if D > N:
@@ -2476,19 +2410,23 @@ def deconvolve(signal, divisor):
 def hilbert(x, N=None, axis=-1):
     r"""FFT-based computation of the analytic signal.
 
-    The analytic signal is calculated by filtering out the negative frequencies and
+    The analytic signal is calculated by zeroing out the negative frequencies and
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
     
     The transformation is done along the last axis by default.
 
+    For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
+
     Parameters
     ----------
     x : array_like
         Signal data.  Must be real.
     N : int, optional
-        Number of Fourier components.  Default: ``x.shape[axis]``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axis`.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
 
@@ -2578,53 +2516,177 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = xp.zeros(N, dtype=Xf.dtype)
+    Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
+        Xf[..., 1: N // 2] *= 2.0
+        Xf[..., N // 2 + 1:N] = 0.0
     else:
-        h[0] = 1
-        h[1:(N + 1) // 2] = 2
+        Xf[..., 1:(N + 1) // 2] *= 2.0
+        Xf[..., (N + 1) // 2:N] = 0.0
 
-    if x.ndim > 1:
-        ind = [xp.newaxis] * x.ndim
-        ind[axis] = slice(None)
-        h = h[tuple(ind)]
-    x = sp_fft.ifft(Xf * h, axis=axis)
+    Xf = xp.moveaxis(Xf, -1, axis)
+    x = sp_fft.ifft(Xf, axis=axis)
     return x
 
 
-def hilbert2(x, N=None):
-    """
-    Compute the '2-D' analytic signal of `x`
+def hilbert2(x, N=None, axes=(-2, -1)):
+    r"""Compute the '2-D' analytic signal of `x`.
+
+    The 2-D analytic signal is calculated as a so-called "single-orthant" transform.
+    This is achieved by applying one-dimensional Hilbert functions (as in
+    `~scipy.signal.hilbert`) to the first and to the second array axis in Fourier space.
+
+    For NumPy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
 
     Parameters
     ----------
     x : array_like
-        2-D signal data.
+        Input signal. Must be at least two-dimensional.
     N : int or tuple of two ints, optional
-        Number of Fourier components. Default is ``x.shape``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axes`.  Default: ``x.shape[i] for i in axes``
+    axes : tuple of two ints, optional
+        Axes along which to do the transformation.  Default: (-2, -1).
+
+        .. versionchanged:: 1.17
+
+            Added `axes` parameter
 
     Returns
     -------
     xa : ndarray
-        Analytic signal of `x` taken along axes (0,1).
+        Analytic signal of `x` taken along given axes.
+
+    Notes
+    -----
+    The "single-orthant" transform, as defined in [2]_, is calculated by performing the
+    following steps:
+
+    1. Calculate the two-dimensional FFT of the input, i.e.,
+
+       .. math::
+
+            X[p,q] = \sum_{k,l=0}^{N_0,N_1} x[k,l]\,
+                                                 e^{-2j\pi k p/N_0}\, e^{-2j\pi l q/N_1}
+
+    2. Zero negative frequency bins and double their positive counterparts, i.e.,
+
+       .. math::
+
+           X_a[p,q] = \big(1 + s_{N_0}(p)\big) \big(1 + s_{N_1}(q)\big) X[p,q]
+
+       with :math:`s_N(.)` being a modified sign function defined as
+
+       .. math::
+
+           s_N(p) := \begin{cases}
+                                 -1 & \text{ for } p < 0\ ,\\
+                       \phantom{-}0 & \text{ for } p = 0\ ,\\
+                                 +1 & \text{ for } 1 \leq p < (N+1) // 2\ ,\\
+                       \phantom{-}0 & \text{ elsewhere.}
+                     \end{cases}
+
+       The limitation of the ":math:`+1`" case to the range of ``[1:(N+1)//2]``
+       accounts for the unpaired Nyquist frequency bin at :math:`N/2` for even
+       :math:`N`. Note that :math:`X_a[p] = \big(1 + s_N(p)\big) X[p]` is the
+       one-dimensional Hilbert function (as in `~scipy.signal.hilbert`) in Fourier
+       space.
+
+    3. Produce the analytic signal by performing the inverse FFT, i.e.,
+
+       .. math::
+
+           x_a[k, l] = \frac{1}{N_0 N_1}
+                 \sum_{p,q=0}^{N_0,N_1} X_a[p,q]\, e^{2j\pi k p/N_0}\, e^{2j\pi l q/N_1}
+
+    The "single-orthant" transform is not the only possible definition of an analytic
+    signal in multiple dimensions (as noted in [1]_). Consult [3]_ for a description of
+    properties that this 2-D transform does and does not share with the 1-D transform.
+    The second example below shows one of the downsides of this approach.
 
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
         https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Hahn, Stefan L. "Multidimensional complex signals with
+        single-orthant spectra." Proceedings of the IEEE 80.8
+        (1992): 1287-1300.
+        `PDF <https://ieeexplore.ieee.org/iel1/5/4083/00158601.pdf>`__
+    .. [3] Bülow, Thomas, and Gerald Sommer. "A novel approach to the 2D analytic
+        signal." In International Conference on Computer Analysis of Images and
+        Patterns, pp. 25-32. Berlin, Heidelberg: Springer Berlin Heidelberg, 1999.
+        `PDF <https://www.informatik.uni-kiel.de/inf/Sommer/doc/Publications/tbl/caip99.pdf>`__
+
+    Examples
+    --------
+    The following example calculates the two-dimensional analytic signal from a single
+    impulse with an added constant offset. The impulse produces an FFT where each bin
+    has a value of one and the constant offset component produces only a non-zero
+    component at the ``(0,0)`` bin.
+
+    >>> import numpy as np
+    >>> from scipy.fft import fft2, fftshift, ifftshift
+    >>> from scipy.signal import hilbert2
+    ...
+    >>> # Input signal is unit impulse with a constant offset:
+    >>> x = np.ones((5, 5)) / 5
+    >>> x[0, 0] += 1
+    ...
+    >>> X = fftshift(fft2(x))  # Zero frequency bin is at center
+    >>> print(X)
+    [[1.-0.j 1.-0.j 1.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 6.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.+0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.+0.j 1.+0.j 1.+0.j]]
+    >>> x_a = hilbert2(x)
+    >>> X_a = fftshift(fft2(x_a))
+    >>> print(np.round(X_a, 3))
+    [[ 0.+0.j  0.+0.j -0.+0.j  0.+0.j  0.+0.j]
+     [ 0.+0.j  0.+0.j -0.+0.j  0.+0.j  0.+0.j]
+     [ 0.+0.j  0.+0.j  6.+0.j  2.+0.j  2.+0.j]
+     [ 0.+0.j  0.+0.j  2.+0.j  4.+0.j  4.+0.j]
+     [ 0.+0.j  0.+0.j  2.+0.j  4.+0.j  4.+0.j]]
+
+    The FFT of the result illustrates that the values of the lower right quadrant (or
+    orthant) with purely positive frequency bins have been quadrupled. The values at its
+    borders, where only one frequency component is zero, are doubled. The zero frequency
+    bin ``(0, 0)`` has not been altered. All other quadrants have been set to zero.
+
+    This second example illustrates a problem with the "single-orthant" convention. A
+    purely real signal can produce an analytic signal which is completely zero:
+
+    >>> from scipy.fft import fft2, fftshift, ifft2, ifftshift
+    >>> from scipy.signal import hilbert2
+    ...
+    >>> # Create a real signal by ensuring `Z[-p,-q] == np.conj(Z[p,q])` holds:
+    >>> Z = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 0, 0, 1, 0],
+    ...               [0, 0, 0, 0, 0],
+    ...               [0, 1, 0, 0, 0],
+    ...               [0, 0, 0, 0, 0]]) * 25
+    >>> z = ifft2(ifftshift(Z))
+    >>> np.allclose(z.imag, 0)  # z is a real signal
+    True
+    >>> np.sum(z.real**2)  # z.real is non-zero
+    np.float64(50.0)
+    >>> z_a = hilbert2(z.real)
+    >>> np.allclose(z_a, 0)  # analytic signal is zero
+    True
 
     """
     xp = array_namespace(x)
     x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
-    if x.ndim > 2:
-        raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
         raise ValueError("x must be real.")
+    if len(axes) != 2:
+        raise ValueError("axes must be a tuple of length 2")
+    if axes[0] == axes[1]:
+        raise ValueError("axes must contain 2 distinct axes")
 
     if N is None:
-        N = x.shape
+        N = (x.shape[axes[0]], x.shape[axes[1]])
     elif isinstance(N, int):
         if N <= 0:
             raise ValueError("N must be positive.")
@@ -2633,24 +2695,19 @@ def hilbert2(x, N=None):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = xp.zeros(N[0], dtype=Xf.dtype)
-    h2 = xp.zeros(N[1], dtype=Xf.dtype)
-    for h in (h1, h2):
-        N1 = h.shape[0]
-        if N1 % 2 == 0:
-            h[0] = h[N1 // 2] = 1
-            h[1:N1 // 2] = 2
-        else:
-            h[0] = 1
-            h[1:(N1 + 1) // 2] = 2
+    Xf = sp_fft.fft2(x, N, axes=axes)
+    Xf = xp.moveaxis(Xf, axes, (-2, -1))
+    k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
-    h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
-    k = x.ndim
-    while k > 2:
-        h = h[:, xp.newaxis]
-        k -= 1
-    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
+    if k0 > 1:  # condition k0 > 1 needed for Dask backend
+        Xf[..., 1:k0, :] *= 2.0
+    if k1 > 1:  # condition k1 > 1 needed for Dask backend
+        Xf[..., :, 1:k1] *= 2.0
+    Xf[..., k0:, :] = 0.0
+    Xf[..., :, k1:] = 0.0
+
+    Xf = xp.moveaxis(Xf, (-2, -1), axes)
+    x = sp_fft.ifft2(Xf, axes=axes)
     return x
 
 
@@ -4139,8 +4196,11 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data : bool, optional
-        If True, perform in place detrending and avoid a copy. Default is False
+    overwrite_data: bool, optional
+        If True, allow in place detrending and avoid a copy. Default is
+        False. In place modification applies only if ``type == 'linear'``
+        and `data` is of the floating point dtype ``float32``, ``float64``,
+        ``complex64`` or ``complex128``.
 
     Returns
     -------
@@ -4808,8 +4868,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     """
     xp = array_namespace(b, a, x)
 
-    b = np.atleast_1d(b)
-    a = np.atleast_1d(a)
+    b = np.atleast_1d(np.asarray(b))
+    a = np.atleast_1d(np.asarray(a))
     x = np.asarray(x)
 
     if method not in ["pad", "gust"]:
@@ -4967,17 +5027,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(sos, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(sos, 'sosfilt')
-        _reject_objects(x, 'sosfilt')
-        if zi is not None:
-            _reject_objects(zi, 'sosfilt')
+    xp = array_namespace(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -5017,10 +5067,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape = x_shape
+    x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
-        zi.shape = zi_shape
+        zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
@@ -5132,7 +5182,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
-    zi.shape = [n_sections] + zi_shape
+    zi = zi.reshape([n_sections] + zi_shape)
     x_0 = axis_slice(ext, stop=1, axis=axis)
     (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)

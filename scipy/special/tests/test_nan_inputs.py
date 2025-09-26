@@ -1,10 +1,12 @@
 """Test how the ufuncs in special handle nan inputs.
 
 """
+import warnings
+
 from collections.abc import Callable
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_, suppress_warnings
+from numpy.testing import assert_array_equal, assert_
 import pytest
 import scipy.special as sc
 
@@ -35,17 +37,19 @@ def _get_ufuncs():
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("func", UFUNCS, ids=UFUNC_NAMES)
 def test_nan_inputs(func):
     args = (np.nan,)*func.nin
-    with suppress_warnings() as sup:
+    with warnings.catch_warnings():
         # Ignore warnings about unsafe casts from legacy wrappers
-        sup.filter(RuntimeWarning,
-                   "floating point number truncated to an integer")
+        warnings.filterwarnings(
+            "ignore",
+            "floating point number truncated to an integer",
+            RuntimeWarning
+        )
         try:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
                 res = func(*args)
         except TypeError:
             # One of the arguments doesn't take real inputs
@@ -58,8 +62,11 @@ def test_nan_inputs(func):
 
 
 def test_legacy_cast():
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning,
-                   "floating point number truncated to an integer")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            "floating point number truncated to an integer",
+            RuntimeWarning
+        )
         res = sc.bdtrc(np.nan, 1, 0.5)
         assert_(np.isnan(res))

@@ -6,6 +6,7 @@ import threading
 import numpy as np
 
 from ._continuous_distns import norm
+from scipy._lib._array_api import xp_capabilities
 import scipy.stats
 
 
@@ -16,6 +17,7 @@ class PageTrendTestResult:
     method: str
 
 
+@xp_capabilities(np_only=True)
 def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     r"""
     Perform Page's Test, a measure of trend in observations between treatments.

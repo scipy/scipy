@@ -1,13 +1,14 @@
 import math
+import warnings
 
 import numpy as np
 from numpy import array
-from numpy.testing import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
+from scipy.signal.windows._windows import _WIN_FUNC_DATA
 from scipy._lib._array_api import (
      xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
      assert_array_almost_equal, SCIPY_DEVICE, is_numpy
@@ -260,8 +261,9 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
 class TestChebWin:
 
     def test_basic(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             xp_assert_close(windows.chebwin(6, 100, xp=xp),
                             xp.asarray([0.1046401879356917, 0.5075781475823447,
                                         1.0, 1.0,
@@ -288,14 +290,16 @@ class TestChebWin:
                                         0.5190521247588651], dtype=xp.float64))
 
     def test_cheb_odd_high_attenuation(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_odd = windows.chebwin(53, at=-40, xp=xp)
         assert_array_almost_equal(cheb_odd, xp.asarray(cheb_odd_true), decimal=4)
 
     def test_cheb_even_high_attenuation(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_even = windows.chebwin(54, at=40, xp=xp)
         assert_array_almost_equal(cheb_even, xp.asarray(cheb_even_true), decimal=4)
 
@@ -303,8 +307,9 @@ class TestChebWin:
         cheb_odd_low_at_true = xp.asarray([1.000000, 0.519052, 0.586405,
                                            0.610151, 0.586405, 0.519052,
                                            1.000000], dtype=xp.float64)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_odd = windows.chebwin(7, at=10, xp=xp)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
@@ -312,8 +317,9 @@ class TestChebWin:
         cheb_even_low_at_true = xp.asarray([1.000000, 0.451924, 0.51027,
                                             0.541338, 0.541338, 0.51027,
                                             0.451924, 1.000000], dtype=xp.float64)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             cheb_even = windows.chebwin(8, at=-10, xp=xp)
         assert_array_almost_equal(cheb_even, cheb_even_low_at_true, decimal=4)
 
@@ -772,6 +778,27 @@ class TestLanczos:
 
 
 class TestGetWindow:
+    """Unit test for `scipy.signal.get_windows`. """
+
+    def test_WIN_FUNC_DATA_integrity(self):
+        """Verify that the `_windows._WIN_FUNC_DATA` dict is consistent.
+
+          The keys of _WIN_FUNC_DATA are made of tuples of strings of allowed window
+          names. Its values are 2-tuples made up of the window function and a
+          entry characterizing the existence of window parameters as ``True``,
+          ``False`` or ``'OPTIONAL'``.
+
+
+          It is verified that the correct window name (i.e., corresponding to the
+          function in the value tuple) is included in the key tuple. It is also checked
+          that the second entry in the value tuple is either ``True``, ``False`` or
+          ``'OPTIONAL'``.
+          """
+        for nn_, v_ in _WIN_FUNC_DATA.items():
+            func_name = v_[0].__name__
+            msg = f"Function name in {nn_} does not contain name of actual function!"
+            assert func_name in nn_, msg
+            assert v_[1] in (True, False, 'OPTIONAL')
 
     def test_boxcar(self, xp):
         w = windows.get_window('boxcar', 12, xp=xp)
@@ -784,8 +811,9 @@ class TestGetWindow:
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_odd(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             w = windows.get_window(('chebwin', -40), 53, fftbins=False, xp=xp)
         assert_array_almost_equal(
             w, xp.asarray(cheb_odd_true, dtype=xp.float64), decimal=4
@@ -794,8 +822,9 @@ class TestGetWindow:
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_even(self, xp):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, xp.asarray(cheb_even_true), decimal=4)
 
@@ -803,19 +832,54 @@ class TestGetWindow:
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
-        assert_array_almost_equal(win1, win2, decimal=4)
+        xp_assert_equal(win1, win2)
 
     def test_kaiser_float(self, xp):
         win1 = windows.get_window(7.2, 64, xp=xp)
         win2 = windows.kaiser(64, 7.2, False, xp=xp)
-        xp_assert_close(win1, win2)
+        xp_assert_equal(win1, win2)
 
+    @pytest.mark.parametrize('Nx', [-1, 3.0, np.float64(3)])
+    def test_invalid_parameter_NX(self, Nx, xp):
+        with pytest.raises(ValueError, match="^Parameter Nx=.*"):
+            windows.get_window('hann', Nx, xp=xp)
+
+    # noinspection PyTypeChecker
     def test_invalid_inputs(self, xp):
-        # Window is not a float, tuple, or string
-        assert_raises(ValueError, windows.get_window, set('hann'), 8, xp=xp)
+        """Raise all exceptions (except those concerning parameter `Nx`). """
+        with pytest.raises(ValueError, match="^Parameter fftbins=.*"):
+            windows.get_window('hann', 5, fftbins=1, xp=xp)
+        with pytest.raises(ValueError, match="^Parameter window=.*"):
+            windows.get_window(['hann',], 5, xp=xp)
+        with pytest.raises(ValueError, match="^First tuple entry of parameter win.*"):
+            windows.get_window((42,), 5, xp=xp)
+        with pytest.raises(ValueError, match="^Invalid window name 'INVALID'.*"):
+            windows.get_window('INVALID', 5, xp=xp)
+        with pytest.raises(ValueError, match="^'hann' does not allow parameters.*"):
+            windows.get_window(('hann', 1), 5, xp=xp)
+        with pytest.raises(ValueError, match="^'kaiser' must have parameters.*"):
+            windows.get_window('kaiser', 5, xp=xp)
+        with pytest.raises(ValueError, match="^Window dpss must have one.*"):
+            windows.get_window(('dpss', 1, 2), 5, xp=xp)
+        with pytest.raises(ValueError, match="^'general_cosine' does not accept.*"):
+            xp_ = xp or np  # ensure parameter xp_ is not None
+            windows.get_window(('general cosine', [1, 2]), 5, xp=xp_)
 
-        # Unknown window type error
-        assert_raises(ValueError, windows.get_window, 'broken', 4, xp=xp)
+    def test_symmetric_periodic(self, xp):
+        """Ensure that suffixes `_periodic` and `_symmetric` work for window names. """
+        w_sym = windows.bartlett(5, sym=True, xp=xp)
+        xp_assert_close(get_window('bartlett', 5, fftbins=False, xp=xp), w_sym)
+        xp_assert_close(get_window('bartlett_symmetric', 5, xp=xp), w_sym)
+        # overwrite parameter `fftbins`:
+        xp_assert_close(get_window('bartlett_symmetric', 5, fftbins=True, xp=xp), w_sym)
+
+        w_per = windows.bartlett(5, sym=False, xp=xp)
+        xp_assert_close(get_window('bartlett', 5, xp=xp), w_per)
+        xp_assert_close(get_window('bartlett', 5, fftbins=True, xp=xp), w_per)
+        xp_assert_close(get_window('bartlett_periodic', 5, xp=xp), w_per)
+        # overwrite parameter `fftbins`:
+        xp_assert_close(get_window('bartlett_periodic', 5, fftbins=False, xp=xp),
+                        w_per)
 
     @xfail_xp_backends(np_only=True, reason='TODO: make resample array API ready')
     def test_array_as_window(self, xp):
@@ -876,8 +940,9 @@ def test_windowfunc_basics(xp):
             if is_torch(xp) and SCIPY_DEVICE != 'cpu':
                 pytest.skip(reason='needs eight_tridiagonal which is CPU only')
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "This window is not suitable")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "This window is not suitable", UserWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True, xp=xp)
             w2 = window(7, *params, sym=False, xp=xp)

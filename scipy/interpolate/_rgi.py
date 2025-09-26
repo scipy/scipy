@@ -1,6 +1,7 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
+from types import GenericAlias
 
 import numpy as np
 
@@ -271,6 +272,9 @@ class RegularGridInterpolator:
     _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, *, solver=None, solver_args=None):

@@ -243,11 +243,11 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights *= 1.0 / weights.sum()
+    weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
     if precenter:
-        y -= y.mean()
+        y = y - y.mean()
 
     # transform arrays
     # row vector
@@ -494,7 +494,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                  scaling=scaling, axis=axis)
 
 
-def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1, average='mean'):
     r"""
@@ -517,7 +517,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -669,7 +669,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
     r"""
@@ -690,7 +690,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -897,6 +897,15 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
 
+    if x.shape[axis] < y.shape[axis]:  # zero-pad x to shape of y:
+        z_shape = list(y.shape)
+        z_shape[axis] = y.shape[axis] - x.shape[axis]
+        x = np.concatenate((x, np.zeros(z_shape)), axis=axis)
+    elif y.shape[axis] < x.shape[axis]:  # zero-pad y to shape of x:
+        z_shape = list(x.shape)
+        z_shape[axis] = x.shape[axis] - y.shape[axis]
+        y = np.concatenate((y, np.zeros(z_shape)), axis=axis)
+
     # using cast() to make mypy happy:
     fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
     if scaling not in (scales := {'spectrum': 'magnitude', 'density': 'psd'}):
@@ -945,7 +954,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return SFT.f, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """Compute a spectrogram with consecutive Fourier transforms (legacy function).
@@ -973,7 +982,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg.
-        Defaults to a Tukey window with shape parameter of 0.25.
+        Defaults to a periodic Tukey window with shape parameter of 0.25.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -1401,7 +1410,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     return np.min(binsums) > tol
 
 
-def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1, scaling='spectrum'):
     r"""Compute the Short Time Fourier Transform (legacy function).
@@ -1428,7 +1437,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to 256.
     noverlap : int, optional
@@ -1592,7 +1601,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, time, Zxx
 
 
-def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
     r"""Perform the inverse Short Time Fourier transform (legacy function).
@@ -1617,7 +1626,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window. Must match the window used to generate the
+        to a periodic Hann window. Must match the window used to generate the
         STFT for faithful inversion.
     nperseg : int, optional
         Number of data points corresponding to each STFT segment. This
@@ -1894,7 +1903,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return time, x
 
 
-def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     r"""
     Estimate the magnitude squared coherence estimate, Cxy, of
@@ -1919,7 +1928,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the

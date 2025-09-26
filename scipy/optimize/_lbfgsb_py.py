@@ -42,6 +42,8 @@ from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
+from scipy._lib.deprecation import _NoValue
+import warnings
 
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 
@@ -93,7 +95,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxfun=15000, maxiter=15000, disp=None,
+                  iprint=_NoValue, maxfun=15000, maxiter=15000, disp=_NoValue,
                   callback=None, maxls=20):
     """
     Minimize a function func using the L-BFGS-B algorithm.
@@ -144,7 +146,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     disp : int, optional
         Deprecated option that previously controlled the text printed on the
@@ -152,7 +154,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxfun : int, optional
         Maximum number of function evaluations. Note that this function
@@ -265,7 +267,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     # build options
     callback = _wrap_callback(callback)
-    opts = {'maxcor': m,
+    opts = {'disp': disp,
+            'iprint': iprint,
+            'maxcor': m,
             'ftol': factr * np.finfo(float).eps,
             'gtol': pgtol,
             'eps': epsilon,
@@ -288,9 +292,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
-                     disp=None, maxcor=10, ftol=2.2204460492503131e-09,
+                     disp=_NoValue, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
-                     iprint=-1, callback=None, maxls=20,
+                     iprint=_NoValue, callback=None, maxls=20,
                      finite_diff_rel_step=None, workers=None,
                      **unknown_options):
     """
@@ -305,7 +309,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxcor : int
         The maximum number of variable metric corrections used to
@@ -334,7 +338,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
@@ -373,6 +377,17 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     x0 = asarray(x0).ravel()
     n, = x0.shape
+    if disp is not _NoValue:
+        warnings.warn("scipy.optimize: The `disp` and `iprint` options of the "
+                      "L-BFGS-B solver are deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=3)
+
+    if iprint is not _NoValue:
+        warnings.warn("scipy.optimize: The `disp` and `iprint` options of the "
+                      "L-BFGS-B solver are deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=3)
 
     # historically old-style bounds were/are expected by lbfgsb.
     # That's still the case but we'll deal with new-style from here on,
@@ -425,8 +440,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         raise ValueError('maxls must be positive.')
 
     x = array(x0, dtype=np.float64)
-    f = array(0.0, dtype=np.int32)
-    g = zeros((n,), dtype=np.int32)
+    f = array(0.0, dtype=np.float64)
+    g = zeros((n,), dtype=np.float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
     iwa = zeros(3*n, dtype=np.int32)
     task = zeros(2, dtype=np.int32)

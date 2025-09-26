@@ -7,7 +7,12 @@ import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_result_type
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    xp_capabilities,
+    xp_result_type,
+)
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -277,6 +282,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -756,6 +762,7 @@ class MonteCarloTestResult:
     null_distribution: np.ndarray
 
 
+@xp_capabilities()
 @_rename_parameter('sample', 'data')
 def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
@@ -942,7 +949,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = xp.concat(null_distribution)
-    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
+    null_distribution = xp.reshape(null_distribution, (-1,) + (1,)*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
@@ -1083,6 +1090,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             n_resamples_int, batch_iv, vals, keys, shape[1:])
 
 
+@xp_capabilities(np_only=True)
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1605,6 +1613,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
             batch_iv, alternative, axis_int, rng)
 
 
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=None, n_resamples=9999, batch=None,
