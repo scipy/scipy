@@ -2313,10 +2313,6 @@ poisson_ppf_wrap(const Real p, const Real n)
     if ((p == 0) || (n == 0)) {
         return 0.0;
     }
-    // for very small n and p not too close to 1, the result is always 0
-    if ((p < 0.975) && (n < 0.01)) {
-        return 0.0;
-    }
     Real y;
     try {
         y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
