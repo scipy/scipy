@@ -37,13 +37,16 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     # We delay lazy branch checks until after normalization to avoid overwriting nans
     # with the rotation matrix
     if not lazy and xp.any(~last_row_ok):
-        last_row_ok = xpx.atleast_nd(last_row_ok, ndim=1, xp=xp)
-        matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
-        ind = int(xp.nonzero(~last_row_ok)[0][0])
+        if last_row_ok.shape == ():
+            idx = ()
+        else:
+            idx = tuple(int(i[0]) for i in xp.nonzero(~last_row_ok))
+        vals = matrix[idx + (3, ...)]
         raise ValueError(
-            f"Expected last row of transformation matrix {ind} to be "
-            f"exactly [0, 0, 0, 1], got {matrix[ind, 3, xp.arange(4)]}."
+            f"Expected last row of transformation matrix {idx} to be "
+            f"exactly [0, 0, 0, 1], got {vals}"
         )
+
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
     # overhead in converting a rotation matrix to a quaternion and back, it
@@ -72,10 +75,9 @@ def from_rotation(quat: Array) -> Array:
 def from_translation(translation: Array) -> Array:
     xp = array_namespace(translation)
 
-    if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
+    if translation.shape[-1] != 3:
         raise ValueError(
-            "Expected `translation` to have shape (3,), or (N, 3), "
-            f"got {translation.shape}."
+            f"Expected `translation` to have shape (..., 3), got {translation.shape}."
         )
     device = xp_device(translation)
     dtype = xp_result_type(translation, force_floating=True, xp=xp)
@@ -109,10 +111,9 @@ def from_exp_coords(exp_coords: Array) -> Array:
 def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
     xp = array_namespace(dual_quat)
 
-    if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
+    if dual_quat.shape[-1] != 8:
         raise ValueError(
-            "Expected `dual_quat` to have shape (8,), or (N, 8), "
-            f"got {dual_quat.shape}."
+            f"Expected `dual_quat` to have shape (..., 8), got {dual_quat.shape}."
         )
 
     real_part = dual_quat[..., :4]
@@ -191,10 +192,8 @@ def inv(matrix: Array) -> Array:
 
 def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     xp = array_namespace(matrix)
-    if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
-        raise ValueError(
-            f"Expected vector to have shape (N, 3), or (3,), got {vector.shape}."
-        )
+    if vector.shape[-1] != 3:
+        raise ValueError(f"Expected vector to have shape (..., 3), got {vector.shape}.")
     vec = xp.empty(
         (*vector.shape[:-1], 4), dtype=vector.dtype, device=xp_device(vector)
     )
@@ -270,7 +269,6 @@ def _create_transformation_matrix(
     translations: Array, rotation_matrices: Array
 ) -> Array:
     if not translations.shape[:-1] == rotation_matrices.shape[:-2]:
-        print(translations.shape, rotation_matrices.shape)
         raise ValueError(
             "The number of rotation matrices and translations must be the same."
         )
