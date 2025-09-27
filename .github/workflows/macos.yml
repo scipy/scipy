@@ -110,4 +110,5 @@ jobs:
 
       - name: Test SciPy
         working-directory: .github/workflows
-        run: pixi run test-${{ matrix.environment }} -m full
+        # mpmath tests are too slow for CI
+        run: pixi run test-${{ matrix.environment }} -m full -- -k "not mpmath"
