@@ -1,4 +1,5 @@
 """Test of 1D aspects of sparse array classes"""
+import warnings
 
 import pytest
 
@@ -11,10 +12,6 @@ from scipy.sparse import (
         coo_array, csr_array, dok_array,
     )
 from scipy.sparse._sputils import supported_dtypes, matrix
-
-
-sup_complex = np.testing.suppress_warnings()
-sup_complex.filter(ComplexWarning)
 
 
 spcreators = [coo_array, csr_array, dok_array]
@@ -235,44 +232,44 @@ class TestCommon1D:
         assert_allclose(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
-    @pytest.mark.thread_unsafe
-    @sup_complex
     def test_from_array(self, spcreator):
-        A = np.array([2, 3, 4])
-        assert_equal(spcreator(A).toarray(), A)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            A = np.array([2, 3, 4])
+            assert_equal(spcreator(A).toarray(), A)
 
-        A = np.array([1.0 + 3j, 0, -1])
-        assert_equal(spcreator(A).toarray(), A)
-        assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
+            A = np.array([1.0 + 3j, 0, -1])
+            assert_equal(spcreator(A).toarray(), A)
+            assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
 
-    @pytest.mark.thread_unsafe
-    @sup_complex
     def test_from_list(self, spcreator):
-        A = [2, 3, 4]
-        assert_equal(spcreator(A).toarray(), A)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            A = [2, 3, 4]
+            assert_equal(spcreator(A).toarray(), A)
 
-        A = [1.0 + 3j, 0, -1]
-        assert_equal(spcreator(A).toarray(), np.array(A))
-        assert_equal(
-            spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
+            A = [1.0 + 3j, 0, -1]
+            assert_equal(spcreator(A).toarray(), np.array(A))
+            assert_equal(
+                spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
         )
 
-    @pytest.mark.thread_unsafe
-    @sup_complex
     def test_from_sparse(self, spcreator):
-        D = np.array([1, 0, 0])
-        S = coo_array(D)
-        assert_equal(spcreator(S).toarray(), D)
-        S = spcreator(D)
-        assert_equal(spcreator(S).toarray(), D)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ComplexWarning)
+            D = np.array([1, 0, 0])
+            S = coo_array(D)
+            assert_equal(spcreator(S).toarray(), D)
+            S = spcreator(D)
+            assert_equal(spcreator(S).toarray(), D)
 
-        D = np.array([1.0 + 3j, 0, -1])
-        S = coo_array(D)
-        assert_equal(spcreator(S).toarray(), D)
-        assert_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
-        S = spcreator(D)
-        assert_equal(spcreator(S).toarray(), D)
-        assert_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
+            D = np.array([1.0 + 3j, 0, -1])
+            S = coo_array(D)
+            assert_equal(spcreator(S).toarray(), D)
+            assert_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
+            S = spcreator(D)
+            assert_equal(spcreator(S).toarray(), D)
+            assert_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
 
     def test_toarray(self, spcreator, dat1d):
         datsp = spcreator(dat1d)

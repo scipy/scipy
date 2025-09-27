@@ -2453,7 +2453,6 @@ class TestNdPPoly:
         paz = p.antiderivative((0, 0, 1))
         xp_assert_close(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
 
@@ -2508,7 +2507,7 @@ def _ppoly_eval_2(coeffs, breaks, xnew, fill=np.nan):
     V = np.vander(diff, N=K)
     values = np.array([np.dot(V[k, :], pp[:, indxs[k]]) for k in range(len(xx))])
     res[mask] = values
-    res.shape = saveshape
+    res = res.reshape(saveshape)
     return res
 
 

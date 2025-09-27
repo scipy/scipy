@@ -1,4 +1,5 @@
 import itertools
+import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -6,7 +7,7 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
-                           assert_array_equal, suppress_warnings)
+                           assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
 
@@ -18,10 +19,16 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+)
 
 
 def _eps_cast(dtyp):
@@ -786,7 +793,7 @@ class TestSolve:
         d = np.logspace(0, 50, n)
         A = np.diag(d)
         b = rng.random(size=n)
-        message = "Ill-conditioned matrix..."
+        message = "(Ill-conditioned matrix|An ill-conditioned matrix)"
         with pytest.warns(LinAlgWarning, match=message):
             solve(A, b, assume_a=structure)
 
@@ -815,6 +822,7 @@ class TestSolve:
         x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
 
+    @pytest.mark.skip(reason="1. why? 2. deprecate the kwarg altogether?")
     def test_transposed_notimplemented(self):
         a = np.eye(3).astype(complex)
         with assert_raises(NotImplementedError):
@@ -890,6 +898,13 @@ class TestSolve:
         assert x.size == 0
         dt_nonempty = solve(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)).dtype
         assert x.dtype == dt_nonempty
+        assert x.shape == np.linalg.solve(a, b).shape
+
+        a = np.ones((3, 0, 2, 2), dtype=dt_a)
+        b = np.ones((2, 4), dtype=dt_b)
+        x = solve(a, b)
+        assert x.shape == (3, 0, 2, 4)
+        assert x.dtype == dt_nonempty
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -962,12 +977,156 @@ class TestSolve:
         # Check that `solve` correctly identifies the structure and returns
         # *exactly* the same solution whether `assume_a` is specified or not
         if assume_a != 'banded':  # structure detection removed for banded
-            assert_equal(solve(A_copy, b_copy, transposed=transposed), res)
+            assert_allclose(
+                solve(A_copy, b_copy, transposed=transposed), res, atol=1e-15
+            )
 
         # Check that overwrite was respected
         if not overwrite:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
+
+    @pytest.mark.skipif(
+        np.__version__ < '2', reason="solve chokes on b.ndim == 1 in numpy < 2"
+    )
+    @pytest.mark.parametrize(
+        "assume_a",
+        [
+            None, "general", "upper triangular", "lower triangular",
+            "pos", "pos upper", "pos lower"
+        ]
+    )
+    def test_vs_np_solve(self, assume_a):
+        e = np.eye(2)
+        a = np.arange(1, 4*3*2 + 1).reshape((4, 3, 2, 1, 1)) * e
+
+        b = np.ones(2)
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
+
+        b = np.ones((2, 1))
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
+
+        b = np.ones((2, 2)) * [1, 2]
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
+
+    def test_pos_lower(self):
+        # regression test for
+        # https://github.com/scipy/scipy/pull/23071#issuecomment-3085826112
+        rng = np.random.default_rng(0)
+        a = rng.normal(size=(4, 4))
+        a = np.tril(np.matmul(a, np.conj(a.T)))  # lower triangle of hermitian array
+        b = rng.normal(size=(4, 2))
+        out = solve(a, b, assume_a='pos', lower=True)
+
+        aa = a + a.T - np.diag(np.diag(a))   # the full hermitian array
+        result_np = np.linalg.solve(aa, b)
+        assert_allclose(out, result_np, atol=1e-15)
+
+        out = solve(a, b, assume_a='pos lower')
+        assert_allclose(out, result_np, atol=1e-15)
+
+        # repeat with uplo='U'
+        out = solve(a.T, b, assume_a='pos', lower=False)
+        assert_allclose(out, result_np, atol=1e-15)
+
+        out = solve(a.T, b, assume_a='pos upper')
+        assert_allclose(out, result_np, atol=1e-15)
+
+        # conflicting assume_a & lower
+        with assert_raises(ValueError):
+            solve(a, b, assume_a='pos upper', lower=True)
+
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+        b = np.ones(3)
+        x = solve(a, b)
+        assert_allclose(x, b, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[:, ::-1]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[::-1, :]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones(4)[::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones((2, 6))[:, ::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_weird_strides(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 2, 2)
+        a = a.transpose(1, 3, 4, 0, 2)
+
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == a.shape[:-1]
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    def test_posdef_not_posdef(self):
+        # the `b` matrix is invertible but not positive definite
+        a = np.arange(9).reshape(3, 3)
+        A = a + a.T + np.eye(3)
+        b = np.ones(3)
+
+        # cholesky solver fails, and the routine falls back to the general inverse
+        x0 = solve(A, b)
+        assert_allclose(A @ x0, b, atol=1e-14)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            solve(A, b, assume_a='pos')
 
 
 class TestSolveTriangular:
@@ -1050,11 +1209,6 @@ class TestSolveTriangular:
         x = solve_triangular(a, b)
         assert_(x.size == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
-
-
-parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
-)
 
 
 class TestInv:
@@ -1698,11 +1852,11 @@ class TestLstsq:
                                       err_msg=f"driver: {lapack_driver}")
 
     def test_check_finite(self):
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # On (some) OSX this tests triggers a warning (gh-7538)
-            sup.filter(RuntimeWarning,
-                       "internal gelsd driver lwork query error,.*"
-                       "Falling back to 'gelss' driver.")
+            warnings.filterwarnings("ignore",
+                                    "internal gelsd driver lwork query error,.*"
+                                    "Falling back to 'gelss' driver.", RuntimeWarning)
 
         at = np.array(((1, 20), (-30, 4)))
         for dtype, bt, lapack_driver, overwrite, check_finite in \
@@ -2173,7 +2327,7 @@ class TestSolveCirculant:
 
 
 class TestMatrix_Balance:
-
+    @skip_xp_invalid_arg
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')
 

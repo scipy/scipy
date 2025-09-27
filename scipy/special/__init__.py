@@ -5,6 +5,11 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
+.. toctree::
+   :hidden:
+
+   special.cython_special
+
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
@@ -780,11 +785,12 @@ from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 from . import _ufuncs
 from ._ufuncs import *
 
-# Replace some function definitions from _ufuncs to add Array API support
-from ._support_alternative_backends import *
-
 from . import _basic
 from ._basic import *
+
+# Replace some function definitions from _ufuncs and _basic
+# to add Array API support
+from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -794,7 +800,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,

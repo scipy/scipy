@@ -1,7 +1,6 @@
 exclude = [
   "scipy/_build_utils/tempita/*",
   "scipy/_lib/_docscrape.py",
-  "scipy/_lib/decorator.py",
   "scipy/_lib/pyprima",
   "scipy/datasets/_registry.py",
 ]
@@ -22,6 +21,7 @@ target-version = "py311"
 # `ICN001` added in gh-20382 to enforce common conventions for import.
 # `W292` added in gh-21023 to enforce newlines at end of files.
 select = ["E", "F", "PGH004", "UP", "B006", "B008", "B028", "ICN001", "W292"]
+# E741: ignore ambiguous variable names (this ignore could be made more granular)
 ignore = ["E741"]
 
 # Allow unused variables when underscore-prefixed.

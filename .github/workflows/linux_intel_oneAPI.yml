@@ -87,7 +87,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}

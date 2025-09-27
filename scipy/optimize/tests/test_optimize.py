@@ -10,11 +10,13 @@ import itertools
 import inspect
 import platform
 import threading
+import warnings
+
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
-                           assert_no_warnings, assert_warns,
-                           assert_array_less, suppress_warnings)
+                           assert_no_warnings,
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 
@@ -777,7 +779,6 @@ def test_neldermead_adaptive():
     assert_equal(res.success, True)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
     # should still be within the bounds (provided that the user doesn't make a
@@ -788,7 +789,7 @@ def test_bounded_powell_outsidebounds():
     x0 = [-4, .5, -.8]
 
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0, bounds=bounds, method="Powell")
     assert_allclose(res.x, np.array([0.] * len(x0)), atol=1e-6)
     assert_equal(res.success, True)
@@ -800,7 +801,7 @@ def test_bounded_powell_outsidebounds():
     # parameter cannot be updated!
     direc = [[0, 0, 0], [0, 1, 0], [0, 0, 1]]
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res = optimize.minimize(func, x0,
                                 bounds=bounds, method="Powell",
                                 options={'direc': direc})
@@ -809,7 +810,6 @@ def test_bounded_powell_outsidebounds():
     assert_equal(res.status, 4)
 
 
-@pytest.mark.thread_unsafe
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
     # will return a different result than the standard Powell
@@ -879,7 +879,7 @@ def test_bounded_powell_vs_powell():
     x0 = [45.46254415, -26.52351498, 31.74830248]
     bounds = [(-2, 5)] * 3
     # we're starting outside the bounds, so we should get a warning
-    with assert_warns(optimize.OptimizeWarning):
+    with pytest.warns(optimize.OptimizeWarning):
         res_bounded_powell = optimize.minimize(func, x0,
                                                bounds=bounds,
                                                method="Powell")
@@ -1430,7 +1430,6 @@ class TestOptimizeSimple(CheckOptimize):
         elif method == 'cobyqa':
             assert sol.status == 6  # Iteration limit reached
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
     def test_runtime_warning(self, method):
@@ -1596,10 +1595,12 @@ class TestOptimizeSimple(CheckOptimize):
         hesss = [hess] if needs_hess else [hess, None]
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
@@ -1622,9 +1623,9 @@ class TestOptimizeSimple(CheckOptimize):
                       'dogleg'):
             hess = self.hess
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
             # for trust-constr
-            sup.filter(UserWarning, "delta_grad == 0.*")
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
             optimize.minimize(self.func, self.startparams,
                               method=method, jac=jac, hess=hess)
 
@@ -1706,13 +1707,16 @@ class TestOptimizeSimple(CheckOptimize):
             return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.message.startswith("`callback` raised `StopIteration`")
             assert res.nit == ref.nit == maxiter
-        assert res.fun == ref.fun
-        assert_equal(res.x, ref.x)
-        assert res.status == (3 if method in [
-            'trust-constr',
-            'cobyqa',
-        ] else 99)
+        if method != 'slsqp':
+            # Unlike all other methods, apparently SLSQP updates x/fun after the last
+            # call to the callback
+            assert res.fun == ref.fun
+            assert_equal(res.x, ref.x)
+        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
+        if method != 'cobyqa':
+            assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -1736,7 +1740,6 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
     def test_minimize_warnings_gh1953(self, method):
         # test that minimize methods produce warnings rather than just using
@@ -2048,10 +2051,12 @@ class TestOptimizeScalar:
         bracket = (-1, 0, 1)
         bounds = (-1, 1)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
+        with np.errstate(invalid='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "delta_grad == 0.*", UserWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use Hessian.*", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", ".*does not use gradient.*", RuntimeWarning)
 
             count = [0]
 
@@ -2110,7 +2115,6 @@ class TestOptimizeScalar:
         res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])
     def test_minimize_scalar_warnings_gh1953(self, method):
         # test that minimize_scalar methods produce warnings rather than just
@@ -2568,10 +2572,10 @@ class TestOptimizeResultAttributes:
                       'message']
         skip = {'cobyla': ['nit']}
         for method in MINIMIZE_METHODS:
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning,
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",
                            ("Method .+ does not use (gradient|Hessian.*)"
-                            " information"))
+                            " information"), RuntimeWarning)
                 res = optimize.minimize(self.func, self.x0, method=method,
                                         jac=self.jac, hess=self.hess,
                                         hessp=self.hessp)
@@ -2664,7 +2668,6 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-    @pytest.mark.thread_unsafe
     def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
@@ -2684,7 +2687,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.thread_unsafe
+
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
@@ -3165,6 +3168,15 @@ def test_bounds_with_list():
     optimize.minimize(
         optimize.rosen, x0=np.array([9, 9]), method='Powell', bounds=bounds
     )
+
+
+@pytest.mark.parametrize('method', (
+    'slsqp', 'cg', 'cobyqa', 'powell','nelder-mead', 'bfgs', 'l-bfgs-b',
+    'trust-constr'))
+def test_minimize_maxiter_noninteger(method):
+    # Regression test for gh-23430
+    x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    optimize.minimize(rosen, x0, method=method, options={'maxiter': 100.1})
 
 
 def test_x_overwritten_user_function():

@@ -22,7 +22,7 @@ __all__ = [
 
 
 class MultiUFunc:
-    def __init__(self, ufunc_or_ufuncs, doc=None, *,
+    def __init__(self, ufunc_or_ufuncs, name=None, doc=None, *,
                  force_complex_output=False, **default_kwargs):
         if not isinstance(ufunc_or_ufuncs, np.ufunc):
             if isinstance(ufunc_or_ufuncs, collections.abc.Mapping):
@@ -44,6 +44,7 @@ class MultiUFunc:
             if len(seen_input_types) > 1:
                 raise ValueError("All ufuncs must take the same input types.")
 
+        self.__name__ = name
         self._ufunc_or_ufuncs = ufunc_or_ufuncs
         self.__doc = doc
         self.__force_complex_output = force_complex_output
@@ -141,6 +142,7 @@ class MultiUFunc:
 
 sph_legendre_p = MultiUFunc(
     sph_legendre_p,
+    "sph_legendre_p",
     r"""sph_legendre_p(n, m, theta, *, diff_n=0)
 
     Spherical Legendre polynomial of the first kind.
@@ -195,14 +197,17 @@ def _(out):
 
 sph_legendre_p_all = MultiUFunc(
     sph_legendre_p_all,
+    "sph_legendre_p_all",
     """sph_legendre_p_all(n, m, theta, *, diff_n=0)
 
     All spherical Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree ``n``, order ``m``, and all derivatives up
+    to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+    ``-m <= k <= m``.
 
     See Also
     --------
@@ -242,6 +247,7 @@ def _(out):
 
 assoc_legendre_p = MultiUFunc(
     assoc_legendre_p,
+    "assoc_legendre_p",
     r"""assoc_legendre_p(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     Associated Legendre polynomial of the first kind.
@@ -305,14 +311,17 @@ def _(out):
 
 assoc_legendre_p_all = MultiUFunc(
     assoc_legendre_p_all,
+    "assoc_legendre_p_all",
     """assoc_legendre_p_all(n, m, z, *, branch_cut=2, norm=False, diff_n=0)
 
     All associated Legendre polynomials of the first kind up to the
-    specified degree ``n`` and order ``m``.
+    specified degree ``n``, order ``m``, and all derivatives up
+    to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Output shape is ``(diff_n + 1, n + 1, 2 * m + 1, ...)``. The entry at
+    ``(i, j, k)`` corresponds to the ``i``-th derivative, degree ``j``, and
+    order ``k`` for all ``0 <= i <= diff_n``, ``0 <= j <= n``, and
+    ``-m <= k <= m``.
 
     See Also
     --------
@@ -366,6 +375,7 @@ def _(out):
 
 legendre_p = MultiUFunc(
     legendre_p,
+    "legendre_p",
     """legendre_p(n, z, *, diff_n=0)
 
     Legendre polynomial of the first kind.
@@ -419,13 +429,15 @@ def _(out):
 
 legendre_p_all = MultiUFunc(
     legendre_p_all,
+    "legendre_p_all",
     """legendre_p_all(n, z, *, diff_n=0)
 
-    All Legendre polynomials of the first kind up to the
-    specified degree ``n``.
+    All Legendre polynomials of the first kind up to the specified degree
+    ``n`` and all derivatives up to order ``diff_n``.
 
-    Output shape is ``(n + 1, ...)``. The entry at ``j``
-    corresponds to degree ``j`` for all  ``0 <= j <= n``.
+    Output shape is ``(diff_n + 1, n + 1, ...)``. The entry at ``(i, j)``
+    corresponds to the ``i``-th derivative and degree ``j`` for all
+    ``0 <= i <= diff_n`` and ``0 <= j <= n``.
 
     See Also
     --------
@@ -464,6 +476,7 @@ def _(out):
 
 sph_harm_y = MultiUFunc(
     sph_harm_y,
+    "sph_harm_y",
     r"""sph_harm_y(n, m, theta, phi, *, diff_n=0)
 
     Spherical harmonics. They are defined as
@@ -555,13 +568,19 @@ def _(out):
 
 sph_harm_y_all = MultiUFunc(
     sph_harm_y_all,
+    "sph_harm_y_all",
     """sph_harm_y_all(n, m, theta, phi, *, diff_n=0)
 
-    All spherical harmonics up to the specified degree ``n`` and order ``m``.
+    All spherical harmonics up to the specified degree ``n``, order ``m``,
+    and all derivatives up to order ``diff_n``.
 
-    Output shape is ``(n + 1, 2 * m + 1, ...)``. The entry at ``(j, i)``
-    corresponds to degree ``j`` and order ``i`` for all  ``0 <= j <= n``
-    and ``-m <= i <= m``.
+    Returns a tuple of length ``diff_n + 1`` (if ``diff_n > 0``). The first
+    entry corresponds to the spherical harmonics, the second entry
+    (if ``diff_n >= 1``) to the gradient, and the third entry
+    (if ``diff_n >= 2``)  to the Hessian matrix. Each entry is an array of
+    shape ``(n + 1, 2 * m + 1, ...)``, where the entry at ``(i, j)``
+    corresponds to degree ``i`` and order ``j`` for all ``0 <= i <= n``
+    and ``-m <= j <= m``.
 
     See Also
     --------
