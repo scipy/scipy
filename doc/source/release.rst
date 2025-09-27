@@ -6,7 +6,9 @@ This is the list of changes to SciPy between each release. For full details,-not
 see the `commit logs <https://github.com/scipy/scipy/commits/>`_.
 
 .. toctree::
+   :caption: Releases
    :maxdepth: 1
+
 
    release/1.17.0-notes
    release/1.16.2-notes

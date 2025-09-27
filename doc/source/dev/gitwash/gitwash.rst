@@ -20,6 +20,8 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
+   :caption: Git for development
+
 
    development_setup
    configure_git
