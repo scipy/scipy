@@ -804,23 +804,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data[offsets] = x
             return
 
-        mask = (offsets >= 0)
+        is_existing = (offsets >= 0)
+        is_new = ~is_existing
+        N_new = is_new.sum()
+
         # Boundary between csc and convert to coo
         # The value 0.001 is justified in gh-19962#issuecomment-1920499678
-        if self.nnz - mask.sum() < self.nnz * 0.001:
+        if N_new < self.nnz * 0.001:
             # replace existing entries
-            self.data[offsets[mask]] = x[mask]
+            self.data[offsets[is_existing]] = x[is_existing]
             # create new entries
-            mask = ~mask
-            i = i[mask]
-            j = j[mask]
-            self._insert_many(i, j, x[mask])
+            self._insert_many(i[is_new], j[is_new], x[is_new])
         else:
             # convert to coo for _set_diag
             coo = self.tocoo()
             coo._setdiag(values, k)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, _ = arrays
+            # Sort the indices (like in _insert_many)
+            if self.has_sorted_indices:
+                self.has_sorted_indices = False  # force a sort
+                self.sort_indices()
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self._shape_as_2d)
