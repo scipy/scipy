@@ -88,7 +88,8 @@
     },
     "bdtrin": {
         "_cdflib_wrappers.pxd": {
-            "bdtrin": "ddd->d"        }
+            "bdtrin": "ddd->d"
+        }
     },
     "betainc": {
         "boost_special_functions.h++": {
@@ -157,60 +158,70 @@
             "chdtriv_double": "dd->d"
         }
     },
+    "pdtrik": {
+        "boost_special_functions.h++": {
+            "pdtrik_float": "ff->f",
+            "pdtrik_double": "dd->d"
+        }
+    },
     "chndtr": {
         "boost_special_functions.h++": {
             "ncx2_cdf_float": "fff->f",
-            "ncx2_cdf_double": "ddd->d" }
+            "ncx2_cdf_double": "ddd->d"
+        }
     },
     "chndtridf": {
         "boost_special_functions.h++": {
             "ncx2_find_degrees_of_freedom_float": "fff->f",
-            "ncx2_find_degrees_of_freedom_double": "ddd->d" }
+            "ncx2_find_degrees_of_freedom_double": "ddd->d"
+        }
     },
     "chndtrinc": {
         "boost_special_functions.h++": {
             "ncx2_find_noncentrality_float": "fff->f",
-            "ncx2_find_noncentrality_double": "ddd->d" }
+            "ncx2_find_noncentrality_double": "ddd->d"
+        }
     },
-    "chndtrix":{
+    "chndtrix": {
         "boost_special_functions.h++": {
             "ncx2_ppf_float": "fff->f",
-            "ncx2_ppf_double": "ddd->d" }
+            "ncx2_ppf_double": "ddd->d"
+        }
     },
     "_factorial": {
-	"_factorial.pxd": {
-	    "_factorial": "d->d"
-	}
+        "_factorial.pxd": {
+            "_factorial": "d->d"
+        }
     },
     "elliprc": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RC": "dd->d",
-	    "cellint_RC": "DD->D"
-	}
+        "ellint_carlson_wrap.hh++": {
+            "fellint_RC": "dd->d",
+            "cellint_RC": "DD->D"
+        }
     },
     "elliprd": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RD": "ddd->d",
-	    "cellint_RD": "DDD->D"
-	}
+        "ellint_carlson_wrap.hh++": {
+            "fellint_RD": "ddd->d",
+            "cellint_RD": "DDD->D"
+        }
     },
     "elliprf": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RF": "ddd->d",
-	    "cellint_RF": "DDD->D"
-	}
+        "ellint_carlson_wrap.hh++": {
+            "fellint_RF": "ddd->d",
+            "cellint_RF": "DDD->D"
+        }
     },
     "elliprg": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RG": "ddd->d",
-	    "cellint_RG": "DDD->D"
-	}
+        "ellint_carlson_wrap.hh++": {
+            "fellint_RG": "ddd->d",
+            "cellint_RG": "DDD->D"
+        }
     },
     "elliprj": {
-	"ellint_carlson_wrap.hh++": {
-	    "fellint_RJ": "dddd->d",
-	    "cellint_RJ": "DDDD->D"
-	}
+        "ellint_carlson_wrap.hh++": {
+            "fellint_RJ": "dddd->d",
+            "cellint_RJ": "DDDD->D"
+        }
     },
     "entr": {
         "_convex_analysis.pxd": {
@@ -357,7 +368,8 @@
     },
     "fdtridfd": {
         "_cdflib_wrappers.pxd": {
-            "fdtridfd": "ddd->d"        }
+            "fdtridfd": "ddd->d"
+        }
     },
     "gdtr": {
         "xsf_wrappers.h": {
@@ -398,7 +410,7 @@
     "hyp1f1": {
         "boost_special_functions.h++": {
             "hyp1f1_double": "ddd->d"
-	    },
+        },
         "xsf_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
         }
@@ -517,7 +529,8 @@
     },
     "nbdtrik": {
         "_cdflib_wrappers.pxd": {
-            "nbdtrik": "ddd->d"        }
+            "nbdtrik": "ddd->d"
+        }
     },
     "nbdtrin": {
         "_cdflib_wrappers.pxd": {
@@ -543,16 +556,19 @@
     },
     "ncfdtridfn": {
         "_cdflib_wrappers.pxd": {
-            "ncfdtridfn": "dddd->d"        }
+            "ncfdtridfn": "dddd->d"
+        }
     },
     "ncfdtrinc": {
         "_cdflib_wrappers.pxd": {
-            "ncfdtrinc": "dddd->d"        }
+            "ncfdtrinc": "dddd->d"
+        }
     },
     "nctdtr": {
         "boost_special_functions.h++": {
             "nct_cdf_float": "fff->f",
-            "nct_cdf_double": "ddd->d"    }
+            "nct_cdf_double": "ddd->d"
+        }
     },
     "nctdtridf": {
         "_cdflib_wrappers.pxd": {
@@ -577,7 +593,8 @@
     },
     "nrdtrimn": {
         "_cdflib_wrappers.pxd": {
-            "nrdtrimn": "ddd->d"        }
+            "nrdtrimn": "ddd->d"
+        }
     },
     "nrdtrisd": {
         "_cdflib_wrappers.pxd": {
@@ -606,10 +623,6 @@
         "xsf_wrappers.h": {
             "cephes_pdtri_wrap": "pd->d"
         }
-    },
-    "pdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "pdtrik": "dd->d"        }
     },
     "poch": {
         "xsf_wrappers.h": {
@@ -708,7 +721,7 @@
             "stdtridf": "dd->d"
         }
     },
-    "stdtrit":{
+    "stdtrit": {
         "boost_special_functions.h++": {
             "t_ppf_float": "ff->f",
             "t_ppf_double": "dd->d"

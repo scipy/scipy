@@ -2295,4 +2295,63 @@ chdtriv_double(double p, double x)
     return chdtriv_wrap(p, x);
 }
 
+template<typename Real>
+Real
+poisson_ppf_wrap(const Real p, const Real n)
+{
+    if (std::isnan(p) || std::isnan(n)) {
+        return NAN;
+    }
+    // validate input
+    // cdflib returns nan for p==1, so we do the same for compatibility
+    if ((n < 0) || (p < 0) || (p >= 1)) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    // keep backwards compatible with cdflib which returns 0
+    // for p==0 or n==0
+    if ((p == 0) || (n == 0)) {
+        return 0.0;
+    }
+    // for very small n and p not too close to 1, the result is always 0
+    if ((p < 0.975) && (n < 0.01)) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
+    } catch (const std::domain_error&) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error&) {
+        sf_error("pdtrik", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error&) {
+        sf_error("pdtrik", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // In theory, y should never be negative, but with an overabundance of caution
+    // we check and return NAN if it happens.
+    //if (y < 0) {
+    //    sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+    //    y = NAN;
+    //
+    return y;
+}
+
+float
+pdtrik_float(float p, float x)
+{
+    return poisson_ppf_wrap(p, x);
+}
+
+double
+pdtrik_double(double p, double x)
+{
+    return poisson_ppf_wrap(p, x);
+}
+
 #endif
