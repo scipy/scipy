@@ -2303,9 +2303,13 @@ poisson_ppf_wrap(const Real p, const Real n)
         return NAN;
     }
     // validate input
-    // cdflib returns nan for p==1, so we do the same for compatibility
-    if ((n < 0) || (p < 0) || (p >= 1)) {
+    if ((n < 0) || (p < 0) || (p > 1)) {
         sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    // cdflib returns nan for p == 1, so we do the same
+    // for backwards compatibility
+    if (p == 1) {
         return NAN;
     }
     // keep backwards compatible with cdflib which returns 0

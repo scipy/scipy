@@ -844,3 +844,16 @@ class TestNoncentralChiSquaredFunctions:
 @pytest.mark.parametrize("x", [0.1, 100])
 def test_chdtriv_p_equals_1_returns_0(x):
     assert sp.chdtriv(1, x) == 0
+
+
+class TestPdtrik:
+    @pytest.mark.parametrize("p, n, expected",
+                             [(0, 0.5, 0),
+                              (0.5, 0, 0),
+                              (0, 0, 0)])
+    def test_edge_cases(self, p, n, expected):
+        assert sp.pdtrik(p, n) == expected
+
+    @pytest.mark.parametrize("n", (0.1, 1, 10))
+    def test_p_equals_1_returns_nan(self, n):
+        assert np.isnan(sp.pdtrik(1, n))
