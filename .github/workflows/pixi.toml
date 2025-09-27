@@ -19,6 +19,21 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "test-task"]
 solve-group = "default"
 
+[environments.build-debug]
+# tasks: build-debug
+features = ["build-deps", "build-debug"]
+solve-group = "default"
+
+[environments.ipython]
+# tasks: ipython
+features = ["run-deps", "test-deps", "ipython"]
+solve-group = "default"
+
+[environments.debug]
+# tasks: lldb
+features = ["run-deps", "test-deps", "lldb"]
+solve-group = "default"
+
 [environments.lint]
 # tasks: lint, check-python-h
 features = ["lint"]
@@ -161,6 +176,34 @@ cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = "build"
 description = "Test SciPy (default settings)"
+
+
+### Debugging ###
+
+[feature.ipython.dependencies]
+ipython = "*"
+
+[feature.ipython.tasks.ipython]
+cmd = "spin ipython --no-build"
+cwd = "../.."
+depends-on = "build"
+description = "Launch IPython"
+
+
+[feature.build-debug.tasks.build-debug]
+cmd = "spin build --build-dir=build-debug --setup-args=-Dbuildtype=debug --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cwd = "../.."
+env = { CFLAGS = "-O0 -g" }
+description = "Build SciPy with debug buildtype"
+
+[feature.lldb.dependencies]
+lldb = "*"
+
+[feature.lldb.tasks.lldb]
+cmd = "spin lldb --build-dir=build-debug --no-build"
+cwd = "../.."
+depends-on = "build-debug"
+description = "Debug with lldb"
 
 
 ### Linting ###
