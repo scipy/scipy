@@ -388,8 +388,15 @@ class TestBatch:
         b = b + 5*np.eye(5)
         q = q + 5*np.eye(5)
         r = r + 5*np.eye(5)
-        # can't easily generate valid random e, s
+        e = np.eye(5)
+        s = np.zeros((5, 5))
         self.batch_test(fun, (a, b, q, r))
+        self.batch_test(fun, (a, b, q, r, e))
+        self.batch_test(fun, (a, b, q, r, e, s))
+
+        res = fun(a, b, q, r)
+        ref = fun(a, b, q, r, s=s)
+        np.testing.assert_allclose(res, ref)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_rsf2cs(self, dtype):
