@@ -34,7 +34,6 @@ class Test_RealInterval:
         with pytest.raises(TypeError, match=message):
             domain.get_numerical_endpoints(dict)
 
-
     @pytest.mark.parametrize('x', [rng.uniform(10, 10, size=(2, 3, 4)),
                                    -np.inf, np.pi])
     def test_contains_simple(self, x):
