@@ -37,6 +37,7 @@ mle_failing_fits = [
         'vonmises',
         'levy_stable',
         'trapezoid',
+        'truncpareto',
         'truncweibull_min',
         'studentized_range',
 ]
