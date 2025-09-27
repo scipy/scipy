@@ -480,6 +480,9 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     --------
     xp_result_type
     """
+    if not args:
+        return args
+
     args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]  # solely to prevent double conversion of iterable to array
 
