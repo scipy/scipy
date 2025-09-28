@@ -2333,12 +2333,18 @@ poisson_ppf_wrap(const Real p, const Real n)
         sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
-    // For small p, y easily becomes negative. This is the correct inverse
-    // for the upper incomplete gamma function with respect to a.
+    // In the unlikely case that the computation becomes smaller
+    // than -1, we return NAN. This should never happen.
+    if (y < -1) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        return NAN;
+    }
+    // For small p, the direct formula yields values
+    // between -1 and 0. 
     // For the Poisson distribution though, the bottom limit is 0,
     // so we return 0 in that case.
-    if (y < 0) {
-        y = 0;
+    if ((-1 < y) && (y < 0)) {
+        return 0.0;
     }
     return y;
 }
