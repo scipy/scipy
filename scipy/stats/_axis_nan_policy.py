@@ -262,7 +262,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     """
     Check for empty sample; return appropriate output for a vectorized hypotest
     """
-    xp = array_namespace(*samples)
+    xp = array_namespace(*samples) if xp is None else xp
     # if none of the samples are empty, we need to perform the test
     if not any(xp_size(sample) == 0 for sample in samples):
         return None
@@ -270,7 +270,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
     NaN = _get_nan(*samples)
-    output = xp.full(output_shape, NaN)
+    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype)
     return output
 
 
@@ -568,7 +568,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
                                           and override['nan_propagation']):
-                    res = xp.full(n_out, NaN)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -584,7 +584,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = xp.full(n_out, NaN)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -594,7 +594,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 return tuple_to_result(*res)
 
             # check for empty input
-            empty_output = _check_empty_inputs(samples, axis)
+            empty_output = _check_empty_inputs(samples, axis, xp=xp)
             # only return empty output if zero sized input is too small.
             if (
                 empty_output is not None
