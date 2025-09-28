@@ -259,7 +259,7 @@ def cases_test_fit_mle():
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
-                       'skellam', 'triang',
+                       'skellam', 'trapezoid', 'triang',
                        'tukeylambda', 'vonmises'}
 
     for dist in dict(distdiscrete + distcont):
@@ -318,7 +318,7 @@ def cases_test_fit_mse():
                        'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlognorm',
                        'reciprocal', 'rel_breitwigner', 'rice',
-                       'truncnorm', 'truncweibull_min',
+                       'trapezoid', 'truncnorm', 'truncweibull_min',
                        'vonmises_line'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved

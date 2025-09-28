@@ -61,8 +61,8 @@ skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
-                'truncweibull_min', 'wrapcauchy'}
+                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'trapezoid',
+                'truncnorm', 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'dpareto_lognorm', 'exponweib', 'f', 'fisk',
                 'foldcauchy', 'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
