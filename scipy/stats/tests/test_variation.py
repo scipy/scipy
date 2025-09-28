@@ -143,7 +143,8 @@ class TestVariation:
             # torch
             warnings.filterwarnings("ignore", "std*", UserWarning)
             if axis != 0:
-                with eager_warns(SmallSampleWarning, match="See documentation...", xp=xp):
+                message = "See documentation..."
+                with eager_warns(SmallSampleWarning, match=message, xp=xp):
                     y = variation(x, axis=axis)
             else:
                 y = variation(x, axis=axis)

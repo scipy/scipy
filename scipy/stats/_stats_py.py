@@ -465,12 +465,11 @@ def _mode_result(mode, count):
     # When a slice is empty, `_axis_nan_policy` automatically produces
     # NaN for `mode` and `count`. This is a reasonable convention for `mode`,
     # but `count` should not be NaN; it should be zero.
-    xp = array_namespace(mode, count)
-    i = xp.isnan(count)
+    i = np.isnan(count)
     if i.shape == ():
-        count = xp.asarray(0, dtype=count.dtype)[()] if i else count
+        count = np.asarray(0, dtype=count.dtype)[()] if i else count
     else:
-        count = xpx.at(count)[i].set(0)
+        count[i] = 0
     return ModeResult(mode, count)
 
 
