@@ -2343,7 +2343,7 @@ poisson_ppf_wrap(const Real p, const Real n)
     // between -1 and 0. 
     // For the Poisson distribution though, the bottom limit is 0,
     // so we return 0 in that case.
-    if ((-1 < y) && (y < 0)) {
+    if ((-1 <= y) && (y < 0)) {
         return 0.0;
     }
     return y;
