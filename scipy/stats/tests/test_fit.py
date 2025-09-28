@@ -36,7 +36,6 @@ mle_failing_fits = [
         'tukeylambda',
         'vonmises',
         'levy_stable',
-        'trapezoid',
         'truncweibull_min',
         'studentized_range',
 ]
@@ -71,7 +70,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'rel_breitwigner', 'skewcauchy', 't', 'triang',
                    'truncpareto', 'truncweibull_min', 'tukeylambda',
                    'studentized_range']
 
