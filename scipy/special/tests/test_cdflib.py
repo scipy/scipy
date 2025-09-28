@@ -8,7 +8,6 @@ The following functions still need tests:
 - ncfdtrinc
 - nbdtrik
 - nbdtrin
-- pdtrik
 - nctdtridf
 - nctdtrinc
 
@@ -16,7 +15,7 @@ The following functions still need tests:
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, assert_array_equal
 import pytest
 
 import scipy.special as sp
@@ -847,13 +846,33 @@ def test_chdtriv_p_equals_1_returns_0(x):
 
 
 class TestPdtrik:
-    @pytest.mark.parametrize("p, n, expected",
+    @pytest.mark.parametrize("p, m, expected",
                              [(0, 0.5, 0),
                               (0.5, 0, 0),
                               (0, 0, 0)])
-    def test_edge_cases(self, p, n, expected):
-        assert sp.pdtrik(p, n) == expected
+    def test_edge_cases(self, p, m, expected):
+        assert sp.pdtrik(p, m) == expected
 
-    @pytest.mark.parametrize("n", (0.1, 1, 10))
-    def test_p_equals_1_returns_nan(self, n):
-        assert np.isnan(sp.pdtrik(1, n))
+    @pytest.mark.parametrize("m", (0.1, 1, 10))
+    def test_p_equals_1_returns_nan(self, m):
+        assert np.isnan(sp.pdtrik(1, m))
+
+    def test_small_probabilities(self):
+        # Edge case: m = 0 or very small.
+        k = sp.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
+        assert_array_equal(k, np.zeros((3, 3)))
+
+    def test_roundtrip_against_pdtr(self):
+        m = [10, 50, 500]
+        k = 5
+        p = sp.pdtr(k, m)
+        assert_allclose(sp.pdtrik(p, m), k, atol=1.5e-7, rtol=0)
+
+    @pytest.mark.parametrize("p, m, expected",
+                             [(1.8976107553682285e-40, 100, 2),
+                              (0.48670120172085135, 100, 99),
+                              (8.30383406699052e-69, 1000, 500),
+                              (2.252837804125894e-227, 100_000, 90_000)]
+                            )
+    def test_accuracy(self, p, m, expected):
+        assert_allclose(sp.pdtrik(p, m), expected, rtol=1e-15)
