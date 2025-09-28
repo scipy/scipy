@@ -10237,11 +10237,9 @@ class TestTruncPareto:
         c = xmax / xmin
         scale = xmin
         loc = 0
-        res = stats.truncpareto(b, c, loc, scale).pdf(x)
-
-        assert_allclose(res, ref)
-
         X = stats.truncpareto(b, c, loc, scale)
+
+        assert_allclose(X.pdf(x), ref)
         assert_allclose(X.logpdf(x), np.log(X.pdf(x)))
         # indexing avoids RuntimeWarning with `np.log(0)`
         assert_allclose(X.logcdf(x[1:]), np.log(X.cdf(x[1:])))
