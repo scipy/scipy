@@ -868,13 +868,13 @@ class TestPdtrik:
         p = sp.pdtr(k, m)
         assert_allclose(sp.pdtrik(p, m), k, atol=1.5e-7, rtol=0)
 
-    @pytest.mark.parametrize("p, m, expected",
+    @pytest.mark.parametrize("p, m, k",
                              [(1.8976107553682285e-40, 100, 2),
                               (0.48670120172085135, 100, 99),
                               (8.30383406699052e-69, 1000, 500),
                               (2.252837804125894e-227, 100_000, 90_000)]
                             )
-    def test_accuracy(self, p, m, expected):
+    def test_accuracy(self, p, m, k):
         # Reference values for p were computed with mpmath using
         # mp.gammainc(k+1, a=m, regularized=True)
-        assert_allclose(sp.pdtrik(p, m), expected, rtol=1e-15)
+        assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
