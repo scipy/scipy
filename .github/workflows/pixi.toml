@@ -191,10 +191,9 @@ description = "Launch IPython"
 
 
 [feature.build-debug.tasks.build-debug]
-cmd = "spin build --build-dir=build-debug --setup-args=-Dbuildtype=debug --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+# `-Dc_args='-O0'` needed to override `-O2` from clang activation `CFLAGS`
+cmd = "spin build --build-dir=build-debug --setup-args=-Dc_args='-O0' --setup-args=-Dbuildtype=debug --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 cwd = "../.."
-# for Cython, see mesonbuild/meson#15055
-env = { CFLAGS = "-O0 -g" }
 description = "Build SciPy with debug buildtype"
 
 [feature.lldb.dependencies]
