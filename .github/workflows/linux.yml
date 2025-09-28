@@ -296,7 +296,7 @@ jobs:
       matrix:
         # Both use numpy 2.x-dev at build time; 3.11 job then downgrades to
         # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.11', '3.12']
+        python-version: ['3.11', '3.13']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

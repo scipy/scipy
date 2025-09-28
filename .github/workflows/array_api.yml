@@ -50,7 +50,7 @@ jobs:
 
       - name: Build SciPy
         working-directory: .github/workflows
-        run: pixi run build
+        run: pixi run build-cpu
 
       - name: Test SciPy
         working-directory: .github/workflows
@@ -60,4 +60,4 @@ jobs:
 
       - name: Test SciPy with torch/float32
         working-directory: .github/workflows
-        run: pixi run --environment=array-api-cpu test-torch-float32 -- --durations 3 --timeout=60
+        run: pixi run --skip-deps test-torch-float32 -- --durations 3 --timeout=60

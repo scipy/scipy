@@ -1448,7 +1448,7 @@ class cauchy_gen(rv_continuous):
     for a real number :math:`x`.
 
     This distribution uses routines from the Boost Math C++ library for
-    the computation of the ``ppf` and ``isf`` methods. [1]_
+    the computation of the ``ppf`` and ``isf`` methods. [1]_
 
     %(after_notes)s
 
@@ -7216,16 +7216,16 @@ class kappa4_gen(rv_continuous):
 
     If :math:`h` or :math:`k` are zero then the pdf can be simplified:
 
-    h = 0 and k != 0::
+    :math:`h = 0` and :math:`k \neq 0`::
 
         kappa4.pdf(x, h, k) = (1.0 - k*x)**(1.0/k - 1.0)*
                               exp(-(1.0 - k*x)**(1.0/k))
 
-    h != 0 and k = 0::
+    :math:`h \neq 0` and :math:`k = 0`::
 
         kappa4.pdf(x, h, k) = exp(-x)*(1.0 - h*exp(-x))**(1.0/h - 1.0)
 
-    h = 0 and k = 0::
+    :math:`h = 0` and :math:`k = 0`::
 
         kappa4.pdf(x, h, k) = exp(-x)*exp(-exp(-x))
 
