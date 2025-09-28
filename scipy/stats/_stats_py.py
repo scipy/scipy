@@ -9662,6 +9662,27 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
 
+    From the example in [2]_, we take the `u_values` and `v_values` to be the values
+    :math:`i` associated with the piles :math:`P_i` and :math:`Q_i`. The `u_weights`
+    and `v_weights` are the "shovelsful of dirt" in each pile:
+
+    >>> u_values = v_values = np.asarray([1, 2, 3, 4])
+    >>> u_weights = np.asarray([3, 2, 1, 4])
+    >>> v_weights = np.asarray([1, 2, 4, 3])
+    >>> wasserstein_distance(u_values, v_values,
+    ...                      u_weights=u_weights, v_weights=v_weights)
+    np.float64(0.5)
+
+    In our context of probability distributions, however, the weights have been
+    normalized and treated as probability masses associated with each value. This
+    accounts for the factor of ten between the output of `wasserstein_distance`,
+    ``0.5``, and the result in the reference, :math:`5`. The Wasserstein distance does
+    depend on the scales of the *values* of the distributions, though:
+
+    >>> wasserstein_distance(100*u_values, 100*v_values,
+    ...                      u_weights=u_weights, v_weights=v_weights)
+    np.float64(50.0)
+
     """
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
