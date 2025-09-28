@@ -457,6 +457,10 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
     elif math.isinf(p):
         fun = xp.max if p > 0 else xp.min
+        if weights is not None:
+            zero_weight_fun = xp.min if p > 0 else xp.max
+            a_zero_weight = zero_weight_fun(a, axis=None)
+            a = xpx.at(a, weights==0).set(a_zero_weight)
         return fun(a, axis=axis)
 
     with np.errstate(divide='ignore', invalid='ignore'):
