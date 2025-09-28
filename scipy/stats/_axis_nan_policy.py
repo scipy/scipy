@@ -533,8 +533,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 if samples:
                     # when axis=None, take the maximum of all dimensions since
                     # all the dimensions are reduced.
-                    n_dims = int(np.max([xp.asarray(sample).ndim
-                                         for sample in samples]))
+                    n_dims = max([xp.asarray(sample).ndim for sample in samples])
                     reduced_axes = tuple(range(n_dims))
                 samples = [xp_ravel(sample) for sample in samples]
             else:

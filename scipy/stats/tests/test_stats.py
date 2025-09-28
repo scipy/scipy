@@ -3928,7 +3928,6 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_2))
         xp_assert_close(p, xp.asarray(self.P1_2))
 
-    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     def test_onesample_nan_policy_propagate(self, xp):
         x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
@@ -3970,7 +3969,6 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_1))
 
     @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
-    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -5680,7 +5678,6 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
     @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
-    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -5860,8 +5857,6 @@ class TestTTestInd:
         assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901),
                         atol=1e-15)
 
-
-    # @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_empty_1d_returns_nan(self, xp):
         # Two empty inputs should return a TtestResult containing nan
         # for both values.
@@ -5872,7 +5867,6 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    # @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     @pytest.mark.parametrize('b, expected_shape',
                             [(np.empty((1, 5, 0)), (3, 5)),
                             (np.empty((1, 0, 0)), (3, 0))])
@@ -5891,7 +5885,6 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, expected_value)
         xp_assert_equal(res.pvalue, expected_value)
 
-    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_nonaxis_size_zero(self, xp):
         # In this test, the length of the axis dimension is nonzero,
         # but one of the nonaxis dimensions has length 0.  Check that
@@ -5904,7 +5897,6 @@ class TestTTestInd:
         assert res.statistic.shape ==(5, 0)
         assert res.pvalue.shape == (5, 0)
 
-    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_nonaxis_size_zero_different_lengths(self, xp):
         # In this test, the length of the axis dimension is nonzero,
         # and that size is different in the two inputs,
@@ -6070,7 +6062,6 @@ def test_ttest_1samp_new_omit(xp):
 
 @make_xp_test_case(stats.ttest_1samp)
 @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
-@skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,

@@ -2785,7 +2785,6 @@ class TestCircFuncs:
         y = stats.circstd(xp.asarray([0]))
         assert math.copysign(1.0, y) == 1.0
 
-    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_circmean_accuracy_tiny_input(self, xp):
         # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
         # circmean(x) should return x because atan2(sin(x), cos(x)) == x.
