@@ -25,7 +25,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_torch, make_xp_test_case
+from scipy._lib._array_api import is_torch, make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -762,12 +762,12 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
 
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.bartlett(*args)
 
         NaN = xp.asarray(xp.nan)
@@ -1802,8 +1802,9 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.kstat(xp.asarray([]))
         xp_assert_equal(res, xp.asarray(xp.nan))
 
@@ -1841,9 +1842,10 @@ class TestKstat:
 
 @make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
         x = xp.asarray([])
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.kstatvar(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
@@ -2006,7 +2008,7 @@ class TestBoxcox_llf:
 
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
-        with pytest.warns(SmallSampleWarning, match=message):
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
@@ -2727,7 +2729,7 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = test_func(x)
 
         xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))

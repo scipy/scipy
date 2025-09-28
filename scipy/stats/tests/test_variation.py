@@ -139,15 +139,13 @@ class TestVariation:
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        with warnings.catch_warnings():
-            # torch
-            warnings.filterwarnings("ignore", "std*", UserWarning)
-            if axis != 0:
-                message = "See documentation..."
-                with eager_warns(SmallSampleWarning, match=message, xp=xp):
-                    y = variation(x, axis=axis)
-            else:
+        if axis != 0:
+            # specific message depends on `axis`, and `SmallSampleWarning`
+            # is specific enough.
+            with eager_warns(SmallSampleWarning, xp=xp):
                 y = variation(x, axis=axis)
+        else:
+            y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning:dask')
