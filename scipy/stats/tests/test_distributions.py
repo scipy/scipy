@@ -10246,6 +10246,29 @@ class TestTruncPareto:
         ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
         assert_allclose(res, ref)
 
+    def test_pdf_negative(self):
+        # truncpareto is equivalent to more general powerlaw from gh-23648
+        # exponent of truncpareto is negative in this case
+        a, xmin, xmax = 4, 3, 5
+        x = np.linspace(xmin, xmax)
+
+        # compute reference using PDF from gh-23648
+        C = a / (xmax ** a - xmin ** a)
+        ref = C * x ** (a - 1)
+
+        # compute using `truncpareto` with negative exponent
+        b = -a
+        c = xmax / xmin
+        scale = xmin
+        loc = 0
+        X = stats.truncpareto(b, c, loc, scale)
+
+        assert_allclose(X.pdf(x), ref)
+        assert_allclose(X.logpdf(x), np.log(X.pdf(x)))
+        # indexing avoids RuntimeWarning with `np.log(0)`
+        assert_allclose(X.logcdf(x[1:]), np.log(X.cdf(x[1:])))
+        assert_allclose(X.logsf(x[:-1]), np.log(X.sf(x[:-1])))
+
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])
     @pytest.mark.parametrize('fix_b', [True, False])
