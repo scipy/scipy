@@ -7,7 +7,7 @@ import pytest
 from scipy.stats import variation
 from scipy._lib._util import AxisError
 
-from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._array_api import make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
@@ -143,7 +143,7 @@ class TestVariation:
             # torch
             warnings.filterwarnings("ignore", "std*", UserWarning)
             if axis != 0:
-                with pytest.warns(SmallSampleWarning, match="See documentation..."):
+                with eager_warns(SmallSampleWarning, match="See documentation...", xp=xp):
                     y = variation(x, axis=axis)
             else:
                 y = variation(x, axis=axis)

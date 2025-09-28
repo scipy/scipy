@@ -3638,7 +3638,7 @@ class SkewKurtosisTest:
 
     def test_empty_1d(self, xp):
         x = xp.asarray([])
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = self.stat_fun(x)
 
         xp_assert_equal(res, xp.asarray(xp.nan))
@@ -5865,7 +5865,7 @@ class TestTTestInd:
     def test_ttest_ind_empty_1d_returns_nan(self, xp):
         # Two empty inputs should return a TtestResult containing nan
         # for both values.
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.ttest_ind(xp.asarray([]), xp.asarray([]))
         assert isinstance(res, stats._stats_py.TtestResult)
         NaN = xp.asarray(xp.nan)[()]
@@ -6308,7 +6308,7 @@ class TestSkewTest(NormalityTests):
 
         x = xp.arange(7.0)
 
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.skewtest(x)
             NaN = xp.asarray(xp.nan)
             xp_assert_equal(res.statistic, NaN)
@@ -6340,7 +6340,7 @@ class TestKurtosisTest(NormalityTests):
         # Regression test for ticket #1425.
         stats.kurtosistest(xp.arange(5.0))
 
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.kurtosistest(xp.arange(4.))
             NaN = xp.asarray(xp.nan)
             xp_assert_equal(res.statistic, NaN)
@@ -6356,8 +6356,7 @@ class TestNormalTest(NormalityTests):
         stats.normaltest(xp.arange(8.))
 
         # 1D sample has too few observations -> warning / NaN output
-        # specific warning messages tested for `skewtest`/`kurtosistest`
-        with pytest.warns(SmallSampleWarning):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = stats.normaltest(xp.arange(7.))
             NaN = xp.asarray(xp.nan)
             xp_assert_equal(res.statistic, NaN)

@@ -12,7 +12,7 @@ from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
-                                   xp_promote)
+                                   xp_promote, is_lazy_array)
 import scipy._lib.array_api_extra as xpx
 
 import inspect
@@ -426,6 +426,21 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         def axis_nan_policy_wrapper(*args, _no_deco=False, **kwds):
 
             if _no_deco:  # for testing, decorator does nothing
+                return hypotest_fun_in(*args, **kwds)
+
+            # For now, skip the decorator entirely if using array API. In the future,
+            # we'll probably want to use it for `keepdims`, `axis` tuples, etc.
+            if len(args) == 0:  # extract sample from `kwds` if there are no `args`
+                used_kwd_samples = list(set(kwds).intersection(set(kwd_samples)))
+                temp = used_kwd_samples[:1]
+            else:
+                temp = args[0]
+
+            if is_lazy_array(temp):
+                msg = ("Use of `nan_policy` and `keepdims` "
+                       "is incompatible with lazy arrays.")
+                if 'nan_policy' in kwds or 'keepdims' in kwds:
+                    raise NotImplementedError(msg)
                 return hypotest_fun_in(*args, **kwds)
 
             # We need to be flexible about whether position or keyword

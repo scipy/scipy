@@ -1571,7 +1571,7 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(jax_jit=False)
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1657,10 +1657,6 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 8).set(xp.nan)
-    if xp.any(xp.isnan(n)):
-        message = ("`skewtest` requires at least 8 valid observations;"
-                   "slices with fewer observations will produce NaNs.")
-        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         y = b2 * xp.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
@@ -1681,7 +1677,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(jax_jit=False)
 @_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
@@ -1762,10 +1758,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 5).set(xp.nan)
-    if xp.any(xp.isnan(n)):
-        message = ("`kurtosistest` requires at least 5 valid observations; "
-                   "slices with fewer observations will produce NaNs.")
-        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
@@ -1779,7 +1771,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     denom = 1 + x * (2/(A-4.0))**0.5
     term2 = xp.sign(denom) * xp.where(denom == 0.0, xp.nan,
                                       ((1-2.0/A)/xp.abs(denom))**(1/3))
-    if xp.any(denom == 0):
+    if not is_lazy_array(denom) and xp.any(denom == 0):
         msg = ("Test statistic not defined in some cases due to division by "
                "zero. Return nan in that case...")
         warnings.warn(msg, RuntimeWarning, stacklevel=2)
