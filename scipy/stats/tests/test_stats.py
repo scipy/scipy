@@ -6,7 +6,6 @@
 
     Additional tests by a host of SciPy developers.
 """
-import math
 import os
 import re
 import warnings
@@ -7013,20 +7012,10 @@ class TestPMean:
 
     def test_infinite_p_gh23111(self):
         # gh-23111 reported that `pmean` didn't work properly with infinite `p`;
-        # check that the example from the issue is resolved
-        assert stats.pmean([2], np.inf) == 2.0
-
-    @pytest.mark.parametrize("dtype", [np.int32, np.float64, None])
-    @pytest.mark.parametrize("axis", [0, 1, None])
-    @pytest.mark.parametrize("weighted", [False, True])
-    def test_infinite_p_gh23111b(self, xp, dtype, axis, weighted):
-        rng = np.random.default_rng(2359823495872948752)
-        size = (5, 6)
-        a = xp.asarray(rng.integers(100, size=size).astype(dtype))
-        w = xp.asarray(rng.integers(100, size=size).astype(dtype)) if weighted else None
-        kwargs = dict(weights=w, axis=axis, xp=xp)
-        check_equal_pmean(a, math.inf, xp.max(a, axis=axis), **kwargs)
-        check_equal_pmean(a, -math.inf, xp.min(a, axis=axis), **kwargs)
+        # check that this raises an appropriate error message
+        message = "Power mean only implemented for finite `p`"
+        with pytest.raises(NotImplementedError, match=message):
+            stats.pmean([2], np.inf)
 
 
 @make_xp_test_case(stats.gstd)

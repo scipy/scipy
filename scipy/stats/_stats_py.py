@@ -350,8 +350,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
         \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
 
-    When ``p=0``, it returns the geometric mean; when ``p=math.inf``, it returns
-    the maximum; and when ``p=-math.inf``, it returns the minimum.
+    When ``p=0``, it returns the geometric mean.
 
     This mean is also called generalized mean or Hölder mean, and must not be
     confused with the Kolmogorov generalized mean, also called
@@ -362,7 +361,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     a : array_like
         Input array, masked array or object that can be converted to an array.
     p : int or float
-        Exponent.
+        Exponent. Must be finite.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -436,6 +435,11 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     if not isinstance(p, int | float):
         raise ValueError("Power mean only defined for exponent of type int or "
                          "float.")
+    if p == 0:
+        return gmean(a, axis=axis, dtype=dtype, weights=weights)
+    elif math.isinf(p):
+        message = "Power mean only implemented for finite `p`"
+        raise NotImplementedError(message)
 
     xp = array_namespace(a, weights)
     a = xp.asarray(a, dtype=dtype)
@@ -452,16 +456,6 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
         message = ("The power mean is only defined if all elements are "
                    "non-negative; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-    if p == 0:
-        return gmean(a, axis=axis, dtype=dtype, weights=weights)
-    elif math.isinf(p):
-        fun = xp.max if p > 0 else xp.min
-        if weights is not None:
-            zero_weight_fun = xp.min if p > 0 else xp.max
-            a_zero_weight = zero_weight_fun(a, axis=None)
-            a = xpx.at(a, weights==0).set(a_zero_weight)
-        return fun(a, axis=axis)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         return _xp_mean(a**float(p), axis=axis, weights=weights)**(1/p)
