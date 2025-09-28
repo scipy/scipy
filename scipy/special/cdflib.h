@@ -107,7 +107,6 @@ typedef struct DzrorState DzrorState;
 
 struct TupleDID cdfbin_which2(double, double, double, double, double);
 struct TupleDID cdfbin_which3(double, double, double, double, double);
-struct TupleDID cdfchi_which3(double, double, double);
 struct TupleDID cdff_which4(double, double, double, double);
 struct TupleDID cdffnc_which3(double, double, double, double, double);
 struct TupleDID cdffnc_which4(double, double, double, double, double);
@@ -119,8 +118,6 @@ struct TupleDID cdfnbn_which3(double, double, double, double, double);
 struct TupleDID cdfnor_which3(double, double, double, double);
 struct TupleDID cdfnor_which4(double, double, double, double);
 struct TupleDID cdfpoi_which2(double, double, double);
-struct TupleDDID cdft_which1(double, double);
-struct TupleDID cdft_which2(double, double, double);
 struct TupleDID cdft_which3(double, double, double);
 struct TupleDID cdftnc_which3(double, double, double, double);
 struct TupleDID cdftnc_which4(double, double, double, double);

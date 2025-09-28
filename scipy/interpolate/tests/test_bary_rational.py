@@ -259,6 +259,15 @@ class TestAAA:
         # check accuracy
         assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)
 
+    def test_diag_scaling(self):
+        # fails without diag scaling
+        z = np.logspace(-15, 0, 300)
+        f = np.sqrt(z)
+        r = AAA(z, f)
+
+        zz = np.logspace(-15, 0, 500)
+        assert_allclose(r(zz), np.sqrt(zz), rtol=9e-6)
+
 
 class TestFloaterHormann:
     def runge(self, z):

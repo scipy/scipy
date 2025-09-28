@@ -24,7 +24,7 @@ from scipy._lib._util import _transition_to_rng, broadcastable
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def _select_backend(xp: ModuleType, cython_compatible: bool):
+def select_backend(xp: ModuleType, cython_compatible: bool):
     """Select the backend for the given array library.
 
     We need this selection function because the Cython backend for numpy does not
@@ -272,7 +272,7 @@ class Rotation:
 
     Finally, it is also possible to invert rotations:
 
-    >>> r1 = R.from_euler('z', [90, 45], degrees=True)
+    >>> r1 = R.from_euler('z', [[90], [45]], degrees=True)
     >>> r2 = r1.inv()
     >>> r2.as_euler('zyx', degrees=True)
     array([[-90.,   0.,   0.],
@@ -362,7 +362,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
+        self._backend = select_backend(xp, cython_compatible=quat.ndim < 3)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -579,7 +579,7 @@ class Rotation:
         xp = array_namespace(matrix)
         matrix = _promote(matrix, xp=xp)
         # Resulting quat will have 1 less dimension than matrix
-        backend = _select_backend(xp, cython_compatible=matrix.ndim < 4)
+        backend = select_backend(xp, cython_compatible=matrix.ndim < 4)
         quat = backend.from_matrix(matrix)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -653,7 +653,7 @@ class Rotation:
         """
         xp = array_namespace(rotvec)
         rotvec = _promote(rotvec, xp=xp)
-        backend = _select_backend(xp, cython_compatible=rotvec.ndim < 3)
+        backend = select_backend(xp, cython_compatible=rotvec.ndim < 3)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -680,24 +680,12 @@ class Rotation:
             belonging to the set {'X', 'Y', 'Z'} for intrinsic rotations, or
             {'x', 'y', 'z'} for extrinsic rotations. Extrinsic and intrinsic
             rotations cannot be mixed in one function call.
-        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
+        angles : float or array_like, shape (...,  [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
-            For a single character `seq`, `angles` can be:
-
-            - a single value
-            - array_like with shape (N,), where each `angle[i]`
-              corresponds to a single rotation
-            - array_like with shape (N, 1), where each `angle[i, 0]`
-              corresponds to a single rotation
-
-            For 2- and 3-character wide `seq`, `angles` can be:
-
-            - array_like with shape (W,) where `W` is the width of
-              `seq`, which corresponds to a single rotation with `W` axes
-            - array_like with shape (N, W) where each `angle[i]`
-              corresponds to a sequence of Euler angles describing a single
-              rotation
+            Each character in `seq` defines one axis around which `angles` turns.
+            The resulting rotation has the shape np.atleast_1d(angles).shape[:-1].
+            Dimensionless angles are thus only valid for single character `seq`.
 
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees.
@@ -731,7 +719,7 @@ class Rotation:
 
         Initialize a stack with a single rotation around a single axis:
 
-        >>> r = R.from_euler('x', [90], degrees=True)
+        >>> r = R.from_euler('x', [[90]], degrees=True)
         >>> r.as_quat().shape
         (1, 4)
 
@@ -743,7 +731,7 @@ class Rotation:
 
         Initialize multiple elementary rotations in one object:
 
-        >>> r = R.from_euler('x', [90, 45, 30], degrees=True)
+        >>> r = R.from_euler('x', [[90], [45], [30]], degrees=True)
         >>> r.as_quat().shape
         (3, 4)
 
@@ -756,7 +744,7 @@ class Rotation:
         """
         xp = array_namespace(angles)
         angles = _promote(angles, xp=xp)
-        backend = _select_backend(xp, cython_compatible=angles.ndim < 3)
+        backend = select_backend(xp, cython_compatible=angles.ndim < 3)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -792,33 +780,22 @@ class Rotation:
 
         Parameters
         ----------
-        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimensional. If two dimensional, describes the
-            sequence of axes for rotations, where each axes[i, :] is the ith
+        axes : array_like, shape (3,) or (..., [1 or 2 or 3], 3)
+            Axis of rotation, if one dimensional. If two or more dimensional, describes
+            the sequence of axes for rotations, where each axes[..., i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
             If it is equal to 'e' or 'extrinsic', the sequence will be
             extrinsic. If it is equal to 'i' or 'intrinsic', sequence
             will be treated as intrinsic.
-        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
-            Euler angles specified in radians (`degrees` is False) or degrees
+        angles : float or array_like, shape (..., [1 or 2 or 3])
+            Angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
-            For a single axis, `angles` can be:
-
-            - a single value
-            - array_like with shape (N,), where each `angle[i]`
-              corresponds to a single rotation
-            - array_like with shape (N, 1), where each `angle[i, 0]`
-              corresponds to a single rotation
-
-            For 2 and 3 axes, `angles` can be:
-
-            - array_like with shape (W,) where `W` is the number of rows of
-              `axes`, which corresponds to a single rotation with `W` axes
-            - array_like with shape (N, W) where each `angle[i]`
-              corresponds to a sequence of Davenport angles describing a
-              single rotation
+            Each angle i in the last dimension of `angles` turns around the corresponding
+            axis axis[..., i, :]. The resulting rotation has the shape
+            np.broadcast_shapes(np.atleast_2d(axes).shape[:-2], np.atleast_1d(angles).shape[:-1])
+            Dimensionless angles are thus only valid for a single axis.
 
         degrees : bool, optional
             If True, then the given angles are assumed to be in degrees.
@@ -886,7 +863,7 @@ class Rotation:
         xp = array_namespace(axes)
         axes, angles = _promote(axes, angles, xp=xp)
         cython_compatible = axes.ndim < 3 and angles.ndim < 2
-        backend = _select_backend(xp, cython_compatible=cython_compatible)
+        backend = select_backend(xp, cython_compatible=cython_compatible)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -960,7 +937,7 @@ class Rotation:
         """
         xp = array_namespace(mrp)
         mrp = _promote(mrp, xp=xp)
-        backend = _select_backend(xp, cython_compatible=mrp.ndim < 3)
+        backend = select_backend(xp, cython_compatible=mrp.ndim < 3)
         quat = backend.from_mrp(mrp)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
@@ -1196,11 +1173,7 @@ class Rotation:
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
     def as_euler(
-        self,
-        seq: str,
-        degrees: bool = False,
-        *,
-        suppress_warnings: bool = False
+        self, seq: str, degrees: bool = False, *, suppress_warnings: bool = False
     ) -> Array:
         """Represent as Euler angles.
 
@@ -1693,7 +1666,7 @@ class Rotation:
         if is_numpy(self._xp):
             vectors = xpx.atleast_nd(vectors, ndim=2, xp=self._xp)
         cython_compatible = self._quat.ndim < 3 and vectors.ndim < 3
-        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
         result = backend.apply(self._quat, vectors, inverse=inverse)
         if self._single and single_vector:
             return result[0, ...]
@@ -1782,7 +1755,7 @@ class Rotation:
                 f"first to {other._quat.shape[:-1]} rotations in second object."
             )
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
-        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
         quat = backend.compose_quat(self._quat, other._quat)
         if self._single and other._single:
             quat = quat[0]
@@ -1990,7 +1963,7 @@ class Rotation:
         False
         """
         cython_compatible = self._quat.ndim < 3 and other._quat.ndim < 3
-        backend = _select_backend(self._xp, cython_compatible=cython_compatible)
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
         return backend.approx_equal(self._quat, other._quat, atol=atol, degrees=degrees)
 
     @xp_capabilities(
@@ -2279,7 +2252,10 @@ class Rotation:
     def random(
         cls, num: int | None = None, rng: np.random.Generator | None = None
     ) -> Rotation:
-        """Generate uniformly distributed rotations.
+        r"""Generate rotations that are uniformly distributed on a sphere.
+        
+        Formally, the rotations follow the Haar-uniform distribution over the SO(3)
+        group.
 
         Parameters
         ----------
@@ -2363,6 +2339,11 @@ class Rotation:
         The rotation is estimated with Kabsch algorithm [1]_, and solves what
         is known as the "pointing problem", or "Wahba's problem" [2]_.
 
+        Note that the length of each vector in this formulation acts as an
+        implicit weight. So for use cases where all vectors need to be
+        weighted equally, you should normalize them to unit length prior to
+        calling this method.
+
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
         `b` to `a` is returned.
@@ -2412,9 +2393,9 @@ class Rotation:
             optimal rotation.
             Note that the result will also be weighted by the vectors'
             magnitudes, so perfectly aligned vector pairs will have nonzero
-            `rssd` if they are not of the same length. So, depending on the
-            use case it may be desirable to normalize the input vectors to unit
-            length before calling this method.
+            `rssd` if they are not of the same length. This can be avoided by
+            normalizing them to unit length prior to calling this method,
+            though note that doing this will change the resulting rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
@@ -2548,7 +2529,7 @@ class Rotation:
         cython_compatible = (
             (a.ndim < 3) & (b.ndim < 3) & (weights is None or weights.ndim < 2)
         )
-        backend = _select_backend(xp, cython_compatible=cython_compatible)
+        backend = select_backend(xp, cython_compatible=cython_compatible)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
             return Rotation._from_raw_quat(q, xp=xp, backend=backend), rssd, sensitivity
@@ -2562,7 +2543,7 @@ class Rotation:
         xp = array_namespace(quat)
         self._xp = xp
         self._quat = xp.asarray(quat, copy=True)
-        self._backend = _select_backend(xp, cython_compatible=self._quat.ndim < 3)
+        self._backend = select_backend(xp, cython_compatible=self._quat.ndim < 3)
         self._single = single
 
     @property
@@ -2611,7 +2592,7 @@ class Rotation:
         m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
         return "Rotation.from_matrix(" + "\n".join(m) + ")"
 
-    @xp_capabilities(jax_jit=False)
+    @xp_capabilities()
     def __iter__(self) -> Iterator[Rotation]:
         """Iterate over rotations."""
         if self._single or self._quat.ndim == 1:
@@ -2639,7 +2620,7 @@ class Rotation:
         rot._quat = quat
         rot._xp = xp
         if backend is None:
-            backend = _select_backend(xp, cython_compatible=quat.ndim < 3)
+            backend = select_backend(xp, cython_compatible=quat.ndim < 3)
         rot._backend = backend
         return rot
 

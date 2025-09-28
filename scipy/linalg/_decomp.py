@@ -177,7 +177,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -374,7 +374,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     --------
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Notes
@@ -1189,7 +1189,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
 
     See Also
     --------
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples

@@ -2,10 +2,6 @@ from . cimport sf_error
 
 from libc.math cimport NAN, isnan, isinf, isfinite
 
-cdef extern from "xsf_wrappers.h" nogil:
-    double cephes_ndtr_wrap(double a)
-    double cephes_ndtri_wrap(double y0)
-
 cdef extern from "cdflib.h" nogil:
     cdef struct TupleDDI:
         double d1
@@ -37,8 +33,6 @@ cdef extern from "cdflib.h" nogil:
     TupleDID cdfnor_which3(double, double, double, double);
     TupleDID cdfnor_which4(double, double, double, double);
     TupleDID cdfpoi_which2(double, double, double);
-    TupleDDID cdft_which1(double, double);
-    TupleDID cdft_which2(double, double, double);
     TupleDID cdft_which3(double, double, double);
     TupleDID cdftnc_which3(double, double, double, double);
     TupleDID cdftnc_which4(double, double, double, double);
@@ -124,25 +118,6 @@ cdef inline double bdtrin(double s, double p, double pr) noexcept nogil:
     ret = cdfbin_which3(p, q, s, pr, ompr)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("btdtrin", argnames, result, status, bound, 1)
-
-
-cdef inline double chdtriv(double p, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[3]
-
-    if isnan(p) or isnan(x):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-
-    ret = cdfchi_which3(p, q, x)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("chdtriv", argnames, result, status, bound, 1)
 
 
 cdef inline double fdtridfd(double dfn, double p, double f) noexcept nogil:
@@ -424,27 +399,6 @@ cdef inline double pdtrik(double p, double xlam) noexcept nogil:
     return get_result("pdtrik", argnames, result, status, bound, 1)
 
 
-cdef inline double stdtr(double df, double t) noexcept nogil:
-    cdef:
-        double result, _, bound
-        int status = 10
-        char *argnames[2]
-        TupleDDID ret
-
-    argnames[0] = "t"
-    argnames[1] = "df"
-
-    if isinf(df) and df > 0:
-        return NAN if isnan(t) else cephes_ndtr_wrap(t)
-
-    if isnan(df) or isnan(t):
-      return NAN
-
-    ret = cdft_which1(t, df)
-    result, status, bound = ret.d1, ret.i1, ret.d3
-    return get_result("stdtr", argnames, result, status, bound, 1)
-
-
 cdef inline double stdtridf(double p, double t) noexcept nogil:
     cdef:
         double q = 1.0 - p
@@ -463,26 +417,3 @@ cdef inline double stdtridf(double p, double t) noexcept nogil:
     ret = cdft_which3(p, q, t)
     result, status, bound = ret.d1, ret.i1, ret.d2
     return get_result("stdtridf", argnames, result, status, bound, 1)
-
-
-cdef inline double stdtrit(double df, double p) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isinf(df) and df > 0:
-        return NAN if isnan(p) else cephes_ndtri_wrap(p)
-
-    if isnan(p) or isnan(df):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "df"
-
-    ret = cdft_which2(p, q, df)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("stdtrit", argnames, result, status, bound, 1)

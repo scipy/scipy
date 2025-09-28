@@ -35,7 +35,7 @@ The following table summarizes the results of the experiment in which
 some participants took a daily dose of acetazolamide 250 mg while others
 took a placebo.
 
-Cases of acute mountain sickness were recorded::
+Cases of acute mountain sickness were recorded:
 
 |                         | Acetazolamide | Control/Placebo V |
 |-------------------------|---------------|-------------------|

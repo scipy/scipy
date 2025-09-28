@@ -3940,7 +3940,7 @@ class TestStudentT:
         t_meth_ref = getattr(t_dist_ref, methname)
         norm_meth = getattr(norm_dist, methname)
         res = t_meth(x)
-        assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
+        assert_allclose(res[df_infmask], norm_meth(x[df_infmask]), rtol=5e-15)
         assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
 
     @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
@@ -7955,6 +7955,30 @@ class TestTrapezoid:
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
+    def test_trapezoid_fit_convergence_gh23503(self):
+        # gh-23503 reported that trapezoid.fit would consistently converge to a
+        # triangular distribution unless starting values were provided. Check that this
+        # is resolved.
+
+        # Generate test data from a trapezoidal distribution
+        rng = np.random.default_rng(23842359234598263956)
+        true_args = 0.3, 0.7, -1, 2
+        true_dist = stats.trapezoid(*true_args)
+        x = true_dist.rvs(1000, random_state=rng)
+
+        # fit to data
+        fitted_args = stats.trapezoid.fit(x)
+
+        # Should not converge to triangular distribution (c=d=1)
+        fitted_c, fitted_d = fitted_args[:2]
+        assert not np.allclose(fitted_c, 1, atol=0.1)
+        assert not np.allclose(fitted_d, 1, atol=0.1)
+
+        # objective function is better than with true values of parameters
+        true_llf = stats.trapezoid.nnlf(true_args, x)
+        fitted_llf = stats.trapezoid.nnlf(fitted_args, x)
+        assert fitted_llf < true_llf
+
 
 class TestTriang:
     def test_edge_cases(self):
@@ -10221,6 +10245,29 @@ class TestTruncPareto:
         res = stats.truncpareto(b, c).pdf(x)
         ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
         assert_allclose(res, ref)
+
+    def test_pdf_negative(self):
+        # truncpareto is equivalent to more general powerlaw from gh-23648
+        # exponent of truncpareto is negative in this case
+        a, xmin, xmax = 4, 3, 5
+        x = np.linspace(xmin, xmax)
+
+        # compute reference using PDF from gh-23648
+        C = a / (xmax ** a - xmin ** a)
+        ref = C * x ** (a - 1)
+
+        # compute using `truncpareto` with negative exponent
+        b = -a
+        c = xmax / xmin
+        scale = xmin
+        loc = 0
+        X = stats.truncpareto(b, c, loc, scale)
+
+        assert_allclose(X.pdf(x), ref)
+        assert_allclose(X.logpdf(x), np.log(X.pdf(x)))
+        # indexing avoids RuntimeWarning with `np.log(0)`
+        assert_allclose(X.logcdf(x[1:]), np.log(X.cdf(x[1:])))
+        assert_allclose(X.logsf(x[:-1]), np.log(X.sf(x[:-1])))
 
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])
