@@ -72,16 +72,6 @@ HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12], float)
 TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
-lazy_xp_modules = [stats]
-# Oops - I ruined this. Fix later.
-# from scipy._lib.array_api_extra.testing import lazy_xp_function
-# lazy_xp_function(stats.tmean, static_argnames=("inclusive", "axis"))
-# lazy_xp_function(stats.tvar, static_argnames=("inclusive", "axis", "ddof"))
-# lazy_xp_function(stats.tstd, static_argnames=("inclusive", "axis", "ddof"))
-# lazy_xp_function(stats.tsem, static_argnames=("inclusive", "axis", "ddof"))
-# lazy_xp_function(stats.tmin, static_argnames=("inclusive", "axis"))
-# lazy_xp_function(stats.tmax, static_argnames=("inclusive", "axis"))
-
 
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly

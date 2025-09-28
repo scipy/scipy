@@ -270,7 +270,7 @@ def _check_empty_inputs(samples, axis, xp=None):
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
     NaN = _get_nan(*samples)
-    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype)
+    output = xp.full(output_shape, NaN)
     return output
 
 
@@ -509,9 +509,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 xp = array_namespace(*samples)
                 samples = xp_promote(*samples, xp=xp)
                 samples = (samples,) if not isinstance(samples, tuple) else samples
-                atleast_1d = (np.atleast_1d if is_numpy(xp)
-                              else lambda x: xpx.atleast_nd(x, ndim=1))
-                samples = [atleast_1d(sample) for sample in samples]
+                samples = [xpx.atleast_nd(sample, ndim=1) for sample in samples]
             except KeyError:  # let the function raise the right error
                 # might need to revisit this if required arg is not a "sample"
                 hypotest_fun_in(*args, **kwds)
@@ -570,7 +568,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
                                           and override['nan_propagation']):
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
+                    res = xp.full(n_out, NaN)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -586,7 +584,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
+                    res = xp.full(n_out, NaN)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -648,7 +646,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if is_too_small(samples, kwds):
                         warnings.warn(too_small_nd_omit, SmallSampleWarning,
                                       stacklevel=4)
-                        return np.full(n_out, xp.nan, dtype=NaN.dtype)
+                        return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             # Addresses nan_policy == "propagate"

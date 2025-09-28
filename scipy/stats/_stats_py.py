@@ -6018,7 +6018,7 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
     xp = array_namespace(statistic, pvalue)
     alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
     alternative = alternative[xp.isfinite(alternative)]
-    alternative = alternative[0] if xp_size(alternative) else xp.nan
+    alternative = alternative[0] if xp_size(alternative) != 0 else xp.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 
