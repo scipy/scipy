@@ -875,4 +875,6 @@ class TestPdtrik:
                               (2.252837804125894e-227, 100_000, 90_000)]
                             )
     def test_accuracy(self, p, m, expected):
+        # Reference values for p were computed with mpmath using
+        # mp.gammainc(k+1, a=m, regularized=True)
         assert_allclose(sp.pdtrik(p, m), expected, rtol=1e-15)
