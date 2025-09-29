@@ -473,7 +473,7 @@ class RigidTransform:
 
         >>> m = np.tile(np.eye(4), (2, 5, 1, 1))  # Shape (2, 5, 4, 4)
         >>> tf = Tf.from_matrix(m)
-        >>> tf.shape()
+        >>> tf.shape
         (2, 5)
         >>> tf.single
         False
@@ -1201,6 +1201,7 @@ class RigidTransform:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransform as Tf
+        >>> import numpy as np
         >>> tf = Tf.identity(3)
         >>> len(tf)
         3
