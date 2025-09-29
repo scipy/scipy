@@ -190,9 +190,9 @@ ITER_START:
         S->h1 = S->h1 + S->h3*fabs(d[j]);
     }
 
-    // Report Progress (Optimality & Feasibility)
-    S->optimal = S->h1;  // Variation of Langragian
-    S->feas = S->h2;     // Sum of constraint violation
+    // Report Progress (Optimality & Constraint Violation)
+    S->optimality = S->h1;        // Variation of Langragian
+    S->constr_violation = S->h2;  // Sum of constraint violation
 
     // Check convergence
     S->mode = 0;

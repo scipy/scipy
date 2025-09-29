@@ -294,8 +294,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         .. math::
 
             \begin{align}
-                \textit{optimal} &= \bigl|\nabla f^T \mathbf{p}\bigr| + \sum_{j \in \mathcal{M}} \bigl| \lambda_j c_j(x)\bigr|,\\
-                \text{and}\quad \textit{feas} &= \sum_{j \in \mathcal{M}_{\text{eq}}} \bigl|c_j(x)\bigr| + \sum_{j \in \mathcal{M}_{\text{ineq}}} \max\!\bigl(0,
+                \textit{optimality} &= \bigl|\nabla f^T \mathbf{p}\bigr| + \sum_{j \in \mathcal{M}} \bigl| \lambda_j c_j(x)\bigr|,\\
+                \textit{constr_violation} &= \sum_{j \in \mathcal{M}_{\text{eq}}} \bigl|c_j(x)\bigr| + \sum_{j \in \mathcal{M}_{\text{ineq}}} \max\!\bigl(0,
                 -c_j(x)\bigr)
             \end{align}
 
@@ -305,10 +305,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     :math:`\mathcal{M}` are the indices of all constraints,
     :math:`\mathcal{M}_{\text{eq}}` are the indices of the equality constraints and
     :math:`\mathcal{M}_{\text{ineq}}` are the indices of the inequality constraints.
-    ``optimal`` is a variation of the lagrangian function and ``feas`` is the sum of the 
-    constraint violation. These can be printed at each iteration by setting ``iprint = 2``
-    and are included in the ``intermediate_results`` object as the terms ``optimality``
-    and ``constr_violation`` respectively which can be accessed in a callback function.
+    ``optimality`` is a variation of the lagrangian function and ``constr_violation``
+    is the sum of the constraint violation. These can be printed at each iteration by
+    setting ``iprint = 2`` and are included in the ``intermediate_results`` object which
+    can be accessed in a callback function.
 
     References
     ----------
@@ -457,7 +457,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # This dictionary is passed to the SLSQP matching the C struct defined as
     #
     # struct SLSQP_static_vars {
-    #     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol, optimal, feas;
+    #     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol, optimality,
+    #            constr_violation;
     #     int exact, inconsistent, reset, iter, itermax, line, mode, meq;
     # };
     #
@@ -467,12 +468,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     #               while the original nonlinear problem is still solvable. Then
     #               the problem is augmented with a regularizing dummy variable.
     # reset: holds the count of resetting bfgs to identity matrix.
-    # iter    : the current and itermax is the maximum number of iterations.
-    # line    : the current line search iteration.
-    # mode    : the exit mode of the solver.
-    # optimal : current optimality where optim <= acc for convergence
-    # feas    : current feasibility, computed as the sum of the constraint
-    #           violation where feas <= acc for convergence
+    # iter             : the current and itermax is the maximum number of iterations.
+    # line             : the current line search iteration.
+    # mode             : the exit mode of the solver.
+    # optimality       : current optimality where optimality <= acc for convergence
+    # constr_violation : current feasibility, computed as the sum of the constraint
+    #                    violation where constr_violation <= acc for convergence
     # alpha, f0, gs, h1, h2, h3, h4, t, t0 : internal variables used by the solver.
     #
     # The dict holds the intermediate state of the solver. The keys are the same
@@ -499,14 +500,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "meq": meq,
         "mode": 0,
         "n": n,
-        "optimal": 0.0,
-        "feas": 0.0,
+        "optimality": 0.0,
+        "constr_violation": 0.0,
     }
 
     # Print the header if iprint >= 2
     if iprint >= 2:
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} "
-              f"{'OPTIMALITY':>16} {'FEASIBILITY':>16}")
+              f"{'OPTIMALITY':>16} {'CON. VIOLATION':>16}")
 
     # Internal buffer and int array
     indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
@@ -565,8 +566,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                 intermediate_result = OptimizeResult(
                     x=np.copy(x),
                     fun=fx,
-                    optimality=state_dict['optimal'],
-                    constr_violation=state_dict['feas'],
+                    optimality=state_dict['optimality'],
+                    constr_violation=state_dict['constr_violation'],
                 )
                 if _call_callback_maybe_halt(callback, intermediate_result):
                     break
@@ -574,11 +575,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
                 print(
-                    f"{state_dict['iter']:5d} "         # Iteration Count
-                    f"{sf.nfev:5d} "                    # Function Eval. Count
-                    f"{fx:16.6E} "                      # Obj Value
-                    f"{state_dict['optimal']:16.6E} "   # Optimality
-                    f"{state_dict['feas']:16.6E} "      # Feasibility (Sum of Con Viol)
+                    f"{state_dict['iter']:5d} "                 # Iteration Count
+                    f"{sf.nfev:5d} "                            # Function Eval. Count
+                    f"{fx:16.6E} "                              # Obj Value
+                    f"{state_dict['optimality']:16.6E} "        # Optimality
+                    f"{state_dict['constr_violation']:16.6E} "  # Sum of Con Violation
                 )
 
         # If exit mode is not -1 or 1, slsqp has completed
@@ -601,7 +602,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         x=x, fun=fx, jac=g, nit=state_dict['iter'], nfev=sf.nfev, njev=sf.ngev,
         status=state_dict['mode'], message=exit_modes[state_dict['mode']],
         success=(state_dict['mode'] == 0), multipliers=mult[:m],
-        optimality=state_dict['optimal'], constr_violation=state_dict['feas'],
+        optimality=state_dict['optimality'],
+        constr_violation=state_dict['constr_violation'],
     )
 
 # The following functions modify their first input argument in-place.
