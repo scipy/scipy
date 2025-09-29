@@ -6,7 +6,7 @@ name: BLAS tests (Linux)
 # Jobs and their purpose:
 #
 #   - mkl:
-#         Tests MKL installed from PyPI (because easiest/fastest) in
+#         Tests MKL installed from conda-forge in
 #         2 ways: both LP64 and ILP64 via pkg-config.
 #
 #    - scipy-openblas64:
@@ -49,22 +49,20 @@ jobs:
           submodules: recursive
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements/build.txt
-          pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.70.1
+          cache: false
 
       - name: Build with defaults (LP64)
         run: |
-          pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-          spin build -S-Dblas=mkl-dynamic-lp64-seq
+          pixi run --environment=build-mkl-lp64 pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+          pixi run build-mkl-lp64
+          pixi run check-mkl-lp64-sharedlibs
 
       - name: Test
-        run: spin test -j4
+        run: pixi run --skip-deps test-mkl-lp64
 
   mkl-ilp64:
     runs-on: ubuntu-latest
@@ -75,28 +73,27 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
         with:
           submodules: recursive
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
+          pixi-version: v0.70.1
+          cache: false
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements/build.txt
-          pip install mkl mkl-devel spin "click<8.3.0" pytest hypothesis pytest-xdist pooch
-
-      - name: Build with ILP64
+      - name: Build with ILP64, cython-blas LP64
         run: |
           # Note: the `lp64` in the .pc name isn't a mistake, due to cython-blas-abi=lp64
-          pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-          spin build -S-Dblas=mkl-dynamic-lp64-seq -S-Duse-ilp64=true -S-Dcython-blas-abi=lp64
+          pixi run -e build-mkl-ilp64 pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+          pixi run build-mkl-ilp64
+
+      - name: Check shared libraries
+        run: pixi run check-mkl-ilp64-sharedlibs
 
       - name: Test
-        run: spin test -j4
+        run: pixi run --skip-deps test-mkl-ilp64
 
   mkl-cyilp64:
     runs-on: ubuntu-latest
@@ -111,35 +108,38 @@ jobs:
           submodules: recursive
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
+          pixi-version: v0.70.1
+          cache: false
 
-      - name: Install dependencies
+      - name: Build with ILP64, cython-blas ILP64
         run: |
-          pip install -r requirements/build.txt
-          pip install mkl mkl-devel build pytest hypothesis pytest-xdist pooch
+          pixi run -e build-mkl-ilp64 pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
+          pixi run build-mkl-cyilp64
 
-      - name: Build SciPy wheel and install
-        run: |
-          python -m build -wnx \
-            -Csetup-args=-Dblas=mkl-dynamic-ilp64-seq \
-            -Csetup-args=-Duse-ilp64=true
-          pip install dist/scipy*.whl
+      - name: Check shared libraries
+        run: pixi run check-mkl-cyilp64-sharedlibs
 
-      - name: Test SciPy
-        run: |
-          cd /tmp
-          python -m pytest --pyargs scipy -n2
+      - name: Test
+        run: pixi run --skip-deps test-mkl-cyilp64
 
       - name: Install linalg ILP64 downstream test package
+        # `spin run` needs build deps available
+        shell: pixi run -e build-mkl-cyilp64 spin run --build-dir=build-mkl-cyilp64 bash -e {0}
         run: |
-          pip install --no-build-isolation -v scipy/linalg/tests/_cython_examples/ilp64_test_package
-
+          pixi global install uv
+          # `spin run` sets the system Python, so pass `--system`
+          uv pip install --system --no-build-isolation -v -Csetup-args=--werror scipy/linalg/tests/_cython_examples/ilp64_test_package
+      
       - name: Test linalg ILP64 downstream test package
+        # `spin run` needs build deps available
+        shell: pixi run -e build-mkl-cyilp64 spin run --build-dir=build-mkl-cyilp64 bash -e {0}
         run: |
           cp -r scipy/linalg/tests/_cython_examples/ilp64_test_package/tests /tmp/ilp64_tests
           cd /tmp
+          uv pip install --system pytest
           python -m pytest ilp64_tests
 
   scipy-openblas-ilp64:
@@ -155,40 +155,29 @@ jobs:
           submodules: recursive
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.14"
+          pixi-version: v0.70.1
+          cache: false
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements/build.txt
-          pip install build pytest hypothesis pytest-xdist pooch
-          pip install -r requirements/openblas64.txt
+      - name: Build with ILP64
+        run: pixi run build-scipy-openblas64
 
-      - name: Write out scipy-openblas64.pc
-        run: |
-          python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas.pc
-
-      - name: Build SciPy wheel and install
-        run: |
-          export PKG_CONFIG_PATH=$PWD
-          python -m build -wnx \
-            -Csetup-args=-Dblas=scipy-openblas \
-            -Csetup-args=-Duse-ilp64=true \
-            -Csetup-args=-Dblas-symbol-suffix=64_
-          pip install dist/scipy*.whl
-
-      - name: Test SciPy
-        run: |
-          cd /tmp
-          python -m pytest --pyargs scipy -n2
+      - name: Test
+        run: pixi run --skip-deps test-scipy-openblas64
 
       - name: Install linalg ILP64 downstream test package
+        # `spin run` needs build deps available
+        shell: pixi run -e scipy-openblas64 spin run --build-dir=build-scipy-openblas64 bash -e {0}
         run: |
-          pip install --no-build-isolation -v -Csetup-args=--werror scipy/linalg/tests/_cython_examples/ilp64_test_package
+          pixi global install uv
+          # `spin run` sets the system Python, so pass `--system`
+          uv pip install --system --no-build-isolation -v -Csetup-args=--werror scipy/linalg/tests/_cython_examples/ilp64_test_package
 
-      - name: Test ILP64 downstream test package
+      - name: Test linalg ILP64 downstream test package
+        shell: pixi run -e scipy-openblas64 spin run --build-dir=build-scipy-openblas64 bash -e {0}
         run: |
           cp -r scipy/linalg/tests/_cython_examples/ilp64_test_package/tests /tmp/ilp64_tests
           cd /tmp
-          python -m pytest ilp64_tests
+          pytest ilp64_tests

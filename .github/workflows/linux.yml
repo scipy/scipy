@@ -16,6 +16,8 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   CCACHE_MAXSIZE: "250M"
+  # Needed because Pixi doesn't set mtime for compilers
+  CCACHE_COMPILERCHECK: "content"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -549,11 +551,12 @@ jobs:
 
   #################################################################################
   free-threaded:
-    name: free-threaded
+    name: free-threaded${{ matrix.parallel == '1' && ' (pytest-run-parallel)' || '' }}
     needs: get_commit_message
     strategy:
       matrix:
         parallel: ["0", "1"]
+      fail-fast: false
 
     runs-on: ubuntu-latest
     if: >
@@ -565,15 +568,11 @@ jobs:
           submodules: recursive
           fetch-tags: true
           persist-credentials: false
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.14t-dev"
-
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ccache
+          pixi-version: v0.70.1
+          cache: false
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -581,63 +580,19 @@ jobs:
           workflow_name: ${{ github.workflow }}
           job_name: ${{ github.job }}
 
-      - name: Install Python dependencies
-        run: |
-          pip install -r requirements/build.txt
-          pip install -r requirements/openblas.txt
-          pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis "click<8.3.0"
+      - name: Run tests (full)
+        if: ${{ matrix.parallel == '0'}}
+        run: pixi run test-freethreading -j4 -m full --durations=10
 
-      - name: Install pytest-run-parallel
+      - name: Run tests (fast, with pytest-run-parallel)
         if: ${{ matrix.parallel == '1'}}
-        run: |
-          pip install pytest-run-parallel
-          pip uninstall --yes pytest-xdist
-
-      - name: Build SciPy
-        run: |
-          spin build --with-scipy-openblas=32
+        run: pixi run test-parallel-freethreading
 
       - name: Ccache performance
         shell: bash -l {0}
         run: |
-          ccache --evict-older-than 1d
-          ccache -s
-
-      - name: Run tests (full)
-        if: ${{ matrix.parallel == '0'}}
-        run: |
-          spin test -j4 -m full --durations=10
-
-      - name: Run tests (fast, with pytest-run-parallel)
-        if: ${{ matrix.parallel == '1'}}
-        env:
-          # Excluded modules:
-          # - scipy.spatial has multiple issues  in kdtree/qhull, and gh-20655 is pending.
-          TEST_SUBMODULES: >-
-            scipy._lib
-            scipy.cluster
-            scipy.constants
-            scipy.datasets
-            scipy.differentiate
-            scipy.fft
-            scipy.fftpack
-            scipy.integrate
-            scipy.interpolate
-            scipy.io
-            scipy.linalg
-            scipy.misc
-            scipy.ndimage
-            scipy.optimize
-            scipy.signal
-            scipy.sparse
-            scipy.special
-            scipy.stats
-        run: |
-          # Note: Only fast tests; full test suite is unlikely to uncover anything more,
-          #       and it'll be quite slow with pytest-run-parallel. Also skip
-          #       tests that won't run in parallel, those are covered by the
-          #       parallel == 0 run.
-          spin test -t $TEST_SUBMODULES -- --parallel-threads=4 --skip-thread-unsafe=true
+          pixi exec ccache --evict-older-than 1d
+          pixi exec ccache -s
 
   #################################################################################
   clang-18-build-only:
@@ -680,6 +635,9 @@ jobs:
   #################################################################################
   test_aarch64:
     name: aarch64, fast, fail slow, py3.12/npAny, spin
+    # We want to check for test timing only in a single job, on Linux, running the
+    # fast test suite. This is that job. See gh-20806 for previous issues
+    # after running this job on Windows and in multiple jobs.
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -691,32 +649,12 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
-
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev \
-            libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
-      - name: Install Python packages
-        run: |
-          python -m pip install -r requirements/build.txt -r requirements/test.txt -r requirements/dev.txt
-          # We want to check for test timing only in a single job, on Linux, running the
-          # fast test suite. This is that job. See gh-20806 for previous issues
-          # after running this job on Windows and in multiple jobs.
-          python -m pip install pytest-fail-slow
-
-      - name: Build SciPy
-        run: |
-          spin build
+          pixi-version: v0.70.1
+          cache: false
 
       - name: Test SciPy
         run: |
-          export OMP_NUM_THREADS=2
-          spin test -- --durations=0 --durations-min=0.5 --fail-slow=1.0
-
-  #################################################################################
+          export OMP_NUM_THREAD=2
+          pixi run test-fail-slow
