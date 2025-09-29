@@ -9955,7 +9955,7 @@ def _square_of_sums(a, axis=0):
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
                                 ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False, cpu_only=True, exceptions=['jax.numpy'])
+                 jax_jit=False)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
@@ -10083,7 +10083,7 @@ def _order_ranks(ranks, j, *, xp):
     else:
         # `put_along_axis` not in array API (data-apis/array-api#177)
         #  so argsort the argsort and take_along_axis...
-        j_inv = xp.argsort(j, axis=-1)
+        j_inv = xp.argsort(j, axis=-1, stable=True)
         ordered_ranks = xp.take_along_axis(ranks, j_inv, axis=-1)
     return ordered_ranks
 
@@ -10095,7 +10095,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
     # Get sort order
-    j = xp.argsort(x, axis=-1)
+    j = xp.argsort(x, axis=-1, stable=True)
     ordinal_ranks = xp.broadcast_to(xp.arange(1, shape[-1]+1, dtype=dtype), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
