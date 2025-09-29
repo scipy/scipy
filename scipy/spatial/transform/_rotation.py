@@ -81,9 +81,9 @@ class Rotation:
     - Rotation Indexing
 
     A `Rotation` instance can contain a single rotation transform or rotations of
-    multiple leading dimensions. E.g., it is possible to have a tensor of (N, M, K)
-    rotations. When applied to other rotations or vectors, standard broadcasting rules
-    apply.
+    multiple leading dimensions. E.g., it is possible to have an N-dimensional array of
+    (N, M, K) rotations. When applied to other rotations or vectors, standard broadcasting
+    rules apply.
 
     Indexing within a rotation is supported to access a subset of the rotations stored
     in a `Rotation` instance.
@@ -574,7 +574,7 @@ class Rotation:
         >>> r.as_matrix().shape
         (1, 3, 3)
 
-        We can also create a tensor of rotations:
+        We can also create an N-dimensional array of rotations:
 
         >>> r = R.from_matrix(np.tile(np.eye(3), (2, 3, 1, 1)))
         >>> r.shape
@@ -1020,8 +1020,8 @@ class Rotation:
 
         The resulting shape of the quaternion is always the shape of the Rotation
         object with an added last dimension of size 4. E.g. when the `Rotation` object
-        contains an (N, M, K) tensor of rotations, the result will be a 4-dimensional
-        array:
+        contains an N-dimensional array (N, M, K) of rotations, the result will be a 
+        4-dimensional array:
 
         >>> r = R.from_rotvec(np.ones((2, 3, 4, 3)))
         >>> r.as_quat().shape
