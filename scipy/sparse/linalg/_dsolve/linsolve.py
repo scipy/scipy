@@ -830,8 +830,8 @@ def spbandwidth(A):
     Computes the lower and upper limits on the bandwidth of the
     sparse 2D array ``A``. The result is summarized as a 2-tuple
     of positive integers ``(lo, hi)``. A zero denotes no sub/super
-    diagonal entries on that side (tringular). The maximum value
-    for ``lo``(``hi``) is one less than the number of rows(cols).
+    diagonal entries on that side (triangular). The maximum value
+    for ``lo`` (``hi``) is one less than the number of rows(cols).
 
     Only the sparse structure is used here. Values are not checked for zeros.
 
