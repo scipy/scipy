@@ -19,20 +19,25 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "test-task"]
 solve-group = "default"
 
-[environments.build-debug]
-# tasks: build-debug
-features = ["build-deps", "build-debug"]
-solve-group = "default"
-
 [environments.ipython]
 # tasks: ipython
 features = ["run-deps", "test-deps", "ipython"]
 solve-group = "default"
 
-[environments.debug]
+[environments.build-debug]
+# tasks: build-debug
+features = ["build-deps", "build-debug"]
+solve-group = "debug"
+
+[environments.lldb]
 # tasks: lldb
 features = ["run-deps", "test-deps", "lldb"]
-solve-group = "default"
+solve-group = "debug"
+
+[environments.gdb]
+# tasks: gdb
+features = ["run-deps", "test-deps", "gdb"]
+solve-group = "debug"
 
 [environments.lint]
 # tasks: lint, check-python-h
@@ -178,7 +183,7 @@ depends-on = "build"
 description = "Test SciPy (default settings)"
 
 
-### Debugging ###
+### IPython ###
 
 [feature.ipython.dependencies]
 ipython = "*"
@@ -190,11 +195,20 @@ depends-on = "build"
 description = "Launch IPython"
 
 
+### Debugging ###
+
+[feature.build-debug]
+platforms = ["linux-64", "osx-arm64"]
+
 [feature.build-debug.tasks.build-debug]
 # `-Dc_args='-O0'` needed to override `-O2` from clang activation `CFLAGS`
 cmd = "spin build --build-dir=build-debug --setup-args=-Dc_args='-O0' --setup-args=-Dbuildtype=debug --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 cwd = "../.."
 description = "Build SciPy with debug buildtype"
+
+
+[feature.lldb]
+platforms = ["osx-arm64"]
 
 [feature.lldb.dependencies]
 lldb = "*"
@@ -204,6 +218,19 @@ cmd = "spin lldb --build-dir=build-debug --no-build"
 cwd = "../.."
 depends-on = "build-debug"
 description = "Debug with lldb"
+
+
+[feature.gdb]
+platforms = ["linux-64"]
+
+[feature.gdb.dependencies]
+gdb = "*"
+
+[feature.gdb.tasks.gdb]
+cmd = "spin gdb --build-dir=build-debug --no-build"
+cwd = "../.."
+depends-on = "build-debug"
+description = "Debug with gdb"
 
 
 ### Linting ###
