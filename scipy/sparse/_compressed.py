@@ -817,12 +817,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self._insert_many(i[is_new], j[is_new], x[is_new])
         else:
             # convert to coo for _set_diag
+            do_sort = self.has_sorted_indices
             coo = self.tocoo()
             coo._setdiag(values, k)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, _ = arrays
             # Sort the indices (like in _insert_many)
-            if self.has_sorted_indices:
+            if do_sort:
                 self.has_sorted_indices = False  # force a sort
                 self.sort_indices()
 
