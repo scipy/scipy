@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from types import EllipsisType, ModuleType
+from collections.abc import Iterable, Iterator
+from types import EllipsisType, ModuleType, NotImplementedType
 from collections.abc import Callable
 
 import numpy as np
@@ -11,12 +11,16 @@ from scipy._lib._array_api import (
     is_numpy,
     ArrayLike,
     Array,
+    xp_capabilities,
 )
 from scipy.spatial.transform import Rotation
+from scipy.spatial.transform._rotation import _promote
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
+import scipy.spatial.transform._rigid_transform_xp as xp_backend
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_compat import device
 from scipy._lib._array_api import xp_promote
+from scipy._lib._util import broadcastable
 
 
 __all__ = ["RigidTransform"]
@@ -24,10 +28,32 @@ __all__ = ["RigidTransform"]
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
+def select_backend(xp: ModuleType, cython_compatible: bool):
+    """Select the backend for the given array library.
+
+    We need this selection function because the Cython backend for numpy does not
+    support quaternions of arbitrary dimensions. We therefore only use the Array API
+    backend for numpy if we are dealing with rotations of more than one leading
+    dimension.
+    """
+    if is_numpy(xp) and not cython_compatible:
+        return xp_backend
+    return backend_registry.get(xp, xp_backend)
+
+
+@xp_capabilities()
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
-    return backend_registry[xp].normalize_dual_quaternion(dual_quat)
+    dual_quat = _promote(dual_quat, xp=xp)
+    single = dual_quat.ndim == 1 and is_numpy(xp)
+    if single:
+        dual_quat = xpx.atleast_nd(dual_quat, ndim=2, xp=xp)
+    cython_compatible = dual_quat.ndim < 3
+    dq = select_backend(xp, cython_compatible).normalize_dual_quaternion(dual_quat)
+    if single:
+        return dq[0]
+    return dq
 
 
 class RigidTransform:
@@ -367,11 +393,10 @@ class RigidTransform:
         """
         xp = array_namespace(matrix)
         self._xp = xp
-        matrix = xp_promote(matrix, force_floating=True, xp=xp)
-        if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
+        matrix = _promote(matrix, xp=xp)
+        if matrix.shape[-2:] != (4, 4):
             raise ValueError(
-                "Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
-                f"got {matrix.shape}."
+                f"Expected `matrix` to have shape (..., 4, 4), got {matrix.shape}."
             )
         # We only need the _single flag for the cython backend. The Array API backend
         # uses broadcasting by default and hence returns the correct shape without
@@ -380,7 +405,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = backend_registry[xp]
+        self._backend = select_backend(xp, matrix.ndim < 4)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -389,8 +414,11 @@ class RigidTransform:
         m[1:] = [" " * 27 + m[i] for i in range(1, len(m))]
         return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
 
-    @classmethod
-    def from_matrix(cls, matrix: ArrayLike) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def from_matrix(matrix: ArrayLike) -> RigidTransform:
         """Initialize from a 4x4 transformation matrix.
 
         Parameters
@@ -465,10 +493,13 @@ class RigidTransform:
                [0., 0., 1., 0.],
                [0., 0., 0., 1.]])
         """
-        return cls(matrix, normalize=True, copy=True)
+        return RigidTransform(matrix, normalize=True, copy=True)
 
-    @classmethod
-    def from_rotation(cls, rotation: Rotation) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def from_rotation(rotation: Rotation) -> RigidTransform:
         """Initialize from a rotation, without a translation.
 
         When applying this transform to a vector ``v``, the result is the
@@ -529,16 +560,15 @@ class RigidTransform:
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        if quat.ndim > 2:  # Rotations now can have arbitrary leading dimensions
-            raise ValueError(
-                "Rotations with more than 1 leading dimension are not supported."
-            )
-        backend = backend_registry[xp]
+        backend = select_backend(xp, quat.ndim < 3)
         matrix = backend.from_rotation(quat)
-        return cls._from_raw_matrix(matrix, xp, backend)
+        return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
-    @classmethod
-    def from_translation(cls, translation: ArrayLike) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def from_translation(translation: ArrayLike) -> RigidTransform:
         """Initialize from a translation numpy array, without a rotation.
 
         When applying this transform to a vector ``v``, the result is the same
@@ -601,14 +631,16 @@ class RigidTransform:
         2
         """
         xp = array_namespace(translation)
-        backend = backend_registry[xp]
+        translation = _promote(translation, xp=xp)
+        backend = select_backend(xp, translation.ndim < 3)
         matrix = backend.from_translation(translation)
-        return cls._from_raw_matrix(matrix, xp, backend)
+        return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
-    @classmethod
-    def from_components(
-        cls, translation: ArrayLike, rotation: Rotation
-    ) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def from_components(translation: ArrayLike, rotation: Rotation) -> RigidTransform:
         """Initialize a rigid transform from translation and rotation
         components.
 
@@ -671,10 +703,14 @@ class RigidTransform:
         >>> tf.apply([1, 0, 0])
         array([2.       , 3.8660254,  3.5     ])
         """
-        return cls.from_translation(translation) * cls.from_rotation(rotation)
+        rotation_tf = RigidTransform.from_rotation(rotation)
+        return RigidTransform.from_translation(translation) * rotation_tf
 
-    @classmethod
-    def from_exp_coords(cls, exp_coords: ArrayLike) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def from_exp_coords(exp_coords: ArrayLike) -> RigidTransform:
         r"""Initialize from exponential coordinates of transform.
 
         This implements the exponential map that converts 6-dimensional real
@@ -757,18 +793,20 @@ class RigidTransform:
         """
         xp = array_namespace(exp_coords)
         exp_coords = xp_promote(exp_coords, force_floating=True, xp=xp)
-        if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
+        if exp_coords.shape[-1] != 6:
             raise ValueError(
-                "Expected `exp_coords` to have shape (6,), or (N, 6), "
-                f"got {exp_coords.shape}."
+                f"Expected `exp_coords` to have shape (..., 6), got {exp_coords.shape}."
             )
-        backend = backend_registry[xp]
+        backend = select_backend(xp, cython_compatible=exp_coords.ndim < 3)
         matrix = backend.from_exp_coords(exp_coords)
-        return cls._from_raw_matrix(matrix, xp, backend)
+        return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
-    @classmethod
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def from_dual_quat(
-        cls, dual_quat: ArrayLike, *, scalar_first: bool = False
+        dual_quat: ArrayLike, *, scalar_first: bool = False
     ) -> RigidTransform:
         """Initialize from a unit dual quaternion.
 
@@ -816,12 +854,16 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        backend = backend_registry[xp]
+        dual_quat = _promote(dual_quat, xp=xp)
+        backend = select_backend(xp, dual_quat.ndim < 3)
         matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
-        return cls._from_raw_matrix(matrix, xp, backend)
+        return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
-    @classmethod
-    def identity(cls, num: int | None = None) -> RigidTransform:
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def identity(num: int | None = None) -> RigidTransform:
         """Initialize an identity transform.
 
         Composition with the identity transform has no effect, and
@@ -894,11 +936,14 @@ class RigidTransform:
             matrix = np.tile(np.eye(4), (num, 1, 1))
         # No need for a backend call here since identity is easy to construct and we are
         # currently not offering a backend-specific identity matrix
-        return cls._from_raw_matrix(matrix, array_namespace(matrix))
+        return RigidTransform._from_raw_matrix(matrix, array_namespace(matrix))
 
-    @classmethod
+    @staticmethod
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def concatenate(
-        cls, transforms: RigidTransform | Iterable[RigidTransform]
+        transforms: RigidTransform | Iterable[RigidTransform],
     ) -> RigidTransform:
         """
         Concatenate a sequence of `RigidTransform` objects into a
@@ -926,7 +971,9 @@ class RigidTransform:
                [3., 0., 0.]])
         """
         if isinstance(transforms, RigidTransform):
-            return cls(transforms.as_matrix(), normalize=False, copy=True)
+            return RigidTransform._from_raw_matrix(
+                transforms.as_matrix(), transforms._xp
+            )
         if not all(isinstance(x, RigidTransform) for x in transforms):
             raise TypeError("input must contain RigidTransform objects only")
 
@@ -934,8 +981,11 @@ class RigidTransform:
         matrix = xp.concat(
             [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
         )
-        return cls._from_raw_matrix(matrix, xp, None)
+        return RigidTransform._from_raw_matrix(matrix, xp, None)
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
@@ -990,6 +1040,9 @@ class RigidTransform:
             return matrix[0, ...]
         return matrix
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_components(self) -> tuple[Array, Rotation]:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
@@ -1051,6 +1104,9 @@ class RigidTransform:
         """
         return self.translation, self.rotation
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_exp_coords(self) -> Array:
         """Return the exponential coordinates of the transform.
 
@@ -1082,6 +1138,9 @@ class RigidTransform:
             exp_coords = exp_coords[0, ...]
         return exp_coords
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def as_dual_quat(self, *, scalar_first: bool = False) -> Array:
         """Return the dual quaternion representation of the transform.
 
@@ -1157,6 +1216,10 @@ class RigidTransform:
             raise TypeError("Single transform has no len")
         return self._matrix.shape[0]
 
+    @xp_capabilities(
+        jax_jit=False,
+        skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
+    )
     def __getitem__(
         self, indexer: int | slice | EllipsisType | None | ArrayLike
     ) -> RigidTransform:
@@ -1224,11 +1287,17 @@ class RigidTransform:
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
         if is_array and xp.isdtype(indexer.dtype, "integral"):
+            if self._matrix.shape[0] == 0:
+                raise IndexError("cannot take from an empty array")
             return RigidTransform(
                 xp.take(self._matrix, indexer, axis=0), normalize=False
             )
         return RigidTransform(self._matrix[indexer, ...], normalize=False)
 
+    @xp_capabilities(
+        jax_jit=False,
+        skip_backends=[("dask.array", "cannot handle zero-length rigid transforms")],
+    )
     def __setitem__(
         self,
         indexer: int | slice | EllipsisType | None | ArrayLike,
@@ -1272,7 +1341,10 @@ class RigidTransform:
 
         self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    def __mul__(self, other: RigidTransform) -> RigidTransform:
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def __mul__(self, other: RigidTransform) -> RigidTransform | NotImplementedType:
         """Compose this transform with the other.
 
         If ``p`` and ``q`` are two transforms, then the composition of '``q``
@@ -1350,14 +1422,25 @@ class RigidTransform:
         2
         """
         if not isinstance(other, RigidTransform):
-            raise TypeError("other must be a RigidTransform object")
-
-        matrix = self._backend.compose_transforms(self._matrix, other._matrix)
+            # If other is not a RigidTransform, we return NotImplemented to allow other
+            # types to implement __rmul__
+            return NotImplemented
+        if not broadcastable(self._matrix.shape, other._matrix.shape):
+            raise ValueError(
+                f"Cannot broadcast {self._matrix.shape[:-2]} transforms in "
+                f"first to {other._matrix.shape[:-2]} transforms in second object."
+            )
+        cython_compatible = self._matrix.ndim < 4 and other._matrix.ndim < 4
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
+        matrix = backend.compose_transforms(self._matrix, other._matrix)
         # Only necessary for cython. Array API broadcasting handles this by default
         if self._single and other._single:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=True, copy=False)
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def __pow__(self, n: float) -> RigidTransform:
         """Compose this transform with itself `n` times.
 
@@ -1461,6 +1544,9 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
     def inv(self) -> RigidTransform:
         """Invert this transform.
 
@@ -1524,6 +1610,12 @@ class RigidTransform:
             matrix = matrix[0, ...]
         return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
+    @xp_capabilities(
+        skip_backends=[
+            ("dask.array", "missing linalg.cross/det functions"),
+            ("cupy", "missing .mT attribute in cupy<14.*"),
+        ]
+    )
     def apply(self, vector: ArrayLike, inverse: bool = False) -> Array:
         """Apply the transform to a vector.
 
@@ -1618,7 +1710,9 @@ class RigidTransform:
         vector = xp.asarray(
             vector, dtype=self._matrix.dtype, device=device(self._matrix)
         )
-        result = self._backend.apply(self._matrix, vector, inverse)
+        cython_compatible = self._matrix.ndim < 4 and vector.ndim < 3
+        backend = select_backend(xp, cython_compatible=cython_compatible)
+        result = backend.apply(self._matrix, vector, inverse)
         if self._single and vector.ndim == 1:
             result = result[0, ...]
         return result
@@ -1699,6 +1793,13 @@ class RigidTransform:
         """
         return self._single or self._matrix.ndim == 2
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """The shape of the transform's leading dimensions."""
+        if self._single or self._matrix.ndim == 2:
+            return ()
+        return self._matrix.shape[:-2]
+
     def __reduce__(self) -> tuple[Callable, tuple]:
         """Reduce the RigidTransform for pickling.
 
@@ -1710,6 +1811,19 @@ class RigidTransform:
         if self._single:
             matrix = matrix[0, ...]
         return (self.__class__.from_matrix, (matrix,))
+
+    @xp_capabilities()
+    def __iter__(self) -> Iterator[RigidTransform]:
+        """Iterate over transforms."""
+        if self._single or self._matrix.ndim == 2:
+            raise TypeError("Single transform is not iterable.")
+        # We return a generator that yields a new RigidTransform object for each
+        # transform in the current object. We cannot rely on the default implementation
+        # because jax will not raise an IndexError for out-of-bounds indices.
+        for i in range(self._matrix.shape[0]):
+            yield RigidTransform._from_raw_matrix(
+                self._matrix[i, ...], self._xp, self._backend
+            )
 
     @staticmethod
     def _from_raw_matrix(
@@ -1727,6 +1841,6 @@ class RigidTransform:
         tf._matrix = matrix
         tf._xp = xp
         if backend is None:
-            backend = backend_registry[xp]
+            backend = select_backend(xp, matrix.ndim < 4)
         tf._backend = backend
         return tf

@@ -600,9 +600,9 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
-        mask |= (a < lower_limit) if lower_include else a <= lower_limit
+        mask = mask | ((a < lower_limit) if lower_include else a <= lower_limit)
     if upper_limit is not None:
-        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+        mask = mask | ((a > upper_limit) if upper_include else a >= upper_limit)
     lazy = is_lazy_array(mask)
     if not lazy and xp.all(mask):
         raise ValueError("No array values within given limits")
@@ -989,7 +989,8 @@ def _moment_outputs(kwds, default_order=1):
 def _moment_result_object(*args):
     if len(args) == 1:
         return args[0]
-    return np.asarray(args)
+    xp = array_namespace(*args)
+    return xp.stack(args)
 
 
 # When `order` is array-like with size > 1, moment produces an *array*
@@ -997,7 +998,7 @@ def _moment_result_object(*args):
 # separate outputs. It is important to make the distinction between
 # separate outputs when adding the reduced axes back (`keepdims=True`).
 def _moment_tuple(x, n_out):
-    return tuple(x) if n_out > 1 else (x,)
+    return tuple(x[i, ...] for i in range(x.shape[0])) if n_out > 1 else (x,)
 
 
 # `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
@@ -1569,7 +1570,7 @@ def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1655,10 +1656,6 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 8).set(xp.nan)
-    if xp.any(xp.isnan(n)):
-        message = ("`skewtest` requires at least 8 valid observations;"
-                   "slices with fewer observations will produce NaNs.")
-        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         y = b2 * xp.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
@@ -1679,7 +1676,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
@@ -1760,10 +1757,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 5).set(xp.nan)
-    if xp.any(xp.isnan(n)):
-        message = ("`kurtosistest` requires at least 5 valid observations; "
-                   "slices with fewer observations will produce NaNs.")
-        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
@@ -1777,7 +1770,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     denom = 1 + x * (2/(A-4.0))**0.5
     term2 = xp.sign(denom) * xp.where(denom == 0.0, xp.nan,
                                       ((1-2.0/A)/xp.abs(denom))**(1/3))
-    if xp.any(denom == 0):
+    if not is_lazy_array(denom) and xp.any(denom == 0):
         msg = ("Test statistic not defined in some cases due to division by "
                "zero. Return nan in that case...")
         warnings.warn(msg, RuntimeWarning, stacklevel=2)
@@ -1793,7 +1786,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(NormaltestResult, n_samples=1, too_small=7)
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
@@ -6022,9 +6015,10 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique non-NaN value
-    alternative = np.atleast_1d(alternative)  # can't index 0D object
-    alternative = alternative[np.isfinite(alternative)]
-    alternative = alternative[0] if alternative.size else np.nan
+    xp = array_namespace(statistic, pvalue)
+    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
+    alternative = alternative[xp.isfinite(alternative)]
+    alternative = alternative[0] if xp_size(alternative) != 0 else xp.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 

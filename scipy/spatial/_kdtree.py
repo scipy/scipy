@@ -361,7 +361,7 @@ class KDTree(cKDTree):
                          balanced_tree, boxsize)
 
     def query(
-            self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
+            self, x, k=1, eps=0., p=2, distance_upper_bound=np.inf, workers=1):
         r"""Query the kd-tree for nearest neighbors.
 
         Parameters
@@ -477,7 +477,7 @@ class KDTree(cKDTree):
             i = np.intp(i)
         return d, i
 
-    def query_ball_point(self, x, r, p=2., eps=0, workers=1,
+    def query_ball_point(self, x, r, p=2., eps=0., workers=1,
                          return_sorted=None, return_length=False):
         """Find all points within distance r of point(s) x.
 
@@ -554,7 +554,7 @@ class KDTree(cKDTree):
         return super().query_ball_point(
             x, r, p, eps, workers, return_sorted, return_length)
 
-    def query_ball_tree(self, other, r, p=2., eps=0):
+    def query_ball_tree(self, other, r, p=2., eps=0.):
         """
         Find all pairs of points between `self` and `other` whose distance is
         at most r.
@@ -605,7 +605,7 @@ class KDTree(cKDTree):
         """
         return super().query_ball_tree(other, r, p, eps)
 
-    def query_pairs(self, r, p=2., eps=0, output_type='set'):
+    def query_pairs(self, r, p=2., eps=0., output_type='set'):
         """Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
