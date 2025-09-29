@@ -7,6 +7,7 @@ name: BLAS tests (Linux)
 #
 #   - mkl:
 #         Tests MKL installed from PyPI (because easiest/fastest) in
+#           XXX: do we still want to isntall MKL from PyPI?
 #         2 ways: both LP64 and ILP64 via pkg-config.
 #
 #    - scipy-openblas64:
@@ -47,26 +48,22 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
-        with:
-          python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gfortran
-          pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
-          pip install -r requirements/dev.txt
-          pip install git+https://github.com/numpy/meson.git@main-numpymeson
-          pip install mkl mkl-devel
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.55.0
+          manifest-path: .github/workflows/pixi.toml
+          cache: false
 
       - name: Build with defaults (LP64)
+        working-directory: .github/workflows
         run: |
-          pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-          spin build -S-Dblas=mkl
+          pixi run --environment=build-mkl pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+          pixi run build-mkl
 
       - name: Test
-        run: spin test -j2
+        working-directory: .github/workflows
+        run: pixi run --skip-deps test-mkl
 
   mkl-ilp64:
     runs-on: ubuntu-latest
@@ -114,27 +111,17 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gfortran
-          pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
-          pip install -r requirements/dev.txt
-          pip install git+https://github.com/numpy/meson.git@main-numpymeson
-          pip install scipy-openblas32 scipy-openblas64
-
-      - name: Write out scipy-openblas64.pc
-        run: |
-          # spin does this for scipy-openblas32
-          python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+          pixi-version: v0.55.0
+          manifest-path: .github/workflows/pixi.toml
+          cache: false
 
       - name: Build with ILP64
-        run: |
-          spin build --with-scipy-openblas -S-Duse-ilp64=true
+        working-directory: .github/workflows
+        run: pixi run build-scipy-openblas-64
 
       - name: Test
-        run: spin test -j2
+        working-directory: .github/workflows
+        run: pixi run --skip-deps test-scipy-openblas-64

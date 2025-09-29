@@ -454,6 +454,7 @@ jobs:
           popd
 
   free-threaded:
+    name: free-threaded (parallel == ${{ matrix.parallel }})
     needs: get_commit_message
     strategy:
       matrix:
@@ -585,30 +586,14 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
-
-      - name: Install Ubuntu dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
-
-      - name: Install Python packages
-        run: |
-          python -m pip install -r requirements/build.txt -r requirements/test.txt
-          # We want to check for test timing only in a single job, on Linux, running the
-          # fast test suite. This is that job. See gh-20806 for previous issues
-          # after running this job on Windows and in multiple jobs.
-          python -m pip install pytest-fail-slow
-
-      - name: Install SciPy
-        run: |
-          python -m pip install . --no-build-isolation
+          pixi-version: v0.55.0
+          manifest-path: .github/workflows/pixi.toml
+          cache: false
 
       - name: Test SciPy
+        working-directory: .github/workflows
         run: |
-          export OMP_NUM_THREADS=2
-          cd ..
-          pytest --pyargs scipy -m 'not slow' --durations=0 --durations-min=0.5 --fail-slow=1.0
+          export OMP_NUM_THREAD=2
+          pixi run test-fail-slow

@@ -85,7 +85,7 @@ jobs:
 
       - name: Test with scipy-openblas32
         working-directory: .github/workflows
-        run: pixi run test-scipy-openblas
+        run: pixi run test-scipy-openblas-32
 
   test_accelerate:
     name: Accelerate, full, py3.13/npAny, spin
