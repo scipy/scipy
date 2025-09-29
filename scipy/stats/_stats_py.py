@@ -475,8 +475,8 @@ def _mode_result(mode, count):
 
 
 @xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
-                                ('cupy', "data-apis/array-api-compat#312")],
-                 jax_jit=False)
+                                ('jax.numpy', "relies on _axis_nan_policy"),
+                                ('cupy', "data-apis/array-api-compat#312")])
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -9955,7 +9955,7 @@ def _square_of_sums(a, axis=0):
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),
                                 ("dask.array", "no `take_along_axis`")],
-                 jax_jit=False, allow_dask_compute=True)
+                 jax_jit=False, cpu_only=True, exceptions=['jax.numpy'])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 

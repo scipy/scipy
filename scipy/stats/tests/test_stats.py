@@ -2644,10 +2644,10 @@ class TestMode:
         data2 = xp.asarray([])
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
-        check_named_results(actual, attributes)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        check_named_results(actual, attributes, xp=xp)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             actual2 = stats.mode(data2)
-        check_named_results(actual2, attributes)
+        check_named_results(actual2, attributes, xp=xp)
 
     def test_nan_propagate(self, xp):
         data1 = xp.asarray([3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6])
