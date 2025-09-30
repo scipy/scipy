@@ -6,6 +6,7 @@
 
     Additional tests by a host of SciPy developers.
 """
+import math
 import os
 import re
 import warnings
@@ -9050,6 +9051,7 @@ class TestExpectile:
         assert np.all(np.diff(e_list) > 0)
 
 
+@make_xp_test_case(stats.lmoment)
 class TestLMoment:
     # data from https://github.com/scipy/scipy/issues/19460
     data = [0.87, 0.87, 1.29, 1.5, 1.7, 0.66, 1.5, 0.5, 1., 1.25, 2.3,
@@ -9064,12 +9066,12 @@ class TestLMoment:
             1.4, 1.35, 1.28, 1.04, 1.31, 0.87, 0.96, 2.55, 1.72, 1.05, 1.15,
             1.73, 1.03, 1.53, 2.41, 1.36, 2.08, 0.92, 0.73, 1.56, 1.94, 0.78]
 
-    not_integers = [1.5, [1, 2, 3.5], np.nan, np.inf, 'a duck']
+    not_integers = [1.5, [1, 2, 3.5], math.nan, math.inf]
 
-    def test_dtype_iv(self):
+    def test_dtype_iv(self, xp):
         message = '`sample` must be an array of real numbers.'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(np.array(self.data, dtype=np.complex128))
+            stats.lmoment(xp.asarray(self.data, dtype=xp.complex128))
 
     @skip_xp_invalid_arg
     def test_dtype_iv_non_numeric(self):
@@ -9078,63 +9080,62 @@ class TestLMoment:
             stats.lmoment(np.array(self.data, dtype=object))
 
     @pytest.mark.parametrize('order', not_integers + [0, -1, [], [[1, 2, 3]]])
-    def test_order_iv(self, order):
+    def test_order_iv(self, order, xp):
         message = '`order` must be a scalar or a non-empty...'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, order=order)
+            stats.lmoment(xp.asarray(self.data), order=order)
 
     @pytest.mark.parametrize('axis', not_integers)
-    def test_axis_iv(self, axis):
+    def test_axis_iv(self, axis, xp):
         message = '`axis` must be an integer, a tuple'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, axis=axis)
+            stats.lmoment(xp.asarray(self.data), axis=axis)
 
     @pytest.mark.parametrize('sorted', not_integers)
-    def test_sorted_iv(self, sorted):
+    def test_sorted_iv(self, sorted, xp):
         message = '`sorted` must be True or False.'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, sorted=sorted)
+            stats.lmoment(xp.asarray(self.data), sorted=sorted)
 
     @pytest.mark.parametrize('standardize', not_integers)
-    def test_standardize_iv(self, standardize):
+    def test_standardize_iv(self, standardize, xp):
         message = '`standardize` must be True or False.'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, standardize=standardize)
+            stats.lmoment(xp.asarray(self.data), standardize=standardize)
 
     @pytest.mark.parametrize('order', [1, 4, [1, 2, 3, 4]])
     @pytest.mark.parametrize('standardize', [False, True])
     @pytest.mark.parametrize('sorted', [False, True])
-    def test_lmoment(self, order, standardize, sorted):
+    def test_lmoment(self, order, standardize, sorted, xp):
         # Reference values from R package `lmom`
         # options(digits=16)
         # library(lmom)
         # data= c(0.87, 0.87,..., 1.94, 0.78)
         # samlmu(data)
-        ref = np.asarray([1.4087603305785130, 0.3415936639118458,
+        ref = xp.asarray([1.4087603305785130, 0.3415936639118458,
                           0.2189964482831403, 0.1328186463415905])
 
         if not standardize:
             ref[2:] *= ref[1]
 
         data = np.sort(self.data) if sorted else self.data
+        data = xp.asarray(data)
 
         res = stats.lmoment(data, order, standardize=standardize, sorted=sorted)
-        assert_allclose(res, ref[np.asarray(order)-1])
+        xp_assert_close(res, ref[xp.asarray(order)-1])
 
-    def test_dtype(self):
-        dtype = np.float32
-        sample = np.asarray(self.data)
-        res = stats.lmoment(sample.astype(dtype))
-        ref = stats.lmoment(sample)
-        assert res.dtype.type == dtype
-        assert_allclose(res, ref, rtol=1e-4)
+    def test_dtype(self, xp):
+        dtype = xp.float32
+        sample = xp.asarray(self.data)
+        res = stats.lmoment(xp.astype(sample, dtype))
+        ref = xp.astype(stats.lmoment(sample), dtype)
+        xp_assert_close(res, ref, rtol=1e-4)
 
-        dtype = np.int64
-        sample = np.asarray([1, 2, 3, 4, 5])
-        res = stats.lmoment(sample.astype(dtype))
-        ref = stats.lmoment(sample.astype(np.float64))
-        assert res.dtype.type == np.float64
-        assert_allclose(res, ref, rtol=1e-15)
+        dtype = xp.int64
+        sample = xp.asarray([1, 2, 3, 4, 5])
+        res = stats.lmoment(xp.astype(sample, dtype))
+        ref = stats.lmoment(xp.astype(sample, xp_default_dtype(xp)))
+        xp_assert_close(res, ref)
 
 
 class TestXP_Mean:

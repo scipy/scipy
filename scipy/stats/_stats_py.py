@@ -71,6 +71,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_array_api_strict,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -10262,49 +10263,49 @@ def expectile(a, alpha=0.5, *, weights=None):
     return res.root
 
 
-def _lmoment_iv(sample, order, axis, sorted, standardize):
+def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
     # input validation/standardization for `lmoment`
-    sample = np.asarray(sample)
+    sample = xp_promote(sample, force_floating=True, xp=xp)
+
     message = "`sample` must be an array of real numbers."
-    if np.issubdtype(sample.dtype, np.integer):
-        sample = sample.astype(np.float64)
-    if not np.issubdtype(sample.dtype, np.floating):
+    if not xp.isdtype(sample.dtype, "real floating"):
         raise ValueError(message)
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
-    order = np.arange(1, 5) if order is None else np.asarray(order)
-    if not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0):
+    order = xp.arange(1, 5) if order is None else xp.asarray(order)
+    if not xp.isdtype(order.dtype, "integral") or xp.any(order <= 0):
         raise ValueError(message)
 
+    # input validation of non-array types can still be performed with NumPy
     axis = np.asarray(axis)[()]
     message = "`axis` must be an integer."
-    if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
+    if not np.isdtype(axis.dtype, "integral") or axis.ndim != 0:
         raise ValueError(message)
 
     sorted = np.asarray(sorted)[()]
     message = "`sorted` must be True or False."
-    if not np.issubdtype(sorted.dtype, np.bool_) or sorted.ndim != 0:
+    if not np.isdtype(sorted.dtype, "bool") or sorted.ndim != 0:
         raise ValueError(message)
 
     standardize = np.asarray(standardize)[()]
     message = "`standardize` must be True or False."
-    if not np.issubdtype(standardize.dtype, np.bool_) or standardize.ndim != 0:
+    if not np.isdtype(standardize.dtype, "bool") or standardize.ndim != 0:
         raise ValueError(message)
 
-    sample = np.moveaxis(sample, axis, -1)
-    sample = np.sort(sample, axis=-1) if not sorted else sample
+    sample = xp.moveaxis(sample, axis, -1)
+    sample = xp.sort(sample, axis=-1) if not sorted else sample
 
     return sample, order, axis, sorted, standardize
 
 
-def _br(x, *, r=0):
+def _br(x, *, r=0, xp):
     n = x.shape[-1]
-    x = np.expand_dims(x, axis=-2)
-    x = np.broadcast_to(x, x.shape[:-2] + (len(r), n))
-    x = np.triu(x)
-    j = np.arange(n, dtype=x.dtype)
-    n = np.asarray(n, dtype=x.dtype)[()]
-    return (np_vecdot(special.binom(j, r[:, np.newaxis]), x, axis=-1)
+    x = xp.expand_dims(x, axis=-2)
+    x = xp.broadcast_to(x, x.shape[:-2] + (r.shape[0], n))
+    x = _triu(x, xp=xp)
+    j = xp.arange(n, dtype=x.dtype)
+    n = xp.asarray(n, dtype=x.dtype)[()]
+    return (xp.vecdot(special.binom(j, r[:, xp.newaxis]), x, axis=-1)
             / special.binom(n-1, r) / n)
 
 
@@ -10315,7 +10316,17 @@ def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
 
-@xp_capabilities(np_only=True)
+def _triu(x, xp):
+    # not array API compatible, but supported by cupy, jax.numpy, torch, dask.array
+    if is_array_api_strict(xp):
+        # allows testing with array_api_strict
+        return xp.asarray(np.triu(np.asarray(x)))
+    else:
+        return xp.triu(x)
+
+
+@xp_capabilities(skip_backends=[('dask.array', "too many issues"),
+                                ('jax.numpy', "for now, requires mutability")])
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
@@ -10384,22 +10395,25 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     provide reasonable estimates.
 
     """
-    args = _lmoment_iv(sample, order, axis, sorted, standardize)
+    xp = array_namespace(sample)
+    args = _lmoment_iv(sample, order, axis, sorted, standardize, xp=xp)
     sample, order, axis, sorted, standardize = args
 
-    n_moments = np.max(order)
-    k = np.arange(n_moments, dtype=sample.dtype)
-    prk = _prk(np.expand_dims(k, tuple(range(1, sample.ndim+1))), k)
-    bk = _br(sample, r=k)
+    n_moments = int(xp.max(order))
+    k = xp.arange(n_moments, dtype=sample.dtype)
+    prk = _prk(xpx.expand_dims(k, axis=tuple(range(1, sample.ndim+1))), k)
+    bk = _br(sample, r=k, xp=xp)
 
     n = sample.shape[-1]
-    bk[..., n:] = 0  # remove NaNs due to n_moments > n
+    if n < bk.shape[-1]:
+        bk[..., n:] = 0  # remove NaNs due to n_moments > n
 
-    lmoms = np_vecdot(prk, bk, axis=-1)
+    lmoms = xp.vecdot(prk, bk, axis=-1)
     if standardize and n_moments > 2:
         lmoms[2:] /= lmoms[1]
 
-    lmoms[n:] = np.nan  # add NaNs where appropriate
+    if n < lmoms.shape[-1]:
+        lmoms[n:] = xp.nan  # add NaNs where appropriate
     return lmoms[order-1]
 
 
