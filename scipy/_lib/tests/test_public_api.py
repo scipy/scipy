@@ -11,9 +11,9 @@ from importlib import import_module
 
 import pytest
 
-import numpy as np
 import scipy
 
+from scipy._lib._public_api import PUBLIC_MODULES
 from scipy.conftest import xp_available_backends
 
 
@@ -22,55 +22,6 @@ def test_dir_testing():
     attribute without duplicate"""
     assert len(dir(scipy)) == len(set(dir(scipy)))
 
-
-# Historically SciPy has not used leading underscores for private submodules
-# much.  This has resulted in lots of things that look like public modules
-# (i.e. things that can be imported as `import scipy.somesubmodule.somefile`),
-# but were never intended to be public.  The PUBLIC_MODULES list contains
-# modules that are either public because they were meant to be, or because they
-# contain public functions/objects that aren't present in any other namespace
-# for whatever reason and therefore should be treated as public.
-PUBLIC_MODULES = ["scipy." + s for s in [
-    "cluster",
-    "cluster.vq",
-    "cluster.hierarchy",
-    "constants",
-    "datasets",
-    "differentiate",
-    "fft",
-    "fftpack",
-    "integrate",
-    "interpolate",
-    "io",
-    "io.arff",
-    "io.matlab",
-    "io.wavfile",
-    "linalg",
-    "linalg.blas",
-    "linalg.cython_blas",
-    "linalg.lapack",
-    "linalg.cython_lapack",
-    "linalg.interpolative",
-    "ndimage",
-    "odr",
-    "optimize",
-    "optimize.elementwise",
-    "signal",
-    "signal.windows",
-    "sparse",
-    "sparse.linalg",
-    "sparse.csgraph",
-    "spatial",
-    "spatial.distance",
-    "spatial.transform",
-    "special",
-    "stats",
-    "stats.contingency",
-    "stats.distributions",
-    "stats.mstats",
-    "stats.qmc",
-    "stats.sampling"
-]]
 
 # The PRIVATE_BUT_PRESENT_MODULES list contains modules that lacked underscores
 # in their name and hence looked public, but weren't meant to be. All these
@@ -223,7 +174,9 @@ SKIP_LIST = [
 # while attempting to import each discovered package.
 # For now, `ignore_errors` only ignores what is necessary, but this could be expanded -
 # for example, to all errors from private modules or git subpackages - if desired.
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(
+    reason=("crashes in pkgutil.walk_packages, see "
+            "https://github.com/data-apis/array-api-compat/issues/343"))
 def test_all_modules_are_expected():
     """
     Test that we don't add anything that looks like a new public module by
@@ -244,8 +197,8 @@ def test_all_modules_are_expected():
 
     modnames = []
 
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(DeprecationWarning,"scipy.misc")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "scipy.misc", DeprecationWarning)
         for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
                                                    prefix=scipy.__name__ + '.',
                                                    onerror=ignore_errors):
@@ -295,8 +248,8 @@ def test_all_modules_are_expected_2():
                         members.append(fullobjname)
 
         return members
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "scipy.misc")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",  "scipy.misc", DeprecationWarning)
         unexpected_members = find_unexpected_members("scipy")
 
     for modname in PUBLIC_MODULES:
@@ -332,8 +285,8 @@ def test_api_importable():
                              f"imported: {module_names}")
 
     with warnings.catch_warnings(record=True):
-        warnings.filterwarnings('always', category=DeprecationWarning)
-        warnings.filterwarnings('always', category=ImportWarning)
+        warnings.simplefilter('always', category=DeprecationWarning)
+        warnings.simplefilter('always', category=ImportWarning)
         for module_name in PRIVATE_BUT_PRESENT_MODULES:
             if not check_importable(module_name):
                 module_names.append(module_name)
@@ -344,7 +297,6 @@ def test_api_importable():
                              f"{module_names}")
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize(("module_name", "correct_module"),
                          [('scipy.constants.codata', None),
                           ('scipy.constants.constants', None),
@@ -360,6 +312,7 @@ def test_api_importable():
                           ('scipy.interpolate.dfitpack', None),
                           ('scipy.interpolate.fitpack', None),
                           ('scipy.interpolate.fitpack2', None),
+                          ('scipy.interpolate.interpnd', None),
                           ('scipy.interpolate.interpolate', None),
                           ('scipy.interpolate.ndgriddata', None),
                           ('scipy.interpolate.polyint', None),

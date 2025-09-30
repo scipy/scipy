@@ -134,8 +134,8 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import (_asarray, array_namespace, is_dask, is_jax,
-                                   is_lazy_array, xp_copy)
+from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
+                                   is_lazy_array, xp_capabilities, xp_copy)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -165,9 +165,15 @@ def _warning(s):
 def int_floor(arr, xp):
     # array_api_strict is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
-    return int(xp.astype(xp.asarray(arr), xp.int64))
+    return int(xp.asarray(arr, dtype=xp.int64))
 
 
+lazy_cython = xp_capabilities(
+    cpu_only=True, reason="Cython code",
+    warnings=[("dask.array", "merges chunks")])
+
+
+@lazy_cython
 def single(y):
     """
     Perform single/min/nearest linkage on the condensed distance matrix ``y``.
@@ -246,6 +252,7 @@ def single(y):
     return linkage(y, method='single', metric='euclidean')
 
 
+@lazy_cython
 def complete(y):
     """
     Perform complete/max/farthest point linkage on a condensed distance matrix.
@@ -328,6 +335,7 @@ def complete(y):
     return linkage(y, method='complete', metric='euclidean')
 
 
+@lazy_cython
 def average(y):
     """
     Perform average/UPGMA linkage on a condensed distance matrix.
@@ -410,6 +418,7 @@ def average(y):
     return linkage(y, method='average', metric='euclidean')
 
 
+@lazy_cython
 def weighted(y):
     """
     Perform weighted/WPGMA linkage on the condensed distance matrix.
@@ -495,6 +504,7 @@ def weighted(y):
     return linkage(y, method='weighted', metric='euclidean')
 
 
+@lazy_cython
 def centroid(y):
     """
     Perform centroid/UPGMC linkage.
@@ -597,6 +607,7 @@ def centroid(y):
     return linkage(y, method='centroid', metric='euclidean')
 
 
+@lazy_cython
 def median(y):
     """
     Perform median/WPGMC linkage.
@@ -699,6 +710,7 @@ def median(y):
     return linkage(y, method='median', metric='euclidean')
 
 
+@lazy_cython
 def ward(y):
     """
     Perform Ward's linkage on a condensed distance matrix.
@@ -798,6 +810,7 @@ def ward(y):
     return linkage(y, method='ward', metric='euclidean')
 
 
+@lazy_cython
 def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
@@ -1049,7 +1062,8 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
             return _hierarchy.fast_linkage(y, n, method_code)
 
     result = xpx.lazy_apply(cy_linkage, y, validate=lazy,
-                            shape=(n - 1, 4), dtype=xp.float64, as_numpy=True)
+                            shape=(n - 1, 4), dtype=xp.float64,
+                            as_numpy=True, xp=xp)
 
     if optimal_ordering:
         return optimal_leaf_ordering(result, y)
@@ -1290,6 +1304,7 @@ def _order_cluster_tree(Z):
     return nodes
 
 
+@xp_capabilities(np_only=True, reason="non-standard indexing")
 def cut_tree(Z, n_clusters=None, height=None):
     """
     Given a linkage matrix Z, return the cut tree.
@@ -1377,6 +1392,7 @@ def cut_tree(Z, n_clusters=None, height=None):
     return groups.T
 
 
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
 def to_tree(Z, rd=False):
     """
     Convert a linkage matrix into an easy-to-use tree object.
@@ -1438,8 +1454,8 @@ def to_tree(Z, rd=False):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    Z = _asarray(Z, order='C', xp=xp)
+    _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
     # Number of original objects is equal to the number of rows plus 1.
     n = Z.shape[0] + 1
@@ -1480,6 +1496,7 @@ def to_tree(Z, rd=False):
         return nd
 
 
+@lazy_cython
 def optimal_leaf_ordering(Z, y, metric='euclidean'):
     """
     Given a linkage matrix Z and distance, reorder the cut tree.
@@ -1523,7 +1540,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Z = _asarray(Z, order='C', xp=xp)
     y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
     lazy = is_lazy_array(Z)
-    _is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1544,18 +1561,19 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     # The function name is prominently visible on the user-facing Dask dashboard;
     # make sure it is meaningful.
-    def optimal_leaf_ordering_(Z, y, validate):
+    def cy_optimal_leaf_ordering(Z, y, validate):
         if validate:
-            is_valid_linkage(Z, throw=True, name='Z')
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
             if not np.all(np.isfinite(y)):
                 raise ValueError("The condensed distance matrix must contain only "
                                  "finite values.")
         return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
-    return xpx.lazy_apply(optimal_leaf_ordering_, Z, y, validate=lazy,
-                          shape=Z.shape, dtype=Z.dtype, as_numpy=True)
+    return xpx.lazy_apply(cy_optimal_leaf_ordering, Z, y, validate=lazy,
+                          shape=Z.shape, dtype=Z.dtype, as_numpy=True, xp=xp)
 
 
+@lazy_cython
 def cophenet(Z, Y=None):
     """
     Calculate the cophenetic distances between each observation in
@@ -1666,13 +1684,21 @@ def cophenet(Z, Y=None):
     xp = array_namespace(Z, Y)
     # Ensure float64 C-contiguous array. Cython code doesn't deal with striding.
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
-    n = Z.shape[0] + 1
-    zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    Z = np.asarray(Z)
-    _hierarchy.cophenetic_distances(Z, zz, int(n))
-    zz = xp.asarray(zz)
+    def cy_cophenet(Z, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+        n = Z.shape[0] + 1
+        zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
+        _hierarchy.cophenetic_distances(Z, zz, n)
+        return zz
+    
+    n = Z.shape[0] + 1
+    zz = xpx.lazy_apply(cy_cophenet, Z, validate=is_lazy_array(Z),
+                        shape=((n * (n-1)) // 2, ), dtype=xp.float64,
+                        as_numpy=True, xp=xp)
+                        
     if Y is None:
         return zz
 
@@ -1690,6 +1716,7 @@ def cophenet(Z, Y=None):
     return (c, zz)
 
 
+@lazy_cython
 def inconsistent(Z, d=2):
     r"""
     Calculate inconsistency statistics on a linkage matrix.
@@ -1747,21 +1774,26 @@ def inconsistent(Z, d=2):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    if (not d == np.floor(d)) or d < 0:
+    if d != np.floor(d) or d < 0:
         raise ValueError('The second argument d must be a nonnegative '
                          'integer value.')
 
-    n = Z.shape[0] + 1
-    R = np.zeros((n - 1, 4), dtype=np.float64)
+    def cy_inconsistent(Z, d, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+        R = np.zeros((Z.shape[0], 4), dtype=np.float64)
+        n = Z.shape[0] + 1
+        _hierarchy.inconsistent(Z, R, n, d)
+        return R
 
-    Z = np.asarray(Z)
-    _hierarchy.inconsistent(Z, R, int(n), int(d))
-    R = xp.asarray(R)
-    return R
+    return xpx.lazy_apply(cy_inconsistent, Z, d=int(d), validate=is_lazy_array(Z),
+                          shape=(Z.shape[0], 4), dtype=xp.float64,
+                          as_numpy=True, xp=xp)
 
 
+@lazy_cython
 def from_mlab_linkage(Z):
     """
     Convert a linkage matrix generated by MATLAB(TM) to a new
@@ -1834,34 +1866,48 @@ def from_mlab_linkage(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, dtype=xp.float64, order='C', xp=xp)
-    Zs = Z.shape
 
     # If it's empty, return it.
-    if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
+    if Z.shape in ((), (0, )):
         return xp_copy(Z, xp=xp)
 
-    if len(Zs) != 2:
+    if Z.ndim != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
-    if Zs[0] == 0:
+    n = Z.shape[0]
+    if n == 0:
         return xp_copy(Z, xp=xp)
 
-    if xp.min(Z[:, 0:2]) != 1.0 and xp.max(Z[:, 0:2]) != 2 * Zs[0]:
+    lazy = is_lazy_array(Z)
+
+    if not lazy and xp.min(Z[:, :2]) != 1.0 and xp.max(Z[:, :2]) != 2 * n:
         raise ValueError('The format of the indices is not 1..N')
 
-    Zpart = xp.concat((Z[:, 0:2] - 1.0, Z[:, 2:]), axis=1)
-    CS = np.zeros((Zs[0],), dtype=np.float64)
-    if is_jax(xp):
-        # calculate_cluster_sizes doesn't accept read-only arrays
-        Zpart = np.array(Zpart, copy=True)
-    else:
-        Zpart = np.asarray(Zpart)
-    _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
-    res = np.hstack([Zpart, CS.reshape(Zs[0], 1)])
-    return xp.asarray(res)
+    res = xp.empty((Z.shape[0], Z.shape[1] + 1), dtype=Z.dtype)
+    res = xpx.at(res)[:, :2].set(Z[:, :2] - 1.0)
+    res = xpx.at(res)[:, 2:-1].set(Z[:, 2:])
+
+    def cy_from_mlab_linkage(Zpart, validate):
+        n = Zpart.shape[0]
+        if validate and np.min(Zpart[:, :2]) != 0.0 and np.max(Zpart[:, :2]) != 2 * n:
+            raise ValueError('The format of the indices is not 1..N')
+
+        if not Zpart.flags.writeable:
+            Zpart = Zpart.copy()  # xp=jax.numpy
+
+        CS = np.zeros((n,))
+        _hierarchy.calculate_cluster_sizes(Zpart, CS, n + 1)
+        return CS
+
+    CS = xpx.lazy_apply(cy_from_mlab_linkage, res[:, :-1], validate=lazy,
+                        shape=(res.shape[0],), dtype=xp.float64,
+                        as_numpy=True, xp=xp)
+
+    return xpx.at(res)[:, -1].set(CS)
 
 
+@xp_capabilities()
 def to_mlab_linkage(Z):
     """
     Convert a linkage matrix to a MATLAB(TM) compatible one.
@@ -1938,14 +1984,15 @@ def to_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
-    if Z.ndim == 0 or (Z.ndim == 1 and Z.shape[0] == 0):
+    Z = _asarray(Z, dtype=xp.float64, xp=xp)
+    if Z.shape in ((), (0, )):
         return xp_copy(Z, xp=xp)
-    _is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
     return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
 
 
+@xp_capabilities()
 def is_monotonic(Z):
     """
     Return True if the linkage passed is monotonic.
@@ -2025,13 +2072,14 @@ def is_monotonic(Z):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
-    _is_valid_linkage(Z, throw=True, name='Z')
+    Z = _asarray(Z, xp=xp)
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
     # We expect the i'th value to be greater than its successor.
     return xp.all(Z[1:, 2] >= Z[:-1, 2])
 
 
+@xp_capabilities(warnings=[("dask.array", "see notes"), ("jax.numpy", "see notes")])
 def is_valid_im(R, warning=False, throw=False, name=None):
     """Return True if the inconsistency matrix passed is valid.
 
@@ -2125,16 +2173,17 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     False
 
     """
-    return _is_valid_im(R, warning=warning, throw=throw, name=name, materialize=True)
+    xp = array_namespace(R)
+    R = _asarray(R, xp=xp)
+    return _is_valid_im(R, warning=warning, throw=throw, name=name,
+                        materialize=True, xp=xp)
 
 
-def _is_valid_im(R, warning=False, throw=False, name=None, materialize=False):
+def _is_valid_im(R, warning=False, throw=False, name=None, materialize=False, *, xp):
     """Variant of `is_valid_im` to be called internally by other scipy functions,
     which by default does not materialize lazy input arrays (Dask, JAX, etc.) when
     warning=True or throw=True.
     """
-    xp = array_namespace(R)
-    R = _asarray(R, xp=xp)
     name_str = f"{name!r} " if name else ''
     try:
         if R.dtype != xp.float64:
@@ -2168,6 +2217,7 @@ def _is_valid_im(R, warning=False, throw=False, name=None, materialize=False):
     )
 
 
+@xp_capabilities(warnings=[("dask.array", "see notes"), ("jax.numpy", "see notes")])
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
     """
     Check the validity of a linkage matrix.
@@ -2259,17 +2309,18 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     False
 
     """
+    xp = array_namespace(Z)
+    Z = _asarray(Z, xp=xp)
     return _is_valid_linkage(Z, warning=warning, throw=throw,
-                             name=name, materialize=True)
+                             name=name, materialize=True, xp=xp)
 
 
-def _is_valid_linkage(Z, warning=False, throw=False, name=None, materialize=False):
+def _is_valid_linkage(Z, warning=False, throw=False, name=None,
+                      materialize=False, *, xp):
     """Variant of `is_valid_linkage` to be called internally by other scipy functions,
     which by default does not materialize lazy input arrays (Dask, JAX, etc.) when
     warning=True or throw=True.
     """
-    xp = array_namespace(Z)
-    Z = _asarray(Z, xp=xp)
     name_str = f"{name!r} " if name else ''
     try:
         if Z.dtype != xp.float64:
@@ -2363,6 +2414,7 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
     return not any(conds)
 
 
+@xp_capabilities()
 def num_obs_linkage(Z):
     """
     Return the number of original observations of the linkage matrix passed.
@@ -2397,11 +2449,12 @@ def num_obs_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
-    _is_valid_linkage(Z, throw=True, name='Z')
+    Z = _asarray(Z, xp=xp)
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
     return Z.shape[0] + 1
 
 
+@xp_capabilities()
 def correspond(Z, Y):
     """
     Check for correspondence between linkage and condensed distance matrices.
@@ -2451,14 +2504,16 @@ def correspond(Z, Y):
     True
 
     """
-    _is_valid_linkage(Z, throw=True)
-    distance.is_valid_y(Y, throw=True)
     xp = array_namespace(Z, Y)
-    Z = _asarray(Z, order='c', xp=xp)
-    Y = _asarray(Y, order='c', xp=xp)
+    Z = _asarray(Z, xp=xp)
+    Y = _asarray(Y, xp=xp)
+    _is_valid_linkage(Z, throw=True, xp=xp)
+    distance.is_valid_y(Y, throw=True)
     return distance.num_obs_y(Y) == num_obs_linkage(Z)
 
 
+@xp_capabilities(cpu_only=True, reason="Cython code",
+                 jax_jit=False, allow_dask_compute=True)
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
     Form flat clusters from the hierarchical clustering defined by
@@ -2612,7 +2667,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
     n = Z.shape[0] + 1
     T = np.zeros((n,), dtype='i')
@@ -2627,7 +2682,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             R = inconsistent(Z, depth)
         else:
             R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
-            is_valid_im(R, throw=True, name='R')
+            _is_valid_im(R, throw=True, name='R', materialize=True, xp=xp)
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
             R = np.asarray(R)
@@ -2645,6 +2700,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     return xp.asarray(T)
 
 
+@xp_capabilities(cpu_only=True, reason="Cython code",
+                 jax_jit=False, allow_dask_compute=True)
 def fclusterdata(X, t, criterion='inconsistent',
                  metric='euclidean', depth=2, method='single', R=None):
     """
@@ -2741,11 +2798,12 @@ def fclusterdata(X, t, criterion='inconsistent',
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = _asarray(R, order='c', xp=xp)
+        R = _asarray(R, order='C', xp=xp)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
 
+@lazy_cython
 def leaves_list(Z):
     """
     Return a list of leaf node ids.
@@ -2796,12 +2854,20 @@ def leaves_list(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='C', xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
+
+    def cy_leaves_list(Z, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+        n = Z.shape[0] + 1
+        ML = np.zeros((n,), dtype=np.int32)
+        _hierarchy.prelist(Z, ML, n)
+        return ML
+
     n = Z.shape[0] + 1
-    ML = np.zeros((n,), dtype='i')
-    Z = np.asarray(Z)
-    _hierarchy.prelist(Z, ML, n)
-    return xp.asarray(ML)
+    return xpx.lazy_apply(cy_leaves_list, Z, validate=is_lazy_array(Z),
+                          shape=(n, ), dtype=xp.int32,
+                          as_numpy=True, xp=xp)
 
 
 # Maps number of leaves to text size.
@@ -2985,6 +3051,7 @@ _link_line_colors_default = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9
 _link_line_colors = list(_link_line_colors_default)
 
 
+@xp_capabilities(out_of_scope=True)
 def set_link_color_palette(palette):
     """
     Set list of matplotlib color codes for use by dendrogram.
@@ -3059,6 +3126,7 @@ def set_link_color_palette(palette):
     _link_line_colors = palette
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                get_leaves=True, orientation='top', labels=None,
                count_sort=False, distance_sort=False, show_leaf_counts=True,
@@ -3335,7 +3403,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='C', xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
@@ -3349,7 +3417,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         if Z.shape[0] + 1 != len_labels:
             raise ValueError("Dimensions of Z and labels must be consistent.")
 
-    is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
     Zs = Z.shape
     n = Zs[0] + 1
     if isinstance(p, int | float):
@@ -3742,6 +3810,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     return (((uiva + uivb) / 2), uwa + uwb, h, max_dist)
 
 
+@xp_capabilities()
 def is_isomorphic(T1, T2):
     """
     Determine if two different cluster assignments are equivalent.
@@ -3773,7 +3842,7 @@ def is_isomorphic(T1, T2):
     Two flat cluster assignments can be isomorphic if they represent the same
     cluster assignment, with different labels.
 
-    For example, we can use the `scipy.cluster.hierarchy.single`: method
+    For example, we can use the `scipy.cluster.hierarchy.single` method
     and flatten the output to four clusters:
 
     >>> X = [[0, 0], [0, 1], [1, 0],
@@ -3803,35 +3872,35 @@ def is_isomorphic(T1, T2):
     True
 
     """
-    T1 = np.asarray(T1, order='c')
-    T2 = np.asarray(T2, order='c')
+    xp = array_namespace(T1, T2)
+    T1 = _asarray(T1, xp=xp)
+    T2 = _asarray(T2, xp=xp)
 
-    T1S = T1.shape
-    T2S = T2.shape
-
-    if len(T1S) != 1:
+    if T1.ndim != 1:
         raise ValueError('T1 must be one-dimensional.')
-    if len(T2S) != 1:
+    if T2.ndim != 1:
         raise ValueError('T2 must be one-dimensional.')
-    if T1S[0] != T2S[0]:
+    if T1.shape != T2.shape:
         raise ValueError('T1 and T2 must have the same number of elements.')
-    n = T1S[0]
-    d1 = {}
-    d2 = {}
-    for i in range(0, n):
-        if T1[i] in d1:
-            if T2[i] not in d2:
-                return False
-            if d1[T1[i]] != T2[i] or d2[T2[i]] != T1[i]:
-                return False
-        elif T2[i] in d2:
-            return False
-        else:
-            d1[T1[i]] = T2[i]
-            d2[T2[i]] = T1[i]
-    return True
+
+    # For each pair of (i, j) indices, test that
+    # T1[i] == T1[j] <--> T2[i] == T2[j]
+    # In other words, if the same symbol appears multiple times in T1,
+    # then a potentially different symbol must also be repeated in the same
+    # positions in T2, and vice versa.
+
+    # O(n*log(n)) algorithm.
+    # It is also possible to write a O(n) algorithm on top of unique_all(),
+    # but in practice it's much slower even for large clusters.
+    idx = xp.argsort(T1)
+    T1 = xp.take(T1, idx)
+    T2 = xp.take(T2, idx)
+    changes1 = T1 != xp.roll(T1, -1)
+    changes2 = T2 != xp.roll(T2, -1)
+    return xp.all(changes1 == changes2)
 
 
+@lazy_cython
 def maxdists(Z):
     """
     Return the maximum distance between any non-singleton cluster.
@@ -3907,16 +3976,21 @@ def maxdists(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    n = Z.shape[0] + 1
-    MD = np.zeros((n - 1,))
-    Z = np.asarray(Z)
-    _hierarchy.get_max_dist_for_each_cluster(Z, MD, int(n))
-    MD = xp.asarray(MD)
-    return MD
+    def cy_maxdists(Z, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+        MD = np.zeros((Z.shape[0],))
+        _hierarchy.get_max_dist_for_each_cluster(Z, MD, Z.shape[0] + 1)
+        return MD
+
+    return xpx.lazy_apply(cy_maxdists, Z, validate=is_lazy_array(Z),
+                          shape=(Z.shape[0], ), dtype=xp.float64,
+                          as_numpy=True, xp=xp)
 
 
+@lazy_cython
 def maxinconsts(Z, R):
     """
     Return the maximum inconsistency coefficient for each
@@ -3995,21 +4069,28 @@ def maxinconsts(Z, R):
     xp = array_namespace(Z, R)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
-    is_valid_im(R, throw=True, name='R')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
+    _is_valid_im(R, throw=True, name='R', xp=xp)
 
-    n = Z.shape[0] + 1
     if Z.shape[0] != R.shape[0]:
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
-    MI = np.zeros((n - 1,))
-    Z = np.asarray(Z)
-    R = np.asarray(R)
-    _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, int(n), 3)
-    MI = xp.asarray(MI)
-    return MI
+    
+    def cy_maxinconsts(Z, R, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+            _is_valid_im(R, throw=True, name='R', xp=np)
+        n = Z.shape[0] + 1
+        MI = np.zeros((n - 1,))
+        _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, n, 3)
+        return MI
+
+    return xpx.lazy_apply(cy_maxinconsts, Z, R, validate=is_lazy_array(Z),
+                          shape=(Z.shape[0], ), dtype=xp.float64,
+                          as_numpy=True, xp=xp)
 
 
+@lazy_cython
 def maxRstat(Z, R, i):
     """
     Return the maximum statistic for each non-singleton cluster and its
@@ -4090,8 +4171,8 @@ def maxRstat(Z, R, i):
     xp = array_namespace(Z, R)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     R = _asarray(R, order='C', dtype=xp.float64, xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
-    is_valid_im(R, throw=True, name='R')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
+    _is_valid_im(R, throw=True, name='R', xp=xp)
 
     if not isinstance(i, int):
         raise TypeError('The third argument must be an integer.')
@@ -4103,15 +4184,23 @@ def maxRstat(Z, R, i):
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
 
-    n = Z.shape[0] + 1
-    MR = np.zeros((n - 1,))
-    Z = np.asarray(Z)
-    R = np.asarray(R)
-    _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, int(n), i)
-    MR = xp.asarray(MR)
-    return MR
+    def cy_maxRstat(Z, R, i, validate):
+        if validate:
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
+            _is_valid_im(R, throw=True, name='R', xp=np)
+        MR = np.zeros((Z.shape[0],))
+        n = Z.shape[0] + 1
+        _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, n, i)
+        return MR
+
+    return xpx.lazy_apply(cy_maxRstat, Z, R, i=i, validate=is_lazy_array(Z),
+                          shape=(Z.shape[0], ), dtype=xp.float64,
+                          as_numpy=True, xp=xp)
 
 
+# Data-dependent output shape makes it impossible to use jax.jit
+@xp_capabilities(cpu_only=True, reason="Cython code", jax_jit=False,
+                 warnings=[("dask.array", "merges chunks")])
 def leaders(Z, T):
     """
     Return the root nodes in a hierarchical clustering.
@@ -4222,7 +4311,7 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     T = _asarray(T, order='C', xp=xp)
-    _is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
     if T.dtype != xp.int32:
         raise TypeError('T must be a 1-D array of dtype int32.')
@@ -4232,9 +4321,9 @@ def leaders(Z, T):
 
     n_obs = Z.shape[0] + 1
 
-    def leaders_(Z, T, validate):
+    def cy_leaders(Z, T, validate):
         if validate:
-            is_valid_linkage(Z, throw=True, name='Z')
+            _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         n_clusters = int(xpx.nunique(T))
         L = np.zeros(n_clusters, dtype=np.int32)
         M = np.zeros(n_clusters, dtype=np.int32)
@@ -4244,6 +4333,6 @@ def leaders(Z, T):
                              f'when examining linkage node {s} (< 2n-1).')
         return L, M
 
-    return xpx.lazy_apply(leaders_, Z, T, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_leaders, Z, T, validate=is_lazy_array(Z),
                           shape=((None,), (None, )), dtype=(xp.int32, xp.int32),
-                          as_numpy=True)
+                          as_numpy=True, xp=xp)

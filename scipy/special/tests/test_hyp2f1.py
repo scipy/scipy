@@ -2543,3 +2543,24 @@ class TestHyp2f1:
             if mark.name == 'parametrize'
             for case in mark.args[1]
         ]
+
+class TestHyp2f1ExtremeInputs:
+
+    @pytest.mark.parametrize("a", [1.0, 2.0, 3.0, -np.inf, np.inf])
+    @pytest.mark.parametrize("b", [3.0, 4.0, 5.0, -np.inf, np.inf])
+    @pytest.mark.parametrize("c", [3.0, 5.0, 6.0, 7.0])
+    @pytest.mark.parametrize("z", [4.0 + 1.0j])
+    def test_inf_a_b(self, a, b, c, z):
+        if np.any(np.isinf(np.asarray([a, b]))):
+            assert(np.isnan(hyp2f1(a, b, c, z)))
+
+    def test_large_a_b(self):
+        assert(np.isnan(hyp2f1(10**7, 1.0, 3.0, 4.0 + 1.0j)))
+        assert(np.isnan(hyp2f1(-10**7, 1.0, 3.0, 4.0 + 1.0j)))
+
+        assert(np.isnan(hyp2f1(1.0, 10**7, 3.0, 4.0 + 1.0j)))
+        assert(np.isnan(hyp2f1(1.0, -10**7, 3.0, 4.0 + 1.0j)))
+
+        # Already correct in main but testing for surety
+        assert(np.isnan(hyp2f1(np.inf, 1.0, 3.0, 4.0)))
+        assert(np.isnan(hyp2f1(1.0, np.inf, 3.0, 4.0)))

@@ -8,7 +8,8 @@ import pytest
 import numpy as np
 import scipy
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
+from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
+                            OptimizeResult)
 
 
 class MyCallBack:
@@ -21,8 +22,18 @@ class MyCallBack:
         self.ncalls = 0
 
     def __call__(self, x):
+        assert not isinstance(x, OptimizeResult)
         self.been_called = True
         self.ncalls += 1
+
+    def callback2(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        self.been_called = True
+        self.ncalls += 1
+
+    def callback3(self, intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        raise StopIteration
 
 
 class TestSLSQP:
@@ -358,9 +369,32 @@ class TestSLSQP:
         callback = MyCallBack()
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', callback=callback, options=self.opts)
-        assert_(res['success'], res['message'])
-        assert_(callback.been_called)
+        assert res.success
+        assert res.message
+        assert callback.been_called
         assert_equal(callback.ncalls, res['nit'])
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback2,
+            options=self.opts
+        )
+        assert res.success
+        assert callback.been_called
+
+        res = minimize(
+            self.fun,
+            [-1.0, 1.0],
+            args=(-1.0, ),
+            method='SLSQP',
+            callback=callback.callback3,
+            options=self.opts
+        )
+        assert not res.success
+        assert res.message.startswith("`callback` raised `StopIteration`")
 
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the
@@ -592,7 +626,6 @@ class TestSLSQP:
         # The problem is infeasible, so it cannot succeed
         assert not res.success
 
-    @pytest.mark.thread_unsafe
     def test_parameters_stay_within_bounds(self):
         # gh11403. For some problems the SLSQP Fortran code suggests a step
         # outside one of the lower/upper bounds. When this happens
@@ -607,7 +640,40 @@ class TestSLSQP:
         def f(x):
             assert (x >= bounds.lb).all()
             return np.linalg.norm(x)
+        # The following should not raise any warnings which was the case, with the
+        # old Fortran code.
+        res = minimize(f, x0, method='SLSQP', bounds=bounds)
+        assert res.success
 
-        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
-            res = minimize(f, x0, method='SLSQP', bounds=bounds)
-            assert res.success
+
+def test_slsqp_segfault_wrong_workspace_computation():
+    # See gh-14915
+    # This problem is not well-defined, however should not cause a segfault.
+    # The previous F77 workspace computation did not handle only equality-
+    # constrained problems correctly.
+    rng = np.random.default_rng(1742651087222879)
+    x = rng.uniform(size=[22,365])
+    target = np.linspace(0.9, 4.0, 50)
+
+    def metric(v, weights):
+        return [[0, 0],[1, 1]]
+
+    def efficient_metric(v, target):
+        def metric_a(weights):
+            return metric(v, weights)[1][0]
+
+        def metric_b(weights, v):
+            return metric(v, weights)[0][0]
+
+        constraints = ({'type': 'eq', 'fun': lambda x: metric_a(x) - target},
+                       {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+        weights = np.array([len(v)*[1./len(v)]])[0]
+        result = minimize(metric_b,
+                          weights,
+                          args=(v,),
+                          method='SLSQP',
+                          constraints=constraints)
+        return result
+
+    efficient_metric(x, target)
+

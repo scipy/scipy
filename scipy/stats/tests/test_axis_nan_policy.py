@@ -173,6 +173,7 @@ axis_nan_policy_cases = [
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
+    (stats._morestats._boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -334,7 +335,6 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (1,))
 @pytest.mark.parametrize(("data_generator"), ("mixed",))
-@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
@@ -463,8 +463,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         # warning depends on slice
         elif (nan_policy == 'omit' and data_generator == "mixed"
               and hypotest not in too_small_special_case_funcs):
-            with np.testing.suppress_warnings() as sup:
-                sup.filter(SmallSampleWarning, too_small_1d_omit)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", too_small_1d_omit, SmallSampleWarning)
                 res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         # shouldn't complain if there are no NaNs
         else:
@@ -500,13 +500,24 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     assert_allclose(res_nd, res_1d, rtol=1e-14)
 
+# nan should not raise a exception in np.mean()
+# but does on some mips64el systems, triggering failure in some test cases
+# see https://github.com/scipy/scipy/issues/22360
+# and https://github.com/numpy/numpy/issues/23158
+def skip_nan_unexpected_exception():
+    try:
+        # should not raise an exception
+        with np.errstate(all='raise'):
+            x = np.asarray([1, 2, np.nan])
+            np.mean(x)
+    except Exception as e:
+        pytest.skip(f"nan raises unexpected {e.__class__.__name__} in numpy")
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("data_generator"),
                          ("all_nans", "all_finite", "mixed", "empty"))
-@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
@@ -514,6 +525,24 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     if not unpacker:
         def unpacker(res):
             return res
+
+    # skip if nan emits unexpected RuntimeWarning in np.mean()
+    # seen on mips64el, https://github.com/scipy/scipy/issues/22360
+    # Only affects nan_policy "mixed-propagate" for selected hypotests
+    if data_generator=="mixed" and nan_policy=="propagate":
+        # only skip affected hypotests
+        if hypotest.__name__ in ["iqr", "ttest_ci",
+                                 "xp_mean_1samp", "xp_mean_2samp", "xp_var",
+                                 "weightedtau", "weightedtau_weighted"]:
+            skip_nan_unexpected_exception()
+    # all_nans-propagate-ttest_ci is also affected, via scalar multiply
+    if (data_generator=="all_nans" and nan_policy=="propagate"
+        and hypotest.__name__=="ttest_ci"):
+        skip_nan_unexpected_exception()
+    # mixed-omit-xp_var is also affected, via subtract
+    if (data_generator=="mixed" and nan_policy=="omit"
+        and hypotest.__name__=="xp_var"):
+        skip_nan_unexpected_exception()
 
     rng = np.random.default_rng(0)
 
@@ -781,9 +810,11 @@ def test_check_empty_inputs():
                 output = stats._axis_nan_policy._check_empty_inputs(samples,
                                                                     axis)
                 if output is not None:
-                    with np.testing.suppress_warnings() as sup:
-                        sup.filter(RuntimeWarning, "Mean of empty slice.")
-                        sup.filter(RuntimeWarning, "invalid value encountered")
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                            "ignore", "Mean of empty slice", RuntimeWarning)
+                        warnings.filterwarnings(
+                            "ignore", "invalid value encountered", RuntimeWarning)
                         reference = samples[0].mean(axis=axis)
                     np.testing.assert_equal(output, reference)
 
@@ -824,7 +855,6 @@ def _check_arrays_broadcastable(arrays, axis):
 @pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
-@pytest.mark.parallel_threads(1)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
     if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
@@ -866,11 +896,13 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
-                concat = stats._stats_py._broadcast_concatenate(samples, axis,
-                                                                paired=paired)
-                with np.testing.suppress_warnings() as sup:
-                    sup.filter(RuntimeWarning, "Mean of empty slice.")
-                    sup.filter(RuntimeWarning, "invalid value encountered")
+                concat = stats._axis_nan_policy._broadcast_concatenate(samples, axis,
+                                                                       paired=paired)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore", "Mean of empty slice", RuntimeWarning)
+                    warnings.filterwarnings(
+                        "ignore", "invalid value encountered", RuntimeWarning)
                     expected = np.mean(concat, axis=axis) * np.nan
                     mask = np.isnan(expected)
                     expected = [np.asarray(expected.copy()) for i in range(n_outputs)]
@@ -887,9 +919,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     with pytest.warns(SmallSampleWarning, match=message):
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 else:
-                    with np.testing.suppress_warnings() as sup:
+                    with warnings.catch_warnings():
                         # f_oneway special case
-                        sup.filter(SmallSampleWarning, "all input arrays have length 1")
+                        msg = "all input arrays have length 1"
+                        warnings.filterwarnings("ignore", msg, SmallSampleWarning)
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 res = unpacker(res)
 
@@ -905,7 +938,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # produce this information.
                 message = "Array shapes are incompatible for broadcasting."
                 with pytest.raises(ValueError, match=message):
-                    stats._stats_py._broadcast_concatenate(samples, axis, paired)
+                    stats._axis_nan_policy._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
 
@@ -1044,6 +1077,7 @@ def test_masked_dtype():
     assert stats.gmean(a).dtype == np.float32
 
 
+@skip_xp_invalid_arg
 def test_masked_stat_1d():
     # basic test of _axis_nan_policy_factory with 1D masked sample
     males = [19, 22, 16, 29, 24]
@@ -1332,9 +1366,9 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     a_masked3 = np.ma.masked_array(a, mask=(mask_a1 | mask_a2))
     b_masked3 = np.ma.masked_array(b, mask=(mask_b1 | mask_b2))
 
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = 'invalid value encountered'
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         res = func(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
         res1 = func(a_masked1, weights=b_masked1, nan_policy="omit", axis=axis)
         res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
@@ -1380,6 +1414,13 @@ def test_array_like_input(dtype):
 
         def __array__(self, dtype=None, copy=None):
             return np.asarray(x, dtype=self._dtype)
+
+        def __iter__(self):
+            # I don't know of a canonical way to determine whether an object should
+            # be coerced to a NumPy array or not. Currently, `xp_promote` checks
+            # whether they are iterable, and if so uses `_asarray` with whatever
+            # `xp` is. So for this to get coerced, it needs to be iterable.
+            return iter(self._x)
 
     x = [1]*2 + [3, 4, 5]
     res = stats.mode(ArrLike(x, dtype=dtype))

@@ -3,19 +3,19 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 import math
-import warnings
+import re
 import sys
+import warnings
 from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
-                           assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+                           assert_, assert_allclose, assert_equal)
 import pytest
 from pytest import raises as assert_raises
-import re
+
 from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
@@ -25,7 +25,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_torch, make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -501,7 +501,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
 
-    @pytest.mark.thread_unsafe
     def test_R_kSamples(self):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
@@ -538,27 +537,27 @@ class TestAndersonKSamp:
         x1 = np.linspace(1, 100, 100)
         # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
         assert_almost_equal(s, 41.105, 3)
         assert_equal(p, 0.001)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value floored', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5])
         assert_almost_equal(s, 41.235, 3)
         assert_equal(p, 0.001)
 
         # test case: similar distributions --> p-value capped at 0.25
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value capped')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + .5], midrank=False)
         assert_almost_equal(s, -1.2824, 4)
         assert_equal(p, 0.25)
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value capped')
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'p-value capped', UserWarning)
             s, _, p = stats.anderson_ksamp([x1, x1 + .5])
         assert_almost_equal(s, -1.2944, 4)
         assert_equal(p, 0.25)
@@ -609,8 +608,9 @@ class TestAnsari:
     def test_small(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             W, pval = stats.ansari(x, y)
         assert_almost_equal(W, 23.5, 11)
         assert_almost_equal(pval, 0.13499256881897437, 11)
@@ -622,8 +622,9 @@ class TestAnsari:
                            100, 96, 108, 103, 104, 114, 114, 113, 108,
                            106, 99))
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             W, pval = stats.ansari(ramsay, parekh)
 
         assert_almost_equal(W, 185.5, 11)
@@ -644,8 +645,9 @@ class TestAnsari:
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Ties preclude use of exact statistic.", UserWarning)
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
@@ -738,6 +740,7 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@make_xp_test_case(stats.bartlett)
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
@@ -759,20 +762,14 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.bartlett(*args)
-        else:
-            with np.testing.suppress_warnings() as sup:
-                # torch/array_api_strict
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
-                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
-                res = stats.bartlett(*args)
+
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.bartlett(*args)
+
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
@@ -794,6 +791,13 @@ class TestLevene:
         assert_almost_equal(W, 1.7059176930008939, 7)
         assert_almost_equal(pval, 0.0990829755522, 7)
 
+    def test_mean(self):
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="mean")
+        assert_allclose(W, 2.15945985647285, rtol=5e-14)
+        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
@@ -804,22 +808,11 @@ class TestLevene:
         assert_almost_equal(pval1, pval2)
 
     def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
-
-        # Use center='trimmed'
-        W0, pval0 = stats.levene(x, y, center='trimmed',
-                                 proportiontocut=0.125)
-        W1, pval1 = stats.levene(x2, y, center='trimmed',
-                                 proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(W0, W2)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 2.07712845686874, rtol=5e-14)
+        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
@@ -1120,17 +1113,15 @@ class TestFligner:
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
-    def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
-                                    proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
+    def test_trimmed_nonregression(self):
+        # This is a non-regression test
+        # Expected results are *not* from an external gold standard,
+        # we're just making sure the results remain consistent
+        # in the future in case of changes
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 15.953569890010614, rtol=5e-14)
+        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
 
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
@@ -1272,10 +1263,8 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1)
-        x2 = np.array(x2)
-        x1.shape = (10, 2)
-        x2.shape = (15, 2)
+        x1 = np.array(x1).reshape((10,2))
+        x2 = np.array(x2).reshape((15,2))
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 
@@ -1416,7 +1405,6 @@ class TestProbplot:
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         fig = plt.figure()
@@ -1797,11 +1785,12 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@make_xp_test_case(stats.kstat)
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
         data = xp.asarray(rng.randn(12345), dtype=xp.float64)
-        moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
+        moments = xp.stack([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
         expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
                               dtype=data.dtype)
@@ -1811,16 +1800,12 @@ class TestKstat:
         m1 = stats.moment(data, order=1)
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
-        xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
+        xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstat(xp.asarray([]))
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstat(xp.asarray([]))
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.kstat(xp.asarray([]))
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -1855,16 +1840,13 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
+@make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
         x = xp.asarray([])
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstatvar(x)
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstatvar(x)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.kstatvar(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -1993,6 +1975,7 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
+@make_xp_test_case(stats.boxcox_llf)
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2024,7 +2007,9 @@ class TestBoxcox_llf:
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
     def test_empty(self, xp):
-        assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
+        message = "One or more sample arguments is too small..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
+            assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
         # Regression test for gh-6873.
@@ -2035,11 +2020,27 @@ class TestBoxcox_llf:
         xp_assert_close(llf, xp.asarray(-17.93934208579061))
 
     def test_instability_gh20021(self, xp):
-        data = xp.asarray([2003, 1950, 1997, 2000, 2009])
+        data = xp.asarray([2003, 1950, 1997, 2000, 2009], dtype=xp.float64)
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
-        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
+        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
+                        rtol=1e-7)
+
+    def test_axis(self, xp):
+        data = xp.asarray([[100, 200], [300, 400]])
+        llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
+        llf_0 = xp.stack([
+            stats.boxcox_llf(1, data[:, 0]),
+            stats.boxcox_llf(1, data[:, 1]),
+        ])
+        xp_assert_close(llf_axis_0, llf_0)
+        llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
+        llf_1 = xp.stack([
+            stats.boxcox_llf(1, data[0, :]),
+            stats.boxcox_llf(1, data[1, :]),
+        ])
+        xp_assert_close(llf_axis_1, llf_1)
 
 
 # This is the data from GitHub user Qukaiyi, given as an example
@@ -2649,6 +2650,7 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
+@make_xp_test_case(stats.circmean, stats.circvar, stats.circstd)
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -2708,11 +2710,11 @@ class TestCircFuncs:
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
         res = circfunc(x, high=360, axis=0)
         ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -2727,15 +2729,9 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = test_func(x)
-        else:
-            with np.testing.suppress_warnings() as sup:
-                # for array_api_strict
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                res = test_func(x)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = test_func(x)
+
         xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
@@ -3036,6 +3032,8 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
+
+@make_xp_test_case(stats.directional_stats)
 class TestDirectionalStats:
     # Reference implementations are not available
     def test_directional_stats_correctness(self, xp):
@@ -3218,16 +3216,18 @@ class TestCommonAxis:
                                       (stats.kstat, {'n': 2}),
                                       (stats.variation, {})])
     def test_axis(self, case, xp):
+        if is_torch(xp) and case[0] == stats.variation:
+            pytest.xfail(reason="copysign doesn't accept scalar array-api-compat#271")
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
         x = xp.asarray(rng.random((6, 7)))
 
         res = fun(x, **kwargs, axis=0)
-        ref = xp.asarray([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
+        ref = xp.stack([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=1)
-        ref = xp.asarray([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
+        ref = xp.stack([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=None)

@@ -1,12 +1,11 @@
-import warnings
+import math
 import sys
+import warnings
 from copy import deepcopy
 from threading import Lock
 
 import numpy as np
-from numpy.testing import (
-    assert_array_equal, assert_equal, assert_, suppress_warnings
-)
+from numpy.testing import assert_array_equal
 import pytest
 from pytest import raises as assert_raises
 
@@ -17,7 +16,8 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, xp_copy, xp_assert_close, xp_assert_equal
+    SCIPY_ARRAY_API, eager_warns, is_lazy_array, make_xp_test_case,
+    xp_copy, xp_assert_close, xp_assert_equal
 )
 
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -79,6 +79,7 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
+@make_xp_test_case(whiten)
 class TestWhiten:
 
     def test_whiten(self, xp):
@@ -95,11 +96,7 @@ class TestWhiten:
                           [0.45067590, 0.45464607]])
         xp_assert_close(whiten(obs), desired, rtol=1e-5)
 
-    @pytest.fixture
-    def whiten_lock(self):
-        return Lock()
-
-    def test_whiten_zero_std(self, xp, whiten_lock):
+    def test_whiten_zero_std(self, xp):
         desired = xp.asarray([[0., 1.0, 2.86666544],
                               [0., 1.0, 1.32460034],
                               [0., 1.0, 3.74382172]])
@@ -108,27 +105,32 @@ class TestWhiten:
                           [0., 1., 0.34243798],
                           [0., 1., 0.96785929]])
 
-        with whiten_lock:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
+        with eager_warns(RuntimeWarning, match="Some columns have standard...", xp=xp):
+            actual = whiten(obs)
+        xp_assert_close(actual, desired, rtol=1e-5)
 
-                xp_assert_close(whiten(obs), desired, rtol=1e-5)
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.parametrize("bad_value", [math.nan, math.inf, -math.inf])
+    def test_whiten_not_finite(self, bad_value, xp):
+        obs = xp.asarray([[0.98744510, bad_value],
+                          [0.62093317, 0.19406729],
+                          [0.87545741, 0.00735733],
+                          [0.85124403, 0.26499712],
+                          [0.45067590, 0.45464607]])
 
-                assert_equal(len(w), 1)
-                assert_(issubclass(w[-1].category, RuntimeWarning))
-
-    def test_whiten_not_finite(self, xp):
-        for bad_value in xp.nan, xp.inf, -xp.inf:
-            obs = xp.asarray([[0.98744510, bad_value],
-                              [0.62093317, 0.19406729],
-                              [0.87545741, 0.00735733],
-                              [0.85124403, 0.26499712],
-                              [0.45067590, 0.45464607]])
+        if is_lazy_array(obs):
+            desired = xp.asarray([[5.08738849, math.nan],
+                                  [3.19909255, math.nan],
+                                  [4.51041982, math.nan],
+                                  [4.38567074, math.nan],
+                                  [2.32191480, math.nan]])
+            xp_assert_close(whiten(obs), desired, rtol=1e-5)
+        else:
             assert_raises(ValueError, whiten, obs)
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
-    def test_whiten_not_finite_matrix(self, xp):
+    def test_whiten_not_finite_matrix(self):
         for bad_value in np.nan, np.inf, -np.inf:
             obs = matrix([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
@@ -138,9 +140,9 @@ class TestWhiten:
             assert_raises(ValueError, whiten, obs)
 
 
+@make_xp_test_case(vq)
 class TestVq:
 
-    @skip_xp_backends(cpu_only=True)
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
@@ -150,28 +152,26 @@ class TestVq:
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
-    def test_py_vq_matrix(self, xp):
+    def test_py_vq_matrix(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
         label1 = py_vq(matrix(X), matrix(initc))[0]
         assert_array_equal(label1, LABEL1)
 
-    @skip_xp_backends(np_only=True, reason='`_vq` only supports NumPy backend')
     def test_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        label1, _ = _vq.vq(xp.asarray(X), xp.asarray(initc))
+        label1, _ = _vq.vq(X, initc)
         assert_array_equal(label1, LABEL1)
         _, _ = vq(xp.asarray(X), xp.asarray(initc))
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
-    def test_vq_matrix(self, xp):
+    def test_vq_matrix(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         label1, _ = _vq.vq(matrix(X), matrix(initc))
         assert_array_equal(label1, LABEL1)
         _, _ = vq(matrix(X), matrix(initc))
 
-    @skip_xp_backends(cpu_only=True)
     def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
         data = X[:, 0]
@@ -184,18 +184,15 @@ class TestVq:
         xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
 
-    @skip_xp_backends(np_only=True, reason='`_vq` only supports NumPy backend')
-    def test__vq_sametype(self, xp):
-        a = xp.asarray([1.0, 2.0], dtype=xp.float64)
-        b = a.astype(xp.float32)
+    def test__vq_sametype(self):
+        a = np.asarray([1.0, 2.0])
+        b = a.astype(np.float32)
         assert_raises(TypeError, _vq.vq, a, b)
 
-    @skip_xp_backends(np_only=True, reason='`_vq` only supports NumPy backend')
-    def test__vq_invalid_type(self, xp):
-        a = xp.asarray([1, 2], dtype=int)
+    def test__vq_invalid_type(self):
+        a = np.asarray([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
-    @skip_xp_backends(cpu_only=True)
     def test_vq_large_nfeat(self, xp):
         X = np.random.rand(20, 20)
         code_book = np.random.rand(3, 20)
@@ -219,7 +216,6 @@ class TestVq:
         # codes1.dtype varies between int32 and int64 over platforms
         xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
-    @skip_xp_backends(cpu_only=True)
     def test_vq_large_features(self, xp):
         X = np.random.rand(10, 5) * 1000000
         code_book = np.random.rand(2, 5) * 1000000
@@ -235,8 +231,8 @@ class TestVq:
 
 # Whole class skipped on GPU for now;
 # once pdist/cdist are hooked up for CuPy, more tests will work
-@skip_xp_backends(cpu_only=True)
-class TestKMean:
+@make_xp_test_case(kmeans, kmeans2)
+class TestKMeans:
 
     def test_large_features(self, xp):
         # Generate a data set with large values, and run kmeans on it to
@@ -264,7 +260,7 @@ class TestKMean:
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
-    def test_kmeans_simple_matrix(self, xp):
+    def test_kmeans_simple_matrix(self):
         rng = np.random.default_rng(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         code1 = kmeans(matrix(X), matrix(initc), iter=1, rng=rng)[0]
@@ -278,10 +274,13 @@ class TestKMean:
                             [-2.31149087, -0.05160469]])
 
         kmeans(data, initk)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmeans with a "
-                       "different initialization")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                ("One of the clusters is empty. Re-run kmeans with a different "
+                 "initialization"),
+                UserWarning,
+            )
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -299,9 +298,9 @@ class TestKMean:
 
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
-    def test_kmeans2_simple_matrix(self, xp):
+    def test_kmeans2_simple_matrix(self):
         rng = np.random.default_rng(12345678)
-        initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         code1 = kmeans2(matrix(X), matrix(initc), iter=1, rng=rng)[0]
         code2 = kmeans2(matrix(X), matrix(initc), iter=2, rng=rng)[0]
 
@@ -343,8 +342,8 @@ class TestKMean:
         kmeans2(data[:, 1], k, minit='++', rng=rng)  # special case (1-D)
 
         # minit='random' can give warnings, filter those
-        with suppress_warnings() as sup:
-            sup.filter(message="One of the clusters is empty. Re-run.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "One of the clusters is empty. Re-run.")
             kmeans2(data, k, minit='random', rng=rng)
             kmeans2(data[:, 1], k, minit='random', rng=rng)  # special case (1-D)
 
@@ -393,7 +392,6 @@ class TestKMean:
         res, _ = kmeans2(xp.asarray(TESTDATA_2D), 2, minit='++', rng=rng)
         xp_assert_close(res, prev_res)
 
-    @pytest.mark.thread_unsafe
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         rng = np.random.default_rng(23587923456834568)

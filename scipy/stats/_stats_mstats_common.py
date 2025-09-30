@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from . import distributions
+from .._lib._array_api import xp_capabilities
 from .._lib._bunch import _make_tuple_bunch
 from ._axis_nan_policy import _axis_nan_policy_factory
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
@@ -19,9 +20,11 @@ def _n_samples_optional_x(kwargs):
     return 2 if kwargs.get('x', None) is not None else 1
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
-                          result_to_tuple=tuple, paired=True, too_small=1)
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
@@ -202,9 +205,11 @@ def _find_repeats(arr):
     return unique[atleast2], freq[atleast2]
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
-                          result_to_tuple=tuple, paired=True, too_small=1)
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).

@@ -8,7 +8,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 
 from numpy.testing import (
     assert_, assert_array_almost_equal,
-    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+    assert_allclose, assert_array_equal, assert_equal)
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
@@ -142,7 +142,6 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853')
 
-    @pytest.mark.thread_unsafe
     def test_concurrent_fail(self):
         for sol in ('vode', 'zvode', 'lsoda'):
             def f(t, y):
@@ -635,14 +634,14 @@ class ODECheckParameterUse:
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
-    @pytest.mark.thread_unsafe
     def test_warns_on_failure(self):
         # Set nsteps small to ensure failure
         solver = self._get_solver(f, jac)
         solver.set_integrator(self.solver_name, nsteps=1)
         ic = [1.0, 0.0]
         solver.set_initial_value(ic, 0.0)
-        assert_warns(UserWarning, solver.integrate, pi)
+        with pytest.warns(UserWarning):
+            solver.integrate(pi)
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):

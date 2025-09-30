@@ -13,6 +13,7 @@ import scipy.sparse as sparse
 
 import scipy.sparse.linalg._interface as interface
 from scipy.sparse._sputils import matrix
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 
 class TestLinearOperator:
@@ -399,7 +400,6 @@ def test_pickle():
             assert_equal(getattr(A, k), getattr(B, k))
 
 
-@pytest.mark.thread_unsafe
 def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
@@ -512,6 +512,30 @@ def test_transpose_noconjugate():
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
 
+def test_transpose_multiplication():
+    class MyMatrix(interface.LinearOperator):
+        def __init__(self, A):
+            super().__init__(A.dtype, A.shape)
+            self.A = A
+        def _matmat(self, other): return self.A @ other
+        def _rmatmat(self, other): return self.A.T @ other
+
+    A = MyMatrix(np.array([[1, 2], [3, 4]]))
+    X = np.array([1, 2])
+    B = np.array([[10, 20], [30, 40]])
+    X2 = X.reshape(-1, 1)
+    Y = np.array([[1, 2], [3, 4]])
+
+    assert_equal(A @ B, Y @ B)
+    assert_equal(B.T @ A, B.T @ Y)
+    assert_equal(A.T @ B, Y.T @ B)
+    assert_equal(A @ X, Y @ X)
+    assert_equal(X.T @ A, X.T @ Y)
+    assert_equal(A.T @ X, Y.T @ X)
+    assert_equal(A @ X2, Y @ X2)
+    assert_equal(X2.T @ A, X2.T @ Y)
+    assert_equal(A.T @ X2, Y.T @ X2)
+
 def test_sparse_matmat_exception():
     A = interface.LinearOperator((2, 2), matvec=lambda x: x)
     B = sparse.eye_array(2)
@@ -524,3 +548,13 @@ def test_sparse_matmat_exception():
         A @ np.identity(4)
     with assert_raises(ValueError):
         np.identity(4) @ A
+
+
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
+def test_MatrixLinearOperator_refcycle():
+    # gh-10634
+    # Test that MatrixLinearOperator can be automatically garbage collected
+    A = np.eye(2)
+    with assert_deallocated(interface.MatrixLinearOperator, A) as op:
+        op.adjoint()
+        del op

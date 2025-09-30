@@ -1,13 +1,14 @@
 import numpy as np
 
 from scipy._lib._array_api import (
-    array_namespace, xp_ravel, xp_copy, is_torch,  xp_default_dtype
+    array_namespace, xp_ravel, xp_copy, xp_promote
 )
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy import special
 
 # Todo:
+# Avoid special-casing key 'n' in _lib._elementwise_iterative_method::_check_termination
 # Rearrange termination condition to allow absolute and relative tolerances?
 # Interpret/return |f_n - f_{n-1}| as an error estimate?
 # Return gracefully for size=0 arrays
@@ -28,6 +29,14 @@ def _continued_fraction_iv(a, b, args, tolerances, maxiter, log):
 
     if not np.iterable(args):
         args = (args,)
+
+    # Call each callable once to determine namespace and dtypes
+    a0, b0 = a(0, *args), b(0, *args)
+    xp = array_namespace(a0, b0, *args)
+    a0, b0, *args = xp_promote(a0, b0, *args, force_floating=True, broadcast=True,
+                               xp=xp)
+    shape, dtype = a0.shape, a0.dtype
+    a0, b0, *args = (xp_ravel(arg) for arg in (a0, b0) + tuple(args))
 
     tolerances = {} if tolerances is None else tolerances
     eps = tolerances.get('eps', None)
@@ -53,7 +62,7 @@ def _continued_fraction_iv(a, b, args, tolerances, maxiter, log):
     if not isinstance(log, bool):
         raise ValueError('`log` must be boolean.')
 
-    return a, b, args, eps, tiny, maxiter, log
+    return a, b, args, eps, tiny, maxiter, log, a0, b0, shape, dtype, xp
 
 
 def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=False):
@@ -265,7 +274,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     """
 
     res = _continued_fraction_iv(a, b, args, tolerances, maxiter, log)
-    a, b, args, eps, tiny, maxiter, log = res
+    a, b, args, eps, tiny, maxiter, log, a0, b0, shape, dtype, xp = res
     callback = None  # don't want to test it, but easy to add later
 
     # The EIM framework was designed for the case in where there would
@@ -274,7 +283,6 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     # and the first argument is an integer (the number of the term). Rather
     # than complicate the framework, we wrap the user-provided callables to
     # make this problem fit within the existing framework.
-    xp = array_namespace(*args) if args else array_namespace(a(0))
 
     def a(n, *args, a=a):
         n = int(xp.real(xp_ravel(n))[0])
@@ -287,36 +295,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
     def func(n, *args):
         return xp.stack((a(n, *args), b(n, *args)), axis=-1)
 
-    # Initialization
-    # The EIM framework was written with only one callable in mind. Again,
-    # rather than complicating the framework, we call its `initialize` function
-    # on each callable to get the shape and dtype, then we broadcast these
-    # shapes, compute the result dtype, and broadcast/promote the zeroth terms
-    # and `*args` to this shape/dtype.
-
-    # `float32` here avoids influencing precision of resulting float type
-    # patch up promotion: in numpy (int64, float32) -> float64, while in torch
-    # (int64, float32) -> float32 irrespective of the default_dtype.
-    dt = {'dtype': None
-          if is_torch(xp) and xp_default_dtype(xp) == xp.float64
-          else xp.float32}
-    zero = xp.asarray(0, **dt)
-
-    temp = eim._initialize(a, (zero,), args, complex_ok=True)
-    _, _, fs_a, _, shape_a, dtype_a, xp_a = temp
-    temp = eim._initialize(b, (zero,), args, complex_ok=True)
-    _, _, fs_b, _, shape_b, dtype_b, xp_b = temp
-
-    xp = array_namespace(fs_a[0], fs_b[0], *args)
-
-    shape = np.broadcast_shapes(shape_a, shape_b)  # OK to use NumPy on tuples
-    dtype = xp.result_type(dtype_a, dtype_b)
-    an = xp.astype(xp_ravel(xp.broadcast_to(xp.reshape(fs_a[0], shape_a), shape)), dtype)  # noqa: E501
-    bn = xp.astype(xp_ravel(xp.broadcast_to(xp.reshape(fs_b[0], shape_b), shape)), dtype)  # noqa: E501
-    args = [xp.astype(xp_ravel(xp.broadcast_to(arg, shape)), dtype) for arg in args]
-
-    status = xp.full_like(an, xp.asarray(eim._EINPROGRESS),
-                          dtype=xp.int32)  # in progress
+    status = xp.full_like(a0, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluation (per function) performed above
     maxiter = 100 if maxiter is None else maxiter
 
@@ -331,7 +310,7 @@ def _continued_fraction(a, b, *, args=(), tolerances=None, maxiter=100, log=Fals
 
     # "Set f0 and C0 to the value b0 or to tiny if b0=0. Set D0 = 0.
     zero = -xp.inf if log else 0
-    fn = xp.where(bn == zero, tiny, bn)
+    fn = xp.where(b0 == zero, tiny, b0)
     Cnm1 = xp_copy(fn)
     Dnm1 = xp.full_like(fn, zero)
 

@@ -7,16 +7,19 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
+import os
+import sys
+import textwrap
 from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, is_marray, xp_size)
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
+                                   is_marray, xp_size, xp_result_device, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
-from numpy.exceptions import AxisError, DTypePromotionError
+from numpy.exceptions import AxisError
 
 
 np_long: type
@@ -61,14 +64,6 @@ _RNG: TypeAlias = np.random.Generator | np.random.RandomState
 SeedType: TypeAlias = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
-
-# Since Generator was introduced in numpy 1.17, the following condition is needed for
-# backward compatibility
-try:
-    from numpy.random import Generator as Generator
-except ImportError:
-    class Generator:  # type: ignore[no-redef]
-        pass
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -350,6 +345,13 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
 
             return fun(*args, **kwargs)
 
+        # Add the old parameter name to the function signature
+        wrapped_signature = inspect.signature(fun)
+        wrapper.__signature__ = wrapped_signature.replace(parameters=[
+            *wrapped_signature.parameters.values(),
+            inspect.Parameter(old_name, inspect.Parameter.KEYWORD_ONLY, default=None),
+        ])
+
         if replace_doc:
             doc = FunctionDoc(wrapper)
             parameter_names = [param.name for param in doc['Parameters']]
@@ -361,7 +363,7 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
                 new_doc = [_desc] + old_doc_keep
                 _rng_parameter_doc = Parameter('rng', _type, new_doc)
                 doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
-                doc = str(doc).split("\n", 1)[1]  # remove signature
+                doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
                 wrapper.__doc__ = str(doc)
         return wrapper
 
@@ -618,18 +620,26 @@ class MapWrapper:
             self.pool = pool
             self._mapfunc = self.pool
         else:
-            from multiprocessing import Pool
+            from multiprocessing import get_context, get_start_method
+
+            method = get_start_method(allow_none=True)
+
+            if method is None and os.name=='posix' and sys.version_info < (3, 14):
+                # Python 3.13 and older used "fork" on posix, which can lead to
+                # deadlocks. This backports that fix to older Python versions.
+                method = 'forkserver'
+
             # user supplies a number
             if int(pool) == -1:
                 # use as many processors as possible
-                self.pool = Pool()
+                self.pool = get_context(method=method).Pool()
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             elif int(pool) == 1:
                 pass
             elif int(pool) > 1:
                 # use the number of processors requested
-                self.pool = Pool(processes=int(pool))
+                self.pool = get_context(method=method).Pool(processes=int(pool))
                 self._mapfunc = self.pool.map
                 self._own_pool = True
             else:
@@ -734,7 +744,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
-    if isinstance(gen, Generator):
+    if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
     else:
@@ -763,6 +773,13 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         yield
     finally:
         np.random.default_rng = orig_fun
+
+
+@contextmanager
+def ignore_warns(expected_warning, *, match=None):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", match, expected_warning)
+        yield
 
 
 def _rng_html_rewrite(func):
@@ -802,91 +819,11 @@ def _argmin(a, keepdims=False, axis=None):
     return res
 
 
-def _first_nonnan(a, axis):
-    """
-    Return the first non-nan value along the given axis.
-
-    If a slice is all nan, nan is returned for that slice.
-
-    The shape of the return value corresponds to ``keepdims=True``.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> nan = np.nan
-    >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
-    >>> _first_nonnan(a, axis=0)
-    array([[3., 3., 2., 3.]])
-    >>> _first_nonnan(a, axis=1)
-    array([[ 3.],
-           [ 1.],
-           [ 9.],
-           [ 5.],
-           [ 2.],
-           [nan]])
-    """
-    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
-    return np.take_along_axis(a, k, axis=axis)
-
-
-def _nan_allsame(a, axis, keepdims=False):
-    """
-    Determine if the values along an axis are all the same.
-
-    nan values are ignored.
-
-    `a` must be a numpy array.
-
-    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
-
-    For an axis of length 0, the result is True.  That is, we adopt the
-    convention that ``allsame([])`` is True. (There are no values in the
-    input that are different.)
-
-    `True` is returned for slices that are all nan--not because all the
-    values are the same, but because this is equivalent to ``allsame([])``.
-
-    Examples
-    --------
-    >>> from numpy import nan, array
-    >>> a = array([[ 3.,  3., nan,  3.],
-    ...            [ 1., nan,  2.,  4.],
-    ...            [nan, nan,  9., -1.],
-    ...            [nan,  5.,  4.,  3.],
-    ...            [ 2.,  2.,  2.,  2.],
-    ...            [nan, nan, nan, nan]])
-    >>> _nan_allsame(a, axis=1, keepdims=True)
-    array([[ True],
-           [False],
-           [False],
-           [False],
-           [ True],
-           [ True]])
-    """
-    if axis is None:
-        if a.size == 0:
-            return True
-        a = a.ravel()
-        axis = 0
-    else:
-        shp = a.shape
-        if shp[axis] == 0:
-            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
-            return np.full(shp, fill_value=True, dtype=bool)
-    a0 = _first_nonnan(a, axis=axis)
-    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
-
-
 def _contains_nan(
     a: Array,
     nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
     *,
-    xp_omit_okay: bool = False, 
+    xp_omit_okay: bool = False,
     xp: ModuleType | None = None,
 ) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
@@ -938,9 +875,6 @@ def _contains_nan(
         if is_lazy_array(a):
             msg = "nan_policy='omit' is not supported for lazy arrays."
             raise TypeError(msg)
-        if contains_nan:
-            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-            raise ValueError(msg)
 
     return contains_nan
 
@@ -1009,17 +943,14 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data, xp=None):
+def _get_nan(*data, shape=(), xp=None):
     xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [xp.asarray(item) for item in data]
-    try:
-        min_float = getattr(xp, 'float16', xp.float32)
-        dtype = xp.result_type(*data, min_float)  # must be at least a float
-    except DTypePromotionError:
-        # fallback to float64
-        dtype = xp.float64
-    res = xp.asarray(xp.nan, dtype=dtype)[()]
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
+    device = xp_result_device(*data)
+    res = xp.full(shape, xp.nan, dtype=dtype, device=device)
+    if not shape:
+        res = res[()]
     # whenever mdhaber/marray#89 is resolved, could just return `res`
     return res.data if is_marray(xp) else res
 
@@ -1209,11 +1140,13 @@ def _apply_over_batch(*argdefs):
                     else:
                         arrays.append(kwargs.pop(name))
 
+            xp = array_namespace(*arrays)
+
             # Determine core and batch shapes
             batch_shapes = []
             core_shapes = []
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
-                array = None if array is None else np.asarray(array)
+                array = None if array is None else xp.asarray(array)
                 shape = () if array is None else array.shape
 
                 if ndim == "1|2":  # special case for `solve`, etc.
@@ -1234,7 +1167,7 @@ def _apply_over_batch(*argdefs):
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
                     continue
-                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+                arrays[i] = xp.broadcast_to(array, batch_shape + core_shape)
 
             # Main loop
             results = []
@@ -1249,9 +1182,9 @@ def _apply_over_batch(*argdefs):
 
             # Reshape results
             for i, result in enumerate(results):
-                result = np.stack(result)
+                result = xp.stack(result)
                 core_shape = result.shape[1:]
-                results[i] = np.reshape(result, batch_shape + core_shape)
+                results[i] = xp.reshape(result, batch_shape + core_shape)
 
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
@@ -1260,7 +1193,7 @@ def _apply_over_batch(*argdefs):
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper
     return decorator
@@ -1276,3 +1209,15 @@ def np_vecdot(x1, x2, /, *, axis=-1):
         # of course there are other fancy ways of doing this (e.g. `einsum`)
         # but let's keep it simple since it's temporary
         return np.sum(x1 * x2, axis=axis)
+
+
+def _dedent_for_py313(s):
+    """Apply textwrap.dedent to s for Python versions 3.13 or later."""
+    return s if sys.version_info < (3, 13) else textwrap.dedent(s)
+
+
+def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
+    )

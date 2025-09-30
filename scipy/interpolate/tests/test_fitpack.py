@@ -88,6 +88,16 @@ class TestSmokeTests:
                     xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
                 else:
                     assert k == 5   # knot length differ in some k=5 cases
+            else:
+                if np.allclose(v[0], v[-1], atol=1e-15):
+                    spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe, bc_type='periodic')
+                    if k != 1: # knots for k == 1 in some cases
+                        xp_assert_close(spl.t, tck[0], atol=1e-15)
+                        xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                else:
+                    with assert_raises(ValueError):
+                        spl = make_splrep(x, v, k=k, s=s,
+                                          xb=xb, xe=xe, bc_type='periodic')
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -117,7 +127,10 @@ class TestSmokeTests:
     def test_smoke_splrep_splev(self):
         self.check_1(s=1e-6)
         self.check_1(b=1.5*np.pi)
+
+    def test_smoke_splrep_splev_periodic(self):
         self.check_1(b=1.5*np.pi, xe=2*np.pi, per=1, s=1e-1)
+        self.check_1(b=2*np.pi, per=1, s=1e-1)
 
     @pytest.mark.parametrize('per', [0, 1])
     @pytest.mark.parametrize('at_nodes', [True, False])
@@ -191,7 +204,7 @@ class TestSmokeTests:
         t2 = makepairs(tt[0], tt[1])
         v1 = bisplev(tt[0], tt[1], tck)
         v2 = f2(t2[0], t2[1])
-        v2.shape = len(tt[0]), len(tt[1])
+        v2 = v2.reshape(len(tt[0]), len(tt[1]))
 
         assert norm2(np.ravel(v1 - v2)) < 1e-2
 
@@ -448,6 +461,8 @@ def test_splprep_segfault():
     tck, u = splprep([x, y], task=-1, t=uknots)  # here is the crash
 
 
+@pytest.mark.skipif(dfitpack_int == np.int64,
+        reason='Will crash (see gh-23396), test only meant for 32-bit overflow')
 def test_bisplev_integer_overflow():
     np.random.seed(1)
 
@@ -502,7 +517,7 @@ def test_spalde_scalar_input():
 
 def test_spalde_nc():
     # regression test for https://github.com/scipy/scipy/issues/19002
-    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1) 
+    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1)
     x = np.asarray([-10., -9., -8., -7., -6., -5., -4., -3., -2.5, -2., -1.5,
                     -1., -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 4., 5., 6.],
                     dtype="float")

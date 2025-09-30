@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   icx_icpx_ifx_mkl:
-    name: py3.12, dev.py
+    name: py3.12, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -87,7 +87,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}
@@ -99,11 +99,11 @@ jobs:
           # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
           pip install pythran
           unset FFLAGS
-          CC=icx CXX=icpx FC=ifx python dev.py build -C-Dblas=mkl-dynamic-lp64-iomp -C-Dlapack=mkl-dynamic-lp64-iomp
+          CC=icx CXX=icpx FC=ifx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
 
       - name: Test scipy
         shell: bash -l {0}
         run: |
           . /opt/intel/oneapi/setvars.sh --force
           conda activate scipy-dev
-          python dev.py test
+          spin test

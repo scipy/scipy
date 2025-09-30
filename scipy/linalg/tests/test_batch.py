@@ -113,6 +113,12 @@ class TestBatch:
     def test_matmat(self, fun, dtype):  # matrix in, matrix out
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+
+        # sqrtm can return complex output for real input resulting in i/o type
+        # mismatch. Nudge the eigenvalues to positive side to avoid this.
+        if fun == linalg.sqrtm:
+            A = A + 3*np.eye(4, dtype=dtype)
+
         self.batch_test(fun, A)
 
     @pytest.mark.parametrize('dtype', floating)
@@ -136,17 +142,15 @@ class TestBatch:
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
 
-    @pytest.mark.parametrize('disp', [False, True])
     @pytest.mark.parametrize('dtype', floating)
-    def test_logm(self, dtype, disp):
+    def test_logm(self, dtype):
         # One test failed absolute tolerance with default random seed
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        n_out = 1 if disp else 2
-        res1 = self.batch_test(linalg.logm, A, n_out=n_out, kwargs=dict(disp=disp))
+        res1 = self.batch_test(linalg.logm, A)
         # test that `disp` can be passed by position
-        res2 = linalg.logm(A, disp)
+        res2 = linalg.logm(A)
         for res1i, res2i in zip(res1, res2):
             np.testing.assert_equal(res1i, res2i)
 
@@ -441,7 +445,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1.5e-6)
+        assert_allclose(A @ x - b, 0, atol=2e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
@@ -455,7 +459,7 @@ class TestBatch:
         if len(bdim) == 1:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
-        assert_allclose(A @ x - b, 0, atol=1.5e-6)
+        assert_allclose(A @ x - b, 0, atol=2e-6)
         assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
@@ -475,23 +479,39 @@ class TestBatch:
                 xij = linalg.solve_banded((lj, uj), ab[i, j], bij)
                 assert_allclose(x[i, j], xij)
 
-    # Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
-    # @pytest.mark.parametrize('separate_r', [False, True])
-    # @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
-    # @pytest.mark.parametrize('dtype', floating)
-    # def test_solve_toeplitz(self, separate_r, bdim, dtype):
-    #     rng = np.random.default_rng(8342310302941288912051)
-    #     c = get_random((2, 3, 5), dtype=dtype, rng=rng)
-    #     r = get_random((2, 3, 5), dtype=dtype, rng=rng)
-    #     c_or_cr = (c, r) if separate_r else c
-    #     b = get_random(bdim, dtype=dtype, rng=rng)
-    #     x = linalg.solve_toeplitz(c_or_cr, b)
-    #     for i in range(2):
-    #         for j in range(3):
-    #             bij = b if len(bdim) <= 2 else b[i, j]
-    #             c_or_cr_ij = (c[i, j], r[i, j]) if separate_r else c[i, j]
-    #             xij = linalg.solve_toeplitz(c_or_cr_ij, bij)
-    #             assert_allclose(x[i, j], xij)
+    @pytest.mark.parametrize('separate_r', [False, True])
+    @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_solve_toeplitz(self, separate_r, bdim, dtype):
+        rng = np.random.default_rng(8342310302941288912051)
+        c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        r = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        c_or_cr = (c, r) if separate_r else c
+        b = get_random(bdim, dtype=dtype, rng=rng)
+        x = linalg.solve_toeplitz(c_or_cr, b)
+        for i in range(2):
+            for j in range(3):
+                bij = b if len(bdim) <= 2 else b[i, j]
+                c_or_cr_ij = (c[i, j], r[i, j]) if separate_r else c[i, j]
+                xij = linalg.solve_toeplitz(c_or_cr_ij, bij)
+                assert_allclose(x[i, j], xij)
+
+    @pytest.mark.parametrize('separate_r', [False, True])
+    @pytest.mark.parametrize('xdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_matmul_toeplitz(self, separate_r, xdim, dtype):
+        rng = np.random.default_rng(8342310302941288912051)
+        c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        r = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        c_or_cr = (c, r) if separate_r else c
+        x = get_random(xdim, dtype=dtype, rng=rng)
+        res = linalg.matmul_toeplitz(c_or_cr, x)
+        if separate_r:
+            ref = linalg.toeplitz(c, r) @ x
+        else:
+            ref = linalg.toeplitz(c) @ x
+        atol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
+        assert_allclose(res, ref, atol=atol)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)

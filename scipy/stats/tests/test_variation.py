@@ -2,11 +2,11 @@ import math
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
-from scipy._lib._array_api import is_numpy
+
+from scipy._lib._array_api import make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
@@ -14,7 +14,7 @@ from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_om
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-@skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
+@make_xp_test_case(variation)
 class TestVariation:
     """
     Test class for scipy.stats.variation
@@ -133,27 +133,21 @@ class TestVariation:
         y = variation(x)
         xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
 
-    # internal dask warning we can't do anything about
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
+    @pytest.mark.filterwarnings('ignore:Invalid value encountered:RuntimeWarning:dask')
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        with suppress_warnings() as sup:
-            # torch
-            sup.filter(UserWarning, "std*")
-            if axis != 0:
-                if is_numpy(xp):
-                    with pytest.warns(SmallSampleWarning, match="See documentation..."):
-                        y = variation(x, axis=axis)
-                else:
-                    y = variation(x, axis=axis)
-            else:
+        if axis != 0:
+            # specific message depends on `axis`, and `SmallSampleWarning`
+            # is specific enough.
+            with eager_warns(SmallSampleWarning, xp=xp):
                 y = variation(x, axis=axis)
+        else:
+            y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
+    @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning:dask')
     def test_neg_inf(self, xp):
         # Edge case that produces -inf: ddof equals the number of non-nan
         # values, the values are not constant, and the mean is negative.
@@ -172,9 +166,9 @@ class TestVariation:
                       reason='`nan_policy` only supports NumPy backend')
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
     def test_combined_edge_cases(self, nan_policy, xp):
-        x = xp.array([[0, 10, xp.nan, 1],
-                      [0, -5, xp.nan, 2],
-                      [0, -5, xp.nan, 3]])
+        x = xp.asarray([[0, 10, xp.nan, 1],
+                        [0, -5, xp.nan, 2],
+                        [0, -5, xp.nan, 3]])
         if nan_policy == 'omit':
             with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
                 y = variation(x, axis=0, nan_policy=nan_policy)

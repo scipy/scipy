@@ -62,12 +62,14 @@ py3.extension_module('_zeros',
   subdir: 'scipy/optimize'
 )
 
+
+# TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
   [
     '__lbfgsb.h',
     '__lbfgsb.c',
   ],
-  dependencies: [lapack_dep, blas_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -82,16 +84,6 @@ py3.extension_module('_moduleTNC',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/optimize'
-)
-
-py3.extension_module('_slsqp',
-  [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -145,10 +137,14 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_cython_nnls',
-  opt_gen.process('_cython_nnls.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
+py3.extension_module('_slsqplib',
+  [
+    '__slsqp.h',
+    '__slsqp.c',
+    '__nnls.h',
+    '__nnls.c'
+  ],
+  dependencies: [lapack_lp64_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'

@@ -1,41 +1,41 @@
-#include "xsf/numpy.h"
+#include <xsf/numpy.h>
 
 #include <cmath>
 #include <complex>
 
 #include "sf_error.h"
-#include "xsf/airy.h"
-#include "xsf/alg.h"
-#include "xsf/amos.h"
-#include "xsf/bessel.h"
-#include "xsf/beta.h"
-#include "xsf/binom.h"
-#include "xsf/digamma.h"
-#include "xsf/ellip.h"
-#include "xsf/erf.h"
-#include "xsf/exp.h"
-#include "xsf/expint.h"
-#include "xsf/fresnel.h"
-#include "xsf/gamma.h"
-#include "xsf/hyp2f1.h"
-#include "xsf/iv_ratio.h"
-#include "xsf/kelvin.h"
-#include "xsf/lambertw.h"
-#include "xsf/legendre.h"
-#include "xsf/log.h"
-#include "xsf/log_exp.h"
-#include "xsf/mathieu.h"
-#include "xsf/par_cyl.h"
-#include "xsf/specfun.h"
-#include "xsf/sph_bessel.h"
-#include "xsf/sph_harm.h"
-#include "xsf/sphd_wave.h"
-#include "xsf/stats.h"
-#include "xsf/struve.h"
-#include "xsf/trig.h"
-#include "xsf/wright_bessel.h"
-#include "xsf/zeta.h"
-#include "xsf_special.h"
+#include <xsf/airy.h>
+#include <xsf/alg.h>
+#include <xsf/amos.h>
+#include <xsf/bessel.h>
+#include <xsf/beta.h>
+#include <xsf/binom.h>
+#include <xsf/digamma.h>
+#include <xsf/ellip.h>
+#include <xsf/erf.h>
+#include <xsf/exp.h>
+#include <xsf/expint.h>
+#include <xsf/fresnel.h>
+#include <xsf/gamma.h>
+#include <xsf/hyp2f1.h>
+#include <xsf/iv_ratio.h>
+#include <xsf/kelvin.h>
+#include <xsf/lambertw.h>
+#include <xsf/legendre.h>
+#include <xsf/log.h>
+#include <xsf/log_exp.h>
+#include <xsf/mathieu.h>
+#include <xsf/par_cyl.h>
+#include <xsf/specfun.h>
+#include <xsf/sph_bessel.h>
+#include <xsf/sph_harm.h>
+#include <xsf/sphd_wave.h>
+#include <xsf/stats.h>
+#include <xsf/struve.h>
+#include <xsf/trig.h>
+#include <xsf/wright_bessel.h>
+#include <xsf/zeta.h>
+#include "gen_harmonic.h"
 
 // This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
 // "xsf::numpy::ufunc" with a braced list of kernel functions that will become the ufunc overloads. There are
@@ -47,8 +47,10 @@
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
+extern const char *_gen_harmonic_doc;
 extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
+extern const char *_normalized_gen_harmonic_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
 extern const char *bei_doc;
@@ -175,7 +177,6 @@ extern const char *spherical_in_doc;
 extern const char *spherical_in_d_doc;
 extern const char *spherical_kn_doc;
 extern const char *spherical_kn_d_doc;
-extern const char *sph_harm_doc;
 extern const char *struve_h_doc;
 extern const char *struve_l_doc;
 extern const char *tandg_doc;
@@ -234,6 +235,14 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            static_cast<xsf::numpy::F_F>(xsf::cospi), static_cast<xsf::numpy::D_D>(xsf::cospi)},
                           "_cospi", _cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
+
+    PyObject *_gen_harmonic =
+        xsf::numpy::ufunc({gen_harmonic}, "_gen_harmonic", _gen_harmonic_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_gen_harmonic", _gen_harmonic);
+
+    PyObject *_normalized_gen_harmonic =
+        xsf::numpy::ufunc({normalized_gen_harmonic}, "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_normalized_gen_harmonic", _normalized_gen_harmonic);
 
     PyObject *_lambertw = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::Dld_D>(xsf::lambertw), static_cast<xsf::numpy::Flf_F>(xsf::lambertw)}, "_lambertw",
@@ -1051,12 +1060,6 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            "sph_legendre_p", nullptr, "(),(),()->(3)",
                            [](const npy_intp *dims, npy_intp *new_dims) {}));
     PyModule_AddObjectRef(_special_ufuncs, "sph_legendre_p", sph_legendre_p);
-
-    PyObject *sph_harm =
-        xsf::numpy::ufunc({static_cast<xsf::numpy::qqdd_D>(::sph_harm), static_cast<xsf::numpy::dddd_D>(::sph_harm),
-                           static_cast<xsf::numpy::qqff_F>(::sph_harm), static_cast<xsf::numpy::ffff_F>(::sph_harm)},
-                          "sph_harm", sph_harm_doc);
-    PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
     PyObject *sph_harm_y =
         Py_BuildValue("(N, N, N)",

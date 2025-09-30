@@ -5,7 +5,8 @@
 from functools import partial
 
 from scipy import special
-from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+import scipy.special._ufuncs as scu
 from scipy._lib._util import rng_integers
 import scipy._lib.array_api_extra as xpx
 from scipy.interpolate import interp1d
@@ -22,9 +23,6 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 from ._stats_pythran import _poisson_binom
-
-import scipy.special._ufuncs as scu
-
 
 
 class binom_gen(rv_discrete):
@@ -1056,7 +1054,7 @@ class planck_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_):
         return lambda_ > 0
@@ -1361,31 +1359,6 @@ class zipf_gen(rv_discrete):
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
-def _gen_harmonic_gt1(n, a):
-    """Generalized harmonic number, a > 1"""
-    # See https://en.wikipedia.org/wiki/Harmonic_number; search for "hurwitz"
-    return zeta(a, 1) - zeta(a, n+1)
-
-
-def _gen_harmonic_leq1(n, a):
-    """Generalized harmonic number, a <= 1"""
-    if not np.size(n):
-        return n
-    n_max = np.max(n)  # loop starts at maximum of all n
-    out = np.zeros_like(a, dtype=float)
-    # add terms of harmonic series; starting from smallest to avoid roundoff
-    for i in np.arange(n_max, 0, -1, dtype=float):
-        mask = i <= n  # don't add terms after nth
-        out[mask] += 1/i**a[mask]
-    return out
-
-
-def _gen_harmonic(n, a):
-    """Generalized harmonic number"""
-    n, a = np.broadcast_arrays(n, a)
-    return xpx.apply_where(a > 1, (n, a), _gen_harmonic_gt1, _gen_harmonic_leq1)
-
-
 class zipfian_gen(rv_discrete):
     r"""A Zipfian discrete random variable.
 
@@ -1439,31 +1412,34 @@ class zipfian_gen(rv_discrete):
 
     def _argcheck(self, a, n):
         # we need np.asarray here because moment (maybe others) don't convert
-        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
+        return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=np.int_))
 
     def _get_support(self, a, n):
-        return 1, n
+        return 1, np.floor(n).astype(np.int_)
 
     def _pmf(self, k, a, n):
-        k = k.astype(np.float64)
-        return 1.0 / _gen_harmonic(n, a) * k**-a
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(k, k, n, a)
 
     def _cdf(self, k, a, n):
-        return _gen_harmonic(k, a) / _gen_harmonic(n, a)
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(1, k, n, a)
 
     def _sf(self, k, a, n):
-        k = k + 1  # # to match SciPy convention
-        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
-                / (k**a*_gen_harmonic(n, a)))
+        k = np.floor(k).astype(np.int_)
+        n = np.floor(n).astype(np.int_)
+        return scu._normalized_gen_harmonic(k + 1, n, n, a)
 
     def _stats(self, a, n):
-        # see # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
-        Hna = _gen_harmonic(n, a)
-        Hna1 = _gen_harmonic(n, a-1)
-        Hna2 = _gen_harmonic(n, a-2)
-        Hna3 = _gen_harmonic(n, a-3)
-        Hna4 = _gen_harmonic(n, a-4)
+        n = np.floor(n).astype(np.int_)
+        # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
+        Hna = scu._gen_harmonic(n, a)
+        Hna1 = scu._gen_harmonic(n, a-1)
+        Hna2 = scu._gen_harmonic(n, a-2)
+        Hna3 = scu._gen_harmonic(n, a-3)
+        Hna4 = scu._gen_harmonic(n, a-4)
         mu1 = Hna1/Hna
         mu2n = (Hna2*Hna - Hna1**2)
         mu2d = Hna**2
@@ -1747,8 +1723,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          special.chndtr(2*mu2, -2*x, 2*mu1),
+                          scu._ncx2_sf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -1870,9 +1846,9 @@ class _nchypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N, odds):
         M, n = np.asarray(M), np.asarray(n),
         N, odds = np.asarray(N), np.asarray(odds)
-        cond1 = (M.astype(int) == M) & (M >= 0)
-        cond2 = (n.astype(int) == n) & (n >= 0)
-        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond1 = (~np.isnan(M)) & (M.astype(int) == M) & (M >= 0)
+        cond2 = (~np.isnan(n)) & (n.astype(int) == n) & (n >= 0)
+        cond3 = (~np.isnan(N)) & (N.astype(int) == N) & (N >= 0)
         cond4 = odds > 0
         cond5 = N <= M
         cond6 = n <= M
@@ -1882,6 +1858,8 @@ class _nchypergeom_gen(rv_discrete):
 
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, N, odds, size, random_state):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.full(size, np.nan)
             length = np.prod(size)
             urn = _PyStochasticLib3()
             rv_gen = getattr(urn, self.rvs_name)
@@ -1899,15 +1877,19 @@ class _nchypergeom_gen(rv_discrete):
 
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
+            if np.isnan(x) | np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.probability(x)
 
         return _pmf1(x, M, n, N, odds)
 
-    def _stats(self, M, n, N, odds, moments):
+    def _stats(self, M, n, N, odds, moments='mv'):
 
         @np.vectorize
         def _moments1(M, n, N, odds):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan, np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 

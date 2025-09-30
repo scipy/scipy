@@ -2,7 +2,13 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy._lib._array_api import xp_default_dtype, is_numpy, is_torch
+from scipy._lib._array_api import (
+    xp_default_dtype,
+    is_numpy,
+    is_torch,
+    make_xp_test_case,
+    SCIPY_ARRAY_API,
+)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -53,8 +59,7 @@ def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
     return res
 
 
-@skip_xp_backends('dask.array', reason="No take_along_axis yet.")
-@skip_xp_backends('jax.numpy', reason="No mutation.")
+@make_xp_test_case(stats.quantile)
 class TestQuantile:
 
     def test_input_validation(self, xp):
@@ -105,8 +110,8 @@ class TestQuantile:
           'median_unbiased', 'normal_unbiased', 'weibull',
           'harrell-davis', 'winsor_round', 'winsor_less', 'winsor_more'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
-         [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
-          ((10, 2), None, 0), ((10, 2), None, 0)])
+         [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
+          ((10, 2), None, 0), ((10, 2), None, 0),])
     def test_against_reference(self, method, shape_x, shape_p, axis, xp):
         # Test all methods with various data shapes
         dtype = xp_default_dtype(xp)
@@ -156,6 +161,8 @@ class TestQuantile:
             if is_torch(xp):
                 pytest.skip("sum_cpu not implemented for UInt64, see "
                             "data-apis/array-api-compat#242")
+            if not SCIPY_ARRAY_API:
+                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=method)
             mxp = marray._get_namespace(xp)
@@ -183,7 +190,11 @@ class TestQuantile:
          ([[], []], 0.5, np.full(2, np.nan), {'axis': -1}),
          ([[], []], 0.5, np.zeros((0,)), {'axis': 0, 'keepdims': False}),
          ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
-         ([], [0.5, 0.6], np.full(2, np.nan), {}),])
+         ([], [0.5, 0.6], np.full(2, np.nan), {}),
+         (np.arange(1, 28).reshape((3, 3, 3)), 0.5, [[[14.]]],
+          {'axis': None, 'keepdims': True}),
+         ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]],
+          {'axis': None, 'keepdims': True}),])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
         default_dtype = xp_default_dtype(xp)
         x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref, dtype=default_dtype)

@@ -2,12 +2,9 @@
 import pytest
 
 import numpy as np
-from scipy._lib._array_api import assert_almost_equal
+from scipy._lib._array_api import assert_almost_equal, make_xp_test_case
 
 from scipy import ndimage
-
-skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 def get_spline_knot_values(order):
@@ -56,6 +53,7 @@ def make_spline_knot_matrix(xp, n, order, mode='mirror'):
     return xp.asarray(matrix / knot_values_sum)
 
 
+@make_xp_test_case(ndimage.spline_filter1d)
 @pytest.mark.parametrize('order', [0, 1, 2, 3, 4, 5])
 @pytest.mark.parametrize('mode', ['mirror', 'grid-wrap', 'reflect'])
 def test_spline_filter_vs_matrix_solution(order, mode, xp):
