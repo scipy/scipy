@@ -595,9 +595,11 @@ def kron(A, B, format=None):
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         bsr_sparse = bsr_array
+        csr_sparse = csr_array
         coo_sparse = coo_array
     else:  # use spmatrix
         bsr_sparse = bsr_matrix
+        csr_sparse = csr_matrix
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
@@ -607,9 +609,11 @@ def kron(A, B, format=None):
         (format is None or format == "bsr") and
         B.ndim == 2 and 2*B.nnz >= math.prod(B.shape)
     ):
-        A = coo_sparse(A, copy=True)
+        if not hasattr(A, 'ndim') or A.ndim != 2:
+            # CSR routes thru COO in constructor so can make COO to check ndim
+            A = coo_sparse(A)
         if A.ndim == 2:
-            A = A.tocsr()
+            A = csr_sparse(A, copy=True)
             output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
             if A.nnz == 0 or B.nnz == 0:
@@ -621,10 +625,10 @@ def kron(A, B, format=None):
             data = data * B
 
             return bsr_sparse((data, A.indices, A.indptr), shape=output_shape)
+    else:
+        A = coo_sparse(A)  # no copy needed as we use np.repeat below
 
     # use COO
-    A = coo_sparse(A, copy=True)
-
     if coo_sparse is coo_matrix:
         output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
         ndim_diff = 0
