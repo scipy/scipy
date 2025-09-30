@@ -246,7 +246,6 @@ class TestNearestNDInterpolator:
         with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
 
-    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         npts, nd = 50, 3
         x = np.arange(npts * nd).reshape((npts, nd))

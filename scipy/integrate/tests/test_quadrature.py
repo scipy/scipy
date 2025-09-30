@@ -14,11 +14,13 @@ from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import make_xp_test_case, xp_default_dtype
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@make_xp_test_case(fixed_quad)
 class TestFixedQuad:
     def test_scalar(self):
         n = 4
@@ -35,21 +37,22 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature:
-    def quad(self, x, a, b, args):
-        raise NotImplementedError
+@make_xp_test_case(romb)
+class TestRomb:
+    def test_romb(self, xp):
+        xp_assert_equal(romb(xp.arange(17.0)), xp.asarray(128.0, dtype=xp.float64))
 
-    def test_romb(self):
-        assert_equal(romb(np.arange(17)), 128)
-
-    def test_romb_gh_3731(self):
+    def test_romb_gh_3731(self, xp):
         # Check that romb makes maximal use of data points
         x = np.arange(2**4+1)
         y = np.cos(0.2*x)
-        val = romb(y)
-        val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
-        assert_allclose(val, val2, rtol=1e-8, atol=0)
+        val = romb(xp.asarray(y))
+        expected, _ = quad(lambda x: np.cos(np.array(0.2*x)), np.min(x), np.max(x))
+        xp_assert_close(val, xp.asarray(expected, dtype=xp.float64), rtol=1e-8, atol=0)
 
+
+@make_xp_test_case(newton_cotes)
+class TestNewtonCotes:
     def test_newton_cotes(self):
         """Test the first few degrees, for evenly spaced points."""
         n = 1
@@ -89,6 +92,9 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
+
+@make_xp_test_case(simpson)
+class TestSimpson:
     def test_simpson(self):
         y = np.arange(17)
         assert_equal(simpson(y), 128)
@@ -180,95 +186,97 @@ class TestQuadrature:
         assert_equal(result, expected)
 
 
+@make_xp_test_case(cumulative_trapezoid)
 class TestCumulative_trapezoid:
-    def test_1d(self):
-        x = np.linspace(-2, 2, num=5)
+    def test_1d(self, xp):
+        x = xp.linspace(-2, 2, num=5)
         y = x
         y_int = cumulative_trapezoid(y, x, initial=0)
-        y_expected = [0., -1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0., -1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, x, initial=None)
-        assert_allclose(y_int, y_expected[1:])
+        xp_assert_close(y_int, y_expected[1:])
 
-    def test_y_nd_x_nd(self):
-        x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
+    def test_y_nd_x_nd(self, xp):
+        x = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
         y = x
         y_int = cumulative_trapezoid(y, x, initial=0)
-        y_expected = np.array([[[0., 0.5, 2., 4.5],
-                                [0., 4.5, 10., 16.5]],
-                               [[0., 8.5, 18., 28.5],
-                                [0., 12.5, 26., 40.5]],
-                               [[0., 16.5, 34., 52.5],
-                                [0., 20.5, 42., 64.5]]])
+        y_expected = xp.asarray([[[0., 0.5, 2., 4.5],
+                                  [0., 4.5, 10., 16.5]],
+                                 [[0., 8.5, 18., 28.5],
+                                  [0., 12.5, 26., 40.5]],
+                                 [[0., 16.5, 34., 52.5],
+                                  [0., 20.5, 42., 64.5]]])
 
-        assert_allclose(y_int, y_expected)
+        xp_assert_close(y_int, y_expected)
 
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
             y_int = cumulative_trapezoid(y, x, initial=0, axis=axis)
-            assert_equal(y_int.shape, (3, 2, 4))
+            assert y_int.shape == (3, 2, 4)
             y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
-            assert_equal(y_int.shape, shape)
+            assert y_int.shape == shape
 
-    def test_y_nd_x_1d(self):
-        y = np.arange(3 * 2 * 4).reshape(3, 2, 4)
-        x = np.arange(4)**2
+    def test_y_nd_x_1d(self, xp):
+        y = xp.reshape(xp.arange(3 * 2 * 4, dtype=xp_default_dtype(xp)), (3, 2, 4))
+        x = xp.arange(4, dtype=xp_default_dtype(xp))**2
         # Try with all axes
         ys_expected = (
-            np.array([[[4., 5., 6., 7.],
-                       [8., 9., 10., 11.]],
-                      [[40., 44., 48., 52.],
-                       [56., 60., 64., 68.]]]),
-            np.array([[[2., 3., 4., 5.]],
-                      [[10., 11., 12., 13.]],
-                      [[18., 19., 20., 21.]]]),
-            np.array([[[0.5, 5., 17.5],
-                       [4.5, 21., 53.5]],
-                      [[8.5, 37., 89.5],
-                       [12.5, 53., 125.5]],
-                      [[16.5, 69., 161.5],
-                       [20.5, 85., 197.5]]]))
+            xp.asarray([[[4., 5., 6., 7.],
+                         [8., 9., 10., 11.]],
+                        [[40., 44., 48., 52.],
+                         [56., 60., 64., 68.]]]),
+            xp.asarray([[[2., 3., 4., 5.]],
+                        [[10., 11., 12., 13.]],
+                        [[18., 19., 20., 21.]]]),
+            xp.asarray([[[0.5, 5., 17.5],
+                         [4.5, 21., 53.5]],
+                        [[8.5, 37., 89.5],
+                         [12.5, 53., 125.5]],
+                        [[16.5, 69., 161.5],
+                         [20.5, 85., 197.5]]]))
 
         for axis, y_expected in zip([0, 1, 2], ys_expected):
             y_int = cumulative_trapezoid(y, x=x[:y.shape[axis]], axis=axis,
                                          initial=None)
-            assert_allclose(y_int, y_expected)
+            xp_assert_close(y_int, y_expected)
 
-    def test_x_none(self):
-        y = np.linspace(-2, 2, num=5)
+    def test_x_none(self, xp):
+        y = xp.linspace(-2, 2, num=5)
 
         y_int = cumulative_trapezoid(y)
-        y_expected = [-1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([-1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, initial=0)
-        y_expected = [0, -1.5, -2., -1.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0, -1.5, -2., -1.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3)
-        y_expected = [-4.5, -6., -4.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([-4.5, -6., -4.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3, initial=0)
-        y_expected = [0, -4.5, -6., -4.5, 0.]
-        assert_allclose(y_int, y_expected)
+        y_expected = xp.asarray([0, -4.5, -6., -4.5, 0.])
+        xp_assert_close(y_int, y_expected)
 
     @pytest.mark.parametrize(
         "initial", [1, 0.5]
     )
-    def test_initial_error(self, initial):
+    def test_initial_error(self, initial, xp):
         """If initial is not None or 0, a ValueError is raised."""
-        y = np.linspace(0, 10, num=10)
+        y = xp.linspace(0, 10, num=10)
         with pytest.raises(ValueError, match="`initial`"):
             cumulative_trapezoid(y, initial=initial)
 
-    def test_zero_len_y(self):
+    def test_zero_len_y(self, xp):
         with pytest.raises(ValueError, match="At least one point is required"):
-            cumulative_trapezoid(y=[])
+            cumulative_trapezoid(y=xp.asarray([]))
 
 
+@make_xp_test_case(trapezoid)
 class TestTrapezoid:
     def test_simple(self, xp):
         x = xp.arange(-10, 10, .1)
@@ -276,8 +284,6 @@ class TestTrapezoid:
         # check integral of normal equals 1
         xp_assert_close(r, xp.asarray(1.0))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_ndim(self, xp):
         x = xp.linspace(0, 1, 3)
         y = xp.linspace(0, 2, 8)
@@ -315,8 +321,6 @@ class TestTrapezoid:
         r = trapezoid(q, x=z, axis=2)
         xp_assert_close(r, qz)
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
         x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
@@ -358,20 +362,18 @@ class TestTrapezoid:
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
-    def test_array_like(self, xp):
+    def test_array_like(self):
         x = list(range(5))
         y = [t * t for t in x]
-        xarr = xp.asarray(x, dtype=xp.float64)
-        yarr = xp.asarray(y, dtype=xp.float64)
+        xarr = np.asarray(x, dtype=np.float64)
+        yarr = np.asarray(y, dtype=np.float64)
         res = trapezoid(y, x)
         resarr = trapezoid(yarr, xarr)
         xp_assert_close(res, resarr)
 
 
+@make_xp_test_case(qmc_quad)
 class TestQMCQuad:
-    @pytest.mark.thread_unsafe
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -448,7 +450,6 @@ class TestQMCQuad:
     def test_sign(self, signs):
         self.basic_test(signs=signs)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("log", [False, True])
     def test_zero(self, log):
         message = "A lower limit was equal to an upper limit, so"
@@ -505,13 +506,14 @@ def cumulative_simpson_nd_reference(y, *, x=None, dx=None, initial=None, axis=-1
     return res
 
 
+@make_xp_test_case(cumulative_simpson)
 class TestCumulativeSimpson:
     x0 = np.arange(4)
     y0 = x0**2
 
     @pytest.mark.parametrize('use_dx', (False, True))
     @pytest.mark.parametrize('use_initial', (False, True))
-    def test_1d(self, use_dx, use_initial):
+    def test_1d(self, use_dx, use_initial, xp):
         # Test for exact agreement with polynomial of highest
         # possible order (3 if `dx` is constant, 2 otherwise).
         rng = np.random.default_rng(82456839535679456794)
@@ -520,13 +522,15 @@ class TestCumulativeSimpson:
         # Generate random polynomials and ground truth
         # integral of appropriate order
         order = 3 if use_dx else 2
-        dx = rng.random()
-        x = (np.sort(rng.random(n)) if order == 2
-             else np.arange(n)*dx + rng.random())
-        i = np.arange(order + 1)[:, np.newaxis]
-        c = rng.random(order + 1)[:, np.newaxis]
-        y = np.sum(c*x**i, axis=0)
-        Y = np.sum(c*x**(i + 1)/(i + 1), axis=0)
+        dx = xp.asarray(rng.random())
+        if order == 2:
+            x = xp.asarray(np.sort(rng.random(n)))
+        else:
+            x = xp.arange(n, dtype=xp.float64)*dx + xp.asarray(rng.random())
+        i = xp.arange(order + 1, dtype=xp.float64)[:, xp.newaxis]
+        c = xp.asarray(rng.random(order + 1))[:, xp.newaxis]
+        y = xp.sum(c*x**i, axis=0)
+        Y = xp.sum(c*x**(i + 1)/(i + 1), axis=0)
         ref = Y if use_initial else (Y-Y[0])[1:]
 
         # Integrate with `cumulative_simpson`
@@ -536,20 +540,21 @@ class TestCumulativeSimpson:
 
         # Compare result against reference
         if not use_dx:
-            assert_allclose(res, ref, rtol=2e-15)
+            xp_assert_close(res, ref, rtol=2e-15)
         else:
             i0 = 0 if use_initial else 1
             # all terms are "close"
-            assert_allclose(res, ref, rtol=0.0025)
+            xp_assert_close(res, ref, rtol=0.0025)
             # only even-interval terms are "exact"
-            assert_allclose(res[i0::2], ref[i0::2], rtol=2e-15)
+            xp_assert_close(res[i0::2], ref[i0::2], rtol=2e-15)
 
+    @skip_xp_backends(cpu_only=True)  # uses np.apply_along_axis
     @pytest.mark.parametrize('axis', np.arange(-3, 3))
     @pytest.mark.parametrize('x_ndim', (1, 3))
     @pytest.mark.parametrize('x_len', (1, 2, 7))
     @pytest.mark.parametrize('i_ndim', (None, 0, 3,))
     @pytest.mark.parametrize('dx', (None, True))
-    def test_nd(self, axis, x_ndim, x_len, i_ndim, dx):
+    def test_nd(self, axis, x_ndim, x_len, i_ndim, dx, xp):
         # Test behavior of `cumulative_simpson` with N-D `y`
         rng = np.random.default_rng(82456839535679456794)
 
@@ -561,19 +566,26 @@ class TestCumulativeSimpson:
         i_shape = shape_len_1 if i_ndim == 3 else ()
 
         # initialize arguments
-        y = rng.random(size=shape)
+        y = xp.asarray(rng.random(size=shape))
         x, dx = None, None
         if dx:
             dx = rng.random(size=shape_len_1) if x_ndim > 1 else rng.random()
+            dx = xp.asarray(dx)
         else:
             x = (np.sort(rng.random(size=shape), axis=axis) if x_ndim > 1
                  else np.sort(rng.random(size=shape[axis])))
-        initial = None if i_ndim is None else rng.random(size=i_shape)
+            x = xp.asarray(x)
+        initial = None if i_ndim is None else xp.asarray(rng.random(size=i_shape))
 
         # compare results
         res = cumulative_simpson(y, x=x, dx=dx, initial=initial, axis=axis)
-        ref = cumulative_simpson_nd_reference(y, x=x, dx=dx, initial=initial, axis=axis)
-        np.testing.assert_allclose(res, ref, rtol=1e-15)
+        # use np to generate `ref` as `cumulative_simpson_nd_ref`
+        # uses `apply_along_axis`
+        ref = cumulative_simpson_nd_reference(
+            np.asarray(y), x=np.asarray(x), dx=None if dx is None else np.asarray(dx),
+            initial=None if initial is None else np.asarray(initial), axis=axis
+        )
+        xp_assert_close(res, xp.asarray(ref), rtol=1e-15)
 
     @pytest.mark.parametrize(('message', 'kwarg_update'), [
         ("x must be strictly increasing", dict(x=[2, 2, 3, 4])),
@@ -585,17 +597,20 @@ class TestCumulativeSimpson:
         ("`initial` must either be a scalar or...", dict(initial=np.arange(5))),
         ("`dx` must either be a scalar or...", dict(x=None, dx=np.arange(5))),
     ])
-    def test_simpson_exceptions(self, message, kwarg_update):
-        kwargs0 = dict(y=self.y0, x=self.x0, dx=None, initial=None, axis=-1)
+    def test_simpson_exceptions(self, message, kwarg_update, xp):
+        kwargs0 = dict(y=xp.asarray(self.y0), x=xp.asarray(self.x0), dx=None,
+                       initial=None, axis=-1)
+        kwarg_update = {k: xp.asarray(np.asarray(v)) if isinstance(v, list) else v
+                        for k, v in kwarg_update.items()}
         with pytest.raises(ValueError, match=message):
             cumulative_simpson(**dict(kwargs0, **kwarg_update))
 
-    def test_special_cases(self):
+    def test_special_cases(self, xp):
         # Test special cases not checked elsewhere
         rng = np.random.default_rng(82456839535679456794)
-        y = rng.random(size=10)
-        res = cumulative_simpson(y, dx=0)
-        assert_equal(res, 0)
+        y = xp.asarray(rng.random(size=10))
+        res = cumulative_simpson(y, dx=0.)
+        xp_assert_equal(res, xp.zeros(9, dtype=xp.float64))
 
         # Should add tests of:
         # - all elements of `x` identical
@@ -632,7 +647,6 @@ class TestCumulativeSimpson:
         return theoretical_difference
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
@@ -642,7 +656,7 @@ class TestCumulativeSimpson:
         )
     )
     def test_cumulative_simpson_against_simpson_with_default_dx(
-        self, y
+        self, y, xp
     ):
         """Theoretically, the output of `cumulative_simpson` will be identical
         to `simpson` at all even indices and in the last index. The first index
@@ -654,17 +668,17 @@ class TestCumulativeSimpson:
                 [simpson(y[..., :i], dx=1.0) for i in range(2, y.shape[-1]+1)], axis=-1,
             )
 
-        res = cumulative_simpson(y, dx=1.0)
+        res = cumulative_simpson(xp.asarray(y), dx=1.0)
         ref = simpson_reference(y)
         theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
             y, x=np.arange(y.shape[-1])
         )
-        np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
+        xp_assert_close(
+            res[..., 1:], xp.asarray(ref[..., 1:] + theoretical_difference[..., 1:]),
+            atol=1e-16
         )
 
     @pytest.mark.fail_slow(10)
-    @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
@@ -674,7 +688,7 @@ class TestCumulativeSimpson:
         )
     )
     def test_cumulative_simpson_against_simpson(
-        self, y
+        self, y, xp
     ):
         """Theoretically, the output of `cumulative_simpson` will be identical
         to `simpson` at all even indices and in the last index. The first index
@@ -691,15 +705,17 @@ class TestCumulativeSimpson:
                 axis=-1,
             )
 
-        res = cumulative_simpson(y, x=x)
+        res = cumulative_simpson(xp.asarray(y), x=xp.asarray(x))
         ref = simpson_reference(y, x)
         theoretical_difference = self._get_theoretical_diff_between_simps_and_cum_simps(
             y, x
         )
-        np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+        xp_assert_close(
+            res[..., 1:], xp.asarray(ref[..., 1:] + theoretical_difference[..., 1:])
         )
 
+
+@make_xp_test_case(integrate.lebedev_rule)
 class TestLebedev:
     def test_input_validation(self):
         # only certain rules are available

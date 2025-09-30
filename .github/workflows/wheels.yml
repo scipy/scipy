@@ -46,6 +46,7 @@ jobs:
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Get commit message
         id: commit_message
         run: |
@@ -56,7 +57,6 @@ jobs:
               RUN="1"
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
-          echo github.ref ${{ github.ref }}
 
   build_wheels:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
@@ -77,7 +77,7 @@ jobs:
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
         # should also be able to do multi-archs on a single entry, e.g.
-        # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
+        # [windows-2025, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
@@ -87,8 +87,9 @@ jobs:
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2019, win, AMD64, "", ""]
-        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
+        - [windows-2025, win, AMD64, "", ""]
+        - [windows-11-arm, win, ARM64, "", ""]
+        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314"], ["cp314t", "cp314"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -109,20 +110,32 @@ jobs:
           python-version: 3.11
 
       - name: win_amd64 - install rtools
+        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
         run: |
           # mingw-w64
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
 
       - name: windows - set PKG_CONFIG_PATH
-        if: ${{ runner.os == 'Windows' }}
+        if: ${{ matrix.buildplat[1] == 'win' }}
         run: |
           $env:CIBW = "${{ github.workspace }}"
           # It seems somewhere in the env passing, `\` is not
           # passed through, so convert it to '/'
           $env:CIBW=$env:CIBW.replace("\","/")
           echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+
+      - name: Set environment variables for ARM64
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        run: |
+            echo "CC=clang-cl" >> $env:GITHUB_ENV
+            echo "CXX=clang-cl" >> $env:GITHUB_ENV
+            echo "FC=flang" >> $env:GITHUB_ENV
+            echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
+   
+      - name: Set up Flang and pkgconf for ARM64
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        uses: ./.github/windows_arm64_steps
 
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
@@ -183,6 +196,7 @@ jobs:
           fi
           echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
 
+
       # - name: Inject environment variable for python dev version
       #   if: ${{ matrix.python[1] == '3.14-dev'
       #   shell: bash
@@ -204,15 +218,11 @@ jobs:
 
       #     echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
 
-      - name: Disable build isolation for python free-threaded version
-        if: endsWith(matrix.python[0], 't')
-        shell: bash
-        run: |
-          CIBW="pip; args: --no-build-isolation"
-          echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
+      #     CIBW="build; args: --no-isolation"
+      #     echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
+        uses: pypa/cibuildwheel@ffd835cef18fa11522f608fc0fa973b89f5ddc87 # v3.1.0
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
@@ -245,6 +255,7 @@ jobs:
           python-version: "3.11"
           miniforge-version: latest
           conda-remove-defaults: "true"
+          architecture: ${{ (matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64') && 'x64' || '' }}
 
       - name: Upload wheels
         if: success()

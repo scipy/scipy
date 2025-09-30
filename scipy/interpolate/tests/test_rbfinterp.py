@@ -366,7 +366,6 @@ class _TestRBFInterpolator:
         with pytest.raises(ValueError, match=match):
             self.build(y, d, kernel='thin_plate_spline')
 
-    @pytest.mark.thread_unsafe
     def test_degree_warning(self):
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)

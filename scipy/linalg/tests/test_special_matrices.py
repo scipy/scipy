@@ -8,11 +8,12 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._lib._array_api import make_xp_test_case, xp_assert_equal, xp_size
 
 
 class TestToeplitz:
@@ -205,36 +206,6 @@ class TestBlockDiag:
                                [0, 0, 2, 3, 0, 0],
                                [0, 0, 4, 5, 0, 0],
                                [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-    @pytest.mark.thread_unsafe
-    def test_dep(self):
-        with pytest.deprecated_call(match="`kron`"):
-            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
 
 
 class TestHelmert:
@@ -533,19 +504,22 @@ def test_dft():
     assert_array_almost_equal(mx, fx)
 
 
-def test_fiedler():
-    f = fiedler([])
-    assert_equal(f.size, 0)
-    f = fiedler([123.])
-    assert_array_equal(f, np.array([[0.]]))
-    f = fiedler(np.arange(1, 7))
-    des = np.array([[0, 1, 2, 3, 4, 5],
-                    [1, 0, 1, 2, 3, 4],
-                    [2, 1, 0, 1, 2, 3],
-                    [3, 2, 1, 0, 1, 2],
-                    [4, 3, 2, 1, 0, 1],
-                    [5, 4, 3, 2, 1, 0]])
-    assert_array_equal(f, des)
+@make_xp_test_case(fiedler)
+def test_fiedler(xp):
+    f = fiedler(xp.asarray([]))
+    assert xp_size(f) == 0
+
+    f = fiedler(xp.asarray([123.]))
+    xp_assert_equal(f, xp.asarray([[0.]]))
+
+    f = fiedler(xp.arange(1, 7))
+    des = xp.asarray([[0, 1, 2, 3, 4, 5],
+                      [1, 0, 1, 2, 3, 4],
+                      [2, 1, 0, 1, 2, 3],
+                      [3, 2, 1, 0, 1, 2],
+                      [4, 3, 2, 1, 0, 1],
+                      [5, 4, 3, 2, 1, 0]])
+    xp_assert_equal(f, des)
 
 
 def test_fiedler_companion():
@@ -608,7 +582,6 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),
@@ -623,12 +596,6 @@ def test_batch(f, args):
     batch_shape = (2, 3)
     m = 10
     A = rng.random(batch_shape + (m,))
-
-    if f in {toeplitz}:
-        message = "Beginning in SciPy 1.17, multidimensional input will be..."
-        with pytest.warns(FutureWarning, match=message):
-            f(A, *args)
-        return
 
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])

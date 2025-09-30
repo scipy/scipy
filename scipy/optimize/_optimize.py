@@ -87,7 +87,7 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
+    if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -388,7 +388,7 @@ def rosen(x):
     return r
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -472,7 +472,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -928,15 +928,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
         except _MaxFuncCallError:
             pass
-        finally:
-            ind = np.argsort(fsim)
-            sim = np.take(sim, ind, 0)
-            fsim = np.take(fsim, ind, 0)
-            if retall:
-                allvecs.append(sim[0])
-            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
-            if _call_callback_maybe_halt(callback, intermediate_result):
-                break
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
+        if retall:
+            allvecs.append(sim[0])
+        intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1410,7 +1409,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
-        x0.shape = (1,)
+        x0 = x0.reshape((1,))
     if maxiter is None:
         maxiter = len(x0) * 200
 

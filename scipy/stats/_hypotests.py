@@ -9,6 +9,7 @@ from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
+from scipy._lib._array_api import xp_capabilities
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -26,6 +27,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -148,6 +150,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
+@xp_capabilities(np_only=True)
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
     Performs the Poisson means test, AKA the "E-test".
@@ -482,10 +485,11 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-def _cvm_result_to_tuple(res):
+def _cvm_result_to_tuple(res, _):
     return res.statistic, res.pvalue
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=()):
@@ -709,6 +713,7 @@ class SomersDResult:
     table: np.ndarray
 
 
+@xp_capabilities(np_only=True)
 def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
@@ -920,6 +925,7 @@ class BarnardExactResult:
     pvalue: float
 
 
+@xp_capabilities(np_only=True)
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     r"""Perform a Barnard exact test on a 2x2 contingency table.
 
@@ -1191,6 +1197,7 @@ class BoschlooExactResult:
     pvalue: float
 
 
+@xp_capabilities(np_only=True)
 def boschloo_exact(table, alternative="two-sided", n=32):
     r"""Perform Boschloo's exact test on a 2x2 contingency table.
 
@@ -1544,6 +1551,7 @@ def _pval_cvm_2samp_exact(s, m, n):
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto'):
@@ -1749,13 +1757,12 @@ class TukeyHSDResult:
         s = ("Pairwise Group Comparisons"
              f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
-        for i in range(self.pvalue.shape[0]):
-            for j in range(self.pvalue.shape[0]):
-                if i != j:
-                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
-                          f"{self.pvalue[i, j]:>10.3f}"
-                          f"{self._ci.low[i, j]:>10.3f}"
-                          f"{self._ci.high[i, j]:>10.3f}\n")
+        for i, j in np.ndindex(self.pvalue.shape):
+            if i != j:
+                s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                      f"{self.pvalue[i, j]:>10.3f}"
+                      f"{self._ci.low[i, j]:>10.3f}"
+                      f"{self._ci.high[i, j]:>10.3f}\n")
         return s
 
     def confidence_interval(self, confidence_level=.95):
@@ -1847,6 +1854,7 @@ def _tukey_hsd_iv(args, equal_var):
     return args
 
 
+@xp_capabilities(np_only=True)
 def tukey_hsd(*args, equal_var=True):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 

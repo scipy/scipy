@@ -12,9 +12,12 @@ from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
-from scipy._lib._util import copy_if_needed
+from scipy._lib._util import copy_if_needed, _dedent_for_py313
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
+from inspect import signature
+from difflib import get_close_matches
+from types import GenericAlias
 
 
 __all__ = [
@@ -63,14 +66,14 @@ def _safe_norm(v):
 
 
 _doc_parts = dict(
-    params_basic="""
+    params_basic=_dedent_for_py313("""
     F : function(x) -> f
         Function whose root to find; should take and return an array-like
         object.
     xin : array_like
         Initial guess for the solution
-    """.strip(),
-    params_extra="""
+    """).strip(),
+    params_extra=_dedent_for_py313("""
     iter : int, optional
         Number of iterations to make. If omitted (default), make as many
         as required to meet tolerances.
@@ -110,7 +113,7 @@ _doc_parts = dict(
     NoConvergence
         When a solution was not found.
 
-    """.strip()
+    """).strip()
 )
 
 
@@ -415,6 +418,9 @@ class Jacobian:
 
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, **kw):
         names = ["solve", "update", "matvec", "rmatvec", "rsolve",
                  "matmat", "todense", "shape", "dtype"]
@@ -461,7 +467,7 @@ class InverseJacobian:
     ----------
     jacobian : Jacobian
         The Jacobian to invert.
-    
+
     Attributes
     ----------
     shape
@@ -470,6 +476,10 @@ class InverseJacobian:
         Data type of the matrix.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, jacobian):
         self.jacobian = jacobian
         self.matvec = jacobian.solve
@@ -585,6 +595,9 @@ def asjacobian(J):
 #------------------------------------------------------------------------------
 
 class GenericBroyden(Jacobian):
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def setup(self, x0, f0, func):
         Jacobian.setup(self, x0, f0, func)
         self.last_f = f0
@@ -620,6 +633,9 @@ class LowRankMatrix:
     full matrix representation will be used thereon.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, alpha, n, dtype):
         self.alpha = alpha
@@ -814,7 +830,7 @@ class LowRankMatrix:
         del self.ds[q:]
 
 
-_doc_parts['broyden_params'] = """
+_doc_parts['broyden_params'] = _dedent_for_py313("""
     alpha : float, optional
         Initial guess for the Jacobian is ``(-1/alpha)``.
     reduction_method : str or tuple, optional
@@ -835,7 +851,7 @@ _doc_parts['broyden_params'] = """
     max_rank : int, optional
         Maximum rank for the Broyden matrix.
         Default is infinity (i.e., no rank reduction).
-    """.strip()
+    """).strip()
 
 
 class BroydenFirst(GenericBroyden):
@@ -1491,9 +1507,39 @@ class KrylovJacobian(Jacobian):
             self.method_kw.setdefault('store_outer_Av', False)
             self.method_kw.setdefault('atol', 0)
 
+        # Retrieve the signature of the method to find the valid parameters
+        valid_inner_params = [
+            k for k in signature(self.method).parameters
+            if k not in ('self', 'args', 'kwargs')
+        ]
+
         for key, value in kw.items():
-            if not key.startswith('inner_'):
+            if not key.startswith("inner_"):
                 raise ValueError(f"Unknown parameter {key}")
+            if key[6:] not in valid_inner_params:
+                # Use difflib to find close matches to the invalid key
+                inner_param_suggestions = get_close_matches(key[6:],
+                                                            valid_inner_params,
+                                                            n=1)
+                if inner_param_suggestions:
+                    suggestion_msg = (f" Did you mean '"
+                                      f"{inner_param_suggestions[0]}'?")
+                else:
+                    suggestion_msg = ""
+
+                # warn user that the parameter is not valid for the inner method
+                warnings.warn(
+                    f"Option '{key}' is invalid for the inner method: {method}."
+                    " It will be ignored."
+                    "Please check inner method documentation for valid options."
+                    + suggestion_msg,
+                    stacklevel=3,
+                    category=UserWarning,
+                    # using `skip_file_prefixes` would be a good idea
+                    # and should be added once we drop support for Python 3.11
+                )
+                # ignore this parameter and continue
+                continue
             self.method_kw[key[6:]] = value
 
     def _update_diff_step(self):

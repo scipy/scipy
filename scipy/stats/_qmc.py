@@ -1863,7 +1863,7 @@ class Sobol(QMCEngine):
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.", stacklevel=2)
+                              " n to be a power of 2.", stacklevel=3)
 
             if n == 1:
                 sample = self._first_point

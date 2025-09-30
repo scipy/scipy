@@ -1,9 +1,15 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import xp_ravel, array_namespace, xp_promote
+from scipy._lib._array_api import (
+    xp_capabilities,
+    xp_ravel,
+    array_namespace,
+    xp_promote,
+    xp_device,
+    _length_nonmasked
+)
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
-from scipy.stats._stats_py import _length_nonmasked
 
 
 def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
@@ -16,6 +22,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         raise ValueError("`p` must have real floating dtype.")
 
     x, p = xp_promote(x, p, force_floating=True, xp=xp)
+    p = xp.asarray(p, device=xp_device(x))
     dtype = x.dtype
 
     axis_none = axis is None
@@ -52,7 +59,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     if x.shape[axis] == 0:
         shape = list(x.shape)
         shape[axis] = 1
-        x = xp.full(shape, xp.asarray(xp.nan, dtype=dtype))
+        x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
 
     y = xp.sort(x, axis=axis)
     y, p = _broadcast_arrays((y, p), axis=axis)
@@ -66,7 +73,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     p = xp.moveaxis(p, axis, -1)
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
-    n = xp.asarray(n, dtype=dtype)
+    n = xp.asarray(n, dtype=dtype, device=xp_device(y))
     if contains_nans:
         nans = xp.isnan(y)
 
@@ -97,6 +104,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
 
 
+@xp_capabilities(skip_backends=(("dask.array", "No take_along_axis yet."),
+                                ("jax.numpy", "No mutation.")))
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the p-th quantile of the data along the specified axis.
@@ -200,8 +209,9 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
     Note that indices ``j`` and ``j + 1`` are clipped to the range ``0`` to
     ``n - 1`` when the results of the formula would be outside the allowed
-    range of non-negative indices. The ``-1`` in the formulas for ``j`` and
-    ``g`` accounts for Python's 0-based indexing.
+    range of non-negative indices. When ``j`` is clipped to zero, ``g`` is
+    set to zero as well. The ``-1`` in the formulas for ``j`` and ``g``
+    accounts for Python's 0-based indexing.
 
     The table above includes only the estimators from [1]_ that are continuous
     functions of probability `p` (estimators 4-9). SciPy also provides the
@@ -308,6 +318,8 @@ def _quantile_hf(y, p, n, method, xp):
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'}:
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
+
+    g[j < 0] = 0
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 
@@ -324,7 +336,7 @@ def _quantile_hd(y, p, n, xp):
     p = xp.moveaxis(p, -1, 0)[..., xp.newaxis]
     a = p * (n + 1)
     b = (1 - p) * (n + 1)
-    i = xp.arange(y.shape[-1] + 1, dtype=y.dtype)
+    i = xp.arange(y.shape[-1] + 1, dtype=y.dtype, device=xp_device(y))
     w = betainc(a, b, i / n)
     w = w[..., 1:] - w[..., :-1]
     w = xpx.at(w, xp.isnan(w)).set(0)

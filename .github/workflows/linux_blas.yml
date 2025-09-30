@@ -1,0 +1,142 @@
+name: BLAS tests (Linux)
+
+# This file is meant for testing LP64/ILP64 BLAS/LAPACK flavors and build
+# options on Linux. All other yml files for Linux will only test LP64 BLAS/LAPACK flavors.
+#
+# Jobs and their purpose:
+#
+#   - mkl:
+#         Tests MKL installed from PyPI (because easiest/fastest) in
+#         2 ways: both LP64 and ILP64 via pkg-config.
+#
+#    - scipy-openblas64:
+#         Tests ILP64-enabled build with scipy-openblas32 and scipy-openblas64.
+#
+
+on:
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  mkl-lp64:
+    runs-on: ubuntu-latest
+    name: "MKL LP64"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install mkl mkl-devel
+
+    - name: Build with defaults (LP64)
+      run: |
+        pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+        spin build -S-Dblas=mkl
+
+    - name: Test
+      run: spin test -j2
+
+
+  mkl-ilp64:
+    runs-on: ubuntu-latest
+    name: "MKL ILP64"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install mkl mkl-devel
+
+    - name: Build with ILP64
+      run: |
+        pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
+        spin build -S-Dblas=mkl -S-Duse-ilp64=true
+
+    - name: Test
+      run: spin test -j2
+
+
+  scipy-openblas-ilp64:
+    runs-on: ubuntu-latest
+    name: "scipy-openblas ILP64"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install scipy-openblas32 scipy-openblas64
+
+    - name: Write out scipy-openblas64.pc
+      run: |
+        # spin does this for scipy-openblas32
+        python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+
+    - name: Build with ILP64
+      run: |
+        spin build --with-scipy-openblas -S-Duse-ilp64=true
+
+    - name: Test
+      run: spin test -j2
