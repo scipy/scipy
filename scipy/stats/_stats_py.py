@@ -10415,7 +10415,8 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     if n < lmoms.shape[0]:
         lmoms = xpx.at(lmoms)[n:, ...].set(xp.nan)  # add NaNs where appropriate
-    return lmoms[order-1]  # strict can't handle fancy indexing plus ellipses
+    # return lmoms[order-1]  # strict can't handle fancy indexing plus ellipses
+    return xp.take(lmoms, order - 1, axis=0) if order.ndim == 1 else lmoms[order - 1]
 
 
 LinregressResult = _make_tuple_bunch('LinregressResult',

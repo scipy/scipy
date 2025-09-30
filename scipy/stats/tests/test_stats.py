@@ -9137,6 +9137,15 @@ class TestLMoment:
         ref = stats.lmoment(xp.astype(sample, xp_default_dtype(xp)))
         xp_assert_close(res, ref)
 
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_axis(self, axis, xp):
+        # nd input is tested extensively in `test_axis_nan_policy`, but only for NumPy
+        rng = np.random.default_rng(234923498149931248151)
+        x = rng.random(size=(10, 11))
+        res = stats.lmoment(xp.asarray(x), axis=axis)
+        ref = xp.asarray(stats.lmoment(x, axis=axis))
+        xp_assert_close(res, ref)
+
 
 class TestXP_Mean:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
