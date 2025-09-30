@@ -624,7 +624,7 @@ class BenchQMCGeometricDiscrepancy(Benchmark):
     params = [
         ['mindist', 'mst'],
         ['euclidean', 'cityblock', 'chebyshev', 'cosine'],
-        [3, 10],
+        [2, 3, 10],
     ]
 
     def setup(self, method, metric, ndims):
