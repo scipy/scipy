@@ -10273,7 +10273,8 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
 
     message = "`order` must be a scalar or a non-empty array of positive integers."
     order = xp.arange(1, 5) if order is None else xp.asarray(order)
-    if not xp.isdtype(order.dtype, "integral") or xp.any(order <= 0):
+    if (not xp.isdtype(order.dtype, "integral") or xp.any(order <= 0)
+            or order.size == 0 or order.ndim > 1):
         raise ValueError(message)
 
     # input validation of non-array types can still be performed with NumPy
@@ -10325,8 +10326,8 @@ def _triu(x, xp):
         return xp.triu(x)
 
 
-@xp_capabilities(skip_backends=[('dask.array', "too many issues"),
-                                ('jax.numpy', "for now, requires mutability")])
+@xp_capabilities(skip_backends=[('dask.array', "too many issues")],
+                 jax_jit=False)
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
@@ -10406,15 +10407,15 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
 
     n = sample.shape[-1]
     if n < bk.shape[-1]:
-        bk[..., n:] = 0  # remove NaNs due to n_moments > n
+        bk = xpx.at(bk)[..., n:].set(0)  # remove NaNs due to n_moments > n
 
     lmoms = xp.vecdot(prk, bk, axis=-1)
     if standardize and n_moments > 2:
-        lmoms[2:] /= lmoms[1]
+        lmoms = xpx.at(lmoms)[2:, ...].divide(lmoms[1, ...])
 
-    if n < lmoms.shape[-1]:
-        lmoms[n:] = xp.nan  # add NaNs where appropriate
-    return lmoms[order-1]
+    if n < lmoms.shape[0]:
+        lmoms = xpx.at(lmoms)[n:, ...].set(xp.nan)  # add NaNs where appropriate
+    return lmoms[order-1]  # strict can't handle fancy indexing plus ellipses
 
 
 LinregressResult = _make_tuple_bunch('LinregressResult',

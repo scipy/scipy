@@ -9087,7 +9087,7 @@ class TestLMoment:
 
     @pytest.mark.parametrize('axis', not_integers)
     def test_axis_iv(self, axis, xp):
-        message = '`axis` must be an integer, a tuple'
+        message = '`axis` must be an integer'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(xp.asarray(self.data), axis=axis)
 
@@ -9116,7 +9116,7 @@ class TestLMoment:
                           0.2189964482831403, 0.1328186463415905])
 
         if not standardize:
-            ref[2:] *= ref[1]
+            ref = xpx.at(ref)[2:].multiply(ref[1])
 
         data = np.sort(self.data) if sorted else self.data
         data = xp.asarray(data)
