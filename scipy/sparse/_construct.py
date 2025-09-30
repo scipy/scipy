@@ -100,6 +100,7 @@ def swapaxes(A, axis1, axis2):
     except IndexError as err:
         # message is like: Invalid axis -4 is out of bounds for axis 0 with size 2
         raise ValueError(f"Invalid axis {str(err)[6:]}")
+    axes = tuple(axes)
     return permute_dims(A, axes=axes, copy=True)
 
 
@@ -130,19 +131,35 @@ def permute_dims(A, axes=None, copy=False):
         If provided a non-integer or out of range ``[-N, N-1]`` axis,
         where ``N`` is ``A.ndim``.
     """
-    N = A.ndim
+    ndim = A.ndim
     if axes is None:
-        axes = range(N)[::-1]
-    elif len(axes) != N:
-        raise ValueError(f"Incorrect number of axes: {N} instead of {A.ndim}")
-    elif len(set(axes)) != N:
-        raise ValueError(f"Duplicate axes are not allowed: {axes=}")
+        axes = tuple(range(ndim)[::-1])
+    elif len(axes) != ndim:
+        raise ValueError(f"Incorrect number of axes: {ndim} instead of {A.ndim}")
 
-    for axis in axes:
-        if not isintlike(axis):
-            raise ValueError(f"Invalid axis {axis}. Must be an integer.")
-        if axis < 0 or axis >= A.ndim:
-            raise ValueError(f"Invalid axis {axis} for N={N}. Must be in [-N, N-1].")
+    # -------------This is from _sputils.validateaxis which almost does what we want
+    # TODO stop _sputils.validateaxis from returning `None` when len(axes)==ndim
+    if not isinstance(axes, tuple):
+        # If not a tuple, check that the provided axes is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axes)), np.integer):
+            raise TypeError(f'axes must be an integer/tuple of ints, not {type(axes)}')
+        axes = (axes,)
+
+    canon_axes = []
+    for ax in axes:
+        if not isintlike(ax):
+            raise TypeError(f"axes must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axes out of range for ndim")
+        canon_axes.append(ax)
+
+    if len(canon_axes) != len(set(canon_axes)):
+        raise ValueError("Duplicate value in axes")
+    # -------------End of code from  _sputils.validateaxis
+
     A = A.tocoo(copy=copy)
     A._shape = tuple(A.shape[idx] for idx in axes)
     A.coords = tuple(A.coords[idx] for idx in axes)

@@ -992,22 +992,26 @@ def test_axis_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
     with assert_raises(ValueError, match="Incorrect number of axes"):
         construct.permute_dims(A, axes=(2, 0, 1))
-    with assert_raises(ValueError, match="Duplicate axes"):
+    with assert_raises(ValueError, match="Duplicate value in axes"):
         construct.permute_dims(A, axes=(0, 0))
 
-    with assert_raises(ValueError, match="Invalid axis"):
+    with assert_raises(ValueError, match="axes out of range"):
         construct.permute_dims(A, axes=(-3, 0))
-    with assert_raises(ValueError, match="Invalid axis"):
+    with assert_raises(ValueError, match="axes out of range"):
         construct.permute_dims(A, axes=(0, -3))
-    with assert_raises(ValueError, match="Invalid axis"):
+    with assert_raises(ValueError, match="axes out of range"):
         construct.permute_dims(A, axes=(2, 0))
-    with assert_raises(ValueError, match="Invalid axis"):
+    with assert_raises(ValueError, match="axes out of range"):
         construct.permute_dims(A, axes=(0, 2))
-    with assert_raises(ValueError, match="Invalid axis"):
+    with assert_raises(TypeError, match="axes must be an integer"):
         construct.permute_dims(A, axes=(1.2, 0))
 
     assert_equal(
         construct.permute_dims(A, axes=(1, 0), copy=True).toarray(),
+        A.transpose(axes=(1, 0), copy=True).toarray()
+    )
+    assert_equal(
+        construct.permute_dims(A, axes=None, copy=True).toarray(),
         A.transpose(axes=(1, 0), copy=True).toarray()
     )
 
