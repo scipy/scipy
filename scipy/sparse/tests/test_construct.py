@@ -1067,7 +1067,7 @@ def test_sparse_format_expand_dims(format):
     assert out.format == "coo"
     assert out.shape == (2, 1, 2)
     assert_equal(out.toarray(), np.expand_dims(A, axis=1))
-    assert not out.has_canonical_format
+    assert SA.tocoo().has_canonical_format == out.has_canonical_format
 
 def test_axis_expand_dims():
     A = coo_array([[2, 0], [3, 5]])

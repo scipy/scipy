@@ -62,13 +62,14 @@ def expand_dims(A, /, *, axis=0):
     if idx < 0 or idx > A.ndim:
         raise ValueError(f"Invalid axis {axis} for N={A.ndim}. Must be in [-N-1, N].")
 
-    A = A.tocoo(copy=True)
-    new_coord = np.zeros_like(A.coords[0])
+    newA = A.tocoo(copy=True)
+    new_coord = np.zeros_like(newA.coords[0])
 
-    A.coords = A.coords[:idx] + (new_coord,) + A.coords[idx:]
-    A._shape = A.shape[:idx] + (1,) + A.shape[idx:]
-    A.has_canonical_format = False  # data not guaranteed sorted
-    return A
+    newA.coords = newA.coords[:idx] + (new_coord,) + newA.coords[idx:]
+    newA._shape = newA.shape[:idx] + (1,) + newA.shape[idx:]
+    if A.format == "coo":
+        newA.has_canonical_format = A.has_canonical_format
+    return newA
 
 
 def swapaxes(A, axis1, axis2):
@@ -93,28 +94,13 @@ def swapaxes(A, axis1, axis2):
         If provided a non-integer or out of range ``[-N, N-1]`` axis,
         where ``N`` is ``A.ndim``.
     """
-    if not isintlike(axis1):
-        raise ValueError(f"Invalid axis1 {axis1}. Must be an integer.")
-    idx1 = axis1 if axis1 >= 0 else axis1 + A.ndim
-    if idx1 < 0 or idx1 > A.ndim - 1:
-        raise ValueError(f"Invalid axis1 {axis1} for N={A.ndim}. Must be in [-N, N-1].")
-    if not isintlike(axis2):
-        raise ValueError(f"Invalid axis2 {axis2}. Must be an integer.")
-    idx2 = axis2 if axis2 >= 0 else axis2 + A.ndim
-    if idx2 < 0 or idx2 > A.ndim - 1:
-        raise ValueError(f"Invalid axis2 {axis2} for N={A.ndim}. Must be in [-N, N-1].")
-
-    A = A.tocoo(copy=True)
-    if idx1 == idx2:
-        return A
-    new_coords = list(A.coords)
-    new_coords[idx1], new_coords[idx2] = new_coords[idx2], new_coords[idx1]
-    A.coords = tuple(new_coords)
-    new_shape = list(A.shape)
-    new_shape[idx1], new_shape[idx2] = new_shape[idx2], new_shape[idx1]
-    A._shape = tuple(new_shape)
-    A.has_canonical_format = False  # data not guaranteed sorted
-    return A
+    axes = np.arange(A.ndim)
+    try:
+        axes[[axis1, axis2]] = axes[[axis2, axis1]]
+    except IndexError as err:
+        # message is like: Invalid axis -4 is out of bounds for axis 0 with size 2
+        raise ValueError(f"Invalid axis {str(err)[6:]}")
+    return permute_dims(A, axes=axes, copy=True)
 
 
 def permute_dims(A, axes=None, copy=False):
@@ -160,7 +146,7 @@ def permute_dims(A, axes=None, copy=False):
     A = A.tocoo(copy=copy)
     A._shape = tuple(A.shape[idx] for idx in axes)
     A.coords = tuple(A.coords[idx] for idx in axes)
-    A.has_canonical_format = False  # data not guaranteed sorted
+    A.has_canonical_format = False  # data usually no longer sorted
     return A
 
 
