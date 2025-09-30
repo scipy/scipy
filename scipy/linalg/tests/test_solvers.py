@@ -575,6 +575,22 @@ class TestSolveDiscreteAre:
         assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
 
 
+class TestSolveCommonAre:
+    @pytest.mark.parametrize("solver", [solve_continuous_are, solve_discrete_are])
+    def test_with_skipped_array_argument_gh23336(self, solver):
+        # gh-23336 reported a failure when optional argument `e` was skipped
+        A = np.array([[-0.9, 0.25], [0, -1.1]])
+        B = np.array([[0.23], [0.45]])
+        Q = np.eye(2)
+        R = np.atleast_2d(0.45)
+        E = np.eye(2)
+        S = np.array([[0.1], [0.2]])
+
+        res = solver(A, B, Q, R, s=S)
+        ref = solver(A, B, Q, R, E, S)
+        np.testing.assert_allclose(res, ref)
+
+
 def test_solve_generalized_continuous_are():
     cases = [
         # Two random examples differ by s term
