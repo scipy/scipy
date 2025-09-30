@@ -7,7 +7,15 @@ To distinguish the two sets, the "new-style" routine names start with `npp_`
 """
 import warnings
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_promote, xp_default_dtype, xp_size, xp_device
+from scipy._lib._array_api import (
+    xp_promote, xp_default_dtype, xp_size, xp_device, is_numpy
+)
+
+try:
+    from numpy.exceptions import RankWarning
+except ImportError:
+    # numpy 1.x
+    from numpy import RankWarning
 
 
 def _sort_cmplx(arr, xp):
@@ -68,6 +76,39 @@ def _trim_zeros(filt, trim='fb'):
     return filt[first:last]
 
 
+# For numpy arrays, use scipy.linalg.lstsq;
+# For other backends,
+#   - use xp.linalg.lstsq, if available (cupy, torch, jax.numpy);
+#   - otherwise manually compute pseudoinverse via SVD factorization
+def _lstsq(a, b, xp=None, rcond=None):
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
+
+    if rcond is None:
+        rcond = xp.finfo(a.dtype).eps * max(a.shape[-1], a.shape[-2])
+
+    if is_numpy(xp):
+        from scipy.linalg import lstsq as s_lstsq
+        return s_lstsq(a, b, cond=rcond)
+    elif lstsq_func := getattr(xp.linalg, "lstsq", None):
+        # cupy, torch, jax.numpy all have xp.linalg.lstsq
+        return lstsq_func(a, b, rcond=rcond)
+    else:
+        # unknown array library: LSQ solve via pseudoinverse
+        u, s, vt = xp.linalg.svd(a, full_matrices=False)
+
+        sing_val_mask = s > rcond
+        s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
+
+        sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
+        x = vt.T @ sigma @ u.T @ b
+
+        rank = xp.count_nonzero(sing_val_mask)
+
+        # XXX actually compute residuals, when there's a use case
+        residuals = xp.asarray([])
+        return x, residuals, rank, s
+
+
 # ### Old-style routines ###
 
 
@@ -92,6 +133,8 @@ def polyval(p, x, *, xp):
     x = xp.asarray(x)
     y = xp.zeros_like(x)
 
+    # NB: cannot do `for pv in p` since array API iteration
+    # is only defined for 1D arrays.
     for j in range(p.shape[0]):
         y = y * x + p[j, ...]
     return y
@@ -171,21 +214,11 @@ def polyfit(x, y, deg, *, xp, rcond=None):
     scale = xp.sqrt(xp.sum(lhs * lhs, axis=0))
     lhs /= scale
 
-    # LSQ solve via pseudoinverse + rank check
-    u, s, vt = xp.linalg.svd(lhs, full_matrices=False)
-
-    sing_val_mask = s > rcond
-    s = xpx.apply_where(sing_val_mask, (s,), lambda x: 1. / x, fill_value=0.)
-
-    sigma = xp.eye(s.shape[0]) * s    # == np.diag(s)
-    c = vt.T @ sigma @ u.T @ y
+    c, _, rank, _ = _lstsq(lhs, y, rcond=rcond, xp=xp)
     c = (c.T / scale).T  # broadcast scale coefficients
 
     # warn on rank reduction, which indicates an ill conditioned matrix
-    rank = xp.count_nonzero(sing_val_mask)
     if rank != order:
-        from numpy.exceptions import RankWarning
-
         msg = "Polyfit may be poorly conditioned"
         warnings.warn(msg, RankWarning, stacklevel=2)
 

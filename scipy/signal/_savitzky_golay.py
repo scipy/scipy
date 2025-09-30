@@ -147,7 +147,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     y = xpx.at(y, deriv).set(float_factorial(deriv) / (delta ** deriv))
 
     # Find the least-squares solution of A*c = y
-    coeffs = xp.linalg.pinv(A) @ y
+    coeffs, _, _, _ = _pu._lstsq(A, y, xp=xp)
 
     return coeffs
 

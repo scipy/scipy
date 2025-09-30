@@ -1,9 +1,8 @@
 import pytest
 import numpy as np
 
-from scipy._lib._array_api import (
-    assert_almost_equal, assert_array_almost_equal, xp_assert_close, xp_assert_equal,
-    xp_swapaxes
+from scipy._lib._array_api import (xp_assert_close, xp_assert_equal,
+    xp_swapaxes, is_torch,
 )
 
 from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
@@ -12,6 +11,12 @@ from scipy.signal import savgol_coeffs, savgol_filter
 from scipy.signal._savitzky_golay import _polyder
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+
+pytestmark = pytest.mark.skip_xp_backends(
+    "dask.array", reason="linalg.lstsq is missing rcond"
+)
+
 
 def check_polyder(p, m, expected, xp):
     dp = _polyder(p, m, xp=xp)
@@ -64,7 +69,6 @@ def alt_sg_coeffs(window_length, polyorder, pos, xp):
     return xp.asarray(h)
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_trivial(xp):
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
     h = savgol_coeffs(1, 0, xp=xp)
@@ -96,7 +100,6 @@ def compare_coeffs_to_alt(window_length, order, xp):
         )
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_compare(xp):
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
@@ -105,7 +108,6 @@ def test_sg_coeffs_compare(xp):
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_exact(xp):
     polyorder = 4
     window_length = 9
@@ -135,7 +137,6 @@ def test_sg_coeffs_exact(xp):
     xp_assert_close(y2[halflen:-halflen], d2y[halflen:-halflen])
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_deriv(xp):
     # The data in `x` is a sampled parabola, so using savgol_coeffs with an
     # order 2 or higher polynomial should give exact results.
@@ -152,7 +153,6 @@ def test_sg_coeffs_deriv(xp):
         xp_assert_close(coeffs2 @ x , d2x[pos], atol=1e-10)
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_deriv_gt_polyorder(xp):
     """
     If deriv > polyorder, the coefficients should be all 0.
@@ -166,22 +166,28 @@ def test_sg_coeffs_deriv_gt_polyorder(xp):
     xp_assert_equal(coeffs, xp.zeros(7, dtype=xp.float64))
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
+@xfail_xp_backends(
+    "torch", reason="torch loses precision (worse with f32 default dtype)"
+)
 def test_sg_coeffs_large(xp):
     # Test that for large values of window_length and polyorder the array of
     # coefficients returned is symmetric. The aim is to ensure that
     # no potential numeric overflow occurs.
     coeffs0 = savgol_coeffs(31, 9, xp=xp)
-    assert_array_almost_equal(coeffs0, xp.flip(coeffs0))
+    xp_assert_close(
+        coeffs0, xp.flip(coeffs0), atol=5e-4 if is_torch(xp) else 1.5e-6
+    )
+
     coeffs1 = savgol_coeffs(31, 9, deriv=1, xp=xp)
-    assert_array_almost_equal(coeffs1, -xp.flip(coeffs1))
+    xp_assert_close(
+        coeffs1, -xp.flip(coeffs1), atol=1.2e-2 if is_torch(xp) else 1.5e-6
+    )
 
 # --------------------------------------------------------------------
 # savgol_coeffs tests for even window length
 # --------------------------------------------------------------------
 
 
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_coeffs_even_window_length(xp):
     # Simple case - deriv=0, polyorder=0, 1
     window_lengths = [4, 6, 8, 10, 12, 14, 16]
@@ -223,7 +229,6 @@ def test_sg_coeffs_even_window_length(xp):
 #--------------------------------------------------------------------
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_trivial(xp):
     """ Test some trivial edge cases for savgol_filter()."""
     x = xp.asarray([1.0])
@@ -235,19 +240,18 @@ def test_sg_filter_trivial(xp):
     # (1, 0) at 0. This is just the average of the three values, hence 1.0.
     x = xp.asarray([3.0])
     y = savgol_filter(x, 3, 1, mode='constant')
-    assert_almost_equal(y, xp.asarray([1.0]), decimal=15)
+    xp_assert_close(y, xp.asarray([1.0]), atol=1.5e-15)
 
     x = xp.asarray([3.0])
     y = savgol_filter(x, 3, 1, mode='nearest')
-    assert_almost_equal(y, xp.asarray([3.0]), decimal=15)
+    xp_assert_close(y, xp.asarray([3.0]), atol=1.5e-15)
 
     x = xp.asarray([1.0] * 3)
     y = savgol_filter(x, 3, 1, mode='wrap')
-    assert_almost_equal(y, xp.asarray([1.0, 1.0, 1.0]), decimal=15)
+    xp_assert_close(y, xp.asarray([1.0, 1.0, 1.0]), atol=1.5e-15)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_basic(xp):
     # Some basic test cases for savgol_filter().
     x = xp.asarray([1.0, 2.0, 1.0])
@@ -262,7 +266,6 @@ def test_sg_filter_basic(xp):
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_2d(xp):
     x = xp.asarray([[1.0, 2.0, 1.0],
                     [2.0, 4.0, 2.0]])
@@ -276,7 +279,6 @@ def test_sg_filter_2d(xp):
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_interp_edges(xp):
     # Another test with low degree polynomial data, for which we can easily
     # give the exact results. In this test, we use mode='interp', so
@@ -327,7 +329,6 @@ def test_sg_filter_interp_edges(xp):
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_interp_edges_3d(xp):
     # Test mode='interp' with a 3-D array.
     t = xp.linspace(-5, 5, 21)
@@ -371,7 +372,6 @@ def test_sg_filter_interp_edges_3d(xp):
 
 
 @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
-@skip_xp_backends("dask.array", reason="linalg.pinv is missing")
 def test_sg_filter_valid_window_length_3d(xp):
     """Tests that the window_length check is using the correct axis."""
 
