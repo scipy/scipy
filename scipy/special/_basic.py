@@ -3052,7 +3052,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     n : int or float or complex (or array_like thereof)
         Input values for multifactorial. Non-integer values require
         ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
-    n : int or float or complex (or array_like thereof)
+    k : int or float or complex (or array_like thereof)
         Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
         If ``exact`` is set to True, calculate the answer exactly using
