@@ -116,7 +116,7 @@ def test_from_matrix(xp, ndim: int):
     matrix = xp.tile(xp.eye(4), shape[:-2] + (1, 1))
     t = xp.reshape(xp.arange(ndim ** (ndim-1) * 3, dtype=dtype), shape[:-2] + (3,))
     matrix = xpx.at(matrix)[..., :3, 3].set(t)
-    
+
     tf = RigidTransform.from_matrix(matrix)
     xp_assert_close(tf.as_matrix(), matrix, atol=atol)
     assert tf.single == (ndim == 1)
@@ -379,7 +379,7 @@ def test_from_dual_quat(xp, ndim: int):
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     shape = (ndim,) * (ndim - 1)
-    
+
     # identity
     dq = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], dtype=dtype)
     dq = xp.tile(dq, shape + (1,))
@@ -479,7 +479,7 @@ def test_from_dual_quat(xp, ndim: int):
 
     dq = xp.tile(unnormalized_dual_quat, shape + (1,))
     dual_quat = RigidTransform.from_dual_quat(dq).as_dual_quat()
-    
+
     expected_ones = xp.ones(shape) if shape != () else xp.asarray(1.0)[()]
     expected_zeros = xp.zeros(shape) if shape != () else xp.asarray(0.0)[()]
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
@@ -498,7 +498,7 @@ def test_from_dual_quat(xp, ndim: int):
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
     dq = xp.tile(unnormalized_dual_quat, shape + (1,))
     dual_quat = RigidTransform.from_dual_quat(dq).as_dual_quat()
-    
+
     xp_assert_close(xp_vector_norm(dual_quat[..., :4], axis=-1), expected_ones,
                     atol=1e-12)
     vecdot = xp.vecdot(dual_quat[..., :4], dual_quat[..., 4:])
@@ -638,7 +638,7 @@ def test_from_as_internal_consistency(xp, ndim: int):
     n = 10
     rng = np.random.default_rng(10)
     shape = (n,) + (ndim,) * (ndim - 1)
-    
+
     t = xp.asarray(rng.normal(size=shape + (3,)), dtype=dtype)
     r = Rotation.from_quat(xp.asarray(rng.normal(size=shape + (4,)), dtype=dtype))
     tf0 = RigidTransform.from_components(t, r)
@@ -1011,6 +1011,34 @@ def test_input_validation(xp):
         RigidTransform.from_rotation(xp.eye(3))
 
 
+@make_xp_test_case(RigidTransform.mean)
+@pytest.mark.parametrize("ndim", range(1, 4))
+def test_mean(xp, ndim: int):
+    atol = 1e-12
+    rng = np.random.default_rng(123)
+
+    t = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (3,)))
+    q = rng.normal(size=(ndim,) * (ndim - 1) + (4,))
+    r = rotation_to_xp(Rotation.from_quat(q), xp=xp)
+    tf = RigidTransform.from_components(t, r)
+
+    if ndim == 1:
+        weights = None
+        t_mean = t
+    else:
+        weights = xp.asarray(rng.random(size=(ndim,) * (ndim - 1)))
+        axis = tuple(range(t.ndim - 1))
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum/norm
+    r_mean = r.mean(weights=weights)
+    tf_mean = tf.mean(weights=weights)
+
+    tf_from_components = RigidTransform.from_components(t_mean, r_mean)
+    xp_assert_close(tf_mean.as_matrix(),
+                    tf_from_components.as_matrix(), atol=atol)
+
+
 @make_xp_test_case(RigidTransform.from_translation)
 def test_translation_validation(xp):
     # Test invalid translation shapes
@@ -1156,7 +1184,7 @@ def test_normalize_dual_quaternion(xp, ndim: int):
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     rng = np.random.default_rng(100)
     shape = (ndim,) * (ndim - 1)
-    
+
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
     xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
                     atol=1e-12)
@@ -1180,7 +1208,7 @@ def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
     assert not tf.single
-    
+
     tf = RigidTransform.from_rotation(Rotation.from_quat(xp.zeros((0, 4))))
     assert len(tf) == 0
     assert not tf.single
