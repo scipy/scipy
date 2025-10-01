@@ -5128,10 +5128,12 @@ class multivariate_t_gen(multi_rv_generic):
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
-        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
-                            shape_info.rank)
+        cov_object = _covariance.CovViaPSD(shape_info)
 
-    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank):
+        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
+                            shape_info.rank, cov_object)
+
+    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank, cov_object=None):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -5160,7 +5162,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         """
         if df == np.inf:
-            return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
+            return multivariate_normal._logpdf(x, loc, cov_object)
 
         dev = x - loc
         maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
