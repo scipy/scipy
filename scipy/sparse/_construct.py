@@ -98,8 +98,11 @@ def swapaxes(A, axis1, axis2):
     try:
         axes[[axis1, axis2]] = axes[[axis2, axis1]]
     except IndexError as err:
-        # message is like: Invalid axis -4 is out of bounds for axis 0 with size 2
-        raise ValueError(f"Invalid axis {str(err)[6:]}")
+        # original msg looks like: "index -4 is out of bounds for axis 0 with size 2"
+        msg = str(err)
+        msg = msg.removeprefix('index ').split(' axis ', 1)[0]
+        # Final error is: "Invalid axis: -4 is out of bounds for ndim=2"
+        raise ValueError(f"Invalid axis: {msg} ndim={A.ndim}")
     axes = tuple(axes)
     return permute_dims(A, axes=axes, copy=True)
 
@@ -159,6 +162,9 @@ def permute_dims(A, axes=None, copy=False):
     if len(canon_axes) != len(set(canon_axes)):
         raise ValueError("Duplicate value in axes")
     # -------------End of code from  _sputils.validateaxis
+    axes = canon_axes
+    if axes == list(range(ndim)):
+        return A if not copy else A.copy()
 
     A = A.tocoo(copy=copy)
     A._shape = tuple(A.shape[idx] for idx in axes)

@@ -896,6 +896,7 @@ def test_diags_int_to_float64(func):
     expected = np.array([[1.0, 4.0], [3.0, 2.0]])
     assert_array_equal(arr.toarray(), expected, strict=True)
 
+
 def test_swapaxes():
     # Borrowed from Numpy swapaxes tests
     x = np.array([8.375, 7.545, 8.828, 8.5, 1.757, 5.928,
@@ -912,6 +913,7 @@ def test_swapaxes():
     sXXswapped = construct.swapaxes(sXX, 0, 2)
     assert_equal(sXXswapped.shape, (2, 2, 3, 3))
 
+
 def test_3d_swapaxes():
     tgt = [[[0, 0], [2, 6]], [[1, 5], [0, 7]]]
     x = np.array([[[0, 1], [2, 0]], [[0, 5], [6, 7]]])
@@ -919,6 +921,7 @@ def test_3d_swapaxes():
     out = construct.swapaxes(A, 0, 2)
     assert_equal(out.toarray(), tgt)
     assert_equal(out.toarray(), np.swapaxes(x, 0, 2))
+
 
 @pytest.mark.parametrize("format", sparse_formats)
 def test_sparse_format_swapaxes(format):
@@ -930,6 +933,7 @@ def test_sparse_format_swapaxes(format):
     assert out.shape == (3, 2)
     assert_equal(out.toarray(), np.swapaxes(A, 1, 0))
     assert not out.has_canonical_format
+
 
 def test_axis_swapaxes():
     A = coo_array([[2, 0], [3, 5]])
@@ -945,11 +949,13 @@ def test_axis_swapaxes():
         construct.swapaxes(A, 1.2, 1)
     with assert_raises(ValueError, match="Invalid axis"):
         construct.swapaxes(A, 1, 1.2)
+    assert_equal(construct.swapaxes(A, 0, 0).toarray(), A.toarray())
     for i in range(2):
         assert_equal(
             construct.swapaxes(A, i, 1 - i).toarray(),
             construct.swapaxes(A, i - 2, -1 - i).toarray()
         )
+
 
 def test_permute_dims():
     # Borrowed from Numpy tests.
@@ -977,6 +983,7 @@ def test_permute_dims():
     # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
     assert_equal(sXXpermuted.toarray(), np.transpose(npxx, axes=(0, 2, 1, 3)))
 
+
 def test_3d_permute_dims():
     tgt = [[[0], [2], [0], [6]], [[1], [0], [5], [7]]]
     x = np.array([[[0, 1], [2, 0], [0, 5], [6, 7]]])
@@ -987,6 +994,7 @@ def test_3d_permute_dims():
     assert_equal(out.toarray(), tgt)
     # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
     assert_equal(out.toarray(), np.transpose(x, axes=(2, 1, 0)))
+
 
 def test_axis_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
@@ -1014,6 +1022,11 @@ def test_axis_permute_dims():
         construct.permute_dims(A, axes=None, copy=True).toarray(),
         A.transpose(axes=(1, 0), copy=True).toarray()
     )
+    assert_equal(
+        construct.permute_dims(A, axes=(0, 1), copy=True).toarray(), A.toarray()
+    )
+    assert construct.permute_dims(A, axes=(0, 1)) is A
+
 
 @pytest.mark.parametrize("format", sparse_formats)
 def test_sparse_format_permute_dims(format):
@@ -1026,6 +1039,7 @@ def test_sparse_format_permute_dims(format):
     # TODO change np.transpose to np.permute_dims when numpy 2 is min supported version
     assert_equal(out.toarray(), np.transpose(A, axes=(1, 0)))
     assert not out.has_canonical_format
+
 
 def test_expand_dims():
     # Borrowed from Numpy tests.
@@ -1056,11 +1070,13 @@ def test_expand_dims():
     assert_equal(sXXexpanded.shape, (3, 2, 2, 1, 3))
     assert_equal(sXXexpanded.toarray(), npxx_expanded)
 
+
 def test_3d_expand_dims():
     tgt = [[[[0, 0], [2, 6]]], [[[1, 5], [0, 7]]]]
     A = coo_array([[[0, 0], [2, 6]], [[1, 5], [0, 7]]])
     out = construct.expand_dims(A, axis=1)
     assert_equal(out.toarray(), tgt)
+
 
 @pytest.mark.parametrize("format", sparse_formats)
 def test_sparse_format_expand_dims(format):
@@ -1072,6 +1088,7 @@ def test_sparse_format_expand_dims(format):
     assert out.shape == (2, 1, 2)
     assert_equal(out.toarray(), np.expand_dims(A, axis=1))
     assert SA.tocoo().has_canonical_format == out.has_canonical_format
+
 
 def test_axis_expand_dims():
     A = coo_array([[2, 0], [3, 5]])
