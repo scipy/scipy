@@ -9105,8 +9105,8 @@ class TestLMoment:
 
     @pytest.mark.parametrize('order', [1, 4, [1, 2, 3, 4]])
     @pytest.mark.parametrize('standardize', [False, True])
-    @pytest.mark.parametrize('sorted', [False, True])
-    def test_lmoment(self, order, standardize, sorted, xp):
+    @pytest.mark.parametrize('presorted', [False, True])
+    def test_lmoment(self, order, standardize, presorted, xp):
         # Reference values from R package `lmom`
         # options(digits=16)
         # library(lmom)
@@ -9118,10 +9118,10 @@ class TestLMoment:
         if not standardize:
             ref = xpx.at(ref)[2:].multiply(ref[1])
 
-        data = np.sort(self.data) if sorted else self.data
+        data = sorted(self.data) if presorted else self.data
         data = xp.asarray(data)
 
-        res = stats.lmoment(data, order, standardize=standardize, sorted=sorted)
+        res = stats.lmoment(data, order, standardize=standardize, sorted=presorted)
         xp_assert_close(res, ref[xp.asarray(order)-1])
 
     def test_dtype(self, xp):

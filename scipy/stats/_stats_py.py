@@ -10280,18 +10280,21 @@ def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
     # input validation of non-array types can still be performed with NumPy
     axis = np.asarray(axis)[()]
     message = "`axis` must be an integer."
-    if not np.isdtype(axis.dtype, "integral") or axis.ndim != 0:
+    if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
         raise ValueError(message)
+    axis = int(axis)
 
     sorted = np.asarray(sorted)[()]
     message = "`sorted` must be True or False."
-    if not np.isdtype(sorted.dtype, "bool") or sorted.ndim != 0:
+    if not np.issubdtype(sorted.dtype, np.bool_) or sorted.ndim != 0:
         raise ValueError(message)
+    sorted = bool(sorted)
 
     standardize = np.asarray(standardize)[()]
     message = "`standardize` must be True or False."
-    if not np.isdtype(standardize.dtype, "bool") or standardize.ndim != 0:
+    if not np.issubdtype(standardize.dtype, np.bool_) or standardize.ndim != 0:
         raise ValueError(message)
+    standardize = bool(standardize)
 
     sample = xp.moveaxis(sample, axis, -1)
     sample = xp.sort(sample, axis=-1) if not sorted else sample
@@ -10327,7 +10330,8 @@ def _triu(x, xp):
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
-                 jax_jit=False)
+                 jax_jit=False, cpu_only=True,  # torch doesn't have `binom`
+                 exceptions=('cupy', 'jax.numpy'))
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
     n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
