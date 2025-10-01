@@ -136,6 +136,7 @@ jobs:
       - name: Test SciPy
         run: |
           pip install -r requirements/build.txt
+          pip install -r requirements/dev.txt
           spin build --with-accelerate
           pip install -r requirements/test.txt
           spin test
