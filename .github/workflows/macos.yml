@@ -135,6 +135,7 @@ jobs:
 
       - name: Test SciPy
         run: |
+          alias gfortran=gfortran-13
           pip install -r requirements/build.txt
           pip install -r requirements/dev.txt
           spin build --with-accelerate
