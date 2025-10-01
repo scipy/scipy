@@ -339,7 +339,6 @@ def solve_discrete_lyapunov(a, q, method=None):
     return x
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
 def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     r"""
     Solves the continuous-time algebraic Riccati equation (CARE).
@@ -368,6 +367,11 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix with sizes compatible with ``a`` and
     ``b``, respectively.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -458,7 +462,12 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     True
 
     """
+    # ensure that all arguments are present when using `_apply_over_batch` (gh-23336)
+    return _solve_continuous_are(a, b, q, r, e, s, balanced)
 
+
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+def _solve_continuous_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'care')
@@ -545,7 +554,6 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     return (x + x.conj().T)/2
 
 
-@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
 def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     r"""
     Solves the discrete-time algebraic Riccati equation (DARE).
@@ -573,6 +581,11 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -666,7 +679,12 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     True
 
     """
+    # ensure that all arguments are present when using `_apply_over_batch` (gh-23336)
+    return _solve_discrete_are(a, b, q, r, e, s, balanced)
 
+
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
+def _solve_discrete_are(a, b, q, r, e, s, balanced):
     # Validate input arguments
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'dare')
