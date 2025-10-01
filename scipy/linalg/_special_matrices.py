@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
@@ -155,7 +156,7 @@ def circulant(c):
 
 
 def hankel(c, r=None):
-    """
+    r"""
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
@@ -168,13 +169,17 @@ def hankel(c, r=None):
     Parameters
     ----------
     c : array_like
-        First column of the matrix. Whatever the actual shape of `c`, it
-        will be converted to a 1-D array.
+        First column of the matrix.
     r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
-        ``[c[-1], r[1:]]``. Whatever the actual shape of `r`, it will be
-        converted to a 1-D array.
+        ``[c[-1], r[1:]]``.
+
+        .. warning::
+
+            Beginning in SciPy 1.19, multidimensional input will be treated as a batch,
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+            before passing them to `toeplitz`.
 
     Returns
     -------
@@ -200,11 +205,19 @@ def hankel(c, r=None):
            [4, 7, 7, 8, 9]])
 
     """
-    c = np.asarray(c).ravel()
+    c = np.asarray(c)
     if r is None:
         r = np.zeros_like(c)
     else:
-        r = np.asarray(r).ravel()
+        r = np.asarray(r)
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.19, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` arguments before passing them to `hankel`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        c, r = c.ravel(), r.ravel()
+
     # Form a 1-D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
