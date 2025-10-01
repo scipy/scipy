@@ -7350,8 +7350,10 @@ class TestSigmaClip:
         assert_equal(stats.sigmaclip(x)[0], x)
 
 
+@make_xp_test_case(stats.alexandergovern)
 class TestAlexanderGovern:
     def test_compare_dtypes(self):
+        # leave this NumPy only
         args = [[13, 13, 13, 13, 13, 13, 13, 12, 12],
                 [14, 13, 12, 12, 12, 12, 12, 11, 11],
                 [14, 14, 13, 13, 13, 13, 13, 12, 12],
@@ -7371,22 +7373,27 @@ class TestAlexanderGovern:
         assert (res_int16.statistic == res_int32.statistic ==
                 res_uint8.statistic == res_float64.statistic)
 
+    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
     @pytest.mark.parametrize('case',[([1, 2], []), ([1, 2], 2), ([1, 2], [2])])
-    def test_too_small_inputs(self, case):
+    def test_too_small_inputs(self, case, xp):
         # input array is of size zero or too small
+        dtype = xp_default_dtype(xp)
+        case = xp.asarray(case[0], dtype=dtype), xp.asarray(case[1], dtype=dtype)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.alexandergovern(*case)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_bad_inputs(self):
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+    def test_bad_inputs(self, xp):
         # inputs are not finite (infinity)
-        with np.errstate(invalid='ignore'):
-            res = stats.alexandergovern([1, 2], [np.inf, np.inf])
-        assert_equal(res.statistic, np.nan)
-        assert_equal(res.pvalue, np.nan)
+        samples = xp.asarray([1., 2.]), xp.asarray([xp.inf, xp.inf])
+        res = stats.alexandergovern(*samples)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_compare_r(self):
+    def test_compare_r(self, xp):
         '''
         Data generated in R with
         > set.seed(1)
@@ -7449,12 +7456,12 @@ class TestAlexanderGovern:
                  6.659007424270365, 21.261996745527256, -6.083678472686013,
                  7.400376198325763, 5.341975815444621]
 
-        one, two, eight = np.asarray(one), np.asarray(two), np.asarray(eight)
+        one, two, eight = xp.asarray(one), xp.asarray(two), xp.asarray(eight)
         soln = stats.alexandergovern(one, two, eight)
-        assert_allclose(soln.statistic, 1.3599405447999450836)
-        assert_allclose(soln.pvalue, 0.50663205309676440091)
+        xp_assert_close(soln.statistic, xp.asarray(1.3599405447999450836))
+        xp_assert_close(soln.pvalue, xp.asarray(0.50663205309676440091))
 
-    def test_compare_scholar(self):
+    def test_compare_scholar(self, xp):
         '''
         Data taken from 'The Modification and Evaluation of the
         Alexander-Govern Test in Terms of Power' by Kingsley Ochuko, T.,
@@ -7467,10 +7474,10 @@ class TestAlexanderGovern:
                   487.3, 493.08, 494.31, 499.1, 886.41]
         old = [519.01, 528.5, 530.23, 536.03, 538.56, 538.83, 557.24, 558.61,
                558.95, 565.43, 586.39, 594.69, 629.22, 645.69, 691.84]
-        young, middle, old = np.asarray(young), np.asarray(middle), np.asarray(old)
+        young, middle, old = xp.asarray(young), xp.asarray(middle), xp.asarray(old)
         soln = stats.alexandergovern(young, middle, old)
-        assert_allclose(soln.statistic, 5.3237, atol=1e-3)
-        assert_allclose(soln.pvalue, 0.06982, atol=1e-4)
+        xp_assert_close(soln.statistic, xp.asarray(5.3237), atol=1e-3)
+        xp_assert_close(soln.pvalue, xp.asarray(0.06982), atol=1e-4)
 
         # verify with ag.test in r
         '''
@@ -7502,10 +7509,10 @@ class TestAlexanderGovern:
         -------------------------------------------------------------
 
         '''
-        assert_allclose(soln.statistic, 5.324629)
-        assert_allclose(soln.pvalue, 0.06978651)
+        xp_assert_close(soln.statistic, xp.asarray(5.324629), rtol=1e-7)
+        xp_assert_close(soln.pvalue, xp.asarray(0.06978651), rtol=1e-7)
 
-    def test_compare_scholar3(self):
+    def test_compare_scholar3(self, xp):
         '''
         Data taken from 'Robustness And Comparative Power Of WelchAspin,
         Alexander-Govern And Yuen Tests Under Non-Normality And Variance
@@ -7520,10 +7527,10 @@ class TestAlexanderGovern:
               -0.3601, -0.33273, -0.28859, -0.09637, -0.08969, -0.01824,
               0.260131, 0.289278, 0.518254, 0.683003, 0.877618, 1.172475,
               1.33964, 1.576766]
-        x1, x2 = np.asarray(x1), np.asarray(x2)
+        x1, x2 = xp.asarray(x1), xp.asarray(x2)
         soln = stats.alexandergovern(x1, x2)
-        assert_allclose(soln.statistic, 0.713526, atol=1e-5)
-        assert_allclose(soln.pvalue, 0.398276, atol=1e-5)
+        xp_assert_close(soln.statistic, xp.asarray(0.713526), atol=1e-5)
+        xp_assert_close(soln.pvalue, xp.asarray(0.398276), atol=1e-5)
 
         '''
         tested in ag.test in R:
@@ -7553,37 +7560,57 @@ class TestAlexanderGovern:
         Result     : Difference is not statistically significant.
         -------------------------------------------------------------
         '''
-        assert_allclose(soln.statistic, 0.7135182)
-        assert_allclose(soln.pvalue, 0.3982783)
+        xp_assert_close(soln.statistic, xp.asarray(0.7135182), rtol=1e-7)
+        xp_assert_close(soln.pvalue, xp.asarray(0.3982783), rtol=1e-7)
 
-    def test_nan_policy_propagate(self):
-        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
+    def test_nan_policy_propagate(self, xp):
+        args = xp.asarray([1., 2., 3., 4.]), xp.asarray([1, xp.nan])
         # default nan_policy is 'propagate'
         res = stats.alexandergovern(*args)
-        assert_equal(res.pvalue, np.nan)
-        assert_equal(res.statistic, np.nan)
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
 
-    def test_nan_policy_raise(self):
-        args = np.asarray([1, 2, 3, 4]), np.asarray([1, np.nan])
+    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    def test_nan_policy_raise(self, xp):
+        args = xp.asarray([1., 2., 3., 4.]), xp.asarray([1., xp.nan])
         with assert_raises(ValueError, match="The input contains nan values"):
             stats.alexandergovern(*args, nan_policy='raise')
 
-    def test_nan_policy_omit(self):
-        args_nan = np.asarray([1, 2, 3, np.nan, 4]), np.asarray([1, np.nan, 19, 25])
-        args_no_nan = np.asarray([1, 2, 3, 4]), np.asarray([1, 19, 25])
+    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    def test_nan_policy_omit(self, xp):
+        args_nan = xp.asarray([1, 2, 3, xp.nan, 4]), xp.asarray([1, xp.nan, 19, 25])
+        args_no_nan = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 19, 25])
         res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
         res_no_nan = stats.alexandergovern(*args_no_nan)
-        assert_equal(res_nan.pvalue, res_no_nan.pvalue)
-        assert_equal(res_nan.statistic, res_no_nan.statistic)
+        xp_assert_equal(res_nan.pvalue, res_no_nan.pvalue)
+        xp_assert_equal(res_nan.statistic, res_no_nan.statistic)
 
-    def test_constant_input(self):
+    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    def test_constant_input(self, xp):
         # Zero variance input, consistent with `stats.pearsonr`
-        x1 = np.asarray([0.667, 0.667, 0.667])
-        x2 = np.asarray([0.123, 0.456, 0.789])
+        x1 = xp.asarray([0.667, 0.667, 0.667])
+        x2 = xp.asarray([0.123, 0.456, 0.789])
         with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             res = stats.alexandergovern(x1, x2)
-        assert_equal(res.statistic, np.nan)
-        assert_equal(res.pvalue, np.nan)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+
+    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    def test_2d_input(self, xp, axis):
+        # much more extensive testing for NumPy in `test_axis_nan_policy.py`
+        rng = np.random.default_rng(23498389754392854235)
+        shape = (11, 12)
+        samples = [rng.random(shape) for i in range(3)]
+        xp_samples = [xp.asarray(sample) for sample in samples]
+        ref = stats.alexandergovern(*samples, axis=axis)
+        res = stats.alexandergovern(*xp_samples, axis=axis)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
 
 
 class TestFOneWay:
