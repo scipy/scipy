@@ -600,7 +600,8 @@ def test_gh18919_ppf_array_args():
     res = stats.binom.ppf(q, n, p)
     np.testing.assert_allclose(res, ref)
 
-def test_gh18919_ppf_isf_array_args2():
+@pytest.mark.parametrize("dist", [stats.binom, stats.boltzmann])
+def test_gh18919_ppf_isf_array_args2(dist):
     # a more general version of the test above. Requires that arguments are broadcasted
     # by the infrastructure.
     rng = np.random.default_rng(34873457824358729823)
@@ -612,12 +613,12 @@ def test_gh18919_ppf_isf_array_args2():
     q[rng.random(size=30) > 0.7] = 0
     q[rng.random(size=30) > 0.7] = 1
 
-    res = stats.binom.ppf(q, n, p, loc=loc)
-    ref = _ufuncs._binom_ppf(q, n, p) + loc
-    ref[np.broadcast_to(q, ref.shape) == 0] -= 1
+    args = (q, n, p) if dist == stats.binom else (q, p, n)
+
+    res = dist.ppf(*args, loc=loc)
+    ref = np.vectorize(dist.ppf)(*args) + loc
     np.testing.assert_allclose(res, ref)
 
-    res = stats.binom.isf(q, n, p, loc=loc)
-    ref = _ufuncs._binom_isf(q, n, p) + loc
-    ref[np.broadcast_to(q, ref.shape) == 1] -= 1
+    res = dist.isf(*args, loc=loc)
+    ref = np.vectorize(dist.isf)(*args) + loc
     np.testing.assert_allclose(res, ref)
