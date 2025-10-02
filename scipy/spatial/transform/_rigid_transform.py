@@ -14,11 +14,13 @@ from scipy._lib._array_api import (
     xp_capabilities,
 )
 from scipy.spatial.transform import Rotation
+from scipy.spatial.transform._rotation import _promote
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as xp_backend
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_compat import device
 from scipy._lib._array_api import xp_promote
+from scipy._lib._util import broadcastable
 
 
 __all__ = ["RigidTransform"]
@@ -26,7 +28,16 @@ __all__ = ["RigidTransform"]
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def select_backend(xp: ModuleType):
+def select_backend(xp: ModuleType, cython_compatible: bool):
+    """Select the backend for the given array library.
+
+    We need this selection function because the Cython backend for numpy does not
+    support quaternions of arbitrary dimensions. We therefore only use the Array API
+    backend for numpy if we are dealing with rotations of more than one leading
+    dimension.
+    """
+    if is_numpy(xp) and not cython_compatible:
+        return xp_backend
     return backend_registry.get(xp, xp_backend)
 
 
@@ -34,7 +45,15 @@ def select_backend(xp: ModuleType):
 def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
     xp = array_namespace(dual_quat)
-    return select_backend(xp).normalize_dual_quaternion(dual_quat)
+    dual_quat = _promote(dual_quat, xp=xp)
+    single = dual_quat.ndim == 1 and is_numpy(xp)
+    if single:
+        dual_quat = xpx.atleast_nd(dual_quat, ndim=2, xp=xp)
+    cython_compatible = dual_quat.ndim < 3
+    dq = select_backend(xp, cython_compatible).normalize_dual_quaternion(dual_quat)
+    if single:
+        return dq[0]
+    return dq
 
 
 class RigidTransform:
@@ -374,11 +393,10 @@ class RigidTransform:
         """
         xp = array_namespace(matrix)
         self._xp = xp
-        matrix = xp_promote(matrix, force_floating=True, xp=xp)
-        if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
+        matrix = _promote(matrix, xp=xp)
+        if matrix.shape[-2:] != (4, 4):
             raise ValueError(
-                "Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
-                f"got {matrix.shape}."
+                f"Expected `matrix` to have shape (..., 4, 4), got {matrix.shape}."
             )
         # We only need the _single flag for the cython backend. The Array API backend
         # uses broadcasting by default and hence returns the correct shape without
@@ -387,7 +405,7 @@ class RigidTransform:
         if self._single:
             matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        self._backend = select_backend(xp)
+        self._backend = select_backend(xp, matrix.ndim < 4)
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
@@ -542,11 +560,7 @@ class RigidTransform:
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        if quat.ndim > 2:  # Rotations now can have arbitrary leading dimensions
-            raise ValueError(
-                "Rotations with more than 1 leading dimension are not supported."
-            )
-        backend = select_backend(xp)
+        backend = select_backend(xp, quat.ndim < 3)
         matrix = backend.from_rotation(quat)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -617,7 +631,8 @@ class RigidTransform:
         2
         """
         xp = array_namespace(translation)
-        backend = select_backend(xp)
+        translation = _promote(translation, xp=xp)
+        backend = select_backend(xp, translation.ndim < 3)
         matrix = backend.from_translation(translation)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -778,12 +793,11 @@ class RigidTransform:
         """
         xp = array_namespace(exp_coords)
         exp_coords = xp_promote(exp_coords, force_floating=True, xp=xp)
-        if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
+        if exp_coords.shape[-1] != 6:
             raise ValueError(
-                "Expected `exp_coords` to have shape (6,), or (N, 6), "
-                f"got {exp_coords.shape}."
+                f"Expected `exp_coords` to have shape (..., 6), got {exp_coords.shape}."
             )
-        backend = select_backend(xp)
+        backend = select_backend(xp, cython_compatible=exp_coords.ndim < 3)
         matrix = backend.from_exp_coords(exp_coords)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -840,7 +854,8 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        backend = select_backend(xp)
+        dual_quat = _promote(dual_quat, xp=xp)
+        backend = select_backend(xp, dual_quat.ndim < 3)
         matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
         return RigidTransform._from_raw_matrix(matrix, xp, backend)
 
@@ -1410,8 +1425,14 @@ class RigidTransform:
             # If other is not a RigidTransform, we return NotImplemented to allow other
             # types to implement __rmul__
             return NotImplemented
-
-        matrix = self._backend.compose_transforms(self._matrix, other._matrix)
+        if not broadcastable(self._matrix.shape, other._matrix.shape):
+            raise ValueError(
+                f"Cannot broadcast {self._matrix.shape[:-2]} transforms in "
+                f"first to {other._matrix.shape[:-2]} transforms in second object."
+            )
+        cython_compatible = self._matrix.ndim < 4 and other._matrix.ndim < 4
+        backend = select_backend(self._xp, cython_compatible=cython_compatible)
+        matrix = backend.compose_transforms(self._matrix, other._matrix)
         # Only necessary for cython. Array API broadcasting handles this by default
         if self._single and other._single:
             matrix = matrix[0, ...]
@@ -1689,7 +1710,9 @@ class RigidTransform:
         vector = xp.asarray(
             vector, dtype=self._matrix.dtype, device=device(self._matrix)
         )
-        result = self._backend.apply(self._matrix, vector, inverse)
+        cython_compatible = self._matrix.ndim < 4 and vector.ndim < 3
+        backend = select_backend(xp, cython_compatible=cython_compatible)
+        result = backend.apply(self._matrix, vector, inverse)
         if self._single and vector.ndim == 1:
             result = result[0, ...]
         return result
@@ -1770,6 +1793,13 @@ class RigidTransform:
         """
         return self._single or self._matrix.ndim == 2
 
+    @property
+    def shape(self) -> tuple[int, ...]:
+        """The shape of the transform's leading dimensions."""
+        if self._single or self._matrix.ndim == 2:
+            return ()
+        return self._matrix.shape[:-2]
+
     def __reduce__(self) -> tuple[Callable, tuple]:
         """Reduce the RigidTransform for pickling.
 
@@ -1811,6 +1841,6 @@ class RigidTransform:
         tf._matrix = matrix
         tf._xp = xp
         if backend is None:
-            backend = select_backend(xp)
+            backend = select_backend(xp, matrix.ndim < 4)
         tf._backend = backend
         return tf

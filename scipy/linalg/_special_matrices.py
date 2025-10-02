@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
@@ -25,6 +26,11 @@ def toeplitz(c, r=None):
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -88,6 +94,10 @@ def circulant(c):
     """
     Construct a circulant matrix.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     c : (..., N,)  array_like
@@ -146,7 +156,7 @@ def circulant(c):
 
 
 def hankel(c, r=None):
-    """
+    r"""
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
@@ -159,13 +169,17 @@ def hankel(c, r=None):
     Parameters
     ----------
     c : array_like
-        First column of the matrix. Whatever the actual shape of `c`, it
-        will be converted to a 1-D array.
+        First column of the matrix.
     r : array_like, optional
         Last row of the matrix. If None, ``r = zeros_like(c)`` is assumed.
         r[0] is ignored; the last row of the returned matrix is
-        ``[c[-1], r[1:]]``. Whatever the actual shape of `r`, it will be
-        converted to a 1-D array.
+        ``[c[-1], r[1:]]``.
+
+        .. warning::
+
+            Beginning in SciPy 1.19, multidimensional input will be treated as a batch,
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+            before passing them to `toeplitz`.
 
     Returns
     -------
@@ -191,11 +205,19 @@ def hankel(c, r=None):
            [4, 7, 7, 8, 9]])
 
     """
-    c = np.asarray(c).ravel()
+    c = np.asarray(c)
     if r is None:
         r = np.zeros_like(c)
     else:
-        r = np.asarray(r).ravel()
+        r = np.asarray(r)
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.19, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` arguments before passing them to `hankel`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+        c, r = c.ravel(), r.ravel()
+
     # Form a 1-D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
@@ -271,6 +293,11 @@ def leslie(f, s):
     n-1 array of survival coefficients `s`, return the associated Leslie
     matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     f : (N,) array_like
@@ -342,12 +369,16 @@ def block_diag(*arrs):
          [0, B, 0],
          [0, 0, C]]
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     A, B, C, ... : array_like
         Input arrays.  A 1-D array or array_like sequence of length ``n`` is
-        treated as a 2-D array with shape ``(1, n)``. Any dimensions before
-        the last two are treated as batch dimensions; see :ref:`linalg_batch`.
+        treated as a 2-D array with shape ``(1, n)``.
 
     Returns
     -------
@@ -421,6 +452,10 @@ def companion(a):
 
     Create the companion matrix [1]_ associated with the polynomial whose
     coefficients are given in `a`.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -917,6 +952,10 @@ def fiedler(a):
     eigenvalues are negative. Although not valid generally, for certain inputs,
     the inverse and the determinant can be derived explicitly as given in [1]_.
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     a : (..., n,) array_like
@@ -993,6 +1032,10 @@ def fiedler_companion(a):
     Given a polynomial coefficient array ``a``, this function forms a
     pentadiagonal matrix with a special structure whose eigenvalues coincides
     with the roots of ``a``.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -1076,6 +1119,10 @@ def convolution_matrix(a, n, mode='full'):
 
     Constructs the Toeplitz matrix representing one-dimensional
     convolution [1]_.  See the notes below for details.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
