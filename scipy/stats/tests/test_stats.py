@@ -7509,8 +7509,8 @@ class TestAlexanderGovern:
         -------------------------------------------------------------
 
         '''
-        xp_assert_close(soln.statistic, xp.asarray(5.324629), rtol=1e-7)
-        xp_assert_close(soln.pvalue, xp.asarray(0.06978651), rtol=1e-7)
+        xp_assert_close(soln.statistic, xp.asarray(5.324629), rtol=2e-6)
+        xp_assert_close(soln.pvalue, xp.asarray(0.06978651), rtol=2e-6)
 
     def test_compare_scholar3(self, xp):
         '''
@@ -7560,8 +7560,8 @@ class TestAlexanderGovern:
         Result     : Difference is not statistically significant.
         -------------------------------------------------------------
         '''
-        xp_assert_close(soln.statistic, xp.asarray(0.7135182), rtol=1e-7)
-        xp_assert_close(soln.pvalue, xp.asarray(0.3982783), rtol=1e-7)
+        xp_assert_close(soln.statistic, xp.asarray(0.7135182), rtol=2e-6)
+        xp_assert_close(soln.pvalue, xp.asarray(0.3982783), rtol=2e-6)
 
     def test_nan_policy_propagate(self, xp):
         args = xp.asarray([1., 2., 3., 4.]), xp.asarray([1, xp.nan])

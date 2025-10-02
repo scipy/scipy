@@ -4182,6 +4182,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     # (9) calculate statistic
     A = xp.vecdot(z, z, axis=-z.ndim)
+    A = A[()] if A.ndim == 1 else A  # data-apis/array-api-compat#355
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
