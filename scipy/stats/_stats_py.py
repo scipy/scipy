@@ -4038,7 +4038,7 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
@@ -4132,7 +4132,8 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     the alternative.
 
     """
-    samples = _alexandergovern_input_validation(samples, nan_policy, axis)
+    xp = array_namespace(*samples)
+    samples = _alexandergovern_input_validation(samples, nan_policy, axis, xp=xp)
 
     # The following formula numbers reference the equation described on
     # page 92 by Alexander, Govern. Formulas 5, 6, and 7 describe other
@@ -4141,38 +4142,38 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
 
     # precalculate mean and length of each sample
     lengths = [sample.shape[-1] for sample in samples]
-    means = np.asarray([_xp_mean(sample, axis=-1) for sample in samples])
+    means = xp.stack([_xp_mean(sample, axis=-1) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
     se2 = [(_xp_var(sample, correction=1, axis=-1) / length)
            for sample, length in zip(samples, lengths)]
-    standard_errors_squared = np.asarray(se2)
+    standard_errors_squared = xp.stack(se2)
     standard_errors = standard_errors_squared**0.5
 
     # Special case: statistic is NaN when variance is zero
-    eps = np.finfo(standard_errors.dtype).eps
-    zero = standard_errors <= np.abs(eps * means)
-    NaN = np.asarray(np.nan, dtype=standard_errors.dtype)
-    standard_errors = np.where(zero, NaN, standard_errors)
+    eps = xp.finfo(standard_errors.dtype).eps
+    zero = standard_errors <= xp.abs(eps * means)
+    NaN = xp.asarray(xp.nan, dtype=standard_errors.dtype)
+    standard_errors = xp.where(zero, NaN, standard_errors)
 
     # (2) define a weight for each sample
     inv_sq_se = 1 / standard_errors_squared
-    weights = inv_sq_se / np.sum(inv_sq_se, axis=0, keepdims=True)
+    weights = inv_sq_se / xp.sum(inv_sq_se, axis=0, keepdims=True)
 
     # (3) determine variance-weighted estimate of the common mean
     # Consider replacing with vecdot when data-apis/array-api#910 is resolved
-    var_w = np.sum(weights * means, axis=0, keepdims=True)
+    var_w = xp.sum(weights * means, axis=0, keepdims=True)
 
     # (4) determine one-sample t statistic for each group
-    t_stats = _demean(means, var_w, axis=0, xp=np) / standard_errors
+    t_stats = _demean(means, var_w, axis=0, xp=xp) / standard_errors
 
     # calculate parameters to be used in transformation
-    v = np.asarray(lengths) - 1
+    v = xp.asarray(lengths, dtype=t_stats.dtype) - 1
     # align along 0th axis, which corresponds with separate samples
-    v = np.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
+    v = xp.reshape(v, (-1,) + (1,)*(t_stats.ndim-1))
     a = v - .5
     b = 48 * a**2
-    c = (a * np.log(1 + (t_stats ** 2)/v))**.5
+    c = (a * xp.log(1 + (t_stats ** 2)/v))**.5
 
     # (8) perform a normalizing transformation on t statistic
     z = (c + ((c**3 + 3*c)/b) -
@@ -4180,17 +4181,18 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
           (b**2*10 + 8*b*c**4 + 1000*b)))
 
     # (9) calculate statistic
-    A = np_vecdot(z, z, axis=0)
+    A = xp.vecdot(z, z, axis=-z.ndim)
+    A = A[()] if A.ndim == 0 else A  # data-apis/array-api-compat#355
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    df = len(samples) - 1
+    df = xp.asarray(len(samples) - 1, dtype=A.dtype)
     chi2 = _SimpleChi2(df)
-    p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=np)
+    p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=xp)
     return AlexanderGovernResult(A, p)
 
 
-def _alexandergovern_input_validation(samples, nan_policy, axis):
+def _alexandergovern_input_validation(samples, nan_policy, axis, xp):
     if len(samples) < 2:
         raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
@@ -4198,7 +4200,7 @@ def _alexandergovern_input_validation(samples, nan_policy, axis):
         if sample.shape[axis] <= 1:
             raise ValueError("Input sample size must be greater than one.")
 
-    samples = [np.moveaxis(sample, axis, -1) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     return samples
 
