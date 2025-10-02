@@ -520,7 +520,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
     jj = 0;
     TRLIB_PRINTLN_2("%ld\t Reg %e\t Reg/Norm %e\t lb %e ub %e", jj, *lam, *lam/(*norm_sol), sigma_l, sigma_u);
 
-    // check if accetable
+    // check if acceptable
     if( *norm_sol * sigma_l <= *lam && *lam <= *norm_sol * sigma_u ) {
         TRLIB_PRINTLN_1("Exit with Regularization Factor %e and Reg/Norm %e", *lam, *lam/(*norm_sol))
         TRLIB_RETURN(TRLIB_TTR_CONV_INTERIOR);
