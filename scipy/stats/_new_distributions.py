@@ -479,22 +479,22 @@ class Binomial(DiscreteDistribution):
         return scu._binom_cdf(x, n, p)
 
     def _logcdf_formula(self, x, *, n, p, **kwargs):
-        # todo: add this strategy to infrastructure more generally while avoiding
-        # expensive calculations to figure out which tail we're in
-        mode = self._mode_formula(n=n, p=p)
-        return xpx.apply_where(x < mode, (x, n, p),
+        # todo: add this strategy to infrastructure more generally, but allow dist
+        #   author to specify threshold other than median in case median is expensive
+        median = self._icdf_formula(0.5, n=n, p=p)
+        return xpx.apply_where(x < median, (x, n, p),
             lambda *args: np.log(scu._binom_cdf(*args)),
-            lambda *args: scu._log1mexp(np.log(scu._binom_sf(*args)))
+            lambda *args: np.log1p(-scu._binom_sf(*args))
         )
 
     def _ccdf_formula(self, x, *, n, p, **kwargs):
         return scu._binom_sf(x, n, p)
 
     def _logccdf_formula(self, x, *, n, p, **kwargs):
-        mode = self._mode_formula(n=n, p=p)
-        return xpx.apply_where(x > mode, (x, n, p),
-            lambda *args: np.log(scu._binom_sf(*args)),
-            lambda *args: scu._log1mexp(np.log(scu._binom_cdf(*args)))
+        median = self._icdf_formula(0.5, n=n, p=p)
+        return xpx.apply_where(x < median, (x, n, p),
+            lambda *args: np.log1p(-scu._binom_cdf(*args)),
+            lambda *args: np.log(scu._binom_sf(*args))
         )
 
     def _icdf_formula(self, x, *, n, p, **kwargs):
