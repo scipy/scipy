@@ -902,16 +902,18 @@ stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
 static void
 stoda(
     int* neq, double* y, double* yh, int nyh, double* ewt,
-    double* svaf, double* acor, double* wm, int* iwm, lsoda_func_t f,
+    double* savf, double* acor, double* wm, int* iwm, lsoda_func_t f,
     lsoda_jac_t jac, lsoda_common_struct_t* S)
 {
     const double sm1[12] = {0.5, 0.575, 0.55, 0.45, 0.35, 0.25, 0.20, 0.15, 0.10, 0.075, 0.050, 0.025};
     lsoda_corrector_status_t corrector_status;
+    double rh = 0.0, dsm = 0.0, exup = 0.0, exdn = 0.0, exsm = 0.0, rhup = 0.0, rhdn = 0.0, rhsm = 0.0;
+    double told = S->tn, dup = 0.0, ddn = 0.0;
+    double dm1, dm2, exm1, exm2, rh1, rh2, rh1it, pdh;
+    int newq = 0, nqm1 = 0, nqm2 = 0, ncf = 0, lm1 = 0, lm2 = 0;
     int should_reset_rmax = 0;  // Flag to track if we should go to label 690 (rmax reset + exit)
-    double rh = 0.0, dsm = 0.0;
+
     S->kflag = 0;
-    double told = S->tn;
-    int ncf = 0;
     S->ierpj = 0;
     S->iersl = 0;
     S->jcur = 0;
@@ -939,7 +941,11 @@ stoda(
                 S->ialth = S->l;
                 stoda_reset(S);
             }
-            // Fall through to 160, no break
+            if (S->h == S->hold) { break; }
+            rh = S->h / S->hold;
+            S->h = S->hold;
+            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
+            break;
         }
 
         case -2:  // Step change only
@@ -967,7 +973,7 @@ stoda(
         double del_corrector = 0.0;
 
         // Corrector loop 220
-        corrector_status = stoda_corrector_loop(neq, y, yh, nyh, ewt, svaf, acor, wm, iwm, f, jac, pnorm, &m_corrector, &del_corrector, S);
+        corrector_status = stoda_corrector_loop(neq, y, yh, nyh, ewt, savf, acor, wm, iwm, f, jac, pnorm, &m_corrector, &del_corrector, S);
         // 430
 
         // Step 4: Handle corrector results
@@ -1007,9 +1013,10 @@ stoda(
         // The corrector has converged. jcur is set to 0 to signal that the
         // jacobian involved may need updating later. The local error test is
         // made and control passes to statement 500 if it fails.
+
+        // 450
         S->jcur = 0;
 
-        // Compute local error estimate (label 450)
         if (m_corrector == 0)
         {
             dsm = del_corrector / S->tesco[1 + (S->nq - 1)*3];
@@ -1030,9 +1037,14 @@ stoda(
             S->tn = told;
 
             int i1 = S->nqnyh;
-            for (int jb = 1; jb <= S->nq; jb++) {
-                i1 = i1 - S->nyh;
-                for (int i = i1; i < S->nqnyh; i++) { yh[i] = yh[i] - yh[i + S->nyh]; }  // 510
+            for (int jb = 0; jb < S->nq; jb++)
+            {
+                i1 -= S->nyh;
+                for (int i = i1; i < S->nqnyh; i++)
+                {
+                    yh[i] = yh[i] - yh[i + S->nyh];
+                }
+                // 510
             }
             // 515
 
@@ -1048,6 +1060,13 @@ stoda(
             if (S->kflag <= -3)
             {
                 // 640
+                // control reaches this section if 3 or more failures have occurred.
+                // if 10 failures have occurred, exit with kflag = -1.
+                // it is assumed that the derivatives that have accumulated in the
+                // yh array have errors of the wrong order.  hence the first
+                // derivative is recomputed, and the order is set to 1.  then
+                // h is reduced by a factor of 10, and the step is retried,
+                // until it succeeds or h reaches hmin.
                 if (S->kflag == -10)
                 {
                     // 660
@@ -1057,226 +1076,68 @@ stoda(
                     return;
                 }
 
-                double rh = 0.1;
+                rh = 0.1;
                 rh = fmax(S->hmin / fabs(S->h), rh);
                 S->h = S->h * rh;
                 for (int i = 0; i < S->n; i++) { y[i] = yh[i]; } // 645
 
-                f(neq, &S->tn, y, svaf);
+                f(neq, &S->tn, y, savf);
                 if (*neq == -1) { return; }
 
                 S->nfe++;
-                for (int i = 0; i < S->n; i++) { yh[i + nyh] = S->h * svaf[i]; } // 650
+                for (int i = 0; i < S->n; i++) { yh[i + nyh] = S->h * savf[i]; } // 650
                 S->ipup = S->miter;
                 S->ialth = 5;
                 if (S->nq == 1) { continue; }
                 S->nq = 1;
                 S->l = 2;
-                stoda_reset(S);
-                continue;
+                stoda_reset(S);  // 150
+                stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
+                continue;  // 200
             }
 
-            double rhup = 0.0;
-            // 540
-            double rhsm = 1.0 / (1.2 * pow(dsm, 1.0 / S->l) + 0.0000012);
-            double rhdn = 0.0;
+            rhup = 0.0;
+            // Continue to 540
 
-            if (S->nq != 1) {
-                double ddn = vmnorm(S->n, &yh[(S->l - 1) * S->nyh], ewt) / S->tesco[(S->nq - 1) * 3];
-                double exdn = 1.0 / S->nq;
-                rhdn = 1.0 / (1.3 * pow(ddn, exdn) + 0.0000013);
-            }
-
-            // 550
-            // If meth = 1, limit rh according to the stability region also.
-            if (S->meth == 1) {
-                double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-                if (S->l < S->lmax) { rhup = fmin(rhup, sm1[S->l - 1] / pdh); }
-                rhsm = fmin(rhsm, sm1[S->nq - 1] / pdh);
-                if (S->nq > 1) { rhdn = fmin(rhdn, sm1[S->nq - 2] / pdh); }
-                S->pdest = 0.0;
-            }
-
-            // 560
-            int newq;
-            double rh;
-            if (rhsm >= rhup) {
-                // 570
-                if (rhsm >= rhdn) {
-                    newq = S->nq;
-                    rh = rhsm;
-                } else {
-                    // 580
-                    newq = S->nq - 1;
-                    rh = rhdn;
-                    if (S->kflag < 0 && rh > 1.0) {
-                        rh = 1.0;
-                    }
-                }
-            } else {
-                if (rhup > rhdn) {
-                    // 590
-                    newq = S->l;
-                    rh = rhup;
-                    if (rh < 1.1) {
-                        // 610 -> go to 700 (no rmax reset)
-                        S->ialth = 3;
-                        break;
-                    }
-                    // Handle acor scaling for order increase (590-600)
-                    double r = S->el[S->l - 1] / (double)S->l;
-                    for (int i = 0; i < S->n; i++) {
-                        yh[i + newq * nyh] = acor[i] * r;
-                    }
-                    // 630 - update nq, l and reset coefficients
-                    S->nq = newq;
-                    S->l = S->nq + 1;
-                    stoda_reset(S);
-                    continue;
-                } else {
-                    // 580
-                    newq = S->nq - 1;
-                    rh = rhdn;
-                    if (S->kflag < 0 && rh > 1.0) {
-                        rh = 1.0;
-                    }
-                }
-            }
-
-            // 620
-            if (S->meth == 1) {
-                double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-                if (rh * pdh * 1.00001 < sm1[newq - 1]) {
-                    // Step restricted by stability - skip 10% test (go to 625)
-                } else if (S->kflag == 0 && rh < 1.1) {
-                    // 622: go to 610 -> go to 700 (no rmax reset)
-                    S->ialth = 3;
-                    break;
-                }
-            } else {
-                // 622: meth == 2
-                if (S->kflag == 0 && rh < 1.1) {
-                    // go to 610 -> go to 700 (no rmax reset)
-                    S->ialth = 3;
-                    break;
-                }
-            }
-
-            // 625
-            if (S->kflag <= -2) { rh = fmin(rh, 0.2); }
-
-            // Apply changes and retry
-            if (newq != S->nq) {
-                // 630: go to 150 and then 170
-                S->nq = newq;
-                S->l = S->nq + 1;
-                stoda_reset(S);
-            }
-            S->h = S->h * rh;
-            S->rc = S->rc * rh;
-            S->ialth = S->l;
-            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
-            continue;
-        }
-
-        // Back to happy branch after 450
-        // After a successful step, update the yh array.
-        // Decrease icount by 1, and if it is -1, consider switching methods.
-        // If a method switch is made, reset various parameters,
-        // rescale the yh array, and exit. If there is no switch,
-        // consider changing h if ialth = 1. Otherwise decrease ialth by 1.
-        // If ialth is then 1 and nq < maxord, then acor is saved for
-        // use in a possible order increase on the next step.
-        // if a change in h is considered, an increase or decrease in order
-        // by one is considered also. A change in h is made only if it is by a
-        // factor of at least 1.1. If not, ialth is set to 3 to prevent
-        // testing for that many steps.
-        S->kflag = 0;
-        should_reset_rmax = 1;  // Equivalent to FORTRAN iredo = 0 at line 393
-        S->nst += 1;
-        S->hu = S->h;
-        S->nqu = S->nq;
-        S->mused = S->meth;
-
-        for (int j = 0; j < S->l; j++)
-        {
-            for (int i = 0; i < S->n; i++)
-            {
-                yh[i + j*nyh] = yh[i + j*nyh] + S->el[j] * acor[i];
-            }
-        }
-        // 460
-
-        // Decrease icount and consider method switching
-        S->icount -= 1;
-        if (S->icount >= 0)
-        {
-            ; // No switch
         } else {
-            // Consider method switching based on current method
-            if (S->meth == 2) {
-                // We are currently using a bdf method. Consider switching to adams.
-                // Compute the step size we could have (ideally) used on this step,
-                // With the current (bdf) method, and also that for the adams.
-                // if nq > mxordn, we consider changing to order mxordn on switching.
-                // compare the two step sizes to decide whether to switch.
-                // The step size advantage must be at least 5/ratio = 1 to switch.
-                // If the step size for adams would be so small as to cause roundoff
-                // pollution, we stay with bdf.
-                // 480
-                double exsm = 1.0 / (double)S->l;
-                int nqm1;
-                double rh1, exm1;
+            // Did not go to 500
 
-                if (S->mxordn >= S->nq) {
-                    double dm1 = dsm * (S->cm2[S->nq - 1] / S->cm1[S->nq - 1]);  // C 0-based
-                    rh1 = 1.0 / (1.2 * pow(dm1, exsm) + 0.0000012);
-                    nqm1 = S->nq;
-                    exm1 = exsm;
-                } else {
-                    nqm1 = S->mxordn;
-                    int lm1 = S->mxordn + 1;
-                    exm1 = 1.0 / (double)lm1;
-                    int lm1p1 = lm1 + 1;
-                    double dm1 = vmnorm(S->n, &yh[(lm1p1 - 1) * S->nyh], ewt) / S->cm1[S->mxordn - 1];  // yh(1,lm1p1) in FORTRAN, C 0-based
-                    rh1 = 1.0 / (1.2 * pow(dm1, exm1) + 0.0000012);
-                }
-                // 486
-                double rh1it = 2.0 * rh1;
-                double pdh = S->pdnorm * fabs(S->h);
-                if (pdh * rh1 > 0.00001) {
-                    rh1it = sm1[nqm1 - 1] / pdh;  // C 0-based indexing
-                }
-                rh1 = fmin(rh1, rh1it);
-                double rh2 = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
+            // after a successful step, update the yh array.
+            // decrease icount by 1, and if it is -1, consider switching methods.
+            // if a method switch is made, reset various parameters,
+            // rescale the yh array, and exit.  if there is no switch,
+            // consider changing h if ialth = 1.  otherwise decrease ialth by 1.
+            // if ialth is then 1 and nq .lt. maxord, then acor is saved for
+            // use in a possible order increase on the next step.
+            // if a change in h is considered, an increase or decrease in order
+            // by one is considered also.  a change in h is made only if it is by a
+            // factor of at least 1.1.  if not, ialth is set to 3 to prevent
+            // testing for that many steps.
 
-                if (rh1 * S->ratio >= 5.0 * rh2) {
-                    double alpha = fmax(0.001, rh1);
-                    double dm1_test = pow(alpha, exm1) * dsm * (S->cm2[S->nq - 1] / S->cm1[S->nq - 1]);
-                    if (dm1_test > 1000.0 * S->uround * pnorm) {
-                        // Switch to Adams
-                        rh = rh1;
-                        S->icount = 20;
-                        S->meth = 1;
-                        S->miter = 0;
-                        S->pdlast = 0.0;
-                        S->nq = nqm1;
-                        S->l = S->nq + 1;
-                        // 150 -> 170
-                        stoda_reset(S);
-                        should_reset_rmax = 0;  // Method switch resets iredo context
-                        stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
-                        continue;  // Restart integration with new method
-                    }
+            S->kflag = 0;
+            should_reset_rmax = 1;  // Equivalent to FORTRAN iredo = 0 at line 393
+            S->nst += 1;
+            S->hu = S->h;
+            S->nqu = S->nq;
+            S->mused = S->meth;
+            for (int j = 0; j < S->l; j++)
+            {
+                for (int i = 0; i < S->n; i++)
+                {
+                    yh[i + j*nyh] = yh[i + j*nyh] + S->el[j] * acor[i];
                 }
-                // No switch
-
-            } else {
-                // 480
-                // We are currently using an adams method, consider switching to bdf.
-                // If the current order is greater than 5, assume the problem is
+            }
+            // 460
+            S->icount -= 1;
+            if (S->icount >= 0)
+            {
+                // go to 488 - no method change
+                ;
+            } else if (S->meth == 1) {
+                // we are currently using an adams method.  consider switching to bdf.
+                // if the current order is greater than 5, assume the problem is
                 // not stiff, and skip this section.
-                // If the lipschitz constant and error estimate are not polluted
+                // if the lipschitz constant and error estimate are not polluted
                 // by roundoff, go to 470 and perform the usual test.
                 // otherwise, switch to the bdf methods if the last step was
                 // restricted to insure stability (irflag = 1), and stay with adams
@@ -1289,241 +1150,254 @@ stoda(
                 // if nq .gt. mxords, we consider changing to order mxords on switching.
                 // compare the two step sizes to decide whether to switch.
                 // the step size advantage must be at least ratio = 5 to switch.
-                // Currently using BDF - consider switching to Adams (label 480)
-                if (S->nq <= 5) {
-                    // Check if estimates are polluted by roundoff
-                    if (dsm > 100.0 * pnorm * S->uround && S->pdest != 0.0)
+
+                // The following is to jump through the entangled goto logic; see original F77 code
+
+                // if condA or (not condB but condC) do not enter
+                if (!((S->nq > 5) || ((!((dsm > 100.0 * pnorm * S->uround) && (S->pdest != 0.0))) &&  (S->irflag == 0))))
+                {
+                    int else_branch = 0;
+                    // if not condB
+                    if (!((dsm > 100.0 * pnorm * S->uround) && (S->pdest != 0.0)))
                     {
-                        // Estimates are clean - do full switching test (label 470)
-                        double exsm = 1.0 / (double)S->l;
-                        double rh1 = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
-                        double rh1it = 2.0 * rh1;
-                        double pdh = S->pdlast * fabs(S->h);
+                        rh2 = 2.0;
+                        nqm2 = int_min(S->nq, S->mxords);
+                    } else {
+                        else_branch = 1;
+                        // 470
+                        exsm = 1.0 / (double)S->l;
+                        rh1 = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
+                        rh1it = 2.0 * rh1;
+                        pdh = S->pdlast * fabs(S->h);
                         if (pdh * rh1 > 0.00001) { rh1it = sm1[S->nq - 1] / pdh; }
                         rh1 = fmin(rh1, rh1it);
 
-                        int nqm2;
-                        double rh2;
                         if (S->nq <= S->mxords)
                         {
-                            double dm2 = dsm * (S->cm1[S->nq - 1] / S->cm2[S->nq - 1]);
+                            nqm2 = S->mxords;
+                            lm2 = S->mxords + 1;
+                            exm2 = 1.0 / (double)lm2;
+                            dm2 = vmnorm(S->n, &yh[(lm2) * S->nyh], ewt) / S->cm2[S->mxords - 1];
+                            rh2 = 1.0 / (1.2 * pow(dm2, exm2) + 0.0000012);
+                        } else {
+                            dm2 = dsm * (S->cm1[S->nq - 1] / S->cm2[S->nq - 1]);
                             rh2 = 1.0 / (1.2 * pow(dm2, exsm) + 0.0000012);
                             nqm2 = S->nq;
-                        } else {
-                            nqm2 = S->mxords;
-                            int lm2 = S->mxords + 1;
-                            double exm2 = 1.0 / (double)lm2;
-                            int lm2p1 = lm2 + 1;
-                            double dm2 = vmnorm(S->n, &yh[(lm2p1 - 1) * S->nyh], ewt) / S->cm2[S->mxords - 1];
-                            rh2 = 1.0 / (1.2 * pow(dm2, exm2) + 0.0000012);
-                        }
-
-                        if (rh2 >= S->ratio * rh1)
-                        {
-                            // 478 switch to BDF
-                            rh = rh2;
-                            S->icount = 20;
-                            S->meth = 2;
-                            S->miter = S->jtyp;
-                            S->pdlast = 0.0;
-                            S->nq = nqm2;
-                            S->l = S->nq + 1;
-                            // 150 -> 170
-                            stoda_reset(S);
-                            should_reset_rmax = 0;  // Method switch resets iredo context
-                            stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
-                            continue;
-                        }
-
-                    } else {
-                        // 470
-                        if (S->irflag != 0)
-                        {
-                            // Switch to BDF with doubled step size
-                            S->h = S->h * 2.0;
-                            int nqm2 = (S->nq < S->mxords) ? S->nq : S->mxords;
-                            S->icount = 20;
-                            S->meth = 2;
-                            S->miter = S->jtyp;
-                            S->pdlast = 0.0;
-                            S->nq = nqm2;
-                            S->l = S->nq + 1;
-                            // 150 -> 170
-                            stoda_reset(S);
-                            should_reset_rmax = 0;  // Method switch resets iredo context
-                            stoda_adjust_step_size(S, yh, nyh, sm1);
-                            continue;
                         }
                     }
+
+                    if (((else_branch) && (rh2 >= S->ratio*rh1)) || (!else_branch))
+                    {
+                        // 478
+                        // the switch test passed. Reset relevant quantities for bdf.
+                        rh = rh2;
+                        S->icount = 20;
+                        S->meth = 2;
+                        S->miter = S->jtyp;
+                        S->pdlast = 0.0;
+                        S->nq = nqm2;
+                        S->l = S->nq + 1;
+                        stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
+                        continue;  // go to 200
+                    }
                 }
+                // else fall through to 488
+
+            } else {
+                // we are currently using a bdf method.  consider switching to adams.
+                // compute the step size we could have (ideally) used on this step,
+                // with the current (bdf) method, and also that for the adams.
+                // if nq .gt. mxordn, we consider changing to order mxordn on switching.
+                // compare the two step sizes to decide whether to switch.
+                // the step size advantage must be at least 5/ratio = 1 to switch.
+                // if the step size for adams would be so small as to cause
+                // roundoff pollution, we stay with bdf.
+
+                // 480
+                exsm = 1.0 / (double)S->l;
+                if (S->mxordn >= S->nq)
+                {
+                    // 484
+                    dm1 = dsm * (S->cm2[S->nq - 1] / S->cm1[S->nq - 1]);
+                    rh1 = 1.0 / (1.2 * pow(dm1, exsm) + 0.0000012);
+                    nqm1 = S->nq;
+                    exm1 = exsm;
+                } else {
+                    nqm1 = S->mxordn;
+                    lm1 = S->mxordn + 1;
+                    exm1 = 1.0 / (double)lm1;
+                    dm1 = vmnorm(S->n, &yh[lm1 * S->nyh], ewt) / S->cm1[S->mxordn - 1];
+                    rh1 = 1.0 / (1.2 * pow(dm1, exm1) + 0.0000012);
+                }
+
+                // 486
+                rh1it = 2.0 * rh1;
+                pdh = S->pdnorm * fabs(S->h);
+                if (pdh * rh1 > 0.00001) { rh1it = sm1[nqm1 - 1] / pdh; }
+                rh1 = fmin(rh1, rh1it);
+                rh2 = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
+                if (rh1 * S->ratio >= 5.0 * rh2)
+                {
+                    dm1 = pow(fmax(0.001, rh1), exm1) * dm1;
+                    if (dm1 > 1000.0 * S->uround * pnorm)
+                    {
+                        rh = rh1;
+                        S->icount = 20;
+                        S->meth = 1;
+                        S->miter = 0;
+                        S->pdlast = 0.0;
+                        S->nq = nqm1;
+                        S->l = S->nq + 1;
+                        stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
+                        continue;  // go to 200
+                    }
+                }
+            }
+
+            // 488
+            // no method switch is being made. do the usual step/order selection.
+            S->ialth -= 1;
+            if (S->ialth == 0)
+            {
+                // go to 520
+                rhup = 0.0;
+                if (S->l != S->lmax)
+                {
+                    for (int i = 0; i < S->n; i++)
+                    {
+                        savf[i] = acor[i] - yh[i + (S->lmax-1)*nyh];
+                    }
+                    dup = vmnorm(S->n, savf, ewt) / S->tesco[2 + (S->nq - 1)*3];
+                    exup = 1.0 / ((double)S->l + 1.0);
+                    rhup = 1.0 / (1.4 * pow(dup, exup) + 0.0000014);
+
+                    // continue at 540
+                }
+            } else {
+                if (!((S->ialth > 1) || (S->l == S->lmax)))
+                {
+                    for (int i = 0; i < S->n; i++)
+                    {
+                        yh[i + (S->lmax - 1)*nyh] = acor[i];
+                    }
+                }
+                // go to 700
+                double r = 1.0 / S->tesco[1 + (S->nqu - 1)*3];
+                for (int i = 0; i < S->n; i++) { acor[i] = acor[i] * r; }
+                S->hold = S->h;
+                S->jstart = 1;
+                return;
             }
         }
 
-        // 488 Start of goto olympics.
-        S->ialth -= 1;
-        if (S->ialth == 0) {
-            // 520
 
-            // Regardless of the success or failure of the step, factors
-            // rhdn, rhsm, and rhup are computed, by which h could be multiplied
-            // at order nq - 1, order nq, or order nq + 1, respectively.
-            // In the case of failure, rhup = 0.0 to avoid an order increase.
-            // The largest of these is determined and the new order chosen
-            // accordingly. If the order is to be increased, we compute one
-            // additional scaled derivative.
-            double rhup = 0.0;
-            if (S->l != S->lmax) {
-                for (int i = 0; i < S->n; i++)
-                {
-                    svaf[i] = acor[i] - yh[i + (S->lmax - 1) * nyh];
-                }
-                // 530
-                double dup = vmnorm(S->n, svaf, ewt) / S->tesco[2 + (S->nq - 1) * 3];
-                double exup = 1.0 / (double)(S->l + 1);
-                rhup = 1.0 / (1.4 * pow(dup, exup) + 0.0000014);
-            }
+        // Back to 540
+        exsm = 1.0 / (double)S->l;
+        rhsm = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
+        rhdn = 0.0;
 
-            // 540
-            double exsm = 1.0 / (double)S->l;
-            double rhsm = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
+        if (S->nq != 1)
+        {
+            ddn = vmnorm(S->n, &yh[(S->l - 1) * S->nyh], ewt) / S->tesco[(S->nq - 1) * 3];
+            exdn = 1.0 / S->nq;
+            rhdn = 1.0 / (1.3 * pow(ddn, exdn) + 0.0000013);
+        }
 
-            double rhdn = 0.0;
-            if (S->nq != 1)
-            {
-                double ddn = vmnorm(S->n, &yh[(S->l - 1) * S->nyh], ewt) / S->tesco[0 + (S->nq - 1) * 3];
-                double exdn = 1.0 / (double)S->nq;
-                rhdn = 1.0 / (1.3 * pow(ddn, exdn) + 0.0000013);
-            }
+        // 550
+        // If meth = 1, limit rh according to the stability region also.
+        if (S->meth == 1)
+        {
+            pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
+            if (S->l < S->lmax) { rhup = fmin(rhup, sm1[S->l - 1] / pdh); }
+            rhsm = fmin(rhsm, sm1[S->nq - 1] / pdh);
+            if (S->nq > 1) { rhdn = fmin(rhdn, sm1[S->nq - 2] / pdh); }
+            S->pdest = 0.0;
+        }
 
-            // 550
-            if (S->meth == 1) {
-                double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-                if (S->l < S->lmax) { rhup = fmin(rhup, sm1[S->l - 1] / pdh); }
-                rhsm = fmin(rhsm, sm1[S->nq - 1] / pdh);
-                if (S->nq > 1) { rhdn = fmin(rhdn, sm1[S->nq - 2] / pdh); }
-                S->pdest = 0.0;
-            }
-
-            int newq;
-            double rh;
-            // 560
-            if (rhsm >= rhup)
-            {
-                // 570
-                if (rhsm >= rhdn)
-                {
-                    newq = S->nq;
-                    rh = rhsm;
-                } else {
-                    // 580
-                    newq = S->nq - 1;
-                    rh = rhdn;
-                    if (S->kflag < 0 && rh > 1.0) { rh = 1.0; }
-                }
+        // 560
+        if (rhsm >= rhup) {
+            // 570
+            if (rhsm >= rhdn) {
+                newq = S->nq;
+                rh = rhsm;
             } else {
-                if (rhup > rhdn) {
-                    // 590
-                    newq = S->l;
-                    rh = rhup;
-                    if (rh < 1.1) {
-                        // 610 -> go to 700 (no rmax reset)
-                        S->ialth = 3;
-                        break;
-                    }
-
-                    double r = S->el[S->l - 1] / (double)S->l;
-                    for (int i = 0; i < S->n; i++) {
-                        yh[i + newq * nyh] = acor[i] * r;
-                    }
-                    // Apply step size change and continue
-                    if (newq != S->nq) {
-                        S->nq = newq;
-                        S->l = S->nq + 1;
-                        stoda_reset(S);
-                    }
-                    S->h = S->h * rh;
-                    S->rc = S->rc * rh;
-                    S->ialth = S->l;
-                    continue;
-                } else {
-                    // 580 - Default case: rhsm < rhup AND rhup <= rhdn
-                    newq = S->nq - 1;
-                    rh = rhdn;
-                    if (S->kflag < 0 && rh > 1.0) { rh = 1.0; }
+                // 580
+                newq = S->nq - 1;
+                rh = rhdn;
+                if (S->kflag < 0 && rh > 1.0) {
+                    rh = 1.0;
                 }
             }
-
-            // 620
-            // If meth = 1 and h is restricted by stability, bypass 10 percent test.
-            if (S->meth == 1) {
-                double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-                if (rh * pdh * 1.00001 >= sm1[newq - 1])
-                {
-                    // goto 625
-                    ;
-                } else if (S->kflag == 0 && rh < 1.1) {
+        } else {
+            if (rhup > rhdn) {
+                // 590
+                newq = S->l;
+                rh = rhup;
+                if (rh < 1.1) {
                     // 610 -> go to 700 (no rmax reset)
                     S->ialth = 3;
+                    should_reset_rmax = 0;
                     break;
                 }
-            } else {
-                if (S->kflag == 0 && rh < 1.1)
-                {
-                    // 610 -> go to 700 (no rmax reset)
-                    S->ialth = 3;
-                    break;
+                // Handle acor scaling for order increase (590-600)
+                double r = S->el[S->l - 1] / (double)S->l;
+                for (int i = 0; i < S->n; i++) {
+                    yh[i + newq * nyh] = acor[i] * r;
                 }
-            }
-
-            // 625
-            if (S->kflag <= -2) { rh = fmin(rh, 0.2); }
-
-            // If there is a change of order, reset nq, l, and the coefficients.
-            // in any case h is reset according to rh and the yh array is rescaled.
-            // then exit from 690 if the step was ok, or redo the step otherwise.
-            if (newq != S->nq) {
-                // 630: nq = newq, l = nq + 1, iret = 2, go to 150 -> 170
+                // 630 - update nq, l and reset coefficients
                 S->nq = newq;
                 S->l = S->nq + 1;
                 stoda_reset(S);
-            }
-
-            // 170 is inlined here to skip over the 160-170 block in stoda_adjust_step_size.
-            rh = fmax(rh, S->hmin / fabs(S->h));
-            rh = fmin(rh, S->rmax);
-            rh = rh / fmax(1.0, fabs(S->h) * S->hmxi * rh);
-
-            // Adams stability region constraint (meth = 1 only)
-            if (S->meth == 1) {
-                S->irflag = 0;
-                double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-                if (rh * pdh * 1.00001 < sm1[S->nq - 1]) {
-                    rh = sm1[S->nq - 1] / pdh;
-                    S->irflag = 1;
+                rh = fmax(rh, S->hmin / fabs(S->h));
+                stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
+                continue;
+            } else {
+                // 580
+                newq = S->nq - 1;
+                rh = rhdn;
+                if (S->kflag < 0 && rh > 1.0) {
+                    rh = 1.0;
                 }
             }
-
-            // 178-180: Rescale yh array and apply step size
-            double r = 1.0;
-            for (int j = 2; j <= S->l; j++)
-            {
-                r = r * rh;
-                for (int i = 0; i < S->n; i++)
-                {
-                    yh[i + (j-1)*nyh] = yh[i + (j-1)*nyh] * r;
-                }
-            }
-            S->h = S->h * rh;
-            S->rc = S->rc * rh;
-            S->ialth = S->l;
-            continue;
-
-        } else if ((S->ialth > 1) || (S->l == S->lmax)) {
-            break;
-        } else {
-            for (int i = 0; i < S->n; i++) { yh[i + (S->lmax - 1)*nyh] = acor[i]; }
-            break;
         }
+
+        // 620
+        if (S->meth == 1) {
+            double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
+            if (rh * pdh * 1.00001 < sm1[newq - 1]) {
+                // Step restricted by stability - skip 10% test (go to 625)
+            } else if (S->kflag == 0 && rh < 1.1) {
+                // 622: go to 610 -> go to 700 (no rmax reset)
+                S->ialth = 3;
+                break;
+            }
+        } else {
+            // 622: meth == 2
+            if (S->kflag == 0 && rh < 1.1) {
+                // go to 610 -> go to 700 (no rmax reset)
+                S->ialth = 3;
+                break;
+            }
+        }
+
+        // 625
+        if (S->kflag <= -2) { rh = fmin(rh, 0.2); }
+
+        // Apply changes and retry
+        if (newq != S->nq) {
+            // 630: go to 150 and then 170
+            S->nq = newq;
+            S->l = S->nq + 1;
+            stoda_reset(S);
+        }
+        S->h = S->h * rh;
+        S->rc = S->rc * rh;
+        S->ialth = S->l;
+        stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
+        continue;
+
+
+
     }
 
     // 690: Reset rmax on success
