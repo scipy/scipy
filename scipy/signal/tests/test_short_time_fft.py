@@ -33,6 +33,8 @@ from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
     _calc_dual_canonical_window, closest_STFT_dual_window, ShortTimeFFT, PAD_TYPE
 from scipy.signal.windows import blackman, gaussian, hamming, nuttall, triang
 
+from scipy.signal._short_time_fft import _closest_STFT_dual_window2
+
 
 def test__calc_dual_canonical_window_roundtrip():
     """Test dual window calculation with a round trip to verify duality.
@@ -78,6 +80,22 @@ def test_closest_STFT_dual_window_exceptions():
 
     with pytest.raises(ValueError, match="Unable to calculate scaled closest dual.*"):
         closest_STFT_dual_window(np.ones(4), 2, np.zeros(4), scaled=True)
+
+
+@pytest.mark.parametrize("scaled", (True, False))
+@pytest.mark.parametrize('sym_win', (False, True))
+@pytest.mark.parametrize('hop', (8, 9))
+@pytest.mark.parametrize('m', (16, 17))
+@pytest.mark.parametrize('win_name', ('hann', 'hamming'))
+def test_issue2370(win_name, m, hop, sym_win, scaled):
+    """Analyze macos15-intel problems (issue 23710) """
+    win = get_window(win_name, m, not sym_win)
+    d1, s1 = _closest_STFT_dual_window2(win, hop, np.ones_like(win), scaled=scaled)
+    d2, s2 = _closest_STFT_dual_window2(win, hop, np.ones_like(win), scaled=scaled)
+
+    # Identical function calls should produce identical results
+    xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
+    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
 
 
 @pytest.mark.parametrize("scaled", (True, False))

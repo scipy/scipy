@@ -68,6 +68,44 @@ def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
 
     return win / DD
 
+def _closest_STFT_dual_window2(win: np.ndarray, hop: int,
+                             desired_dual: np.ndarray | None = None, *,
+                             scaled: bool = True) \
+        -> tuple[np.ndarray, float | complex]:
+    """Analyze macos15-intel problems (issue 23710) """
+    if desired_dual is None:  # default is rectangular window
+        desired_dual = np.ones_like(win)
+    if not (win.ndim == 1 and win.shape == desired_dual.shape):
+        raise ValueError("Parameters `win` and `desired_dual` are not 1d arrays of " +
+                         f"equal length ({win.shape=}, {desired_dual.shape=})!")
+    if not all(np.isfinite(win)):
+        raise ValueError("Parameter win must have finite entries!")
+    if not all(np.isfinite(desired_dual)):
+        raise ValueError("Parameter desired_dual must have finite entries!")
+    if not (1 <= hop <= len(win) and isinstance(hop, int | np.integer)):
+        raise ValueError(f"Parameter {hop=} is not an integer between 1 and " +
+                         f"{len(win)=}!")
+
+    w_d = _calc_dual_canonical_window(win, hop)
+    wdd = win.conjugate() * desired_dual
+    q_d = wdd.copy()
+    for k_ in range(hop, len(win), hop):
+        q_d[k_:] += wdd[:-k_]
+        q_d[:-k_] += wdd[k_:]
+    q_d = w_d * q_d
+
+    if not scaled:
+        return w_d + desired_dual - q_d, 1.
+
+    numerator = q_d.conjugate().T @ w_d
+    denominator = q_d.T.real @ q_d.real + q_d.T.imag @ q_d.imag  # always >= 0
+    if not (abs(numerator) > 0 and denominator > np.finfo(w_d.dtype).resolution):
+        raise ValueError(
+            "Unable to calculate scaled closest dual window due to numerically " +
+            "unstable scaling factor! Try setting parameter `scaled` to False.")
+    alpha = numerator / denominator
+    return w_d + alpha * (desired_dual - q_d), alpha
+
 
 def closest_STFT_dual_window(win: np.ndarray, hop: int,
                              desired_dual: np.ndarray | None = None, *,
