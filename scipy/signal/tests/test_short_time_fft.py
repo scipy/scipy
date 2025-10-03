@@ -90,10 +90,18 @@ def test_closest_STFT_dual_window_exceptions():
 def test_issue2370(win_name, m, hop, sym_win, scaled):
     """Analyze macos15-intel problems (issue 23710) """
     win = get_window(win_name, m, not sym_win)
-    d1, s1 = _closest_STFT_dual_window2(win, hop, np.ones_like(win), scaled=scaled)
-    d2, s2 = _closest_STFT_dual_window2(win, hop, np.ones_like(win), scaled=scaled)
+    win1 = win.copy()
+    d1, s1, qd1, wd1 = _closest_STFT_dual_window2(win, hop, np.ones_like(win),
+                                                  scaled=scaled)
+    xp_assert_equal(win, win1, err_msg="win is mutated (1)")
+    d2, s2, qd2, wd2 = _closest_STFT_dual_window2(win, hop, np.ones_like(win),
+                                        scaled=scaled)
+    xp_assert_equal(win, win1, err_msg="win is mutated (2)")
 
-    # Identical function calls should produce identical results
+
+    # Identical function calls should produce identical results:
+    xp_assert_equal(qd2, qd1)
+    xp_assert_equal(wd2, wd1)
     xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
     assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
 

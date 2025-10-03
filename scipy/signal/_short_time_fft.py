@@ -70,8 +70,7 @@ def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
 
 def _closest_STFT_dual_window2(win: np.ndarray, hop: int,
                              desired_dual: np.ndarray | None = None, *,
-                             scaled: bool = True) \
-        -> tuple[np.ndarray, float | complex]:
+                             scaled: bool = True):
     """Analyze macos15-intel problems (issue 23710) """
     if desired_dual is None:  # default is rectangular window
         desired_dual = np.ones_like(win)
@@ -95,7 +94,7 @@ def _closest_STFT_dual_window2(win: np.ndarray, hop: int,
     q_d = w_d * q_d
 
     if not scaled:
-        return w_d + desired_dual - q_d, 1.
+        return w_d + desired_dual - q_d, 1., None, None
 
     numerator = q_d.conjugate().T @ w_d
     denominator = q_d.T.real @ q_d.real + q_d.T.imag @ q_d.imag  # always >= 0
@@ -104,7 +103,7 @@ def _closest_STFT_dual_window2(win: np.ndarray, hop: int,
             "Unable to calculate scaled closest dual window due to numerically " +
             "unstable scaling factor! Try setting parameter `scaled` to False.")
     alpha = numerator / denominator
-    return w_d + alpha * (desired_dual - q_d), alpha
+    return w_d + alpha * (desired_dual - q_d), alpha, q_d, w_d
 
 
 def closest_STFT_dual_window(win: np.ndarray, hop: int,
