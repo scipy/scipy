@@ -813,7 +813,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # replace existing entries
             self.data[offsets[is_existing]] = x[is_existing]
             # create new entries
-            is_new = ~is_existing
+            is_new = np.logical_not(is_existing, out=is_existing)
+            del is_existing
             self._insert_many(i[is_new], j[is_new], x[is_new])
         else:
             # convert to coo for _set_diag
