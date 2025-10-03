@@ -481,6 +481,7 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        quat = xp.reshape(quat, (-1, 4))
         K = xp.matrix_transpose(quat) @ quat  # TODO: Replace with .mT
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
@@ -500,7 +501,9 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
 
         # Make sure we can transpose quat
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = xp.matrix_transpose(weights[..., None] * quat) @ quat
+        quat = xp.reshape(quat, (-1, 4))
+        weights_flat = xp.reshape(weights, (-1,))
+        K = xp.matrix_transpose(weights_flat[..., None] * quat) @ quat
 
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
