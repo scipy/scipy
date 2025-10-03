@@ -1022,21 +1022,27 @@ def test_mean(xp, ndim: int):
     r = rotation_to_xp(Rotation.from_quat(q), xp=xp)
     tf = RigidTransform.from_components(t, r)
 
+    # Unweighted mean
+    axis = tuple(range(t.ndim - 1))
+    t_mean = xp.mean(t, axis=axis)
+    r_mean = r.mean()
+    xp_assert_close(tf.mean().as_matrix(),
+                    RigidTransform.from_components(t_mean, r_mean).as_matrix(),
+                    atol=atol)
+
+    # Weighted mean
     if ndim == 1:
         weights = None
         t_mean = t
     else:
         weights = xp.asarray(rng.random(size=(ndim,) * (ndim - 1)))
-        axis = tuple(range(t.ndim - 1))
         norm = xp.sum(weights[..., None], axis=axis)
         wsum = xp.sum(t * weights[..., None], axis=axis)
         t_mean = wsum/norm
     r_mean = r.mean(weights=weights)
-    tf_mean = tf.mean(weights=weights)
-
-    tf_from_components = RigidTransform.from_components(t_mean, r_mean)
-    xp_assert_close(tf_mean.as_matrix(),
-                    tf_from_components.as_matrix(), atol=atol)
+    xp_assert_close(tf.mean(weights=weights).as_matrix(),
+                    RigidTransform.from_components(t_mean, r_mean).as_matrix(),
+                    atol=atol)
 
 
 @make_xp_test_case(RigidTransform.from_translation)
