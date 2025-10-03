@@ -90,28 +90,18 @@ def test_issue2370(win_name, m, hop, sym_win, scaled=True):
     """Analyze macos15-intel problems (issue 23710) """
     win = get_window(win_name, m, not sym_win)
     d_win = np.ones_like(win)
-    win1 = get_window(win_name, m, not sym_win)
-    d_win1 = np.ones_like(win1)
     d1, s1, qd1, wd1 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
-    xp_assert_equal(win, win1, err_msg="parameter win mutated (1)")
-    xp_assert_equal(d_win, d_win1, err_msg="parameter d_win mutated (1)")
     d2, s2, qd2, wd2 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
-    xp_assert_equal(win, win1, err_msg="parameter win mutated (2)")
-    xp_assert_equal(d_win, d_win1, err_msg="parameter d_win mutated (2)")
 
     # Identical function calls should produce identical results:
-    xp_assert_equal(qd2, qd1)
     xp_assert_equal(wd2, wd1)
+    xp_assert_equal(qd2, qd1)
+    assert qd1 is not qd2  # ensure mutating qd1 is not the problem
 
-    # Taken from closest_STFT_dual_window:
-    numerator1 = qd1.conjugate().T @ wd1
+    # Taken from closest_STFT_dual_window (qd1 == qd2):
     denominator1 = qd1.T.real @ qd1.real + qd1.T.imag @ qd1.imag  # always >= 0
-    alpha1 = numerator1 / denominator1
-
-    numerator2 = qd2.conjugate().T @ wd2
     denominator2 = qd2.T.real @ qd2.real + qd2.T.imag @ qd2.imag  # always >= 0
-    alpha2 = numerator2 / denominator2
-    assert alpha2 == alpha1
+    xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
 
     xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
     assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
