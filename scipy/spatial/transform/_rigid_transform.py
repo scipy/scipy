@@ -1016,8 +1016,8 @@ class RigidTransform:
         Returns
         -------
         mean : `RigidTransform` instance
-            Object containing the mean of the transforms in the current
-            instance.
+            Single transform containing the mean of the transforms in the
+            current instance.
 
         References
         ----------
@@ -1049,18 +1049,10 @@ class RigidTransform:
                [ 0.51801458,  0.13833531, -0.84411151,  0.52429339],
                [0., 0., 0., 1.]])
         """
-        t, r = self.as_components()
-        r_mean = r.mean(weights=weights)
-        xp = array_namespace(t)
-        if weights is None:
-            t_mean = xp.mean(t, axis=tuple(range(t.ndim - 1)))
-        else:
-            axis = tuple(range(t.ndim - 1))
-            norm = xp.sum(weights[..., None], axis=axis)
-            wsum = xp.sum(t * weights[..., None], axis=axis)
-            t_mean = wsum / norm
-        mean = RigidTransform.from_components(t_mean, r_mean)
-        return mean
+        backend = select_backend(self._xp, cython_compatible=False)
+        mean = backend.mean(self._matrix, weights=weights)
+        return RigidTransform._from_raw_matrix(mean, xp=self._xp,
+                                               backend=backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]

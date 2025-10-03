@@ -1026,7 +1026,9 @@ def test_mean(xp, ndim: int):
     axis = tuple(range(t.ndim - 1))
     t_mean = xp.mean(t, axis=axis)
     r_mean = r.mean()
-    xp_assert_close(tf.mean().as_matrix(),
+    tf_mean = tf.mean()
+    assert tf_mean.shape == ()
+    xp_assert_close(tf_mean.as_matrix(),
                     RigidTransform.from_components(t_mean, r_mean).as_matrix(),
                     atol=atol)
 
@@ -1040,9 +1042,30 @@ def test_mean(xp, ndim: int):
         wsum = xp.sum(t * weights[..., None], axis=axis)
         t_mean = wsum/norm
     r_mean = r.mean(weights=weights)
-    xp_assert_close(tf.mean(weights=weights).as_matrix(),
+    tf_mean = tf.mean(weights=weights)
+    assert tf_mean.shape == ()
+    xp_assert_close(tf_mean.as_matrix(),
                     RigidTransform.from_components(t_mean, r_mean).as_matrix(),
                     atol=atol)
+
+
+@make_xp_test_case(RigidTransform.mean)
+def test_mean_invalid_weights(xp):
+    tf = RigidTransform.from_matrix(xp.eye(4))
+    if is_lazy_array(tf.as_matrix()):
+        m = tf.mean(weights=-xp.ones(4))
+        assert all(xp.isnan(m.as_matrix()))
+    else:
+        with pytest.raises(ValueError, match="non-negative"):
+            tf.mean(weights=-xp.ones(4))
+
+    # Test weight shape mismatch
+    tf = RigidTransform.from_matrix(xp.eye(4))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        tf.mean(weights=xp.ones((2,)))
+    tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (3, 2, 1, 1, 1)))
+    with pytest.raises(ValueError, match="Expected `weights` to"):
+        tf.mean(weights=xp.ones((2, 1)))
 
 
 @make_xp_test_case(RigidTransform.from_translation)

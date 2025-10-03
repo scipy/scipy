@@ -1298,8 +1298,9 @@ def test_mean(xp, ndim: int):
     desired = xp.asarray(0.0)[()]
     atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
-        r = Rotation.from_rotvec(t * axes)
-        xp_assert_close(r.mean().magnitude(), desired, atol=atol)
+        r_mean = Rotation.from_rotvec(t * axes).mean()
+        assert r_mean.shape == ()
+        xp_assert_close(r_mean.magnitude(), desired, atol=atol)
 
 
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
@@ -1323,6 +1324,7 @@ def test_weighted_mean(xp, ndim: int):
 
         r = Rotation.from_rotvec(t * axes)
         m = r.mean()
+        assert m.shape == ()
         xp_assert_close((m * mw.inv()).magnitude(), expected, atol=1e-6)
 
 

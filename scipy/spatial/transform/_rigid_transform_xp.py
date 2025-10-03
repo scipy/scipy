@@ -3,6 +3,7 @@ from types import EllipsisType
 from scipy._lib._array_api import (
     array_namespace,
     Array,
+    ArrayLike,
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
@@ -18,6 +19,7 @@ from scipy.spatial.transform._rotation_xp import (
     compose_quat,
     from_quat,
     inv as quat_inv,
+    mean as quat_mean,
 )
 from scipy._lib.array_api_compat import device as xp_device
 from scipy._lib._util import broadcastable
@@ -243,6 +245,30 @@ def pow(matrix: Array, n: float | Array) -> Array:
     elif n == 1:
         return matrix
     return from_exp_coords(as_exp_coords(matrix) * n)
+
+
+def mean(matrix: Array, weights: ArrayLike | None = None) -> Array:
+    xp = array_namespace(matrix)
+    if matrix.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+
+    quats = quat_from_matrix(matrix[..., :3, :3])
+    if weights is None:
+        quats_mean = quat_mean(quats)
+    else:
+        quats_mean = quat_mean(quats, weights=weights)
+    r_mean = quat_as_matrix(quats_mean)
+
+    t = matrix[..., :3, 3]
+    axis = tuple(range(t.ndim - 1))
+    if weights is None:
+        t_mean = xp.mean(t, axis=axis)
+    else:
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum / norm
+
+    return _create_transformation_matrix(t_mean, r_mean)
 
 
 def setitem(
