@@ -385,7 +385,7 @@ class TestFirwin2:
         freq = xp.asarray([0.0, 0.5, 0.5, 1.0])
         gain = xp.asarray([0.0, 0.0, 1.0, 1.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = np.array([0.0, 0.25, 0.5 - width, 0.5 + width, 0.75, 1.0])
+        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width, 0.5 + width, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         freqs, response = xp.asarray(freqs), xp.asarray(response)
         assert_array_almost_equal(
@@ -402,9 +402,9 @@ class TestFirwin2:
         freq = xp.asarray([0.0, 0.4, 0.4, 0.5, 0.5, 1.0])
         gain = xp.asarray([1.0, 1.0, 0.0, 0.0, 1.0, 1.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = np.array([0.0, 0.4 - width, 0.4 + width, 0.45,
-                                    0.5 - width, 0.5 + width, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
+        freq_samples = xp.asarray([0.0, 0.4 - width, 0.4 + width, 0.45,
+                                   0.5 - width, 0.5 + width, 0.75, 1.0])
+        freqs, response = freqz(taps, worN=xp.pi*freq_samples)
         freqs, response = xp.asarray(freqs), xp.asarray(response)
         assert_array_almost_equal(
             xp.abs(response),
@@ -598,7 +598,7 @@ class TestFirls:
         assert_array_almost_equal(hodd, xp.zeros_like(hodd))
 
         # now check the frequency response
-        w, H = freqz(np.asarray(h), 1)
+        w, H = freqz(h, 1)
         w, H = xp.asarray(w), xp.asarray(H)
         f = w/2/xp.pi
         Hmag = xp.abs(H)
