@@ -337,27 +337,6 @@ cdef inline double nctdtrinc(double df, double p, double t) noexcept nogil:
     return get_result("nctdtrinc", argnames, result, status, bound, 1)
 
 
-cdef inline double nrdtrimn(double p, double std, double x) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[4]
-        TupleDID ret
-
-    if isnan(p) or isnan(std) or isnan(x):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "x"
-    argnames[3] = "std"
-
-    ret = cdfnor_which3(p, q, x, std)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("nrdtrimn", argnames, result, status, bound, 1)
-
-
 cdef inline double nrdtrisd(double mn, double p, double x) noexcept nogil:
     cdef:
         double q = 1.0 - p

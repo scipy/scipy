@@ -2295,4 +2295,58 @@ chdtriv_double(double p, double x)
     return chdtriv_wrap(p, x);
 }
 
+template<typename Real>
+Real
+norm_cdf_inv_mean_wrap(const Real p, const Real std, const Real x)
+{
+    if (std::isnan(p) || std::isnan(std) || std::isnan(x)) {
+        return NAN;
+    }
+    // p must be in (0, 1)
+    if (p <= 0 || p >= 1) {
+        sf_error("nrdtrimn", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (std <= 0) {
+        sf_error("nrdtrimn", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (std::isinf(std)) {
+        return - INFINITY;
+    }
+    if (std::isinf(x)) {
+        return (x > 0) ? INFINITY : -INFINITY;
+    }
+    Real y;
+    try {
+        y = boost::math::find_location<
+            boost::math::normal_distribution<Real, SpecialPolicy>>(x, p, std);
+    } catch (const std::domain_error&) {
+        sf_error("nrdtrimn", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error&) {
+        sf_error("nrdtrimn", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error&) {
+        sf_error("nrdtrimn", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("nrdtrimn", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+norm_cdf_inv_mean_float(float p, float std, float x)
+{
+    return norm_cdf_inv_mean_wrap(p, std, x);
+}
+
+double
+norm_cdf_inv_mean_double(double p, double std, double x)
+{
+    return norm_cdf_inv_mean_wrap(p, std, x);
+}
+
 #endif

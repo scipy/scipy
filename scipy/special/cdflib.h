@@ -115,7 +115,6 @@ struct TupleDID cdfgam_which2(double, double, double, double);
 struct TupleDID cdfgam_which4(double, double, double, double);
 struct TupleDID cdfnbn_which2(double, double, double, double, double);
 struct TupleDID cdfnbn_which3(double, double, double, double, double);
-struct TupleDID cdfnor_which3(double, double, double, double);
 struct TupleDID cdfnor_which4(double, double, double, double);
 struct TupleDID cdfpoi_which2(double, double, double);
 struct TupleDID cdft_which3(double, double, double);

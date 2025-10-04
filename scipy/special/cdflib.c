@@ -2401,16 +2401,6 @@ struct TupleDID cdfnbn_which3(double p, double q, double s, double pr, double om
     //**********************************************************************
 
 
-struct TupleDID cdfnor_which3(double p, double q, double x, double sd)
-{
-    if (!(sd > 0.0)) {
-        return (struct TupleDID){.d1 = 0.0, .i1 = -4, .d2 = 0.0};
-    }
-    double z = dinvnr(p, q);
-    return (struct TupleDID){.d1 = x - sd*z, .i1 = 0, .d2 = 0.0};
-}
-
-
 struct TupleDID cdfnor_which4(double p, double q, double x, double mean)
 {
     double z = dinvnr(p, q);

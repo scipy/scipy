@@ -576,8 +576,10 @@
         }
     },
     "nrdtrimn": {
-        "_cdflib_wrappers.pxd": {
-            "nrdtrimn": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "norm_cdf_inv_mean_float": "fff->f",
+            "norm_cdf_inv_mean_double": "ddd->d"
+        }
     },
     "nrdtrisd": {
         "_cdflib_wrappers.pxd": {

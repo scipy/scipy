@@ -802,6 +802,7 @@ Available functions
 - :py:func:`~scipy.special.nrdtrimn`::
 
         double nrdtrimn(double, double, double)
+        float nrdtrimn(float, float, float)
 
 - :py:func:`~scipy.special.nrdtrisd`::
 
@@ -1733,10 +1734,6 @@ cdef _proto_nctdtridf_t *_proto_nctdtridf_t_var = &_func_nctdtridf
 from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
 ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
 cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
-
-from ._cdflib_wrappers cimport nrdtrimn as _func_nrdtrimn
-ctypedef double _proto_nrdtrimn_t(double, double, double) noexcept nogil
-cdef _proto_nrdtrimn_t *_proto_nrdtrimn_t_var = &_func_nrdtrimn
 
 from ._cdflib_wrappers cimport nrdtrisd as _func_nrdtrisd
 ctypedef double _proto_nrdtrisd_t(double, double, double) noexcept nogil
@@ -3146,6 +3143,15 @@ cpdef df_number_t ncfdtri(df_number_t x0, df_number_t x1, df_number_t x2, df_num
         else:
             return NAN
 
+cpdef df_number_t nrdtrimn(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.nrdtrimn"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_norm_cdf_inv_mean_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_norm_cdf_inv_mean_double)(x0, x1, x2)
+    else:
+        return NAN
+
 cpdef double ncfdtridfd(double x0, double x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.ncfdtridfd"""
     return _func_ncfdtridfd(x0, x1, x2, x3)
@@ -3199,10 +3205,6 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
 cpdef double ndtri(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri"""
     return xsf_ndtri(x0)
-
-cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.nrdtrimn"""
-    return _func_nrdtrimn(x0, x1, x2)
 
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nrdtrisd"""
