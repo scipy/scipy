@@ -9,7 +9,7 @@ import numpy as np
 import scipy
 
 from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
-                            OptimizeResult)
+                            OptimizeResult, AnalysisError)
 
 
 class MyCallBack:
@@ -644,7 +644,195 @@ class TestSLSQP:
         # old Fortran code.
         res = minimize(f, x0, method='SLSQP', bounds=bounds)
         assert res.success
+    
+    def test_fnc_with_simple_invalid_region(self):
+        # Test function where slsqp is encouraged to evalutate the square
+        # root of a negative design variable to demonstrate recoverability
+        # by raising an AnalysisError.
 
+        # Tracks the number of invalid steps to ensure the test is valid
+        invalid_step_count = [0]
+
+        def fun(x):
+            return (x - 0.5)**4 + 1
+
+        def jac_fun(x):
+            return 4*(x - 0.5)**3
+
+        def con(x):
+            if x < 0:
+                invalid_step_count[0] += 1
+                raise AnalysisError()
+            return np.sqrt(x)
+
+        def jac_con(x):
+            return 0.5*x**(-0.5)
+
+        constraints = [
+            NonlinearConstraint(
+                con,
+                lb=0.0,
+                ub=1.0,
+                jac=jac_con,
+            )
+        ]
+
+        res = minimize(
+            fun,
+            x0=10.0,
+            jac=jac_fun,
+            method='SLSQP',
+            constraints=constraints,
+            tol=1e-9
+            )
+        
+        # Ensures the optimization converges
+        assert res.success
+        np.testing.assert_allclose(res.fun, 1.0, rtol=1e-4)
+        np.testing.assert_allclose(res.x, [0.5], rtol=2e-2)
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert invalid_step_count[0] > 0
+
+    def test_func_with_invalid_obj_region(self):
+        # Test where the objective function has regions where evaluation
+        # is not possible. The objective function is based on the Bean
+        # function defined in Engineering Design Optimization by Dr.
+        # Martins and Dr. Ning. The invalid regions is a periodic set of
+        # holes in the design space. The minima is in the valid design
+        # space.
+
+        # Tracks the number of invalid steps to ensure the test is valid
+        invalid_step_count = [0]
+
+        def fun(x):
+            if np.cos(2.0*x[0]) + np.cos(2.0*x[1]) > 0.5:
+                invalid_step_count[0] += 1
+                raise AnalysisError("Invalid Region")
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+        
+        res = minimize(fun, [2.0, 2.0], method="SLSQP")
+
+        # Ensures the optimization converges
+        assert res.success
+        np.testing.assert_allclose(res.fun, 0.09194, rtol=1e-3)
+        np.testing.assert_allclose(res.x, [1.2134, 0.82414], rtol=1e-3)
+
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert invalid_step_count[0] > 0
+
+    def test_func_with_value_error_fails(self):
+        # Test to ensure ValueError causes `minimize` to fail
+
+        def fun(x):
+            if x < 10:
+                raise ValueError()
+            return x**2
+        
+        with pytest.raises(ValueError):
+            minimize(fun, [10.0], method="SLSQP")
+
+    def test_func_with_invalid_con_region(self):
+        # Test where the constraint function has regions where evaluation
+        # is not possible. The objective function is based on the Bean
+        # function defined in Engineering Design Optimization by Dr.
+        # Martins and Dr. Ning. The invalid regions is a periodic set of
+        # holes in the design space. The minima is in the valid design
+        # space. The constraint is intentionally inactive.
+
+        # Tracks the number of invalid steps to ensure the test is valid
+        invalid_step_count = [0]
+
+        def fun(x):
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+        
+        def con(x):
+            if np.cos(2.0*x[0]) + np.cos(2.0*x[1]) > 0.5:
+                invalid_step_count[0] += 1
+                raise AnalysisError("Invalid Region")
+            return x[0] + 5
+        
+        res = minimize(fun, [2.0, 2.0], method="SLSQP", constraints=[
+            {"type": "ineq", "fun": con}
+        ])
+
+        # Ensures the optimization converges
+        assert res.success
+        np.testing.assert_allclose(res.fun, 0.09194, rtol=1e-3)
+        np.testing.assert_allclose(res.x, [1.2134, 0.82414], rtol=1e-3)
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert invalid_step_count[0] > 0
+
+    def test_func_with_minima_in_invalid_region(self):
+        # Test where the objective function has regions where evaluation
+        # is not possible and the minima lies within this region. In this
+        # case, the optimization will fail and exit to the last point where
+        # the function evaluation was possible. The objective function is 
+        # based on the Bean function defined in Engineering Design
+        # Optimization by Dr. Martins and Dr. Ning.
+
+        def fun(x):
+            if x[0] < 2.0:
+                raise AnalysisError("Invalid Region")
+            return (1-x[0])**2 + (1-x[1])**2 + 0.5*(2.0*x[1]-x[0]**2)**2
+
+        res = minimize(fun, [5.0, 10.0], method="SLSQP")
+
+        # Ensure optimization fails
+        assert not res.success
+        assert res.status == 9  # Iteration limit failure
+
+        # Check final point
+        assert res.x[0] >= 2  # Does not end in invalid region
+        fun(res.x)  # Ensure func can be evaluated without error at final point
+
+        # Check that the optimization exits near the border of the invalid region
+        assert res.x[0] < 2.1
+
+    def test_divergent_simulation_problem(self):
+        # Test problem involving a numerical simulation with scaling
+        # such that it is intentionally divergent. Tests that SLSQP
+        # is able to recover from the divence via raising an AnalysisError
+
+        prob = DivergentSimulationProblem()
+        constraints = [{'type': 'ineq', 'fun': prob.cons, 'jac': prob.cons_jac}]
+
+        x0 = 1.0
+        res = minimize(
+            prob.obj,
+            x0/prob.SCALE_X,
+            method='SLSQP',
+            jac=prob.obj_jac,
+            constraints=constraints,
+            tol=1e-6
+        )
+
+        assert res.success
+        np.testing.assert_allclose(res.fun + 1, prob.fglob + 1.0, rtol=1e-3)
+        np.testing.assert_allclose(res.x, [prob.xglob], rtol=1e-3)
+
+        # Ensure the test is valid (the function entered the invalid region)
+        assert prob.divergent_simulations >= 1
+
+    def test_callbacks_in_invalid_region(self):
+        # Tests that AnalysisError support does not interfere with callbacks
+
+        all_x = []
+        def callback(x):
+            all_x.append(x)
+
+        def fun(x):
+            if x[0] < 2.0:
+                raise AnalysisError("Invalid Region")
+            return x**2
+
+        # Optimization will fail here, but that's not relevant
+        minimize(fun, 5.0, method="SLSQP", callback=callback)
+
+        # Check that the callback still triggered even in the invalid region
+        assert any([x < 2.0 for x in all_x])
 
 def test_slsqp_segfault_wrong_workspace_computation():
     # See gh-14915
@@ -677,3 +865,107 @@ def test_slsqp_segfault_wrong_workspace_computation():
 
     efficient_metric(x, target)
 
+
+class DivergentSimulationProblem:
+    """
+    Problem that optimizes a logistic-map parameter so that the
+    final population density is 0.25, while enforcing monotonic increase in
+    population over time via inequality constraints.
+
+    The logistic map is iterated for 51 steps starting from ``y0 = 0.1``.
+    The objective minimizes ``(y_T - 0.25)**2`` and the constraints require
+    ``np.diff(y) >= 0``.
+
+    The logistic map is defined as:
+
+    .. math::
+
+        y_{t+1} = x * y_t * (1 - y_t)
+
+    where ``x`` is the parameter to be optimized.
+
+    Notes
+    -----
+    * The simulation raises ``AnalysisError`` when the state or its
+      sensitivities diverge to infinity or overflow is encountered
+    * An intentionally poor scaling factor ``SCALE_X`` is used to drive
+    the optimizer towards the divergent region
+
+    References
+    ----------
+    .. [1] R. M. May, "Simple mathematical models with very complicated dynamics,"
+           Nature, 261, 459-467 (1976). https://doi.org/10.1038/261459a0
+    """
+
+    def __init__(self):
+
+        # Scale factor to encourage large steps
+        self.SCALE_X = 10.0
+
+        # Analytic Solution
+        self.fglob = 0.0
+        self.xglob = (4.0/3.0) / self.SCALE_X  # Won't be exact as we only do 51 steps
+
+        # Track function calls where simulation diverges
+        self.divergent_simulations = 0
+
+        # Sim Cache
+        self.cache_x = None
+        self.cache_res = None
+
+    # Avoid excessive calls to simulation
+    def get_sim_results(self, x):
+        x = float(x[0])
+        if self.cache_x is None or x != self.cache_x:
+            self.cache_res = self.simulate(x)
+            self.cache_x = x
+        return self.cache_res
+
+    def scale_x(self, x):
+        return self.SCALE_X * x
+
+    def simulate(self, x):
+        num_iter = 51
+        y, dy_dx = [0.0]*num_iter, [0.0]*num_iter
+        y[0] = 0.1
+
+        # Run simulation and propagate gradients
+        for i in range(1, num_iter):
+            y[i] = x*y[i-1]*(1.0 - y[i-1])
+            dy_dx[i] = y[i-1]*(1.0 - y[i-1]) + x*(1.0 - 2.0*y[i-1])*dy_dx[i-1]
+
+        # Check for divergent simulation
+        if any([np.any(np.isinf(y)), np.any(np.isinf(dy_dx))]):
+            self.divergent_simulations += 1
+            raise AnalysisError()
+
+        return y, dy_dx
+
+    def obj(self, x):
+        x_scaled = self.scale_x(x)
+        y, _ = self.get_sim_results(x_scaled)
+        try:
+            obj = (y[-1] - 0.25)**2
+        except OverflowError:
+            self.divergent_simulations += 1
+            raise AnalysisError()
+        return obj
+
+    def obj_jac(self, x):
+        x_scaled = self.scale_x(x)
+        y, dy_dx = self.get_sim_results(x_scaled)
+        dobj_dx = 2.0 * (y[-1] - 0.25) * dy_dx[-1]
+        dobj_dxscaled =  dobj_dx * self.SCALE_X
+        return dobj_dxscaled
+
+    def cons(self, x):
+        x_scaled = self.scale_x(x)
+        y, _ = self.get_sim_results(x_scaled)
+        return np.diff(y)
+
+    def cons_jac(self, x):
+        x_scaled = self.scale_x(x)
+        _, dy_dx = self.get_sim_results(x_scaled)
+        dcon_dx = np.diff(dy_dx).reshape(-1, 1)
+        dcon_dxscaled = dcon_dx * self.SCALE_X
+        return dcon_dxscaled
