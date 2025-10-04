@@ -10306,7 +10306,7 @@ def _br(x, *, r=0, xp):
     n = x.shape[-1]
     x = xp.expand_dims(x, axis=-2)
     x = xp.broadcast_to(x, x.shape[:-2] + (r.shape[0], n))
-    x = _triu(x, xp=xp)
+    x = xp.triu(x)
     j = xp.arange(n, dtype=x.dtype)
     n = xp.asarray(n, dtype=x.dtype)[()]
     return (xp.vecdot(special.binom(j, r[:, xp.newaxis]), x, axis=-1)
@@ -10318,15 +10318,6 @@ def _prk(r, k):
     # This does not protect against overflow, so improvements to
     # robustness would be a welcome follow-up.
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
-
-
-def _triu(x, xp):
-    # not array API compatible, but supported by cupy, jax.numpy, torch, dask.array
-    if is_array_api_strict(xp):
-        # allows testing with array_api_strict
-        return xp.asarray(np.triu(np.asarray(x)))
-    else:
-        return xp.triu(x)
 
 
 @xp_capabilities(skip_backends=[('dask.array', "too many issues")],
