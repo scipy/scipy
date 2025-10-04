@@ -2496,6 +2496,20 @@ class TestLogser:
         #   1.000000005
         assert_allclose(m, 1.000000005)
 
+    def test_sf(self):
+        p = [[0.5], [1e-5], [1 - 1e-5]]
+        k = [1, 10, 100, 1000]
+        # Reference values from Wolfram Alpha, e.g.
+        # SurvivalFunction[LogSeriesDistribution[99999/100000], 1000]
+        # 0.35068668662799737584735036958139157462633608106500173019897861351038286634
+        ref = [[0.2786524795555183, 0.00011876901682721189,
+                1.1159788564768581e-32, 1.3437300083506688e-304],
+               [5.000008333375e-06, 9.090946969973778e-52, 0, 0],
+               [0.9131419722083134, 0.745601735620566,
+                0.5495169511115096, 0.3506866866279974]]
+        res = stats.logser.sf(k, p)
+        np.testing.assert_allclose(res, ref, atol=1e-300)
+
 
 class TestGumbel_r_l:
     @pytest.fixture(scope='function')
