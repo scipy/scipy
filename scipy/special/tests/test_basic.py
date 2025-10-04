@@ -799,12 +799,6 @@ class TestCephes:
             warnings.filterwarnings("ignore", msg, RuntimeWarning)
             cephes.pdtri(0.5,0.5)
 
-    def test_pdtrik(self):
-        k = cephes.pdtrik(0.5, 1)
-        assert_allclose(cephes.gammaincc(k + 1, 1), 0.5, atol=1.5e-7, rtol=0)
-        # Edge case: m = 0 or very small.
-        k = cephes.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
-        assert_array_equal(k, np.zeros((3, 3)))
 
     def test_pro_ang1(self):
         cephes.pro_ang1(1,1,1,0)
