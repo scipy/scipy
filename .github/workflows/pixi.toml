@@ -3,7 +3,7 @@ name = "scipy-ci"
 description = "Environment and task management for SciPy CI"
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
-platforms = ["linux-64", "osx-arm64", "win-64"]
+platforms = ["linux-64", "osx-arm64", "win-64", "linux-aarch64"]
 
 
 ### Environments ###
@@ -17,6 +17,11 @@ solve-group = "default"
 [environments.test]
 # tasks: test
 features = ["run-deps", "test-deps", "test-task"]
+solve-group = "default"
+
+[environments.test-fail-slow]
+# tasks: test-fail-slow
+features = ["run-deps", "test-deps", "fail-slow"]
 solve-group = "default"
 
 [environments.ipython]
@@ -43,6 +48,16 @@ solve-group = "debug"
 # tasks: lint, check-python-h
 features = ["lint"]
 
+[environments.build-mkl]
+# tasks: build-mkl
+features = ["build-deps", "build-mkl", "mkl-deps"]
+solve-group = "mkl"
+
+[environments.test-mkl]
+# tasks: test-mkl
+features = ["run-deps", "test-deps", "test-mkl", "mkl-deps"]
+solve-group = "mkl"
+
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
 # and create a non-default solve group with minimal dependencies
 # to more reliably test the very latest versions of core dependencies
@@ -63,17 +78,17 @@ solve-group = "array-api-cpu"
 
 [environments.jax-cpu]
 # tasks: test-jax
-features = ["run-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
+features = ["run-deps", "test-deps", "mkl-deps", "jax-cpu", "jax-cpu-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.torch-cpu]
 # tasks: test-torch, test-torch-float32
-features = ["run-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
+features = ["run-deps", "test-deps", "mkl-deps", "torch-cpu", "torch-cpu-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.array-api-cpu]
 # tasks: test-cpu
-features = ["run-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
+features = ["run-deps", "test-deps", "test-cpu", "mkl-deps", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
 solve-group = "array-api-cpu"
 
 [environments.build-cuda]
@@ -88,12 +103,12 @@ solve-group = "cuda13"
 
 [environments.jax-cuda]
 # tasks: test-jax-cuda
-features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
+features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl-deps", "jax-cuda"]
 solve-group = "cuda12"
 
 [environments.torch-cuda]
 # tasks: test-torch-cuda
-features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
+features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl-deps", "torch-cuda"]
 solve-group = "cuda12"
 
 [environments.build-accelerate-lp64]
@@ -121,7 +136,7 @@ solve-group = "accelerate-ilp64"
 features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
-# tasks: build-scipy-openblas, test-scipy-openblas
+# tasks: build-scipy-openblas-32, build-scipy-openblas-64, test-scipy-openblas-32, test-scipy-openblas-64
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
 
@@ -181,6 +196,16 @@ cmd = "spin test --no-build"
 cwd = "../.."
 depends-on = "build"
 description = "Test SciPy (default settings)"
+
+
+[feature.fail-slow.dependencies]
+pytest-fail-slow = "*"
+
+[feature.fail-slow.tasks.test-fail-slow]
+cmd = "spin test --no-build -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
+cwd = "../.."
+depends-on = "build"
+description = "Test SciPy with `fail-slow=1.0`"
 
 
 ### IPython ###
@@ -256,15 +281,24 @@ description = "Check that `Python.h` is included before any stdlib headers"
 
 ### BLAS/LAPACK features ###
 
-[feature.mkl.target.linux-64.dependencies]
+[feature.mkl-deps.target.linux-64.dependencies]
 libblas = { version = "*", build = "*mkl" }
 mkl = "*"
 
-[feature.mkl.tasks.build-mkl]
+[feature.build-mkl]
+platforms = ["linux-64"]
+
+[feature.build-mkl.tasks.build-mkl]
 cmd = "spin build --build-dir=build-mkl --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
-cwd = "scipy"
+cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build with MKL BLAS"
+
+[feature.test-mkl.tasks.test-mkl]
+cmd = "spin test --no-build --build-dir=build-mkl"
+cwd = "../.."
+depends-on = "build-mkl"
+description = "Test SciPy (with MKL BLAS)"
 
 
 [feature.accelerate]
@@ -300,18 +334,37 @@ description = "Test SciPy with accelerate (ilp64)"
 
 [feature.scipy-openblas.pypi-dependencies]
 scipy-openblas32 = "*"
+scipy-openblas64 = "*"
 
-[feature.scipy-openblas.tasks.build-scipy-openblas]
-cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
+[feature.scipy-openblas.tasks.build-scipy-openblas-32]
+cmd = "spin build --build-dir=build-scipy-openblas-32 --with-scipy-openblas"
 cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with scipy-openblas32"
 
-[feature.scipy-openblas.tasks.test-scipy-openblas]
-cmd = "spin test --no-build --build-dir=build-scipy-openblas"
+[feature.scipy-openblas.tasks.test-scipy-openblas-32]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas-32"
 cwd = "../.."
-depends-on = "build-scipy-openblas"
+depends-on = "build-scipy-openblas-32"
 description = "Test SciPy with scipy-openblas32"
+
+[feature.scipy-openblas.tasks.build-scipy-openblas-64]
+cmd = "spin build --build-dir=build-scipy-openblas-64 --with-scipy-openblas -S-Duse-ilp64=true"
+cwd = "../.."
+env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+depends-on = "_write-scipy-openblas-64-pc"
+description = "Build SciPy with scipy-openblas32"
+
+[feature.scipy-openblas.tasks._write-scipy-openblas-64-pc]
+cmd = "python -c 'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc"
+cwd = "../.."
+description = "Write out scipy-openblas64.pc (spin does this for scipy-openblas32)"
+
+[feature.scipy-openblas.tasks.test-scipy-openblas-64]
+cmd = "spin test --no-build --build-dir=build-scipy-openblas-64"
+cwd = "../.."
+depends-on = "build-scipy-openblas-64"
+description = "Test SciPy with scipy-openblas64"
 
 
 ### CPU/CUDA features ###
