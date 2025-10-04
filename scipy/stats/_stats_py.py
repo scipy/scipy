@@ -71,7 +71,6 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
-    is_array_api_strict,
     xp_size,
     xp_vector_norm,
     xp_promote,
