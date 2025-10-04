@@ -82,8 +82,8 @@ class Rotation:
 
     A `Rotation` instance can contain a single rotation transform or rotations of
     multiple leading dimensions. E.g., it is possible to have an N-dimensional array of
-    (N, M, K) rotations. When applied to other rotations or vectors, standard broadcasting
-    rules apply.
+    (N, M, K) rotations. When applied to other rotations or vectors, standard
+    broadcasting rules apply.
 
     Indexing within a rotation is supported to access a subset of the rotations stored
     in a `Rotation` instance.
@@ -2011,13 +2011,13 @@ class Rotation:
             Weights describing the relative importance of the rotations. If
             None (default), then all values in `weights` are assumed to be
             equal. If given, the shape of `weights` must be broadcastable to
-            the rotation shape.
+            the rotation shape. Weights must be non-negative.
 
         Returns
         -------
         mean : `Rotation` instance
-            Object containing the mean of the rotations in the current
-            instance.
+            Single rotation containing the mean of the rotations in the
+            current instance.
 
         References
         ----------
