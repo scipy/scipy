@@ -847,13 +847,14 @@ def test_chdtriv_p_equals_1_returns_0(x):
 
 
 class TestNrdtrimn:
-    @pytest.mark.parametrize("x", [-np.inf, np.inf])
-    def test_nrdtrimn_infinite_x(self, x):
-        result = sp.nrdtrimn(0.5, 1, x)
-        assert np.isinf(result)
-        assert np.sign(result) == np.sign(x)
+    def test_nrdtrimn_positive_infinite_x(self):
+        result = sp.nrdtrimn(0.5, 1, np.inf)
+        assert np.isposinf(result)
+
+    def test_nrdtrimn_negative_infinite_x(self):
+        result = sp.nrdtrimn(0.5, 1, -np.inf)
+        assert np.isneginf(result)
 
     def test_infinite_sd(self):
         result = sp.nrdtrimn(0.5, np.inf, 1)
-        assert np.isinf(result)
-        assert result < 0
+        assert np.isneginf(result)
