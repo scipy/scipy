@@ -844,3 +844,16 @@ class TestNoncentralChiSquaredFunctions:
 @pytest.mark.parametrize("x", [0.1, 100])
 def test_chdtriv_p_equals_1_returns_0(x):
     assert sp.chdtriv(1, x) == 0
+
+
+class TestNrdtrimn:
+    @pytest.mark.parametrize("x", [-np.inf, np.inf])
+    def test_nrdtrimn_infinite_x(self, x):
+        result = sp.nrdtrimn(0.5, 1, x)
+        assert np.isinf(result)
+        assert np.sign(result) == np.sign(x)
+
+    def test_infinite_sd(self):
+        result = sp.nrdtrimn(0.5, np.inf, 1)
+        assert np.isinf(result)
+        assert result < 0
