@@ -1094,8 +1094,6 @@ def newton_cotes(rn, equal=0):
 
 
 def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp):
-    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
-
     # lazy import to avoid issues with partially-initialized submodule
     if not hasattr(qmc_quad, 'qmc'):
         from scipy import stats
@@ -1108,6 +1106,7 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp):
         raise TypeError(message)
 
     # a, b will be modified, so copy. Oh well if it's copied twice.
+    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
     a = xpx.atleast_nd(a, ndim=1, xp=xp)
     b = xpx.atleast_nd(b, ndim=1, xp=xp)
     a, b = xp.broadcast_arrays(a, b)
@@ -1181,7 +1180,8 @@ QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
 @xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")])
+                                 "JAX arrays do not support item assignment")],
+                                 allow_dask_compute=1)
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
              log=False):
     """
