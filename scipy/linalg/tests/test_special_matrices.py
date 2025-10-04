@@ -197,6 +197,7 @@ class TestBlockDiag:
                                        [0, 0, 4, 5],
                                        [0, 0, 6, 7]]))
 
+    @pytest.mark.skip_xp_backends("dask.array", reason="dask/dask#11800")
     def test_zerosized_matrix_arg(self, xp):
         # test for gh-4908: check the shape of the result for
         # zero-sized matrix inputs, i.e. matrices with shape (0,n) or (n,0).
