@@ -1179,9 +1179,9 @@ def _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log, xp):
 QMCQuadResult = namedtuple('QMCQuadResult', ['integral', 'standard_error'])
 
 
-@xp_capabilities(skip_backends=[('jax.numpy',
-                                 "JAX arrays do not support item assignment")],
-                                 allow_dask_compute=1)
+@xp_capabilities(skip_backends=[("dask.array",
+                                 "Dask arrays are confused about their shape")],
+                 jax_jit=False)
 def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
              log=False):
     """
@@ -1340,7 +1340,11 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     i_swap = b < a
     sign = (-1)**(xp.count_nonzero(i_swap, axis=-1))  # odd # of swaps -> negative
     sign = xp.astype(sign, a.dtype)
-    a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    # a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+    a_iswap = a[i_swap]
+    b_iswap = b[i_swap]
+    a = xpx.at(a)[i_swap].set(b_iswap)
+    b = xpx.at(b)[i_swap].set(a_iswap)
 
     A = xp.prod(b - a)
     dA = A / n_points
@@ -1355,7 +1359,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.
         x = (sample * (b - a) + a).T  # (n_dim, n_points)
         integrands = func(x)
-        estimates[i] = sum_product(integrands, dA, log)
+        estimates = xpx.at(estimates)[i].set(sum_product(integrands, dA, log))
 
         # Get a new, independently-scrambled QRNG for next time
         qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
