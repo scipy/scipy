@@ -3420,6 +3420,14 @@ def sigmaclip(a, low=4., high=4.):
     upper : float
         Upper threshold value use for clipping.
 
+    Notes
+    -----
+    This function iteratively *removes* observations. Once observations are
+    removed, they are not re-added in subsequent iterations. Consequently,
+    although it is often the case that ``clipped`` is identical to
+    ``a[(a >= lower) & (a <= upper)]``, this property is not guaranteed to be
+    satisfied; ``clipped`` may have fewer elements.
+
     Examples
     --------
     >>> import numpy as np
