@@ -93,9 +93,8 @@ def test_two_methods_give_same_result_on_many_sparse_inputs():
     for _ in range(100):
         lsa_raises = False
         mwfbm_raises = False
-
-        sparse = random(100, 100, density=0.06,
-                        data_rvs=lambda size: rng.integers(1, 100, size))
+        sparse = random_array(100, 100, density=0.06,
+            data_sampler=lambda size: rng.integers(1, 100, size))
         # In csgraph, zeros correspond to missing edges, so we explicitly
         # replace those with infinities
         dense = np.full(sparse.shape, np.inf)
