@@ -32,14 +32,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-import os.path
-
 from functools import wraps, partial
+import os.path
+import sys
+import sysconfig
+import warnings
 import weakref
 
 import numpy as np
-import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
@@ -57,10 +57,9 @@ from scipy.spatial.distance import (
 # jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
-                                    hamming, jaccard, jensenshannon,
-                                    kulczynski1, mahalanobis,
+                                    hamming, jaccard, jensenshannon, mahalanobis,
                                     minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener,  # noqa: F401
+                                    russellrao, seuclidean,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import np_long, np_ulong
 from scipy.conftest import skip_xp_invalid_arg
@@ -378,20 +377,6 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
     return wrapped
 
 
-class DummyContextManager:
-    def __enter__(self):
-        pass
-    def __exit__(self, *args):
-        pass
-
-
-def maybe_deprecated(metric: str):
-    if metric in ('kulczynski1', 'sokalmichener'):
-        return pytest.deprecated_call()
-    else:
-        return DummyContextManager()
-
-
 wcdist = _weight_checked(cdist, default_axis=1, squeeze=False)
 wcdist_no_const = _weight_checked(cdist, default_axis=1,
                                   squeeze=False, const_test=False)
@@ -406,14 +391,12 @@ wcityblock = _weight_checked(cityblock)
 wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
-wkulczynski1 = _weight_checked(kulczynski1)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
 wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
 wbraycurtis = _weight_checked(braycurtis)
 wcanberra = _weight_checked(canberra, const_test=False)
 wsokalsneath = _weight_checked(sokalsneath)
-wsokalmichener = _weight_checked(sokalmichener)
 wrussellrao = _weight_checked(russellrao)
 
 
@@ -428,7 +411,6 @@ class TestCdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
-    @pytest.mark.thread_unsafe
     def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
 
@@ -438,14 +420,11 @@ class TestCdist:
         args = [3.14] * 200
 
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric=metric, **kwargs)
+            cdist(X1, X2, metric=metric, **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric=eval(metric), **kwargs)
+            cdist(X1, X2, metric=eval(metric), **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric="test_" + metric, **kwargs)
+            cdist(X1, X2, metric="test_" + metric, **kwargs)
         with pytest.raises(TypeError):
             cdist(X1, X2, metric=metric, *args)
         with pytest.raises(TypeError):
@@ -584,11 +563,9 @@ class TestCdist:
             X2 = eo[eo_name][1::5, ::2]
             if verbose > 2:
                 print("testing: ", metric, " with: ", eo_name)
-            if metric in {'dice', 'yule',
-                          'rogerstanimoto',
-                          'russellrao', 'sokalmichener',
-                          'sokalsneath',
-                          'kulczynski1'} and 'bool' not in eo_name:
+            if (metric in {'dice', 'yule', 'rogerstanimoto', 'russellrao',
+                           'sokalsneath'}
+                and 'bool' not in eo_name):
                 # python version permits non-bools e.g. for fuzzy logic
                 continue
             self._check_calling_conventions(X1, X2, metric)
@@ -631,7 +608,7 @@ class TestCdist:
                     y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
+    @pytest.mark.skipif(sysconfig.get_platform() == 'win-arm64', reason="numpy#29442")
     def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -643,10 +620,8 @@ class TestCdist:
         if metric == 'minkowski':
             kwargs['p'] = 1.23
         out1 = np.empty((out_r, out_c), dtype=np.float64)
-        with maybe_deprecated(metric):
-            Y1 = cdist(X1, X2, metric, **kwargs)
-        with maybe_deprecated(metric):
-            Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
 
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
@@ -657,27 +632,22 @@ class TestCdist:
         # test for incorrect shape
         out2 = np.empty((out_r-1, out_c+1), dtype=np.float64)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric, out=out2, **kwargs)
+            cdist(X1, X2, metric, out=out2, **kwargs)
 
         # test for C-contiguous order
         out3 = np.empty(
             (2 * out_r, 2 * out_c), dtype=np.float64)[::2, ::2]
         out4 = np.empty((out_r, out_c), dtype=np.float64, order='F')
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric, out=out3, **kwargs)
+            cdist(X1, X2, metric, out=out3, **kwargs)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric, out=out4, **kwargs)
+            cdist(X1, X2, metric, out=out4, **kwargs)
 
         # test for incorrect dtype
         out5 = np.empty((out_r, out_c), dtype=np.int64)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                cdist(X1, X2, metric, out=out5, **kwargs)
+            cdist(X1, X2, metric, out=out5, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -699,14 +669,11 @@ class TestCdist:
         kwargs = dict()
         if metric == 'minkowski':
             kwargs['p'] = 1.23
-        with maybe_deprecated(metric):
-            Y1 = cdist(X1, X2, metric, **kwargs)
-        with maybe_deprecated(metric):
-            Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+        Y1 = cdist(X1, X2, metric, **kwargs)
+        Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
     def test_cdist_refcount(self, metric):
         x1 = np.random.rand(10, 10)
         x2 = np.random.rand(10, 10)
@@ -715,8 +682,7 @@ class TestCdist:
         if metric == 'minkowski':
             kwargs['p'] = 1.23
 
-        with maybe_deprecated(metric):
-            out = cdist(x1, x2, metric=metric, **kwargs)
+        out = cdist(x1, x2, metric=metric, **kwargs)
 
         # Check reference counts aren't messed up. If we only hold weak
         # references, the arrays should be deallocated.
@@ -739,7 +705,6 @@ class TestPdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
-    @pytest.mark.thread_unsafe
     def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
@@ -747,14 +712,11 @@ class TestPdist:
         args = [3.14] * 200
 
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric=metric, **kwargs)
+            pdist(X1, metric=metric, **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric=eval(metric), **kwargs)
+            pdist(X1, metric=eval(metric), **kwargs)
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric="test_" + metric, **kwargs)
+            pdist(X1, metric="test_" + metric, **kwargs)
         with pytest.raises(TypeError):
             pdist(X1, metric=metric, *args)
         with pytest.raises(TypeError):
@@ -1418,10 +1380,8 @@ class TestPdist:
             X = eo[eo_name][::5, ::2]
             if verbose > 2:
                 print("testing: ", metric, " with: ", eo_name)
-            if metric in {'dice', 'yule', 'matching',
-                          'rogerstanimoto', 'russellrao', 'sokalmichener',
-                          'sokalsneath',
-                          'kulczynski1'} and 'bool' not in eo_name:
+            if metric in {'dice', 'yule', 'matching', 'rogerstanimoto', 'russellrao',
+                          'sokalsneath'} and 'bool' not in eo_name:
                 # python version permits non-bools e.g. for fuzzy logic
                 continue
             self._check_calling_conventions(X, metric)
@@ -1460,7 +1420,6 @@ class TestPdist:
                     y2 = pdist(new_type(X1), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.thread_unsafe
     def test_pdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1471,10 +1430,8 @@ class TestPdist:
         if metric == 'minkowski':
             kwargs['p'] = 1.23
         out1 = np.empty(out_size, dtype=np.float64)
-        with maybe_deprecated(metric):
-            Y_right = pdist(X, metric, **kwargs)
-        with maybe_deprecated(metric):
-            Y_test1 = pdist(X, metric, out=out1, **kwargs)
+        Y_right = pdist(X, metric, **kwargs)
+        Y_test1 = pdist(X, metric, out=out1, **kwargs)
 
         # test that output is numerically equivalent
         assert_allclose(Y_test1, Y_right, rtol=eps)
@@ -1485,22 +1442,18 @@ class TestPdist:
         # test for incorrect shape
         out2 = np.empty(out_size + 3, dtype=np.float64)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                pdist(X, metric, out=out2, **kwargs)
+            pdist(X, metric, out=out2, **kwargs)
 
         # test for (C-)contiguous output
         out3 = np.empty(2 * out_size, dtype=np.float64)[::2]
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                pdist(X, metric, out=out3, **kwargs)
+            pdist(X, metric, out=out3, **kwargs)
 
         # test for incorrect dtype
         out5 = np.empty(out_size, dtype=np.int64)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                pdist(X, metric, out=out5, **kwargs)
+            pdist(X, metric, out=out5, **kwargs)
 
-    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -1515,10 +1468,8 @@ class TestPdist:
         kwargs = dict()
         if metric == 'minkowski':
             kwargs['p'] = 1.23
-        with maybe_deprecated(metric):
-            Y1 = pdist(X, metric, **kwargs)
-        with maybe_deprecated(metric):
-            Y2 = pdist(X_copy, metric, **kwargs)
+        Y1 = pdist(X, metric, **kwargs)
+        Y2 = pdist(X_copy, metric, **kwargs)
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
@@ -1588,13 +1539,12 @@ class TestSomeDistanceFunctions:
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings('ignore:Casting complex')
     @pytest.mark.parametrize("func", [correlation, cosine])
     def test_corr_dep_complex(self, func):
         x = [1+0j, 2+0j]
         y = [3+0j, 4+0j]
-        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+        with pytest.raises(TypeError, match="real"):
             func(x, y)
 
     def test_mahalanobis(self):
@@ -2038,47 +1988,6 @@ def test_sqeuclidean_dtypes():
         assert_equal(d.dtype, dtype)
 
 
-@pytest.mark.thread_unsafe
-def test_sokalmichener():
-    # Test that sokalmichener has the same result for bool and int inputs.
-    p = [True, True, False]
-    q = [True, False, True]
-    x = [int(b) for b in p]
-    y = [int(b) for b in q]
-    with pytest.deprecated_call():
-        dist1 = sokalmichener(p, q)
-    with pytest.deprecated_call():
-        dist2 = sokalmichener(x, y)
-    # These should be exactly the same.
-    assert_equal(dist1, dist2)
-
-
-@pytest.mark.thread_unsafe
-def test_sokalmichener_with_weight():
-    # from: | 1 |   | 0 |
-    # to:   | 1 |   | 1 |
-    # weight|   | 1 |   | 0.2
-    ntf = 0 * 1 + 0 * 0.2
-    nft = 0 * 1 + 1 * 0.2
-    ntt = 1 * 1 + 0 * 0.2
-    nff = 0 * 1 + 0 * 0.2
-    expected = 2 * (nft + ntf) / (ntt + nff + 2 * (nft + ntf))
-    assert_almost_equal(expected, 0.2857143)
-    with pytest.deprecated_call():
-        actual = sokalmichener([1, 0], [1, 1], w=[1, 0.2])
-    assert_almost_equal(expected, actual)
-
-    a1 = [False, False, True, True, True, False, False, True, True, True, True,
-          True, True, False, True, False, False, False, True, True]
-    a2 = [True, True, True, False, False, True, True, True, False, True,
-          True, True, True, True, False, False, False, True, True, True]
-
-    for w in [0.05, 0.1, 1.0, 20.0]:
-        with pytest.deprecated_call():
-            assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
-
-
-@pytest.mark.thread_unsafe
 def test_modifies_input(metric):
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
@@ -2086,14 +1995,11 @@ def test_modifies_input(metric):
                      [2.2, 2.3, 4.4],
                      [22.2, 23.3, 44.4]])
     X1_copy = X1.copy()
-    with maybe_deprecated(metric):
-        cdist(X1, X1, metric)
-    with maybe_deprecated(metric):
-        pdist(X1, metric)
+    cdist(X1, X1, metric)
+    pdist(X1, metric)
     assert_array_equal(X1, X1_copy)
 
 
-@pytest.mark.thread_unsafe
 def test_Xdist_deprecated_args(metric):
     # testing both cdist and pdist deprecated warnings
     X1 = np.asarray([[1., 2., 3.],
@@ -2116,15 +2022,12 @@ def test_Xdist_deprecated_args(metric):
             continue
 
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                cdist(X1, X1, metric, **kwargs)
+            cdist(X1, X1, metric, **kwargs)
 
         with pytest.raises(TypeError):
-            with maybe_deprecated(metric):
-                pdist(X1, metric, **kwargs)
+            pdist(X1, metric, **kwargs)
 
 
-@pytest.mark.thread_unsafe
 def test_Xdist_non_negative_weights(metric):
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
@@ -2135,11 +2038,9 @@ def test_Xdist_non_negative_weights(metric):
 
     for m in [metric, eval(metric), "test_" + metric]:
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                pdist(X, m, w=w)
+            pdist(X, m, w=w)
         with pytest.raises(ValueError):
-            with maybe_deprecated(metric):
-                cdist(X, X, m, w=w)
+            cdist(X, X, m, w=w)
 
 
 def test__validate_vector():
@@ -2221,14 +2122,24 @@ def test_gh_17703():
     assert_allclose(actual, expected)
 
 
-@pytest.mark.thread_unsafe
 def test_immutable_input(metric):
     if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
         pytest.skip("not applicable")
     x = np.arange(10, dtype=np.float64)
     x.setflags(write=False)
-    with maybe_deprecated(metric):
-        getattr(scipy.spatial.distance, metric)(x, x, w=x)
+    getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+def test_gh_23109():
+    a = np.array([0, 0, 1, 1])
+    b = np.array([0, 1, 1, 0])
+    w = np.asarray([1.5, 1.2, 0.7, 1.3])
+    expected = yule(a, b, w=w)
+    assert_allclose(expected, 1.1954022988505748)
+    actual = cdist(np.atleast_2d(a),
+                   np.atleast_2d(b),
+                   metric='yule', w=w)
+    assert_allclose(actual, expected)
 
 
 class TestJaccard:

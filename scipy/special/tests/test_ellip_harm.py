@@ -2,10 +2,10 @@
 # Tests for the Ellipsoidal Harmonic Function,
 # Distributed under the same license as SciPy itself.
 #
+import warnings
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_, suppress_warnings)
+from numpy.testing import assert_equal, assert_allclose, assert_
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
 from scipy.integrate import IntegrationWarning
@@ -52,9 +52,11 @@ def test_ellip_potential():
         (120, sqrt(16), 3.2, 21, sqrt(11), 2.9, 11, 20),
        ]
 
-    with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
-        sup.filter(IntegrationWarning, "The maximum number of subdivisions")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The occurrence of roundoff error", IntegrationWarning)
+        warnings.filterwarnings(
+            "ignore", "The maximum number of subdivisions", IntegrationWarning)
 
         for p in pts:
             err_msg = repr(p)
@@ -159,8 +161,9 @@ def test_ellip_norm():
         for p in range(1, 2*n+2):
             points.append((h2, k2, np.full(h2.size, n), np.full(h2.size, p)))
     points = np.array(points)
-    with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The occurrence of roundoff error", IntegrationWarning)
         assert_func_equal(ellip_normal, ellip_normal_known, points, rtol=1e-12)
 
 
@@ -172,16 +175,23 @@ def test_ellip_harm_2():
         ellip_harm_2(h2, k2, 1, 3, s)/(3 * ellip_harm(h2, k2, 1, 3, s)))
         return res
 
-    with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
-        assert_almost_equal(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))))
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The occurrence of roundoff error", IntegrationWarning)
+        assert_allclose(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))),
+                        atol=1.5e-7, rtol=0)
 
         # Values produced by code from arXiv:1204.0267
-        assert_almost_equal(ellip_harm_2(5, 8, 2, 1, 10), 0.00108056853382)
-        assert_almost_equal(ellip_harm_2(5, 8, 2, 2, 10), 0.00105820513809)
-        assert_almost_equal(ellip_harm_2(5, 8, 2, 3, 10), 0.00106058384743)
-        assert_almost_equal(ellip_harm_2(5, 8, 2, 4, 10), 0.00106774492306)
-        assert_almost_equal(ellip_harm_2(5, 8, 2, 5, 10), 0.00107976356454)
+        assert_allclose(ellip_harm_2(5, 8, 2, 1, 10), 0.00108056853382,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(ellip_harm_2(5, 8, 2, 2, 10), 0.00105820513809,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(ellip_harm_2(5, 8, 2, 3, 10), 0.00106058384743,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(ellip_harm_2(5, 8, 2, 4, 10), 0.00106774492306,
+                        atol=1.5e-7, rtol=0)
+        assert_allclose(ellip_harm_2(5, 8, 2, 5, 10), 0.00107976356454,
+                        atol=1.5e-7, rtol=0)
 
 
 def test_ellip_harm():

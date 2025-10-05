@@ -1,4 +1,5 @@
 #include "__nnls.h"
+#include <stdio.h>
 
 /* Algorithm NNLS: NONNEGATIVE LEAST SQUARES
 *
@@ -21,14 +22,15 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
 {
     int i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
-    double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T, tmp_work;
-    double pivot = 1.0, pivot2 = 0.0;
+    double tau = 0.0, unorm = 0.0, ztest, alpha, cc, ss, wmax, T, tmp_work;
+    double pivot = 1.0, pivot2 = 0.0, tmp = 0.0, spacing = 0.0;
     *info = 1;
     if (m <= 0 || n <= 0)
     {
         *info = 2;
         return;
     }
+
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
     for (i = 0; i < n; i++) { x[i] = 0.0; }
@@ -37,16 +39,13 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
     while (indz < (m < n ? m : n))
     {
         // Compute the dual vector components in set Z.
+        // Essentially a permuted gemv operation via BLAS ddot, in NumPy notation;
         // w[indices[indz:]] = A[indz:m, indices[indsz:]] @ b[indz:m]
         for (i = indz; i < n; i++)
         {
             j = indices[i];
-            tmp = 0.0;
-            for (k = indz; k < m; k++)
-            {
-                tmp = tmp + a[k + j*m] * b[k];
-            }
-            w[j] = tmp;
+            tmpint = m - indz;
+            w[j] = ddot_(&tmpint, &a[indz + j*m], &one, &b[indz], &one);
         }
 
         // Find the next linearly independent column that corresponds to the
@@ -76,10 +75,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
 
             // Compute the norm of a[0:indz, j] to check for linear dependence.
             unorm = (indz > 0 ? dnrm2_(&indz, &a[j*m], &one) : 0.0);
+            // unorm is nonnegative
+            spacing = (unorm > 0.0 ? nextafter(unorm, 2*unorm) - unorm : 0.0);
 
             // Test for independence by checking the pivot for zero.
-            // Note, e.g., (100. + 1e-15) - 100. == 0.0 in floating point arithmetic.
-            if (((unorm + fabs(pivot)*0.01) - unorm) > 0.0)
+            if (fabs(pivot) > 100.0*spacing)
             {
                 // Column j is sufficiently independent. Copy b into zz and solve
                 // for ztest which is the new prospective value for x[j].
@@ -88,7 +88,8 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 pivot2 = a[indz + j*m];
                 a[indz + j*m] = 1.0;
                 dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
-                // See if ztest is positive.
+                // See if ztest is positive. This is from the original F77 code.
+                // Probably better to use a sign test instead of a division.
                 ztest = zz[indz] / pivot;
                 if (ztest > 0.0)
                 {
@@ -104,8 +105,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
         }
         // ====================================================================
 
-
-        // the index  j=indices[iz]  has been selected to be moved from set z to
+        // the index j=indices[iz]  has been selected to be moved from set z to
         // set p. Update b, update indices, apply householder transformations to
         // cols in new set z,  zero subdiagonal elements in col j,  set w(j)=0.
         for (i = 0; i < m; i++) { b[i] = zz[i]; }

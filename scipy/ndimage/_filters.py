@@ -36,6 +36,7 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace, is_cupy, xp_size
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -53,8 +54,10 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
                           axes, batch_memory):
+    xp = array_namespace(input, footprint, output)
+
     # vectorized_filter input validation and standardization
-    input = np.asarray(input)
+    input = xp.asarray(input)
 
     if not callable(function):
         raise ValueError("`function` must be a callable.")
@@ -65,29 +68,37 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if size is not None and footprint is not None:
         raise ValueError("Either `size` or `footprint` may be provided, not both.")
 
-    # Either footprint or size must be provided, and these determine the core
-    # dimensionality...
+    if axes is None:
+        axes = tuple(range(-input.ndim, 0))
+    elif np.isscalar(axes):
+        axes = (axes,)
+    n_axes = len(axes)
+    n_batch = input.ndim - n_axes
+
+    if n_axes > input.ndim:
+        message = ("The length of `axes` may not exceed the dimensionality of `input`"
+                   "(`input.ndim`).")
+        raise ValueError(message)
+
+    # Either footprint or size must be provided
     footprinted_function = function
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
-        size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
-        valid = [np.issubdtype(np.asarray(i).dtype, np.integer) and i > 0 for i in size]
+        size = (size,)*n_axes if np.isscalar(size) else tuple(size)
+        valid = [xp.isdtype(xp.asarray(i).dtype, 'integral') and i > 0 for i in size]
         if not all(valid):
             raise ValueError("All elements of `size` must be positive integers.")
     else:
         # If provided, `footprint` must be array-like
-        footprint = np.asarray(footprint, dtype=bool)
+        footprint = xp.asarray(footprint, dtype=xp.bool)
         size = footprint.shape
         def footprinted_function(input, *args, axis=-1, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
 
-    n_axes = len(size)
-    n_batch = input.ndim - n_axes
-
-    # ...which can't exceed the dimensionality of `input`.
-    if n_axes > input.ndim:
-        message = ("The dimensionality of the window (`len(size)` or `footprint.ndim`) "
-                   "may not exceed the number of axes of `input` (`input.ndim`).")
+    # And by now, the dimensionality of the footprint must equal the number of axes
+    if n_axes != len(size):
+        message = ("`axes` must be compatible with the dimensionality "
+                   "of the window specified by `size` or `footprint`.")
         raise ValueError(message)
 
     # If this is not *equal* to the dimensionality of `input`, then `axes`
@@ -98,9 +109,10 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                        "(`len(size)` or `footprint.ndim`) does not equal the number "
                        "of axes of `input` (`input.ndim`).")
             raise ValueError(message)
-        axes = (axes,) if np.isscalar(axes) else axes
     else:
-        axes = tuple(range(-n_axes, 0))
+        axes = tuple(range(-n_axes, 0)) if axes is None else axes
+
+    axes = (axes,) if np.isscalar(axes) else axes
 
     # If `origin` is provided, then it must be "broadcastable" to a tuple with length
     # equal to the core dimensionality.
@@ -108,7 +120,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         origin = (0,) * n_axes
     else:
         origin = (origin,)*n_axes if np.isscalar(origin) else tuple(origin)
-        integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in origin]
+        integral = [xp.isdtype(xp.asarray(i).dtype, 'integral') for i in origin]
         if not all(integral):
             raise ValueError("All elements of `origin` must be integers.")
         if not len(origin) == n_axes:
@@ -117,7 +129,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             raise ValueError(message)
 
     # mode must be one of the allowed strings, and we should convert it to the
-    # value required by `np.pad` here.
+    # value required by `np.pad`/`cp.pad` here.
     valid_modes = {'reflect', 'constant', 'nearest', 'mirror', 'wrap',
                    'grid-mirror', 'grid-constant', 'grid-wrap', 'valid'}
     if mode not in valid_modes:
@@ -136,21 +148,20 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("Use of `cval` is compatible only with `mode='constant'`.")
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
-    # dimensionality of `input`. (Full input validation done by `np.pad`.)
-    if not np.issubdtype(np.asarray(cval).dtype, np.number):
+    # dimensionality of `input`. (Full input validation done by `np.pad`/`cp.pad`.)
+    if not xp.isdtype(xp.asarray(cval).dtype, 'numeric'):
         raise ValueError("`cval` must include only numbers.")
 
     # `batch_memory` must be a positive number.
-    temp = np.asarray(batch_memory)
-    if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
+    temp = xp.asarray(batch_memory)
+    if temp.ndim != 0 or (not xp.isdtype(temp.dtype, 'numeric')) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")
 
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
-    if axes is not None:
-        input = np.moveaxis(input, axes, working_axes)
-        output = (np.moveaxis(output, axes, working_axes)
-                  if output is not None else output)
+    input = xp.moveaxis(input, axes, working_axes)
+    output = (xp.moveaxis(output, axes, working_axes)
+              if output is not None else output)
 
     # Wrap the function to limit maximum memory usage, deal with `footprint`,
     # and populate `output`. The latter requires some verbosity because we
@@ -159,7 +170,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         kwargs = {'axis': working_axes}
 
         if working_axes == ():
-            return footprinted_function(view, **kwargs)
+            return footprinted_function(xp.asarray(view), **kwargs)
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
@@ -169,9 +180,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
         elif slices_per_batch == view.shape[0]:
             if output is None:
-                return footprinted_function(view, **kwargs)
+                return footprinted_function(xp.asarray(view), **kwargs)
             else:
-                output[...] = footprinted_function(view, **kwargs)
+                output[...] = footprinted_function(xp.asarray(view), **kwargs)
                 return output
 
         for i in range(0, view.shape[0], slices_per_batch):
@@ -179,15 +190,16 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             if output is None:
                 # Look at the dtype before allocating the array. (In a follow-up, we
                 # can also look at the shape to support non-scalar elements.)
-                temp = footprinted_function(view[i:i2], **kwargs)
-                output = np.empty(view.shape[:-n_axes], dtype=temp.dtype)
-                output[i:i2] = temp
+                temp = footprinted_function(xp.asarray(view[i:i2]), **kwargs)
+                output = xp.empty(view.shape[:-n_axes], dtype=temp.dtype)
+                output[i:i2, ...] = temp
             else:
-                output[i:i2] = footprinted_function(view[i:i2], **kwargs)
+                output[i:i2, ...] = footprinted_function(xp.asarray(view[i:i2]),
+                                                         **kwargs)
         return output
 
-    return (input, wrapped_function, size, mode, cval,
-            origin, working_axes, n_axes, n_batch)
+    return (input, wrapped_function, size, mode, cval, origin,
+            working_axes, axes, n_axes, n_batch, xp)
 
 
 @_ni_docstrings.docfiller
@@ -207,8 +219,22 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
         where ``axis`` specifies the axis (or axes) of ``window`` along which
         the filter function is evaluated.
-    %(size_foot)s
-    %(output)s
+    size : scalar or tuple, optional
+        See `footprint` below. Ignored if `footprint` is given.
+    footprint : array, optional
+        Either `size` or `footprint` must be defined. `size` gives
+        the shape that is taken from the input array, at every element
+        position, to define the input to the filter function.
+        `footprint` is a boolean array that specifies (implicitly) a
+        shape, but also which of the elements within this shape will get
+        passed to the filter function. Thus ``size=(n, m)`` is equivalent
+        to ``footprint=np.ones((n, m))``.
+        We adjust `size` to the number of dimensions indicated by `axes`.
+        For instance, if `axes` is ``(0, 2, 1)`` and ``n`` is passed for ``size``,
+        then the effective `size` is ``(n, n, n)``.
+    output : array, optional
+        The array in which to place the output. By default, an array of the dtype
+        returned by `function` will be created.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the input array is extended
         beyond its boundaries. Default is 'reflect'. Behavior for each valid
@@ -405,39 +431,53 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """  # noqa: E501
 
-    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
+    (input, function, size, mode, cval, origin, working_axes, axes, n_axes, n_batch, xp
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, axes, batch_memory)
 
-    # `np.pad` raises with these sorts of cases, but the best result is probably
-    # to return the original array. It could be argued that we should call the
-    # function on the empty array with `axis=None` just to determine the output
+    # `np.pad`/`cp.pad` raises with these sorts of cases, but the best result is
+    # probably to return the original array. It could be argued that we should call
+    # the function on the empty array with `axis=None` just to determine the output
     # dtype, but I can also see rationale against that.
-    if input.size == 0:
-        return input
+    if xp_size(input) == 0:
+        return xp.asarray(input)
 
     # This seems to be defined.
     if input.ndim == 0 and size == ():
-        return np.asarray(function(input) if footprint is None
+        return xp.asarray(function(input) if footprint is None
                           else function(input[footprint]))
 
-    # Border the image according to `mode` and `offset`. `np.pad` does the work,
-    # but it uses different names; adjust `mode` accordingly.
-    # Move this to input validation.
+    if is_cupy(xp):
+        # CuPy is the only GPU backend that has `pad` (with all modes)
+        # and `sliding_window_view`. An enhancement would be to use
+        # no-copy conversion to CuPy whenever the data is on the GPU.
+        cp = xp  # let there be no ambiguity!
+        swv = cp.lib.stride_tricks.sliding_window_view
+        pad = cp.pad
+    else:
+        # Try to perform no-copy conversion to NumPy for padding and
+        # `sliding_window_view`. (If that fails, fine - for now, the only
+        # GPU backend we support is CuPy.)
+        swv = np.lib.stride_tricks.sliding_window_view
+        pad = np.pad
+        input = np.asarray(input)
+        cval = np.asarray(cval)[()] if mode == 'constant' else None
+
+    # Border the image according to `mode` and `offset`.
     if mode != 'valid':
         kwargs = {'constant_values': cval} if mode == 'constant' else {}
         borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
-        bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
+        bordered_input = pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
     else:
         bordered_input = input
 
     # Evaluate function with sliding window view. Function is already wrapped to
     # manage memory, deal with `footprint`, populate `output`, etc.
-    view = np.lib.stride_tricks.sliding_window_view(bordered_input, size, working_axes)
+    view = swv(bordered_input, size, working_axes)
     res = function(view)
 
     # move working_axes back to original positions
-    return np.moveaxis(res, working_axes, axes) if axes is not None else res
+    return xp.moveaxis(res, working_axes, axes)
 
 
 def _invalid_origin(origin, lenw):
@@ -1128,7 +1168,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
 
     Returns
     -------
-    generic_gradient_matnitude : ndarray
+    generic_gradient_magnitude : ndarray
         Filtered array. Has the same shape as `input`.
 
     """
@@ -1861,6 +1901,8 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     A sequence of modes (one per axis) is only supported when the footprint is
     separable. Otherwise, a single mode string must be provided.
 
+    %(nan)s
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
@@ -1947,7 +1989,14 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
         mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
-        if input.ndim == 1:
+        # Some corner cases are currently not allowed to use the
+        # "new"/fast 1D rank filter code, including when the
+        # footprint is large compared to the array size.
+        # See discussion in gh-23293; longer-term it may be possible
+        # to allow the fast path for these corner cases as well,
+        # if algorithmic fixes are found.
+        lim2 = input.size - ((footprint.size - 1) // 2 - origin)
+        if input.ndim == 1 and ((lim2 >= 0) or (input.size == 1)):
             if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output

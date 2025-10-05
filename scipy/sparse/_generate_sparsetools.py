@@ -56,23 +56,8 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 
 # csc.h
 CSC_ROUTINES = """
-csc_diagonal        v iiiIIT*T
-csc_tocsr           v iiIIT*I*I*T
-csc_matmat_maxnnz   l iiIIII
-csc_matmat          v iiIITIIT*I*I*T
 csc_matvec          v iiIITT*T
 csc_matvecs         v iiiIITT*T
-csc_elmul_csc       v iiIITIIT*I*I*T
-csc_eldiv_csc       v iiIITIIT*I*I*T
-csc_plus_csc        v iiIITIIT*I*I*T
-csc_minus_csc       v iiIITIIT*I*I*T
-csc_maximum_csc     v iiIITIIT*I*I*T
-csc_minimum_csc     v iiIITIIT*I*I*T
-csc_ne_csc          v iiIITIIT*I*I*B
-csc_lt_csc          v iiIITIIT*I*I*B
-csc_gt_csc          v iiIITIIT*I*I*B
-csc_le_csc          v iiIITIIT*I*I*B
-csc_ge_csc          v iiIITIIT*I*I*B
 """
 
 # csr.h
@@ -125,7 +110,10 @@ coo_matvec          v lIITT*T
 coo_matvec_nd       v llIITT*T
 coo_matmat_dense    v llIITT*T
 coo_matmat_dense_nd v lllIIITT*T
+dia_tocsr           i iiiiITI*T*I*I
+dia_matmat          v iiiiITiiiIT*V*W
 dia_matvec          v iiiiITT*T
+dia_matvecs         v iiiiITiT*T
 cs_graph_components i iII*I
 """
 

@@ -11,19 +11,26 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
+    is_marray,
+    xp_capabilities,
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_result_type,
+    xp_device,
+    xp_ravel,
+    _length_nonmasked,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
+from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -47,6 +54,7 @@ Variance = namedtuple('Variance', ('statistic', 'minmax'))
 Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
 
 
+@xp_capabilities(np_only=True)
 def bayes_mvs(data, alpha=0.90):
     r"""
     Bayesian confidence intervals for the mean, var, and std.
@@ -146,6 +154,7 @@ def bayes_mvs(data, alpha=0.90):
     return m_res, v_res, s_res
 
 
+@xp_capabilities(np_only=True)
 def mvsdist(data):
     """
     'Frozen' distributions for mean, variance, and standard deviation of data.
@@ -221,8 +230,9 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2, *, axis=None):
     r"""
@@ -326,8 +336,9 @@ def kstat(data, n=2, *, axis=None):
         raise ValueError("Should not be here.")
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
@@ -500,6 +511,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
+@xp_capabilities(np_only=True)
 def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
@@ -663,6 +675,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         return osm, osr
 
 
+@xp_capabilities(np_only=True)
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """Calculate the shape parameter that maximizes the PPCC.
 
@@ -751,6 +764,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
                           args=(osm_uniform, osr, dist.ppf))
 
 
+@xp_capabilities(np_only=True)
 def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     """Calculate and optionally plot probability plot correlation coefficient.
 
@@ -854,25 +868,25 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     return svals, ppcc
 
 
-def _log_mean(logx):
+def _log_mean(logx, axis):
     # compute log of mean of x from log(x)
-    res = special.logsumexp(logx, axis=0) - math.log(logx.shape[0])
-    return res
+    return (
+        special.logsumexp(logx, axis=axis, keepdims=True)
+        - math.log(logx.shape[axis])
+    )
 
 
-def _log_var(logx, xp):
+def _log_var(logx, xp, axis):
     # compute log of variance of x from log(x)
-    logmean = _log_mean(logx)
-    # get complex dtype with component dtypes same as `logx` dtype;
-    dtype = xp.result_type(logx.dtype, 1j)
-    pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
-    logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
-    res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
-           - math.log(logx.shape[0]))
-    return res
+    logmean = xp.broadcast_to(_log_mean(logx, axis=axis), logx.shape)
+    ones = xp.ones_like(logx)
+    logxmu, _ = special.logsumexp(xp.stack((logx, logmean), axis=0), axis=0,
+                                  b=xp.stack((ones, -ones), axis=0), return_sign=True)
+    return special.logsumexp(2 * logxmu, axis=axis) - math.log(logx.shape[axis])
 
 
-def boxcox_llf(lmb, data):
+@xp_capabilities()
+def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     r"""The boxcox log-likelihood function.
 
     Parameters
@@ -883,6 +897,26 @@ def boxcox_llf(lmb, data):
         Data to calculate Box-Cox log-likelihood for.  If `data` is
         multi-dimensional, the log-likelihood is calculated along the first
         axis.
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -896,14 +930,17 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -952,28 +989,40 @@ def boxcox_llf(lmb, data):
     >>> plt.show()
 
     """
-    xp = array_namespace(data)
-    data = xp_promote(data, force_floating=True, xp=xp)
+    # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
+    kwargs = {}
+    if keepdims is not False:
+        kwargs[keepdims] = keepdims
+    if nan_policy != 'propagate':
+        kwargs[nan_policy] = nan_policy
+    return _boxcox_llf(data, lmb=lmb, axis=axis, **kwargs)
 
-    N = data.shape[0]
+
+@_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
+                          result_to_tuple=lambda x, _: (x,))
+def _boxcox_llf(data, axis=0, *, lmb):
+    xp = array_namespace(data)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
+    N = data.shape[axis]
     if N == 0:
-        return xp.nan
+        return _get_nan(data, xp=xp)
 
     logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        logvar = xp.log(xp.var(logdata, axis=0))
+        logvar = xp.log(xp.var(logdata, axis=axis))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
-        logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
+        logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
-    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
-    res = xp.astype(res, data.dtype, copy=False)
+    res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
+    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -1013,6 +1062,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
+@xp_capabilities(np_only=True)
 def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     r"""Return a dataset transformed by a Box-Cox power transformation.
 
@@ -1077,10 +1127,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1092,9 +1147,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1170,6 +1225,7 @@ class _BigFloat:
 _BigFloat_singleton = _BigFloat()
 
 
+@xp_capabilities(np_only=True)
 def boxcox_normmax(
     x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat_singleton
 ):
@@ -1439,6 +1495,7 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     return lmbdas, ppcc
 
 
+@xp_capabilities(np_only=True)
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1507,6 +1564,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     return _normplot('boxcox', x, la, lb, plot, N)
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson(x, lmbda=None):
     r"""Return a dataset transformed by a Yeo-Johnson power transformation.
 
@@ -1533,12 +1591,24 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for } x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for } x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for } x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for } x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
@@ -1622,6 +1692,7 @@ def _yeojohnson_transform(x, lmbda):
     return out
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_llf(lmb, data):
     r"""The yeojohnson log-likelihood function.
 
@@ -1646,15 +1717,18 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
@@ -1725,6 +1799,7 @@ def yeojohnson_llf(lmb, data):
     return loglike
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_normmax(x, brack=None):
     """Compute optimal Yeo-Johnson transform parameter.
 
@@ -1814,6 +1889,7 @@ def yeojohnson_normmax(x, brack=None):
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
+@xp_capabilities(np_only=True)
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
 
@@ -1887,6 +1963,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x):
     r"""Perform the Shapiro-Wilk test for normality.
@@ -2081,6 +2158,7 @@ AndersonResult = _make_tuple_bunch('AndersonResult',
                                     'significance_level'], ['fit_result'])
 
 
+@xp_capabilities(np_only=True)
 def anderson(x, dist='norm'):
     """Anderson-Darling test for data coming from a particular distribution.
 
@@ -2371,6 +2449,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
@@ -2629,6 +2708,7 @@ class _ABW:
 _abw_state = threading.local()
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided'):
     """Perform the Ansari-Bradley test for equal scale parameters.
@@ -2769,7 +2849,7 @@ def ansari(x, y, alternative='two-sided'):
             pval = _abw_state.a.cdf(AB, n, m)
         else:
             pval = _abw_state.a.sf(AB, n, m)
-        return AnsariResult(AB, min(1.0, pval))
+        return AnsariResult(AB, np.minimum(1.0, pval))
 
     # otherwise compute normal approximation
     if N % 2:  # N odd
@@ -2796,7 +2876,7 @@ def ansari(x, y, alternative='two-sided'):
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
-
+@xp_capabilities()
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
 def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
@@ -2878,15 +2958,21 @@ def bartlett(*samples, axis=0):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
+    if axis is None:
+        samples = [xp_ravel(sample) for sample in samples]
+    else:
+        samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+        samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+                     dtype=sample.dtype, device=xp_device(sample))
+          for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
+    Ni = xpx.at(Ni)[Ni == 0].set(xp.nan)
     ssq = xp.concat(ssq, axis=0)
     dtype = Ni.dtype
     Ntot = xp.sum(Ni, axis=0)
@@ -2897,7 +2983,7 @@ def bartlett(*samples, axis=0):
              * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
-    chi2 = _SimpleChi2(xp.asarray(k-1))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(T)))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
     T = xp.clip(T, min=0., max=xp.inf)
@@ -2910,6 +2996,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05):
     r"""Perform Levene test for equal variances.
@@ -2925,7 +3012,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
         The sample data, possibly with different lengths. Only one-dimensional
         samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
-        Which function of the data to use in the test.  The default
+        Which statistics to use to center data points within each sample.  Default
         is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
@@ -3015,11 +3102,10 @@ def levene(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+
 
     for j in range(k):
         Ni[j] = len(samples[j])
@@ -3066,6 +3152,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3079,8 +3166,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     sample1, sample2, ... : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
-        Keyword argument controlling which function of the data is used in
-        computing the test statistic.  The default is 'median'.
+        Which statistics to use to center data points within each sample. Default
+        is 'median'.
     proportiontocut : float, optional
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
@@ -3113,19 +3200,14 @@ def fligner(*samples, center='median', proportiontocut=0.05):
 
     References
     ----------
-    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
+    .. [1] Qu, A., Lindsay, B. G., and Li, B. (2000). Improving generalized
+           estimating equations using quadratic inference functions.
+           Biometrika, 87(4), 823-836.
+           :doi:`10.1093/biomet/87.4.823`
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. Journal of the American Statistical Association.
            71(353), 210-213.
-    .. [3] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
-           Hypothesis Testing based on Quadratic Inference Function. Technical
-           Report #99-03, Center for Likelihood Studies, Pennsylvania State
-           University.
-    .. [4] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
+    .. [3] Conover, W. J., Johnson, M. E. and Johnson M. M. (1981). A
            comparative study of tests for homogeneity of variances, with
            applications to the outer continental shelf bidding data.
            Technometrics, 23(4), 351-361.
@@ -3181,11 +3263,9 @@ def fligner(*samples, center='median', proportiontocut=0.05):
             return np.mean(x, axis=0)
 
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(sample, proportiontocut)
-                        for sample in samples)
 
         def func(x):
-            return np.mean(x, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=0)
 
     Ni = asarray([len(samples[j]) for j in range(k)])
     Yci = asarray([func(samples[j]) for j in range(k)])
@@ -3293,6 +3373,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3435,15 +3516,15 @@ def mood(x, y, axis=0, alternative="two-sided"):
         z = z[0]
         pval = pval[0]
     else:
-        z.shape = res_shape
-        pval.shape = res_shape
+        z = z.reshape(res_shape)
+        pval = pval.reshape(res_shape)
     return SignificanceResult(z[()], pval[()])
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
-def wilcoxon_result_unpacker(res):
+def wilcoxon_result_unpacker(res, _):
     if hasattr(res, 'zstatistic'):
         return res.statistic, res.pvalue, res.zstatistic
     else:
@@ -3464,6 +3545,7 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
+@xp_capabilities(np_only=True)
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
@@ -3709,6 +3791,7 @@ MedianTestResult = _make_tuple_bunch(
 )
 
 
+@xp_capabilities(np_only=True)
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -3938,9 +4021,10 @@ def _circfuncs_common(samples, period, xp=None):
     return samples, sin_samp, cos_samp
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
@@ -4031,9 +4115,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return (res * (period / (2.0 * pi)) - low) % period + low
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
@@ -4125,9 +4210,10 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res
 
 
+@xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
@@ -4241,6 +4327,7 @@ class DirectionalStats:
                 f" mean_resultant_length={self.mean_resultant_length})")
 
 
+@xp_capabilities()
 def directional_stats(samples, *, axis=0, normalize=True):
     """
     Computes sample statistics for directional data.
@@ -4363,6 +4450,12 @@ def directional_stats(samples, *, axis=0, normalize=True):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")
     samples = xp.moveaxis(samples, axis, 0)
+
+    if is_marray(xp):
+        _xp = array_namespace(samples.mask)
+        mask = _xp.any(samples.mask, axis=-1, keepdims=True)
+        samples = xp.asarray(samples.data, mask=mask)
+
     if normalize:
         vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
@@ -4374,6 +4467,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
+@xp_capabilities(np_only=True)
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4513,6 +4607,13 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     of the fourth null hypothesis was particularly important to the original
     study as it led to the conclusion that the new treatment had a
     "substantially lower in-hospital mortality rate."
+
+    For simplicity of exposition, the p-values in the example above were given in
+    sorted order, but this is not required; `false_discovery_control` returns
+    adjusted p-values in order corresponding with the input `ps`.
+
+    >>> stats.false_discovery_control([0.5, 0.6, 0.1, 0.001])
+    array([0.6  , 0.6  , 0.2  , 0.004])
 
     """
     # Input Validation and Special Cases

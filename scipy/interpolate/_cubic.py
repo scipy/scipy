@@ -231,10 +231,13 @@ class PchipInterpolator(CubicHermiteSpline):
            monotone piecewise cubic interpolants,
            SIAM J. Sci. Comput., 5(2), 300-304 (1984).
            :doi:`10.1137/0905021`.
-    .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
+    .. [2] C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
     """
+
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
 
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
@@ -331,12 +334,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in
-            SciPy 1.15.0. If you are trying to use the real components of
-            the passed array, use ``np.real`` on `yi`.
-
     x : scalar or array_like
         Of length M.
     der : int or list, optional
@@ -494,6 +491,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -544,13 +544,25 @@ class Akima1DInterpolator(CubicHermiteSpline):
             else:
                 f1 = dm[2:]
                 f2 = dm[:-2]
+
+            # makima is more numerically stable for small f12,
+            # so a finite cutoff should not improve any behavior
+            # however, akima has a qualitative discontinuity near f12=0
+            # a finite cutoff moves it, but cannot remove it.
+            # the cutoff break_mult could be made a keyword argument
+            # method='akima' also benefits from a check for m2=m3
+            break_mult = 1.e-9
+
             f12 = f1 + f2
+
             # These are the mask of where the slope at breakpoint is defined:
-            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            ind = np.nonzero(f12 > break_mult * np.max(f12, initial=-np.inf))
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
-            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            t[ind] = m[(x_ind + 1,) + y_ind] + (
+                (f2[ind] / f12[ind])
+                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis

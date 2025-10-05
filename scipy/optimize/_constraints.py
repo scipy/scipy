@@ -1,5 +1,6 @@
 """Constraints definition for minimize."""
 from warnings import warn, catch_warnings, simplefilter, filterwarnings
+from types import GenericAlias
 
 import numpy as np
 
@@ -71,7 +72,7 @@ class NonlinearConstraint:
         Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints.
     finite_diff_rel_step: None or array_like, optional
         Relative step size for the finite difference approximation. Default is
@@ -153,7 +154,7 @@ class LinearConstraint:
         and ``ub = np.inf`` (no limits).
     keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints.
     """
     def _input_validation(self):
@@ -250,6 +251,10 @@ class Bounds:
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def _input_validation(self):
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
@@ -340,6 +345,10 @@ class PreparedConstraint:
          Array indicating which components must be kept feasible with a size
          equal to the number of the constraints.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, constraint, x0, sparse_jacobian=None,
                  finite_diff_bounds=(-np.inf, np.inf)):
         if isinstance(constraint, NonlinearConstraint):

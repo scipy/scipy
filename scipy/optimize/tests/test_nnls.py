@@ -456,3 +456,14 @@ class TestNNLS:
         b = np.ones(shape=[4, 2], dtype=np.float64)
         with pytest.raises(ValueError, match="Expected a 1D array"):
             nnls(A, b)
+
+    def test_gh_22791_32bit(self):
+        # Scikit-learn got hit by this problem on 32-bit arch.
+        desired = [0, 0, 1.05617285, 0, 0, 0, 0, 0.23123048, 0, 0, 0, 0.26128651]
+        rng = np.random.RandomState(42)
+        n_samples, n_features = 5, 12
+        X = rng.randn(n_samples, n_features)
+        X[:2, :] = 0
+        y = rng.randn(n_samples)
+        coef, _ = nnls(X, y)
+        assert_allclose(coef, desired)

@@ -505,6 +505,9 @@ def _sum_finite(x):
 # Frozen RV class
 class rv_frozen:
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __init__(self, dist, *args, **kwds):
         self.args = args
         self.kwds = kwds
@@ -829,6 +832,10 @@ class rv_generic:
 
     def _construct_doc(self, docdict, shapes_vals=None):
         """Construct the instance docstring with string substitutions."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         tempdict = docdict.copy()
         tempdict['name'] = self.name or 'distname'
         tempdict['shapes'] = self.shapes or ''
@@ -871,6 +878,10 @@ class rv_generic:
     def _construct_default_doc(self, longname=None,
                                docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
+        if sys.flags.optimize > 1:
+            # if run with -OO, docstrings are stripped
+            # see https://docs.python.org/3/using/cmdline.html#cmdoption-OO
+            return
         if longname is None:
             longname = 'A'
         self.__doc__ = ''.join([f'{longname} {discrete} random variable.',
@@ -2566,7 +2577,7 @@ class rv_continuous(rv_generic):
             Special keyword arguments are recognized as holding certain
             parameters fixed:
 
-            - f0...fn : hold respective shape parameters fixed.
+            - f0, ..., fn : hold respective shape parameters fixed.
               Alternatively, shape parameters to fix can be specified by name.
               For example, if ``self.shapes == "a, b"``, ``fa`` and ``fix_a``
               are equivalent to ``f0``, and ``fb`` and ``fix_b`` are
@@ -3746,6 +3757,13 @@ class rv_discrete(rv_generic):
         k : array_like
             Quantile corresponding to the lower tail probability, q.
 
+        Notes
+        -----
+        For discrete distributions, the `cdf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `cdf` at `k` is at
+        least `q`. There is one exception:  the `ppf` of ``0`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
+
         """
         args, loc, _ = self._parse_args(*args, **kwds)
         q, loc = map(asarray, (q, loc))
@@ -3753,12 +3771,14 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
-        cond2 = (q == 1) & cond0
+        cond2 = (q == 0) & cond0
+        cond3 = (q == 1) & cond0
         cond = cond0 & cond1
         output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _a-1 + loc)
-        place(output, cond2, _b + loc)
+
+        place(output, cond2, argsreduce(cond2, _a-1 + loc)[0])
+        place(output, cond3, argsreduce(cond3, _b + loc)[0])
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
@@ -3786,6 +3806,13 @@ class rv_discrete(rv_generic):
         k : ndarray or scalar
             Quantile corresponding to the upper tail probability, q.
 
+        Notes
+        -----
+        For discrete distributions, the `sf` is not strictly invertible. By convention,
+        this method returns the minimum value `k` for which the `sf` at `k` is
+        no greater than `q`. There is one exception: the `isf` of ``1`` is ``a-1``,
+        where ``a`` is the left endpoint of the support.
+
         """
         args, loc, _ = self._parse_args(*args, **kwds)
         q, loc = map(asarray, (q, loc))
@@ -3802,8 +3829,8 @@ class rv_discrete(rv_generic):
         # output type 'd' to handle nin and inf
         lower_bound = _a - 1 + loc
         upper_bound = _b + loc
-        place(output, cond2*(cond == cond), lower_bound)
-        place(output, cond3*(cond == cond), upper_bound)
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
         # call place only if at least 1 valid argument
         if np.any(cond):

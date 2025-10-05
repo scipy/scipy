@@ -6,8 +6,8 @@
 #include <limits>
 #include <memory>
 
-#include "xsf/binom.h"
-#include "xsf/lambertw.h"
+#include <xsf/binom.h>
+#include <xsf/lambertw.h>
 #include "sf_error.h"
 
 

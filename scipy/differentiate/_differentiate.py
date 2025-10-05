@@ -3,7 +3,8 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_promote
+from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
+import scipy._lib.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -56,6 +57,13 @@ def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
+
+_array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
+_dask_reason = 'boolean indexing assignment'
+
+
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
@@ -404,7 +412,7 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
-    h0[h0 <= 0] = xp.asarray(xp.nan, dtype=dtype)
+    h0 = xpx.at(h0)[h0 <= 0].set(xp.nan)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
@@ -477,9 +485,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
         x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
         il, ic, ir = work.il, work.ic, work.ir
-        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr[ir]
-        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc[ic]
-        x_eval[il] = work.x[il][:, xp.newaxis] - hr[il]
+        x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
+        x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
+        x_eval = xpx.at(x_eval)[il].set(work.x[il][:, xp.newaxis] - hr[il])
         return x_eval
 
     def post_func_eval(x, f, work):
@@ -529,14 +537,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
             fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
         work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
-        work.fs[ic] = work_fc
-        work.fs[io] = work_fo
+        work.fs = xpx.at(work.fs)[ic].set(work_fc)
+        work.fs = xpx.at(work.fs)[io].set(work_fo)
 
         wc, wo = _derivative_weights(work, n, xp)
         work.df_last = xp.asarray(work.df, copy=True)
-        work.df[ic] = fc @ wc / work.h[ic]
-        work.df[io] = fo @ wo / work.h[io]
-        work.df[il] *= -1
+        work.df = xpx.at(work.df)[ic].set(fc @ wc / work.h[ic])
+        work.df = xpx.at(work.df)[io].set(fo @ wo / work.h[io])
+        work.df = xpx.at(work.df)[il].multiply(-1)
 
         work.h /= work.fac
         work.error_last = work.error
@@ -554,13 +562,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         stop = xp.astype(xp.zeros_like(work.df), xp.bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
-        work.status[i] = eim._ECONVERGED
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+        stop = xpx.at(stop)[i].set(True)
 
         if work.nit > 0:
             i = ~((xp.isfinite(work.x) & xp.isfinite(work.df)) | stop)
-            work.df[i], work.status[i] = xp.nan, eim._EVALUEERR
-            stop[i] = True
+            work.df = xpx.at(work.df)[i].set(xp.nan)
+            work.status = xpx.at(work.status)[i].set(eim._EVALUEERR)
+            stop = xpx.at(stop)[i].set(True)
 
         # With infinite precision, there is a step size below which
         # all smaller step sizes will reduce the error. But in floating point
@@ -570,8 +579,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         # detecting a step size that minimizes the total error, but this
         # heuristic seems simple and effective.
         i = (work.error > work.error_last*10) & ~stop
-        work.status[i] = _EERRORINCREASE
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(_EERRORINCREASE)
+        stop = xpx.at(stop)[i].set(True)
 
         return stop
 
@@ -707,6 +716,8 @@ def _derivative_weights(work, n, xp):
             xp.asarray(diff_state.right, dtype=work.dtype))
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
              step_factor=2.0, step_direction=0):
     r"""Evaluate the Jacobian of a function numerically.
@@ -923,7 +934,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
         if x.ndim != x0.ndim:
             xph = xp.expand_dims(xph, axis=-1)
         xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
-        xph[i, i] = x
+        xph = xpx.at(xph)[i, i].set(x)
         return f(xph)
 
     res = derivative(wrapped, x, tolerances=tolerances,
@@ -935,6 +946,8 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     return res
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def hessian(f, x, *, tolerances=None, maxiter=10,
             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Hessian of a function numerically.

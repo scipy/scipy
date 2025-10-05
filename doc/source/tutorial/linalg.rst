@@ -364,7 +364,7 @@ problem. The data shown below were generated using the model:
 
     y_{i}=c_{1}e^{-x_{i}}+c_{2}x_{i},
 
-where :math:`x_{i}=0.1i` for :math:`i=1\ldots10` , :math:`c_{1}=5`,
+where :math:`x_{i}=0.1i` for :math:`i=1, \ldots, 10` , :math:`c_{1}=5`,
 and :math:`c_{2}=4.` Noise is added to :math:`y_{i}` and the
 coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
 linear least squares.
@@ -881,7 +881,7 @@ Finally, any arbitrary function that takes one complex number and
 returns a complex number can be called as a matrix function using the
 command :obj:`linalg.funm`. This command takes the matrix and an
 arbitrary Python function. It then implements an algorithm from Golub
-and Van Loan's book "Matrix Computations" to compute the function applied
+and Van Loan's book_ "Matrix Computations" to compute the function applied
 to the matrix using a Schur decomposition.  Note that *the function
 needs to accept complex numbers* as input in order to work with this
 algorithm. For example, the following code computes the zeroth-order
@@ -974,3 +974,5 @@ in which case the *core shape* of the input is ``(2,)`` and the *batch shape* is
 In these cases, the final shape of the output is the batch shape of the input
 concatenated with the core shape of the output (i.e., the shape of the output when
 the batch shape of the input is ``()``). For more information, see :doc:`linalg_batch`.
+
+.. _book: https://www.press.jhu.edu/books/title/10678/matrix-computations

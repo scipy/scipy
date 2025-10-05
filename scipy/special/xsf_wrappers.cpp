@@ -1,55 +1,53 @@
 #include "xsf_wrappers.h"
-#include "xsf/airy.h"
-#include "xsf/alg.h"
-#include "xsf/amos.h"
-#include "xsf/bessel.h"
-#include "xsf/beta.h"
-#include "xsf/binom.h"
-#include "xsf/cdflib.h"
-#include "xsf/digamma.h"
-#include "xsf/ellip.h"
-#include "xsf/erf.h"
-#include "xsf/exp.h"
-#include "xsf/expint.h"
-#include "xsf/fresnel.h"
-#include "xsf/gamma.h"
-#include "xsf/hyp2f1.h"
-#include "xsf/kelvin.h"
-#include "xsf/lambertw.h"
-#include "xsf/log.h"
-#include "xsf/log_exp.h"
-#include "xsf/loggamma.h"
-#include "xsf/mathieu.h"
-#include "xsf/par_cyl.h"
-#include "xsf/sici.h"
-#include "xsf/specfun.h"
-#include "xsf/sph_bessel.h"
-#include "xsf/sph_harm.h"
-#include "xsf/sphd_wave.h"
-#include "xsf/stats.h"
-#include "xsf/struve.h"
-#include "xsf/trig.h"
-#include "xsf/wright_bessel.h"
-#include "xsf/zeta.h"
-#include "xsf_special.h"
+#include <xsf/airy.h>
+#include <xsf/amos.h>
+#include <xsf/bessel.h>
+#include <xsf/beta.h>
+#include <xsf/binom.h>
+#include <xsf/cdflib.h>
+#include <xsf/digamma.h>
+#include <xsf/ellip.h>
+#include <xsf/erf.h>
+#include <xsf/exp.h>
+#include <xsf/expint.h>
+#include <xsf/fresnel.h>
+#include <xsf/gamma.h>
+#include <xsf/hyp2f1.h>
+#include <xsf/kelvin.h>
+#include <xsf/lambertw.h>
+#include <xsf/log.h>
+#include <xsf/log_exp.h>
+#include <xsf/loggamma.h>
+#include <xsf/mathieu.h>
+#include <xsf/par_cyl.h>
+#include <xsf/sici.h>
+#include <xsf/specfun.h>
+#include <xsf/sph_bessel.h>
+#include <xsf/sph_harm.h>
+#include <xsf/sphd_wave.h>
+#include <xsf/stats.h>
+#include <xsf/struve.h>
+#include <xsf/trig.h>
+#include <xsf/wright_bessel.h>
+#include <xsf/zeta.h>
 
-#include "xsf/cephes/cbrt.h"
-#include "xsf/cephes/erfinv.h"
-#include "xsf/cephes/expn.h"
-#include "xsf/cephes/fresnl.h"
-#include "xsf/cephes/hyperg.h"
-#include "xsf/cephes/igam.h"
-#include "xsf/cephes/igami.h"
-#include "xsf/cephes/jv.h"
-#include "xsf/cephes/lanczos.h"
-#include "xsf/cephes/poch.h"
-#include "xsf/cephes/rgamma.h"
-#include "xsf/cephes/round.h"
-#include "xsf/cephes/scipy_iv.h"
-#include "xsf/cephes/spence.h"
-#include "xsf/cephes/trig.h"
-#include "xsf/cephes/unity.h"
-#include "xsf/cephes/yn.h"
+#include <xsf/cephes/cbrt.h>
+#include <xsf/cephes/erfinv.h>
+#include <xsf/cephes/expn.h>
+#include <xsf/cephes/fresnl.h>
+#include <xsf/cephes/hyperg.h>
+#include <xsf/cephes/igam.h>
+#include <xsf/cephes/igami.h>
+#include <xsf/cephes/jv.h>
+#include <xsf/cephes/lanczos.h>
+#include <xsf/cephes/poch.h>
+#include <xsf/cephes/rgamma.h>
+#include <xsf/cephes/round.h>
+#include <xsf/cephes/scipy_iv.h>
+#include <xsf/cephes/spence.h>
+#include <xsf/cephes/trig.h>
+#include <xsf/cephes/unity.h>
+#include <xsf/cephes/yn.h>
 
 using namespace std;
 
@@ -61,7 +59,7 @@ npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 } // namespace
 
-npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::chyp1f1(a, b, to_complex(z))); }
+npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
 
 double hypU_wrap(double a, double b, double x) { return xsf::hypu(a, b, x); }
 
@@ -290,14 +288,6 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
     return to_ccomplex(xsf::lambertw(to_complex(z), k, tol));
 }
 
-npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(m, n, theta, phi));
-}
-
-npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
-}
-
 double cephes_expm1_wrap(double x) { return xsf::cephes::expm1(x); }
 
 double cephes_expn_wrap(Py_ssize_t n, double x) { return xsf::cephes::expn(static_cast<int>(n), x); }
@@ -310,17 +300,17 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
     return xsf::cephes::ellpj(u, m, sn, cn, dn, ph);
 }
 
-int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
+int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, *si, *ci); }
 
-int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, si, ci); }
+int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, *si, *ci); }
 
 int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
-    return xsf::sici(to_complex(x), reinterpret_cast<complex<double> *>(si), reinterpret_cast<complex<double> *>(ci));
+    return xsf::sici(to_complex(x), *reinterpret_cast<complex<double> *>(si), *reinterpret_cast<complex<double> *>(ci));
 }
 
 int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
-    return xsf::shichi(to_complex(x), reinterpret_cast<complex<double> *>(shi),
-                       reinterpret_cast<complex<double> *>(chi));
+    return xsf::shichi(to_complex(x), *reinterpret_cast<complex<double> *>(shi),
+                       *reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
@@ -352,7 +342,7 @@ double xsf_beta(double a, double b) { return xsf::beta(a, b); }
 
 double xsf_betaln(double a, double b) { return xsf::betaln(a, b); }
 
-double xsf_cbrt(double x) { return xsf::cbrt(x); }
+double xsf_cbrt(double x) { return xsf::cephes::cbrt(x); }
 
 double xsf_gamma(double x) { return xsf::gamma(x); }
 
@@ -595,12 +585,6 @@ double xsf_chdtr(double df, double x) { return xsf::chdtr(df, x); }
 double xsf_chdtrc(double df, double x) { return xsf::chdtrc(df, x); }
 
 double xsf_chdtri(double df, double y) { return xsf::chdtri(df, y); }
-
-double xsf_fdtr(double a, double b, double x) { return xsf::fdtr(a, b, x); }
-
-double xsf_fdtrc(double a, double b, double x) { return xsf::fdtrc(a, b, x); }
-
-double xsf_fdtri(double a, double b, double y) { return xsf::fdtri(a, b, y); }
 
 double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 

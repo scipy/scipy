@@ -4,10 +4,11 @@ import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
 from . import _signaltools
+from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
-from typing import Literal
+from typing import cast, Literal
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
@@ -242,11 +243,11 @@ def lombscargle(
         )
 
     # weight vector must sum to 1
-    weights *= 1.0 / weights.sum()
+    weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
     if precenter:
-        y -= y.mean()
+        y = y - y.mean()
 
     # transform arrays
     # row vector
@@ -377,8 +378,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the squared magnitude
-        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        where `Pxx` has units of V²/Hz and computing the squared magnitude
+        spectrum ('spectrum') where `Pxx` has units of V², if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
     axis : int, optional
@@ -399,6 +400,12 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Notes
     -----
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided by the spectral
+    power density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
+
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
     the magnitude (squared) spectrum.
@@ -487,7 +494,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                  scaling=scaling, axis=axis)
 
 
-def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1, average='mean'):
     r"""
@@ -510,7 +517,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -554,6 +561,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     See Also
     --------
+    csd: Cross power spectral density using Welch's method
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
 
@@ -561,12 +569,16 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
+    50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
-    windows may require a larger overlap.
+    windows may require a larger overlap. If `noverlap` is 0, this
+    method is equivalent to Bartlett's method [2]_.
 
-    If `noverlap` is 0, this method is equivalent to Bartlett's method
-    [2]_.
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided by the spectral
+    power density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
 
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
@@ -657,7 +669,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
     r"""
@@ -678,14 +690,15 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None`.
+        ``noverlap = nperseg // 2``. Defaults to `None` and may
+        not be greater than `nperseg`.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
         `None`, the FFT length is `nperseg`. Defaults to `None`.
@@ -739,12 +752,38 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
+    50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
+    The ratio of the cross spectrum (``scaling='spectrum'``) divided by the cross
+    spectral density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
+
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
+
+    Welch's method may be interpreted as taking the average over the time slices of a
+    (cross-) spectrogram. Internally, this function utilizes the  `ShortTimeFFT`  to
+    determine the required (cross-) spectrogram. An example below illustrates that it
+    is straightforward to calculate `Pxy` directly with the `ShortTimeFFT`. However,
+    there are some notable differences in the behavior of the `ShortTimeFFT`:
+
+    * There is no direct `ShortTimeFFT` equivalent for the `csd` parameter
+      combination ``return_onesided=True, scaling='density'``, since
+      ``fft_mode='onesided2X'`` requires ``'psd'`` scaling. The is due to `csd`
+      returning the doubled squared magnitude in this case, which does not have a
+      sensible interpretation.
+    * `ShortTimeFFT` uses `float64` / `complex128` internally, which is due to the
+      behavior of the utilized `~scipy.fft` module. Thus, those are the dtypes being
+      returned. The `csd` function casts the return values to `float32` / `complex64`
+      if the input is `float32` / `complex64` as well.
+    * The `csd` function calculates ``np.conj(Sx[q,p]) * Sy[q,p]``, whereas
+      `~ShortTimeFFT.spectrogram` calculates ``Sx[q,p] * np.conj(Sy[q,p])`` where
+      ``Sx[q,p]``, ``Sy[q,p]`` are the STFTs of `x` and `y`. Also, the window
+      positioning is different.
 
     .. versionadded:: 0.16.0
 
@@ -759,17 +798,17 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    The following example plots the cross power spectral density of two signals with
+    some common features:
+
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
-
-    Generate two test signals with some common features.
-
-    >>> fs = 10e3
-    >>> N = 1e5
-    >>> amp = 20
-    >>> freq = 1234.0
+    ...
+    ... # Generate two test signals with some common features:
+    >>> N, fs = 100_000, 10e3  # number of samples and sampling frequency
+    >>> amp, freq = 20, 1234.0  # amplitude and frequency of utilized sine signal
     >>> noise_power = 0.001 * fs / 2
     >>> time = np.arange(N) / fs
     >>> b, a = signal.butter(2, 0.25, 'low')
@@ -777,43 +816,145 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> y = signal.lfilter(b, a, x)
     >>> x += amp*np.sin(2*np.pi*freq*time)
     >>> y += rng.normal(scale=0.1*np.sqrt(noise_power), size=time.shape)
-
-    Compute and plot the magnitude of the cross spectral density.
-
-    >>> f, Pxy = signal.csd(x, y, fs, nperseg=1024)
-    >>> plt.semilogy(f, np.abs(Pxy))
-    >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('CSD [V**2/Hz]')
+    ...
+    ... # Compute and plot the magnitude of the cross spectral density:
+    >>> nperseg, noverlap, win = 1024, 512, 'hann'
+    >>> f, Pxy = signal.csd(x, y, fs, win, nperseg, noverlap)
+    >>> fig0, ax0 = plt.subplots(tight_layout=True)
+    >>> ax0.set_title(f"CSD ({win.title()}-window, {nperseg=}, {noverlap=})")
+    >>> ax0.set(xlabel="Frequency $f$ in kHz", ylabel="CSD Magnitude in V²/Hz")
+    >>> ax0.semilogy(f/1e3, np.abs(Pxy))
+    >>> ax0.grid()
     >>> plt.show()
 
+    The cross spectral density is calculated by taking the average over the time slices
+    of a spectrogram:
+
+    >>> SFT = signal.ShortTimeFFT.from_window('hann', fs, nperseg, noverlap,
+    ...                                       scale_to='psd', fft_mode='onesided2X',
+    ...                                       phase_shift=None)
+    >>> Sxy1 = SFT.spectrogram(y, x, detr='constant', k_offset=nperseg//2,
+    ...                        p0=0, p1=(N-noverlap) // SFT.hop)
+    >>> Pxy1 = Sxy1.mean(axis=-1)
+    >>> np.allclose(Pxy, Pxy1)  # same result as with csd()
+    True
+
+    As discussed in the Notes section, the results of using an approach analogous to
+    the code snippet above and the `csd` function may deviate due to implementation
+    details.
+
+    Note that the code snippet above can be easily adapted to determine other
+    statistical properties than the mean value.
     """
-    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap,
-                                     nfft, detrend, return_onesided, scaling,
-                                     axis, mode='psd')
+    # The following lines are resembling the behavior of the originally utilized
+    # `_spectral_helper()` function:
+    same_data, axis = y is x, int(axis)
+    x = np.asarray(x)
+
+    if not same_data:
+        y = np.asarray(y)
+        # Check if we can broadcast the outer axes together
+        x_outer, y_outer  = list(x.shape), list(y.shape)
+        x_outer.pop(axis)
+        y_outer.pop(axis)
+        try:
+            outer_shape = np.broadcast_shapes(x_outer, y_outer)
+        except ValueError as e:
+            raise ValueError('x and y cannot be broadcast together.') from e
+        if x.size == 0 or y.size == 0:
+            out_shape = outer_shape + (min([x.shape[axis], y.shape[axis]]),)
+            empty_out = np.moveaxis(np.empty(out_shape), -1, axis)
+            return empty_out, empty_out
+        out_dtype = np.result_type(x, y, np.complex64)
+    else:  # x is y:
+        if x.size == 0:
+            return np.empty(x.shape), np.empty(x.shape)
+        out_dtype = np.result_type(x, np.complex64)
+
+    n = x.shape[axis] if same_data else max(x.shape[axis], y.shape[axis])
+    if isinstance(window, str) or isinstance(window, tuple):
+        nperseg = int(nperseg) if nperseg is not None else 256
+        if nperseg < 1:
+            raise ValueError(f"Parameter {nperseg=} is not a positive integer!")
+        elif n < nperseg:
+            warnings.warn(f"{nperseg=} is greater than signal length max(len(x), " +
+                          f"len(y)) = {n}, using nperseg = {n}", stacklevel=3)
+            nperseg = n
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if nperseg is None:
+            nperseg = len(win)
+    if nperseg != len(win):
+        raise ValueError(f"{nperseg=} does not equal {len(win)=}")
+
+    nfft = int(nfft) if nfft is not None else nperseg
+    if nfft < nperseg:
+        raise ValueError(f"{nfft=} must be greater than or equal to {nperseg=}!")
+    noverlap = int(noverlap) if noverlap is not None else nperseg // 2
+    if noverlap >= nperseg:
+        raise ValueError(f"{noverlap=} must be less than {nperseg=}!")
+    if np.iscomplexobj(x) and return_onesided:
+        return_onesided = False
+
+    if x.shape[axis] < y.shape[axis]:  # zero-pad x to shape of y:
+        z_shape = list(y.shape)
+        z_shape[axis] = y.shape[axis] - x.shape[axis]
+        x = np.concatenate((x, np.zeros(z_shape)), axis=axis)
+    elif y.shape[axis] < x.shape[axis]:  # zero-pad y to shape of x:
+        z_shape = list(x.shape)
+        z_shape[axis] = x.shape[axis] - y.shape[axis]
+        y = np.concatenate((y, np.zeros(z_shape)), axis=axis)
+
+    # using cast() to make mypy happy:
+    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
+    if scaling not in (scales := {'spectrum': 'magnitude', 'density': 'psd'}):
+        raise ValueError(f"Parameter {scaling=} not in {scales}!")
+
+    SFT = ShortTimeFFT(win, nperseg - noverlap, fs, fft_mode=fft_mode, mfft=nfft,
+                       scale_to=scales[scaling], phase_shift=None)
+    # csd() calculates X.conj()*Y instead of X*Y.conj():
+    Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend,
+                          p0=0, p1=(n - noverlap) // SFT.hop, k_offset=nperseg // 2,
+                          axis=axis)
+
+    # Note:
+    # 'onesided2X' scaling of ShortTimeFFT conflicts with the
+    # scaling='spectrum' parameter, since it doubles the squared magnitude,
+    # which in the view of the ShortTimeFFT implementation does not make sense.
+    # Hence, the doubling of the square is implemented here:
+    if return_onesided:
+        f_axis = Pxy.ndim - 1 + axis if axis < 0 else axis
+        Pxy = np.moveaxis(Pxy, f_axis, -1)
+        Pxy[..., 1:-1 if SFT.mfft % 2 == 0 else None] *= 2
+        Pxy = np.moveaxis(Pxy, -1, f_axis)
 
     # Average over windows.
-    if len(Pxy.shape) >= 2 and Pxy.size > 0:
-        if Pxy.shape[-1] > 1:
-            if average == 'median':
-                # np.median must be passed real arrays for the desired result
-                bias = _median_bias(Pxy.shape[-1])
-                if np.iscomplexobj(Pxy):
-                    Pxy = (np.median(np.real(Pxy), axis=-1)
-                           + 1j * np.median(np.imag(Pxy), axis=-1))
-                else:
-                    Pxy = np.median(Pxy, axis=-1)
-                Pxy /= bias
-            elif average == 'mean':
-                Pxy = Pxy.mean(axis=-1)
+    if Pxy.shape[-1] > 1:
+        if average == 'median':
+            # np.median must be passed real arrays for the desired result
+            bias = _median_bias(Pxy.shape[-1])
+            if np.iscomplexobj(Pxy):
+                Pxy = (np.median(np.real(Pxy), axis=-1) +
+                       np.median(np.imag(Pxy), axis=-1) * 1j)
             else:
-                raise ValueError(f'average must be "median" or "mean", got {average}')
+                Pxy = np.median(Pxy, axis=-1)
+            Pxy /= bias
+        elif average == 'mean':
+            Pxy = Pxy.mean(axis=-1)
         else:
-            Pxy = np.reshape(Pxy, Pxy.shape[:-1])
+            raise ValueError(f"Parameter {average=} must be 'median' or 'mean'!")
+    else:
+        Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
-    return freqs, Pxy
+    # cast output type;
+    Pxy = Pxy.astype(out_dtype)
+    if same_data:
+        Pxy = Pxy.real
+    return SFT.f, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """Compute a spectrogram with consecutive Fourier transforms (legacy function).
@@ -841,7 +982,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg.
-        Defaults to a Tukey window with shape parameter of 0.25.
+        Defaults to a periodic Tukey window with shape parameter of 0.25.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -1269,7 +1410,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     return np.min(binsums) > tol
 
 
-def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1, scaling='spectrum'):
     r"""Compute the Short Time Fourier Transform (legacy function).
@@ -1296,7 +1437,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to 256.
     noverlap : int, optional
@@ -1460,7 +1601,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, time, Zxx
 
 
-def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
     r"""Perform the inverse Short Time Fourier transform (legacy function).
@@ -1485,7 +1626,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window. Must match the window used to generate the
+        to a periodic Hann window. Must match the window used to generate the
         STFT for faithful inversion.
     nperseg : int, optional
         Number of data points corresponding to each STFT segment. This
@@ -1762,7 +1903,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return time, x
 
 
-def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     r"""
     Estimate the magnitude squared coherence estimate, Cxy, of
@@ -1787,7 +1928,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length must be nperseg. Defaults
-        to a Hann window.
+        to a periodic Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -1826,7 +1967,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
+    50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
@@ -1890,6 +2031,11 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                      padded=False):
     """Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
+    .. legacy:: function
+
+        This function is soley used by the legacy functions `spectrogram` and `stft`
+        (which are also in this same source file `scipy/signal/_spectral_py.py`).
+
     This is a helper function that implements the commonality between
     the stft, psd, csd, and spectrogram functions. It is not designed to
     be called externally. The windows are not averaged over; the result
@@ -1934,8 +2080,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross
-        spectrum ('spectrum') where `Pxy` has units of V**2, if `x`
+        where `Pxy` has units of V²/Hz and computing the cross
+        spectrum ('spectrum') where `Pxy` has units of V², if `x`
         and `y` are measured in V and `fs` is measured in Hz.
         Defaults to 'density'
     axis : int, optional
@@ -2184,6 +2330,11 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     Calculate windowed FFT, for internal use by
     `scipy.signal._spectral_helper`.
 
+    .. legacy:: function
+
+        This function is solely used by the legacy `_spectral_helper` function,
+        which is located also in this file.
+
     This is a helper function that does the main FFT calculation for
     `_spectral helper`. All input validation is performed there, and the
     data axis is assumed to be the last axis of x. It is not designed to
@@ -2232,6 +2383,11 @@ def _triage_segments(window, nperseg, input_length):
     """
     Parses window and nperseg arguments for spectrogram and _spectral_helper.
     This is a helper function, not meant to be called externally.
+
+    .. legacy:: function
+
+        This function is soley used by the legacy functions `spectrogram` and
+        `_spectral_helper` (which are also in this file).
 
     Parameters
     ----------

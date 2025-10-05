@@ -120,15 +120,15 @@ from scipy.linalg.cython_lapack cimport dlarfgp, dorm2r, zunm2r, zlarfgp
 from scipy.linalg.cython_blas cimport dnrm2, dtrsm, dznrm2, ztrsm
 
 
-__all__ = ['idd_estrank', 'idd_ldiv', 'idd_poweroftwo', 'idd_reconid', 'iddp_aid',
+__all__ = ['idd_estrank', 'idd_reconid', 'iddp_aid',
            'iddp_asvd', 'iddp_id', 'iddp_qrpiv', 'iddp_svd', 'iddr_aid', 'iddr_asvd',
            'iddr_id', 'iddr_qrpiv', 'iddr_svd', 'idz_estrank', 'idz_reconid',
            'idzp_aid', 'idzp_asvd', 'idzp_id', 'idzp_qrpiv', 'idzp_svd', 'idzr_aid',
-           'idzr_asvd', 'idzr_id', 'idzr_qrpiv', 'idzr_svd', 'idd_id2svd', 'idz_id2svd'
+           'idzr_asvd', 'idzr_id', 'idzr_qrpiv', 'idzr_svd', 'idd_id2svd', 'idz_id2svd',
            # LinearOperator funcs
            'idd_findrank', 'iddp_rid', 'iddp_rsvd', 'iddr_rid', 'iddr_rsvd',
            'idz_findrank', 'idzp_rid', 'idzp_rsvd', 'idzr_rid', 'idzr_rsvd',
-           'idd_snorm', 'idz_snorm', 'idd_diffsnorm', 'idz_diffsnorm'
+           'idd_snorm', 'idz_snorm', 'idd_diffsnorm', 'idz_diffsnorm',
            ]
 
 
@@ -1057,14 +1057,14 @@ def iddr_rid(A: LinearOperator, int krank, *, rng):
 
 
 def iddr_rsvd(A: LinearOperator, int krank, *, rng):
-    cdef int n = A.shape[1], j
+    cdef int m = A.shape[0], n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.float64_t, ndim=2] proj
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
 
     perms, proj = iddr_rid(A, krank, rng=rng)
     # idd_getcols
-    col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
+    col = cnp.PyArray_EMPTY(2, [m, krank], cnp.NPY_FLOAT64, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
     for j in range(krank):
         x[perms[j]] = 1.

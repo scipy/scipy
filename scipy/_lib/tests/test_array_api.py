@@ -3,21 +3,27 @@ import re
 import numpy as np
 import pytest
 
+from importlib import import_module
+
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat, xp_default_dtype, xp_result_type, is_torch
+    SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
+    np_compat, xp_default_dtype, xp_result_type, is_torch,
+    xp_capabilities_table
 )
+from scipy._lib._array_api_docs_tables import is_named_function_like_object
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
+# Run all tests in this module in the Array API CI,
+# including those without the `xp` fixture
+pytestmark = pytest.mark.array_api_backends
 
-lazy_xp_function(_asarray, static_argnames=(
-                 "dtype", "order", "copy", "xp", "check_finite", "subok"))
-lazy_xp_function(xp_copy, static_argnames=("xp", ))
+lazy_xp_function(_asarray)
+lazy_xp_function(xp_copy)
 
 
-@pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
+@pytest.mark.skipif(not SCIPY_ARRAY_API,
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
@@ -25,11 +31,6 @@ class TestArrayAPI:
         x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
         xp = array_namespace(x, y)
         assert 'array_api_compat.numpy' in xp.__name__
-
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
-        xp = array_namespace(x, y)
-        assert 'array_api_compat.numpy' in xp.__name__
-        _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
     def test_asarray(self, xp):
         x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)
@@ -86,11 +87,19 @@ class TestArrayAPI:
         assert array_namespace(1, x) is xp
         assert array_namespace(None, x) is xp
 
-        if not is_numpy(xp):
+        if is_numpy(xp):
+            assert array_namespace(x, [1, 2]) is xp
+        else:
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, [1, 2])
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, np.int64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                 # Subclass of float; matches array_api_compat behavior
+                array_namespace(x, np.float64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                # Subclass of complex; matches array_api_compat behavior
+                array_namespace(x, np.complex128(1))
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by
@@ -99,6 +108,27 @@ class TestArrayAPI:
         msg = "only boolean and numerical dtypes are supported"
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
+
+    def test_jax_zero_gradient_array(self):
+        """Test array_namespace special case for JAX zero-gradient arrays, which are
+        numpy arrays but must be treated as JAX arrays.
+        See matching code and tests in array_api_compat.
+        """
+        jax = pytest.importorskip("jax")
+        xp = pytest.importorskip("jax.numpy")
+        # Create numpy array with dtype=jax.float0
+        jax_zero = jax.vmap(jax.grad(xp.float32, allow_int=True))(xp.arange(4))
+        assert array_namespace(jax_zero) is xp
+
+    def test_void_but_not_jax_zero_gradient_array(self):
+        """A void dtype that is not a jax.float0 must not be caught in the
+        special case for JAX zero-gradient arrays.
+        """
+        void = np.empty(0, dtype=np.dtype([]))
+        with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
+            array_namespace(void)
+        with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
+            array_namespace([void, void])
 
     def test_copy(self, xp):
         for _xp in [xp, None]:
@@ -321,3 +351,29 @@ def test_xp_result_type_force_floating(x, y, xp):
 
     dtype_res = xp_result_type(x, y, force_floating=True, xp=xp)
     assert dtype_res == dtype_ref
+
+# Test that the xp_capabilities decorator has been applied to all
+# functions and function-likes in the public API. Modules will be
+# added to the list of tested_modules below as decorator coverage
+# is added on a module by module basis. It remains for future work
+# to offer similar functionality to xp_capabilities for classes in
+# the public API.
+
+tested_modules = ["scipy.stats"]
+
+
+def collect_public_functions():
+    functions = []
+    for module_name in tested_modules:
+        module = import_module(module_name)
+        for name in module.__all__:
+            obj = getattr(module, name)
+            if not is_named_function_like_object(obj):
+                continue
+            functions.append(pytest.param(obj, id=f"{module_name}.{name}"))
+    return functions
+
+
+@pytest.mark.parametrize("func", collect_public_functions())
+def test_xp_capabilities_coverage(func):
+    assert func in xp_capabilities_table

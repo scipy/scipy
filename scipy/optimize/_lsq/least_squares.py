@@ -17,7 +17,7 @@ from .trf import trf
 from .dogbox import dogbox
 from .common import EPS, in_bounds, make_strictly_feasible
 
-    
+
 from scipy.optimize._optimize import _wrap_callback
 
 TERMINATION_MESSAGES = {
@@ -48,9 +48,12 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
 
     # Compute MINPACK's `diag`, which is inverse of our `x_scale` and
     # ``x_scale='jac'`` corresponds to ``diag=None``.
-    if isinstance(x_scale, str) and x_scale == 'jac':
+
+    # 1.16.0 - default x_scale changed to 'jac', with diag=None
+    if x_scale is None or (isinstance(x_scale, str) and x_scale == 'jac'):
         diag = None
     else:
+        # x_scale specified, so use that
         diag = 1 / x_scale
 
     full_output = True
@@ -131,7 +134,14 @@ def check_tolerance(ftol, xtol, gtol, method):
     return ftol, xtol, gtol
 
 
-def check_x_scale(x_scale, x0):
+def check_x_scale(x_scale, x0, method):
+    # normalise the default scaling
+    if x_scale is None:
+        if method == 'lm':
+            return 'jac'
+        else:   # dogbox, trf
+            x_scale = 1.0
+
     if isinstance(x_scale, str) and x_scale == 'jac':
         return x_scale
 
@@ -256,7 +266,7 @@ class _WrapArgsKwargs:
 @_workers_wrapper
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
-        ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
+        ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=None, loss='linear',
         f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None,
         callback=None, workers=None
@@ -368,7 +378,7 @@ def least_squares(
         If None and 'method' is not 'lm', the termination by this condition is
         disabled. If 'method' is 'lm', this tolerance must be higher than
         machine epsilon.
-    x_scale : array_like or 'jac', optional
+    x_scale : {None, array_like, 'jac'}, optional
         Characteristic scale of each variable. Setting `x_scale` is equivalent
         to reformulating the problem in scaled variables ``xs = x / x_scale``.
         An alternative view is that the size of a trust region along jth
@@ -377,7 +387,20 @@ def least_squares(
         along any of the scaled variables has a similar effect on the cost
         function. If set to 'jac', the scale is iteratively updated using the
         inverse norms of the columns of the Jacobian matrix (as described in
-        [JJMore]_).
+        [JJMore]_). The default scaling for each method (i.e.
+        if ``x_scale is None``) is as follows:
+
+        * For 'trf'    : ``x_scale == 1``
+        * For 'dogbox' : ``x_scale == 1``
+        * For 'lm'     : ``x_scale == 'jac'``
+
+        .. versionchanged:: 1.16.0
+            The default keyword value is changed from 1 to None to indicate that
+            a default approach to scaling is used.
+            For the 'lm' method the default scaling is changed from 1 to 'jac'.
+            This has been found to give better performance, and is the same
+            scaling as performed by ``leastsq``.
+
     loss : str or callable, optional
         Determines the loss function. The following keyword values are allowed:
 
@@ -877,7 +900,7 @@ def least_squares(
     if not in_bounds(x0, lb, ub):
         raise ValueError("Initial guess is outside of provided bounds")
 
-    x_scale = check_x_scale(x_scale, x0)
+    x_scale = check_x_scale(x_scale, x0, method)
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
 

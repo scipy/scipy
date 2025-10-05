@@ -478,6 +478,36 @@ class GroupSampling(Benchmark):
         stats.special_ortho_group.rvs(dim, random_state=self.rng)
 
 
+class MatrixSampling(Benchmark):
+    param_names = ['size']
+    params = [[10, 100, 1000, 10000]]
+
+    def setup(self, size):
+        num_rows = 4
+        num_cols = 3
+        self.df = 5
+        self.M = np.full((num_rows,num_cols), 0.3)
+        self.U = 0.5 * np.identity(num_rows) + np.full(
+            (num_rows, num_rows), 0.5
+        )
+        self.V = 0.7 * np.identity(num_cols) + np.full(
+            (num_cols, num_cols), 0.3
+        )
+        self.rng = np.random.default_rng(42)
+
+    def time_matrix_normal(self, size):
+        stats.matrix_normal.rvs(mean=self.M, rowcov=self.U,
+                                 colcov=self.V, size=size, random_state=self.rng)
+
+    def time_invwishart(self, size):
+        stats.invwishart.rvs(df=self.df, scale=self.V,
+                             size=size, random_state=self.rng)
+        
+    def time_matrix_t(self, size):
+        stats.matrix_t.rvs(mean=self.M, row_spread=self.U, col_spread=self.V,
+                           df=self.df, size=size, random_state=self.rng)
+
+
 class BinnedStatisticDD(Benchmark):
 
     params = ["count", "sum", "mean", "min", "max", "median", "std", np.std]
@@ -617,6 +647,26 @@ class BenchQMCDiscrepancy(Benchmark):
 
     def time_discrepancy(self, method):
         stats.qmc.discrepancy(self.sample, method=method)
+
+
+class BenchQMCGeometricDiscrepancy(Benchmark):
+    param_names = ['method', 'metric', 'ndims']
+    params = [
+        ['mindist', 'mst'],
+        ['euclidean', 'cityblock', 'chebyshev', 'cosine'],
+        [2, 3, 10],
+    ]
+
+    def setup(self, method, metric, ndims):
+        rng = np.random.default_rng(1234)
+        sample = rng.random((1000, ndims))
+        self.sample = sample
+
+    def time_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+    def peakmem_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
 
 
 class BenchQMCHalton(Benchmark):
