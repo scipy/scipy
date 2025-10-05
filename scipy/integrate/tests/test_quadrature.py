@@ -19,7 +19,6 @@ from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-
 @make_xp_test_case(fixed_quad)
 class TestFixedQuad:
     def test_scalar(self):
@@ -418,6 +417,7 @@ class TestQMCQuad:
             qmc_quad(lambda x: 1, a, b, log=10)
 
     def basic_test(self, n_points=2**8, n_estimates=8, signs=None, xp=None):
+        dtype = xp_default_dtype(xp)
         if signs is None:
             signs = np.ones(2)
         ndim = 2
@@ -432,23 +432,24 @@ class TestQMCQuad:
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         a = np.zeros(ndim)
         b = np.ones(ndim) * signs
-        res = qmc_quad(func, xp.asarray(a), xp.asarray(b), n_points=n_points,
-                       n_estimates=n_estimates, qrng=qrng)
+        res = qmc_quad(func, xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype),
+                       n_points=n_points, n_estimates=n_estimates, qrng=qrng)
         ref = stats.multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         atol = special.stdtrit(n_estimates-1, 0.995) * res.standard_error  # 99% CI
-        xp_assert_close(res.integral, xp.asarray(ref), atol=atol)
+        xp_assert_close(res.integral, xp.asarray(ref, dtype=dtype), atol=atol)
         assert np.prod(signs)*res.integral > 0
 
         rng = np.random.default_rng(2879434385674690281)
         qrng = stats.qmc.Sobol(ndim, seed=rng)
         logres = qmc_quad(lambda *args: xp.log(func(*args)),
-                          xp.asarray(a), xp.asarray(b),
+                          xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype),
                           n_points=n_points, n_estimates=n_estimates,
                           log=True, qrng=qrng)
-        xp_assert_close(xp.real(xp.exp(logres.integral)), res.integral, rtol=1e-14)
+        rtol = 1e-14 if res.integral.dtype == xp.float64 else 1e-6
+        xp_assert_close(xp.real(xp.exp(logres.integral)), res.integral, rtol=rtol)
         assert xp.imag(logres.integral + 0j) == (xp.pi if np.prod(signs) < 0 else 0)
         xp_assert_close(xp.exp(logres.standard_error),
-                        res.standard_error, rtol=1e-14, atol=1e-16)
+                        res.standard_error, rtol=rtol, atol=rtol/100)
 
     @pytest.mark.parametrize("n_points", [2**8, 2**12])
     @pytest.mark.parametrize("n_estimates", [8, 16])

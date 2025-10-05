@@ -1349,7 +1349,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     A = xp.prod(b - a)
     dA = A / n_points
 
-    estimates = xp.zeros(n_estimates)
+    estimates = xp.zeros(n_estimates, dtype=a.dtype)
     rngs = _rng_spawn(qrng.rng, n_estimates)
     for i in range(n_estimates):
         # Generate integral estimate
