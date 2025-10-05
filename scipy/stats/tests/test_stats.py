@@ -4160,6 +4160,13 @@ class TestPercentileOfScore:
         a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         assert_equal(self.f(a, scores, kind="rank"), results)
 
+    def test_multidimensional_error(self):
+        # gh-21563 reported that `percentileofscore` accepted multidimensional
+        # arrays but did not produce meaningful results.
+        message = "`a` must be 1-dimensional."
+        with pytest.raises(ValueError, match=message):
+            stats.percentileofscore(np.ones((3, 3)), 1)
+
 
 PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
                           ['f_obs', 'f_exp', 'ddof', 'axis',
