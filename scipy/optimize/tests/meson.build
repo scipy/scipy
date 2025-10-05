@@ -1,6 +1,5 @@
 py3.install_sources([
     '__init__.py',
-    'QAP8.npz',
     'test__basinhopping.py',
     'test__differential_evolution.py',
     'test__dual_annealing.py',

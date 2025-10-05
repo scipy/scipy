@@ -1814,13 +1814,8 @@ class LinprogHiGHSTests(LinprogCommonTests):
             f(options=options)
 
     def test_crossover(self):
-        data = np.load("QAP8.npz", allow_pickle=True)
-        c = data["c"]
-        A_eq = data["A_eq"]
-        A_ub = data["A_ub"]
-        b_ub = data["b_ub"]
-        b_eq = data["b_eq"]
-        bounds = np.squeeze(data["bounds"])
+        A_eq, b_eq, c, _, _ = magic_square(5)
+        bounds = (0, 1)
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
