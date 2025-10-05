@@ -151,9 +151,8 @@ class NDInterpolatorBase:
         xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
 
-    def __call__(self, *args):
-        """
-        interpolator(xi)
+    def __call__(self, *args, simplex_tolerance=1.0):
+        """interpolator(xi)
 
         Evaluate interpolator at given points.
 
@@ -163,13 +162,19 @@ class NDInterpolatorBase:
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
+        simplex_tolerance: float, optional
+            Multiplier for the default tolerance QHull uses to assign
+            a simplex to the xi in :meth:`scipy.spatial.Delaunay.find_simplex`.
+            Default is 1.0
+
+            .. versionadded:: 1.17.0
         """
         xi, interpolation_points_shape = self._preprocess_xi(*args)
 
         if self.is_complex:
-            r = self._evaluate_complex(xi)
+            r = self._evaluate_complex(xi, simplex_tolerance=simplex_tolerance)
         else:
-            r = self._evaluate_double(xi)
+            r = self._evaluate_double(xi, simplex_tolerance=simplex_tolerance)
 
         return np.asarray(r).reshape(interpolation_points_shape[:-1] + self.values_shape)
 
@@ -309,15 +314,15 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
 
-    def _evaluate_double(self, xi):
-        return self._do_evaluate(xi, 1.0)
+    def _evaluate_double(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0, simplex_tolerance=simplex_tolerance)
 
-    def _evaluate_complex(self, xi):
-        return self._do_evaluate(xi, 1.0j)
+    def _evaluate_complex(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0j, simplex_tolerance=simplex_tolerance)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy, const double simplex_tolerance=1.0):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
@@ -337,8 +342,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         start = 0
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(DBL_EPSILON)
+        eps = 100 * DBL_EPSILON * simplex_tolerance
+        eps_broad = sqrt(DBL_EPSILON) * simplex_tolerance
 
         # NOTE: a nogil block segfaults here with Python 3.10
         # and 3.11 on x86_64 Ubuntu Linux with gcc 9.x and 11.x
@@ -954,15 +959,15 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
 
-    def _evaluate_double(self, xi):
-        return self._do_evaluate(xi, 1.0)
+    def _evaluate_double(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0, simplex_tolerance=simplex_tolerance)
 
-    def _evaluate_complex(self, xi):
-        return self._do_evaluate(xi, 1.0j)
+    def _evaluate_complex(self, xi, simplex_tolerance=1.0):
+        return self._do_evaluate(xi, 1.0j, simplex_tolerance=simplex_tolerance)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy, const double simplex_tolerance=1.0):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
@@ -986,8 +991,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         start = 0
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(eps)
+        eps = 100 * DBL_EPSILON * simplex_tolerance
+        eps_broad = sqrt(eps) * simplex_tolerance
 
         with nogil:
             for i in range(xi.shape[0]):
