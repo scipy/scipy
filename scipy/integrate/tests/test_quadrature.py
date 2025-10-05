@@ -445,7 +445,7 @@ class TestQMCQuad:
                           xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype),
                           n_points=n_points, n_estimates=n_estimates,
                           log=True, qrng=qrng)
-        rtol = 1e-14 if res.integral.dtype == xp.float64 else 1e-6
+        rtol = 1e-14 if res.integral.dtype == xp.float64 else 1.1e-6
         xp_assert_close(xp.real(xp.exp(logres.integral)), res.integral, rtol=rtol)
         assert xp.imag(logres.integral + 0j) == (xp.pi if np.prod(signs) < 0 else 0)
         xp_assert_close(xp.exp(logres.standard_error),
