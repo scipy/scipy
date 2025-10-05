@@ -82,6 +82,10 @@ class RigidTransform:
     Indexing within a transform is supported since multiple transforms can be
     stored within a single `RigidTransform` instance.
 
+    Multiple transforms can be stored in a single `RigidTransform` object, which can be
+    initialized using N-dimensional arrays and supports broadcasting for all
+    operations.
+
     To create `RigidTransform` objects use ``from_...`` methods (see examples
     below). ``RigidTransform(...)`` is not supposed to be instantiated directly.
 
@@ -375,7 +379,7 @@ class RigidTransform:
 
         Parameters
         ----------
-        matrix : array_like, shape (4, 4) or (N, 4, 4)
+        matrix : array_like, shape (..., 4, 4)
             A single transformation matrix or a stack of transformation
             matrices.
         normalize : bool, optional
@@ -423,9 +427,9 @@ class RigidTransform:
 
         Parameters
         ----------
-        matrix : array_like, shape (4, 4) or (N, 4, 4)
-            A single transformation matrix or a stack of transformation
-            matrices.
+        matrix : array_like, shape (..., 4, 4)
+            Transformation matrices. Each matrix[..., :, :] represents a 4x4
+            transformation matrix.
 
         Returns
         -------
@@ -465,19 +469,12 @@ class RigidTransform:
         >>> tf.single
         True
 
-        Creating a transform from a stack of matrices:
+        Creating a transform from an N-dimensional array of matrices:
 
-        >>> m = np.array([np.eye(4), np.eye(4)])
+        >>> m = np.tile(np.eye(4), (2, 5, 1, 1))  # Shape (2, 5, 4, 4)
         >>> tf = Tf.from_matrix(m)
-        >>> tf.as_matrix()
-        array([[[1., 0., 0., 0.],
-                [0., 1., 0., 0.],
-                [0., 0., 1., 0.],
-                [0., 0., 0., 1.]],
-               [[1., 0., 0., 0.],
-                [0., 1., 0., 0.],
-                [0., 0., 1., 0.],
-                [0., 0., 0., 1.]]])
+        >>> tf.shape
+        (2, 5)
         >>> tf.single
         False
         >>> len(tf)
@@ -509,7 +506,7 @@ class RigidTransform:
         Parameters
         ----------
         rotation : `Rotation` instance
-            A single rotation or a stack of rotations.
+            A single rotation or a rotation with N leading dimensions.
 
         Returns
         -------
@@ -538,7 +535,7 @@ class RigidTransform:
         >>> np.allclose(tf.as_matrix()[:3, :3], r.as_matrix(), atol=1e-12)
         True
 
-        Creating multiple transforms from a stack of rotations:
+        Creating multiple transforms from a rotation with N leading dimensions:
 
         >>> r = R.from_euler("ZYX", [[90, 30, 0], [45, 30, 60]], degrees=True)
         >>> r.apply([1, 0, 0])
@@ -579,8 +576,9 @@ class RigidTransform:
 
         Parameters
         ----------
-        translation : array_like, shape (N, 3) or (3,)
-            A single translation vector or a stack of translation vectors.
+        translation : array_like, shape (..., 3)
+            Translation vectors. Each translation[..., :] represents a 3D
+            translation vector.
 
         Returns
         -------
@@ -613,7 +611,8 @@ class RigidTransform:
         >>> np.allclose(tf.as_matrix()[:3, 3], t)
         True
 
-        Creating multiple transforms from a stack of translation vectors:
+        Creating multiple transforms from an N-dimensional array of translation
+        vectors:
 
         >>> t = np.array([[2, 3, 4], [1, 0, 0]])
         >>> t + np.array([1, 0, 0])
@@ -656,17 +655,18 @@ class RigidTransform:
 
         Parameters
         ----------
-        translation : array_like, shape (N, 3) or (3,)
-            A single translation vector or a stack of translation vectors.
+        translation : array_like, shape (..., 3)
+            Translation vectors. Each translation[..., :] represents a 3D
+            translation vector.
         rotation : `Rotation` instance
-            A single rotation or a stack of rotations.
+            Rotation objects. The shape must be broadcastable with the
+            translation shape.
 
         Returns
         -------
-        `RigidTransform`
-            If rotation is single and translation is shape (3,), then a single
-            transform is returned.
-            Otherwise, a stack of transforms is returned.
+        transform : `RigidTransform` instance
+            Rigid transform objects. The shape is determined by broadcasting
+            the translation and rotation shapes together.
 
         Examples
         --------
@@ -732,16 +732,16 @@ class RigidTransform:
 
         Parameters
         ----------
-        exp_coords : array_like, shape (N, 6) or (6,)
-            A single exponential coordinate vector or a stack of exponential
-            coordinate vectors. The expected order of components is
-            ``[rx, ry, rz, vx, vy, vz]``. The first 3 components encode rotation
-            and the last 3 encode translation.
+        exp_coords : array_like, shape (..., 6)
+            Exponential coordinate vectors. Each exp_coords[..., :] represents
+            a 6D exponential coordinate vector with the expected order of
+            components ``[rx, ry, rz, vx, vy, vz]``. The first 3 components
+            encode rotation and the last 3 encode translation.
 
         Returns
         -------
         transform : `RigidTransform` instance
-            A single transform or a stack of transforms.
+            Rigid transform objects with the same leading dimensions as the input.
 
         Examples
         --------
@@ -821,10 +821,10 @@ class RigidTransform:
 
         Parameters
         ----------
-        dual_quat : array_like, shape (N, 8) or (8,)
-            A single unit dual quaternion or a stack of unit dual quaternions.
-            The real part is stored in the first four components and the dual
-            part in the last four components.
+        dual_quat : array_like, shape (..., 8)
+            Unit dual quaternions. Each dual_quat[..., :] represents a unit
+            dual quaternion. The real part is stored in the first four
+            components and the dual part in the last four components.
         scalar_first : bool, optional
             Whether the scalar component goes first or last in the two
             individual quaternions that represent the real and the dual part.
@@ -833,7 +833,7 @@ class RigidTransform:
         Returns
         -------
         transform : `RigidTransform` instance
-            A single transform or a stack of transforms.
+            Rigid transform objects with the same leading dimensions as the input.
 
         Examples
         --------
@@ -1001,9 +1001,8 @@ class RigidTransform:
 
         Returns
         -------
-        matrix : numpy.ndarray, shape (4, 4) or (N, 4, 4)
-            A single transformation matrix or a stack of transformation
-            matrices.
+        matrix : numpy.ndarray, shape (..., 4, 4)
+            Transformation matrices with the same leading dimensions as the transform.
 
         Examples
         --------
@@ -1066,7 +1065,7 @@ class RigidTransform:
 
         Returns
         -------
-        translation : numpy.ndarray, shape (N, 3) or (3,)
+        translation : numpy.ndarray, shape (..., 3)
             The translation of the transform.
         rotation : `Rotation` instance
             The rotation of the transform.
@@ -1118,10 +1117,10 @@ class RigidTransform:
 
         Returns
         -------
-        exp_coords : numpy.ndarray, shape (N, 6) or (6,)
-            A single exponential coordinate vector or a stack of exponential
-            coordinate vectors. The first three components define the
-            rotation and the last three components define the translation.
+        exp_coords : numpy.ndarray, shape (..., 6)
+            Exponential coordinate vectors with the same leading dimensions as the
+            transform. The first three components define the rotation and the last
+            three components define the translation.
 
         Examples
         --------
@@ -1157,10 +1156,10 @@ class RigidTransform:
 
         Returns
         -------
-        dual_quat : numpy.ndarray, shape (N, 8) or (8,)
-            A single unit dual quaternion vector or a stack of unit dual
-            quaternion vectors. The real part is stored in the first four
-            components and the dual part in the last four components.
+        dual_quat : numpy.ndarray, shape (..., 8)
+            Unit dual quaternion vectors with the same leading dimensions as the
+            transform. The real part is stored in the first four components and the
+            dual part in the last four components.
 
         Examples
         --------
@@ -1183,9 +1182,11 @@ class RigidTransform:
         return dual_quat
 
     def __len__(self) -> int:
-        """Return the number of transforms in this object.
+        """Return the length of the leading transform dimension.
 
-        Multiple transforms can be stored in a single instance.
+        A transform can store an N-dimensional array of transforms. The length is the
+        size of the first dimension of this array. If the transform is a single
+        transform, the length is not defined and an error is raised.
 
         Returns
         -------
@@ -1200,9 +1201,19 @@ class RigidTransform:
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransform as Tf
+        >>> import numpy as np
         >>> tf = Tf.identity(3)
         >>> len(tf)
         3
+
+        An N-dimensional array of transforms returns its first dimension size:
+
+        >>> t = np.ones((5, 2, 3, 1, 3))
+        >>> tf = Tf.from_translation(t)
+        >>> len(tf)
+        5
+
+        A single transform has no length:
 
         >>> tf = Tf.from_translation([1, 0, 0])
         >>> len(tf)  # doctest: +IGNORE_EXCEPTION_DETAIL
@@ -1357,21 +1368,15 @@ class RigidTransform:
         ``p.translation + p.rotation.apply(q.translation)
         + (p.rotation * q.rotation).apply(v)``.
 
-        This function supports composition of multiple transforms at a
-        time. The following cases are possible:
-
-            - Either ``p`` or ``q`` contains a single or length 1 transform. In
-              this case the result contains the result of composing each
-              transform in the other object with the one transform. If both are
-              single transforms, the result is a single transform.
-            - Both ``p`` and ``q`` contain ``N`` transforms. In this case each
-              transform ``p[i]`` is composed with the corresponding transform
-              ``q[i]`` and the result contains ``N`` transforms.
+        This function supports composition of multiple transforms at a time using
+        broadcasting rules. The resulting shape for two `RigidTransform` instances
+        ``p`` and ``q`` is `np.broadcast_shapes(p.shape, q.shape)`.
 
         Parameters
         ----------
         other : `RigidTransform` instance
-            Object containing the transforms to be composed with this one.
+            Transform(s) to be composed with this one. The shapes must be
+            broadcastable.
 
         Returns
         -------
@@ -1420,6 +1425,14 @@ class RigidTransform:
         False
         >>> len(tf)
         2
+
+        Broadcasting rules apply when composing multiple transforms at a time.
+
+        >>> tf1 = Tf.from_translation(np.ones((5, 1, 3)))  # Shape (5, 1, 3)
+        >>> tf2 = Tf.from_translation(np.ones((1, 4, 3)))  # Shape (1, 4, 3)
+        >>> tf = tf1 * tf2  # Shape (5, 4, 3)
+        >>> tf.translation.shape
+        (5, 4, 3)
         """
         if not isinstance(other, RigidTransform):
             # If other is not a RigidTransform, we return NotImplemented to allow other
@@ -1635,23 +1648,17 @@ class RigidTransform:
 
         Parameters
         ----------
-        vector : array_like, shape (N, 3) or (3,)
-            A single vector or a stack of vectors.
+        vector : array_like, shape (..., 3)
+            Vector(s) to be transformed. Each vector[..., :] represents a 3D
+            vector.
         inverse : bool, optional
             If True, the inverse of the transform is applied to the vector.
 
         Returns
         -------
-        transformed_vector : numpy.ndarray, shape (N, 3) or (3,)
-            The transformed vector(s). Shape depends on the following cases:
-
-                - If object contains a single transform (as opposed to a
-                  stack with a single transform) and a single vector is
-                  specified with shape ``(3,)``, then `transformed_vector` has
-                  shape ``(3,)``.
-                - In all other cases, `transformed_vector` has shape
-                  ``(N, 3)``, where ``N`` is either the number of
-                  transforms or vectors.
+        transformed_vector : numpy.ndarray, shape (..., 3)
+            The transformed vector(s) with shape determined by broadcasting
+            the transform and vector shapes together.
 
         Examples
         --------
@@ -1683,6 +1690,14 @@ class RigidTransform:
         array([0, -2, -3])
         >>> tf.apply([1, 0, 0], inverse=True)
         array([0., -2., -3.])
+
+        Broadcasting is supported when applying multiple transforms to an N-dimensional
+        array of vectors.
+
+        >>> tf = Tf.from_translation(np.ones((4, 5, 1, 3)))
+        >>> vectors = np.zeros((2, 3))
+        >>> tf.apply(vectors).shape
+        (4, 5, 2, 3)
 
         For transforms which are not just pure translations, applying it to a
         vector is the same as applying the rotation component to the vector and
@@ -1758,8 +1773,8 @@ class RigidTransform:
 
         Returns
         -------
-        translation : numpy.ndarray, shape (N, 3) or (3,)
-            A single translation vector or a stack of translation vectors.
+        translation : numpy.ndarray, shape (..., 3)
+            Translation vectors with the same leading dimensions as the transform.
 
         Examples
         --------
