@@ -6,6 +6,7 @@ import cmath
 import threading
 import copy
 import warnings
+import sys
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -695,6 +696,11 @@ class TestBSpline:
         _run_concurrent_barrier(10, worker_fn, b)
 
 
+    @pytest.mark.xfail(
+        sys.platform == "cygwin",
+        reason="threading.get_native_id not implemented",
+        raises=AttributeError
+    )
     def test_memmap(self, tmpdir):
         # Make sure that memmaps can be used as t and c atrributes after the
         # spline has been constructed. This is similar to what happens in a
