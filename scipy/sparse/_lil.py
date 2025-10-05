@@ -259,6 +259,10 @@ class _lil_base(_spbase, IndexMixin):
             row, col = key
             # Fast path for simple (int, int) indexing.
             if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                if issparse(x):
+                    x = x.toarray()
+                if isinstance(x, np.ndarray):
+                    x = x.item()
                 x = self.dtype.type(x)
                 if x.size > 1:
                     raise ValueError("Trying to assign a sequence to an item")
