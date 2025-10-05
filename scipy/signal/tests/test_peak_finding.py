@@ -911,3 +911,35 @@ class TestFindPeaksCwt:
         found_locs = find_peaks_cwt(test_data, widths)
 
         np.testing.assert_equal(found_locs, 32)
+
+    def test_gh_23684(self):
+
+        # Make sure find_peaks_cwt doesn't report troughs as peaks. 
+        # Such a thing may happen when a ridge line is completely below zero
+        # but the SNR check fails to reject it, eg. due to bad use of abs().
+        # It is assumed here that find_peaks_cwt uses the Ricker wavelet by
+        # default.
+
+        # The Lorentz peak decays slower than a Gaussian, and seems to be
+        # better at causing negative ridge lines.
+        def lorentz(x, loc, fwhm, height):
+            return height * ( 1 / (1 + (2*(x-loc)/fwhm)**2) )
+
+        x = np.arange(500)
+
+        # Provide find_peaks_cwt with a minimum noise level of approx. 1e-4.
+        # This sinusoid will be picked up by the Ricker wavelet of width 1.
+        noise = np.sin(x*np.pi/2) * 1e-4
+        
+        # Synthesize a signal with two identical peaks
+        signal = lorentz(x, 200, 20, 0.5) + \
+                 lorentz(x, 300, 20, 0.5) + noise
+
+        # Find the two peaks and check that no "peak" is reported halfway
+        # between them
+        cwt_scales = np.geomspace(1, 20, 16)
+        peaks = find_peaks_cwt(signal, cwt_scales, min_snr=10, noise_perc=90)
+
+        found_troughs = [x for x in peaks if (x >= 240) and (x <= 260)]
+        assert found_troughs == []
+

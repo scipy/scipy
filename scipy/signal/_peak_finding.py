@@ -1180,7 +1180,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     hf_window, odd = divmod(window_size, 2)
 
     # Filter based on SNR
-    row_one = np.abs(cwt[0, :])
+    row_one = cwt[0, :]
     noises = np.empty_like(row_one)
     for ind, val in enumerate(row_one):
         window_start = max(ind - hf_window, 0)
@@ -1191,7 +1191,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     def filt_func(line):
         if len(line[0]) < min_length:
             return False
-        snr = max(cwt[line[0], line[1]]) / noises[line[1][0]]
+        snr = max(cwt[line[0], line[1]]) / abs(noises[line[1][0]])
         if snr < min_snr:
             return False
         return True
