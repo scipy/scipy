@@ -1814,7 +1814,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
             f(options=options)
 
     def test_crossover(self):
-        A_eq, b_eq, c, _, _ = magic_square(5)
+        A_eq, b_eq, c, _, _ = magic_square(4, rng=np.random.default_rng(2212392))
         bounds = (0, 1)
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
