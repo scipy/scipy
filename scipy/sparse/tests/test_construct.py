@@ -1012,6 +1012,8 @@ def test_axis_permute_dims():
         construct.permute_dims(A, axes=(2, 0, 1))
     with assert_raises(ValueError, match="duplicate value in axis"):
         construct.permute_dims(A, axes=(0, 0))
+    with assert_raises(TypeError, match="axis must be an integer/tuple"):
+        construct.permute_dims(A, axes={1, 0})
 
     with assert_raises(ValueError, match="axis out of range"):
         construct.permute_dims(A, axes=(-3, 0))
@@ -1027,6 +1029,11 @@ def test_axis_permute_dims():
     assert_equal(
         construct.permute_dims(A, axes=(1, 0), copy=True).toarray(),
         A.transpose(axes=(1, 0), copy=True).toarray()
+    )
+    # use lists for axes
+    assert_equal(
+        construct.permute_dims(A, axes=[1, 0], copy=True).toarray(),
+        A.transpose(axes=[1, 0], copy=True).toarray()
     )
     assert_equal(
         construct.permute_dims(A, axes=None, copy=True).toarray(),
