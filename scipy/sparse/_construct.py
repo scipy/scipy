@@ -143,25 +143,25 @@ def permute_dims(A, axes=None, copy=False):
 
     # -------------This is from _sputils.validateaxis which almost does what we want
     # TODO stop _sputils.validateaxis from returning `None` when len(axes)==ndim
-    if not isinstance(axes, tuple):
+    if not isinstance(axes, (tuple, list)):
         # If not a tuple, check that the provided axes is actually
         # an integer and raise a TypeError similar to NumPy's
         if not np.issubdtype(np.dtype(type(axes)), np.integer):
-            raise TypeError(f'axes must be an integer/tuple of ints, not {type(axes)}')
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axes)}')
         axes = (axes,)
 
     canon_axes = []
     for ax in axes:
         if not isintlike(ax):
-            raise TypeError(f"axes must be an integer. (given {ax})")
+            raise TypeError(f"axis must be an integer. (given {ax})")
         if ax < 0:
             ax += ndim
         if ax < 0 or ax >= ndim:
-            raise ValueError("axes out of range for ndim")
+            raise ValueError("axis out of range for ndim")
         canon_axes.append(ax)
 
     if len(canon_axes) != len(set(canon_axes)):
-        raise ValueError("Duplicate value in axes")
+        raise ValueError("duplicate value in axis")
     # -------------End of code from  _sputils.validateaxis
     axes = canon_axes
     if axes == list(range(ndim)):
