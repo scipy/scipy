@@ -996,8 +996,18 @@ def test_3d_permute_dims():
     assert_equal(out.toarray(), np.transpose(x, axes=(2, 1, 0)))
 
 
+def test_canonical_format_permute_dims():
+    A = coo_array([[2, 0, 1], [3, 5, 0]])
+    # identity axes keep has_canoncial_format True after permute_dims.
+    assert construct.permute_dims(A, axes=(0, 1)).has_canonical_format is True
+    assert construct.permute_dims(A, axes=[0, 1]).has_canonical_format is True
+    # order changes set has_canonical_format to False
+    assert construct.permute_dims(A, axes=[1, 0]).has_canonical_format is False
+
+
 def test_axis_permute_dims():
     A = coo_array([[2, 0, 1], [3, 5, 0]])
+
     with assert_raises(ValueError, match="Incorrect number of axes"):
         construct.permute_dims(A, axes=(2, 0, 1))
     with assert_raises(ValueError, match="duplicate value in axis"):
@@ -1025,7 +1035,6 @@ def test_axis_permute_dims():
     assert_equal(
         construct.permute_dims(A, axes=(0, 1), copy=True).toarray(), A.toarray()
     )
-    assert construct.permute_dims(A, axes=(0, 1)) is A
 
 
 @pytest.mark.parametrize("format", sparse_formats)
