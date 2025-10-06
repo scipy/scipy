@@ -48,7 +48,7 @@ def expand_dims(A, /, *, axis=0):
     Returns
     -------
     out : sparse array
-        A expanded copy output in COO format with the same dtype as A.
+        A expanded copy output in COO format with the same dtype as `A`.
 
     Raises
     ------
@@ -103,6 +103,7 @@ def swapaxes(A, axis1, axis2):
         msg = msg.removeprefix('index ').split(' axis ', 1)[0]
         # Final error is: "Invalid axis: -4 is out of bounds for ndim=2"
         raise ValueError(f"Invalid axis: {msg} ndim={A.ndim}")
+
     axes = tuple(axes)
     return permute_dims(A, axes=axes, copy=True)
 
@@ -115,9 +116,9 @@ def permute_dims(A, axes=None, copy=False):
     A : sparse array
     axes : tuple or list of ints, optional
         If specified, it must be a tuple or list which contains a permutation
-        of ``[0, 1, ..., N-1]`` where ``N`` is the number of axes of `A`. The ``i``th
+        of ``[0, 1, ..., N-1]`` where ``N`` is ``A.ndim``. The ith
         axis of the returned array will correspond to the axis numbered ``axes[i]``
-        of the input. If not specified, defaults to ``range(a.ndim)[::-1]``,
+        of the input. If not specified, defaults to ``range(A.ndim)[::-1]``,
         which reverses the order of the axes.
     copy : bool, optional (default: False)
         Whether to return the permutation as a copy. If False, an in-place
@@ -126,7 +127,7 @@ def permute_dims(A, axes=None, copy=False):
     Returns
     -------
     out : sparse array in COO format
-        A copy of ``A`` with permuted axes.
+        A copy of `A` with permuted axes.
 
     Raises
     ------
