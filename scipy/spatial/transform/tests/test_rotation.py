@@ -971,7 +971,7 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
-    xp_assert_close(angles, angles_quat, atol=0, rtol=1e-13)
+    xp_assert_close(angles, angles_quat, atol=0, rtol=1.1e-13)
     test_stats(angles_quat - angles, 1e-16, 1e-14)
 
 

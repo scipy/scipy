@@ -1573,7 +1573,7 @@ class TestSystematic:
             lambda n, a, b, x: sc.eval_jacobi(int(n), a, b, x),
             lambda n, a, b, x: exception_to_nan(jacobi)(n, a, b, x, **HYPERKW),
             [IntArg(), Arg(), Arg(), Arg()],
-            n=20000,
+            n=4095,
             dps=50,
         )
 

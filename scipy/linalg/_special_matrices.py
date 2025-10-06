@@ -358,6 +358,7 @@ def leslie(f, s):
     return a
 
 
+@xp_capabilities(jax_jit=False, allow_dask_compute=2)
 def block_diag(*arrs):
     """
     Create a block diagonal array from provided arrays.
@@ -427,20 +428,24 @@ def block_diag(*arrs):
            [ 0.,  0.,  0.,  6.,  7.]])
 
     """
+    xp = array_namespace(*arrs)
+
     if arrs == ():
         arrs = ([],)
-    arrs = [np.atleast_2d(a) for a in arrs]
+    arrs = [xpx.atleast_nd(xp.asarray(a), ndim=2) for a in arrs]
 
     batch_shapes = [a.shape[:-2] for a in arrs]
     batch_shape = np.broadcast_shapes(*batch_shapes)
-    arrs = [np.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
-    out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    block_shapes = np.array([a.shape[-2:] for a in arrs])
-    out = np.zeros(batch_shape + tuple(np.sum(block_shapes, axis=0)), dtype=out_dtype)
+    arrs = [xp.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
+    out_dtype = xp.result_type(*arrs)
+    block_shapes = [a.shape[-2:] for a in arrs]
+    out = xp.zeros(batch_shape +
+                   tuple(map(int, xp.sum(xp.asarray(block_shapes), axis=0))),
+                   dtype=out_dtype)
 
     r, c = 0, 0
     for i, (rr, cc) in enumerate(block_shapes):
-        out[..., r:r + rr, c:c + cc] = arrs[i]
+        out = xpx.at(out)[..., r:r+rr, c:c+cc].set(arrs[i])
         r += rr
         c += cc
     return out
