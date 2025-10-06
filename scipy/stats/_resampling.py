@@ -15,6 +15,7 @@ from scipy._lib._array_api import (
     xp_size,
 )
 from scipy.special import ndtr, ndtri, comb, factorial
+from scipy import stats
 
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
@@ -65,12 +66,12 @@ def _jackknife_resample(sample, batch=None):
         yield resamples
 
 
-def _bootstrap_resample(sample, n_resamples=None, rng=None):
+def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     """Bootstrap resample the sample."""
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
-    i = rng_integers(rng, 0, n, (n_resamples, n))
+    i = rng_integers(rng, 0, n, (n_resamples, n), xp=xp)
 
     resamples = sample[..., i]
     return resamples
@@ -85,30 +86,6 @@ def _percentile_of_score(a, score, axis):
     """
     B = a.shape[axis]
     return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
-
-
-def _percentile_along_axis(theta_hat_b, alpha):
-    """`np.percentile` with different percentile for each slice."""
-    # the difference between _percentile_along_axis and np.percentile is that
-    # np.percentile gets _all_ the qs for each axis slice, whereas
-    # _percentile_along_axis gets the q corresponding with each axis slice
-    shape = theta_hat_b.shape[:-1]
-    alpha = np.broadcast_to(alpha, shape)
-    percentiles = np.zeros_like(alpha, dtype=np.float64)
-    for indices, alpha_i in np.ndenumerate(alpha):
-        if np.isnan(alpha_i):
-            # e.g. when bootstrap distribution has only one unique element
-            msg = (
-                "The BCa confidence interval cannot be calculated."
-                " This problem is known to occur when the distribution"
-                " is degenerate or the statistic is np.min."
-            )
-            warnings.warn(DegenerateDataWarning(msg), stacklevel=3)
-            percentiles[indices] = np.nan
-        else:
-            theta_hat_b_i = theta_hat_b[indices]
-            percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
-    return percentiles[()]  # return scalar instead of 0d array
 
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
@@ -292,7 +269,8 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True, exceptions=['array_api_strict', 'cupy'])
+# @xp_capabilities(np_only=True, exceptions=['cupy'])
+@xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -637,12 +615,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         resampled_data = []
         for sample in data:
             resample = _bootstrap_resample(sample, n_resamples=batch_actual,
-                                           rng=rng)
+                                           rng=rng, xp=xp)
             resampled_data.append(resample)
 
         # Compute bootstrap distribution of statistic
         theta_hat_b.append(statistic(*resampled_data, axis=-1))
-    theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
+    theta_hat_b = xp.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
     alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
@@ -650,24 +628,31 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch)[:2]
-        percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
 
-        def percentile_fun(a, q):
-            return np.percentile(a=a, q=q, axis=-1)
-
     # Calculate confidence interval of statistic
-    ci_l = percentile_fun(theta_hat_b, interval[0]*100)
-    ci_u = percentile_fun(theta_hat_b, interval[1]*100)
+    interval = xp.stack(interval, axis=-1)
+    ci = stats.quantile(theta_hat_b, interval, axis=-1)
+    if xp.any(xp.isnan(ci)):
+        msg = (
+            "The BCa confidence interval cannot be calculated."
+            " This problem is known to occur when the distribution"
+            " is degenerate or the statistic is np.min."
+        )
+        warnings.warn(DegenerateDataWarning(msg), stacklevel=2)
+
+    ci_l = ci[..., 0]
+    ci_u = ci[..., 1]
+
     if method == 'basic':  # see [3]
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     if alternative == 'less':
-        ci_l = np.full_like(ci_l, -np.inf)
+        ci_l = xp.full_like(ci_l, -xp.inf)
     elif alternative == 'greater':
-        ci_u = np.full_like(ci_u, np.inf)
+        ci_u = xp.full_like(ci_u, xp.inf)
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,

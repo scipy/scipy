@@ -701,7 +701,7 @@ def _workers_wrapper(func):
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
-                 endpoint=False):
+                 endpoint=False, xp=None):
     """
     Return random integers from low (inclusive) to high (exclusive), or if
     endpoint=True, low (inclusive) to high (inclusive). Replaces
@@ -737,6 +737,8 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
     endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
+    xp : module, default: NumPy
+        Array backend.
 
     Returns
     -------
@@ -744,9 +746,11 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
+    xp = xp if xp is not None else np  # cannot be inferred
+
     if isinstance(gen, np.random.Generator):
-        return gen.integers(low, high=high, size=size, dtype=dtype,
-                            endpoint=endpoint)
+        res = gen.integers(low, high=high, size=size, dtype=dtype,
+                           endpoint=endpoint)
     else:
         if gen is None:
             # default is RandomState singleton used by np.random.
@@ -761,7 +765,9 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
                 return gen.randint(low, high=high + 1, size=size, dtype=dtype)
 
         # exclusive
-        return gen.randint(low, high=high, size=size, dtype=dtype)
+        res = gen.randint(low, high=high, size=size, dtype=dtype)
+
+    return xp.asarray(res)
 
 
 @contextmanager

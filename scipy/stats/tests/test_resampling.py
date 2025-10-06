@@ -606,7 +606,7 @@ class TestBootstrap:
 
         np.random.seed(0)
         x = np.random.rand(*shape)
-        y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1)
+        y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1, xp=xp)
 
         for i in range(n_resamples):
             # each resample is indexed along second to last axis
@@ -633,23 +633,6 @@ class TestBootstrap:
         p2 = vectorized_pos(x, score, axis=-1)/100
 
         assert_allclose(p, p2, 1e-15)
-
-
-    def test_percentile_along_axis(self):
-        # the difference between _percentile_along_axis and np.percentile is that
-        # np.percentile gets _all_ the qs for each axis slice, whereas
-        # _percentile_along_axis gets the q corresponding with each axis slice
-
-        shape = 10, 20
-        rng = np.random.RandomState(0)
-        x = rng.rand(*shape)
-        q = rng.rand(*shape[:-1]) * 100
-        y = _resampling._percentile_along_axis(x, q)
-
-        for i in range(shape[0]):
-            res = y[i]
-            expected = np.percentile(x[i], q[i], axis=-1)
-            assert_allclose(res, expected, 1e-15)
 
 
     @pytest.mark.parametrize("axis", [0, 1, 2])
