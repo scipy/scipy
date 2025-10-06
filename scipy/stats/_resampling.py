@@ -46,7 +46,7 @@ def _vectorize_statistic(statistic):
     return stat_nd
 
 
-def _jackknife_resample(sample, batch=None):
+def _jackknife_resample(sample, batch=None, *, xp):
     """Jackknife resample the sample. Only one-sample stats for now."""
     n = sample.shape[-1]
     batch_nominal = batch or n
@@ -62,6 +62,7 @@ def _jackknife_resample(sample, batch=None):
         i = np.broadcast_to(i, (batch_actual, n))
         i = i[j].reshape((batch_actual, n-1))
 
+        i = xp.asarray(i)
         resamples = sample[..., i]
         yield resamples
 
@@ -77,7 +78,7 @@ def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     return resamples
 
 
-def _percentile_of_score(a, score, axis):
+def _percentile_of_score(a, score, axis, xp):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
     Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
@@ -85,16 +86,16 @@ def _percentile_of_score(a, score, axis):
     in [0, 1].
     """
     B = a.shape[axis]
-    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
+    return (xp.sum(a < score, axis=axis) + xp.sum(a <= score, axis=axis)) / (2 * B)
 
 
-def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
+def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     """Bias-corrected and accelerated interval."""
     # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
-    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
+    theta_hat = xp.expand_dims(statistic(*data, axis=axis), axis=-1)
+    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, xp=xp)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
@@ -105,28 +106,28 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
         # each sample of the data to ensure broadcastability. We need to
         # create a copy of the list containing the samples anyway, so do this
         # in the loop to simplify the code. This is not the bottleneck...
-        samples = [np.expand_dims(sample, -2) for sample in data]
+        samples = [xp.expand_dims(sample, -2) for sample in data]
         theta_hat_i = []
-        for jackknife_sample in _jackknife_resample(sample, batch):
+        for jackknife_sample in _jackknife_resample(sample, batch, xp=xp):
             samples[j] = jackknife_sample
-            broadcasted = _broadcast_arrays(samples, axis=-1)
+            broadcasted = _broadcast_arrays(samples, axis=-1, xp=xp)
             theta_hat_i.append(statistic(*broadcasted, axis=-1))
         theta_hat_ji.append(theta_hat_i)
 
-    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+    theta_hat_ji = [xp.concatenate(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
     n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
 
-    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+    theta_hat_j_dot = [xp.mean(theta_hat_i, axis=-1, keepdims=True)
                        for theta_hat_i in theta_hat_ji]
 
     U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
             for theta_hat_dot, theta_hat_i, n
             in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
 
-    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
-    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    nums = [xp.sum(U_i**3, axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [xp.sum(U_i**2, axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
     a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
@@ -269,8 +270,8 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-# @xp_capabilities(np_only=True, exceptions=['cupy'])
-@xp_capabilities(np_only=True)
+@xp_capabilities(np_only=True, exceptions=['cupy'])
+# @xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -627,9 +628,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
              else (1 - confidence_level))
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
+                                 theta_hat_b=theta_hat_b, batch=batch, xp=xp)[:2]
     else:
-        interval = alpha, 1-alpha
+        interval = xp.asarray(alpha), xp.asarray(1-alpha)
 
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
@@ -654,9 +655,15 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     elif alternative == 'greater':
         ci_u = xp.full_like(ci_u, xp.inf)
 
+    standard_error = np.std(theta_hat_b, ddof=1, axis=-1)
+
+    ci_l = ci_l[()] if ci_l.ndim == 0 else ci_l
+    ci_u = ci_u[()] if ci_u.ndim == 0 else ci_u
+    standard_error = standard_error[()] if standard_error.ndim == 0 else standard_error
+
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,
-                           standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
+                           standard_error=standard_error)
 
 
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
