@@ -9,6 +9,7 @@ from scipy._lib._util import rng_integers
 from scipy._lib._array_api import is_numpy, make_xp_test_case
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
+from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
@@ -17,11 +18,18 @@ import scipy.stats._resampling as _resampling
 
 @make_xp_test_case(bootstrap)
 class TestBootstrap:
-    def test_bootstrap_iv(self, xp):
+    def test_bootstrap_iv_numpy(self):
+        message = "For better performance, `func` should be vectorized"
+        with pytest.warns(UserWarning, match=message):
+            bootstrap(([1, 2, 3],), lambda x: np.mean(x))
 
-        message = "`data` must be a sequence of samples."
-        with pytest.raises(ValueError, match=message):
-            bootstrap(1, np.mean)
+    @skip_xp_backends('numpy', reason='NumPy warns as above')
+    def test_bootstrap_iv_other(self, xp):
+        message = f"When using array library {xp.__name__}"
+        with pytest.raises(TypeError, match=message):
+            bootstrap((xp.asarray([1, 2, 3]),), lambda x: xp.mean(x))
+
+    def test_bootstrap_iv(self, xp):
 
         message = "`data` must contain at least one sample."
         with pytest.raises(ValueError, match=message):
@@ -37,7 +45,7 @@ class TestBootstrap:
 
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
-            bootstrap(1, np.mean, vectorized='ekki')
+            bootstrap([1, 2, 3], np.mean, vectorized='ekki')
 
         message = "`axis` must be an integer."
         with pytest.raises(ValueError, match=message):
@@ -410,6 +418,7 @@ class TestBootstrap:
         assert pvalue > 0.1
 
 
+    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["basic", "percentile"])
     @pytest.mark.parametrize("axis", [0, 1])
     def test_bootstrap_vectorized_3samp(self, method, axis, xp):
@@ -435,6 +444,7 @@ class TestBootstrap:
         assert_allclose(res1.standard_error, res2.standard_error)
 
 
+    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     @pytest.mark.parametrize("axis", [0, 1])
@@ -475,6 +485,7 @@ class TestBootstrap:
         assert_equal(res.standard_error, 0)
 
 
+    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     def test_bootstrap_gh15678(self, method, xp):
         # Check that gh-15678 is fixed: when statistic function returned a Python

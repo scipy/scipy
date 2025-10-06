@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
     is_numpy,
     xp_capabilities,
     xp_result_type,
+    xp_size,
 )
 from scipy.special import ndtr, ndtri, comb, factorial
 
@@ -165,6 +166,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                   alternative, n_resamples, batch, method, bootstrap_result,
                   rng):
     """Input validation and standardization for `bootstrap`."""
+    xp = array_namespace(*data)
 
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
@@ -173,6 +175,14 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
+        if not is_numpy(xp):
+            message = (f"When using array library {xp.__name__}, `func` must be "
+                       "be vectorized and accept argument `axis`.")
+            raise TypeError(message)
+
+        message = ("For better performance, `func` should be vectorized and "
+                   "accept argument `axis`.")
+        warnings.warn(message, stacklevel=3)
         statistic = _vectorize_statistic(statistic)
 
     axis_int = int(axis)
@@ -188,14 +198,14 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
-    data = _broadcast_arrays(data, axis_int)
+    data = _broadcast_arrays(data, axis_int, xp=xp)
 
     data_iv = []
     for sample in data:
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     if paired not in {True, False}:
@@ -215,7 +225,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             data = [sample[..., i] for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [np.arange(n)]
+        data_iv = [xp.arange(n)]
 
     confidence_level_float = float(confidence_level)
 
@@ -248,7 +258,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
                "`n_resamples` must be positive.")
     if ((not bootstrap_result or
-         not bootstrap_result.bootstrap_distribution.size)
+         not xp_size(bootstrap_result.bootstrap_distribution))
             and n_resamples_int == 0):
         raise ValueError(message)
 
@@ -256,7 +266,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, alternative, n_resamples_int, batch_iv,
-            method, bootstrap_result, rng)
+            method, bootstrap_result, rng, xp)
 
 
 @dataclass
@@ -282,7 +292,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(np_only=True, exceptions=['array_api_strict', 'cupy'])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -614,7 +624,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
                          method, bootstrap_result, rng)
     (data, statistic, vectorized, paired, axis, confidence_level,
      alternative, n_resamples, batch, method, bootstrap_result,
-     rng) = args
+     rng, xp) = args
 
     theta_hat_b = ([] if bootstrap_result is None
                    else [bootstrap_result.bootstrap_distribution])
