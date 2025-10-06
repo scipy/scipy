@@ -1068,6 +1068,9 @@ class TestCorrSpearmanr:
         your program has them.
     """
 
+    def setup_method(self):
+        self.rng = np.random.default_rng(228584263)
+
     def test_scalar(self):
         y = stats.spearmanr(4., 2.)
         assert_(np.isnan(y).all())
@@ -1078,9 +1081,8 @@ class TestCorrSpearmanr:
 
     def test_uneven_2d_shapes(self):
         # Different number of columns should work - those just get concatenated.
-        np.random.seed(232324)
-        x = np.random.randn(4, 3)
-        y = np.random.randn(4, 2)
+        x = self.rng.standard_normal((4, 3))
+        y = self.rng.standard_normal((4, 2))
         assert stats.spearmanr(x, y).statistic.shape == (5, 5)
         assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
 
@@ -1088,8 +1090,7 @@ class TestCorrSpearmanr:
         assert_raises(ValueError, stats.spearmanr, x.T, y.T)
 
     def test_ndim_too_high(self):
-        np.random.seed(232324)
-        x = np.random.randn(4, 3, 2)
+        x = self.rng.standard_normal((4, 3, 2))
         assert_raises(ValueError, stats.spearmanr, x)
         assert_raises(ValueError, stats.spearmanr, x, x)
         assert_raises(ValueError, stats.spearmanr, x, None, None)
@@ -1107,8 +1108,8 @@ class TestCorrSpearmanr:
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
 
     def test_nan_policy_bug_12458(self):
-        np.random.seed(5)
-        x = np.random.rand(5, 10)
+        rng = np.random.default_rng(8119864466)
+        x = rng.random((5, 10))
         k = 6
         x[:, k] = np.nan
         y = np.delete(x, k, axis=1)
@@ -1120,10 +1121,9 @@ class TestCorrSpearmanr:
         assert_allclose(px, py, atol=1e-14)
 
     def test_nan_policy_bug_12411(self):
-        np.random.seed(5)
         m = 5
         n = 10
-        x = np.random.randn(m, n)
+        x = self.rng.standard_normal((m, n))
         x[1, 0] = np.nan
         x[3, -1] = np.nan
         corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
@@ -2382,8 +2382,9 @@ class TestRegression:
         assert_equal(result.intercept_stderr, np.nan)
 
     def test_identical_x(self):
+        rng = np.random.default_rng(7872425088)
         x = np.zeros(10)
-        y = np.random.random(10)
+        y = rng.random(10)
         msg = "Cannot calculate a linear regression"
         with assert_raises(ValueError, match=msg):
             stats.linregress(x, y)
@@ -2633,8 +2634,8 @@ class TestMode:
 
     @pytest.mark.parametrize('axis', range(-4, 0))
     def test_negative_axes_gh_15375(self, axis, xp):
-        np.random.seed(984213899)
-        a = xp.asarray(np.random.rand(10, 11, 12, 13))
+        rng = np.random.default_rng(7090348401)
+        a = xp.asarray(rng.random((10, 11, 12, 13)))
         res0 = stats.mode(a, axis=a.ndim+axis)
         res1 = stats.mode(a, axis=axis)
         xp_assert_equal(res0.mode, res1.mode)
@@ -3190,7 +3191,7 @@ class TestGZscore:
 
 
 class TestMedianAbsDeviation:
-    def setup_class(self):
+    def setup_method(self):
         self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
                                  3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
                                  3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan])
@@ -3509,8 +3510,8 @@ class TestMoments:
     """
     testcase = [1., 2., 3., 4.]
     scalar_testcase = 4.
-    np.random.seed(1234)
-    testcase_moment_accuracy = np.random.rand(42)
+    rng = np.random.default_rng(2285049930)
+    testcase_moment_accuracy = rng.random(42)
 
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
@@ -3595,7 +3596,8 @@ class TestMoments:
         if dtype=='complex128' and is_torch(xp):
             pytest.skip()
         dtype = getattr(xp, dtype)
-        x = xp.asarray(np.random.rand(5), dtype=dtype)
+        rng = np.random.default_rng(3824693518)
+        x = xp.asarray(rng.random(5), dtype=dtype)
         y = stats.moment(x, order=order)
         xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
 
@@ -4926,9 +4928,9 @@ class TestKSTwoSamples:
         """Ensure gh-12218 is fixed."""
         # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
         # n1, n2 both large integers, the product exceeded 2^64
-        np.random.seed(12345678)
+        rng = np.random.default_rng(8751495592)
         n1 = 2097152  # 2*^21
-        rvs1 = stats.uniform.rvs(size=n1, loc=0., scale=1)
+        rvs1 = stats.uniform.rvs(size=n1, loc=0., scale=1, random_state=rng)
         rvs2 = rvs1 + 1  # Exact value of rvs2 doesn't matter.
         stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
@@ -5350,9 +5352,9 @@ class Test_ttest_ind_permutations:
     N = 20
 
     # data for most tests
-    np.random.seed(0)
-    a = np.vstack((np.arange(3*N//4), np.random.random(3*N//4)))
-    b = np.vstack((np.arange(N//4) + 100, np.random.random(N//4)))
+    rng = np.random.default_rng(169708062)
+    a = np.vstack((np.arange(3*N//4), rng.random(3*N//4)))
+    b = np.vstack((np.arange(N//4) + 100, rng.random(N//4)))
 
     # data for equal variance tests
     a2 = np.arange(10)
@@ -5363,10 +5365,9 @@ class Test_ttest_ind_permutations:
     b3 = [3, 4]
 
     # data for bigger test
-    np.random.seed(0)
     rvs1 = stats.norm.rvs(loc=5, scale=10,  # type: ignore
-                          size=500).reshape(100, 5).T
-    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
+                          size=500, random_state=rng).reshape(100, 5).T
+    rvs2 = stats.norm.rvs(loc=8, scale=20, size=100, random_state=rng)  # type: ignore
 
     p_d = [1/1001, (676+1)/1001]  # desired pvalues
     p_d_gen = [1/1001, (672 + 1)/1001]  # desired pvalues for Generator seed
@@ -5465,9 +5466,9 @@ class Test_ttest_ind_common:
                              ids=['equal_var', 'unequal_var'])
     def test_ttest_many_dims(self, kwds, equal_var):
         # Test that test works on many-dimensional arrays
-        np.random.seed(0)
-        a = np.random.rand(5, 4, 4, 7, 1, 6)
-        b = np.random.rand(4, 1, 8, 2, 6)
+        rng = np.random.default_rng(3815288136)
+        a = rng.random((5, 4, 4, 7, 1, 6))
+        b = rng.random((4, 1, 8, 2, 6))
         res = stats.ttest_ind(a, b, axis=-3, **kwds)
 
         # compare fully-vectorized t-test against t-test on smaller slice
@@ -5741,9 +5742,9 @@ class Test_ttest_CI:
 def test__broadcast_concatenate():
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
-    np.random.seed(0)
-    a = np.random.rand(5, 4, 4, 3, 1, 6)
-    b = np.random.rand(4, 1, 8, 2, 6)
+    rng = np.random.default_rng(7544340069)
+    a = rng.random((5, 4, 4, 3, 1, 6))
+    b = rng.random((4, 1, 8, 2, 6))
     c = _broadcast_concatenate((a, b), axis=-3)
     # broadcast manually as an independent check
     a = np.tile(a, (1, 1, 1, 1, 2, 1))
@@ -6009,8 +6010,9 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new(xp):
+    rng = np.random.default_rng(88123290)
     n1, n2, n3 = (10, 15, 20)
-    rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
+    rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3), random_state=rng)
     rvn1 = xp.asarray(rvn1)
 
     # check multidimensional array and correct axis handling
@@ -6070,8 +6072,9 @@ def test_ttest_1samp_new(xp):
 
 @skip_xp_backends(np_only=True, reason="Only NumPy has nan_policy='omit' for now")
 def test_ttest_1samp_new_omit(xp):
+    rng = np.random.default_rng(4008400329)
     n1, n2, n3 = (5, 10, 15)
-    rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
+    rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3), random_state=rng)
     rvn1 = xp.asarray(rvn1)
 
     rvn1[0:2, 1:3, 4:8] = xp.nan
@@ -6387,8 +6390,8 @@ class TestNormalTest(NormalityTests):
 
 class TestRankSums:
 
-    np.random.seed(0)
-    x, y = np.random.rand(2, 10)
+    rng = np.random.default_rng(3417115752)
+    x, y = rng.random((2, 10))
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_ranksums_result_attributes(self, alternative):
@@ -6426,8 +6429,8 @@ class TestJarqueBera:
     @skip_xp_backends(np_only=True)
     def test_jarque_bera_array_like(self, xp):
         # array-like only relevant for NumPy
-        np.random.seed(987654321)
-        x = np.random.normal(0, 1, 100000)
+        rng = np.random.default_rng(9294968266)
+        x = rng.normal(0, 1, size=100000)
 
         jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
         jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))
@@ -7326,8 +7329,8 @@ class TestTrim:
         assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
 
         # check axis argument
-        np.random.seed(1234)
-        a = np.random.randint(20, size=(5, 6, 4, 7))
+        rng = np.random.default_rng(3417115752)
+        a = rng.integers(20, size=(5, 6, 4, 7))
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
             res2 = stats.trim_mean(np.moveaxis(a, axis, 0), 2/6.)
@@ -7878,6 +7881,9 @@ class TestFOneWay:
 
 
 class TestKruskal:
+    def setup_method(self):
+        self.rng = np.random.default_rng(1808365978)
+
     def test_simple(self):
         x = [1]
         y = [2]
@@ -7956,8 +7962,8 @@ class TestKruskal:
     def test_large_no_samples(self):
         # Test to see if large samples are handled correctly.
         n = 50000
-        x = np.random.randn(n)
-        y = np.random.randn(n) + 50
+        x = self.rng.standard_normal(n)
+        y = self.rng.standard_normal(n) + 50
         h, p = stats.kruskal(x, y)
         expected = 0
         assert_approx_equal(p, expected)
@@ -8752,6 +8758,9 @@ class TestQuantileTest:
 
 
 class TestPageTrendTest:
+    def setup_method(self):
+        self.rng = np.random.default_rng(1808365978)
+
     # expected statistic and p-values generated using R at
     # https://rdrr.io/cran/cultevo/, e.g.
     # library(cultevo)
@@ -8766,13 +8775,14 @@ class TestPageTrendTest:
     # results could be checked (to limited precision) against tables in
     # scipy.stats.page_trend_test reference [1]
 
-    np.random.seed(0)
-    data_3_25 = np.random.rand(3, 25)
-    data_10_26 = np.random.rand(10, 26)
+    rng = np.random.default_rng(3113562111)
+    data_3_25 = rng.random((3, 25))
+    rng = np.random.default_rng(3113562111)
+    data_10_26 = rng.random((10, 26))
 
     ts = [
-          (12805, 0.3886487053947608, False, 'asymptotic', data_3_25),
-          (49140, 0.02888978556179862, False, 'asymptotic', data_10_26),
+          (12949, 0.275539045444, False, 'asymptotic', data_3_25),
+          (47221, 0.5703651063709, False, 'asymptotic', data_10_26),
           (12332, 0.7722477197436702, False, 'asymptotic',
            [[72, 47, 73, 35, 47, 96, 30, 59, 41, 36, 56, 49, 81,
              43, 70, 47, 28, 28, 62, 20, 61, 20, 80, 24, 50],
@@ -8813,10 +8823,8 @@ class TestPageTrendTest:
            [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
             [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
          ]
-
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
     def test_accuracy(self, L, p, ranked, method, data):
-        np.random.seed(42)
         res = stats.page_trend_test(data, ranked=ranked, method=method)
         assert_equal(L, res.statistic)
         assert_allclose(p, res.pvalue)
@@ -8840,24 +8848,22 @@ class TestPageTrendTest:
              [1, 2, 3, 4, 5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8],
              [1, 2, 3, 4, 5, 6, 7, 8]]),
           ]
-
     # only the first of these appears slow because intermediate data are
     # cached and used on the rest
-    @pytest.mark.parametrize("L, p, ranked, method, data", ts)
+    @pytest.mark.parametrize("L, p, ranked, method, data", ts2)
     @pytest.mark.slow()
     def test_accuracy2(self, L, p, ranked, method, data):
-        np.random.seed(42)
         res = stats.page_trend_test(data, ranked=ranked, method=method)
         assert_equal(L, res.statistic)
         assert_allclose(p, res.pvalue)
         assert_equal(method, res.method)
 
     def test_options(self):
-        np.random.seed(42)
+        rng = np.random.default_rng(183973867)
         m, n = 10, 20
         predicted_ranks = np.arange(1, n+1)
-        perm = np.random.permutation(np.arange(n))
-        data = np.random.rand(m, n)
+        perm = rng.permutation(np.arange(n))
+        data = rng.random((m, n))
         ranks = stats.rankdata(data, axis=1)
         res1 = stats.page_trend_test(ranks)
         res2 = stats.page_trend_test(ranks, ranked=True)
@@ -8872,8 +8878,6 @@ class TestPageTrendTest:
 
     def test_Ames_assay(self):
         # test from _page_trend_test.py [2] page 151; data on page 144
-        np.random.seed(42)
-
         data = [[101, 117, 111], [91, 90, 107], [103, 133, 121],
                 [136, 140, 144], [190, 161, 201], [146, 120, 116]]
         data = np.array(data).T
@@ -8903,10 +8907,11 @@ class TestPageTrendTest:
             stats.page_trend_test([[[1]]])
 
         # test invalid dimensions
+        rng = np.random.default_rng(2482566048)
         with assert_raises(ValueError, match="Page's L is only appropriate"):
-            stats.page_trend_test(np.random.rand(1, 3))
+            stats.page_trend_test(rng.random((1, 3)))
         with assert_raises(ValueError, match="Page's L is only appropriate"):
-            stats.page_trend_test(np.random.rand(2, 2))
+            stats.page_trend_test(rng.random((2, 2)))
 
         # predicted ranks must include each integer [1, 2, 3] exactly once
         message = "`predicted_ranks` must include each integer"

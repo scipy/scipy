@@ -816,8 +816,8 @@ class TestLevene:
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
+        rng = np.random.default_rng(4058827756)
+        x2 = rng.permutation(x)
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
@@ -1235,9 +1235,9 @@ class TestMood:
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
-        np.random.seed(1234)
-        x1 = np.random.randn(10, 1)
-        x2 = np.random.randn(15, 1)
+        rng = np.random.default_rng(4058827756)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
         z1, p1 = stats.mood(x1, x2)
         z2, p2 = stats.mood(x2, x1)
         assert_array_almost_equal([z1, p1], [-z2, p2])
@@ -1272,9 +1272,9 @@ class TestMood:
         # Test if the results of mood test in 2-D case are consistent with the
         # R result for the same inputs.  Numbers from R mood.test().
         ny = 5
-        np.random.seed(1234)
-        x1 = np.random.randn(10, ny)
-        x2 = np.random.randn(15, ny)
+        rng = np.random.default_rng()
+        x1 = rng.standard_normal((10, ny))
+        x2 = rng.standard_normal((15, ny))
         z_vectest, pval_vectest = stats.mood(x1, x2)
 
         for j in range(ny):
@@ -1293,9 +1293,9 @@ class TestMood:
 
     def test_mood_3d(self):
         shape = (10, 5, 6)
-        np.random.seed(1234)
-        x1 = np.random.randn(*shape)
-        x2 = np.random.randn(*shape)
+        rng = np.random.default_rng(3602349075)
+        x1 = rng.standard_normal(shape)
+        x2 = rng.standard_normal(shape)
 
         for axis in range(3):
             z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
