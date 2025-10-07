@@ -15,6 +15,9 @@ from scipy.optimize import root
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 import scipy.stats._resampling as _resampling
 
+import torch
+torch.set_default_dtype(torch.float32)
+
 
 @make_xp_test_case(bootstrap)
 class TestBootstrap:
@@ -304,8 +307,8 @@ class TestBootstrap:
         # reference acceleration (0.011008228344026734) is available at:
         # https://github.com/scipy/scipy/pull/16455#issuecomment-1193400981
 
-        y = xp.asarray([10, 27, 31, 40, 46, 50, 52, 104, 146])
-        z = xp.asarray([16, 23, 38, 94, 99, 141, 197])
+        y = xp.asarray([10., 27., 31., 40., 46., 50., 52., 104., 146.])
+        z = xp.asarray([16., 23., 38., 94., 99., 141., 197.])
 
         def statistic(z, y, axis=0):
             return xp.mean(z, axis=axis) - xp.mean(y, axis=axis)
@@ -497,13 +500,16 @@ class TestBootstrap:
 
 
     @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
-    @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+    @pytest.mark.parametrize("method", ["BCa", "basic", "percentile"])
     def test_bootstrap_gh15678(self, method, xp):
+        # nums = [xp.sum(U_i**3, axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+        # turning U_i `float32` into `float64`
+
         # Check that gh-15678 is fixed: when statistic function returned a Python
         # float, method="BCa" failed when trying to add a dimension to the float
         rng = np.random.default_rng(354645618886684)
         dist = stats.norm(loc=2, scale=4)
-        data = dist.rvs(size=100, random_state=rng)
+        data = dist.rvs(size=100, random_state=rng).astype(np.float32)
         res = bootstrap((xp.asarray(data),), stats.skew, method=method, n_resamples=100,
                         rng=np.random.default_rng(9563))
         # this always worked because np.apply_along_axis returns NumPy data type
@@ -523,16 +529,14 @@ class TestBootstrap:
         dist = stats.norm(loc=2, scale=4)
         data = dist.rvs(size=100, random_state=rng)
         true_min = np.min(data)
-        data = (xp.asarray(data),)
-        res = bootstrap(data, xp.min, method="BCa", n_resamples=100,
+        data = xp.asarray(data)
+        res = bootstrap((data,), xp.min, method="BCa", n_resamples=100,
                         rng=np.random.default_rng(3942))
         xp_assert_equal(res.confidence_interval.low, xp.asarray(true_min))
-        res2 = bootstrap(-xp.array(data), xp.max, method="BCa", n_resamples=100,
+        res2 = bootstrap((-data,), xp.max, method="BCa", n_resamples=100,
                          rng=np.random.default_rng(3942))
-        xp_assert_close(-res.confidence_interval.low,
-                        res2.confidence_interval.high)
-        xp_assert_close(-res.confidence_interval.high,
-                        res2.confidence_interval.low)
+        xp_assert_close(-res.confidence_interval.low, res2.confidence_interval.high)
+        xp_assert_close(-res.confidence_interval.high, res2.confidence_interval.low)
 
 
     @pytest.mark.parametrize("additional_resamples", [0, 1000])

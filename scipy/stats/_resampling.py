@@ -86,7 +86,8 @@ def _percentile_of_score(a, score, axis, xp):
     in [0, 1].
     """
     B = a.shape[axis]
-    return (xp.sum(a < score, axis=axis) + xp.sum(a <= score, axis=axis)) / (2 * B)
+    return (xp.count_nonzero(a < score, axis=axis)
+            + xp.count_nonzero(a <= score, axis=axis)) / (2 * B)
 
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
@@ -96,6 +97,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     # calculate z0_hat
     theta_hat = xp.expand_dims(statistic(*data, axis=axis), axis=-1)
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, xp=xp)
+    percentile = xp.asarray(percentile, dtype=theta_hat.dtype, device=theta_hat.device)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
@@ -106,7 +108,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
         # each sample of the data to ensure broadcastability. We need to
         # create a copy of the list containing the samples anyway, so do this
         # in the loop to simplify the code. This is not the bottleneck...
-        samples = [xp.expand_dims(sample, -2) for sample in data]
+        samples = [xp.expand_dims(sample, axis=-2) for sample in data]
         theta_hat_i = []
         for jackknife_sample in _jackknife_resample(sample, batch, xp=xp):
             samples[j] = jackknife_sample
@@ -131,7 +133,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
-    z_alpha = ndtri(alpha)
+    # `float` because dtype of ndtri output (float64) should not promote other vals
+    z_alpha = float(ndtri(alpha))
     z_1alpha = -z_alpha
     num1 = z0_hat + z_alpha
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
@@ -270,7 +273,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True, exceptions=['cupy'])
+@xp_capabilities(np_only=True, exceptions=['cupy', 'torch'])
 # @xp_capabilities(np_only=True)
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
@@ -630,7 +633,8 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch, xp=xp)[:2]
     else:
-        interval = xp.asarray(alpha), xp.asarray(1-alpha)
+        alpha = xp.asarray(alpha, dtype=theta_hat_b.dtype, device=theta_hat_b.device)
+        interval = alpha, 1 - alpha
 
     # Calculate confidence interval of statistic
     interval = xp.stack(interval, axis=-1)
@@ -655,7 +659,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     elif alternative == 'greater':
         ci_u = xp.full_like(ci_u, xp.inf)
 
-    standard_error = np.std(theta_hat_b, ddof=1, axis=-1)
+    standard_error = xp.std(theta_hat_b, correction=1, axis=-1)
 
     ci_l = ci_l[()] if ci_l.ndim == 0 else ci_l
     ci_u = ci_u[()] if ci_u.ndim == 0 else ci_u
