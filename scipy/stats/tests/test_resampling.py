@@ -564,7 +564,7 @@ def test_bootstrap_alternative(method):
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     rng = np.random.default_rng(5274950392)
-    x = rng.standard_normal(shape)
+    x = rng.random(size=shape)
     y = next(_resampling._jackknife_resample(x))
 
     for i in range(shape[-1]):
@@ -583,8 +583,8 @@ def test_jackknife_resample():
 @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
 def test_bootstrap_resample(rng_name):
     rng = getattr(np.random, rng_name)
-    rng1 = rng(0)
-    rng2 = rng(0)
+    rng1 = rng(3949441460)
+    rng2 = rng(3949441460)
 
     n_resamples = 10
     shape = 3, 4, 5, 6

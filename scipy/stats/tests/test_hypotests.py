@@ -1011,7 +1011,7 @@ class TestSomersD(_TestPythranFunc):
         # generate lists of random classes 1-2 (binary)
         classes = [1, 2]
         n_samples = 10 ** 6
-        rng = np.random.default_rng(6889320191)  #
+        rng = np.random.default_rng(6889320191)
         x = rng.choice(classes, n_samples)
         y = rng.choice(classes, n_samples)
 

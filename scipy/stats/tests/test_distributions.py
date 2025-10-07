@@ -6429,9 +6429,6 @@ def test_args_reduce():
 
 
 class TestFitMethod:
-    def setup_method(self):
-        self.rng = np.random.default_rng(7310515167)
-
     # fitting assumes continuous parameters
     skip = ['ncf', 'ksone', 'kstwo', 'irwinhall']
 

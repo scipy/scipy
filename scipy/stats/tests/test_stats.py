@@ -6430,7 +6430,7 @@ class TestJarqueBera:
     def test_jarque_bera_array_like(self, xp):
         # array-like only relevant for NumPy
         rng = np.random.default_rng(9294968266)
-        x = rng.normal(0, 1, size=100000)
+        x = rng.standard_normal(size=100000)
 
         jb_test1 = JB1, p1 = stats.jarque_bera(list(x))
         jb_test2 = JB2, p2 = stats.jarque_bera(tuple(x))
@@ -8823,6 +8823,7 @@ class TestPageTrendTest:
            [[3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1], [3, 2, 1],
             [3, 2, 1], [3, 2, 1], [3, 2, 1], [2, 1, 3], [1, 2, 3]]),
          ]
+
     @pytest.mark.parametrize("L, p, ranked, method, data", ts)
     def test_accuracy(self, L, p, ranked, method, data):
         res = stats.page_trend_test(data, ranked=ranked, method=method)

@@ -74,7 +74,7 @@ class TestMGCStat:
         self.rng = np.random.default_rng(1266219746)
 
     def _simulations(self, samps=100, dims=1, sim_type="", rng=None):
-        rng = rng if rng is not None else self.rng
+        rng = rng or self.rng
         # linear simulation
         if sim_type == "linear":
             x = rng.uniform(-1, 1, size=(samps, 1))
@@ -89,8 +89,8 @@ class TestMGCStat:
 
         # independence (tests type I simulation)
         elif sim_type == "independence":
-            u = self.rng.normal(0, 1, size=(samps, 1))
-            v = self.rng.normal(0, 1, size=(samps, 1))
+            u = self.rng.standard_normal(size=(samps, 1))
+            v = self.rng.standard_normal(size=(samps, 1))
             u_2 = self.rng.binomial(1, p=0.5, size=(samps, 1))
             v_2 = self.rng.binomial(1, p=0.5, size=(samps, 1))
             x = u/3 + 2*u_2 - 1
@@ -103,7 +103,7 @@ class TestMGCStat:
 
         # add dimensions of noise for higher dimensions
         if dims > 1:
-            dims_noise = self.rng.normal(0, 1, size=(samps, dims-1))
+            dims_noise = self.rng.standard_normal(size=(samps, dims-1))
             x = np.concatenate((x, dims_noise), axis=1)
 
         return x, y
@@ -147,7 +147,7 @@ class TestMGCStat:
     def test_twosamp(self):
         # generate x and y
         x = self.rng.binomial(100, 0.5, size=(100, 5))
-        y = self.rng.normal(0, 1, size=(80, 5))
+        y = self.rng.standard_normal(size=(80, 5))
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=self.rng)
@@ -155,7 +155,7 @@ class TestMGCStat:
         assert_approx_equal(pvalue, 0.001, significant=1)
 
         # generate x and y
-        y = self.rng.normal(0, 1, size=(100, 5))
+        y = self.rng.standard_normal(size=(100, 5))
 
         # test stat and pvalue
         stat, pvalue, _ = stats.multiscale_graphcorr(x, y, is_twosamp=True,
