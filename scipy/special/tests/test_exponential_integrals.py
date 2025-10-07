@@ -111,6 +111,12 @@ class TestExpi:
             rtol=1e-15
         )
 
+    def test_limits(self):
+        limit_zero = sc.expi(0)
+        assert limit_zero == -np.inf
+        limit_inf = sc.expi(np.inf)
+        assert limit_inf == np.inf
+
 
 class TestExpn:
 
