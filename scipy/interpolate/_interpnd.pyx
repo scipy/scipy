@@ -152,7 +152,8 @@ class NDInterpolatorBase:
         return self._scale_x(xi), interpolation_points_shape
 
     def __call__(self, *args, simplex_tolerance=1.0):
-        """interpolator(xi)
+        """\
+        interpolator(xi)
 
         Evaluate interpolator at given points.
 
