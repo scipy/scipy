@@ -18,12 +18,7 @@ import scipy.stats._resampling as _resampling
 
 @make_xp_test_case(bootstrap)
 class TestBootstrap:
-    def test_bootstrap_iv_numpy(self):
-        message = "For better performance, `func` should be vectorized"
-        with pytest.warns(UserWarning, match=message):
-            bootstrap(([1, 2, 3],), lambda x: np.mean(x))
-
-    @skip_xp_backends('numpy', reason='NumPy warns as above')
+    @skip_xp_backends('numpy', reason='NumPy does not raise')
     def test_bootstrap_iv_other(self, xp):
         message = f"When using array library {xp.__name__}"
         with pytest.raises(TypeError, match=message):
@@ -88,7 +83,6 @@ class TestBootstrap:
         with pytest.raises(TypeError, match=message):
             bootstrap((sample,), xp.mean, rng='herring')
 
-
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
     @pytest.mark.parametrize("axis", [0, 1, 2])
     def test_bootstrap_batch(self, method, axis, xp):
@@ -106,7 +100,6 @@ class TestBootstrap:
         xp_assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
         xp_assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
         xp_assert_equal(res2.standard_error, res1.standard_error)
-
 
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
     def test_bootstrap_paired(self, method, xp):
@@ -133,7 +126,6 @@ class TestBootstrap:
         xp_assert_close(res1.confidence_interval.low, res2.confidence_interval.low)
         xp_assert_close(res1.confidence_interval.high, res2.confidence_interval.high)
         xp_assert_close(res1.standard_error, res2.standard_error)
-
 
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
     @pytest.mark.parametrize("axis", [0, 1, 2])
@@ -181,7 +173,6 @@ class TestBootstrap:
         xp_assert_close(res2.confidence_interval.high, ref_ci_high)
         xp_assert_close(res2.standard_error, ref_ci_standard_error)
 
-
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("MemoryError with BCa observed in CI")
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
@@ -212,11 +203,9 @@ class TestBootstrap:
         xp_assert_close(res.confidence_interval.low,
                         xp.asarray(dist.ppf(1-alpha)), rtol=5e-4)
 
-
     tests_R = [("basic", 23.77, 79.12),
                ("percentile", 28.86, 84.21),
                ("BCa", 32.31, 91.43)]
-
 
     @pytest.mark.parametrize("method, ref_low, ref_high", tests_R)
     def test_bootstrap_against_R(self, method, ref_low, ref_high, xp):
@@ -240,7 +229,6 @@ class TestBootstrap:
         res = bootstrap((x,), xp.mean, n_resamples=1000000, method=method, rng=0)
         xp_assert_close(res.confidence_interval.low, xp.asarray(ref_low), rtol=0.005)
         xp_assert_close(res.confidence_interval.high, xp.asarray(ref_high), rtol=0.005)
-
 
     def test_multisample_BCa_against_R(self, xp):
         # Because bootstrap is stochastic, it's tricky to test against reference
@@ -299,7 +287,6 @@ class TestBootstrap:
         assert diff_percent > 0.15
         assert abs(diff_bca) < 0.03
 
-
     def test_BCa_acceleration_against_reference(self, xp):
         # Compare the (deterministic) acceleration parameter for a multi-sample
         # problem against a reference value. The example is from [1], but Efron's
@@ -324,11 +311,9 @@ class TestBootstrap:
                                                 theta_hat_b, batch, xp)
         xp_assert_close(a_hat, xp.asarray(0.011008228344026734))
 
-
     tests_against_itself_1samp = {"basic": 1789,
                                   "percentile": 1790,
                                   "BCa": 1789}
-
 
     @pytest.mark.slow
     @pytest.mark.parametrize("method, expected",
@@ -370,10 +355,8 @@ class TestBootstrap:
                                  confidence_level).pvalue
         assert pvalue > 0.1
 
-
     tests_against_itself_2samp = {"basic": 892,
                                   "percentile": 890}
-
 
     @pytest.mark.slow
     @pytest.mark.parametrize("method, expected",
@@ -424,8 +407,6 @@ class TestBootstrap:
                                  confidence_level).pvalue
         assert pvalue > 0.1
 
-
-    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("dtype", ['float32', 'float64'])
@@ -457,8 +438,6 @@ class TestBootstrap:
                         xp.asarray(res2.confidence_interval.high), rtol=rtol)
         xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error), rtol=rtol)
 
-
-    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     @pytest.mark.parametrize("axis", [0, 1])
@@ -472,8 +451,8 @@ class TestBootstrap:
             assert x.ndim == 1
             return x.mean(axis=0)
 
-        rng = np.random.RandomState(0)
-        x = rng.rand(2, 3)
+        rng = np.random.default_rng(7939952824)
+        x = rng.random((2, 3))
         res1 = bootstrap((xp.asarray(x),), statistic, vectorized=True, axis=axis,
                          n_resamples=100, batch=None, method=method, rng=0)
         res2 = bootstrap((x,), statistic_1d, vectorized=False, axis=axis,
@@ -483,7 +462,6 @@ class TestBootstrap:
         xp_assert_close(res1.confidence_interval.high,
                         xp.asarray(res2.confidence_interval.high))
         xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error))
-
 
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     def test_bootstrap_degenerate(self, method, xp):
@@ -501,8 +479,6 @@ class TestBootstrap:
             xp_assert_equal(res.confidence_interval.high, xp.asarray(10000.))
         xp_assert_equal(res.standard_error, xp.asarray(0.))
 
-
-    @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["BCa", "basic", "percentile"])
     def test_bootstrap_gh15678(self, method, xp):
         # Check that gh-15678 is fixed: when statistic function returned a Python
@@ -521,7 +497,6 @@ class TestBootstrap:
                         xp.asarray(ref.confidence_interval.high))
         xp_assert_close(res.standard_error, xp.asarray(ref.standard_error))
 
-
     def test_bootstrap_min(self, xp):
         # Check that gh-15883 is fixed: percentileofscore should
         # behave according to the 'mean' behavior and not trigger nan for BCa
@@ -537,7 +512,6 @@ class TestBootstrap:
                          rng=np.random.default_rng(3942))
         xp_assert_close(-res.confidence_interval.low, res2.confidence_interval.high)
         xp_assert_close(-res.confidence_interval.high, res2.confidence_interval.low)
-
 
     @pytest.mark.parametrize("additional_resamples", [0, 1000])
     def test_re_bootstrap(self, additional_resamples, xp):
@@ -568,7 +542,6 @@ class TestBootstrap:
                         rtol=1e-14)
         xp_assert_close(res.standard_error, xp.asarray(ref.standard_error), rtol=1e-14)
 
-
     @pytest.mark.xfail_on_32bit("Sensitive to machine precision")
     @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
     def test_bootstrap_alternative(self, method, xp):
@@ -593,7 +566,6 @@ class TestBootstrap:
         with pytest.raises(ValueError, match='`alternative` must be one of'):
             stats.bootstrap(**config, alternative='ekki-ekki')
 
-
     def test_jackknife_resample(self, xp):
         shape = 3, 4, 5, 6
         np.random.seed(0)
@@ -610,7 +582,6 @@ class TestBootstrap:
 
         y2 = list(_resampling._jackknife_resample(xp.asarray(x), batch=2, xp=xp))
         xp_assert_equal(xp.concat(y2, axis=-2), y)
-
 
     @pytest.mark.skip_xp_backends("array_api_strict",
                                   reason="Test uses ... + fancy indexing")
@@ -638,7 +609,6 @@ class TestBootstrap:
 
             xp_assert_equal(slc, expected)
 
-
     @pytest.mark.parametrize("score", [0, 0.5, 1])
     @pytest.mark.parametrize("axis", [0, 1, 2])
     def test_percentile_of_score(self, score, axis, xp):
@@ -656,7 +626,6 @@ class TestBootstrap:
         p2 = vectorized_pos(x, score, axis=-1)/100
 
         xp_assert_close(p, xp.asarray(p2, dtype=dtype), rtol=1e-15)
-
 
     @pytest.mark.parametrize("axis", [0, 1, 2])
     def test_vectorize_statistic(self, axis):
@@ -684,7 +653,6 @@ class TestBootstrap:
         res1 = statistic(x, y, z, axis=axis)
         res2 = statistic2(x, y, z, axis=axis)
         assert_allclose(res1, res2)
-
 
     @pytest.mark.slow
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
@@ -718,7 +686,6 @@ class TestBootstrap:
         assert res.confidence_interval.high.shape == (2, 100)
         assert res.standard_error.shape == (2, 100)
         assert res.bootstrap_distribution.shape == (2, 100, 9999)
-
 
     @pytest.mark.slow
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
@@ -759,7 +726,8 @@ class TestBootstrap:
         assert_allclose(res.confidence_interval.high[0],
                         ref.confidence_interval.high, atol=1e-15)
 
-
+    # torch doesn't have T distribution CDF and can't fall back to NumPy on GPU
+    @pytest.mark.skip_xp_backends(np_only=True, exceptions=['cupy'])
     def test_gh_20850(self, xp):
         rng = np.random.default_rng(2085020850)
         x = xp.asarray(rng.random((10, 2)))
@@ -777,7 +745,6 @@ class TestBootstrap:
             stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
         stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
         stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
-
 
 # --- Test Monte Carlo Hypothesis Test --- #
 

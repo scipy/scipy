@@ -61,9 +61,8 @@ def _jackknife_resample(sample, batch=None, *, xp):
         i = np.arange(n)
         i = np.broadcast_to(i, (batch_actual, n))
         i = i[j].reshape((batch_actual, n-1))
-        i = xp.asarray(i)
 
-        yield _get_from_last_axis(sample, i, xp=xp)
+        yield _get_from_last_axis(sample, xp.asarray(i, device=sample.device), xp=xp)
 
 
 def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
@@ -71,13 +70,14 @@ def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
-    i = rng_integers(rng, 0, n, (n_resamples, n), xp=xp)
+    i = rng_integers(rng, 0, n, (n_resamples, n))
 
-    return _get_from_last_axis(sample, i, xp=xp)
+    return _get_from_last_axis(sample, xp.asarray(i, device=sample.device), xp=xp)
 
 
 def _get_from_last_axis(sample, i, xp):
-    if i.ndim > 1:
+    # Equivalent to `sample[..., i]` as used in `bootstrap`. Assumes i.ndim <=2.
+    if i.ndim == 2:
         sample = xp.expand_dims(sample, axis=-2)
     sample, i = _broadcast_arrays((sample, i), axis=-1, xp=xp)
     return xp.take_along_axis(sample, i, axis=-1)
@@ -172,9 +172,6 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                        "be vectorized and accept argument `axis`.")
             raise TypeError(message)
 
-        message = ("For better performance, `func` should be vectorized and "
-                   "accept argument `axis`.")
-        warnings.warn(message, stacklevel=3)
         statistic = _vectorize_statistic(statistic)
 
     axis_int = int(axis)
@@ -652,9 +649,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     ci = stats.quantile(theta_hat_b, interval, axis=-1)
     if xp.any(xp.isnan(ci)):
         msg = (
-            "The BCa confidence interval cannot be calculated."
-            " This problem is known to occur when the distribution"
-            " is degenerate or the statistic is np.min."
+            "The BCa confidence interval cannot be calculated. "
+            "This problem is known to occur when the distribution "
+            "is degenerate or the statistic is np.min."
         )
         warnings.warn(DegenerateDataWarning(msg), stacklevel=2)
 
