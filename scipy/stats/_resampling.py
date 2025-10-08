@@ -282,7 +282,8 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True, exceptions=['cupy', 'torch', 'array_api_strict'])
+@xp_capabilities(skip_backends=[("jax.numpy", "Not tested."),
+                                ("dask.array", "Dask doesn't have take_along_axis.")])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
