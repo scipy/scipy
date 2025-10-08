@@ -61,10 +61,9 @@ def _jackknife_resample(sample, batch=None, *, xp):
         i = np.arange(n)
         i = np.broadcast_to(i, (batch_actual, n))
         i = i[j].reshape((batch_actual, n-1))
-
         i = xp.asarray(i)
-        resamples = sample[..., i]
-        yield resamples
+
+        yield _get_from_last_axis(sample, i, xp=xp)
 
 
 def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
@@ -74,8 +73,14 @@ def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     # bootstrap - each row is a random resample of original observations
     i = rng_integers(rng, 0, n, (n_resamples, n), xp=xp)
 
-    resamples = sample[..., i]
-    return resamples
+    return _get_from_last_axis(sample, i, xp=xp)
+
+
+def _get_from_last_axis(sample, i, xp):
+    if i.ndim > 1:
+        sample = xp.expand_dims(sample, axis=-2)
+    sample, i = _broadcast_arrays((sample, i), axis=-1, xp=xp)
+    return xp.take_along_axis(sample, i, axis=-1)
 
 
 def _percentile_of_score(a, score, axis, xp):
@@ -117,7 +122,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
             theta_hat_i.append(statistic(*broadcasted, axis=-1))
         theta_hat_ji.append(theta_hat_i)
 
-    theta_hat_ji = [xp.concatenate(theta_hat_i, axis=-1)
+    theta_hat_ji = [xp.concat(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
     # CuPy array dtype is unstable in 1.13.6 when divided by large Python int:
@@ -209,7 +214,8 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         # to generate the bootstrap distribution for paired-sample statistics,
         # resample the indices of the observations
         def statistic(i, axis=-1, data=data_iv, unpaired_statistic=statistic):
-            data = [sample[..., i] for sample in data]
+            # data = [sample[..., i] for sample in data]
+            data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
         data_iv = [xp.arange(n)]
@@ -279,10 +285,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True, exceptions=['cupy', 'torch'])
-# @xp_capabilities(np_only=True)
-@xp_capabilities(np_only=True, exceptions=['torch'],
-                 skip_backends=[('numpy', 'blah')])
+@xp_capabilities(np_only=True, exceptions=['cupy', 'torch', 'array_api_strict'])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -632,7 +635,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
         # Compute bootstrap distribution of statistic
         theta_hat_b.append(statistic(*resampled_data, axis=-1))
-    theta_hat_b = xp.concatenate(theta_hat_b, axis=-1)
+    theta_hat_b = xp.concat(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
     alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'

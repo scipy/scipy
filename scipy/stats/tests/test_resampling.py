@@ -146,7 +146,7 @@ class TestBootstrap:
         rng = np.random.RandomState(0)
 
         def my_statistic(x, y, z, axis=-1):
-            return x.mean(axis=axis) + xp.mean(y, axis=axis) + xp.mean(z, axis=axis)
+            return xp.mean(x, axis=axis) + xp.mean(y, axis=axis) + xp.mean(z, axis=axis)
 
         shape = 10, 11, 12
         n_samples = shape[axis]
@@ -163,9 +163,10 @@ class TestBootstrap:
 
         reshape = [1, 1, 1]
         reshape[axis] = n_samples
-        x = xp.broadcast_to(x.reshape(reshape), shape)
-        y = xp.broadcast_to(y.reshape(reshape), shape)
-        z = xp.broadcast_to(z.reshape(reshape), shape)
+        reshape = tuple(reshape)
+        x = xp.broadcast_to(xp.reshape(x, reshape), shape)
+        y = xp.broadcast_to(xp.reshape(y, reshape), shape)
+        z = xp.broadcast_to(xp.reshape(z, reshape), shape)
         res2 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
                          rng=0, axis=axis, n_resamples=100)
 
@@ -270,9 +271,9 @@ class TestBootstrap:
                                   batch=100, rng=rng)
 
         # compute midpoints so we can compare just one number for each
-        mid_basic = xp.mean(xp.asarray(res_basic.confidence_interval))
-        mid_percent = xp.mean(xp.asarray(res_percent.confidence_interval))
-        mid_bca = xp.mean(xp.asarray(res_bca.confidence_interval))
+        mid_basic = xp.mean(xp.stack(res_basic.confidence_interval))
+        mid_percent = xp.mean(xp.stack(res_percent.confidence_interval))
+        mid_bca = xp.mean(xp.stack(res_bca.confidence_interval))
 
         # reference for BCA CI computed using R wboot package:
         # library(wBoot)
@@ -345,7 +346,7 @@ class TestBootstrap:
 
         # The true mean is 5
         dist = stats.norm(loc=5, scale=1)
-        stat_true = dist.mean()
+        stat_true = float(dist.mean())
 
         # Do the same thing 2000 times. (The code is fully vectorized.)
         n_replications = 2000
@@ -361,7 +362,7 @@ class TestBootstrap:
         ci = res.confidence_interval
 
         # ci contains vectors of lower and upper confidence interval bounds
-        ci_contains_true = xp.sum((ci[0] < stat_true) & (stat_true < ci[1]))
+        ci_contains_true = xp.count_nonzero((ci[0] < stat_true) & (stat_true < ci[1]))
         assert ci_contains_true == expected
 
         # ci_contains_true is not inconsistent with confidence_level
@@ -398,7 +399,7 @@ class TestBootstrap:
         # The true difference in the means is -0.1
         dist1 = stats.norm(loc=0, scale=1)
         dist2 = stats.norm(loc=0.1, scale=1)
-        stat_true = dist1.mean() - dist2.mean()
+        stat_true = float(dist1.mean() - dist2.mean())
 
         # Do the same thing 1000 times. (The code is fully vectorized.)
         n_replications = 1000
@@ -415,7 +416,7 @@ class TestBootstrap:
         ci = res.confidence_interval
 
         # ci contains vectors of lower and upper confidence interval bounds
-        ci_contains_true = xp.sum((ci[0] < stat_true) & (stat_true < ci[1]))
+        ci_contains_true = xp.count_nonzero((ci[0] < stat_true) & (stat_true < ci[1]))
         assert ci_contains_true == expected
 
         # ci_contains_true is not inconsistent with confidence_level
@@ -586,8 +587,8 @@ class TestBootstrap:
                         rtol=1e-14)
         xp_assert_close(g.confidence_interval.low, t.confidence_interval.low,
                         rtol=1e-14)
-        assert xp.isneginf(l.confidence_interval.low)
-        assert xp.isposinf(g.confidence_interval.high)
+        assert xp.isinf(l.confidence_interval.low) and l.confidence_interval.low < 0
+        assert xp.isinf(g.confidence_interval.high) and g.confidence_interval.high > 0
 
         with pytest.raises(ValueError, match='`alternative` must be one of'):
             stats.bootstrap(**config, alternative='ekki-ekki')
@@ -608,9 +609,11 @@ class TestBootstrap:
             xp_assert_equal(slc, xp.asarray(expected))
 
         y2 = list(_resampling._jackknife_resample(xp.asarray(x), batch=2, xp=xp))
-        xp_assert_equal(xp.concatenate(y2, axis=-2), y)
+        xp_assert_equal(xp.concat(y2, axis=-2), y)
 
 
+    @pytest.mark.skip_xp_backends("array_api_strict",
+                                  reason="Test uses ... + fancy indexing")
     @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
     def test_bootstrap_resample(self, rng_name, xp):
         rng = getattr(np.random, rng_name)
