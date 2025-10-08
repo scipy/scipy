@@ -13,6 +13,8 @@ from scipy._lib._array_api import (
     xp_capabilities,
     xp_result_type,
     xp_size,
+    xp_device,
+    is_array_api_strict,
 )
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy import stats
@@ -62,7 +64,8 @@ def _jackknife_resample(sample, batch=None, *, xp):
         i = np.broadcast_to(i, (batch_actual, n))
         i = i[j].reshape((batch_actual, n-1))
 
-        yield _get_from_last_axis(sample, xp.asarray(i, device=sample.device), xp=xp)
+        i = xp.asarray(i, device=xp_device(sample))
+        yield _get_from_last_axis(sample, i, xp=xp)
 
 
 def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
@@ -72,10 +75,14 @@ def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     # bootstrap - each row is a random resample of original observations
     i = rng_integers(rng, 0, n, (n_resamples, n))
 
-    return _get_from_last_axis(sample, xp.asarray(i, device=sample.device), xp=xp)
+    i = xp.asarray(i, device=xp_device(sample))
+    return _get_from_last_axis(sample, i, xp=xp)
 
 
 def _get_from_last_axis(sample, i, xp):
+    if not is_array_api_strict(xp):
+        return sample[..., i]
+
     # Equivalent to `sample[..., i]` as used in `bootstrap`. Assumes i.ndim <=2.
     if i.ndim == 2:
         sample = xp.expand_dims(sample, axis=-2)
@@ -103,7 +110,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     # calculate z0_hat
     theta_hat = xp.expand_dims(statistic(*data, axis=axis), axis=-1)
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, xp=xp)
-    percentile = xp.asarray(percentile, dtype=theta_hat.dtype, device=theta_hat.device)
+    percentile = xp.asarray(percentile, dtype=theta_hat.dtype,
+                            device=xp_device(theta_hat))
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
@@ -282,7 +290,7 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(skip_backends=[("jax.numpy", "Not tested."),
+@xp_capabilities(skip_backends=[("jax.numpy", "Incompatible with `quantile`."),
                                 ("dask.array", "Dask doesn't have take_along_axis.")])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
@@ -642,7 +650,8 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch, xp=xp)[:2]
     else:
-        alpha = xp.asarray(alpha, dtype=theta_hat_b.dtype, device=theta_hat_b.device)
+        alpha = xp.asarray(alpha, dtype=theta_hat_b.dtype,
+                           device=xp_device(theta_hat_b))
         interval = alpha, 1 - alpha
 
     # Calculate confidence interval of statistic
