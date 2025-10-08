@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy, make_xp_test_case
+from scipy._lib._array_api import is_numpy, make_xp_test_case, xp_default_dtype
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
@@ -14,9 +14,6 @@ from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 import scipy.stats._resampling as _resampling
-
-import torch
-torch.set_default_dtype(torch.float32)
 
 
 @make_xp_test_case(bootstrap)
@@ -206,11 +203,13 @@ class TestBootstrap:
 
         config.update(dict(n_resamples=0, bootstrap_result=res))
         res = bootstrap(**config, confidence_level=alpha, alternative='less')
-        xp_assert_close(res.confidence_interval.high, xp.asarray(dist.ppf(alpha)), rtol=5e-4)
+        xp_assert_close(res.confidence_interval.high,
+                        xp.asarray(dist.ppf(alpha)), rtol=5e-4)
 
         config.update(dict(n_resamples=0, bootstrap_result=res))
         res = bootstrap(**config, confidence_level=alpha, alternative='greater')
-        xp_assert_close(res.confidence_interval.low, xp.asarray(dist.ppf(1-alpha)), rtol=5e-4)
+        xp_assert_close(res.confidence_interval.low,
+                        xp.asarray(dist.ppf(1-alpha)), rtol=5e-4)
 
 
     tests_R = [("basic", 23.77, 79.12),
@@ -428,7 +427,8 @@ class TestBootstrap:
     @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
     @pytest.mark.parametrize("axis", [0, 1])
-    def test_bootstrap_vectorized_3samp(self, method, axis, xp):
+    @pytest.mark.parametrize("dtype", ['float32', 'float64'])
+    def test_bootstrap_vectorized_3samp(self, method, axis, dtype, xp):
         def statistic(*data, axis=0):
             # an arbitrary, vectorized statistic
             return sum(xp.mean(sample, axis=axis) for sample in data)
@@ -440,19 +440,21 @@ class TestBootstrap:
             return sum(sample.mean() for sample in data)
 
         rng = np.random.RandomState(0)
-        x = rng.rand(4, 5)
-        y = rng.rand(4, 5)
-        z = rng.rand(4, 5)
+        x = rng.rand(4, 5).astype(dtype)
+        y = rng.rand(4, 5).astype(dtype)
+        z = rng.rand(4, 5).astype(dtype)
         res1 = bootstrap((xp.asarray(x), xp.asarray(y), xp.asarray(z)),
                          statistic, vectorized=True, axis=axis, n_resamples=100,
                          method=method, rng=0)
         res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
                          axis=axis, n_resamples=100, method=method, rng=0)
+
+        rtol = 1e-6 if dtype == 'float32' else 1e-14
         xp_assert_close(res1.confidence_interval.low,
-                        xp.asarray(res2.confidence_interval.low))
+                        xp.asarray(res2.confidence_interval.low), rtol=rtol)
         xp_assert_close(res1.confidence_interval.high,
-                        xp.asarray(res2.confidence_interval.high))
-        xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error))
+                        xp.asarray(res2.confidence_interval.high), rtol=rtol)
+        xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error), rtol=rtol)
 
 
     @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
@@ -502,14 +504,11 @@ class TestBootstrap:
     @pytest.mark.filterwarnings("ignore:For better performance:UserWarning")
     @pytest.mark.parametrize("method", ["BCa", "basic", "percentile"])
     def test_bootstrap_gh15678(self, method, xp):
-        # nums = [xp.sum(U_i**3, axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
-        # turning U_i `float32` into `float64`
-
         # Check that gh-15678 is fixed: when statistic function returned a Python
         # float, method="BCa" failed when trying to add a dimension to the float
         rng = np.random.default_rng(354645618886684)
         dist = stats.norm(loc=2, scale=4)
-        data = dist.rvs(size=100, random_state=rng).astype(np.float32)
+        data = dist.rvs(size=100, random_state=rng)
         res = bootstrap((xp.asarray(data),), stats.skew, method=method, n_resamples=100,
                         rng=np.random.default_rng(9563))
         # this always worked because np.apply_along_axis returns NumPy data type
@@ -643,14 +642,17 @@ class TestBootstrap:
         shape = 10, 20, 30
         np.random.seed(0)
         x = np.random.rand(*shape)
-        p = _resampling._percentile_of_score(xp.asarray(x), score, axis=-1, xp=xp)
+        dtype = xp_default_dtype(xp)
+        p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
+                                             xp.asarray(score, dtype=dtype),
+                                             axis=-1, xp=xp)
 
         def vectorized_pos(a, score, axis):
             return np.apply_along_axis(stats.percentileofscore, axis, a, score)
 
         p2 = vectorized_pos(x, score, axis=-1)/100
 
-        xp_assert_close(p, xp.asarray(p2), rtol=1e-15)
+        xp_assert_close(p, xp.asarray(p2, dtype=dtype), rtol=1e-15)
 
 
     @pytest.mark.parametrize("axis", [0, 1, 2])

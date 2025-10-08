@@ -86,8 +86,9 @@ def _percentile_of_score(a, score, axis, xp):
     in [0, 1].
     """
     B = a.shape[axis]
-    return (xp.count_nonzero(a < score, axis=axis)
-            + xp.count_nonzero(a <= score, axis=axis)) / (2 * B)
+    nonzeros = (xp.count_nonzero(a < score, axis=axis)
+                + xp.count_nonzero(a <= score, axis=axis))
+    return xp.astype(nonzeros, score.dtype) / (2 * B)
 
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
@@ -119,7 +120,12 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     theta_hat_ji = [xp.concatenate(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
-    n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
+    # CuPy array dtype is unstable in 1.13.6 when divided by large Python int:
+    # (cp.ones(1, dtype=cp.float32)/10000).dtype   # float32
+    # (cp.ones(1, dtype=cp.float32)/100000).dtype  # float64
+    # Solution for now is to make the divisor a Python float
+    # Looks like this will be fixed in 1.14.0
+    n_j = [float(theta_hat_i.shape[-1]) for theta_hat_i in theta_hat_ji]
 
     theta_hat_j_dot = [xp.mean(theta_hat_i, axis=-1, keepdims=True)
                        for theta_hat_i in theta_hat_ji]
@@ -275,6 +281,8 @@ class BootstrapResult:
 
 @xp_capabilities(np_only=True, exceptions=['cupy', 'torch'])
 # @xp_capabilities(np_only=True)
+@xp_capabilities(np_only=True, exceptions=['torch'],
+                 skip_backends=[('numpy', 'blah')])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
