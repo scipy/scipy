@@ -419,7 +419,7 @@ class TestBootstrap:
             # the same statistic, not vectorized
             for sample in data:
                 assert sample.ndim == 1
-            return sum(sample.mean() for sample in data)
+            return np.asarray(sum(sample.mean() for sample in data), dtype=dtype)
 
         rng = np.random.RandomState(0)
         x = rng.rand(4, 5).astype(dtype)
