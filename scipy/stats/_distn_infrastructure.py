@@ -3771,12 +3771,14 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         cond0 = self._argcheck(*args) & (loc == loc)
         cond1 = (q > 0) & (q < 1)
-        cond2 = (q == 1) & cond0
+        cond2 = (q == 0) & cond0
+        cond3 = (q == 1) & cond0
         cond = cond0 & cond1
         output = np.full(shape(cond), fill_value=self.badvalue, dtype='d')
         # output type 'd' to handle nin and inf
-        place(output, (q == 0)*(cond == cond), _a-1 + loc)
-        place(output, cond2, _b + loc)
+
+        place(output, cond2, argsreduce(cond2, _a-1 + loc)[0])
+        place(output, cond3, argsreduce(cond3, _b + loc)[0])
         if np.any(cond):
             goodargs = argsreduce(cond, *((q,)+args+(loc,)))
             loc, goodargs = goodargs[-1], goodargs[:-1]
@@ -3827,8 +3829,8 @@ class rv_discrete(rv_generic):
         # output type 'd' to handle nin and inf
         lower_bound = _a - 1 + loc
         upper_bound = _b + loc
-        place(output, cond2*(cond == cond), lower_bound)
-        place(output, cond3*(cond == cond), upper_bound)
+        place(output, cond2, argsreduce(cond2, lower_bound)[0])
+        place(output, cond3, argsreduce(cond3, upper_bound)[0])
 
         # call place only if at least 1 valid argument
         if np.any(cond):

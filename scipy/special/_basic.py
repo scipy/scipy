@@ -1275,14 +1275,14 @@ def h2vp(v, z, n=1):
 
 
 def riccati_jn(n, x):
-    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
+    r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
-    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    The Riccati-Bessel function of the first kind is defined as :math:`x
     j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
     kind of order :math:`n`.
 
     This function computes the value and first derivative of the
-    Ricatti-Bessel function for all orders up to and including `n`.
+    Riccati-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -1331,9 +1331,9 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and its derivative.
+    """Compute Riccati-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined here as :math:`+x
+    The Riccati-Bessel function of the second kind is defined here as :math:`+x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
     kind of order :math:`n`. *Note that this is in contrast to a common convention
     that includes a minus sign in the definition.*
@@ -3052,7 +3052,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     n : int or float or complex (or array_like thereof)
         Input values for multifactorial. Non-integer values require
         ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
-    n : int or float or complex (or array_like thereof)
+    k : int or float or complex (or array_like thereof)
         Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
         If ``exact`` is set to True, calculate the answer exactly using

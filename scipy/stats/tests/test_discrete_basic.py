@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from scipy import stats
+from scipy.special import _ufuncs
 from .common_tests import (check_normalization, check_moment,
                            check_mean_expect,
                            check_var_expect, check_skew_expect,
@@ -579,3 +580,45 @@ def test__pmf_float_input():
     rv = rv_exponential(a=0.0, b=float('inf'))
     rvs = rv.rvs(random_state=42)  # should not crash due to integer input to `_pmf`
     assert_allclose(rvs, 0)
+
+
+def test_gh18919_ppf_array_args():
+    # gh-18919 reported incorrect results for ppf and isf of discrete distributions when
+    # arguments were arrays and first argument (`q`) had elements at the boundaries of
+    # the support.
+    q = [[0.5, 1.0, 0.5],
+         [1.0, 0.5, 1.0],
+         [0.5, 1.0, 0.5]]
+
+    n = [[45, 46, 47],
+         [48, 49, 50],
+         [51, 52, 53]]
+
+    p = 0.5
+
+    ref = _ufuncs._binom_ppf(q, n, p)
+    res = stats.binom.ppf(q, n, p)
+    np.testing.assert_allclose(res, ref)
+
+@pytest.mark.parametrize("dist", [stats.binom, stats.boltzmann])
+def test_gh18919_ppf_isf_array_args2(dist):
+    # a more general version of the test above. Requires that arguments are broadcasted
+    # by the infrastructure.
+    rng = np.random.default_rng(34873457824358729823)
+    q = rng.random(size=(30, 1, 1, 1))
+    n = rng.integers(10, 30, size=(10, 1, 1))
+    p = rng.random(size=(4, 1))
+    loc = rng.integers(5, size=(3,))
+
+    q[rng.random(size=30) > 0.7] = 0
+    q[rng.random(size=30) > 0.7] = 1
+
+    args = (q, n, p) if dist == stats.binom else (q, p, n)
+
+    res = dist.ppf(*args, loc=loc)
+    ref = np.vectorize(dist.ppf)(*args) + loc
+    np.testing.assert_allclose(res, ref)
+
+    res = dist.isf(*args, loc=loc)
+    ref = np.vectorize(dist.isf)(*args) + loc
+    np.testing.assert_allclose(res, ref)

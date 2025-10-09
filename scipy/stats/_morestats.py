@@ -2849,7 +2849,7 @@ def ansari(x, y, alternative='two-sided'):
             pval = _abw_state.a.cdf(AB, n, m)
         else:
             pval = _abw_state.a.sf(AB, n, m)
-        return AnsariResult(AB, min(1.0, pval))
+        return AnsariResult(AB, np.minimum(1.0, pval))
 
     # otherwise compute normal approximation
     if N % 2:  # N odd

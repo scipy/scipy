@@ -649,6 +649,26 @@ class BenchQMCDiscrepancy(Benchmark):
         stats.qmc.discrepancy(self.sample, method=method)
 
 
+class BenchQMCGeometricDiscrepancy(Benchmark):
+    param_names = ['method', 'metric', 'ndims']
+    params = [
+        ['mindist', 'mst'],
+        ['euclidean', 'cityblock', 'chebyshev', 'cosine'],
+        [2, 3, 10],
+    ]
+
+    def setup(self, method, metric, ndims):
+        rng = np.random.default_rng(1234)
+        sample = rng.random((1000, ndims))
+        self.sample = sample
+
+    def time_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+    def peakmem_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+
 class BenchQMCHalton(Benchmark):
     param_names = ['d', 'scramble', 'n', 'workers']
     params = [
