@@ -679,7 +679,7 @@ def _make_sphinx_capabilities(
     return capabilities
 
 
-def _make_capabilities_note(fun_name, capabilities):
+def _make_capabilities_note(fun_name, capabilities, extra_note=None):
     if "out_of_scope" in capabilities:
         # It will be better to link to a section of the dev-arrayapi docs
         # that explains what is and isn't in-scope, but such a section
@@ -714,8 +714,8 @@ def _make_capabilities_note(fun_name, capabilities):
     Dask                  {capabilities['dask.array']              }
     ====================  ====================  ====================
 
-    See :ref:`dev-arrayapi` for more information.
-    """
+    """ + (extra_note or "") + "    See :ref:`dev-arrayapi` for more information."
+
     return textwrap.dedent(note)
 
 
@@ -735,6 +735,8 @@ def xp_capabilities(
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
     allow_dask_compute=False, jax_jit=True,
+    # Extra note to inject into the docstring
+    extra_note=None,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -777,7 +779,7 @@ def xp_capabilities(
         # Don't use a wrapper, as in some cases @xp_capabilities is
         # applied to a ufunc
         capabilities_table[f] = capabilities
-        note = _make_capabilities_note(f.__name__, sphinx_capabilities)
+        note = _make_capabilities_note(f.__name__, sphinx_capabilities, extra_note)
         doc = FunctionDoc(f)
         doc['Notes'].append(note)
         doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature

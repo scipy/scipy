@@ -54,11 +54,17 @@ def _get_backend(xp):
     return _rbfinterp_xp
 
 
+extra_note="""Only the default ``neighbors=None`` is Array API compatible.
+    If a non-default value of ``neighbors`` is given, the behavior is NumPy -only.
+
+"""
+
 @xp_capabilities(
     skip_backends=[
         ("dask.array", "linalg.lu is broken; array_api_extra#488"),
         ("array_api_strict", "array-api#977, diag, view")
     ],
+    extra_note=extra_note
 )
 class RBFInterpolator:
     """Radial basis function interpolator in N ≥ 1 dimensions.
