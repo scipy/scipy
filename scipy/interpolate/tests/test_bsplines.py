@@ -42,7 +42,6 @@ from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 @skip_xp_backends(cpu_only=True)
@@ -147,7 +146,8 @@ class TestBSpline:
                         bspl(xx), atol=1e-14)
 
     @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
-    @skip_xp_backends("torch", reason="_naive_eval breaks down on torch. Why?")
+    @skip_xp_backends("jax.numpy", reason="too slow; XXX a slow-if marker?")
+    @skip_xp_backends("torch", reason="OOB on CI")
     def test_rndm_naive_eval(self, xp):
         # test random coefficient spline *on the base interval*,
         # t[k] <= x < t[-k-1]
@@ -3896,7 +3896,7 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
     def test_periodic_with_periodic_data(self, xp):
         N = 10
         a, b = 0, 2*xp.pi
-        x = xp.linspace(a, b, N + 1)    # nodes
+        x = xp.linspace(a, b, N + 1, dtype=xp.float64)    # nodes
 
         y = xp.cos(x)
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
@@ -4071,7 +4071,7 @@ class TestMakeSplprep:
 class TestMakeSplprepPeriodic:
 
     def _get_xyk(self, n=10, k=3, xp=np):
-        x = xp.linspace(0, 2*xp.pi, n)
+        x = xp.linspace(0, 2*xp.pi, n, dtype=xp.float64)
         y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
