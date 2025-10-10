@@ -33,6 +33,8 @@ from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
     _calc_dual_canonical_window, closest_STFT_dual_window, ShortTimeFFT, PAD_TYPE
 from scipy.signal.windows import blackman, gaussian, hamming, nuttall, triang
 
+from scipy.signal._short_time_fft import _closest_STFT_dual_window2
+
 
 def test__calc_dual_canonical_window_roundtrip():
     """Test dual window calculation with a round trip to verify duality.
@@ -78,6 +80,44 @@ def test_closest_STFT_dual_window_exceptions():
 
     with pytest.raises(ValueError, match="Unable to calculate scaled closest dual.*"):
         closest_STFT_dual_window(np.ones(4), 2, np.zeros(4), scaled=True)
+
+
+def test_macos15_intel_repeatability():
+    """Try to replicate problem of issue 23710 in a test only NumPy dependencies. """
+    qd1 = np.array([
+        0.0, 0.041067318521830716, 0.19526214587563503, 0.5384608080042774, 1.0,
+        1.2060600302011566, 1.1380711874576983, 1.0379412550374412, 1.0,
+        1.0379412550374412, 1.1380711874576983, 1.2060600302011564, 1.0,
+        0.5384608080042773, 0.19526214587563503, 0.04106731852183083])
+    qd2 = qd1.copy()
+    denominator1 = qd1.T.real @ qd1.real + qd1.T.imag @ qd1.imag
+    denominator2 = qd2.T.real @ qd2.real + qd2.T.imag @ qd2.imag
+    xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
+
+
+@pytest.mark.parametrize('sym_win', (False, True))
+@pytest.mark.parametrize('hop', (8, 9))
+@pytest.mark.parametrize('m', (16, 17))
+@pytest.mark.parametrize('win_name', ('hann', 'hamming'))
+def test_issue2370(win_name, m, hop, sym_win, scaled=True):
+    """Analyze macos15-intel problems (issue 23710) """
+    win = get_window(win_name, m, not sym_win)
+    d_win = np.ones_like(win)
+    d1, s1, qd1, wd1 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
+    d2, s2, qd2, wd2 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
+
+    # Identical function calls should produce identical results:
+    xp_assert_equal(wd2, wd1)
+    xp_assert_equal(qd2, qd1)
+    assert qd1 is not qd2  # ensure mutating qd1 is not the problem
+
+    # Taken from closest_STFT_dual_window (qd1 == qd2):
+    denominator1 = qd1.T.real @ qd1.real + qd1.T.imag @ qd1.imag  # always >= 0
+    denominator2 = qd2.T.real @ qd2.real + qd2.T.imag @ qd2.imag  # always >= 0
+    xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
+
+    xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
+    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
 
 
 @pytest.mark.parametrize("scaled", (True, False))
