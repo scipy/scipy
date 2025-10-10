@@ -1,4 +1,6 @@
 #pragma once
+#include <Python.h>
+/* npy_cblas.h includes python.h */
 #include <iostream>
 #include <cinttypes>
 #include <tuple>
