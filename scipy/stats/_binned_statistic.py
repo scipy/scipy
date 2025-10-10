@@ -732,8 +732,10 @@ def _bin_edges(sample, bins=None, range=None):
     # Select range for each dimension
     # Used only if number of bins is given.
     if range is None:
-        smin = np.atleast_1d(np.array(sample.min(axis=0), float))
-        smax = np.atleast_1d(np.array(sample.max(axis=0), float))
+        sample = sample.copy()
+        sample[np.isinf(sample)] = np.nan
+        smin = np.atleast_1d(np.array(np.nanmin(sample, axis=0), float))
+        smax = np.atleast_1d(np.array(np.nanmax(sample, axis=0), float))
     else:
         if len(range) != Ndim:
             raise ValueError(
