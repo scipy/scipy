@@ -1,5 +1,5 @@
 import builtins
-from warnings import catch_warnings, simplefilter
+from warnings import catch_warnings, simplefilter, warn
 import numpy as np
 from operator import index
 from collections import namedtuple
@@ -549,10 +549,6 @@ def binned_statistic_dd(sample, values, statistic='mean',
         pass
     # If bins was an integer-like object, now it is an actual Python int.
 
-    # NOTE: for _bin_edges(), see e.g. gh-11365
-    if isinstance(bins, int) and not np.isfinite(sample).all():
-        raise ValueError(f'{sample!r} contains non-finite values.')
-
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
     # This code is based on np.histogramdd
@@ -575,6 +571,15 @@ def binned_statistic_dd(sample, values, statistic='mean',
     if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
+
+    # NOTE: for _bin_edges(), see e.g. gh-11365
+    i_finite = ~(np.isnan(sample).any(axis=1))
+    if isinstance(bins, int | tuple) and not i_finite.all():
+        sample = sample[i_finite]
+        values = values[:, i_finite]
+        message = ("`sample` contains NaN values; corresponding `values` will '"
+                   "not be considered as elements of any bin.")
+        warn(message, stacklevel=2)
 
     try:
         M = len(bins)
