@@ -2043,22 +2043,21 @@ class TestButtord:
             buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb1ord:
 
     @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_lowpass(self, xp):
         wp = 0.2
-        ws = xp.asarray(0.3)
+        ws = 0.3
         rp = 3
         rs = 60
-        N, Wn = cheb1ord(wp, ws, rp, rs, False)
-        b, a = cheby1(N, rp, Wn, 'low', False)
+        N, Wn = cheb1ord(xp.asarray(wp), ws, rp, rs, False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'low', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[w <= wp]))
-        assert xp.all(dB(h[ws <= w]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
         xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
@@ -2066,59 +2065,59 @@ class TestCheb1ord:
     @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_highpass(self, xp):
         wp = 0.3
-        ws = xp.asarray(0.2)
+        ws = 0.2
         rp = 3
         rs = 70
-        N, Wn = cheb1ord(wp, ws, rp, rs, False)
-        b, a = cheby1(N, rp, Wn, 'high', False)
+        N, Wn = cheb1ord(xp.asarray(wp), ws, rp, rs, False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'high', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[wp <= w]))
-        assert xp.all(dB(h[w <= ws]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 9
         xp_assert_close(Wn, xp.asarray(0.3), rtol=1e-15, check_0d=False)
 
     def test_bandpass(self, xp):
-        wp = xp.asarray([0.2, 0.5])
-        ws = xp.asarray([0.1, 0.6])
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
         rp = 3
         rs = 80
-        N, Wn = cheb1ord(wp, ws, rp, rs, False)
-        b, a = cheby1(N, rp, Wn, 'band', False)
+        N, Wn = cheb1ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'band', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert xp.all(dB(h[xp.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 9
         xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
     def test_bandstop(self, xp):
-        wp = xp.asarray([0.1, 0.6])
-        ws = xp.asarray([0.2, 0.5])
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
         rp = 3
         rs = 90
-        N, Wn = cheb1ord(wp, ws, rp, rs, False)
-        b, a = cheby1(N, rp, Wn, 'stop', False)
+        N, Wn = cheb1ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'stop', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert xp.all(dB(h[xp.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
         assert N == 10
         xp_assert_close(Wn, xp.asarray([0.14758232569947785, 0.6]), rtol=1e-5)
 
     def test_analog(self, xp):
         wp = 700
-        ws = xp.asarray(100.)
+        ws = 100.
         rp = 3
         rs = 70
-        N, Wn = cheb1ord(wp, ws, rp, rs, True)
-        b, a = cheby1(N, rp, Wn, 'high', True)
+        N, Wn = cheb1ord(wp, xp.asarray(ws), rp, rs, True)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'high', True)
         w, h = freqs(b, a)
-        assert xp.all(-rp - 0.1 < dB(h[wp <= w]))
-        assert xp.all(dB(h[w <= ws]) < -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 4
         assert math.isclose(Wn, 700.0, rel_tol=1e-15)
@@ -2128,15 +2127,15 @@ class TestCheb1ord:
     @xfail_xp_backends("torch", reason="accuracy issues")
     def test_fs_param(self, xp):
         wp = 4800
-        ws = xp.asarray(7200.)
+        ws = 7200.
         rp = 3
         rs = 60
         fs = 48000
-        N, Wn = cheb1ord(wp, ws, rp, rs, False, fs=fs)
-        b, a = cheby1(N, rp, Wn, 'low', False, fs=fs)
+        N, Wn = cheb1ord(wp, xp.asarray(ws), rp, rs, False, fs=fs)
+        b, a = cheby1(N, rp, xp_copy_to_numpy(Wn), 'low', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert xp.all(-rp - 0.1 < dB(h[w <= wp]))
-        assert xp.all(dB(h[ws <= w]) < -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
         assert math.isclose(Wn, 4800.0, rel_tol=1e-15)
