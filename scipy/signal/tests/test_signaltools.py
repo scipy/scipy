@@ -30,7 +30,7 @@ from scipy._lib import _testutils
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size, xp_default_dtype, array_namespace
+    xp_copy, xp_size, xp_default_dtype, array_namespace, xp_copy_to_numpy
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -1936,19 +1936,18 @@ class _TestLinearFilter:
         assert_array_almost_equal(y_r2_a0_0, y)
         assert_array_almost_equal(zf, zf_r)
 
-    @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_IIR(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
         a = self.convert_dtype([0.5, 0.5], xp)
 
-        a_np, b_np, x_np = np.asarray(a), np.asarray(b), np.asarray(x)
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
             assert_array_almost_equal(y, xp.asarray(y_r))
 
-    @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_rank_3_IIR_init_cond(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, -1], xp)
@@ -1960,44 +1959,45 @@ class _TestLinearFilter:
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1], xp)
             y, zf = lfilter(b, a, x, axis, zi)
+            b_np, a_np, zi1_np = map(xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
-                return np.asarray(lfilter(b, a, w, zi=zi1)[0])
+                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[0])
             def lf1(w):
-                return np.asarray(lfilter(b, a, w, zi=zi1)[1])
-            y_r = np.apply_along_axis(lf0, axis, np.asarray(x))
-            zf_r = np.apply_along_axis(lf1, axis, np.asarray(x))
+                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[1])
+            y_r = np.apply_along_axis(lf0, axis, xp_copy_to_numpy(x))
+            zf_r = np.apply_along_axis(lf1, axis, xp_copy_to_numpy(x))
             assert_array_almost_equal(y, xp.asarray(y_r))
             assert_array_almost_equal(zf, xp.asarray(zf_r))
 
-    @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
     def test_rank_3_FIR(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        a_np, b_np, x_np = np.asarray(a), np.asarray(b), np.asarray(x)
+        a_np, b_np, x_np = map(xp_copy_to_numpy, (a, b, x))
         for axis in range(x.ndim):
             y = lfilter(b, a, x, axis)
             y_r = np.apply_along_axis(lambda w: lfilter(b_np, a_np, w), axis, x_np)
             assert_array_almost_equal(y, xp.asarray(y_r))
 
-    @skip_xp_backends(np_only=True, reason='np.apply_along_axis is np only')
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_rank_3_FIR_init_cond(self, xp):
         x = self.generate((4, 3, 2), xp)
         b = self.convert_dtype([1, 0, -1], xp)
         a = self.convert_dtype([1], xp)
 
-        x_np = np.asarray(x)
+        x_np, b_np, a_np = map(xp_copy_to_numpy, (x, b, a))
         for axis in range(x.ndim):
             zi_shape = list(x.shape)
             zi_shape[axis] = 2
             zi = self.convert_dtype(xp.ones(zi_shape), xp)
             zi1 = self.convert_dtype([1, 1], xp)
+            zi1_np = xp_copy_to_numpy(zi1)
             y, zf = lfilter(b, a, x, axis, zi)
             def lf0(w):
-                return np.asarray(lfilter(b, a, w, zi=zi1)[0])
+                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[0])
             def lf1(w):
-                return np.asarray(lfilter(b, a, w, zi=zi1)[1])
+                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[1])
             y_r = np.apply_along_axis(lf0, axis, x_np)
             zf_r = np.apply_along_axis(lf1, axis, x_np)
             assert_array_almost_equal(y, xp.asarray(y_r))
