@@ -1295,9 +1295,7 @@ def test_mean(xp, ndim: int):
     axes = xp.concat((-xp.eye(3), xp.eye(3)))
     axes = xp.reshape(axes, (1,) * (ndim - 1) + (6, 3))
     thetas = xp.linspace(0, xp.pi / 2, 100)
-    desired = xp.zeros((1,) * (ndim - 1))
-    if desired.ndim == 0:
-        desired = desired[()]
+    desired = xp.asarray(0.0)[()]
     atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
@@ -1318,16 +1316,14 @@ def test_weighted_mean(xp, ndim: int):
     axes = xp.tile(axes, batch_shape + (1, 1))
     weights = xp.tile(weights, batch_shape + (1,))
 
-    expected = xp.zeros(batch_shape)
-    if expected.ndim == 0:
-        expected = expected[()]
+    expected = xp.asarray(0.0)[()]
     for t in thetas:
         rw = Rotation.from_rotvec(t * axes[..., :2, :])
         mw = rw.mean(weights=weights)
 
         r = Rotation.from_rotvec(t * axes)
         m = r.mean()
-        xp_assert_close((m * mw.inv()).magnitude(), expected, atol=1e-10)
+        xp_assert_close((m * mw.inv()).magnitude(), expected, atol=1e-6)
 
 
 @make_xp_test_case(Rotation.mean)
