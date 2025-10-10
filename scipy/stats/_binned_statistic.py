@@ -573,10 +573,10 @@ def binned_statistic_dd(sample, values, statistic='mean',
                              'length of each `sample` dimension.')
 
     # NOTE: for _bin_edges(), see e.g. gh-11365
-    i_finite = ~(np.isnan(sample).any(axis=1))
-    if isinstance(bins, int | tuple) and not i_finite.all():
-        sample = sample[i_finite]
-        values = values[:, i_finite]
+    i_numeric = ~(np.isnan(sample).any(axis=1))
+    if not i_numeric.all():
+        sample = sample[i_numeric]
+        values = values[:, i_numeric]
         message = ("`sample` contains NaN values; corresponding `values` will '"
                    "not be considered as elements of any bin.")
         warn(message, stacklevel=2)
@@ -732,10 +732,10 @@ def _bin_edges(sample, bins=None, range=None):
     # Select range for each dimension
     # Used only if number of bins is given.
     if range is None:
-        sample = sample.copy()
+        sample = sample.astype(float, copy=True)
         sample[np.isinf(sample)] = np.nan
-        smin = np.atleast_1d(np.array(np.nanmin(sample, axis=0), float))
-        smax = np.atleast_1d(np.array(np.nanmax(sample, axis=0), float))
+        smin = np.atleast_1d(np.nanmin(sample, axis=0))
+        smax = np.atleast_1d(np.nanmax(sample, axis=0))
     else:
         if len(range) != Ndim:
             raise ValueError(
