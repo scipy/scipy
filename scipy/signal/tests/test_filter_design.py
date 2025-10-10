@@ -4704,14 +4704,14 @@ class TestGroupDelay:
                                 0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
 
-    @skip_xp_backends(np_only=True, reason="numpy.convolve")
+    @xfail_xp_backends("cupy", reason="does not warn")
     def test_singular(self, xp):
         # Let's create a filter with zeros and poles on the unit circle and
         # check if warnings are raised at those frequencies.
-        z1 = xp.exp(1j * 0.1 * pi)
-        z2 = xp.exp(1j * 0.25 * pi)
-        p1 = xp.exp(1j * 0.5 * pi)
-        p2 = xp.exp(1j * 0.8 * pi)
+        z1 = np.exp(1j * 0.1 * pi)
+        z2 = np.exp(1j * 0.25 * pi)
+        p1 = np.exp(1j * 0.5 * pi)
+        p2 = np.exp(1j * 0.8 * pi)
 
         b = np.convolve([1, -z1], [1, -z2])
         a = np.convolve([1, -p1], [1, -p2])
@@ -4759,7 +4759,7 @@ class TestGroupDelay:
             assert_array_almost_equal(gd, [0])
 
     @pytest.mark.xfail(DEFAULT_F32, reason="with torch/float32, the rtol is ~1e-7")
-    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_complex_coef(self, xp):
         # gh-19586: handle complex coef TFs
         #
@@ -4795,7 +4795,7 @@ class TestGroupDelay:
         gdtest = group_delay((b, a), wref)[1]
         # need nulp=14 for macOS arm64 wheel builds; added 2 for some
         # robustness on other platforms.
-        assert_array_almost_equal_nulp(np.asarray(gdtest), np.asarray(gdref), nulp=16)
+        xp_assert_close_nulp(gdtest, gdref, nulp=16)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
@@ -4840,12 +4840,13 @@ class TestGammatone:
             b, a = gammatone(1000, ftype, fs=fs, xp=xp)
 
             # Calculate the frequency response.
-            freqs, response = freqz(b, a)
+            freqs, response = freqz(xp_copy_to_numpy(b), xp_copy_to_numpy(a))
 
             # Determine peak magnitude of the response
             # and corresponding frequency.
-            response_max = xp.max(xp.abs(response))
-            freq_hz = freqs[xp.argmax(xp.abs(response))] / ((2 * xp.pi) / fs)
+            response_max = np.max(np.abs(response))
+            freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
+            response_max, freq_hz = map(xp.asarray, (response_max, freq_hz))
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             xp_assert_close(response_max,
@@ -4860,7 +4861,8 @@ class TestGammatone:
     @xfail_xp_backends("jax.numpy", reason="no eig(..) on JAX CUDA")
     def test_iir_symmetry(self, xp):
         b, a = gammatone(440, 'iir', fs=24000, xp=xp)
-        z, p, k = tf2zpk(b, a)
+        z, p, k = tf2zpk(xp_copy_to_numpy(b), xp_copy_to_numpy(a))
+        z, p, k = map(xp.asarray, (z, p, k))
         xp_assert_equal(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
         xp_assert_equal(k, xp.real(k))
