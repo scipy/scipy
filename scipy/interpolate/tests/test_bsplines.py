@@ -1766,6 +1766,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
+
 @skip_xp_backends(cpu_only=True)
 class TestLSQ:
     #
@@ -3486,7 +3487,7 @@ class F_dense:
 
         return fp - self.s
 
-@skip_xp_backends(cpu_only=True)
+
 class _TestMakeSplrepBase:
 
     bc_type = None
@@ -3714,6 +3715,7 @@ class _TestMakeSplrepBase:
         spl = make_splrep(x, y, s=s, bc_type=self.bc_type, t=t)
         xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
 
+
 class TestMakeSplrep(_TestMakeSplrepBase):
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
@@ -3862,15 +3864,16 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
+
 class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
     bc_type = 'periodic'
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
-    def test_no_internal_knots(self, k):
+    def test_no_internal_knots(self, k, xp):
         # should not fail if there are no internal knots
-        x = np.linspace(0, 10, 11)    # nodes
-        y = np.ones((11,))
+        x = xp.linspace(0, 10, 11)    # nodes
+        y = xp.ones((11,))
 
         spl = make_splrep(x, y, k=k, s=1, bc_type=self.bc_type)
         assert spl.t.shape[0] == 2*(k+1)
@@ -3890,20 +3893,20 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
         assert spl_0.t.shape[0] == n + 2 * k
 
-    def test_periodic_with_periodic_data(self):
+    def test_periodic_with_periodic_data(self, xp):
         N = 10
-        a, b = 0, 2*np.pi
-        x = np.linspace(a, b, N + 1)    # nodes
+        a, b = 0, 2*xp.pi
+        x = xp.linspace(a, b, N + 1)    # nodes
 
-        y = np.cos(x)
+        y = xp.cos(x)
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
-        y = np.sin(x) + np.cos(x)
+        y = xp.sin(x) + xp.cos(x)
         spl = make_splrep(x, y, s=1e-12, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-6)
 
-        y = 5*np.sin(x) + np.cos(x)*3
+        y = 5*xp.sin(x) + xp.cos(x)*3
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
@@ -3955,6 +3958,7 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         y_check = bs(x_check)
 
         xp_assert_close(y_check[0], y_check[1])
+
 
 @skip_xp_backends(cpu_only=True)
 class TestMakeSplprep:
@@ -4063,11 +4067,12 @@ class TestMakeSplprep:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+
 class TestMakeSplprepPeriodic:
 
-    def _get_xyk(self, n=10, k=3):
-        x = np.linspace(0, 2*np.pi, n)
-        y = [np.sin(x), np.cos(x)]
+    def _get_xyk(self, n=10, k=3, xp=np):
+        x = xp.linspace(0, 2*xp.pi, n)
+        y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
@@ -4126,22 +4131,24 @@ class TestMakeSplprepPeriodic:
         with assert_raises(ValueError):
             make_splprep(np.asarray(y).T, s=s, bc_type="periodic")
 
-    def test_default_s_is_zero(self):
-        x, y, k = self._get_xyk(n=10)
+    def test_default_s_is_zero(self, xp):
+        x, y, k = self._get_xyk(n=10, xp=xp)
 
         spl, u = make_splprep(y, bc_type="periodic")
-        xp_assert_close(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
 
-    def test_s_zero_vs_near_zero(self):
+    def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
-        x, y, k = self._get_xyk(n=10)
+        x, y, k = self._get_xyk(n=10, xp=xp)
 
         spl_i, u_i = make_splprep(y, s=0, bc_type="periodic")
         spl_n, u_n = make_splprep(y, s=1e-12, bc_type="periodic")
 
         xp_assert_close(u_i, u_n, atol=1e-15)
-        xp_assert_close(spl_i(u_i), y, atol=1e-15)
-        xp_assert_close(spl_n(u_n), y, atol=1e-7, rtol=1e-6)
+
+        y_arr = xp.stack(y)   #  xp_assert_close chokes on the list `y`
+        xp_assert_close(spl_i(u_i), y_arr, atol=1e-15)
+        xp_assert_close(spl_n(u_n), y_arr, atol=1e-7, rtol=1e-6)
         assert spl_i.axis == spl_n.axis
 
     def test_1D(self):
@@ -4160,6 +4167,7 @@ class TestMakeSplprepPeriodic:
 
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
+
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior
