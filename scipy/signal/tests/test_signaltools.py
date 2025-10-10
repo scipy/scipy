@@ -972,10 +972,11 @@ class TestOAConvolve:
     def test_real_manylens(self, shape_a_0, shape_b_0, xp):
         a = np.random.rand(shape_a_0)
         b = np.random.rand(shape_b_0)
+
+        expected = xp.asarray(fftconvolve(a, b))
         a = xp.asarray(a)
         b = xp.asarray(b)
 
-        expected = fftconvolve(a, b)
         out = oaconvolve(a, b)
 
         assert_array_almost_equal(out, expected)
@@ -992,10 +993,9 @@ class TestOAConvolve:
             a = a + 1j*np.random.rand(shape_a_0)
             b = b + 1j*np.random.rand(shape_b_0)
 
+        expected = xp.asarray(fftconvolve(a, b, mode=mode))
         a = xp.asarray(a)
         b = xp.asarray(b)
-
-        expected = fftconvolve(a, b, mode=mode)
 
         monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
@@ -1024,10 +1024,9 @@ class TestOAConvolve:
             a = a + 1j*np.random.rand(*ax_a)
             b = b + 1j*np.random.rand(*ax_b)
 
+        expected = xp.asarray(fftconvolve(a, b, mode=mode, axes=axes))
         a = xp.asarray(a)
         b = xp.asarray(b)
-
-        expected = fftconvolve(a, b, mode=mode, axes=axes)
 
         monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
@@ -1048,10 +1047,9 @@ class TestOAConvolve:
             a = a + 1j*np.random.rand(shape_a_0, shape_a_1)
             b = b + 1j*np.random.rand(shape_b_0, shape_b_1)
 
+        expected = xp.asarray(fftconvolve(a, b, mode=mode))
         a = xp.asarray(a)
         b = xp.asarray(b)
-
-        expected = fftconvolve(a, b, mode=mode)
 
         monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
@@ -1083,12 +1081,11 @@ class TestOAConvolve:
             a = a + 1j*np.random.rand(*ax_a)
             b = b + 1j*np.random.rand(*ax_b)
 
+        expected = xp.asarray(fftconvolve(a, b, mode=mode, axes=axes))
         a = xp.asarray(a)
         b = xp.asarray(b)
 
         axes = tuple(axes)   # XXX for CuPy
-        expected = fftconvolve(a, b, mode=mode, axes=axes)
-
         monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
@@ -1640,20 +1637,22 @@ class TestResample:
         x = random_state.randn(size).astype(dtype)
         if dtype in (np.complex64, np.complex128):
             x += 1j * random_state.randn(size)
-        x = xp.asarray(x)
 
         # resample_poly assumes zeros outside of signl, whereas filtfilt
         # can only constant-pad. Make them equivalent:
         x[0] = 0
         x[-1] = 0
 
-        h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
-        yf = filtfilt(h, xp.asarray(1.0), x, padtype='constant')[::down_factor]
+        h = signal.firwin(31, 1. / down_factor, window='hamming')
+        yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
 
         # Need to pass convolved version of filter to resample_poly,
         # since filtfilt does forward and backward, but resample_poly
         # only goes forward
-        hc = convolve(h, xp.flip(h))
+        hc = convolve(h, np.flip(h))
+        # Use yf.copy() to avoid negative strides, which are unsupported
+        # in torch.
+        x, hc, yf = map(xp.asarray, (x, hc, yf.copy()))
         y = signal.resample_poly(x, 1, down_factor, window=hc)
         xp_assert_close(yf, y, atol=3e-7, rtol=6e-7)
 
@@ -1666,9 +1665,8 @@ class TestResample:
                 for nweights in (32, 33):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
-                    x, weights = map(xp.asarray, (x, weights))
-                    flip = array_namespace(x).flip
-                    y_g = correlate1d(x, flip(weights), mode='constant')
+                    y_g = correlate1d(x, np.flip(weights), mode='constant')
+                    x, weights, y_g = map(xp.asarray, (x, weights, y_g))
                     y_s = signal.resample_poly(
                         x, up=1, down=down, window=weights)
                     xp_assert_close(y_g[::down], y_s)
@@ -1694,13 +1692,13 @@ class TestCSpline1DEval:
         y = np.array([1, 2, 3, 4, 3, 2, 1, 2, 3.0])
         x = np.arange(len(y))
         dx = x[1] - x[0]
-        cj = signal.cspline1d(y)
+        cj = xp.asarray(signal.cspline1d(y))
 
-        x2 = np.arange(len(y) * 10.0) / 10.0
+        x2 = xp.arange(len(y) * 10.0) / 10.0
         y2 = signal.cspline1d_eval(cj, x2, dx=dx, x0=x[0])
 
         # make sure interpolated values are on knot points
-        assert_array_almost_equal(y2[::10], y, decimal=5)
+        assert_array_almost_equal(y2[::10], xp.asarray(y), decimal=5)
 
     def test_complex(self, xp):
         #  create some smoothly varying complex signal to interpolate
@@ -1711,13 +1709,13 @@ class TestCSpline1DEval:
         y = np.exp(2.0J * np.pi * f * x)
 
         # get the cspline transform
-        cy = signal.cspline1d(y)
+        cy = xp.asarray(signal.cspline1d(y))
 
         # determine new test x value and interpolate
-        xnew = np.array([0.5])
+        xnew = xp.asarray([0.5])
         ynew = signal.cspline1d_eval(cy, xnew)
 
-        assert ynew.dtype == y.dtype
+        assert ynew.dtype == xp.asarray(y).dtype
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
