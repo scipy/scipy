@@ -2593,8 +2593,9 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            ap = besselap(N, 'delay')
-            p2 = np.sort(np.concatenate(_cplxreal(ap[1])))
+            z, p, k = besselap(N, 'delay', xp=xp)
+            assert array_namespace(z) == array_namespace(p) == xp
+            p2 = np.sort(np.concatenate(_cplxreal(xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
 
         # "Frequency Normalized Bessel Pole Locations"
@@ -2621,8 +2622,9 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            ap = besselap(N, 'mag')
-            p2 = np.sort(np.concatenate(_cplxreal(ap[1])))
+            z, p, k = besselap(N, 'mag', xp=xp)
+            assert array_namespace(z) == array_namespace(p) == xp
+            p2 = np.sort(np.concatenate(_cplxreal(xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
@@ -2843,9 +2845,8 @@ class TestBessel:
                  -.2373280669322028974199184 + 1.211476658382565356579418j],
             }
         for N in originals:
-            p1 = np.union1d(originals[N], np.conj(originals[N]))
-            p2 = besselap(N)[1]
-            p1, p2 = xp.asarray(p1), xp.asarray(p2)
+            p1 = xp.asarray(np.union1d(originals[N], np.conj(originals[N])))
+            p2 = besselap(N, xp=xp)[1]
             xp_assert_close(_sort_cmplx(p1, xp=xp),
                             _sort_cmplx(p2, xp=xp), rtol=1e-14, check_dtype=False)
 
@@ -2855,9 +2856,10 @@ class TestBessel:
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='phase')
-                w = xp.linspace(0, w0, 100)
-                w, h = freqs(b, a, w)
-                phase = np.unwrap(np.angle(xp.asarray(h)))
+                assert array_namespace(b) == array_namespace(a) == xp
+                w = np.linspace(0, w0, 100)
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
+                phase = np.unwrap(np.angle(h))
                 xp_assert_close(
                     xp.asarray(phase[[0, -1]]), xp.asarray([0, -N*xp.pi/4]), rtol=1e-1
                 )
@@ -2868,10 +2870,11 @@ class TestBessel:
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='mag')
-                w = xp.asarray([0.0, w0])
-                w, h = freqs(b, a, w)
-                mag = xp.abs(h)
-                xp_assert_close(mag, xp.asarray([1, 1/math.sqrt(2)]))
+                assert array_namespace(b) == array_namespace(a) == xp
+                w = [0.0, w0]
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
+                mag = np.abs(h)
+                xp_assert_close(xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)]))
 
     def test_norm_delay(self, xp):
         # Test some orders and frequencies and see that they have the right
@@ -2879,10 +2882,10 @@ class TestBessel:
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='delay')
-                w = xp.linspace(0, 10*w0, 1000)
-                w, h = freqs(b, a, w)
-                unwr_h = xp.asarray(np.unwrap(np.angle(np.asarray(h))))
-                delay = -xp.diff(unwr_h) / xp.diff(w)
+                w = np.linspace(0, 10*w0, 1000)
+                w, h = freqs(xp_copy_to_numpy(b), xp_copy_to_numpy(a), w)
+                unwr_h = np.asarray(np.unwrap(np.angle(np.asarray(h))))
+                delay = -np.diff(unwr_h) / np.diff(w)
                 assert math.isclose(delay[0], 1/w0, rel_tol=1e-4)
 
     def test_norm_factor(self):
