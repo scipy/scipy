@@ -95,6 +95,9 @@ Combining arrays
    triu - Upper triangular portion of a sparse array
    hstack - Stack sparse arrays horizontally (column wise)
    vstack - Stack sparse arrays vertically (row wise)
+   swapaxes - swap two axes of a sparse array
+   expand_dims - add a new (trivial) axis to a sparse array
+   permute_dims - reorder the axes of a sparse array
 
 Sparse tools
 ------------
