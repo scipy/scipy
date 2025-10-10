@@ -1072,7 +1072,7 @@ a number of times with itself:
   :func:`iterate_structure` also returns the adapted origin if the
   *origin* parameter is not ``None``:
 
-.. code:: python
+  .. code:: python
 
 	>>> iterate_structure(struct, 2, -1)
 	(array([[False, False,  True, False, False],
