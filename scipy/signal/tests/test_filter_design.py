@@ -12,7 +12,8 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
-    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy
+    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
+    is_cupy, is_torch, scipy_namespace_for
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -331,20 +332,19 @@ class TestSos2Zpk:
         xp_assert_close(_sort_cmplx(p2, xp=xp), _sort_cmplx(p, xp=xp))
         assert k2 == k
 
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX zpk2sos is numpy-only",
-    )
     def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
-        sos = butter(3, xp.asarray(0.1), output='sos')
-        z, p, k = sos2zpk(sos)
+        sos = butter(3, 0.1, output='sos')
+        z, p, k = sos2zpk(xp.asarray(sos))
         assert z.shape[0] == 4
         assert p.shape[0] == 4
 
-        sos = butter(12, xp.asarray([5., 30.]), 'bandpass', fs=1200., analog=False,
-                     output='sos')
-        with pytest.warns(BadCoefficients, match='Badly conditioned'):
-            z, p, k = sos2zpk(sos)
+        sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False, output='sos')
+        e = BadCoefficients
+        if is_cupy(xp):
+            e = scipy_namespace_for(xp).signal.BadCoefficients
+        with pytest.warns(e, match='Badly conditioned'):
+            z, p, k = sos2zpk(xp.asarray(sos))
         assert z.shape[0] == 24
         assert p.shape[0] == 24
 
@@ -716,15 +716,12 @@ class TestFreqs_zpk:
         w, H = freqs_zpk(z, p, k, worN=n)
         assert_array_almost_equal(w, expected_w)
 
-    @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
-    )
     def test_vs_freqs(self, xp):
-        b, a = cheby1(4, 5, xp.asarray(100.), analog=True, output='ba')
-        z, p, k = cheby1(4, 5, xp.asarray(100.), analog=True, output='zpk')
+        b, a = cheby1(4, 5, 100., analog=True, output='ba')
+        z, p, k = cheby1(4, 5, 100., analog=True, output='zpk')
 
-        w1, h1 = freqs(b, a)
+        w1, h1 = map(xp.asarray, freqs(b, a))
+        z, p, k = map(xp.asarray, (z, p, k))
         w2, h2 = freqs_zpk(z, p, k)
         xp_assert_close(w1, w2)
         xp_assert_close(h1, h2, rtol=1e-6)
@@ -1093,6 +1090,7 @@ class TestFreqz:
             freqz([1.0], fs=None)
 
 
+@skip_xp_backends(cpu_only=True, exceptions=["cupy", "torch"])
 class TestFreqz_sos:
 
     def test_freqz_sos_basic(self, xp):
@@ -1103,20 +1101,26 @@ class TestFreqz_sos:
 
         b, a = butter(4, 0.2)
         sos = butter(4, 0.2, output='sos')
-        b, a, sos = map(xp.asarray, (b, a, sos))   # XXX until butter is converted
-
         w, h = freqz(b, a, worN=N)
+
+        w, h, sos = map(xp.asarray, (w, h, sos))
         w2, h2 = freqz_sos(sos, worN=N)
-        xp_assert_equal(w2, w)
+        if not (is_cupy(xp) or is_torch(xp)):
+            xp_assert_equal(w2, w)
+        else:
+            xp_assert_close(w2, w, rtol=1e-15)
         xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
 
         b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
         sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
-        b, a, sos = map(xp.asarray, (b, a, sos))   # XXX until ellip is converted
-
         w, h = freqz(b, a, worN=N)
+
+        w, h, sos = map(xp.asarray, (w, h, sos))
         w2, h2 = freqz_sos(sos, worN=N)
-        xp_assert_equal(w2, w)
+        if not (is_cupy(xp) or is_torch(xp)):
+            xp_assert_equal(w2, w)
+        else:
+            xp_assert_close(w2, w, rtol=1e-15)
         xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
 
         # must have at least one section
@@ -1128,9 +1132,10 @@ class TestFreqz_sos:
         N = 500
 
         sos = butter(4, 0.2, output='sos')
-        sos = xp.asarray(sos)   # XXX until butter is converted
-        w1, h1 = freqz_sos(sos, worN=N)
         w2, h2 = sosfreqz(sos, worN=N)
+        sos, w2, h2 = map(xp.asarray, (sos, w2, h2))
+        w1, h1 = freqz_sos(sos, worN=N)
+
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
