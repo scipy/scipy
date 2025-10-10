@@ -13,7 +13,7 @@ from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
-    is_cupy, is_torch, scipy_namespace_for
+    is_cupy, is_torch, scipy_namespace_for, xp_assert_close_nulp
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1392,14 +1392,12 @@ class TestFreqz_zpk:
         assert_array_almost_equal(h, xp.ones(8))
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX convolve is numpy-only", exceptions=['cupy']
-    )
     def test_vs_freqz(self, xp):
-        b, a = cheby1(4, 5, xp.asarray(0.5), analog=False, output='ba')
-        z, p, k = cheby1(4, 5, xp.asarray(0.5), analog=False, output='zpk')
+        b, a = cheby1(4, 5, 0.5, analog=False, output='ba')
+        z, p, k = cheby1(4, 5, 0.5, analog=False, output='zpk')
 
         w1, h1 = freqz(b, a)
+        z, p, k, w1, h1 = map(xp.asarray, (z, p, k, w1, h1))
         w2, h2 = freqz_zpk(z, p, k)
         xp_assert_close(w1, w2)
         xp_assert_close(h1, h2, rtol=1.3e-6)
@@ -1614,7 +1612,6 @@ class TestBilinear:
             bilinear(np.ones((2,3)), 1. )
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
     def test_basic(self, xp):
         # reference output values computed with sympy
         b = [0.14879732743343033]
@@ -1627,9 +1624,8 @@ class TestBilinear:
 
         b_z, a_z = bilinear(b, a, 0.5)
 
-        b_z, a_z = map(np.asarray, (b_z, a_z))
-        assert_array_almost_equal_nulp(b_z, b_zref)
-        assert_array_almost_equal_nulp(a_z, a_zref)
+        xp_assert_close_nulp(b_z, xp.asarray(b_zref))
+        xp_assert_close_nulp(a_z, xp.asarray(a_zref))
 
         b = [1, 0, 0.17407467530697837]
         a = [1, 0.18460575326152251, 0.17407467530697837]
@@ -1641,12 +1637,11 @@ class TestBilinear:
 
         b_z, a_z = bilinear(b, a, 0.5)
 
-        b_z, a_z = map(np.asarray, (b_z, a_z))
-        assert_array_almost_equal_nulp(b_z, b_zref)
-        assert_array_almost_equal_nulp(a_z, a_zref)
+        xp_assert_close_nulp(b_z, xp.asarray(b_zref))
+        xp_assert_close_nulp(a_z, xp.asarray(a_zref))
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9404")
     def test_ignore_leading_zeros(self, xp):
         # regression for gh-6606
         # results shouldn't change when leading zeros are added to
@@ -1663,12 +1658,11 @@ class TestBilinear:
             b_z, a_z = bilinear(xpx.pad(b, (lzn, 0), xp=xp),
                                 xpx.pad(a, (lzd, 0), xp=xp),
                                 0.5)
-            b_z, a_z = map(np.asarray, (b_z, a_z))
-            assert_array_almost_equal_nulp(b_z, b_zref)
-            assert_array_almost_equal_nulp(a_z, a_zref)
+            xp_assert_close_nulp(b_z, xp.asarray(b_zref))
+            xp_assert_close_nulp(a_z, xp.asarray(a_zref))
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    @xfail_xp_backends("cupy", reason="complex inputs not supported")
     def test_complex(self, xp):
         # reference output values computed with sympy
         # this is an elliptical filter, 5Hz width, centered at +50Hz:
@@ -1697,9 +1691,8 @@ class TestBilinear:
         b_z, a_z = bilinear(b, a, fs)
 
         # the 3 ulp difference determined from testing
-        b_z, a_z = map(np.asarray, (b_z, a_z))
-        assert_array_almost_equal_nulp(b_z, b_zref, 3)
-        assert_array_almost_equal_nulp(a_z, a_zref, 3)
+        xp_assert_close_nulp(b_z, xp.asarray(b_zref), nulp=3)
+        xp_assert_close_nulp(a_z, xp.asarray(a_zref), nulp=3)
 
     def test_fs_validation(self):
         b = [0.14879732743343033]
