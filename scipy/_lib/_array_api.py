@@ -55,7 +55,7 @@ __all__ = [
     'np_compat', 'get_native_namespace_name',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
+    'xp_copy', 'xp_copy_to_numpy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
     'xp_result_type', 'xp_promote',
     'make_xp_test_case', 'make_xp_pytest_marks', 'make_xp_pytest_param',
@@ -145,6 +145,35 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
         xp = array_namespace(x)
 
     return _asarray(x, copy=True, xp=xp)
+
+
+def xp_copy_to_numpy(x: Array) -> np.ndarray:
+    """Copies a possibly on device array to a NumPy array.
+
+    This function is primarily intended for converting alternative backend
+    arrays to numpy arrays within test code, to allow use of the alternative
+    to be isolated to only the function being tested, not function used to
+    compute reference values etc.
+    
+    Parameters
+    ----------
+    x : array
+
+    Returns
+    -------
+    ndarray
+    """
+    xp  = array_namespace(x)
+    if is_numpy(xp):
+        return x.copy()
+    if is_cupy(xp):
+        return x.get()
+    if is_torch(xp):
+        return x.cpu().numpy()
+    # Fall back to np.asarray. This will work for jax.numpy and
+    # dask.array. If new backends are added, they may require
+    # explicit handling..
+    return np.asarray(x, copy=True)
 
 
 _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
