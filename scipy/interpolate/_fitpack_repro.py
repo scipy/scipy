@@ -109,6 +109,9 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
             raise ValueError(f"{w.ndim = } not implemented yet.")
         if (w < 0).any():
             raise ValueError("Weights must be non-negative")
+        if w.sum() == 0:
+            raise ValueError("All weights are zero.")
+
 
     if y.ndim == 0 or y.ndim > 2:
         raise ValueError(f"{y.ndim = } not supported (must be 1 or 2.)")
