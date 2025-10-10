@@ -1063,14 +1063,14 @@ a number of times with itself:
 	    [False,  True,  True,  True, False],
             [False, False,  True, False, False]], dtype=bool)
 
-     If the origin of the original structure is equal to 0, then it is
-     also equal to 0 for the iterated structure. If not, the origin
-     must also be adapted if the equivalent of the *iterations*
-     erosions or dilations must be achieved with the iterated
-     structure. The adapted origin is simply obtained by multiplying
-     with the number of iterations. For convenience, the
-     :func:`iterate_structure` also returns the adapted origin if the
-     *origin* parameter is not ``None``:
+  If the origin of the original structure is equal to 0, then it is
+  also equal to 0 for the iterated structure. If not, the origin
+  must also be adapted if the equivalent of the *iterations*
+  erosions or dilations must be achieved with the iterated
+  structure. The adapted origin is simply obtained by multiplying
+  with the number of iterations. For convenience, the
+  :func:`iterate_structure` also returns the adapted origin if the
+  *origin* parameter is not ``None``:
 
      .. code:: python
 
