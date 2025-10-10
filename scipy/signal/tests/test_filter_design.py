@@ -2304,20 +2304,19 @@ class TestCheb2ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestEllipord:
 
     def test_lowpass(self, xp):
         wp = 0.2
-        ws = xp.asarray(0.3)
+        ws = 0.3
         rp = 3
         rs = 60
-        N, Wn = ellipord(wp, ws, rp, rs, False)
-        b, a = ellip(N, rp, rs, Wn, 'lp', False)
+        N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'lp', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[w <= wp]))
-        assert xp.all(dB(h[ws <= w]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 5
         assert math.isclose(Wn, 0.2, rel_tol=1e-15)
@@ -2325,71 +2324,71 @@ class TestEllipord:
     def test_lowpass_1000dB(self, xp):
         # failed when ellipkm1 wasn't used in ellipord and ellipap
         wp = 0.2
-        ws = xp.asarray(0.3)
+        ws = 0.3
         rp = 3
         rs = 1000
-        N, Wn = ellipord(wp, ws, rp, rs, False)
-        sos = ellip(N, rp, rs, Wn, 'lp', False, output='sos')
+        N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
+        sos = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'lp', False, output='sos')
         w, h = freqz_sos(sos)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[w <= wp]))
-        assert xp.all(dB(h[ws <= w]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[w <= wp]))
+        assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
     def test_highpass(self, xp):
         wp = 0.3
-        ws = xp.asarray(0.2)
+        ws = 0.2
         rp = 3
         rs = 70
-        N, Wn = ellipord(wp, ws, rp, rs, False)
-        b, a = ellip(N, rp, rs, Wn, 'hp', False)
+        N, Wn = ellipord(wp, xp.asarray(ws), rp, rs, False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'hp', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[wp <= w]))
-        assert xp.all(dB(h[w <= ws]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[wp <= w]))
+        assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 6
         assert math.isclose(Wn, 0.3, rel_tol=1e-15)
 
     def test_bandpass(self, xp):
-        wp = xp.asarray([0.2, 0.5])
-        ws = xp.asarray([0.1, 0.6])
+        wp = [0.2, 0.5]
+        ws = [0.1, 0.6]
         rp = 3
         rs = 80
-        N, Wn = ellipord(wp, ws, rp, rs, False)
-        b, a = ellip(N, rp, rs, Wn, 'bp', False)
+        N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bp', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_and(wp[0] <= w, w <= wp[1])]))
-        assert xp.all(dB(h[xp.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[np.logical_and(wp[0] <= w, w <= wp[1])]))
+        assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 6
         xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
     def test_bandstop(self, xp):
-        wp = xp.asarray([0.1, 0.6])
-        ws = xp.asarray([0.2, 0.5])
+        wp = [0.1, 0.6]
+        ws = [0.2, 0.5]
         rp = 3
         rs = 90
-        N, Wn = ellipord(wp, ws, rp, rs, False)
-        b, a = ellip(N, rp, rs, Wn, 'bs', False)
+        N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', False)
         w, h = freqz(b, a)
-        w /= xp.pi
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert xp.all(dB(h[xp.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
+        w /= np.pi
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
         assert N == 7
         xp_assert_close(Wn, xp.asarray([0.14758232794342988, 0.6]), rtol=1e-5)
 
     def test_analog(self, xp):
-        wp = xp.asarray([1000.0, 6000])
-        ws = xp.asarray([2000.0, 5000])
+        wp = [1000.0, 6000]
+        ws = [2000.0, 5000]
         rp = 3
         rs = 90
-        N, Wn = ellipord(wp, ws, rp, rs, True)
-        b, a = ellip(N, rp, rs, Wn, 'bs', True)
+        N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, True)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', True)
         w, h = freqs(b, a)
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert xp.all(dB(h[xp.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
         assert N == 8
         xp_assert_close(Wn, xp.asarray([1666.6666, 6000]))
@@ -2397,16 +2396,16 @@ class TestEllipord:
         assert ellipord(1, 1.2, 1, 80, analog=True)[0] == 9
 
     def test_fs_param(self, xp):
-        wp = xp.asarray([400.0, 2400])
-        ws = xp.asarray([800.0, 2000])
+        wp = [400.0, 2400]
+        ws = [800.0, 2000]
         rp = 3
         rs = 90
         fs = 8000
-        N, Wn = ellipord(wp, ws, rp, rs, False, fs=fs)
-        b, a = ellip(N, rp, rs, Wn, 'bs', False, fs=fs)
+        N, Wn = ellipord(xp.asarray(wp), xp.asarray(ws), rp, rs, False, fs=fs)
+        b, a = ellip(N, rp, rs, xp_copy_to_numpy(Wn), 'bs', False, fs=fs)
         w, h = freqz(b, a, fs=fs)
-        assert xp.all(-rp - 0.1 < dB(h[xp.logical_or(w <= wp[0], wp[1] <= w)]))
-        assert xp.all(dB(h[xp.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
+        assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
+        assert np.all(dB(h[np.logical_and(ws[0] <= w, w <= ws[1])]) < -rs + 0.1)
 
         assert N == 7
         xp_assert_close(Wn, xp.asarray([590.3293117737195, 2400]), rtol=1e-5)
