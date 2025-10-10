@@ -558,21 +558,51 @@ class TestBinnedStatistic:
 
         # Generate a samples (with NaNs) and values
         rng = np.random.default_rng(529847529874529829)
-        samples = rng.random(size=(100, 3))
-        values = rng.random(100)
+        samples = rng.standard_normal(size=(100, 3))
+        values = rng.standard_normal(100)
         i = rng.random(samples.shape) < 0.05
         samples[i] = np.nan
 
         # Compute results
-        message = "`sample` contains NaN values"
+        message = "`sample` contains NaNs..."
         with pytest.warns(UserWarning, match=message):
             res = binned_statistic_dd(samples, values)
 
-        # Compute reference values
+        # Compute reference values (filter NaNs first)
         keep = ~i.any(axis=1)
         samples = samples[keep]
         values = values[keep]
         ref = binned_statistic_dd(samples, values)
+
+        # Compare results against reference values
+        np.testing.assert_allclose(res[0], ref[0])
+        np.testing.assert_allclose(res[1], ref[1])
+        np.testing.assert_allclose(res[2], ref[2])
+
+    def test_inf_gh17154(self):
+        # While addressing gh-17154, it seemed that `inf`s should not be ignored
+        # entirely; rather, values corresponding with `inf`s can always be in outlier
+        # bins.
+
+        # Generate a samples (with infs) and values
+        rng = np.random.default_rng(529847529874529829)
+        samples = rng.standard_normal(size=(100, 3))
+        values = rng.standard_normal(100)
+        i_pinf = rng.random(samples.shape) < 0.05
+        samples[i_pinf] = np.inf
+        i_ninf = rng.random(samples.shape) < 0.05
+        samples[i_ninf] = -np.inf
+
+        # Compute results
+        res = binned_statistic_dd(samples, values)
+
+        # Compute reference values (with bins computed ignoring infs)
+        i_inf = i_pinf | i_ninf
+        temp = samples.copy()
+        temp[i_inf] = 0
+        low = np.min(temp, axis=0)
+        high = np.max(temp, axis=0)
+        ref = binned_statistic_dd(samples, values, range=list(zip(low, high)))
 
         # Compare results against reference values
         np.testing.assert_allclose(res[0], ref[0])
