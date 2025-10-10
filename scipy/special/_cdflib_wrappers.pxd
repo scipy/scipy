@@ -379,26 +379,6 @@ cdef inline double nrdtrisd(double mn, double p, double x) noexcept nogil:
     return get_result("nrdtrisd", argnames, result, status, bound, 1)
 
 
-cdef inline double pdtrik(double p, double xlam) noexcept nogil:
-    cdef:
-        double q = 1.0 - p
-        double result, bound
-        int status = 10
-        char *argnames[3]
-        TupleDID ret
-
-    if isnan(p) or isnan(xlam):
-      return NAN
-
-    argnames[0] = "p"
-    argnames[1] = "q"
-    argnames[2] = "xlam"
-
-    ret = cdfpoi_which2(p, q, xlam)
-    result, status, bound = ret.d1, ret.i1, ret.d2
-    return get_result("pdtrik", argnames, result, status, bound, 1)
-
-
 cdef inline double stdtridf(double p, double t) noexcept nogil:
     cdef:
         double q = 1.0 - p
