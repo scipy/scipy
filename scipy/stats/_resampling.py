@@ -12,8 +12,12 @@ from scipy._lib._array_api import (
     is_numpy,
     xp_capabilities,
     xp_result_type,
+    xp_size,
+    xp_device,
+    is_array_api_strict,
 )
 from scipy.special import ndtr, ndtri, comb, factorial
+from scipy import stats
 
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
@@ -44,7 +48,7 @@ def _vectorize_statistic(statistic):
     return stat_nd
 
 
-def _jackknife_resample(sample, batch=None):
+def _jackknife_resample(sample, batch=None, *, xp):
     """Jackknife resample the sample. Only one-sample stats for now."""
     n = sample.shape[-1]
     batch_nominal = batch or n
@@ -60,22 +64,33 @@ def _jackknife_resample(sample, batch=None):
         i = np.broadcast_to(i, (batch_actual, n))
         i = i[j].reshape((batch_actual, n-1))
 
-        resamples = sample[..., i]
-        yield resamples
+        i = xp.asarray(i, device=xp_device(sample))
+        yield _get_from_last_axis(sample, i, xp=xp)
 
 
-def _bootstrap_resample(sample, n_resamples=None, rng=None):
+def _bootstrap_resample(sample, n_resamples=None, rng=None, *, xp):
     """Bootstrap resample the sample."""
     n = sample.shape[-1]
 
     # bootstrap - each row is a random resample of original observations
     i = rng_integers(rng, 0, n, (n_resamples, n))
 
-    resamples = sample[..., i]
-    return resamples
+    i = xp.asarray(i, device=xp_device(sample))
+    return _get_from_last_axis(sample, i, xp=xp)
 
 
-def _percentile_of_score(a, score, axis):
+def _get_from_last_axis(sample, i, xp):
+    if not is_array_api_strict(xp):
+        return sample[..., i]
+
+    # Equivalent to `sample[..., i]` as used in `bootstrap`. Assumes i.ndim <=2.
+    if i.ndim == 2:
+        sample = xp.expand_dims(sample, axis=-2)
+    sample, i = _broadcast_arrays((sample, i), axis=-1, xp=xp)
+    return xp.take_along_axis(sample, i, axis=-1)
+
+
+def _percentile_of_score(a, score, axis, xp):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
     Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
@@ -83,40 +98,20 @@ def _percentile_of_score(a, score, axis):
     in [0, 1].
     """
     B = a.shape[axis]
-    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
+    nonzeros = (xp.count_nonzero(a < score, axis=axis)
+                + xp.count_nonzero(a <= score, axis=axis))
+    return xp.astype(nonzeros, score.dtype) / (2 * B)
 
 
-def _percentile_along_axis(theta_hat_b, alpha):
-    """`np.percentile` with different percentile for each slice."""
-    # the difference between _percentile_along_axis and np.percentile is that
-    # np.percentile gets _all_ the qs for each axis slice, whereas
-    # _percentile_along_axis gets the q corresponding with each axis slice
-    shape = theta_hat_b.shape[:-1]
-    alpha = np.broadcast_to(alpha, shape)
-    percentiles = np.zeros_like(alpha, dtype=np.float64)
-    for indices, alpha_i in np.ndenumerate(alpha):
-        if np.isnan(alpha_i):
-            # e.g. when bootstrap distribution has only one unique element
-            msg = (
-                "The BCa confidence interval cannot be calculated."
-                " This problem is known to occur when the distribution"
-                " is degenerate or the statistic is np.min."
-            )
-            warnings.warn(DegenerateDataWarning(msg), stacklevel=3)
-            percentiles[indices] = np.nan
-        else:
-            theta_hat_b_i = theta_hat_b[indices]
-            percentiles[indices] = np.percentile(theta_hat_b_i, alpha_i)
-    return percentiles[()]  # return scalar instead of 0d array
-
-
-def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
+def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch, xp):
     """Bias-corrected and accelerated interval."""
     # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
-    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
+    theta_hat = xp.expand_dims(statistic(*data, axis=axis), axis=-1)
+    percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1, xp=xp)
+    percentile = xp.asarray(percentile, dtype=theta_hat.dtype,
+                            device=xp_device(theta_hat))
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
@@ -127,32 +122,38 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
         # each sample of the data to ensure broadcastability. We need to
         # create a copy of the list containing the samples anyway, so do this
         # in the loop to simplify the code. This is not the bottleneck...
-        samples = [np.expand_dims(sample, -2) for sample in data]
+        samples = [xp.expand_dims(sample, axis=-2) for sample in data]
         theta_hat_i = []
-        for jackknife_sample in _jackknife_resample(sample, batch):
+        for jackknife_sample in _jackknife_resample(sample, batch, xp=xp):
             samples[j] = jackknife_sample
-            broadcasted = _broadcast_arrays(samples, axis=-1)
+            broadcasted = _broadcast_arrays(samples, axis=-1, xp=xp)
             theta_hat_i.append(statistic(*broadcasted, axis=-1))
         theta_hat_ji.append(theta_hat_i)
 
-    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+    theta_hat_ji = [xp.concat(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
-    n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
+    # CuPy array dtype is unstable in 1.13.6 when divided by large Python int:
+    # (cp.ones(1, dtype=cp.float32)/10000).dtype   # float32
+    # (cp.ones(1, dtype=cp.float32)/100000).dtype  # float64
+    # Solution for now is to make the divisor a Python float
+    # Looks like this will be fixed in 1.14.0
+    n_j = [float(theta_hat_i.shape[-1]) for theta_hat_i in theta_hat_ji]
 
-    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+    theta_hat_j_dot = [xp.mean(theta_hat_i, axis=-1, keepdims=True)
                        for theta_hat_i in theta_hat_ji]
 
     U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
             for theta_hat_dot, theta_hat_i, n
             in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
 
-    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
-    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    nums = [xp.sum(U_i**3, axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [xp.sum(U_i**2, axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
     a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
-    z_alpha = ndtri(alpha)
+    # `float` because dtype of ndtri output (float64) should not promote other vals
+    z_alpha = float(ndtri(alpha))
     z_1alpha = -z_alpha
     num1 = z0_hat + z_alpha
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
@@ -165,6 +166,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                   alternative, n_resamples, batch, method, bootstrap_result,
                   rng):
     """Input validation and standardization for `bootstrap`."""
+    xp = array_namespace(*data)
 
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
@@ -173,6 +175,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
+        if not is_numpy(xp):
+            message = (f"When using array library {xp.__name__}, `func` must be "
+                       "be vectorized and accept argument `axis`.")
+            raise TypeError(message)
+
         statistic = _vectorize_statistic(statistic)
 
     axis_int = int(axis)
@@ -188,14 +195,14 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
-    data = _broadcast_arrays(data, axis_int)
+    data = _broadcast_arrays(data, axis_int, xp=xp)
 
     data_iv = []
     for sample in data:
         if sample.shape[axis_int] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     if paired not in {True, False}:
@@ -212,10 +219,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
         # to generate the bootstrap distribution for paired-sample statistics,
         # resample the indices of the observations
         def statistic(i, axis=-1, data=data_iv, unpaired_statistic=statistic):
-            data = [sample[..., i] for sample in data]
+            # data = [sample[..., i] for sample in data]
+            data = [_get_from_last_axis(sample, i, xp=xp) for sample in data]
             return unpaired_statistic(*data, axis=axis)
 
-        data_iv = [np.arange(n)]
+        data_iv = [xp.arange(n)]
 
     confidence_level_float = float(confidence_level)
 
@@ -248,7 +256,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
                "`n_resamples` must be positive.")
     if ((not bootstrap_result or
-         not bootstrap_result.bootstrap_distribution.size)
+         not xp_size(bootstrap_result.bootstrap_distribution))
             and n_resamples_int == 0):
         raise ValueError(message)
 
@@ -256,7 +264,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, alternative, n_resamples_int, batch_iv,
-            method, bootstrap_result, rng)
+            method, bootstrap_result, rng, xp)
 
 
 @dataclass
@@ -282,7 +290,8 @@ class BootstrapResult:
     standard_error: float | np.ndarray
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("jax.numpy", "Incompatible with `quantile`."),
+                                ("dask.array", "Dask doesn't have take_along_axis.")])
 @_transition_to_rng('random_state')
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
@@ -614,7 +623,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
                          method, bootstrap_result, rng)
     (data, statistic, vectorized, paired, axis, confidence_level,
      alternative, n_resamples, batch, method, bootstrap_result,
-     rng) = args
+     rng, xp) = args
 
     theta_hat_b = ([] if bootstrap_result is None
                    else [bootstrap_result.bootstrap_distribution])
@@ -627,41 +636,56 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         resampled_data = []
         for sample in data:
             resample = _bootstrap_resample(sample, n_resamples=batch_actual,
-                                           rng=rng)
+                                           rng=rng, xp=xp)
             resampled_data.append(resample)
 
         # Compute bootstrap distribution of statistic
         theta_hat_b.append(statistic(*resampled_data, axis=-1))
-    theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
+    theta_hat_b = xp.concat(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
     alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
              else (1 - confidence_level))
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
-        percentile_fun = _percentile_along_axis
+                                 theta_hat_b=theta_hat_b, batch=batch, xp=xp)[:2]
     else:
-        interval = alpha, 1-alpha
-
-        def percentile_fun(a, q):
-            return np.percentile(a=a, q=q, axis=-1)
+        alpha = xp.asarray(alpha, dtype=theta_hat_b.dtype,
+                           device=xp_device(theta_hat_b))
+        interval = alpha, 1 - alpha
 
     # Calculate confidence interval of statistic
-    ci_l = percentile_fun(theta_hat_b, interval[0]*100)
-    ci_u = percentile_fun(theta_hat_b, interval[1]*100)
+    interval = xp.stack(interval, axis=-1)
+    ci = stats.quantile(theta_hat_b, interval, axis=-1)
+    if xp.any(xp.isnan(ci)):
+        msg = (
+            "The BCa confidence interval cannot be calculated. "
+            "This problem is known to occur when the distribution "
+            "is degenerate or the statistic is np.min."
+        )
+        warnings.warn(DegenerateDataWarning(msg), stacklevel=2)
+
+    ci_l = ci[..., 0]
+    ci_u = ci[..., 1]
+
     if method == 'basic':  # see [3]
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     if alternative == 'less':
-        ci_l = np.full_like(ci_l, -np.inf)
+        ci_l = xp.full_like(ci_l, -xp.inf)
     elif alternative == 'greater':
-        ci_u = np.full_like(ci_u, np.inf)
+        ci_u = xp.full_like(ci_u, xp.inf)
+
+    standard_error = xp.std(theta_hat_b, correction=1, axis=-1)
+
+    ci_l = ci_l[()] if ci_l.ndim == 0 else ci_l
+    ci_u = ci_u[()] if ci_u.ndim == 0 else ci_u
+    standard_error = standard_error[()] if standard_error.ndim == 0 else standard_error
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,
-                           standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
+                           standard_error=standard_error)
 
 
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
