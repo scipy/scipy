@@ -21,7 +21,7 @@ import warnings
 import operator
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, concat_1d
+from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr,
@@ -148,6 +148,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     return x, y, w, k, s, xb, xe
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def generate_knots(x, y, *, w=None, xb=None, xe=None,
                    k=3, s=0, nest=None, bc_type=None):
     """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
@@ -997,6 +998,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, periodic, xp=np):
     return spl
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_splrep(x, y, *, w=None, xb=None, xe=None,
                 k=3, s=0, t=None, nest=None, bc_type=None):
     r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
@@ -1153,6 +1155,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None,
     return spl
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None,
                  k=3, s=0, t=None, nest=None, bc_type=None):
     r"""

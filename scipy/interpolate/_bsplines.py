@@ -14,7 +14,7 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
-from scipy._lib._array_api import array_namespace, concat_1d
+from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
@@ -1407,6 +1407,7 @@ def _make_periodic_spline(x, y, t, k, axis, *, xp):
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Create an interpolating B-spline with specified degree and boundary conditions.
@@ -1684,6 +1685,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
     r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
@@ -2237,6 +2239,7 @@ def _coeff_of_divided_diff(x):
     return res
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     r"""
     Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.

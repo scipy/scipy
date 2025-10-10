@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d
+    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case
 )
 import scipy._lib.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -1224,7 +1224,7 @@ class TestInterop:
         assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_interp_spline)
 class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
@@ -1767,7 +1767,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_lsq_spline)
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -2176,7 +2176,7 @@ def data_file(basename):
                         'data', basename)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_smoothing_spline)
 class TestSmoothingSpline:
     #
     # test make_smoothing_spline
@@ -3246,7 +3246,7 @@ def _add_knot(x, t, k, residuals):
     return t_new
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(generate_knots)
 class TestGenerateKnots:
     def test_split_add_knot(self):
         # smoke test implementation details: insert a new knot given residuals
@@ -3716,6 +3716,7 @@ class _TestMakeSplrepBase:
         xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
 
 
+@make_xp_test_case(make_splrep)
 class TestMakeSplrep(_TestMakeSplrepBase):
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
@@ -3865,6 +3866,7 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
 
+@make_xp_test_case(make_splrep)
 class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
     bc_type = 'periodic'
@@ -3960,7 +3962,7 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
         xp_assert_close(y_check[0], y_check[1])
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_splprep)
 class TestMakeSplprep:
     def _get_xyk(self, m=10, k=3, xp=np):
         x = xp.arange(m, dtype=xp.float64) * xp.pi / m
@@ -4068,6 +4070,7 @@ class TestMakeSplprep:
         xp_assert_close(spl(u), [x], atol=1e-15)
 
 
+@make_xp_test_case(make_splprep)
 class TestMakeSplprepPeriodic:
 
     def _get_xyk(self, n=10, k=3, xp=np):
