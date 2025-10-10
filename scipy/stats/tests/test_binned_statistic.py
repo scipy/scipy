@@ -60,22 +60,6 @@ class TestBinnedStatistic:
 
         assert_allclose(stat1, stat2)
 
-    def test_non_finite_inputs_and_int_bins(self):
-        # if either `values` or `sample` contain np.inf or np.nan throw
-        # see issue gh-9010 for more
-        x = self.x
-        u = self.u
-        orig = u[0]
-        u[0] = np.inf
-        assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
-        # need to test for non-python specific ints, e.g. np.int8, np.int64
-        assert_raises(ValueError, binned_statistic, u, x, 'std',
-                      bins=np.int64(10))
-        u[0] = np.nan
-        assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
-        # replace original value, u belongs the class
-        u[0] = orig
-
     def test_1d_result_attributes(self):
         x = self.x
         v = self.v
@@ -566,3 +550,31 @@ class TestBinnedStatistic:
         ref = np.array([ref_statistic(v[~i]), ref_statistic(v[i])])
         assert_allclose(stat, ref)
         assert stat.dtype == np.result_type(ref.dtype, np.float64)
+
+    def test_nan_gh17154(self):
+        # gh-17154 reported that `binned_statistic_dd` raised an error when `samples`
+        # contains NaNs and argued that this was an inappropriate default. Test that
+        # NaNs are now ignored by default.
+
+        # Generate a samples (with NaNs) and values
+        rng = np.random.default_rng(529847529874529829)
+        samples = rng.random(size=(100, 3))
+        values = rng.random(100)
+        i = rng.random(samples.shape) < 0.05
+        samples[i] = np.nan
+
+        # Compute results
+        message = "`sample` contains NaN values"
+        with pytest.warns(UserWarning, match=message):
+            res = binned_statistic_dd(samples, values)
+
+        # Compute reference values
+        keep = ~i.any(axis=1)
+        samples = samples[keep]
+        values = values[keep]
+        ref = binned_statistic_dd(samples, values)
+
+        # Compare results against reference values
+        np.testing.assert_allclose(res[0], ref[0])
+        np.testing.assert_allclose(res[1], ref[1])
+        np.testing.assert_allclose(res[2], ref[2])
