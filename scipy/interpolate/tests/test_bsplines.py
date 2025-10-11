@@ -10,7 +10,8 @@ import sys
 
 import numpy as np
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case
+    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case,
+    xp_ravel
 )
 import scipy._lib.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -2420,9 +2421,10 @@ class NdBSpline0:
         return np.asarray(result)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestNdBSpline:
 
-    def test_1D(self):
+    def test_1D(self, xp):
         # test ndim=1 agrees with BSpline
         rng = np.random.default_rng(12345)
         n, k = 11, 3
@@ -2430,18 +2432,23 @@ class TestNdBSpline:
         t = np.sort(rng.uniform(size=n + k + 1))
         c = rng.uniform(size=(n, n_tr))
 
+        t = xp.asarray(t)
+        c = xp.asarray(c)
+
         b = BSpline(t, c, k)
         nb = NdBSpline((t,), c, k)
 
         xi = rng.uniform(size=21)
+        xi = xp.asarray(xi)
+
         # NdBSpline expects xi.shape=(npts, ndim)
         xp_assert_close(nb(xi[:, None]),
                         b(xi), atol=1e-14)
         assert nb(xi[:, None]).shape == (xi.shape[0], c.shape[1])
 
-    def make_2d_case(self):
+    def make_2d_case(self, xp=np):
         # make a 2D separable spline
-        x = np.arange(6)
+        x = xp.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
 
@@ -2453,13 +2460,13 @@ class TestNdBSpline:
 
         return t2, c2, 3
 
-    def make_2d_mixed(self):
+    def make_2d_mixed(self, xp=np):
         # make a 2D separable spline w/ kx=3, ky=2
-        x = np.arange(6)
+        x = xp.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
 
-        x = np.arange(5) + 1.5
+        x = xp.arange(5, dtype=xp.float64) + 1.5
         y_1 = x**2 + 2*x
         spl_1 = make_interp_spline(x, y_1, k=2)
 
@@ -2468,14 +2475,22 @@ class TestNdBSpline:
 
         return t2, c2, spl.k, spl_1.k
 
-    def test_2D_separable(self):
+    def test_2D_separable(self, xp):
         xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
-        t2, c2, k = self.make_2d_case()
+        t2, c2, k = self.make_2d_case(xp=xp)
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
 
         # sanity check: bspline2 gives the product as constructed
-        xp_assert_close(np.asarray([bspline2(xy, t2, c2, k) for xy in xi]),
-                        np.asarray(target),
+        b2 = [bspline2(
+                xy,
+                [np.asarray(_) for _ in t2],
+                np.asarray(c2),
+                k
+              ) for xy in xi
+        ]
+        b2 = np.asarray(b2, dtype=np.float64)
+        xp_assert_close(xp.asarray(b2),
+                        xp.asarray(target, dtype=xp.float64),
                         check_shape=False,
                         atol=1e-14)
 
@@ -2483,32 +2498,35 @@ class TestNdBSpline:
         bspl2 = NdBSpline(t2, c2, k=3)
         assert bspl2(xi).shape == (len(xi), )
         xp_assert_close(bspl2(xi),
-                        target, atol=1e-14)
+                        xp.asarray(target, dtype=xp.float64), atol=1e-14)
 
         # test that a nan in -> nan out
         xi = np.asarray(xi)
         xi[0, 1] = np.nan
-        xp_assert_equal(np.isnan(bspl2(xi)), np.asarray([True, False, False]))
+        xi = xp.asarray(xi)
+        xp_assert_equal(xp.isnan(bspl2(xi)), xp.asarray([True, False, False]))
 
         # now check on a multidim xi
         rng = np.random.default_rng(12345)
         xi = rng.uniform(size=(4, 3, 2)) * 5
+        xi = xp.asarray(xi)
         result = bspl2(xi)
         assert result.shape == (4, 3)
 
         # also check the values
-        x, y = xi.reshape((-1, 2)).T
-        xp_assert_close(result.ravel(),
+        rrr = xp.reshape(xi, (-1, 2)).T
+        x, y = rrr[0, ...], rrr[1, ...]
+        xp_assert_close(xp_ravel(result, xp=xp),
                         x**3 * (y**3 + 2*y), atol=1e-14)
 
-    def test_2D_separable_2(self):
+    def test_2D_separable_2(self, xp):
         # test `c` with trailing dimensions, i.e. c.ndim > ndim
         ndim = 2
         xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
 
-        t2, c2, k = self.make_2d_case()
-        c2_4 = np.dstack((c2, c2, c2, c2))   # c22.shape = (6, 6, 4)
+        t2, c2, k = self.make_2d_case(xp=xp)
+        c2_4 = xp.stack((c2, c2, c2, c2), axis=2)   # c22.shape = (6, 6, 4)
 
         xy = (1.5, 2.5)
         bspl2_4 = NdBSpline(t2, c2_4, k=3)
@@ -2516,44 +2534,44 @@ class TestNdBSpline:
         val_single = NdBSpline(t2, c2, k)(xy)
         assert result.shape == (4,)
         xp_assert_close(result,
-                        [val_single, ]*4, atol=1e-14)
+                        xp.stack([val_single, ]*4), atol=1e-14)
 
         # now try the array xi : the output.shape is (3, 4) where 3
         # is the number of points in xi and 4 is the trailing dimension of c
         assert bspl2_4(xi).shape == np.shape(xi)[:-1] + bspl2_4.c.shape[ndim:]
-        xp_assert_close(bspl2_4(xi),  np.asarray(target)[:, None],
+        xp_assert_close(bspl2_4(xi),
+                        xp.asarray(target, dtype=xp.float64)[:, None],
                         check_shape=False,
                         atol=5e-14)
 
         # two trailing dimensions
-        c2_22 = c2_4.reshape((6, 6, 2, 2))
+        c2_22 = xp.reshape(c2_4, (6, 6, 2, 2))
         bspl2_22 = NdBSpline(t2, c2_22, k=3)
 
         result = bspl2_22(xy)
         assert result.shape == (2, 2)
-        xp_assert_close(result,
-                        [[val_single, val_single],
-                         [val_single, val_single]], atol=1e-14)
+        target2_22 = xp.ones((2, 2), dtype=xp.float64)*val_single
+        xp_assert_close(result, target2_22, atol=1e-14)
 
         # now try the array xi : the output shape is (3, 2, 2)
         # for 3 points in xi and c trailing dimensions being (2, 2)
         assert (bspl2_22(xi).shape ==
                 np.shape(xi)[:-1] + bspl2_22.c.shape[ndim:])
-        xp_assert_close(bspl2_22(xi), np.asarray(target)[:, None, None],
+        xp_assert_close(bspl2_22(xi),
+                        xp.asarray(target, dtype=xp.float64)[:, None, None],
                         check_shape=False,
                         atol=5e-14)
 
-
-    def test_2D_separable_2_complex(self):
+    def test_2D_separable_2_complex(self, xp):
         # test `c` with c.dtype == complex, with and w/o trailing dims
         xi = [(1.5, 2.5), (2.5, 1), (0.5, 1.5)]
         target = [x**3 * (y**3 + 2*y) for (x, y) in xi]
 
         target = [t + 2j*t for t in target]
 
-        t2, c2, k = self.make_2d_case()
+        t2, c2, k = self.make_2d_case(xp=xp)
         c2 = c2 * (1 + 2j)
-        c2_4 = np.dstack((c2, c2, c2, c2))   # c2_4.shape = (6, 6, 4)
+        c2_4 = xp.stack((c2, c2, c2, c2), axis=2)   # c2_4.shape = (6, 6, 4)
 
         xy = (1.5, 2.5)
         bspl2_4 = NdBSpline(t2, c2_4, k=3)
@@ -2561,7 +2579,7 @@ class TestNdBSpline:
         val_single = NdBSpline(t2, c2, k)(xy)
         assert result.shape == (4,)
         xp_assert_close(result,
-                        [val_single, ]*4, atol=1e-14)
+                        xp.stack([val_single]*4), atol=1e-14)
 
     def test_2D_random(self):
         rng = np.random.default_rng(12345)
@@ -2591,8 +2609,8 @@ class TestNdBSpline:
         xp_assert_close(bspl2(xi),
                         target, atol=1e-14)
 
-    def test_2D_derivative(self):
-        t2, c2, kx, ky = self.make_2d_mixed()
+    def test_2D_derivative(self, xp):
+        t2, c2, kx, ky = self.make_2d_mixed(xp=xp)
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
 
@@ -2604,7 +2622,9 @@ class TestNdBSpline:
         }
 
         for nu, expected_fn in test_cases.items():
-            expected_vals = [expected_fn(x, y) for x, y in xi]
+            expected_vals = xp.asarray(
+                [expected_fn(x, y) for x, y in xi], dtype=xp.float64
+            )
 
             # Evaluate via nu argument
             direct = bspl2(xi, nu=nu)
@@ -2621,7 +2641,6 @@ class TestNdBSpline:
                 bspl2(xi, nu=bad_nu)
             with assert_raises(ValueError):
                 bspl2.derivative(bad_nu)
-
 
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
@@ -2659,9 +2678,9 @@ class TestNdBSpline:
         xp_assert_close(bxi, rgi(xi), atol=1e-14)
         xp_assert_close(bxi.reshape(values.shape), values, atol=1e-14)
 
-    def make_3d_case(self):
+    def make_3d_case(self, xp=np):
         # make a 3D separable spline
-        x = np.arange(6)
+        x = xp.arange(6)
         y = x**3
         spl = make_interp_spline(x, y, k=3)
 
@@ -2691,12 +2710,14 @@ class TestNdBSpline:
         assert result.shape == (11,)
         xp_assert_close(result, target, atol=1e-14)
 
-    def test_3D_derivative(self):
-        t3, c3, k = self.make_3d_case()
+    def test_3D_derivative(self, xp):
+        t3, c3, k = self.make_3d_case(xp=xp)
         bspl3 = NdBSpline(t3, c3, k=3)
         rng = np.random.default_rng(12345)
         x, y, z = rng.uniform(size=(3, 11)) * 5
-        xi = [_ for _ in zip(x, y, z)]
+
+        xi_np = [_ for _ in zip(x, y, z)]
+        xi = xp.asarray(xi_np)
 
         # Derivative orders and their expected expressions
         test_cases = {
@@ -2708,10 +2729,10 @@ class TestNdBSpline:
         }
 
         for nu, expected_fn in test_cases.items():
-            expected_vals = [expected_fn(xi_, yi_, zi_) for xi_, yi_, zi_ in xi]
+            expected_vals = [expected_fn(xi_, yi_, zi_) for xi_, yi_, zi_ in xi_np]
+            expected_vals = xp.asarray(expected_vals, dtype=xp.float64)
             xp_assert_close(bspl3(xi, nu=nu), expected_vals, atol=1e-14)
             xp_assert_close(bspl3.derivative(nu)(xi), expected_vals, atol=1e-14)
-
 
     def test_3D_random(self):
         rng = np.random.default_rng(12345)
