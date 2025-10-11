@@ -7,7 +7,7 @@ import pytest
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype
+    array_namespace, xp_default_dtype, xp_copy_to_numpy
 )
 from scipy.fft import fft, fft2
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -151,11 +151,11 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = xp.asarray([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=xp.pi*freq_samples)
+        freq_samples = np.asarray([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(
-            xp.abs(response),
+            xp.abs(xp.asarray(response)),
             xp.asarray([1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5
         )
 
@@ -178,10 +178,10 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
+        freq_samples = np.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2, 0.75, 1.0])
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
-        assert_array_almost_equal(xp.abs(response),
+        assert_array_almost_equal(xp.abs(xp.asarray(response)),
                                   xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='highpass', **kwargs)
@@ -200,11 +200,11 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = xp.asarray([0.0, 0.2, 0.3 - width/2, 0.3 + width/2, 0.5,
+        freq_samples = np.asarray([0.0, 0.2, 0.3 - width/2, 0.3 + width/2, 0.5,
                                    0.7 - width/2, 0.7 + width/2, 0.8, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
-        assert_array_almost_equal(xp.abs(response),
+        assert_array_almost_equal(xp.abs(xp.asarray(response)),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='bandpass', **kwargs)
@@ -222,13 +222,13 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = xp.asarray([0.0, 0.1, 0.2 - width/2, 0.2 + width/2, 0.35,
+        freq_samples = np.asarray([0.0, 0.1, 0.2 - width/2, 0.2 + width/2, 0.35,
                                    0.5 - width/2, 0.5 + width/2, 0.65,
                                    0.8 - width/2, 0.8 + width/2, 0.9, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(
-            xp.abs(response),
+            xp.abs(xp.asarray(response)),
             xp.asarray([1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]),
             decimal=5
         )
@@ -250,11 +250,11 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = xp.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
+        freq_samples = np.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
                                    700 - width/2, 700 + width/2, 800, 1000])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples/nyquist)
 
-        assert_array_almost_equal(xp.abs(response),
+        assert_array_almost_equal(xp.abs(xp.asarray(response)),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
     def test_array_cutoff(self, xp):
@@ -307,7 +307,7 @@ class TestFirWinMore:
             firwin2(51, .5, 1, fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp")
+@skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp", exceptions=["cupy"])
 class TestFirwin2:
 
     def test_invalid_args(self):
@@ -366,12 +366,11 @@ class TestFirwin2:
         freq = xp.asarray([0.0, 0.5, 1.0])
         gain = xp.asarray([1.0, 1.0, 0.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2,
+        freq_samples = np.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2,
                                                         0.75, 1.0 - width/2])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
         assert_array_almost_equal(
-            xp.abs(response),
+            xp.abs(xp.asarray(response)),
             xp.asarray([1.0, 1.0, 1.0, 1.0 - width, 0.5, width]), decimal=5
         )
 
@@ -386,10 +385,9 @@ class TestFirwin2:
         gain = xp.asarray([0.0, 0.0, 1.0, 1.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
         freq_samples = np.array([0.0, 0.25, 0.5 - width, 0.5 + width, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
         assert_array_almost_equal(
-            xp.abs(response),
+            xp.abs(xp.asarray(response)),
             xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
@@ -404,10 +402,9 @@ class TestFirwin2:
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
         freq_samples = np.array([0.0, 0.4 - width, 0.4 + width, 0.45,
                                     0.5 - width, 0.5 + width, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
         assert_array_almost_equal(
-            xp.abs(response),
+            xp.abs(xp.asarray(response)),
             xp.asarray([1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5
         )
 
@@ -437,7 +434,8 @@ class TestFirwin2:
         dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2], flip(-taps[ntaps // 2:]), **dec)
 
-        freqs, response = freqz(taps, worN=2048)
+        freqs, response = freqz(xp_copy_to_numpy(taps), worN=2048)
+        freqs, response = map(xp.asarray, (freqs, response))
         assert_array_almost_equal(xp.abs(response), freqs / xp.pi, decimal=4)
 
     @skip_xp_backends("jax.numpy", reason="immutable arrays")
@@ -456,11 +454,11 @@ class TestFirwin2:
                                   flip(-taps[ntaps // 2 + 1:]), **dec
         )
 
-        freqs, response1 = freqz(taps, worN=2048)
+        freqs, response1 = freqz(xp_copy_to_numpy(taps), worN=2048)
         response2 = xp.asarray(
-            np.interp(np.asarray(freqs) / np.pi, np.asarray(freq), np.asarray(gain))
+            np.interp(freqs / np.pi, xp_copy_to_numpy(freq), xp_copy_to_numpy(gain))
         )
-        assert_array_almost_equal(xp.abs(response1), response2, decimal=3)
+        assert_array_almost_equal(xp.abs(xp.asarray(response1)), response2, decimal=3)
 
     def test_fs_nyq(self, xp):
         taps1 = firwin2(80, xp.asarray([0.0, 0.5, 1.0]), xp.asarray([1.0, 1.0, 0.0]))
