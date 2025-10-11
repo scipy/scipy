@@ -196,6 +196,14 @@ class StandardNormal(Normal):
     def _moment_standardized_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs)
 
+    def _lmoment_formula(self, order, **kwargs):
+        lmoments = {1: 0, 2: 1 / np.sqrt(np.pi), 3: 0}
+        return lmoments.get(order, None)
+
+    def _lmoment_ratio_formula(self, order, **kwargs):
+        lmoment_ratios = {2: 1, 3: 0, 4: 30*np.arctan(np.sqrt(2))/np.pi - 9}
+        return lmoment_ratios.get(order, None)
+
     def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
 
