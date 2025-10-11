@@ -590,6 +590,10 @@ double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
 
+double special_gdtria(double p, double b, double x) { return xsf::gammaincinv(b, p) / x; }
+
+double special_gdtrix(double a, double b, double p) { return xsf::gammaincinv(b, p) / a; }
+
 double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
