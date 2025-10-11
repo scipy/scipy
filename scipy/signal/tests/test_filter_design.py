@@ -238,17 +238,17 @@ class TestZpk2Tf:
             assert isinstance(a, np.ndarray)
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-    @skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
+        z_np = xp_copy_to_numpy(z)
         # shouldn't need elements of pairs to be adjacent
         p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
+        p_np = xp_copy_to_numpy(p_np)
         k = 23
 
         # np.poly should do the right thing, but be explicit about
         # taking real part
-        z_np, p_np = map(np.asarray, (z, p))
         b_np = k * np.poly(z_np).real
         a_np = np.poly(p_np).real
         b, a = map(xp.asarray, (b_np, a_np))
@@ -262,13 +262,12 @@ class TestZpk2Tf:
         assert xp.isdtype(ap.dtype, 'real floating')
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-    )
     def test_complexk(self, xp):
         # regression: z, p real, k complex k gave real b, a
         b, a = xp.asarray([1j, 1j]), xp.asarray([1.0, 2])
-        z, p, k = tf2zpk(b, a)
+        b_np, a_np = map(xp_copy_to_numpy, (b, a))
+        z_np, p_np, k_np = tf2zpk(b_np, a_np)
+        z, p, k = map(xp_copy_to_numpy, (z, p, k))
         xp_assert_close(k, xp.asarray(1j), check_0d=False)
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
