@@ -198,8 +198,8 @@ universal functions):
 .. autosummary::
    :toctree: generated/
 
-   riccati_jn -- Compute Ricatti-Bessel function of the first kind and its derivative.
-   riccati_yn -- Compute Ricatti-Bessel function of the second kind and its derivative.
+   riccati_jn -- Compute Riccati-Bessel function of the first kind and its derivative.
+   riccati_yn -- Compute Riccati-Bessel function of the second kind and its derivative.
 
 Struve functions
 ----------------

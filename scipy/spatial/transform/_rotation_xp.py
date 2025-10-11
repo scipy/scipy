@@ -48,7 +48,6 @@ def from_quat(
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    matrix = xp_promote(matrix, force_floating=True, xp=xp)
     # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
     lazy = is_lazy_array(mask)
@@ -68,7 +67,7 @@ def from_matrix(matrix: Array) -> Array:
     # frameworks or pay the performance penalty for the SVD.
     eye = xp.eye(3, dtype=matrix.dtype, device=device)
     is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
-    U, _, Vt = xp.linalg.svd(matrix)
+    U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
     orthogonal_matrix = U @ Vt
     matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
 
@@ -139,11 +138,9 @@ def from_matrix(matrix: Array) -> Array:
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     xp = array_namespace(rotvec)
-    rotvec = xp_promote(rotvec, force_floating=True, xp=xp)
-    # TODO: Relax the shape check once we support proper broadcasting
-    if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
+    if rotvec.shape[-1] != 3:
         raise ValueError(
-            f"Expected `rot_vec` to have shape (3,) or (N, 3), got {rotvec.shape}"
+            f"Expected `rot_vec` to have shape (..., 3), got {rotvec.shape}"
         )
     rotvec = _deg2rad(rotvec) if degrees else rotvec
 
@@ -164,11 +161,8 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
 
 def from_mrp(mrp: Array) -> Array:
     xp = array_namespace(mrp)
-    mrp = xp_promote(mrp, force_floating=True, xp=xp)
-    if mrp.ndim not in [1, 2] or mrp.shape[len(mrp.shape) - 1] != 3:
-        raise ValueError(
-            f"Expected `mrp` to have shape (3,) or (N, 3), got {mrp.shape}"
-        )
+    if mrp.shape[-1] != 3:
+        raise ValueError(f"Expected `mrp` to have shape (..., 3), got {mrp.shape}")
     mrp2_plus_1 = xp.linalg.vecdot(mrp, mrp, axis=-1)[..., None] + 1
     q_no_norm = xp.concat([2 * mrp[..., :3], (2 - mrp2_plus_1)], axis=-1)
     quat = q_no_norm / mrp2_plus_1
@@ -195,11 +189,19 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
-    angles = xp_promote(angles, force_floating=True, xp=xp)
-    angles, is_single = _format_angles(angles, degrees, num_axes)
+    if degrees:
+        angles = _deg2rad(angles)
+
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+
+    if angles.shape[-1] != num_axes:
+        raise ValueError(
+            "Expected last dimension of `angles` to match number of sequence axes "
+            f"specified, got {angles.shape[-1]}."
+        )
     axes = [_elementary_basis_index(x) for x in seq.lower()]
     q = _elementary_quat_compose(axes, angles, intrinsic)
-    return q[0, ...] if is_single else q
+    return q
 
 
 def from_davenport(
@@ -207,7 +209,6 @@ def from_davenport(
 ) -> Array:
     xp = array_namespace(axes)
     device = xp_device(axes)
-    axes = xp_promote(axes, force_floating=True, xp=xp)
     if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
         extrinsic = True
     elif order in ["i", "intrinsic"]:
@@ -217,46 +218,52 @@ def from_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/"
             f"'intrinsic' for intrinsic sequences, got {order}"
         )
-    angles = xp.asarray(angles, dtype=axes.dtype)  # could be a scalar
 
-    axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     if axes.shape[-1] != 3:
         raise ValueError("Axes must be vectors of length 3.")
 
-    num_axes = axes.shape[0]
+    axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    num_axes = axes.shape[-2]
     if num_axes < 1 or num_axes > 3:
         raise ValueError(f"Expected up to 3 axes, got {num_axes}")
 
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
 
     # Check if axes are orthogonal. Shape checks also work for lazy backends.
-    axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool, device=device)
+    axes_not_orthogonal = xp.zeros(axes.shape[:-2], dtype=xp.bool, device=device)
     if num_axes > 1:
         # Cannot be True yet, so we do not need to use xp.logical_or
-        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
+        axes_not_orthogonal = axes_not_orthogonal | (
             xp.abs(xp.vecdot(axes[..., 0, :], axes[..., 1, :])) > 1e-7
         )
     if num_axes > 2:
-        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
-            xp.logical_or(
-                xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7,
-                axes_not_orthogonal[..., 0],
-            )
+        axes_not_orthogonal = axes_not_orthogonal | (
+            xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7
         )
     if not is_lazy_array(axes_not_orthogonal) and xp.any(axes_not_orthogonal):
         raise ValueError("Consecutive axes must be orthogonal.")
+    else:
+        axes = xp.where(axes_not_orthogonal[..., None, None], xp.nan, axes)
 
-    axes = xp.where(axes_not_orthogonal, xp.nan, axes)
-    angles, single = _format_angles(angles, degrees, num_axes)
+    if degrees:
+        angles = _deg2rad(angles)
 
-    dim_q = (4) if single else (angles.shape[0], 4)
-    q = xp.zeros(dim_q, dtype=angles.dtype, device=xp_device(angles))
+    if (
+        not broadcastable(axes.shape[:-1], angles.shape)
+        or axes.shape[-2] != angles.shape[-1]
+    ):
+        raise ValueError(
+            f"Expected `angles` to match number of axes, got {angles.shape} angles "
+            f"and {axes.shape} axes."
+        )
+
+    q_shape = angles.shape[:-1] + (4,)
+    q = xp.zeros(q_shape, dtype=angles.dtype, device=xp_device(angles))
     q = xpx.at(q)[..., 3].set(1)
 
-    if not single:
-        angles = angles[..., None]
     for i in range(num_axes):
-        qi = from_rotvec(angles[:, i, ...] * axes[i, :])
+        qi = from_rotvec(angles[..., i, None] * axes[..., i, :])
         q = compose_quat(qi, q) if extrinsic else compose_quat(q, qi)
     return q
 
@@ -335,7 +342,9 @@ def as_mrp(quat: Array) -> Array:
     return sign * quat[..., :3] / denominator
 
 
-def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
+def as_euler(
+    quat: Array, seq: str, degrees: bool = False, *, suppress_warnings: bool = False
+) -> Array:
     xp = array_namespace(quat)
 
     # Sanitize the sequence
@@ -366,15 +375,21 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     c = xp.where(mask, quat[..., j], quat[..., j] + quat[..., 3])
     d = xp.where(mask, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
-    angles = _get_angles(extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d)
+    angles = _get_angles(
+        extrinsic, symmetric, sign, xp.pi / 2, a, b, c, d, suppress_warnings
+    )
     return _rad2deg(angles) if degrees else angles
 
 
 def as_davenport(
-    quat: Array, axes: ArrayLike, order: str, degrees: bool = False
+    quat: Array,
+    axes: ArrayLike,
+    order: str,
+    degrees: bool = False,
+    *,
+    suppress_warnings: bool = False,
 ) -> Array:
     xp = array_namespace(quat)
-    axes = xp_promote(axes, force_floating=True, xp=xp)
 
     # Check argument validity
     if order in ["e", "extrinsic"]:
@@ -386,23 +401,33 @@ def as_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/'intrinsic'"
             f" for intrinsic sequences, got {order}"
         )
-    if axes.shape[0] != 3:
+    if axes.shape[-2] != 3:
         raise ValueError(f"Expected 3 axes, got {axes.shape}.")
-    if axes.shape[1] != 3:
+    if axes.shape[-1] != 3:
         raise ValueError("Axes must be vectors of length 3.")
+    if not broadcastable(axes.shape[:-2], quat.shape[:-1]):
+        raise ValueError(
+            f"Expected `axes` to match number of rotations, got {axes.shape} axes "
+            f"and {quat.shape} rotations."
+        )
 
     # normalize axes
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
-    vdot_ax0_ax1 = xp.vecdot(axes[0, ...], axes[1, ...])
-    vdot_ax1_ax2 = xp.vecdot(axes[1, ...], axes[2, ...])
+    vdot_ax0_ax1 = xp.vecdot(axes[..., 0, :], axes[..., 1, :])
+    vdot_ax1_ax2 = xp.vecdot(axes[..., 1, :], axes[..., 2, :])
     is_invalid = (vdot_ax0_ax1 >= 1e-7) | (vdot_ax1_ax2 >= 1e-7)
     if is_lazy_array(is_invalid):
-        axes = xp.where(is_invalid, xp.nan, axes)
-    elif is_invalid:
+        axes = xp.where(is_invalid[..., None, None], xp.nan, axes)
+    elif xp.any(is_invalid):
         raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = _compute_davenport_from_quat(
-        quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
+        quat,
+        axes[..., 0, :],
+        axes[..., 1, :],
+        axes[..., 2, :],
+        extrinsic,
+        suppress_warnings,
     )
     if degrees:
         angles = _rad2deg(angles)
@@ -436,10 +461,8 @@ def approx_equal(
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
-            "Expected equal number of rotations in both "
-            "or a single rotation in either object, "
-            f"got {quat.shape[0]} rotations in first and {other.shape[0]} rotations in "
-            "second object."
+            f"Expected broadcastable shapes in both rotations, got {quat.shape[:-1]} "
+            f"rotations in first and {other.shape[:-1]} rotations in second object."
         )
 
     quat_result = compose_quat(other, inv(quat))
@@ -458,23 +481,9 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = quat.T @ quat
+        K = xp.matrix_transpose(quat) @ quat  # TODO: Replace with .mT
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
-        if not lazy and xp.any(weights < 0):
-            raise ValueError("`weights` must be non-negative.")
-
-        # TODO: Missing full broadcasting support.
-        if weights.ndim != 1:
-            raise ValueError(
-                f"Expected `weights` to be 1 dimensional, got shape {weights.shape}."
-            )
-        n_rot = quat.shape[0] if quat.ndim > 1 else 1
-        if weights.shape[0] != n_rot:
-            raise ValueError(
-                "Expected `weights` to have number of values equal to number of "
-                f"rotations, got {weights.shape[0]} values and {n_rot} rotations."
-            )
         neg_weights = weights < 0
         if not lazy and xp.any(neg_weights):
             raise ValueError("`weights` must be non-negative.")
@@ -483,9 +492,15 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
             # non-branching. We return NaN instead
             weights = xp.where(neg_weights, xp.nan, weights)
 
+        if weights.shape != quat.shape[:-1]:
+            raise ValueError(
+                f"Expected `weights` to match rotation shape, got shape {weights.shape}"
+                f" for {quat.shape[:-1]} rotations."
+            )
+
         # Make sure we can transpose quat
         quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = (weights * quat.T) @ quat
+        K = xp.matrix_transpose(weights[..., None] * quat) @ quat
 
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
@@ -569,22 +584,18 @@ def reduce(
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
     mat = as_matrix(quat)
-    inverse = xp.asarray(inverse, device=xp_device(quat))
     # We do not have access to einsum. To avoid broadcasting issues, we add a singleton
     # dimension to the points array and remove it after the operation.
-    # TODO: We currently evaluate both branches of the where statement. For eager
-    # execution models, this may significantly slow down the function. We should check
-    # that compilers can optimize the where statement (e.g. in jax) and check if we can
-    # have an eager version that only evaluates the branch that is needed.
     points = points[..., None]
     if not broadcastable(mat.shape, points.shape):
         raise ValueError(
-            "Expected equal numbers of rotations and vectors "
-            ", or a single rotation, or a single vector, got "
-            f"{mat.shape[0]} rotations and {points.shape[0]} vectors."
+            f"Cannot broadcast {quat.shape[:-1]} rotations to {points.shape[:-1]} "
+            "vectors."
         )
-
-    return xp.where(inverse, mat.mT @ points, mat @ points)[..., 0]
+    if inverse:
+        # TODO: Replace with .mT once numpy 2.0 is the minimum supported version
+        return (xp.matrix_transpose(mat) @ points)[..., 0]
+    return (mat @ points)[..., 0]
 
 
 def setitem(
@@ -601,7 +612,6 @@ def align_vectors(
     dtype = xp_result_type(a, b, force_floating=True, xp=xp)
     a_original = xp.asarray(a, dtype=dtype)
     b_original = xp.asarray(b, dtype=dtype)
-    # TODO: This function does not support broadcasting yet.
     a = xpx.atleast_nd(a_original, ndim=2, xp=xp)
     b = xpx.atleast_nd(b_original, ndim=2, xp=xp)
     if a.shape[-1] != 3:
@@ -616,6 +626,11 @@ def align_vectors(
         raise ValueError(
             "Expected inputs `a` and `b` to have same shapes"
             f", got {a_original.shape} and {b_original.shape} respectively."
+        )
+    if a.ndim > 2 or b.ndim > 2:  # This function does not support broadcasting
+        raise ValueError(
+            "Expected inputs `a` and `b` to have shape (3,) or (N, 3), got "
+            f"{a_original.shape} and {b_original.shape} respectively."
         )
     N = a.shape[0]
 
@@ -926,55 +941,13 @@ def _elementary_basis_index(axis: str) -> int:
     raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
 
 
-def _format_angles(angles: Array, degrees: bool, num_axes: int) -> tuple[Array, bool]:
-    xp = array_namespace(angles)
-    if degrees:
-        angles = _deg2rad(angles)
-
-    is_single = False
-    # Prepare angles to have shape (num_rot, num_axes)
-    if num_axes == 1:
-        if angles.ndim == 0:
-            # (1, 1)
-            angles = xpx.atleast_nd(angles, ndim=2, xp=xp)
-            is_single = True
-        elif angles.ndim == 1:
-            # (N, 1)
-            angles = angles[:, None]
-        elif angles.ndim == 2 and angles.shape[-1] != 1:
-            raise ValueError(
-                f"Expected `angles` parameter to have shape (N, 1), got {angles.shape}."
-            )
-        elif angles.ndim > 2:
-            raise ValueError(
-                "Expected float, 1D array, or 2D array for parameter `angles` "
-                f"corresponding to `seq`, got shape {angles.shape}."
-            )
-    else:  # 2 or 3 axes
-        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-            raise ValueError(
-                "Expected `angles` to be at most 2-dimensional with width equal to "
-                f"number of axes specified, got {angles.shape} for shape"
-            )
-
-        if angles.ndim == 1:
-            # (1, num_axes)
-            angles = angles[None, :]
-            is_single = True
-
-    # By now angles should have shape (num_rot, num_axes)
-    # sanity check
-    if angles.ndim != 2 or angles.shape[-1] != num_axes:
-        raise ValueError(
-            "Expected angles to have shape (num_rotations, num_axes), got "
-            f"{angles.shape}."
-        )
-
-    return angles, is_single
-
-
 def _compute_davenport_from_quat(
-    quat: Array, n1: Array, n2: Array, n3: Array, extrinsic: bool
+    quat: Array,
+    n1: Array,
+    n2: Array,
+    n3: Array,
+    extrinsic: bool,
+    suppress_warnings: bool,
 ) -> Array:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -982,21 +955,20 @@ def _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
-    device = xp_device(quat)
     n1, n3 = (n1, n3) if extrinsic else (n3, n1)
 
     n_cross = xp.linalg.cross(n1, n2)
     lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
 
     # alternative set of angles compatible with as_euler implementation
-    mask = xp.asarray(lamb < 0, device=device)
-    n2 = xp.where(mask, -n2, n2)
+    mask = lamb < 0
+    n2 = xp.where(mask[..., None], -n2, n2)
     lamb = xp.where(mask, -lamb, lamb)
-    n_cross = xp.where(mask, -n_cross, n_cross)
+    n_cross = xp.where(mask[..., None], -n_cross, n_cross)
     correct_set = mask
 
     quat_lamb = xp.concat(
-        (xp.sin(lamb / 2) * n2, xpx.atleast_nd(xp.cos(lamb / 2), ndim=1, xp=xp))
+        (xp.sin(lamb / 2)[..., None] * n2, xp.cos(lamb / 2)[..., None]), axis=-1
     )
 
     q_trans = compose_quat(quat_lamb, quat)
@@ -1005,7 +977,7 @@ def _compute_davenport_from_quat(
     c = xp.linalg.vecdot(q_trans[..., :3], n2)
     d = xp.linalg.vecdot(q_trans[..., :3], n_cross)
 
-    angles = _get_angles(extrinsic, False, 1, lamb, a, b, c, d)
+    angles = _get_angles(extrinsic, False, 1, lamb, a, b, c, d, suppress_warnings)
     angles = xpx.at(angles)[..., 1].set(
         xp.where(correct_set, -angles[..., 1], angles[..., 1])
     )
@@ -1039,6 +1011,7 @@ def _get_angles(
     b: Array,
     c: Array,
     d: Array,
+    suppress_warnings: bool,
 ) -> Array:
     xp = array_namespace(a)
     device = xp_device(a)
@@ -1061,7 +1034,7 @@ def _get_angles(
     case1 = xp.abs(angles[..., 1]) <= eps
     case2 = xp.abs(angles[..., 1] - xp.pi) <= eps
     case0 = ~(case1 | case2)
-    if not is_lazy_array(case0) and xp.any(~case0):
+    if not suppress_warnings and not is_lazy_array(case0) and xp.any(~case0):
         warnings.warn(
             "Gimbal lock detected. Setting third angle to zero "
             "since it is not possible to uniquely determine "

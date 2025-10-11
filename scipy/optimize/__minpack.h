@@ -102,56 +102,59 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 	-- if no error, place result of Python code into multiarray object.
   */
 
-  PyArrayObject *sequence = NULL;
+  PyObject *sequence = NULL;
   PyObject *arglist = NULL;
   PyObject *arg1 = NULL;
   PyObject *result = NULL;
-  PyArrayObject *result_array = NULL;
+  PyObject *result_array = NULL;
   npy_intp fvec_sz = 0;
 
   /* Build sequence argument from inputs */
-  sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
-  if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
-
-  /* Build argument list */
-  if ((arg1 = PyTuple_New(1)) == NULL) {
-    Py_DECREF(sequence);
-    return NULL;
-  }
-  PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence);
-                /* arg1 now owns sequence reference */
-  if ((arglist = PySequence_Concat( arg1, args)) == NULL)
-    PYERR2(error_obj,"Internal error constructing argument list.");
-
-  Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
-  arg1 = NULL;
-
-  /* Call function object --- variable passed to routine.  Extra
-          arguments are in another passed variable.
-   */
-  if ((result = PyObject_CallObject(func, arglist))==NULL) {
-      goto fail;
+  sequence = PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
+  if (sequence == NULL) {
+      PyErr_Print();
+      PyErr_SetString(error_obj, "Internal failure to make an array of doubles out of first\n                 argument to function call.");
+      return NULL;
   }
 
-  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL)
-    PYERR2(error_obj,"Result from function call is not a proper array of floats.");
+  /* The array doesn't own the memory, so ensure it doesn't get cleaned up.*/
+  PyArray_CLEARFLAGS((PyArrayObject *)sequence, NPY_ARRAY_OWNDATA);
 
-  fvec_sz = PyArray_SIZE(result_array);
-  if(out_size != -1 && fvec_sz != out_size){
+  /* Build argument list, returning a tuple of size 1+n_args: (x, *args) */
+  arg1 = PyTuple_Pack(1, sequence);
+  Py_DECREF(sequence);
+  if (arg1 == NULL) {
+      return NULL;
+  }
+  arglist = PySequence_Concat(arg1, args);
+  Py_DECREF(arg1);
+  if (arglist == NULL) {
+      return NULL;
+  }
+
+  /* Call function object with variables and extra arguments. */
+  result = PyObject_CallObject(func, arglist);
+  Py_DECREF(arglist);
+  if (result == NULL) {
+      return NULL;
+  }
+
+  result_array = PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim);
+  Py_DECREF(result);
+  if (result_array == NULL) {
+      PyErr_Print();
+      PyErr_SetString(error_obj, "Result from function call is not a proper array of floats.");
+      return NULL;
+  }
+
+  fvec_sz = PyArray_SIZE((PyArrayObject *)result_array);
+  if (out_size != -1 && fvec_sz != out_size) {
       PyErr_SetString(PyExc_ValueError, "The array returned by a function changed size between calls");
       Py_DECREF(result_array);
-      goto fail;
+      return NULL;
   }
 
-  Py_DECREF(result);
-  Py_DECREF(arglist);
-  return (PyObject *)result_array;
-
- fail:
-  Py_XDECREF(arglist);
-  Py_XDECREF(result);
-  Py_XDECREF(arg1);
-  return NULL;
+  return result_array;
 }
 
 void CHKDER(const int,const int,double*,const double*,const double*,const int,double*,const double*,const int,double*);

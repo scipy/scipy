@@ -80,63 +80,56 @@ PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
     is returned.
     */
 
-    PyArrayObject *sequence = NULL;
+    PyObject *sequence = NULL;
     PyObject *tfloat = NULL;
     PyObject *firstargs = NULL;
     PyObject *arglist = NULL;
     PyObject *result = NULL;
-    PyArrayObject *result_array = NULL;
+    PyObject *result_array = NULL;
 
     /* Build sequence argument from inputs */
-    sequence = (PyArrayObject *) PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE,
-                                                           (char *) x);
+    sequence = PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *) x);
     if (sequence == NULL) {
-        goto fail;
+        return NULL;
     }
+
+    /* The array doesn't own the memory, so ensure it doesn't get cleaned up.*/
+    PyArray_CLEARFLAGS((PyArrayObject *)sequence, NPY_ARRAY_OWNDATA);
 
     tfloat = PyFloat_FromDouble(t);
     if (tfloat == NULL) {
-        goto fail;
+        Py_DECREF(sequence);
+        return NULL;
     }
 
     /* firstargs is a tuple that will hold the first two arguments. */
-    firstargs = PyTuple_New(2);
-    if (firstargs == NULL) {
-        goto fail;
-    }
-
     if (tfirst == 0) {
-        PyTuple_SET_ITEM(firstargs, 0, (PyObject *) sequence);
-        PyTuple_SET_ITEM(firstargs, 1, tfloat);
+        firstargs = PyTuple_Pack(2, sequence, tfloat);
     } else {
-        PyTuple_SET_ITEM(firstargs, 0, tfloat);
-        PyTuple_SET_ITEM(firstargs, 1, (PyObject *) sequence);
+        firstargs = PyTuple_Pack(2, tfloat, sequence);
     }
-    /* firstargs now owns the sequence and tfloat references. */
-    sequence = NULL;
-    tfloat = NULL;
+    Py_DECREF(sequence);
+    Py_DECREF(tfloat);
+    if (firstargs == NULL) {
+        return NULL;
+    }
 
     arglist = PySequence_Concat(firstargs, args);
+    Py_DECREF(firstargs);
     if (arglist == NULL) {
-        goto fail;
+        return NULL;
     }
 
     /* Call the Python function. */
     result = PyObject_CallObject(func, arglist);
+    Py_DECREF(arglist);
     if (result == NULL) {
-        goto fail;
+        return NULL;
     }
 
-    result_array = (PyArrayObject *)
-                   PyArray_ContiguousFromObject(result, NPY_DOUBLE, 0, 0);
-
-fail:
-    Py_XDECREF(sequence);
-    Py_XDECREF(tfloat);
-    Py_XDECREF(firstargs);
-    Py_XDECREF(arglist);
-    Py_XDECREF(result);
-    return (PyObject *) result_array;
+    result_array = PyArray_ContiguousFromObject(result, NPY_DOUBLE, 0, 0);
+    Py_DECREF(result);
+    return result_array;
 }
 
 

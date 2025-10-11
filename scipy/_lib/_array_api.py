@@ -480,6 +480,9 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     --------
     xp_result_type
     """
+    if not args:
+        return args
+
     args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]  # solely to prevent double conversion of iterable to array
 
@@ -682,6 +685,8 @@ def _make_capabilities_note(fun_name, capabilities):
         # that explains what is and isn't in-scope, but such a section
         # doesn't exist yet. Using :ref:`dev-arrayapi` as a placeholder.
         note = f"""
+        **Array API Standard Support**
+
         `{fun_name}` is not in-scope for support of Python Array API Standard compatible
         backends other than NumPy.
 
@@ -691,6 +696,8 @@ def _make_capabilities_note(fun_name, capabilities):
 
     # Note: deliberately not documenting array-api-strict
     note = f"""
+    **Array API Standard Support**
+
     `{fun_name}` has experimental support for Python Array API Standard compatible
     backends in addition to NumPy. Please consider testing these features
     by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
@@ -773,7 +780,7 @@ def xp_capabilities(
         note = _make_capabilities_note(f.__name__, sphinx_capabilities)
         doc = FunctionDoc(f)
         doc['Notes'].append(note)
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         try:
             f.__doc__ = doc
         except AttributeError:

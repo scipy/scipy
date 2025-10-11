@@ -14,7 +14,7 @@ import platform
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_,
-                           assert_array_less, assert_array_max_ulp, IS_PYPY)
+                           assert_array_less, assert_array_max_ulp)
 import pytest
 from pytest import raises as assert_raises
 
@@ -2496,6 +2496,20 @@ class TestLogser:
         #   1.000000005
         assert_allclose(m, 1.000000005)
 
+    def test_sf(self):
+        p = [[0.5], [1e-5], [1 - 1e-5]]
+        k = [1, 10, 100, 1000]
+        # Reference values from Wolfram Alpha, e.g.
+        # SurvivalFunction[LogSeriesDistribution[99999/100000], 1000]
+        # 0.35068668662799737584735036958139157462633608106500173019897861351038286634
+        ref = [[0.2786524795555183, 0.00011876901682721189,
+                1.1159788564768581e-32, 1.3437300083506688e-304],
+               [5.000008333375e-06, 9.090946969973778e-52, 0, 0],
+               [0.9131419722083134, 0.745601735620566,
+                0.5495169511115096, 0.3506866866279974]]
+        res = stats.logser.sf(k, p)
+        np.testing.assert_allclose(res, ref, atol=1e-300)
+
 
 class TestGumbel_r_l:
     @pytest.fixture(scope='function')
@@ -3940,7 +3954,7 @@ class TestStudentT:
         t_meth_ref = getattr(t_dist_ref, methname)
         norm_meth = getattr(norm_dist, methname)
         res = t_meth(x)
-        assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
+        assert_allclose(res[df_infmask], norm_meth(x[df_infmask]), rtol=5e-15)
         assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
 
     @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
@@ -4900,11 +4914,9 @@ class TestBeta:
         assert_equal(stats.beta.pdf(1, a, b), 5)
         assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
-    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
-        with pytest.warns(RuntimeWarning):
-            stats.beta.ppf(q, a, b)
+        stats.beta.ppf(q, a, b)
 
     @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
     @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
@@ -7957,6 +7969,30 @@ class TestTrapezoid:
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
+    def test_trapezoid_fit_convergence_gh23503(self):
+        # gh-23503 reported that trapezoid.fit would consistently converge to a
+        # triangular distribution unless starting values were provided. Check that this
+        # is resolved.
+
+        # Generate test data from a trapezoidal distribution
+        rng = np.random.default_rng(23842359234598263956)
+        true_args = 0.3, 0.7, -1, 2
+        true_dist = stats.trapezoid(*true_args)
+        x = true_dist.rvs(1000, random_state=rng)
+
+        # fit to data
+        fitted_args = stats.trapezoid.fit(x)
+
+        # Should not converge to triangular distribution (c=d=1)
+        fitted_c, fitted_d = fitted_args[:2]
+        assert not np.allclose(fitted_c, 1, atol=0.1)
+        assert not np.allclose(fitted_d, 1, atol=0.1)
+
+        # objective function is better than with true values of parameters
+        true_llf = stats.trapezoid.nnlf(true_args, x)
+        fitted_llf = stats.trapezoid.nnlf(fitted_args, x)
+        assert fitted_llf < true_llf
+
 
 class TestTriang:
     def test_edge_cases(self):
@@ -10223,6 +10259,29 @@ class TestTruncPareto:
         res = stats.truncpareto(b, c).pdf(x)
         ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
         assert_allclose(res, ref)
+
+    def test_pdf_negative(self):
+        # truncpareto is equivalent to more general powerlaw from gh-23648
+        # exponent of truncpareto is negative in this case
+        a, xmin, xmax = 4, 3, 5
+        x = np.linspace(xmin, xmax)
+
+        # compute reference using PDF from gh-23648
+        C = a / (xmax ** a - xmin ** a)
+        ref = C * x ** (a - 1)
+
+        # compute using `truncpareto` with negative exponent
+        b = -a
+        c = xmax / xmin
+        scale = xmin
+        loc = 0
+        X = stats.truncpareto(b, c, loc, scale)
+
+        assert_allclose(X.pdf(x), ref)
+        assert_allclose(X.logpdf(x), np.log(X.pdf(x)))
+        # indexing avoids RuntimeWarning with `np.log(0)`
+        assert_allclose(X.logcdf(x[1:]), np.log(X.cdf(x[1:])))
+        assert_allclose(X.logsf(x[:-1]), np.log(X.sf(x[:-1])))
 
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])

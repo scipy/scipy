@@ -75,8 +75,9 @@ def from_translation(translation):
     translation = np.asarray(translation, dtype=float)
 
     if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
-        raise ValueError("Expected `translation` to have shape (3,), or (N, 3), "
-                            f"got {translation.shape}.")
+        raise ValueError(
+            f"Expected `translation` to have shape (..., 3), got {translation.shape}."
+        )
 
     # If a single translation vector is given, convert it to a 2D 1 x 3 matrix
     single = False
@@ -200,7 +201,7 @@ def inv(double[:, :, :] matrix):
     # This einsum performs element-wise matrix multiplication
     t_inv = -np.einsum('ijk,ik->ij', r_inv, matrix[:, :3, 3])
     matrix = _create_transformation_matrix(t_inv, r_inv, False)
-    return matrix
+    return np.asarray(matrix)
 
 
 @cython.embedsignature(True)
@@ -313,7 +314,8 @@ def normalize_dual_quaternion(double[:, :] dual_quat):
 
 
 cdef _normalize_dual_quaternion(np.ndarray[double, ndim=2] real_part, np.ndarray[double, ndim=2] dual_part):
-    """Ensure that unit norm of the dual quaternion.
+    """Ensure that the dual quaternion has unit norm.
+
     The norm is a dual number and must be 1 + 0 * epsilon, which means that
     the real quaternion must have unit norm and the dual quaternion must be
     orthogonal to the real quaternion.

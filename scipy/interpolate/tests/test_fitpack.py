@@ -204,7 +204,7 @@ class TestSmokeTests:
         t2 = makepairs(tt[0], tt[1])
         v1 = bisplev(tt[0], tt[1], tck)
         v2 = f2(t2[0], t2[1])
-        v2.shape = len(tt[0]), len(tt[1])
+        v2 = v2.reshape(len(tt[0]), len(tt[1]))
 
         assert norm2(np.ravel(v1 - v2)) < 1e-2
 
