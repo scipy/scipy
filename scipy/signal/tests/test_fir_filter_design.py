@@ -548,7 +548,7 @@ class TestRemez:
         remez(21, bands, desired, weight=weight)
 
 
-@skip_xp_backends(cpu_only=True, reason="lstsq")
+@skip_xp_backends(cpu_only=True, reason="lstsq", exceptions=["cupy"])
 class TestFirls:
 
     def test_bad_args(self):
@@ -596,7 +596,7 @@ class TestFirls:
         assert_array_almost_equal(hodd, xp.zeros_like(hodd))
 
         # now check the frequency response
-        w, H = freqz(np.asarray(h), 1)
+        w, H = freqz(xp_copy_to_numpy(h), 1)
         w, H = xp.asarray(w), xp.asarray(H)
         f = w/2/xp.pi
         Hmag = xp.abs(H)
@@ -650,7 +650,8 @@ class TestFirls:
     def test_rank_deficient(self, xp):
         # solve() runs but warns (only sometimes, so here we don't use match)
         x = firls(21, xp.asarray([0, 0.1, 0.9, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(x, fs=2.)
+        w, h = freqz(xp_copy_to_numpy(x), fs=2.)
+        w, h = map(xp.asarray, (w, h))
         absh2 = xp.abs(h[:2])
         xp_assert_close(absh2, xp.ones_like(absh2), atol=1e-5)
         absh2 = xp.abs(h[-2:])
@@ -659,7 +660,8 @@ class TestFirls:
         # filters, but using shorter ones is faster computationally and
         # the idea is the same)
         x = firls(101, xp.asarray([0, 0.01, 0.99, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(x, fs=2.)
+        w, h = freqz(xp_copy_to_numpy(x), fs=2.)
+        w, h = map(xp.asarray, (w, h))
         mask = xp.asarray(w < 0.01)
         h = xp.asarray(h)
         assert xp.sum(xp.astype(mask, xp.int64)) > 3
