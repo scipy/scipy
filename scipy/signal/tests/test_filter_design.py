@@ -4366,7 +4366,6 @@ class TestIIRComb:
 
     # Verify that the filter's frequency response contains a
     # notch at the cutoff frequency
-    @skip_xp_backends(cpu_only=True, reason='XXX convert argrelextrema')
     @pytest.mark.parametrize('ftype', ('notch', 'peak'))
     def test_frequency_response(self, ftype, xp):
         # Create a notching or peaking comb filter at 1000 Hz
@@ -4376,7 +4375,7 @@ class TestIIRComb:
         freqs, response = freqz(b, a, 1000, fs=10000)
 
         # Find the notch using argrelextrema
-        comb_points = argrelextrema(abs(np.asarray(response)), np.less)[0]
+        comb_points = argrelextrema(abs(xp_copy_to_numpy(response)), np.less)[0]
         comb_points = xp.asarray(comb_points)
 
         # Verify that the first notch sits at 1000 Hz
