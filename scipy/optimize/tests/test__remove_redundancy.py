@@ -21,10 +21,6 @@ from scipy.optimize._remove_redundancy import _remove_redundancy_id
 from scipy.sparse import csc_array
 
 
-def setup_module():
-    np.random.seed(2017)
-
-
 def redundancy_removed(A, B):
     """Checks whether a matrix contains only independent rows of another"""
     for rowA in A:
@@ -38,10 +34,13 @@ def redundancy_removed(A, B):
 
 
 class RRCommonTests:
+    def setup_method(self):
+        self.rng = np.random.default_rng(2017)
+
     def test_no_redundancy(self):
         m, n = 10, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = self.rng.random((m, n))
+        b0 = self.rng.random(m)
         A1, b1, status, message = self.rr(A0, b0)
         assert_allclose(A0, A1)
         assert_allclose(b0, b1)
@@ -50,14 +49,14 @@ class RRCommonTests:
     def test_infeasible_zero_row(self):
         A = np.eye(3)
         A[1, :] = 0
-        b = np.random.rand(3)
+        b = self.rng.random(3)
         A1, b1, status, message = self.rr(A, b)
         assert_equal(status, 2)
 
     def test_remove_zero_row(self):
         A = np.eye(3)
         A[1, :] = 0
-        b = np.random.rand(3)
+        b = self.rng.random(3)
         b[1] = 0
         A1, b1, status, message = self.rr(A, b)
         assert_equal(status, 0)
@@ -66,32 +65,32 @@ class RRCommonTests:
 
     def test_infeasible_m_gt_n(self):
         m, n = 20, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = self.rng.random((m, n))
+        b0 = self.rng.random(m)
         A1, b1, status, message = self.rr(A0, b0)
         assert_equal(status, 2)
 
     def test_infeasible_m_eq_n(self):
         m, n = 10, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = self.rng.random((m, n))
+        b0 = self.rng.random(m)
         A0[-1, :] = 2 * A0[-2, :]
         A1, b1, status, message = self.rr(A0, b0)
         assert_equal(status, 2)
 
     def test_infeasible_m_lt_n(self):
         m, n = 9, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = self.rng.random((m, n))
+        b0 = self.rng.random(m)
         A0[-1, :] = np.arange(m - 1).dot(A0[:-1])
         A1, b1, status, message = self.rr(A0, b0)
         assert_equal(status, 2)
 
     def test_m_gt_n(self):
-        np.random.seed(2032)
+        rng = np.random.default_rng(2032)
         m, n = 20, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = rng.random((m, n))
+        b0 = rng.random(m)
         x = np.linalg.solve(A0[:n, :], b0[:n])
         b0[n:] = A0[n:, :].dot(x)
         A1, b1, status, message = self.rr(A0, b0)
@@ -111,8 +110,8 @@ class RRCommonTests:
 
     def test_m_lt_n_rank_deficient(self):
         m, n = 9, 10
-        A0 = np.random.rand(m, n)
-        b0 = np.random.rand(m)
+        A0 = self.rng.random((m, n))
+        b0 = self.rng.random(m)
         A0[-1, :] = np.arange(m - 1).dot(A0[:-1])
         b0[-1] = np.arange(m - 1).dot(b0[:-1])
         A1, b1, status, message = self.rr(A0, b0)
@@ -146,18 +145,18 @@ class RRCommonTests:
         A = np.eye(6)
         A[-2, -1] = 1
         A[-1, :] = 1
-        b = np.random.rand(A.shape[0])
+        b = self.rng.random(A.shape[0])
         b[-1] = np.sum(b[:-1])
         A1, b1, status, message = self.rr(A, b)
         assert_(redundancy_removed(A1, A))
         assert_equal(status, 0)
 
     def test_m_gt_n_sparse(self):
-        np.random.seed(2013)
+        rng = np.random.default_rng(2013)
         m, n = 20, 5
         p = 0.1
-        A = np.random.rand(m, n)
-        A[np.random.rand(m, n) > p] = 0
+        A = rng.random((m, n))
+        A[rng.random((m, n)) > p] = 0
         rank = np.linalg.matrix_rank(A)
         b = np.zeros(A.shape[0])
         A1, b1, status, message = self.rr(A, b)
@@ -166,11 +165,11 @@ class RRCommonTests:
         assert_equal(np.linalg.matrix_rank(A1), rank)
 
     def test_m_lt_n_sparse(self):
-        np.random.seed(2017)
+        rng = np.random.default_rng(2017)
         m, n = 20, 50
         p = 0.05
-        A = np.random.rand(m, n)
-        A[np.random.rand(m, n) > p] = 0
+        A = rng.random((m, n))
+        A[rng.random((m, n)) > p] = 0
         rank = np.linalg.matrix_rank(A)
         b = np.zeros(A.shape[0])
         A1, b1, status, message = self.rr(A, b)
@@ -179,11 +178,11 @@ class RRCommonTests:
         assert_equal(np.linalg.matrix_rank(A1), rank)
 
     def test_m_eq_n_sparse(self):
-        np.random.seed(2017)
+        rng = np.random.default_rng(2017)
         m, n = 100, 100
         p = 0.01
-        A = np.random.rand(m, n)
-        A[np.random.rand(m, n) > p] = 0
+        A = rng.random((m, n))
+        A[rng.random((m, n)) > p] = 0
         rank = np.linalg.matrix_rank(A)
         b = np.zeros(A.shape[0])
         A1, b1, status, message = self.rr(A, b)

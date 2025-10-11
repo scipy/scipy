@@ -8,7 +8,7 @@ __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'Rectangle', 'KDTree']
 
 
-def minkowski_distance_p(x, y, p=2):
+def minkowski_distance_p(x, y, p=2.0):
     """Compute the pth power of the L**p distance between two arrays.
 
     For efficiency, this function computes the L**p distance but does
@@ -60,7 +60,7 @@ def minkowski_distance_p(x, y, p=2):
         return np.sum(np.abs(y-x)**p, axis=-1)
 
 
-def minkowski_distance(x, y, p=2):
+def minkowski_distance(x, y, p=2.0):
     """Compute the L**p distance between two arrays.
 
     The last dimensions of `x` and `y` must be the same length.  Any
@@ -136,7 +136,7 @@ class Rectangle:
         greater = Rectangle(mid, self.maxes)
         return less, greater
 
-    def min_distance_point(self, x, p=2.):
+    def min_distance_point(self, x, p=2.0):
         """
         Return the minimum distance between input and points in the
         hyperrectangle.
@@ -154,7 +154,7 @@ class Rectangle:
             p
         )
 
-    def max_distance_point(self, x, p=2.):
+    def max_distance_point(self, x, p=2.0):
         """
         Return the maximum distance between input and points in the hyperrectangle.
 
@@ -168,7 +168,7 @@ class Rectangle:
         """
         return minkowski_distance(0, np.maximum(self.maxes-x, x-self.mins), p)
 
-    def min_distance_rectangle(self, other, p=2.):
+    def min_distance_rectangle(self, other, p=2.0):
         """
         Compute the minimum distance between points in the two hyperrectangles.
 
@@ -187,7 +187,7 @@ class Rectangle:
             p
         )
 
-    def max_distance_rectangle(self, other, p=2.):
+    def max_distance_rectangle(self, other, p=2.0):
         """
         Compute the maximum distance between points in the two hyperrectangles.
 
@@ -360,8 +360,8 @@ class KDTree(cKDTree):
         super().__init__(data, leafsize, compact_nodes, copy_data,
                          balanced_tree, boxsize)
 
-    def query(
-            self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1):
+    def query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf,
+              workers=1):
         r"""Query the kd-tree for nearest neighbors.
 
         Parameters
@@ -477,7 +477,7 @@ class KDTree(cKDTree):
             i = np.intp(i)
         return d, i
 
-    def query_ball_point(self, x, r, p=2., eps=0, workers=1,
+    def query_ball_point(self, x, r, p=2.0, eps=0.0, workers=1,
                          return_sorted=None, return_length=False):
         """Find all points within distance r of point(s) x.
 
@@ -554,7 +554,7 @@ class KDTree(cKDTree):
         return super().query_ball_point(
             x, r, p, eps, workers, return_sorted, return_length)
 
-    def query_ball_tree(self, other, r, p=2., eps=0):
+    def query_ball_tree(self, other, r, p=2.0, eps=0.0):
         """
         Find all pairs of points between `self` and `other` whose distance is
         at most r.
@@ -605,7 +605,7 @@ class KDTree(cKDTree):
         """
         return super().query_ball_tree(other, r, p, eps)
 
-    def query_pairs(self, r, p=2., eps=0, output_type='set'):
+    def query_pairs(self, r, p=2.0, eps=0.0, output_type='set'):
         """Find all pairs of points in `self` whose distance is at most r.
 
         Parameters
@@ -653,7 +653,7 @@ class KDTree(cKDTree):
         """
         return super().query_pairs(r, p, eps, output_type)
 
-    def count_neighbors(self, other, r, p=2., weights=None, cumulative=True):
+    def count_neighbors(self, other, r, p=2.0, weights=None, cumulative=True):
         """Count how many nearby pairs can be formed.
 
         Count the number of pairs ``(x1,x2)`` can be formed, with ``x1`` drawn
@@ -802,7 +802,7 @@ class KDTree(cKDTree):
         return super().count_neighbors(other, r, p, weights, cumulative)
 
     def sparse_distance_matrix(
-            self, other, max_distance, p=2., output_type='dok_matrix'):
+            self, other, max_distance, p=2.0, output_type='dok_matrix'):
         """Compute a sparse distance matrix.
 
         Computes a distance matrix between two KDTrees, leaving as zero
@@ -866,7 +866,7 @@ class KDTree(cKDTree):
             other, max_distance, p, output_type)
 
 
-def distance_matrix(x, y, p=2, threshold=1000000):
+def distance_matrix(x, y, p=2.0, threshold=1000000):
     """Compute the distance matrix.
 
     Returns the matrix of all pair-wise distances.

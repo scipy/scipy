@@ -1,3 +1,4 @@
+from types import GenericAlias
 import numpy as np
 
 
@@ -128,6 +129,9 @@ class OdeSolver:
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, fun, t0, y0, t_bound, vectorized,
                  support_complex=False):
         self.t_old = None
@@ -242,6 +246,10 @@ class DenseOutput:
     t_min, t_max : float
         Time range of the interpolation.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, t_old, t):
         self.t_old = t_old
         self.t = t

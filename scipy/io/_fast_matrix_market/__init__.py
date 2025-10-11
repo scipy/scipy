@@ -305,7 +305,7 @@ def mmread(source, *, spmatrix=True):
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------

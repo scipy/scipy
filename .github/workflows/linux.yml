@@ -65,13 +65,13 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.11'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin "click<8.3.0"
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.14-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson "click<8.3.0"
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         # Disable Meson master testing until upstream option handling is fixed, see scipy#22534
         # python -m pip install git+https://github.com/mesonbuild/meson.git
@@ -296,7 +296,7 @@ jobs:
       matrix:
         # Both use numpy 2.x-dev at build time; 3.11 job then downgrades to
         # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.11', '3.12']
+        python-version: ['3.11', '3.13']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -322,7 +322,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install cython pythran ninja meson-python pybind11 spin
+        python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
@@ -390,7 +390,7 @@ jobs:
         uname -a && \
         python3.11 -m venv test && \
         source test/bin/activate && \
-        python -m pip install spin meson ninja && \
+        python -m pip install spin 'click<8.3.0' meson ninja && \
         python -m pip install -r requirements/openblas.txt && \
         # Ensure that scipy-openblas is picked up by the numpy<1.26 build
         cat > \$HOME/.numpy-site.cfg <<EOL
@@ -485,7 +485,7 @@ jobs:
         pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
         pip install meson-python Cython pybind11 pythran ninja
         pip install -r requirements/openblas.txt
-        pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis
+        pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis "click<8.3.0"
 
     - name: Install pytest-run-parallel
       if: ${{ matrix.parallel == '1'}}

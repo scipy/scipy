@@ -541,7 +541,7 @@ class TestTrimming:
         assert_equal(trimx.count(), 48)
         assert_equal(trimx._mask, [1]*16 + [0]*34 + [1]*20 + [0]*14 + [1]*16)
         x._mask = nomask
-        x.shape = (10,10)
+        x = x.reshape((10,10))
         assert_equal(mstats.trimboth(x).count(), 60)
         assert_equal(mstats.trimtail(x).count(), 80)
 
@@ -983,7 +983,7 @@ class TestTheilslopes:
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
-        msg = "All `x` coordinates.*|Mean of empty slice.|invalid value encountered.*"
+        msg = "All `x` coordinates.*|Mean of empty slice|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))

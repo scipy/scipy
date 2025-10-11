@@ -2597,7 +2597,7 @@ void LMSTR(int(*fcn)(int* m, int* n, double* x, double* fvec, double* wa3, int* 
             if ((fabs(actred) <= epsmch) && (prered <= epsmch) && (0.5*ratio <= 1.0)) { *info = 6; }
             if (delta <= epsmch*xnorm) { *info = 7; }
             if (gnorm <= epsmch) { *info = 8; }
-            if (info != 0) { goto EXIT340; }
+            if (*info != 0) { goto EXIT340; }
 
             // End of the inner loop. Repeat if iteration unsuccessful.
         } while (ratio < 0.0001);

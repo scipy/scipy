@@ -87,7 +87,7 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
+    if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -1409,7 +1409,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
-        x0.shape = (1,)
+        x0 = x0.reshape((1,))
     if maxiter is None:
         maxiter = len(x0) * 200
 
