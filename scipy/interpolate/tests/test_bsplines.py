@@ -3418,7 +3418,7 @@ index 1afb1900f1..d817e51ad8 100644
         # regression test for https://github.com/scipy/scipy/issues/23542
         gen = generate_knots([0.,1.,2.,3.], [4.,5.,6.,7.], w=[0.,0.,0.,0.], s=1)
         with pytest.raises(ValueError, match="weights are zero"):
-            knots = list(gen)
+            list(gen)
 
 
 def disc_naive(t, k):
