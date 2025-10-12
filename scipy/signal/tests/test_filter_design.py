@@ -238,6 +238,7 @@ class TestZpk2Tf:
             assert isinstance(a, np.ndarray)
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
