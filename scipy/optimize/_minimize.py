@@ -814,6 +814,33 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     else:
         raise ValueError(f'Unknown solver {method}')
 
+    # cannot be a successful minimisation if the bounds are exceeded, or
+    # constraints aren't met
+    if bounds is not None:
+        # force to be new-style
+        b = standardize_bounds(bounds, res.x, 'trust-constr')
+        if np.any(res.x > b.ub) or np.any(res.x < b.lb):
+            res.success = False
+
+    if constraints is not None and len(constraints):
+        catol = 1e-6
+        if meth == 'cobyla':
+            catol = 2e-4
+            if 'catol' in options:
+                catol = options['catol']
+
+        x = np.squeeze(res.x)
+        # force to be new-style
+        cons = standardize_constraints(constraints, res.x, 'trust-constr')
+        pcons = [PreparedConstraint(con, x) for con in cons]
+        excesses = np.concatenate([pcon.violation(x) for
+                                   pcon in pcons])
+        if np.any(excesses > catol):
+            res.success = False
+
+    if np.any(np.isnan(res.x)) or np.isnan(res.fun):
+        res.success = False
+
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
         res.jac = _add_to_array(res.jac, i_fixed, np.nan)
