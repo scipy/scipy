@@ -927,8 +927,8 @@ class TestFindPeaksCwt:
 
         x = np.arange(500)
 
-        # Provide find_peaks_cwt with a minimum noise level of approx. 1e-4.
-        # This sinusoid will be picked up by the Ricker wavelet of width 1.
+        # Provide find_peaks_cwt with a noise level of ca. 1e-4.
+        # This "noise" will appear almost unchanged at cwt_scale=1.
         noise = np.sin(x*np.pi/2) * 1e-4
         
         # Synthesize a signal with two identical peaks
@@ -938,8 +938,43 @@ class TestFindPeaksCwt:
         # Find the two peaks and check that no "peak" is reported halfway
         # between them
         cwt_scales = np.geomspace(1, 20, 16)
-        peaks = find_peaks_cwt(signal, cwt_scales, min_snr=10, noise_perc=90)
+        peaks = find_peaks_cwt(signal, cwt_scales, min_snr=10, noise_perc=10)
 
         found_troughs = [x for x in peaks if (x >= 240) and (x <= 260)]
         assert found_troughs == []
+
+    def test_gh_23604(self):
+
+        # Test if the maximum CWT value along a ridge line is used as
+        # signal level when calculating SNR
+        
+        N = 500
+
+        # Generate Gaussian noise that has sigma = 0.01.
+        # We'll use noise_perc=10 and window_size=50 for peak finding.
+        # With these settings, the 10th percentile of generated noise
+        # will be between -0.018 and -0.008 with probability > 95%.
+        rng = np.random.default_rng(seed=50)
+        noise = np.asarray(rng.standard_normal((N,))) * 0.01
+
+        signal = _gen_gaussians([250], [30], N) + noise
+
+        # Choose CWT scales so that there will be a ridge line with maximum
+        # CWT coefficient of 5.1 at one row and less than 1.3 elsewhere
+        cwt_scales = np.hstack( (np.geomspace(1, 10, 8), [48.0],
+                                 np.geomspace(10, 1, 8)) )
+
+        peaks = find_peaks_cwt(signal, cwt_scales, min_snr=210, noise_perc=10,
+                               window_size=50)
+
+        # If the code picks the signal level correctly, then the peak
+        # will have SNR > 5.0/0.018 (ca. 278), and this test will pass.
+
+        # If the code picks some wrong element from the CWT result, then
+        # the peak won't have SNR larger than 1.3/0.008 (ca. 163), and
+        # this test will fail.
+
+        # There should be a peak with SNR > 210 somewhere near index 250
+        expected_peaks = [x for x in peaks if (x >= 247) and (x <= 253)]
+        assert expected_peaks != []
 
