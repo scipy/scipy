@@ -83,7 +83,8 @@ def test_closest_STFT_dual_window_exceptions():
 
 
 def test_macos15_intel_repeatability():
-    """Try to replicate problem of issue 23710 in a test only NumPy dependencies. """
+    """This test fails to replicate the problem of issue 23710 in a test with
+    only NumPy dependencies. """
     qd1 = np.array([
         0.0, 0.041067318521830716, 0.19526214587563503, 0.5384608080042774, 1.0,
         1.2060600302011566, 1.1380711874576983, 1.0379412550374412, 1.0,
@@ -118,6 +119,32 @@ def test_issue2370(win_name, m, hop, sym_win, scaled=True):
     xp_assert_equal(qd2, qd1)
 
     denominator2 = qd2.T.real @ qd2.real + qd2.T.imag @ qd2.imag  # always >= 0
+    xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
+
+    xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
+    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
+
+
+@pytest.mark.parametrize('sym_win', (False, True))
+@pytest.mark.parametrize('hop', (8, 9))
+@pytest.mark.parametrize('m', (16, 17))
+@pytest.mark.parametrize('win_name', ('hann', 'hamming'))
+def test_issue2370a(win_name, m, hop, sym_win, scaled=True):
+    """Analyze macos15-intel problems (issue 23710 / NumPy #29873).
+
+     Here the matrix multiplication is tested.
+     """
+    win = get_window(win_name, m, not sym_win)
+    d_win = np.ones_like(win)
+    d1, s1, qd1, wd1 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
+    d2, s2, qd2, wd2 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
+
+    # Identical function calls should produce identical results:
+    xp_assert_equal(qd2, qd1)
+    assert qd1 is not qd2  # ensure mutating qd1 is not the problem
+
+    denominator1 = qd1.T @ qd1
+    denominator2 = qd2.T @ qd2
     xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
 
     xp_assert_equal(d2, d1, err_msg=f"{s2-s1=}")
