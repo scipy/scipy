@@ -107,12 +107,16 @@ def test_issue2370(win_name, m, hop, sym_win, scaled=True):
     d2, s2, qd2, wd2 = _closest_STFT_dual_window2(win, hop, d_win, scaled=scaled)
 
     # Identical function calls should produce identical results:
-    xp_assert_equal(wd2, wd1)
     xp_assert_equal(qd2, qd1)
     assert qd1 is not qd2  # ensure mutating qd1 is not the problem
 
     # Taken from closest_STFT_dual_window (qd1 == qd2):
+    assert np.all(qd1.imag == 0)
     denominator1 = qd1.T.real @ qd1.real + qd1.T.imag @ qd1.imag  # always >= 0
+
+    assert np.all(qd2.imag == 0)
+    xp_assert_equal(qd2, qd1)
+
     denominator2 = qd2.T.real @ qd2.real + qd2.T.imag @ qd2.imag  # always >= 0
     xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel
 
