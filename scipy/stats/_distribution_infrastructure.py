@@ -2014,7 +2014,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     ## Input validation
 
-    def _validate_order_kind(self, order, kind, kinds):
+    def _validate_order(self, order, fname='moment', min_order=0):
         # Yet another integer validating function. Unlike others in SciPy, it
         # Is quite flexible about what is allowed as an integer, and it
         # raises a distribution-specific error message to facilitate
@@ -2023,8 +2023,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             return order
 
         order = np.asarray(order, dtype=self._dtype)[()]
-        message = (f"Argument `order` of `{self.__class__.__name__}.moment` "
-                   "must be a finite, positive integer.")
+        message = (f"Argument `order` of `{self.__class__.__name__}.{fname}` "
+                   f"must be a finite integer greater than or equal to {min_order}.")
         try:
             order_int = round(order.item())
             # If this fails for any reason (e.g. it's an array, it's infinite)
@@ -2032,15 +2032,18 @@ class UnivariateDistribution(_ProbabilityDistribution):
         except Exception as e:
             raise ValueError(message) from e
 
-        if order_int <0 or order_int != order:
-            raise ValueError(message)
-
-        message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
-                   f"must be one of {set(kinds)}.")
-        if kind.lower() not in kinds:
+        if order_int < min_order or order_int != order:
             raise ValueError(message)
 
         return order
+
+    def _validate_kind(self, kind, kinds):
+        message = (f"Argument `kind` of `{self.__class__.__name__}.moment` "
+                   f"must be one of {set(kinds)}.")
+        kind = kind.lower()
+        if kind not in kinds:
+            raise ValueError(message)
+        return kind
 
     def _preserve_type(self, x):
         x = np.asarray(x)
@@ -3126,7 +3129,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @cached_property
     def _lmoment_methods(self):
-        return {'cache', 'formula', 'normalize', 'general', 'definition'}
+        return {'cache', 'formula', 'normalize',
+                'general', 'definition', 'quadrature_icdf'}
 
     @property
     def _zero(self):
@@ -3152,7 +3156,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
-        order = self._validate_order_kind(order, kind, kinds)
+        order = self._validate_order(order)
+        kind = self._validate_kind(kind, kinds)
         moment_kind = kinds[kind]
         return moment_kind(order, method=method)
 
@@ -3391,6 +3396,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @_set_invalid_nan_property
     def lmoment(self, order=1, *, standardized=False, method=None):
+        order = self._validate_order(order, fname='lmoment', min_order=1)
         if standardized:
             return self._lmoment_ratio(order, method=method)
         else:
@@ -3401,27 +3407,34 @@ class UnivariateDistribution(_ProbabilityDistribution):
         return self._lmoment_dispatch(order, methods=methods, **self._parameters)
 
     def _lmoment_dispatch(self, order, *, methods, **params):
-        moment = None
+        lmoment = None
 
         if 'cache' in methods:
-            moment = self._lmoment_cache.get(order, None)
+            lmoment = self._lmoment_cache.get(order, None)
 
-        if moment is None and 'formula' in methods:
-            moment = self._lmoment_formula(order, **params)
+        if lmoment is None and 'formula' in methods:
+            lmoment = self._lmoment_formula(order, **params)
 
-        if moment is None and 'general' in methods:
-            moment = self._lmoment_general(order, **params)
+        if lmoment is None and 'general' in methods:
+            lmoment = self._lmoment_general(order, **params)
 
-        if moment is None and 'normalize' in methods:
-            moment = self._lmoment_normalize(order, **params)
+        if lmoment is None and 'normalize' in methods:
+            lmoment = self._lmoment_normalize(order, **params)
 
-        if moment is None and 'definition' in methods:
-            moment = self._lmoment_from_definition(order, **params)
+        if lmoment is None and 'quadrature_icdf' in methods and (
+                self._overrides('_icdf_formula') or self._overrides('_iccdf_formula')):
+            lmoment = self._lmoment_integrate_icdf(order, **params)
 
-        if moment is not None and self.cache_policy != _NO_CACHE:
-            self._lmoment_cache[order] = moment
+        if lmoment is None and 'definition' in methods:
+            lmoment = self._lmoment_from_definition(order, **params)
 
-        return moment
+        if lmoment is None and 'quadrature_icdf' in methods:
+            lmoment = self._lmoment_integrate_icdf(order, **params)
+
+        if lmoment is not None and self.cache_policy != _NO_CACHE:
+            self._lmoment_cache[order] = lmoment
+
+        return lmoment
 
     def _lmoment_formula(self, order, **params):
         return None
@@ -3443,29 +3456,36 @@ class UnivariateDistribution(_ProbabilityDistribution):
         bc = special.binom(order-1, k)
         return np.sum((-1)**k * bc * E) / order
 
+    def _lmoment_integrate_icdf(self, order, **params):
+        def integrand(p, **params):
+            x = self._icdf_dispatch(p, **params)
+            P = special.eval_sh_legendre(order - 1, p)
+            return x * P
+        return self._quadrature(integrand, limits=(0., 1.), params=params)
+
     def _lmoment_ratio(self, order, *, method):
         methods = self._lmoment_methods if method is None else {method}
         return self._lmoment_ratio_dispatch(order, methods=methods, **self._parameters)
 
     def _lmoment_ratio_dispatch(self, order, *, methods, **params):
-        moment = None
+        lmoment = None
 
         if 'cache' in methods:
-            moment = self._lmoment_ratio_cache.get(order, None)
+            lmoment = self._lmoment_ratio_cache.get(order, None)
 
-        if moment is None and 'formula' in methods:
-            moment = self._lmoment_ratio_formula(order, **params)
+        if lmoment is None and 'formula' in methods:
+            lmoment = self._lmoment_ratio_formula(order, **params)
 
-        if moment is None and 'general' in methods:
-            moment = self._lmoment_ratio_general(order, **params)
+        if lmoment is None and 'general' in methods:
+            lmoment = self._lmoment_ratio_general(order, **params)
 
-        if moment is None and 'normalize' in methods:
-            moment = self._lmoment_ratio_normalize(order, **params)
+        if lmoment is None and 'normalize' in methods:
+            lmoment = self._lmoment_ratio_normalize(order, **params)
 
-        if moment is not None and self.cache_policy != _NO_CACHE:
-            self._lmoment_ratio_cache[order] = moment
+        if lmoment is not None and self.cache_policy != _NO_CACHE:
+            self._lmoment_ratio_cache[order] = lmoment
 
-        return moment
+        return lmoment
 
     def _lmoment_ratio_formula(self, order, **params):
         return None
@@ -5386,7 +5406,8 @@ class Mixture(_ProbabilityDistribution):
         kinds = {'raw': self._moment_raw,
                  'central': self._moment_central,
                  'standardized': self._moment_standardized}
-        order = ContinuousDistribution._validate_order_kind(self, order, kind, kinds)
+        order = ContinuousDistribution._validate_order(self, order)
+        kind = ContinuousDistribution._validate_kind(self, kind, kinds)
         moment_kind = kinds[kind]
         return moment_kind(order)
 
