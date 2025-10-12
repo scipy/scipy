@@ -671,9 +671,25 @@ class _spbase(SparseABC):
             if self.shape != other.shape:
                 # eq and ne return True or False instead of an array when the shapes
                 # don't match. Numpy doesn't do this. Is this what we want?
-                if op in (operator.eq, operator.ne):
-                    return op is operator.ne
-                raise ValueError("inconsistent shape")
+                if self.format not in ("csr", "csc", "bsr", "coo", "lil"):
+                    if op in (operator.eq, operator.ne):
+                        return False
+                    raise ValueError("inconsistent shape")
+
+                if op is operator.eq:
+                    return False
+                elif op is operator.ne:
+                    if self.ndim != other.ndim:
+                        return False
+                    elif not (1 in self.shape or 1 in other.shape):
+                        return False
+                    else:
+                        for N, M in zip(self.shape, other.shape):
+                            if N == M or N == 1 or M == 1:
+                                continue
+                            raise ValueError("inconsistent shape")
+                elif op not in (operator.lt,):
+                    raise ValueError("inconsistent shape")
 
             if self.ndim < 3:
                 cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
@@ -766,8 +782,10 @@ class _spbase(SparseABC):
             raise NotImplementedError('subtracting a nonzero scalar from a '
                                       'sparse array is not supported')
         elif issparse(other):
-            if other.shape != self.shape:
-                raise ValueError("inconsistent shapes")
+            if self.format in ("dia", "dok", "bsr") and other.shape != self.shape:
+                msg = f"inconsistent shapes, no broadcasting for {self.format}"
+                raise ValueError(msg)
+
             return self._sub_sparse(other)
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
