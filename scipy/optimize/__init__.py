@@ -335,6 +335,14 @@ Benchmark problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
+User Errors
+-----------
+
+.. autosummary::
+   :toctree: generated/
+
+   AnalysisError - Error that can be raised in SLSQP to trigger backstepping.
+
 Legacy functions
 ================
 
@@ -429,7 +437,7 @@ from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
 from ._tnc import fmin_tnc
 from ._cobyla_py import fmin_cobyla
 from ._nonlin import *
-from ._slsqp_py import fmin_slsqp
+from ._slsqp_py import fmin_slsqp, AnalysisError
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
@@ -446,6 +454,7 @@ from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
 from ._direct_py import direct
 from ._milp import milp
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

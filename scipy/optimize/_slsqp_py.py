@@ -10,10 +10,11 @@ Functions
 
     approx_jacobian
     fmin_slsqp
+    AnalysisError
 
 """
 
-__all__ = ['approx_jacobian', 'fmin_slsqp']
+__all__ = ['approx_jacobian', 'fmin_slsqp', 'AnalysisError']
 
 import numpy as np
 from ._slsqplib import slsqp
@@ -285,6 +286,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     within a single constraint, then the returned list of multipliers will have
     a different length than the original new-style constraints.
 
+    Backstepping can be triggered by the user by raising an `AnalysisError`
+    during function or contraint evaluation. This can be useful in cases where
+    these processes contain iterative methods that fail to converge at a given
+    iteration or the objective or constraint functions cannot be evaluated.
+
     References
     ----------
     .. [1] Nocedal, J., and S J Wright, 2006, "Numerical Optimization", Springer,
@@ -470,7 +476,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "m": m,
         "meq": meq,
         "mode": 0,
-        "n": n
+        "n": n,
+        "fnc_failure": 0,
     }
 
     # Print the header if iprint >= 2
@@ -521,8 +528,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         slsqp(state_dict, fx, g, C, d, x, mult, xl, xu, buffer, indices)
 
         if state_dict['mode'] == 1:  # objective and constraint evaluation required
-            fx = sf.fun(x)
-            _eval_constraint(d, x, cons, m, meq)
+            prev_fx = fx
+            try:
+                fx = sf.fun(x)
+                _eval_constraint(d, x, cons, m, meq)
+                state_dict["fnc_failure"] = 0
+            except AnalysisError:
+                fx = prev_fx
+                state_dict["fnc_failure"] = 1
 
         if state_dict['mode'] == -1:  # gradient evaluation required
             g = sf.grad(x)
@@ -610,3 +623,32 @@ def _eval_con_normals(C: NDArray, x: NDArray, cons: dict, m: int, meq: int):
             row += temp.shape[0]
 
     return
+
+
+class AnalysisError(Exception):
+    """
+    User raisable exception that will cause :ref:`SLSQP <optimize.minimize-slsqp>`
+    to backstep. This may allow an optimization to recover after entering an
+    invalid region of the design space (i.e. a after a convergence failure of an
+    iterative process or region where the objective or constraints cannot be
+    evaluated).
+
+    Notes
+    -----
+    For general restriction of the design space, constraints should be used.  
+
+    .. versionadded:: 1.16.2
+
+    Examples
+    --------
+    The following example shows how to raise an `AnalysisError` for use with
+    :ref:`SLSQP <optimize.minimize-slsqp>`.  
+
+    >>> import numpy as np
+    >>> from scipy.optimize import minimize, AnalysisError
+    >>> def fun(x):
+    ...     if x < -0.5:
+    ...         raise AnalysisError("Invalid Region")
+    ...     return x**2
+    >>> res = minimize(fun, 5, method="SLSQP")
+    """
