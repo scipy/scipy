@@ -11,12 +11,14 @@ from scipy import linalg
 from scipy._lib._array_api import array_namespace, xp_size
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
            'cont2discrete']
 
 
+@_dispatchable(['num', 'den'])
 def tf2ss(num, den):
     r"""Transfer function to state-space representation.
 
@@ -114,6 +116,7 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
+@_dispatchable(["A", "B", "C", "D"])
 def abcd_normalize(A=None, B=None, C=None, D=None):
     """Check state-space matrices compatibility and ensure they are 2d arrays.
 
@@ -214,6 +217,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     return A, B, C, D
 
 
+@_dispatchable(["A", "B", "C", "D"])
 def ss2tf(A, B, C, D, input=0):
     r"""State-space to transfer function.
 
@@ -303,6 +307,7 @@ def ss2tf(A, B, C, D, input=0):
     return num, den
 
 
+@_dispatchable(["z", "p", "k"])
 def zpk2ss(z, p, k):
     """Zero-pole-gain representation to state-space representation
 
@@ -323,6 +328,7 @@ def zpk2ss(z, p, k):
     return tf2ss(*zpk2tf(z, p, k))
 
 
+@_dispatchable(["A", "B", "C", "D"])
 def ss2zpk(A, B, C, D, input=0):
     """State-space representation to zero-pole-gain representation.
 
@@ -353,6 +359,11 @@ def ss2zpk(A, B, C, D, input=0):
     return tf2zpk(*ss2tf(A, B, C, D, input=input))
 
 
+def cont2discrete_signature(system, dt, method=None, alpha=None):
+    return system if isinstance(system, tuple) else ()
+
+
+@_dispatchable(cont2discrete_signature)
 def cont2discrete(system, dt, method="zoh", alpha=None):
     """
     Transform a continuous to a discrete state-space system.

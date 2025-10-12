@@ -13,6 +13,7 @@ from ._peak_finding_utils import (
     _peak_prominences,
     _peak_widths
 )
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
@@ -80,6 +81,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     return results
 
 
+@_dispatchable(['data'])
 def argrelmin(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative minima of `data`.
@@ -138,6 +140,7 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
     return argrelextrema(data, np.less, axis, order, mode)
 
 
+@_dispatchable(['data'])
 def argrelmax(data, axis=0, order=1, mode='clip'):
     """
     Calculate the relative maxima of `data`.
@@ -195,6 +198,7 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
     return argrelextrema(data, np.greater, axis, order, mode)
 
 
+@_dispatchable(['data'])
 def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     Calculate the relative extrema of `data`.
@@ -320,6 +324,7 @@ def _arg_wlen_as_expected(value):
     return value
 
 
+@_dispatchable(['x', 'peaks'])
 def peak_prominences(x, peaks, wlen=None):
     """
     Calculate the prominence of each peak in a signal.
@@ -464,6 +469,7 @@ def peak_prominences(x, peaks, wlen=None):
     return _peak_prominences(x, peaks, wlen)
 
 
+@_dispatchable(['x', 'peaks'])
 def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     """
     Calculate the width of each peak in a signal.
@@ -726,6 +732,7 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
+@_dispatchable(['x', 'height', 'threshold', 'prominence', 'width', 'plateau_size'])
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5,
                plateau_size=None):
@@ -1198,6 +1205,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
     return list(filter(filt_func, ridge_lines))
 
 
+@_dispatchable(['vector', 'widths', 'max_distances'])
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
                    gap_thresh=None, min_length=None,
                    min_snr=1, noise_perc=10, window_size=None):

@@ -303,11 +303,25 @@ use the classes to create a reusable function instead.
 
 # mypy: ignore-errors
 
-from ._support_alternative_backends import *
-from . import _support_alternative_backends
-__all__ = _support_alternative_backends.__all__
-del _support_alternative_backends, _signal_api, _delegators  # noqa: F821
+from . import _sigtools, windows         # noqa: F401
+from ._waveforms import *        # noqa: F403
+from ._max_len_seq import max_len_seq       # noqa: F401
+from ._upfirdn import upfirdn         # noqa: F401
 
+from ._spline import sepfir2d          # noqa: F401
+
+from ._spline_filters import *         # noqa: F403
+from ._filter_design import *         # noqa: F403
+from ._fir_filter_design import *         # noqa: F403
+from ._ltisys import *         # noqa: F403
+from ._lti_conversion import *         # noqa: F403
+from ._signaltools import *         # noqa: F403
+from ._savitzky_golay import savgol_coeffs, savgol_filter  # noqa: F401
+from ._spectral_py import *         # noqa: F403
+from ._short_time_fft import *         # noqa: F403
+from ._peak_finding import *         # noqa: F403
+from ._czt import *         # noqa: F403
+from .windows import get_window  # keep this one in signal namespace  # noqa: F401
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

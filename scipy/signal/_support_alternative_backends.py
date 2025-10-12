@@ -1,77 +1,65 @@
-import functools
-from scipy._lib._array_api import (
-    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
-)
 
-from ._signal_api import *   # noqa: F403
-from . import _signal_api
-from . import _delegators
-__all__ = _signal_api.__all__
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 
-MODULE_NAME = 'signal'
-
-# jax.scipy.signal has only partial coverage of scipy.signal, so we keep the list
-# of functions we can delegate to JAX
-# https://jax.readthedocs.io/en/latest/jax.scipy.html
-JAX_SIGNAL_FUNCS = [
-    'fftconvolve', 'convolve', 'convolve2d', 'correlate', 'correlate2d',
-    'csd', 'detrend', 'istft', 'welch'
-]
-
-# some cupyx.scipy.signal functions are incompatible with their scipy counterparts
-CUPY_BLACKLIST = [
-    'lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap', 'envelope', 'remez'
-]
-
-# freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
-CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
+class JaxBackend:
+    name = "jax"
+    # A class, just for convenience (may need to change)
+    primary_types = ["~jax:Array"]  # allow subclasses otherwise need _jax.ArrayImpl?
+    secondary_types = []
+    requires_opt_in = False
+    # Patched below while decorating we add the function
+    # (unless it is blocklisted)
+    functions = {}
 
 
-def delegate_xp(delegator, module_name):
-    def inner(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwds):
-            try:
-                xp = delegator(*args, **kwds)
-            except TypeError:
-                # object arrays
-                import numpy as np
-                xp = np
+class CupyBackend:
+    name = "cupy"
+    # A class, just for convenience (may need to change)
+    primary_types = ["cupy:ndarray"]
+    secondary_types = []
+    requires_opt_in = False
+    # Patched below while decorating we add the function
+    # (unless it is blocklisted)
+    RENAMES = {'freqz_sos': 'sosfreqz'}
+    functions = {}
 
-            # try delegating to a cupyx/jax namesake
-            if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
-                func_name = CUPY_RENAMES.get(func.__name__, func.__name__)
+if SCIPY_ARRAY_API:
+    from scipy._lib.spatch.backend_system import BackendSystem
 
-                # https://github.com/cupy/cupy/issues/8336
-                import importlib
-                cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
-                cupyx_func = getattr(cupyx_module, func_name)
-                kwds.pop('xp', None)
-                return cupyx_func(*args, **kwds)
-            elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
-                spx = scipy_namespace_for(xp)
-                jax_module = getattr(spx, module_name)
-                jax_func = getattr(jax_module, func.__name__)
-                kwds.pop('xp', None)
-                return jax_func(*args, **kwds)
-            else:
-                # the original function
-                return func(*args, **kwds)
-        return wrapper
-    return inner
+    _bs = BackendSystem(
+        None,  # don't load entry-points for now (no 3rd party backends)
+        "_SCIPY_INTERNAL_BACKENDS",  # spatch env-var prefix
+        default_primary_types=["numpy:ndarray"],
+        backends=[JaxBackend],
+    )
 
+    def _dispatchable(*args, cupy=True, jax=False, **kwargs):
+        # Cupy supports most (but some are incompatible) while JAX only
+        # supports a select few.  As these are builtin, we build the list
+        # of supported functions on the fly here (normally hardcoded).
+        def decorator(func):
+            name = func.__qualname__
+            if cupy:
+                cupy_name = CupyBackend.RENAMES.get(name, name)
+                CupyBackend.functions[name] = {
+                    "function": f"cupyx.signal:{name}"
+                }
+            if jax:
+                JaxBackend.functions[name] = {
+                    "function": f"jax.scipy.signal:{cupy_name}"
+                }
 
+            # Use the normal spatch decoration now, but change module
+            # to scipy.signal (to have a nicer name for mapping).
+            return _bs.dispatchable(
+                *args, module="scipy.signal", **kwargs)(func)
 
-# ### decorate ###
-for obj_name in _signal_api.__all__:
-    bare_obj = getattr(_signal_api, obj_name)
-    delegator = getattr(_delegators, obj_name + "_signature", None)
+        return decorator
 
-    if SCIPY_ARRAY_API and delegator is not None:
-        f = delegate_xp(delegator, MODULE_NAME)(bare_obj)
-    else:
-        f = bare_obj
+else:
+    def _do_nothing(func):
+        return func
 
-    # add the decorated function to the namespace, to be imported in __init__.py
-    vars()[obj_name] = f
+    def _dispatchable(*args, **kwargs):
+        return _do_nothing
