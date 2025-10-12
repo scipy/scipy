@@ -1715,7 +1715,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         self._moment_central_cache = {}
         self._moment_standardized_cache = {}
         self._lmoment_cache = {}
-        self._lmoment_ratio_cache = {}
         self._support_cache = None
         self._method_cache = {}
         self._constant_cache = None
@@ -3129,8 +3128,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @cached_property
     def _lmoment_methods(self):
-        return {'cache', 'formula', 'normalize',
-                'general', 'definition', 'quadrature_icdf'}
+        return {'cache', 'formula', 'general', 'definition', 'quadrature_icdf'}
 
     @property
     def _zero(self):
@@ -3397,14 +3395,19 @@ class UnivariateDistribution(_ProbabilityDistribution):
     @_set_invalid_nan_property
     def lmoment(self, order=1, *, standardized=False, method=None):
         order = self._validate_order(order, fname='lmoment', min_order=1)
-        if standardized:
-            return self._lmoment_ratio(order, method=method)
-        else:
-            return self._lmoment(order, method=method)
+        return self._lmoment(order, standardized=standardized, method=method)
 
-    def _lmoment(self, order, *, method):
+    def _lmoment(self, order, *, standardized, method):
         methods = self._lmoment_methods if method is None else {method}
-        return self._lmoment_dispatch(order, methods=methods, **self._parameters)
+
+        lmoment = self._lmoment_dispatch(order, methods=methods, **self._parameters)
+
+        if standardized:
+            # todo: add general result: if `order==2` and `standardized`, return unity.
+            lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
+            lmoment = lmoment / lscale
+
+        return lmoment
 
     def _lmoment_dispatch(self, order, *, methods, **params):
         lmoment = None
@@ -3417,9 +3420,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
         if lmoment is None and 'general' in methods:
             lmoment = self._lmoment_general(order, **params)
-
-        if lmoment is None and 'normalize' in methods:
-            lmoment = self._lmoment_normalize(order, **params)
 
         if lmoment is None and 'quadrature_icdf' in methods and (
                 self._overrides('_icdf_formula') or self._overrides('_iccdf_formula')):
@@ -3442,14 +3442,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _lmoment_general(self, order, **params):
         return self.mean() if order == 1 else None
 
-    def _lmoment_normalize(self, order, **params):
-        methods = {'cache', 'formula', 'general'}
-        lmoment_ratio = self._lmoment_ratio_dispatch(order, **params, methods=methods)
-        if lmoment_ratio is None:
-            return None
-        lscale = self._lmoment_dispatch(2, methods=self._lmoment_methods, **params)
-        return lmoment_ratio * lscale
-
     def _lmoment_from_definition(self, order, **params):
         k = np.arange(order)
         E = order_statistic(self, r=order-k, n=order).mean()
@@ -3462,44 +3454,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
             P = special.eval_sh_legendre(order - 1, p)
             return x * P
         return self._quadrature(integrand, limits=(0., 1.), params=params)
-
-    def _lmoment_ratio(self, order, *, method):
-        methods = self._lmoment_methods if method is None else {method}
-        return self._lmoment_ratio_dispatch(order, methods=methods, **self._parameters)
-
-    def _lmoment_ratio_dispatch(self, order, *, methods, **params):
-        lmoment = None
-
-        if 'cache' in methods:
-            lmoment = self._lmoment_ratio_cache.get(order, None)
-
-        if lmoment is None and 'formula' in methods:
-            lmoment = self._lmoment_ratio_formula(order, **params)
-
-        if lmoment is None and 'general' in methods:
-            lmoment = self._lmoment_ratio_general(order, **params)
-
-        if lmoment is None and 'normalize' in methods:
-            lmoment = self._lmoment_ratio_normalize(order, **params)
-
-        if lmoment is not None and self.cache_policy != _NO_CACHE:
-            self._lmoment_ratio_cache[order] = lmoment
-
-        return lmoment
-
-    def _lmoment_ratio_formula(self, order, **params):
-        return None
-
-    def _lmoment_ratio_normalize(self, order, **params):
-        methods = {'cache', 'formula', 'general', 'definition'}
-        lmoment = self._lmoment_dispatch(order, **params, methods=methods)
-        if lmoment is None:
-            return None
-        lscale = self._lmoment_dispatch(2, methods=self._lmoment_methods, **params)
-        return lmoment / lscale
-
-    def _lmoment_ratio_general(self, order, **params):
-        return self._one if order == 2 else None
 
     ### Convenience
 
@@ -3806,14 +3760,9 @@ class DiscreteDistribution(UnivariateDistribution):
             "Two argument cdf functions are currently only supported for "
             "continuous distributions.")
 
-    def _lmoment(self, order, *, method):
+    def _lmoment(self, order, *, standardized, method):
         raise NotImplementedError(
             "L-moments are currently only available"
-            "for continuous distributions.")
-
-    def _lmoment_ratio(self, order, *, method):
-        raise NotImplementedError(
-            "L-moment ratios are currently only available"
             "for continuous distributions.")
 
     def _solve_bounded_discrete(self, func, p, params, comp):
