@@ -244,7 +244,7 @@ class TestZpk2Tf:
         z_np = xp_copy_to_numpy(z)
         # shouldn't need elements of pairs to be adjacent
         p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
-        p_np = xp_copy_to_numpy(p_np)
+        p_np = xp_copy_to_numpy(p)
         k = 23
 
         # np.poly should do the right thing, but be explicit about
@@ -267,7 +267,7 @@ class TestZpk2Tf:
         b, a = xp.asarray([1j, 1j]), xp.asarray([1.0, 2])
         b_np, a_np = map(xp_copy_to_numpy, (b, a))
         z_np, p_np, k_np = tf2zpk(b_np, a_np)
-        z, p, k = map(xp_copy_to_numpy, (z, p, k))
+        z, p, k = map(xp.asarray, (z_np, p_np, k_np))
         xp_assert_close(k, xp.asarray(1j), check_0d=False)
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
