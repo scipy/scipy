@@ -85,6 +85,30 @@ def test_closest_STFT_dual_window_exceptions():
 def test_macos15_intel_repeatability():
     """This test fails to replicate the problem of issue 23710 in a test with
     only NumPy dependencies. """
+    # win_name, m, hop, sym_win = 'hann', 17, 8, True
+    # win = get_window(win_name, m, not sym_win)
+    # d_win = np.ones_like(win)
+    # d0, s0, qd0, wd0 = _closest_STFT_dual_window2(win, hop, d_win, scaled=True)
+    qd1 = np.array([0.0, 0.041067318521830716, 0.19526214587563503, 0.5384608080042774,
+                    1.0, 1.2060600302011566, 1.1380711874576983, 1.0379412550374412,
+                    1.0, 1.0379412550374412, 1.1380711874576983, 1.2060600302011564,
+                    1.0, 0.5384608080042773, 0.19526214587563503, 0.04106731852183083,
+                    0.0])
+    # xp_assert_equal(qd0, qd1)
+
+    qd2 = qd1.copy()
+    xp_assert_equal(qd2, qd1)
+
+    denominator1 = qd1 @ qd1
+    denominator2 = qd2 @ qd2
+    xp_assert_equal(denominator2, denominator1)  # fails on macos15-intel (!?)
+
+def test_macos15_intel_repeatability1():
+    """Replicate the problem of issue 23710 in a test with only NumPy dependencies.
+
+    This version still calls `_closest_STFT_dual_window2` but does not use their return
+    values,
+    """
     win_name, m, hop, sym_win = 'hann', 17, 8, True
     win = get_window(win_name, m, not sym_win)
     d_win = np.ones_like(win)
