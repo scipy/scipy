@@ -914,11 +914,16 @@ def test_input_validation():
         Test(tol=-1)
 
     message = ("Argument `order` of `Test.moment` must be a "
-               "finite, positive integer.")
+               "finite integer greater than or equal to 0.")
     with pytest.raises(ValueError, match=message):
         Test().moment(-1)
     with pytest.raises(ValueError, match=message):
         Test().moment(np.inf)
+
+    message = ("Argument `order` of `Test.lmoment` must be a "
+               "finite integer greater than or equal to 1.")
+    with pytest.raises(ValueError, match=message):
+        Test().lmoment(0)
 
     message = "Argument `kind` of `Test.moment` must be one of..."
     with pytest.raises(ValueError, match=message):

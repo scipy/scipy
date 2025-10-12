@@ -4023,7 +4023,7 @@ def make_distribution(dist):
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
         ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
-        ``moment``, and ``sample``.
+        ``moment``, ``lmoment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
         the corresponding method of `ContinuousDistribution`.
@@ -4031,7 +4031,10 @@ def make_distribution(dist):
         all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
         may return ``None`` if a formula is not available for the arguments; in this
-        case, the infrastructure will fall back to a default implementation. The
+        case, the infrastructure will fall back to a default implementation.
+        The ``lmoment`` method must accept the ``order`` argument by position or
+        keyword and return the specified L-moment (not the L-moment ratio), but may
+        return ``None`` if a formula is not available for the arguments. The
         ``sample`` method must accept ``shape`` by position or keyword, but contrary
         to the public method of the same name, the argument it receives will be the
         *full* shape of the output array - that is, the shape passed to the public
@@ -4365,7 +4368,8 @@ def _make_distribution_custom(dist):
                'median', 'mode', 'logpdf', 'pdf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
-               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
+               'lmoment'}
 
     for method in methods:
         if hasattr(dist, method):
@@ -4873,6 +4877,13 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
         return self._moment_transform_center(
             order, raw_moments, loc, self._zero)
+
+    def _lmoment_dispatch(self, order, *, loc, scale, sign, methods, **params):
+        res = self._dist._lmoment_dispatch(order, methods=methods, **params)
+        if res is None:
+            return None
+        res = res * np.abs(scale) * np.sign(scale)**order
+        return res + loc if order == 1 else res
 
     def _sample_dispatch(self, full_shape, *,
                          rng, loc, scale, sign, method, **params):
