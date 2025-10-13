@@ -1,6 +1,5 @@
 #include "lsoda.h"
 #include <float.h>
-#include <stdio.h>
 
 // Forward declarations (these functions are implemented later in this file)
 static void ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, double* ewt);
@@ -944,6 +943,7 @@ stoda(
             if (S->h == S->hold) { break; }
             rh = S->h / S->hold;
             S->h = S->hold;
+            rh = fmax(rh, S->hmin / fabs(S->h));
             stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
             break;
         }
@@ -1092,7 +1092,8 @@ stoda(
                 S->nq = 1;
                 S->l = 2;
                 stoda_reset(S);  // 150
-                stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
+                stoda_get_predicted_values(S, yh);
+                pnorm = vmnorm(S->n, yh, ewt);
                 continue;  // 200
             }
 
@@ -1197,8 +1198,10 @@ stoda(
                         S->pdlast = 0.0;
                         S->nq = nqm2;
                         S->l = S->nq + 1;
+                        rh = fmax(rh, S->hmin / fabs(S->h));
                         stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
-                        continue;  // go to 200
+                        should_reset_rmax = 1;  // Enter 690
+                        break;
                     }
                 }
                 // else fall through to 488
@@ -1248,8 +1251,10 @@ stoda(
                         S->pdlast = 0.0;
                         S->nq = nqm1;
                         S->l = S->nq + 1;
+                        rh = fmax(rh, S->hmin / fabs(S->h));
                         stoda_adjust_step_size(S, &rh, yh, nyh, sm1);  // 170
-                        continue;  // go to 200
+                        should_reset_rmax = 1;  // Enter 690
+                        break;
                     }
                 }
             }
@@ -1290,7 +1295,6 @@ stoda(
             }
         }
 
-
         // Back to 540
         exsm = 1.0 / (double)S->l;
         rhsm = 1.0 / (1.2 * pow(dsm, exsm) + 0.0000012);
@@ -1304,7 +1308,6 @@ stoda(
         }
 
         // 550
-        // If meth = 1, limit rh according to the stability region also.
         if (S->meth == 1)
         {
             pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
@@ -1315,25 +1318,27 @@ stoda(
         }
 
         // 560
-        if (rhsm >= rhup) {
+        if (rhsm >= rhup)
+        {
             // 570
-            if (rhsm >= rhdn) {
+            if (rhsm >= rhdn)
+            {
                 newq = S->nq;
                 rh = rhsm;
             } else {
                 // 580
                 newq = S->nq - 1;
                 rh = rhdn;
-                if (S->kflag < 0 && rh > 1.0) {
-                    rh = 1.0;
-                }
+                if ((S->kflag < 0) && (rh > 1.0)) { rh = 1.0; }
             }
         } else {
-            if (rhup > rhdn) {
+            if (rhup > rhdn)
+            {
                 // 590
                 newq = S->l;
                 rh = rhup;
-                if (rh < 1.1) {
+                if (rh < 1.1)
+                {
                     // 610 -> go to 700 (no rmax reset)
                     S->ialth = 3;
                     should_reset_rmax = 0;
@@ -1344,59 +1349,55 @@ stoda(
                 for (int i = 0; i < S->n; i++) {
                     yh[i + newq * nyh] = acor[i] * r;
                 }
-                // 630 - update nq, l and reset coefficients
+                // 630
                 S->nq = newq;
                 S->l = S->nq + 1;
                 stoda_reset(S);
                 rh = fmax(rh, S->hmin / fabs(S->h));
                 stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
-                continue;
+                should_reset_rmax = 1;  // Enter 690
+                break;
             } else {
                 // 580
                 newq = S->nq - 1;
                 rh = rhdn;
-                if (S->kflag < 0 && rh > 1.0) {
-                    rh = 1.0;
-                }
+                if ((S->kflag < 0) && (rh > 1.0)) { rh = 1.0; }
             }
         }
 
-        // 620
-        if (S->meth == 1) {
-            double pdh = fmax(fabs(S->h) * S->pdlast, 0.000001);
-            if (rh * pdh * 1.00001 < sm1[newq - 1]) {
-                // Step restricted by stability - skip 10% test (go to 625)
-            } else if (S->kflag == 0 && rh < 1.1) {
-                // 622: go to 610 -> go to 700 (no rmax reset)
-                S->ialth = 3;
-                break;
-            }
-        } else {
-            // 622: meth == 2
-            if (S->kflag == 0 && rh < 1.1) {
-                // go to 610 -> go to 700 (no rmax reset)
-                S->ialth = 3;
-                break;
-            }
+        // 620: bypass 10% test only if Adams AND stability-restricted
+        int bypass = (S->meth == 1) && (rh * pdh * 1.00001 >= sm1[newq - 1]);
+
+        // 622: apply 10% test (unless bypassed)
+        if ((!bypass) && (S->kflag == 0) && (rh < 1.1))
+        {
+            // 610: improvement too small
+            S->ialth = 3;
+            should_reset_rmax = 0;
+            break;
         }
 
         // 625
-        if (S->kflag <= -2) { rh = fmin(rh, 0.2); }
+        if (S->kflag <= -2) rh = fmin(rh, 0.2);
 
-        // Apply changes and retry
+        // Order change if needed, reset before step size adjustment
         if (newq != S->nq) {
-            // 630: go to 150 and then 170
             S->nq = newq;
             S->l = S->nq + 1;
             stoda_reset(S);
         }
-        S->h = S->h * rh;
-        S->rc = S->rc * rh;
-        S->ialth = S->l;
+
+        // 170: adjust step size
+        rh = fmax(rh, S->hmin / fabs(S->h));
         stoda_adjust_step_size(S, &rh, yh, nyh, sm1);
+
+        // Success (iredo == 0 path): exit to 690
+        if (S->kflag == 0) { should_reset_rmax = 1; break; }
+
+        // Failure retry (iredo != 0 path): re-predict and continue
+        stoda_get_predicted_values(S, yh);
+        pnorm = vmnorm(S->n, yh, ewt);
         continue;
-
-
 
     }
 
@@ -1516,7 +1517,6 @@ ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, dou
 void lsoda_mark_error(int* istate, int* illin)
 {
     if (*illin == 5) { *istate = -8; return; }
-    printf("Some error occurred in LSODA, marking istate and illin\n");
     (*illin)++;
     *istate = -3;  // Set istate to indicate an error
     return;
@@ -1544,11 +1544,8 @@ void lsoda(
     // if istate .gt. 1 but the flag init shows that initialization has
     // not yet been done, an error return occurs.
     // if istate = 1 and tout = t, jump to block g and return immediately.
-    printf("HERE0\n");
     if (*istate < 1 || *istate > 3) { lsoda_mark_error(istate, &S->illin); return; } // istate illegal
-    printf("HERE1\n");
     if (*itask < 1 || *itask > 5) { lsoda_mark_error(istate, &S->illin); return; }  // itask illegal
-    printf("HERE2\n");
     if (*istate != 1 && S->init == 0) { lsoda_mark_error(istate, &S->illin); return; } // istate > 1 but LSODA not initialized
     // Fortran code has some tricky go to logic for istate handling hence despite the
     // code duplication the states are handled in separate blocks for, mostly, sanity.
@@ -1635,7 +1632,7 @@ void lsoda(
         len1s += lenwm;
         len1c = len1n;
         if (S->meth == 2) { len1c = len1s; }
-        len1 = int_min(len1n, len1s);
+        len1 = int_max(len1n, len1s);
         len2 = 3*S->n;
         lenrw = len1 + len2;
         lenrwn = len1n + len2;
@@ -1992,8 +1989,9 @@ void lsoda(
                 tcrit = rwork[0];
                 if ((S->tn - tcrit) * S->h > 0.0)  { lsoda_mark_error(istate, &S->illin); return; }
                 hmx = fabs(S->tn) + fabs(S->h);
-                int ihit = fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx;
+                ihit = fabs(S->tn - tcrit) <= 100.0 * S->uround * hmx;
                 if (ihit) {
+                    for (int i = 0; i < S->n; i++) { y[i] = rwork[i + S->lyh]; }
                     *t = tcrit;
                     *istate = 2;
                     goto exit;
@@ -2073,6 +2071,7 @@ void lsoda(
             *istate = -2;
             for (int j = 0; j < S->n; j++) { y[j] = rwork[j + S->lyh]; }
             *t = S->tn;
+            rwork[13] = tolsf;
             goto exit;
         }
         // 280
