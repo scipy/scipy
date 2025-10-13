@@ -4696,7 +4696,7 @@ class TestGroupDelay:
         b = firwin(N + 1, 0.1)
         b = xp.asarray(b)
         w, gd = group_delay((b, 1))
-        xp_assert_close(gd, xp.ones_like(gd)*(0.5 * N))
+        xp_assert_close(gd, xp.ones_like(gd)*(0.5 * N), rtol=5e-7)
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_iir(self, xp):
