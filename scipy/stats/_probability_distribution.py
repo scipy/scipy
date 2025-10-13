@@ -358,8 +358,9 @@ class _ProbabilityDistribution(ABC):
 
             \lambda_n(X) = \int_0^1 F^{-1}(p) \widetilde{P}_{n-1}(p) dp
 
-        The "standardized" L-moment, known as the L-moment ratio, is the L-moment
-        normalized by the L-moment of order 2, resulting in a scale invariant quantity:
+        For order :math:`n \geq 3`, the "standardized" L-moment, known as the L-moment
+        ratio, is the L-moment normalized by the L-moment of order 2, resulting in a
+        scale invariant quantity:
 
         .. math::
 

@@ -11,6 +11,7 @@ from numpy import inf
 from scipy._lib._array_api import xp_capabilities, xp_promote
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
+from scipy._lib import array_api_extra as xpx
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
@@ -3395,17 +3396,22 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @_set_invalid_nan_property
     def lmoment(self, order=1, *, standardized=False, method=None):
-        order = self._validate_order(order, fname='lmoment', min_order=1)
+        min_order = 1 if not standardized else 3
+        order = self._validate_order(order, fname='lmoment', min_order=min_order)
         return self._lmoment(order, standardized=standardized, method=method)
 
     def _lmoment(self, order, *, standardized, method):
         methods = self._lmoment_methods if method is None else {method}
 
         lmoment = self._lmoment_dispatch(order, methods=methods, **self._parameters)
+        if lmoment is None:
+            return None
 
-        if standardized:
+        if standardized and lmoment is not None:
             # todo: add general result: if `order==2` and `standardized`, return unity.
             lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
+            if lscale is None:
+                return None
             lmoment = lmoment / lscale
 
         return lmoment
@@ -3445,9 +3451,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     def _lmoment_from_order_statistics(self, order, **params):
         k = np.arange(order)
+        k = xpx.atleast_nd(k, ndim=self._ndim + 1).T
         E = order_statistic(self, r=order-k, n=order).mean()
         bc = special.binom(order-1, k)
-        return np.sum((-1)**k * bc * E) / order
+        return np.sum((-1)**k * bc * E, axis=0) / order
 
     def _lmoment_integrate_icdf(self, order, **params):
         def integrand(p, **params):
@@ -3763,7 +3770,7 @@ class DiscreteDistribution(UnivariateDistribution):
 
     def _lmoment(self, order, *, standardized, method):
         raise NotImplementedError(
-            "L-moments are currently only available"
+            "L-moments are currently available only "
             "for continuous distributions.")
 
     def _solve_bounded_discrete(self, func, p, params, comp):
@@ -4881,7 +4888,7 @@ class ShiftedScaledDistribution(TransformedDistribution):
 
     def _lmoment_dispatch(self, order, *, loc, scale, sign, methods, **params):
         res = self._dist._lmoment_dispatch(order, methods=methods, **params)
-        if res is None:
+        if res is None:  # if a specific method is requested but not available
             return None
         res = res * np.abs(scale) * np.sign(scale)**order
         return res + loc if order == 1 else res
@@ -5388,6 +5395,10 @@ class Mixture(_ProbabilityDistribution):
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
         return out[()]
+
+    def lmoment(self, order=1, *, standardized=False, method=None):
+        message = "L-moments are not currently available for mixture distributions."
+        raise NotImplementedError(message)
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order

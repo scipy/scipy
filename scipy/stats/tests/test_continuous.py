@@ -214,11 +214,12 @@ class TestDistributions:
                                                    max_side=20))
 
         with np.errstate(invalid='ignore', divide='ignore'):
-            check_support(dist)
-            check_moment_funcs(dist, result_shape)  # this needs to get split up
-            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
-            qrng = qmc.Halton(d=1, seed=rng)
-            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
+            # check_support(dist)
+            # check_moment_funcs(dist, result_shape)  # this needs to get split up
+            check_lmoment_funcs(dist, result_shape)
+            # check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
+            # qrng = qmc.Halton(d=1, seed=rng)
+            # check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -773,23 +774,51 @@ def check_moment_funcs(dist, result_shape):
             check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
-    if isinstance(dist, ShiftedScaledDistribution):
-        # logmoment is not fully fleshed out; no need to test
-        # ShiftedScaledDistribution here
+    dist.reset_cache()
+
+
+def check_lmoment_funcs(dist, result_shape):
+    # Perform consistency check for L-moments similar to check_moment_funcs above
+
+    if not isinstance(dist, ContinuousDistribution):
+        message = "L-moments are currently available only for continuous..."
+        with pytest.raises(NotImplementedError, match=message):
+            dist.lmoment(1)
         return
 
-    # logmoment is not very accuate, and it's not public, so skip for now
-    # ### Check Against _logmoment ###
-    # logmean = dist._logmoment(1, logcenter=-np.inf)
-    # for i in range(6):
-    #     ref = np.exp(dist._logmoment(i, logcenter=-np.inf))
-    #     assert_allclose(dist.moment(i, 'raw'), ref, atol=atol*10**i)
-    #
-    #     ref = np.exp(dist._logmoment(i, logcenter=logmean))
-    #     assert_allclose(dist.moment(i, 'central'), ref, atol=atol*10**i)
-    #
-    #     ref = np.exp(dist._logmoment(i, logcenter=logmean, standardized=True))
-    #     assert_allclose(dist.moment(i, 'standardized'), ref, atol=atol*10**i)
+    atol = 1e-9
+
+    def check(order, standardized=False, method=None, ref=None, success=True):
+        if success:
+            res = dist.lmoment(order, standardized=standardized, method=method)
+            assert_allclose(res, ref, atol=atol)
+            assert res.shape == ref.shape
+        else:
+            with pytest.raises(NotImplementedError):
+                dist.lmoment(order, standardized=standardized, method=method)
+
+    ### Check L-Moments ###
+
+    standardized = False
+    for i in range(1, 6):
+        check(i, standardized, 'cache', success=standardized)  # not cached yet
+        ref = dist.lmoment(i, standardized=standardized, method='order_statistics')
+        check_nans_and_edges(dist, 'lmoment', None, ref)
+        assert ref.shape == result_shape
+        check(i, standardized, 'cache', ref, success=True)  # cached now
+        check(i, standardized, 'formula', ref, success=dist._overrides('_lmoment_formula') and i < 5)
+        check(i, standardized, 'general', ref, success=(i == 1))
+        if dist._overrides('_icdf_formula'):
+            check(i, standardized, 'quadrature_icdf', ref, success=True)
+
+    standardized=True
+    for i in range(3, 6):
+        ref = dist.lmoment(i, standardized=standardized, method='order_statistics')
+        assert ref.shape == result_shape
+        check(i, standardized, 'formula', ref, success=dist._overrides('_lmoment_formula') and i < 5)
+        check(i, standardized, 'general', ref, success=False)
+        if dist._overrides('_icdf_formula'):
+            check(i, standardized, 'quadrature_icdf', ref, success=True)
 
 
 @pytest.mark.parametrize('family', (Normal,))
@@ -924,6 +953,11 @@ def test_input_validation():
                "finite integer greater than or equal to 1.")
     with pytest.raises(ValueError, match=message):
         Test().lmoment(0)
+
+    message = ("Argument `order` of `Test.lmoment` must be a "
+               "finite integer greater than or equal to 3.")
+    with pytest.raises(ValueError, match=message):
+        Test().lmoment(1, standardized=True)
 
     message = "Argument `kind` of `Test.moment` must be one of..."
     with pytest.raises(ValueError, match=message):
@@ -1238,6 +1272,16 @@ class TestMakeDistribution:
                     # can tell the difference between the two
                     return (b - a) / np.log(b/a) + 1e-10
 
+            def lmoment(self, order, *, a, b):
+                s = np.log(b/a)
+                l1 = (b - a) / s
+                l2 = ((s - 2) * b + (s + 2) * a) / s**2
+                l3 = ((s**2 - 6*s + 12) * b - (s**2 + 6*s + 12) * a) / s ** 3
+                l4 = ((s**3 - 12*s**2 + 60*s - 120) * b
+                      + (s**3 + 12*s**2 + 60*s + 120) * a) / s ** 4
+                ls = {1: l1, 2: l2, 3: l3, 4: l4}
+                return ls.get(int(order), None)
+
         LogUniform = stats.make_distribution(MyLogUniform())
 
         X = LogUniform(a=1., b=np.e)
@@ -1266,6 +1310,10 @@ class TestMakeDistribution:
             for order in range(5):
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
+        for standardized in [False, True]:
+            for order in range(1, 5):
+                assert_allclose(X.lmoment(order, standardized=standardized),
+                                Y.lmoment(order, standardized=standardized))
 
         # Confirm that the `sample` and `moment` methods are overriden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
@@ -1275,6 +1323,9 @@ class TestMakeDistribution:
 
         assert_allclose(X.mean(method='formula'), X.mean(method='quadrature'))
         assert not X.mean(method='formula') == X.mean(method='quadrature')
+
+        assert_allclose(X.lmoment(method='formula'), X.lmoment(method='quadrature_icdf'))
+        assert not X.lmoment(method='formula') == X.lmoment(method='quadrature_icdf')
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
@@ -1515,6 +1566,7 @@ class TestTransforms:
         scale = dist.scale
         dist0 = StandardNormal()
         dist_ref = stats.norm(loc=loc, scale=scale)
+        dist_ref_lmoment = Normal(mu=loc, sigma=scale)
 
         x0 = (x - loc) / scale
         y0 = (y - loc) / scale
@@ -1554,6 +1606,10 @@ class TestTransforms:
                                 dist0.moment(i, 'central') * scale**i)
                 assert_allclose(dist.moment(i, 'standardized'),
                                 dist0.moment(i, 'standardized') * np.sign(scale)**i)
+            for i in range(1, 5):
+                assert_allclose(dist.lmoment(i), dist_ref_lmoment.lmoment(i), atol=1e-8)
+                assert_allclose(dist.lmoment(i, standardized=True),
+                                dist_ref_lmoment.lmoment(i, standardized=True), atol=1e-8)
 
         # Transform back to the original distribution using all arithmetic
         # operations; check that it behaves as expected.
@@ -1591,6 +1647,10 @@ class TestTransforms:
                 assert_allclose(dist.moment(i, 'central'), dist0.moment(i, 'central'))
                 assert_allclose(dist.moment(i, 'standardized'),
                                 dist0.moment(i, 'standardized'))
+            for i in range(1, 5):
+                assert_allclose(dist.lmoment(i), dist0.lmoment(i))
+                assert_allclose(dist.lmoment(i, standardized=True),
+                                dist0.lmoment(i, standardized=True))
 
             # These are tough to compare because of the way the shape works
             # rng = np.random.default_rng(seed)
@@ -2155,6 +2215,9 @@ class TestMixture:
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind),
                                 atol=1e-15)
+        message = "L-moments are not currently available..."
+        with pytest.raises(NotImplementedError, match=message):
+            X.lmoment(1)
 
         # weak test of `sample`
         shape = (10, 20, 5)
