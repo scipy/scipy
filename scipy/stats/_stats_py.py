@@ -361,7 +361,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     a : array_like
         Input array, masked array or object that can be converted to an array.
     p : int or float
-        Exponent.
+        Exponent. Must be finite.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -437,6 +437,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
                          "float.")
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
+    elif math.isinf(p):
+        message = "Power mean only implemented for finite `p`"
+        raise NotImplementedError(message)
 
     xp = array_namespace(a, weights)
     a = xp.asarray(a, dtype=dtype)
