@@ -6,8 +6,7 @@ name: BLAS tests (Linux)
 # Jobs and their purpose:
 #
 #   - mkl:
-#         Tests MKL installed from PyPI (because easiest/fastest) in
-#           XXX: do we still want to isntall MKL from PyPI?
+#         Tests MKL installed from conda-forge in
 #         2 ways: both LP64 and ILP64 via pkg-config.
 #
 #    - scipy-openblas64:

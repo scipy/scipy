@@ -202,7 +202,7 @@ description = "Test SciPy (default settings)"
 pytest-fail-slow = "*"
 
 [feature.fail-slow.tasks.test-fail-slow]
-cmd = "spin test --no-build -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
+cmd = "spin test --no-build -v -m 'not slow' -- --durations=0 --durations-min=0.5 --fail-slow=1.0"
 cwd = "../.."
 depends-on = "build"
 description = "Test SciPy with `fail-slow=1.0`"
