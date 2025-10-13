@@ -323,6 +323,8 @@ from ._peak_finding import *         # noqa: F403
 from ._czt import *         # noqa: F403
 from .windows import get_window  # keep this one in signal namespace  # noqa: F401
 
+__all__ = [s for s in dir() if not s.startswith('_')]
+
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
