@@ -339,7 +339,8 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-@_dispatchable(['b', 'a', 'worN'])
+# NOTE(seberg): CuPy has freqz, but it is just a copy and that copy has a bug.
+@_dispatchable(['b', 'a', 'worN'], cupy=False)
 def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
           include_nyquist=False):
     """
