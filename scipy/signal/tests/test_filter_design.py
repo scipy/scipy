@@ -4684,7 +4684,7 @@ class TestIIRFilter:
             iirfilter(2, [0.6, 0.5])
 
 
-@skip_xp_backends(cpu_only=True, reason="np.convolve")
+@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="np.convolve")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestGroupDelay:
     def test_identity_filter(self, xp):
