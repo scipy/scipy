@@ -329,15 +329,14 @@ functions evaluated within a test, for the purpose of producing reference values
 inputs, round-trip calculations, etc. should instead use the NumPy backend. This helps
 ensure that any failures that occur on a backend actually relate to the function
 of interest, and avoids the need to skip backends due to lack of support for
-functions other than ``f`` when ``f`` is supported.
+functions other than ``f``.
 
 To help facillitate such backend isolation, there is a function ``_xp_copy_to_numpy``
 in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
 array, bypassing any device transfer guards, while preserving dtypes. It is essential
-that this function is only used in tests and in tests only for the purpose of isolating
-use of alternative backends to only the function being tested. Attempts to copy a
-device array to NumPy outside of tests should fail, because otherwise it can become
-opaque whether a function is working on GPU or not.
+that this function is only used in tests for functions other than the one being
+tested. Attempts to copy a device array to NumPy outside of tests should fail,
+because otherwise it can become opaque whether a function is working on GPU or not.
 
 When attempting to isolate use of alternative backends to a particular function, one
 must be mindful that PyTorch allows for setting a default dtype, and SciPy is tested
