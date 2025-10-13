@@ -4695,8 +4695,8 @@ class TestGroupDelay:
         # Let's design linear phase FIR and check that the group delay
         # is constant.
         N = 100
-        b = firwin(N + 1, xp.asarray(0.1))
-        b = xp.asarray(b)    # XXX until firwin PR has landed
+        b = firwin(N + 1, 0.1)
+        b = xp.asarray(b)
         w, gd = group_delay((b, 1))
         xp_assert_close(gd, xp.ones_like(gd)*(0.5 * N))
 
@@ -4704,7 +4704,8 @@ class TestGroupDelay:
     def test_iir(self, xp):
         # Let's design Butterworth filter and test the group delay at
         # some points against MATLAB answer.
-        b, a = butter(4, xp.asarray(0.1))
+        b, a = butter(4, 0.1)
+        b, a = map(xp.asarray, (b, a))
         w = xp.linspace(0, xp.pi, num=10, endpoint=False)
         w, gd = group_delay((b, a), w=w)
         matlab_gd = xp.asarray([8.249313898506037, 11.958947880907104,
@@ -4744,7 +4745,8 @@ class TestGroupDelay:
     def test_fs_param(self, xp):
         # Let's design Butterworth filter and test the group delay at
         # some points against the normalized frequency answer.
-        b, a = butter(4, xp.asarray(4800), fs=96000)
+        b, a = butter(4, 4800, fs=96000)
+        b, a = map(xp.asarray, (b, a))
         w = xp.linspace(0, 96000/2, num=10, endpoint=False)
         w, gd = group_delay((b, a), w=w, fs=96000)
         norm_gd = xp.asarray([8.249313898506037, 11.958947880907104,
