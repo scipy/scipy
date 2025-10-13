@@ -173,9 +173,18 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
         return x.get()
     if is_torch(xp):
         return x.cpu().numpy()
-    # Fall back to np.asarray. This will work for jax.numpy and
-    # dask.array. If new backends are added, they may require
-    # explicit handling.
+    if is_array_api_strict(xp):
+        # array api strict supports multiple devices, so need to
+        # ensure x is on the cpu before copying to NumPy.
+        return np.asarray(
+            xp.asarray(x, device=xp.Device("CPU_DEVICE")), copy=True
+        )
+    # Fall back to np.asarray. This works for dask.array. It
+    # currently works for jax.numpy, but hopefully JAX will make
+    # the transfer guard workable enough for use in scipy tests, in
+    # which case, JAX will have to be handled explicitly.
+    # If new backends are added, they may require explicit handling as
+    # well.
     return np.asarray(x, copy=True)
 
 
