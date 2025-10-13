@@ -1330,7 +1330,7 @@ class TestMakeDistribution:
 
         assert_allclose(X.lmoment(method='formula'),
                         X.lmoment(method='quadrature_icdf'))
-        assert not X.lmoment(method='formula') != X.lmoment(method='quadrature_icdf')
+        assert not X.lmoment(method='formula') == X.lmoment(method='quadrature_icdf')
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
