@@ -40,13 +40,13 @@ if SCIPY_ARRAY_API:
             name = func.__qualname__
             if cupy:
                 cupy_name = cupy if isinstance(cupy, str) else name
-                CupyBackend.functions[name] = {
-                    "function": f"cupyx.signal:{cupy_name}"
+                CupyBackend.functions[f"scipy.signal:{name}"] = {
+                    "function": f"cupyx.scipy.signal:{cupy_name}",
                 }
             if jax:
                 jax_name = jax if isinstance(jax, str) else name
-                JaxBackend.functions[name] = {
-                    "function": f"jax.scipy.signal:{jax_name}"
+                JaxBackend.functions[f"scipy.signal:{name}"] = {
+                    "function": f"jax.scipy.signal:{jax_name}",
                 }
 
             # Use the normal spatch decoration now, but change module

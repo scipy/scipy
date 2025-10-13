@@ -3399,16 +3399,23 @@ class TestHilbert2:
         x = xp.reshape(xp.arange(16), (4, 4))
         with pytest.raises(ValueError, match="^x must be real."):
             hilbert2(xp.asarray([[1.0 + 0.0j]]))
-        with pytest.raises(ValueError, match="^axes must be a tuple of length 2"):
-            hilbert2(x, axes=(0, 1, 2))
-        with pytest.raises(ValueError, match="^axes must contain 2 distinct axes"):
-            hilbert2(x, axes=(0, 0))
         with pytest.raises(ValueError, match="^N must be positive."):
             hilbert2(x, N=-1)
         with pytest.raises(ValueError, match="^When given as a tuple, N must hold"):
             hilbert2(x, N=(1, 1, 1))
         with pytest.raises(ValueError, match="^When given as a tuple, N must hold"):
             hilbert2(x, N=(0, 1))
+
+        try:
+            hilbert2(x, axes=(-2, -1))
+        except TypeError:
+            # backend doesn't take axes (maybe cupy)
+            return
+
+        with pytest.raises(ValueError, match="^axes must be a tuple of length 2"):
+            hilbert2(x, axes=(0, 1, 2))
+        with pytest.raises(ValueError, match="^axes must contain 2 distinct axes"):
+            hilbert2(x, axes=(0, 0))
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_hilbert2_types(self, dtype, xp):
