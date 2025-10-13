@@ -4721,6 +4721,7 @@ class TestGroupDelay:
         assert_array_almost_equal(gd, matlab_gd)
 
     @xfail_xp_backends("cupy", reason="does not warn")
+    @xfail_xp_backends("torch", reason="does not warn")
     def test_singular(self, xp):
         # Let's create a filter with zeros and poles on the unit circle and
         # check if warnings are raised at those frequencies.
