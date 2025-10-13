@@ -1614,26 +1614,28 @@ class TestBilinear:
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_basic(self, xp):
         # reference output values computed with sympy
-        b = [0.14879732743343033]
-        a = [1, 0.54552236880522209, 0.14879732743343033]
-        b, a = map(xp.asarray, (b, a))
+        b = xp.asarray([0.14879732743343033])
+        a = xp.asarray([1, 0.54552236880522209, 0.14879732743343033])
 
-        b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
-        a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
-        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
+        b_zref = xp.asarray(
+            [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
+        )
+        a_zref = xp.asarray(
+            [1.0, -1.0047722097030667, 0.3560573367396151]
+        )
 
         b_z, a_z = bilinear(b, a, 0.5)
 
-        xp_assert_close_nulp(b_z, xp.asarray(b_zref))
-        xp_assert_close_nulp(a_z, xp.asarray(a_zref))
+        xp_assert_close_nulp(b_z, b_zref)
+        xp_assert_close_nulp(a_z, z_zref)
 
-        b = [1, 0, 0.17407467530697837]
-        a = [1, 0.18460575326152251, 0.17407467530697837]
-        b, a = map(xp.asarray, (b, a))
+        b = xp.asarray([1, 0, 0.17407467530697837])
+        a = xp.asarray([1, 0.18460575326152251, 0.17407467530697837])
 
-        b_zref = [0.8641286432189045, -1.2157757001964216, 0.8641286432189045]
-        a_zref = [1.0, -1.2157757001964216, 0.7282572864378091]
-        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
+        b_zref = xp.asarray(
+            [0.8641286432189045, -1.2157757001964216, 0.8641286432189045]
+        )
+        a_zref = xp.asarray([1.0, -1.2157757001964216, 0.7282572864378091])
 
         b_z, a_z = bilinear(b, a, 0.5)
 
@@ -1646,20 +1648,20 @@ class TestBilinear:
         # regression for gh-6606
         # results shouldn't change when leading zeros are added to
         # input numerator or denominator
-        b = [0.14879732743343033]
-        a = [1, 0.54552236880522209, 0.14879732743343033]
-        b, a = map(xp.asarray, (b, a))
+        b = xp.asarray([0.14879732743343033])
+        a = xp.asarray([1, 0.54552236880522209, 0.14879732743343033])
 
-        b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
-        a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
-        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
+        b_zref = xp.asarray(
+            [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
+        )
+        a_zref = xp.asarray([1.0, -1.0047722097030667, 0.3560573367396151])
 
         for lzn, lzd in product(range(4), range(4)):
             b_z, a_z = bilinear(xpx.pad(b, (lzn, 0), xp=xp),
                                 xpx.pad(a, (lzd, 0), xp=xp),
                                 0.5)
-            xp_assert_close_nulp(b_z, xp.asarray(b_zref))
-            xp_assert_close_nulp(a_z, xp.asarray(a_zref))
+            xp_assert_close_nulp(b_z, b_zref)
+            xp_assert_close_nulp(a_z, a_zref)
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @xfail_xp_backends("cupy", reason="complex inputs not supported")
@@ -1686,13 +1688,13 @@ class TestBilinear:
         a_zref = [(1+0j),
                   (-1.8839476369292854-0.606808151331815j),
                   (0.7954687330018285+0.5717459398142481j)]
-        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
+        b_zref, a_zref = map(xp.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, fs)
 
         # the 3 ulp difference determined from testing
-        xp_assert_close_nulp(b_z, xp.asarray(b_zref), nulp=3)
-        xp_assert_close_nulp(a_z, xp.asarray(a_zref), nulp=3)
+        xp_assert_close_nulp(b_z, b_zref, nulp=3)
+        xp_assert_close_nulp(a_z, a_zref, nulp=3)
 
     def test_fs_validation(self):
         b = [0.14879732743343033]
@@ -2893,7 +2895,7 @@ class TestBessel:
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='delay')
                 w = np.linspace(0, 10*w0, 1000)
                 w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
-                unwr_h = np.asarray(np.unwrap(np.angle(np.asarray(h))))
+                unwr_h = np.unwrap(np.angle(h))
                 delay = -np.diff(unwr_h) / np.diff(w)
                 assert math.isclose(delay[0], 1/w0, rel_tol=1e-4)
 

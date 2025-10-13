@@ -460,10 +460,10 @@ class TestConvolve2d:
     )
     def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
-        a_np = np.arange(5)
-        b_np = np.asarray([3.2, 1.4, 3])
-        a = xp.asarray(a_np)
-        b = xp.asarray(b_np)
+        a = xp.arange(5)
+        b = xp.asarray([3.2, 1.4, 3])
+        a_np = _xp_copy_to_numpy(a)
+        b_np = _xp_copy_to_numpy(b)
 
         for mode in ['full', 'valid', 'same']:
             xp_assert_close(
@@ -1562,7 +1562,7 @@ class TestResample:
                 y_resamp = signal.resample_poly(x, rate_to, rate,
                                                 padtype=padtype)
             assert y_to.shape == y_resamp.shape
-            corr = xp.asarray(np.corrcoef(y_to, np.asarray(y_resamp))[0, 1])
+            corr = xp.asarray(np.corrcoef(y_to, y_resamp)[0, 1])
             assert corr > 0.99, corr
 
         # More tests of fft method (Master 0.18.1 fails these)
@@ -1961,9 +1961,9 @@ class _TestLinearFilter:
             y, zf = lfilter(b, a, x, axis, zi)
             b_np, a_np, zi1_np = map(_xp_copy_to_numpy, (b, a, zi1))
             def lf0(w):
-                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[0])
+                return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
-                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[1])
+                return lfilter(b_np, a_np, w, zi=zi1_np)[1]
             y_r = np.apply_along_axis(lf0, axis, _xp_copy_to_numpy(x))
             zf_r = np.apply_along_axis(lf1, axis, _xp_copy_to_numpy(x))
             assert_array_almost_equal(y, xp.asarray(y_r))
@@ -1995,9 +1995,9 @@ class _TestLinearFilter:
             zi1_np = _xp_copy_to_numpy(zi1)
             y, zf = lfilter(b, a, x, axis, zi)
             def lf0(w):
-                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[0])
+                return lfilter(b_np, a_np, w, zi=zi1_np)[0]
             def lf1(w):
-                return np.asarray(lfilter(b_np, a_np, w, zi=zi1_np)[1])
+                return lfilter(b_np, a_np, w, zi=zi1_np)[1]
             y_r = np.apply_along_axis(lf0, axis, x_np)
             zf_r = np.apply_along_axis(lf1, axis, x_np)
             assert_array_almost_equal(y, xp.asarray(y_r))

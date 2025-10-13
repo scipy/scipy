@@ -151,7 +151,8 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = np.asarray([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
+        freq_samples = xp.asarray([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(
@@ -178,7 +179,8 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = np.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2, 0.75, 1.0])
+        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2, 0.75, 1.0])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(xp.abs(xp.asarray(response)),
@@ -200,8 +202,9 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = np.asarray([0.0, 0.2, 0.3 - width/2, 0.3 + width/2, 0.5,
+        freq_samples = xp.asarray([0.0, 0.2, 0.3 - width/2, 0.3 + width/2, 0.5,
                                    0.7 - width/2, 0.7 + width/2, 0.8, 1.0])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(xp.abs(xp.asarray(response)),
@@ -222,9 +225,10 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = np.asarray([0.0, 0.1, 0.2 - width/2, 0.2 + width/2, 0.35,
+        freq_samples = xp.asarray([0.0, 0.1, 0.2 - width/2, 0.2 + width/2, 0.35,
                                    0.5 - width/2, 0.5 + width/2, 0.65,
                                    0.8 - width/2, 0.8 + width/2, 0.9, 1.0])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
 
         assert_array_almost_equal(
@@ -250,8 +254,9 @@ class TestFirWinMore:
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
-        freq_samples = np.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
+        freq_samples = xp.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
                                    700 - width/2, 700 + width/2, 800, 1000])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(
             _xp_copy_to_numpy(taps), worN=np.pi*freq_samples/nyquist
         )
@@ -368,8 +373,9 @@ class TestFirwin2:
         freq = xp.asarray([0.0, 0.5, 1.0])
         gain = xp.asarray([1.0, 1.0, 0.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = np.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2,
-                                                        0.75, 1.0 - width/2])
+        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2,
+                                   0.75, 1.0 - width/2])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
         assert_array_almost_equal(
             xp.abs(xp.asarray(response)),
@@ -386,7 +392,8 @@ class TestFirwin2:
         freq = xp.asarray([0.0, 0.5, 0.5, 1.0])
         gain = xp.asarray([0.0, 0.0, 1.0, 1.0])
         taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
-        freq_samples = np.array([0.0, 0.25, 0.5 - width, 0.5 + width, 0.75, 1.0])
+        freq_samples = xp.asarray([0.0, 0.25, 0.5 - width, 0.5 + width, 0.75, 1.0])
+        freq_samples = _xp_copy_to_numpy(freq_samples)
         freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples)
         assert_array_almost_equal(
             xp.abs(xp.asarray(response)),
