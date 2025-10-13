@@ -1627,7 +1627,7 @@ class TestBilinear:
         b_z, a_z = bilinear(b, a, 0.5)
 
         xp_assert_close_nulp(b_z, b_zref)
-        xp_assert_close_nulp(a_z, z_zref)
+        xp_assert_close_nulp(a_z, a_zref)
 
         b = xp.asarray([1, 0, 0.17407467530697837])
         a = xp.asarray([1, 0.18460575326152251, 0.17407467530697837])
