@@ -218,6 +218,9 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="zpk2sos is numpy only"
+)
 class TestZpk2Tf:
 
     def test_identity(self, xp):
@@ -1602,6 +1605,9 @@ class TestLp2bs:
         assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
 
 
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+)
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
 
@@ -1893,6 +1899,9 @@ def dB(x):
 
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+)
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestButtord:
 
@@ -2044,6 +2053,9 @@ class TestButtord:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+)
 class TestCheb1ord:
 
     @xfail_xp_backends("torch", reason="accuracy is bad")
@@ -2175,6 +2187,9 @@ class TestCheb1ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+)
 class TestCheb2ord:
 
     def test_lowpass(self, xp):
@@ -2304,6 +2319,9 @@ class TestCheb2ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(
+    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+)
 class TestEllipord:
 
     def test_lowpass(self, xp):
