@@ -147,13 +147,16 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     return _asarray(x, copy=True, xp=xp)
 
 
-def xp_copy_to_numpy(x: Array) -> np.ndarray:
+def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     """Copies a possibly on device array to a NumPy array.
 
-    This function is primarily intended for converting alternative backend
-    arrays to numpy arrays within test code, to allow use of the alternative
-    to be isolated to only the function being tested, not function used to
-    compute reference values etc.
+    This function is intended only for converting alternative backend
+    arrays to numpy arrays within test code, to make it easier for use
+    of the alternative backend to be isolated only to the function being
+    tested. `_xp_copy_to_numpy` should NEVER be used except in test code
+    for the specific purpose mentioned above. In production code, attempts
+    to copy device arrays to NumPy arrays should fail, or else functions
+    may appear to be working on the GPU when they actually aren't.
     
     Parameters
     ----------
@@ -172,7 +175,7 @@ def xp_copy_to_numpy(x: Array) -> np.ndarray:
         return x.cpu().numpy()
     # Fall back to np.asarray. This will work for jax.numpy and
     # dask.array. If new backends are added, they may require
-    # explicit handling..
+    # explicit handling.
     return np.asarray(x, copy=True)
 
 
@@ -330,7 +333,7 @@ def xp_assert_close_nulp(actual, desired, *, nulp=1, check_namespace=True,
         check_shape=check_shape, check_0d=check_0d
     )
 
-    actual, desired = map(xp_copy_to_numpy, (actual, desired))
+    actual, desired = map(_xp_copy_to_numpy, (actual, desired))
     return np.testing.assert_array_almost_equal_nulp(actual, desired, nulp=nulp)
 
 
