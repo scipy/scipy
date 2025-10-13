@@ -90,7 +90,7 @@ from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import _vode
 from . import _dop
-from . import _lsoda
+from . import _odepack as _lsoda
 
 
 _vode_int_dtype = _vode.types.intvar.dtype
@@ -228,12 +228,8 @@ class ode:
         problems) and a method based on backward differentiation formulas (BDF)
         (for stiff problems).
 
-        Source: http://www.netlib.org/odepack
-
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "lsoda" integrator at the same time.
+        This integrator uses the C translation of the original Fortran 77 ODEPACK
+        library, which can be found at http://www.netlib.org/odepack
 
         This integrator accepts the following parameters in `set_integrator`
         method of the `ode` class:
