@@ -114,6 +114,12 @@ class Normal(ContinuousDistribution):
             # exact is faster (and obviously more accurate) for reasonable orders
             return sigma**order * special.factorial2(int(order) - 1, exact=True)
 
+    def _lmoment_formula(self, order, *, mu, sigma, **kwargs):
+        lscale = sigma / np.sqrt(np.pi)
+        lkurtosis = 30*np.arctan(np.sqrt(2))/np.pi - 9
+        lmoments = {1: mu, 2: lscale, 3: 0, 4: lkurtosis * lscale}
+        return lmoments.get(order, None)
+
     def _sample_formula(self, full_shape, rng, *, mu, sigma, **kwargs):
         return rng.normal(loc=mu, scale=sigma, size=full_shape)[()]
 
@@ -272,6 +278,10 @@ class Logistic(ContinuousDistribution):
     def _moment_standardized_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs) / self._scale**order
 
+    def _lmoment_formula(self, order, **kwargs):
+        lmoments = {1: 0, 2: 1, 3: 0, 4: 1/6}
+        return lmoments.get(order, None)
+
     def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.logistic(size=full_shape)[()]
 
@@ -420,6 +430,10 @@ class Uniform(ContinuousDistribution):
         return ab**2/12 if order == 2 else None
 
     _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
+
+    def _lmoment_formula(self, order, *, a, b, ab, **kwargs):
+        lmoments = {1: 0.5*(a + b), 2: ab / 6, 3: 0, 4: 0}
+        return lmoments.get(order, None)
 
     def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
         try:

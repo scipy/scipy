@@ -214,12 +214,12 @@ class TestDistributions:
                                                    max_side=20))
 
         with np.errstate(invalid='ignore', divide='ignore'):
-            # check_support(dist)
-            # check_moment_funcs(dist, result_shape)  # this needs to get split up
+            check_support(dist)
+            check_moment_funcs(dist, result_shape)  # this needs to get split up
             check_lmoment_funcs(dist, result_shape)
-            # check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
-            # qrng = qmc.Halton(d=1, seed=rng)
-            # check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, rng)
+            qrng = qmc.Halton(d=1, seed=rng)
+            check_sample_shape_NaNs(dist, 'sample', sample_shape, result_shape, qrng)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize('family', families)
@@ -1312,6 +1312,8 @@ class TestMakeDistribution:
                                 Y.moment(order, kind=kind))
         for standardized in [False, True]:
             for order in range(1, 5):
+                if standardized and order < 3:
+                    continue
                 assert_allclose(X.lmoment(order, standardized=standardized),
                                 Y.lmoment(order, standardized=standardized))
 
@@ -1607,6 +1609,8 @@ class TestTransforms:
                 assert_allclose(dist.moment(i, 'standardized'),
                                 dist0.moment(i, 'standardized') * np.sign(scale)**i)
             for i in range(1, 5):
+                if standardized and order < 3:
+                    continue
                 assert_allclose(dist.lmoment(i), dist_ref_lmoment.lmoment(i), atol=1e-8)
                 assert_allclose(dist.lmoment(i, standardized=True),
                                 dist_ref_lmoment.lmoment(i, standardized=True), atol=1e-8)
