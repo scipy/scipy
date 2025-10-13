@@ -849,7 +849,8 @@ def _validate_sos(sos, xp=None):
     return sos, n_sections
 
 
-@_dispatchable(['sos', 'worN'], cupy="sosfreqz")
+# NOTE(seberg): CuPy has freqz, but it is just a copy and that copy has a bug.
+@_dispatchable(['sos', 'worN'], cupy=False)
 def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in SOS format.
