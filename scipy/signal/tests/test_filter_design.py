@@ -7,7 +7,6 @@ from itertools import product
 
 from scipy._lib import _pep440
 import numpy as np
-from numpy.testing import assert_array_almost_equal_nulp
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
