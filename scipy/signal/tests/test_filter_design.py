@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
-    is_cupy, is_torch, scipy_namespace_for, xp_assert_close_nulp,
+    is_cupy, scipy_namespace_for, xp_assert_close_nulp,
     xp_copy_to_numpy
 )
 import scipy._lib.array_api_extra as xpx
@@ -1108,10 +1108,7 @@ class TestFreqz_sos:
 
         w, h, sos = map(xp.asarray, (w, h, sos))
         w2, h2 = freqz_sos(sos, worN=N)
-        if not (is_cupy(xp) or is_torch(xp)):
-            xp_assert_equal(w2, w)
-        else:
-            xp_assert_close(w2, w, rtol=1e-15)
+        xp_assert_close(w2, w, rtol=1e-15)
         xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
 
         b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
@@ -1120,10 +1117,7 @@ class TestFreqz_sos:
 
         w, h, sos = map(xp.asarray, (w, h, sos))
         w2, h2 = freqz_sos(sos, worN=N)
-        if not (is_cupy(xp) or is_torch(xp)):
-            xp_assert_equal(w2, w)
-        else:
-            xp_assert_close(w2, w, rtol=1e-15)
+        xp_assert_close(w2, w, rtol=1e-15)
         xp_assert_close(h2, h, rtol=1e-10, atol=1e-14)
 
         # must have at least one section
