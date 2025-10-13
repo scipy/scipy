@@ -2237,7 +2237,7 @@ class TestCheb2ord:
         rp = 3
         rs = 90
         N, Wn = cheb2ord(xp.asarray(wp), xp.asarray(ws), rp, rs, False)
-        b, a = cheby2(N, rs, xp_copy_to_numpy(Wn), 'bs', False)
+        b, a = cheby2(N, rs, _xp_copy_to_numpy(Wn), 'bs', False)
         w, h = freqz(b, a)
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[np.logical_or(w <= wp[0], wp[1] <= w)]))
