@@ -362,7 +362,8 @@ but would not produce the correct dtype behavior::
   z, p, b, a = map(xp.asarray, (z, p, b, a))
 
   # With float64 inputs, the outputs bp and ap will be of dtype
-  # float64.
+  # float64. Note that the parameter k is a Python scalar which does
+  # not impact output dtype for NumPy >= 2.0.
   bp, ap = zpk2tf(z, p, k)
   # xp_assert_close checks for matching dtype. Due to the way the
   # code was written above, zpk2tf is not tested with float32 inputs
