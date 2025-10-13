@@ -166,7 +166,7 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     -------
     ndarray
     """
-    xp  = array_namespace(x)
+    xp = array_namespace(x)
     if is_numpy(xp):
         return x.copy()
     if is_cupy(xp):
