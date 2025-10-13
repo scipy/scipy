@@ -1547,6 +1547,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     sample
 
     moment
+    lmoment
 
     mean
     median
@@ -3128,7 +3129,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     @cached_property
     def _lmoment_methods(self):
-        return {'cache', 'formula', 'general', 'definition', 'quadrature_icdf'}
+        return {'cache', 'formula', 'general', 'order_statistics', 'quadrature_icdf'}
 
     @property
     def _zero(self):
@@ -3425,8 +3426,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
                 self._overrides('_icdf_formula') or self._overrides('_iccdf_formula')):
             lmoment = self._lmoment_integrate_icdf(order, **params)
 
-        if lmoment is None and 'definition' in methods:
-            lmoment = self._lmoment_from_definition(order, **params)
+        if lmoment is None and 'order_statistics' in methods:
+            lmoment = self._lmoment_from_order_statistics(order, **params)
 
         if lmoment is None and 'quadrature_icdf' in methods:
             lmoment = self._lmoment_integrate_icdf(order, **params)
@@ -3442,7 +3443,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _lmoment_general(self, order, **params):
         return self.mean() if order == 1 else None
 
-    def _lmoment_from_definition(self, order, **params):
+    def _lmoment_from_order_statistics(self, order, **params):
         k = np.arange(order)
         E = order_statistic(self, r=order-k, n=order).mean()
         bc = special.binom(order-1, k)

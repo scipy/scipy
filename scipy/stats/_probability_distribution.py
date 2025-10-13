@@ -248,6 +248,7 @@ class _ProbabilityDistribution(ABC):
         standard_deviation
         skewness
         kurtosis
+        lmoment
 
         Notes
         -----
@@ -331,6 +332,118 @@ class _ProbabilityDistribution(ABC):
         >>> X.moment(order=4, kind='standardized')
         3.0
         >>> X.moment(order=4, kind='standardized') == X.kurtosis(convention='non-excess')
+        True
+
+        """  # noqa:E501
+        raise NotImplementedError()
+
+    @abstractmethod
+    def lmoment(self, order, kind, *, method):
+        r"""L-moment or L-moment ratio of positive integer order.
+
+        The L-moment of order :math:`n` of a continuous random variable :math:`X` is:
+
+        .. math::
+
+            \lambda_n(X) = \frac{1}{n} \sum_{k=0}^{n-1} (-1)^{k} {{n-1}\choose k} E[X_{(n-k)}]
+
+        where :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}` are the order statistics
+        of an independent sample of size :math:`n`,
+
+        The L-moment can also be expresed in terms of the random variable's inverse
+        cumulative distribution function :math:`F^{-1}` and the shifted Legendre
+        polynomial :math:`\widetilde{P}_{n-1}`:
+
+        .. math::
+
+            \lambda_n(X) = \int_0^1 F^{-1}(p) \widetilde{P}_{n-1}(p) dp
+
+        The "standardized" L-moment, known as the L-moment ratio, is the L-moment
+        normalized by the L-moment of order 2, resulting in a scale invariant quantity:
+
+        .. math::
+
+            \tau_n(X) = \frac{\lambda_n(X)}
+                             {\lambda_2(X)}
+
+        Parameters
+        ----------
+        order : int
+            The positive integer order of the L-moment; i.e. :math:`n` in the formulae
+            above.
+        standardized : bool, default: False
+            Indicates whether to return the L-moment (default) or standardized L-moment;
+            i.e., the L-moment ratio.
+        method : {None, 'formula', 'general', 'order_statistics', 'quadrature_icdf', 'cache'}
+            The strategy used to evaluate the L-moment. By default (``None``),
+            the infrastructure chooses between the following options,
+            listed in order of precedence.
+
+            - ``'cache'``: use the value of the L-moment most recently calculated
+              via another method
+            - ``'formula'``: use a formula specific to the distribution.
+            - ``'general'``: use a general result that is true for all distributions
+              with finite L-moments; for instance, the first L-moment is identically
+              equal to the mean.
+            - ``'quadrature_icdf'``: numerically integrate according to the definition
+              in terms of the inverse cumulative distribution function.
+            - ``'order_statistics'``: compute according to the definition in terms of
+              order statistics.
+
+            Not all `method` options are available for all orders and distributions.
+            If the selected `method` is not available, a ``NotImplementedError`` will
+            be raised.
+
+        Returns
+        -------
+        out : array
+            The L-moment of the random variable of the specified order.
+
+        See Also
+        --------
+        moment
+        order_statistic
+
+        Notes
+        -----
+        L-moments are only defined for distributions with finite mean. If a formula for
+        the L-moment is not specifically implemented for the chosen distribution, SciPy
+        will attempt to compute the moment via a generic method, which may yield a
+        finite result where none exists. This is not a critical bug, but an opportunity
+        for an enhancement.
+
+        References
+        ----------
+        .. [1] L-moment, *Wikipedia*,
+               https://en.wikipedia.org/wiki/L-moment
+
+        Examples
+        --------
+        Instantiate a distribution with the desired parameters:
+
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> X = stats.Normal(mu=1., sigma=2.)
+
+        Evaluate the first L-moment:
+
+        >>> X.lmoment(order=1)
+        1.0
+        >>> X.lmoment(order=1) == X.mean() == X.mu
+        True
+
+        Evaluate the second L-moment:
+
+        >>> X.lmoment(order=2)
+        np.float64(1.1283791670955123)
+        >>> np.allclose(X.lmoment(order=2), X.sigma / np.sqrt(np.pi))
+        True
+
+        Evaluate the fourth L-moment ratio, that is, the L-kurtosis:
+
+        >>> X.lmoment(order=4, standardized=True)
+        np.float64(0.12260171954089069)
+        >>> X.lmoment(order=4, standardized=True) == X.lmoment(order=4) / X.lmoment(order=2)
         True
 
         """  # noqa:E501
