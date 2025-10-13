@@ -1599,7 +1599,7 @@ class TestLp2bs:
 
 
 @skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
+    cpu_only=True, exceptions=["cupy"], reason="uses np.polynomial.Polynomial"
 )
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
@@ -1892,9 +1892,6 @@ def dB(x):
 
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
-)
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestButtord:
 
@@ -1950,6 +1947,9 @@ class TestButtord:
             rtol=1e-15
         )
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
+    )
     def test_bandstop(self, xp):
         wp = [0.1, 0.6]
         ws = [0.2, 0.5]
@@ -2046,9 +2046,6 @@ class TestButtord:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
-)
 class TestCheb1ord:
 
     @xfail_xp_backends("torch", reason="accuracy is bad")
@@ -2098,6 +2095,9 @@ class TestCheb1ord:
         assert N == 9
         xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
+    )
     def test_bandstop(self, xp):
         wp = [0.1, 0.6]
         ws = [0.2, 0.5]
@@ -2180,9 +2180,6 @@ class TestCheb1ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
-)
 class TestCheb2ord:
 
     def test_lowpass(self, xp):
@@ -2231,6 +2228,9 @@ class TestCheb2ord:
         xp_assert_close(Wn, xp.asarray([0.14876937565923479, 0.59748447842351482]),
                         rtol=1e-15)
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
+    )
     def test_bandstop(self, xp):
         wp = [0.1, 0.6]
         ws = [0.2, 0.5]
@@ -2312,9 +2312,7 @@ class TestCheb2ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="not array api agnostic"
-)
+@skip_xp_backends(cpu_only=True,  reason="special.ellipk")
 class TestEllipord:
 
     def test_lowpass(self, xp):
