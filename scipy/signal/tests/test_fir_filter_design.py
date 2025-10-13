@@ -252,7 +252,9 @@ class TestFirWinMore:
         # we know it should be approximately 0 or 1.
         freq_samples = np.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
                                    700 - width/2, 700 + width/2, 800, 1000])
-        freqs, response = freqz(_xp_copy_to_numpy(taps), worN=np.pi*freq_samples/nyquist)
+        freqs, response = freqz(
+            _xp_copy_to_numpy(taps), worN=np.pi*freq_samples/nyquist
+        )
 
         assert_array_almost_equal(xp.abs(xp.asarray(response)),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
