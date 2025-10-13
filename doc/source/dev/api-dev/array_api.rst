@@ -348,36 +348,47 @@ and passing them to a function other than the one being tested in order to produ
 inputs for the function being tested, the following may appear natural to write
 but would not produce the correct dtype behavior::
 
-  # conjugate pairs give real-coeff num & den
+  # z, p, k will have dtype float64 regardless of the value of
+  # SCIPY_DEFAULT_DTYPE
   z = np.asarray([1j, -1j, 2j, -2j])
-  # shouldn't need elements of pairs to be adjacent
   p = np.asarray([1+1j, 3-100j, 3+100j, 1-1j])
   k = 23
 
-  # np.poly should do the right thing, but be explicit about
-  # taking real part
+  # np.poly will preserve dtype
   b = k * np.poly(z_np).real
   a = np.poly(p_np).real
+  # Input arrays z, p, and reference outputs b, a will all have
+  # dtype float64.
   z, p, b, a = map(xp.asarray, (z, p, b, a))
 
+  # With float64 inputs, the outputs bp and ap will be of dtype
+  # float64.
   bp, ap = zpk2tf(z, p, k)
+  # xp_assert_close checks for matching dtype. Due to the way the
+  # code was written above, zpk2tf is not tested with float32 inputs
+  # when SCIPY_DEFAULT_DTYPE is float32.
+  xp_assert_close(b, bp)
+  xp_assert_close(a, ap)
 
 One should instead construct all inputs as ``xp`` arrays and then copy to
 NumPy arrays in order to ensure the default dtype is respected::
 
-  # conjugate pairs give real-coeff num & den
+  # calls to xp.asarray will respect the default dtype.
   z = xp.asarray([1j, -1j, 2j, -2j])
-  # shouldn't need elements of pairs to be adjacent
   p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
   k = 23
 
-  # np.poly should do the right thing, but be explicit about
-  # taking real part
+  # _xp_copy_to_numpy preserves dtype, as does np.poly.
   b = k * np.poly(_xp_copy_to_numpy(z)).real
   a = np.poly(_xp_copy_to_numpy(p)).real
+  # b and a will have dtype float32
   b, a = map(xp.asarray, (b, a))
 
+  # zpk2tf is tested with float32 inputs when SCIPY_DEFAULT_DTYPE=float32
+  # as intended.
   bp, ap = zpk2tf(z, p, k)
+  xp_assert_close(b, bp)
+  xp_assert_close(a, ap)
 
 
 Testing the JAX JIT compiler
