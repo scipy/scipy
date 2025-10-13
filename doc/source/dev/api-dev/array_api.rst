@@ -321,31 +321,33 @@ Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
 
 Testing Practice
-----------------
+````````````````
 
-It's best if individual tests for a function ``f`` using the ``xp`` fixture restrict
-use of alternative backends to only the function ``f`` being tested. Other functions
-evaluated within a test, for the purpose of producing reference values, inputs,
-round-trip calculations, etc. should instead use the NumPy backend. This helps
+It's best if individual tests using the ``xp`` fixture restrict
+use of alternative backends to only a single function ``f`` being tested. Other
+functions evaluated within a test, for the purpose of producing reference values,
+inputs, round-trip calculations, etc. should instead use the NumPy backend. This helps
 ensure that any failures that occur on a backend actually relate to the function
 of interest, and avoids the need to skip backends due to lack of support for
-functions other than `f` when `f` is supported.
+functions other than ``f`` when ``f`` is supported.
 
 To help facillitate such backend isolation, there is a function ``_xp_copy_to_numpy``
 in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
 array, bypassing any device transfer guards, while preserving dtypes. It is essential
-that this function is only used in tests for the purpose of using the NumPy backend
-for functions other than the function being tested.
+that this function is only used in tests and in tests only for the purpose of isolating
+use of alternative backends to only the function being tested. Attempts to copy a
+device array to NumPy outside of tests should fail, because otherwise it can become
+opaque whether a function is working on GPU or not.
 
 When attempting to isolate use of alternative backends to a particular function, one
 must be mindful that PyTorch allows for setting a default dtype, and SciPy is tested
-with both default dtype ``float32`` (set the environment variable ``SCIPY_DEFAULT_DTYPE``
-to ``float32``) and ``float64``. Tests using the ``xp`` fixture often rely on
+with both default dtype ``float32`` and ``float64`` (this is controlled with the
+environment variable ``SCIPY_DEFAULT_DTYPE``). Tests using the ``xp`` fixture rely on
 ``xp.asarray`` producing arrays with the default dtype when list input is given and
-no explicit dtype specified. This means that if a test involves taking input arrays,
+no explicit dtype specified. This means that if a test involves taking input arrays
 and passing them to a function other than the one being tested in order to produce
-inputs for the function being tested, the following may appear natural to write,
-but will not produce the correct dtype behavior::
+inputs for the function being tested, the following may appear natural to write
+but would not produce the correct dtype behavior::
 
   # conjugate pairs give real-coeff num & den
   z = np.asarray([1j, -1j, 2j, -2j])
