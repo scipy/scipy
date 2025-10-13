@@ -320,6 +320,64 @@ backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
 
+Testing Practice
+----------------
+
+It's best if individual tests for a function ``f`` using the ``xp`` fixture restrict
+use of alternative backends to only the function ``f`` being tested. Other functions
+evaluated within a test, for the purpose of producing reference values, inputs,
+round-trip calculations, etc. should instead use the NumPy backend. This helps
+ensure that any failures that occur on a backend actually relate to the function
+of interest, and avoids the need to skip backends due to lack of support for
+functions other than `f` when `f` is supported.
+
+To help facillitate such backend isolation, there is a function ``_xp_copy_to_numpy``
+in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
+array, bypassing any device transfer guards, while preserving dtypes. It is essential
+that this function is only used in tests for the purpose of using the NumPy backend
+for functions other than the function being tested.
+
+When attempting to isolate use of alternative backends to a particular function, one
+must be mindful that PyTorch allows for setting a default dtype, and SciPy is tested
+with both default dtype ``float32`` (set the environment variable ``SCIPY_DEFAULT_DTYPE``
+to ``float32``) and ``float64``. Tests using the ``xp`` fixture often rely on
+``xp.asarray`` producing arrays with the default dtype when list input is given and
+no explicit dtype specified. This means that if a test involves taking input arrays,
+and passing them to a function other than the one being tested in order to produce
+inputs for the function being tested, the following may appear natural to write,
+but will not produce the correct dtype behavior::
+
+  # conjugate pairs give real-coeff num & den
+  z = np.asarray([1j, -1j, 2j, -2j])
+  # shouldn't need elements of pairs to be adjacent
+  p = np.asarray([1+1j, 3-100j, 3+100j, 1-1j])
+  k = 23
+
+  # np.poly should do the right thing, but be explicit about
+  # taking real part
+  b = k * np.poly(z_np).real
+  a = np.poly(p_np).real
+  z, p, b, a = map(xp.asarray, (z, p, b, a))
+
+  bp, ap = zpk2tf(z, p, k)
+
+One should instead construct all inputs as ``xp`` arrays and then copy to
+NumPy arrays in order to ensure the default dtype is respected::
+
+  # conjugate pairs give real-coeff num & den
+  z = xp.asarray([1j, -1j, 2j, -2j])
+  # shouldn't need elements of pairs to be adjacent
+  p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
+  k = 23
+
+  # np.poly should do the right thing, but be explicit about
+  # taking real part
+  b = k * np.poly(_xp_copy_to_numpy(z)).real
+  a = np.poly(_xp_copy_to_numpy(p)).real
+  b, a = map(xp.asarray, (b, a))
+
+  bp, ap = zpk2tf(z, p, k)
+
 
 Testing the JAX JIT compiler
 ----------------------------
