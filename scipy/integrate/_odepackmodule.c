@@ -43,8 +43,7 @@ static char doc_odeint[] =
  *  stored in F-contiguous order).
  */
 static void
-copy_array_to_fortran(double* restrict f, const int ldf, const int nrows,
-                      const int ncols, double* restrict c, const int transposed)
+copy_array_to_fortran(double* restrict f, const int ldf, const int nrows, const int ncols, double* restrict c, const int transposed)
 {
     int i, j;
     int row_stride, col_stride;
@@ -69,7 +68,6 @@ copy_array_to_fortran(double* restrict f, const int ldf, const int nrows,
 
 
 // Callback Infrastructure
-
 typedef struct {
     PyObject *ode_function;
     PyObject *jac_function;
@@ -79,11 +77,12 @@ typedef struct {
     int tfirst;               // Controls argument order: 0=(y,t,...), 1=(t,y,...) but why?
 } odepack_callback_t;
 
+
 // Thread-local storage for callbacks
 static SCIPY_TLS odepack_callback_t* current_odepack_callback = NULL;
 
 
-/*
+/**
  * @brief ODE function thunk called from C code, interfaces with user Python callback
  */
 static void
@@ -410,21 +409,16 @@ setup_odepack_callback(odepack_callback_t *callback,
     callback->func_args = NULL;
 
     // Increment reference counts for Python objects
-    if (ode_func) {
-        Py_INCREF(ode_func);
-    }
-    if (jac_func && jac_func != Py_None) {
-        Py_INCREF(jac_func);
-    }
+    if (ode_func) { Py_INCREF(ode_func); }
+    if ((jac_func) && (jac_func != Py_None)) { Py_INCREF(jac_func); }
 
-    /*
-     *
-     * Both ode_function and jac_function will be called with:
-     *   - tfirst=0: f = func(y, t, *extra_args)
-     *   - tfirst=1: f = func(t, y, *extra_args)
-     *
-     */
-    if (extra_args && PyTuple_Check(extra_args)) {
+    //
+    // Both ode_function and jac_function will be called with:
+    //   - tfirst=0: f = func(y, t, *extra_args)
+    //   - tfirst=1: f = func(t, y, *extra_args)
+    //
+    if (extra_args && PyTuple_Check(extra_args))
+    {
         Py_INCREF(extra_args);
         callback->func_args = extra_args;
     } else {
@@ -435,7 +429,7 @@ setup_odepack_callback(odepack_callback_t *callback,
     return 0;
 }
 
-// Clean up callback
+
 static void
 cleanup_odepack_callback(odepack_callback_t *callback)
 {
@@ -449,19 +443,17 @@ cleanup_odepack_callback(odepack_callback_t *callback)
         callback->ode_function = NULL;
     }
 
-    if (callback->jac_function && callback->jac_function != Py_None) {
+    if ((callback->jac_function) && (callback->jac_function != Py_None)) {
         Py_DECREF(callback->jac_function);
         callback->jac_function = NULL;
     }
 }
 
+
 // Activate callback for use in thunks - sets thread-local storage
-static void
-activate_odepack_callback(odepack_callback_t *callback) { current_odepack_callback = callback; }
+static void activate_odepack_callback(odepack_callback_t *callback) { current_odepack_callback = callback; }
+static void deactivate_odepack_callback(void) { current_odepack_callback = NULL; }
 
-
-static void
-deactivate_odepack_callback(void) { current_odepack_callback = NULL; }
 
 // ================================================================================
 
@@ -601,7 +593,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     long t0count;
     double *yout, *yout_ptr, *tout_ptr, *tcrit = NULL;
     double *wa;
-    odepack_callback_t callback;  /* Stack-allocated callback structure */
+    odepack_callback_t callback = {0};
     static char *kwlist[] = {"fun", "y0", "t", "args", "Dfun", "col_deriv",
                              "ml", "mu", "full_output", "rtol", "atol", "tcrit",
                              "h0", "hmax", "hmin", "ixpr", "mxstep", "mxhnil",
@@ -616,62 +608,42 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         return NULL;
     }
 
-    if (o_tcrit == Py_None) {
-        o_tcrit = NULL;
-    }
-    if (o_rtol == Py_None) {
-        o_rtol = NULL;
-    }
-    if (o_atol == Py_None) {
-        o_atol = NULL;
-    }
+    if (o_tcrit == Py_None) { o_tcrit = NULL; }
+    if (o_rtol == Py_None) { o_rtol = NULL; }
+    if (o_atol == Py_None) { o_atol = NULL; }
 
-    /* Set up jt, ml, and mu */
-    if (Dfun == Py_None) {
-        /* set jt for internally generated */
-        jt++;
-    }
-    if (ml < 0 && mu < 0) {
-        /* neither ml nor mu given, mark jt for full jacobian */
-        jt -= 3;
-    }
-    if (ml < 0) {
-        /* if one but not both are given */
-        ml = 0;
-    }
-    if (mu < 0) {
-        mu = 0;
-    }
+    // Set up jt
+    if (Dfun == Py_None) { jt = 4; }
 
-    /* Setup modern callback infrastructure to replace global variables */
-    memset(&callback, 0, sizeof(odepack_callback_t));
+    // neither ml nor mu given, mark jt for full jacobian
+    if ((ml < 0) && (mu < 0)) { jt -= 3; }
+    if (ml < 0) { ml = 0; }
+    if (mu < 0) { mu = 0; }
 
     if (extra_args == NULL) {
         if ((extra_args = PyTuple_New(0)) == NULL) {
             goto fail;
         }
-    }
-    else {
+    } else {
         Py_INCREF(extra_args);   /* We decrement on exit. */
     }
-    if (!PyTuple_Check(extra_args)) {
-        PYERR(odepack_error, "Extra arguments must be in a tuple.");
-    }
-    if (!PyCallable_Check(fcn) || (Dfun != Py_None && !PyCallable_Check(Dfun))) {
+
+    if (!PyTuple_Check(extra_args)) { PYERR(odepack_error, "Extra arguments must be in a tuple."); }
+
+    if (!PyCallable_Check(fcn) || (Dfun != Py_None && !PyCallable_Check(Dfun)))
+    {
         PYERR(odepack_error, "The function and its Jacobian must be callable functions.");
     }
 
-    /* Initialize modern callback structure */
-    if (setup_odepack_callback(&callback, fcn, Dfun, extra_args,
-                               !(col_deriv), jt, tfirst) < 0) {
+    if (setup_odepack_callback(&callback, fcn, Dfun, extra_args, !(col_deriv), jt, tfirst) < 0)
+    {
         PYERR(odepack_error, "Failed to setup callback infrastructure.");
     }
 
-    /* Initial input vector */
+    // Initial input vector
     ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
-    if (ap_y == NULL) {
-        goto fail;
-    }
+    if (ap_y == NULL) { goto fail; }
+
     if (PyArray_NDIM(ap_y) > 1) {
         PyErr_SetString(PyExc_ValueError, "Initial condition y0 must be one-dimensional.");
         goto fail;
@@ -680,7 +652,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     neq = PyArray_Size((PyObject *) ap_y);
     dims[1] = neq;
 
-    /* Set of output times for integration */
+    // Set of output times for integration
     ap_tout = (PyArrayObject *) PyArray_ContiguousFromObject(p_tout, NPY_DOUBLE, 0, 0);
     if (ap_tout == NULL) {
         goto fail;
@@ -695,19 +667,16 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     t0count = 0;
     if (ntimes > 0) {
-        /* Copy tout[0] to t, and count how many times it occurs. */
+        // Copy tout[0] to t, and count how many times it occurs.
         t = tout[0];
         t0count = 1;
-        while ((t0count < ntimes) && (tout[t0count] == t)) {
-            ++t0count;
-        }
+        while ((t0count < ntimes) && (tout[t0count] == t)) { t0count++; }
     }
 
-    /* Set up array to hold the output evaluations*/
+    // Set up array to hold the output evaluations
     ap_yout= (PyArrayObject *) PyArray_SimpleNew(2,dims,NPY_DOUBLE);
-    if (ap_yout== NULL) {
-        goto fail;
-    }
+    if (ap_yout== NULL) { goto fail; }
+
     yout = (double *) PyArray_DATA(ap_yout);
 
     /* Copy initial vector into first row(s) of output */
@@ -788,7 +757,8 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     activate_odepack_callback(&callback);
 
-    while (k < ntimes && istate > 0) {    /* loop over desired times */
+    while ((k < ntimes) && (istate > 0))
+    {
         printf("Calling LSODA for k=%ld, t=%g, tout=%g, istate=%d\n", k, t, tout[k], istate);
         tout_ptr = tout + k;
         /* Use tcrit if relevant */
@@ -801,14 +771,12 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
                 rwork[0] = *(tcrit+crit_ind);
             }
         }
-        if (crit_ind >= numcrit) {
-            itask = 1;  /* No more critical values */
-        }
+        if (crit_ind >= numcrit) { itask = 1; }
 
-        lsoda(ode_function_thunk, neq, y, &t, tout_ptr, itol, rtol, atol, &itask,
-              &istate, &iopt, rwork, lrw, iwork, liw,
-              ode_jacobian_thunk, jt, &S);
-        if (full_output) {
+        lsoda(ode_function_thunk, neq, y, &t, tout_ptr, itol, rtol, atol, &itask, &istate, &iopt, rwork, lrw, iwork, liw, ode_jacobian_thunk, jt, &S);
+
+        if (full_output)
+        {
             *((double *)PyArray_DATA(ap_hu) + (k-1)) = rwork[10];
             *((double *)PyArray_DATA(ap_tcur) + (k-1)) = rwork[12];
             *((double *)PyArray_DATA(ap_tolsf) + (k-1)) = rwork[13];
@@ -817,28 +785,26 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             *((int *)PyArray_DATA(ap_nfe) + (k-1)) = iwork[11];
             *((int *)PyArray_DATA(ap_nje) + (k-1)) = iwork[12];
             *((int *)PyArray_DATA(ap_nqu) + (k-1)) = iwork[13];
+
             if (istate == -5 || istate == -4) {
                 imxer = iwork[15];
-            }
-            else {
+            } else {
                 imxer = -1;
             }
+
             lenrw = iwork[16];
             leniw = iwork[17];
             *((int *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
         }
-        if (PyErr_Occurred()) {
-            goto fail;
-        }
-        /* copy integration result to output - manual loop instead of memcpy */
-        for (int i = 0; i < neq; i++) {
-            yout_ptr[i] = y[i];
-        }
+        if (PyErr_Occurred()) { goto fail; }
+
+        // copy integration result to output
+        for (int i = 0; i < neq; i++) { yout_ptr[i] = y[i]; }
         yout_ptr += neq;
         k++;
     }
 
-    /* Deactivate callback infrastructure and clean up */
+    // Deactivate callback infrastructure and clean up
     deactivate_odepack_callback();
     cleanup_odepack_callback(&callback);
 
@@ -850,8 +816,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     Py_DECREF(ap_tout);
     free(wa);
 
-    /* Do Full output */
-    if (full_output) {
+    // Full output
+    if (full_output)
+    {
         return Py_BuildValue("N{s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:N,s:l,s:l,s:l,s:N}l",
                     PyArray_Return(ap_yout),
                     "hu", PyArray_Return(ap_hu),
@@ -867,13 +834,12 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
                     "leniw", leniw,
                     "mused", PyArray_Return(ap_mused),
                     (long)istate);
-    }
-    else {
+    } else {
         return Py_BuildValue("Nl", PyArray_Return(ap_yout), (long)istate);
     }
 
 fail:
-    /* Clean up modern callback infrastructure */
+    // Clean up callback
     deactivate_odepack_callback();
     cleanup_odepack_callback(&callback);
 
@@ -884,10 +850,10 @@ fail:
     Py_XDECREF(ap_tcrit);
     Py_XDECREF(ap_tout);
     Py_XDECREF(ap_yout);
-    if (allocated) {
-        free(wa);
-    }
-    if (full_output) {
+    if (allocated) { free(wa); }
+
+    if (full_output)
+    {
         Py_XDECREF(ap_hu);
         Py_XDECREF(ap_tcur);
         Py_XDECREF(ap_tolsf);
@@ -898,6 +864,7 @@ fail:
         Py_XDECREF(ap_nqu);
         Py_XDECREF(ap_mused);
     }
+
     return NULL;
 }
 
