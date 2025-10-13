@@ -8,7 +8,7 @@ from importlib import import_module
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table, xp_copy_to_numpy
+    xp_capabilities_table, _xp_copy_to_numpy
 )
 from scipy._lib._array_api_docs_tables import is_named_function_like_object
 from scipy._lib import array_api_extra as xpx
@@ -155,7 +155,7 @@ class TestArrayAPI:
         xp_dtype = getattr(xp, dtype)
         np_dtype = getattr(np, dtype)
         x = xp.asarray(data, dtype=xp_dtype)
-        y = xp_copy_to_numpy(x)
+        y = _xp_copy_to_numpy(x)
         assert isinstance(y, np.ndarray)
         assert y.dtype == np_dtype
         assert x.shape == y.shape
