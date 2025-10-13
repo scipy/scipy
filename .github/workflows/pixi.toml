@@ -210,6 +210,9 @@ description = "Test SciPy with `fail-slow=1.0`"
 
 ### IPython ###
 
+[feature.ipython]
+platforms = ["linux-64", "osx-arm64", "win-64"]
+
 [feature.ipython.dependencies]
 ipython = "*"
 
@@ -294,6 +297,9 @@ cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build with MKL BLAS"
 
+[feature.test-mkl]
+platforms = ["linux-64"]
+
 [feature.test-mkl.tasks.test-mkl]
 cmd = "spin test --no-build --build-dir=build-mkl"
 cwd = "../.."
@@ -331,6 +337,9 @@ cwd = "../.."
 depends-on = "build-accelerate-ilp64"
 description = "Test SciPy with accelerate (ilp64)"
 
+
+[feature.scipy-openblas]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.scipy-openblas.pypi-dependencies]
 scipy-openblas32 = "*"
