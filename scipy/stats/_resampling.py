@@ -1,6 +1,6 @@
 import warnings
 import numpy as np
-from itertools import combinations, permutations, product
+from itertools import combinations, permutations, product, accumulate
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 import inspect
@@ -1440,10 +1440,9 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     # compute number of permutations
     # (distinct partitions of data into samples of these sizes)
     n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
-    n_obs_ic = np.cumulative_sum(n_obs_i)  # OK to use NumPy
+    n_obs_ic = list(accumulate(n_obs_i, initial=0))
     n_obs = n_obs_ic[-1]  # total number of observations
-    n_max = math.prod([math.comb(n_obs_ic[i], n_obs_ic[i-1])
-                       for i in range(n_samples-1, 0, -1)])
+    n_max = math.prod([math.comb(n, k) for n, k in zip(n_obs_ic[1:], n_obs_ic[:-1])])
 
     # perm_generator is an iterator that produces permutations of indices
     # from 0 to n_obs. We'll concatenate the samples, use these indices to
@@ -1469,7 +1468,6 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     # the original sizes, compute the statistic for each batch, and add these
     # statistic values to the null distribution.
     data = xp.concat(data, axis=-1)
-    n_obs_ic = np.insert(n_obs_ic, 0, 0)
     for indices in _batch_generator(perm_generator, batch=batch):
         # Creating a tensor from a list of numpy.ndarrays is extremely slow...
         indices = np.asarray(indices)

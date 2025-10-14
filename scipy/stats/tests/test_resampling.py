@@ -1483,6 +1483,8 @@ class TestPermutationTest:
         assert res.statistic == res2.statistic
         xp_assert_close(res.pvalue, res2.pvalue, atol=1e-2)
 
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     def test_randomized_test_against_exact_pairings(self, xp):
         # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='pairings'
@@ -1873,6 +1875,8 @@ class TestPermutationTest:
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),
                               ('two-sided', 0.1027777777778)))
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     def test_against_spearmanr_in_R(self, alternative, expected_pvalue, xp):
         """
         Results above from R cor.test, e.g.
@@ -1922,6 +1926,8 @@ class TestPermutationTest:
         assert got == expected
 
     @pytest.mark.fail_slow(2)
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
     def test_finite_precision_statistic(self, xp):
         # Some statistics return numerically distinct values when the values
         # should be equal in theory. Test that `permutation_test` accounts
