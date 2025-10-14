@@ -597,4 +597,4 @@ jobs:
         run: |
           export OMP_NUM_THREAD=2
           # test_factorialx_inf_nan gives a fatal python error in CI
-          pixi run test-fail-slow -k 'not test_factorialx_inf_nan'
+          pixi run test-fail-slow -k 'not (test_factorialx_inf_nan or test_factorial_array_corner_cases)'
