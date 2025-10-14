@@ -799,6 +799,10 @@ class ODR:
             y_s = list(self.data.y.shape)
             if self.model.implicit:
                 raise OdrError("an implicit model cannot use response data")
+            if self.job is not None and (self.job % 10) == 1:
+                raise OdrError("the self.job parameter was set to 1 mod 10;"
+                               " this configures an implicit model, and"
+                               " an implicit model cannot use response data")
         else:
             # implicit model with q == self.data.y
             y_s = [self.data.y, x_s[-1]]
