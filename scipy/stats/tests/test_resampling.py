@@ -1248,8 +1248,8 @@ class TestPower:
 
         # This dimension is added to the beginning
         significance = xp.asarray([0.01, 0.025, 0.05, 0.1])
-        res = stats.power(test, self.xp_normal(rng, xp=xp), nx, significance=significance,
-                          kwargs=kwargs)
+        res = stats.power(test, self.xp_normal(rng, xp=xp), nx,
+                          significance=significance, kwargs=kwargs)
 
         # Looping over all combinations
         ref = []
@@ -1271,6 +1271,8 @@ class TestPower:
         # Show that results are similar
         xp_assert_close(res.power, ref, rtol=2e-2, atol=1e-2)
 
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
     def test_ttest_ind_null(self, xp):
         # Check that the p-values of `ttest_ind` are uniformly distributed under
         # the null hypothesis
@@ -1287,6 +1289,8 @@ class TestPower:
 
     @pytest.mark.skip_xp_backends('array_api_strict',
                                   reason='currently combines integer and float arrays')
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
     def test_ttest_1samp_power(self, xp):
         # Check simulated ttest_1samp power against reference
         rng = np.random.default_rng(254952548345528)
