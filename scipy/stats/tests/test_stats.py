@@ -7031,6 +7031,13 @@ class TestPMean:
         desired = fun(a, axis=axis, weights=weights)
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
+    def test_infinite_p_gh23111(self):
+        # gh-23111 reported that `pmean` didn't work properly with infinite `p`;
+        # check that this raises an appropriate error message
+        message = "Power mean only implemented for finite `p`"
+        with pytest.raises(NotImplementedError, match=message):
+            stats.pmean([2], np.inf)
+
 
 @make_xp_test_case(stats.gstd)
 class TestGSTD:

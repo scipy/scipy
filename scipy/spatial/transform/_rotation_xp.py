@@ -67,7 +67,7 @@ def from_matrix(matrix: Array) -> Array:
     # frameworks or pay the performance penalty for the SVD.
     eye = xp.eye(3, dtype=matrix.dtype, device=device)
     is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
-    U, _, Vt = xp.linalg.svd(matrix)
+    U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
     orthogonal_matrix = U @ Vt
     matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
 

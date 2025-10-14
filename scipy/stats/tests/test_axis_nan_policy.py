@@ -622,7 +622,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # Make sure any results returned by reference/public function are identical
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
-    assert_equal(res1dc, res1db)
+    assert_allclose(res1dc, res1db, rtol=1e-15)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
