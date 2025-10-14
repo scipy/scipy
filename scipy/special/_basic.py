@@ -1147,7 +1147,7 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h1v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel1` itself.
 
     Returns
     -------
@@ -1216,7 +1216,7 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h2v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel2` itself.
 
     Returns
     -------
