@@ -1435,8 +1435,6 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     """
     Calculate null distribution for independent sample tests.
     """
-    n_samples = len(data)
-
     # compute number of permutations
     # (distinct partitions of data into samples of these sizes)
     n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
