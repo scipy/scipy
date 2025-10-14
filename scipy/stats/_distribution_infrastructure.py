@@ -3395,20 +3395,20 @@ class UnivariateDistribution(_ProbabilityDistribution):
     ### L-Moments
 
     @_set_invalid_nan_property
-    def lmoment(self, order=1, *, standardized=False, method=None):
-        min_order = 1 if not standardized else 3
-        order = self._validate_order(order, fname='lmoment', min_order=min_order)
-        return self._lmoment(order, standardized=standardized, method=method)
+    def lmoment(self, order=1, *, standardize=False, method=None):
+        min_order = 3 if standardize else 1
+        fname = 'lmoment` with `standardize=True' if standardize else 'lmoment'
+        order = self._validate_order(order, fname=fname, min_order=min_order)
+        return self._lmoment(order, standardize=standardize, method=method)
 
-    def _lmoment(self, order, *, standardized, method):
+    def _lmoment(self, order, *, standardize, method):
         methods = self._lmoment_methods if method is None else {method}
 
         lmoment = self._lmoment_dispatch(order, methods=methods, **self._parameters)
         if lmoment is None:
             return None
 
-        if standardized and lmoment is not None:
-            # todo: add general result: if `order==2` and `standardized`, return unity.
+        if standardize and lmoment is not None:
             lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
             if lscale is None:
                 return None
@@ -3768,7 +3768,7 @@ class DiscreteDistribution(UnivariateDistribution):
             "Two argument cdf functions are currently only supported for "
             "continuous distributions.")
 
-    def _lmoment(self, order, *, standardized, method):
+    def _lmoment(self, order, *, standardize, method):
         raise NotImplementedError(
             "L-moments are currently available only "
             "for continuous distributions.")
@@ -5396,7 +5396,7 @@ class Mixture(_ProbabilityDistribution):
             out += moment * weight
         return out[()]
 
-    def lmoment(self, order=1, *, standardized=False, method=None):
+    def lmoment(self, order=1, *, standardize=False, method=None):
         message = "L-moments are not currently available for mixture distributions."
         raise NotImplementedError(message)
 

@@ -348,9 +348,9 @@ class _ProbabilityDistribution(ABC):
             \lambda_n(X) = \frac{1}{n} \sum_{k=0}^{n-1} (-1)^{k} {{n-1}\choose k} E[X_{(n-k)}]
 
         where :math:`X_{(1)}, \dots, X_{(r)}, \dots, X_{(n)}` are the order statistics
-        of an independent sample of size :math:`n`,
+        of an independent sample of size :math:`n`.
 
-        The L-moment can also be expresed in terms of the random variable's inverse
+        The L-moment can also be expressed in terms of the random variable's inverse
         cumulative distribution function :math:`F^{-1}` and the shifted Legendre
         polynomial :math:`\widetilde{P}_{n-1}`:
 
@@ -372,7 +372,7 @@ class _ProbabilityDistribution(ABC):
         order : int
             The positive integer order of the L-moment; i.e. :math:`n` in the formulae
             above.
-        standardized : bool, default: False
+        standardize : bool, default: False
             Indicates whether to return the L-moment (default) or standardized L-moment;
             i.e., the L-moment ratio.
         method : {None, 'formula', 'general', 'order_statistics', 'quadrature_icdf', 'cache'}
@@ -442,9 +442,9 @@ class _ProbabilityDistribution(ABC):
 
         Evaluate the fourth L-moment ratio, that is, the L-kurtosis:
 
-        >>> X.lmoment(order=4, standardized=True)
+        >>> X.lmoment(order=4, standardize=True)
         np.float64(0.12260171954089069)
-        >>> X.lmoment(order=4, standardized=True) == X.lmoment(order=4) / X.lmoment(order=2)
+        >>> X.lmoment(order=4, standardize=True) == X.lmoment(order=4) / X.lmoment(order=2)
         True
 
         """  # noqa:E501

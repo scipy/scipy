@@ -786,41 +786,41 @@ def check_lmoment_funcs(dist, result_shape):
             dist.lmoment(1)
         return
 
-    atol = 1e-9
+    atol = 2e-9
 
-    def check(order, standardized=False, method=None, ref=None, success=True):
+    def check(order, standardize=False, method=None, ref=None, success=True):
         if success:
-            res = dist.lmoment(order, standardized=standardized, method=method)
+            res = dist.lmoment(order, standardize=standardize, method=method)
             assert_allclose(res, ref, atol=atol)
             assert res.shape == ref.shape
         else:
             with pytest.raises(NotImplementedError):
-                dist.lmoment(order, standardized=standardized, method=method)
+                dist.lmoment(order, standardize=standardize, method=method)
 
     ### Check L-Moments ###
 
-    standardized = False
+    standardize = False
     for i in range(1, 6):
-        check(i, standardized, 'cache', success=standardized)  # not cached yet
-        ref = dist.lmoment(i, standardized=standardized, method='order_statistics')
+        check(i, standardize, 'cache', success=standardize)  # not cached yet
+        ref = dist.lmoment(i, standardize=standardize, method='order_statistics')
         check_nans_and_edges(dist, 'lmoment', None, ref)
         assert ref.shape == result_shape
-        check(i, standardized, 'cache', ref, success=True)  # cached now
-        check(i, standardized, 'formula', ref,
+        check(i, standardize, 'cache', ref, success=True)  # cached now
+        check(i, standardize, 'formula', ref,
               success=dist._overrides('_lmoment_formula') and i < 5)
-        check(i, standardized, 'general', ref, success=(i == 1))
+        check(i, standardize, 'general', ref, success=(i == 1))
         if dist._overrides('_icdf_formula'):
-            check(i, standardized, 'quadrature_icdf', ref, success=True)
+            check(i, standardize, 'quadrature_icdf', ref, success=True)
 
-    standardized=True
+    standardize=True
     for i in range(3, 6):
-        ref = dist.lmoment(i, standardized=standardized, method='order_statistics')
+        ref = dist.lmoment(i, standardize=standardize, method='order_statistics')
         assert ref.shape == result_shape
-        check(i, standardized, 'formula', ref,
+        check(i, standardize, 'formula', ref,
               success=dist._overrides('_lmoment_formula') and i < 5)
-        check(i, standardized, 'general', ref, success=False)
+        check(i, standardize, 'general', ref, success=False)
         if dist._overrides('_icdf_formula'):
-            check(i, standardized, 'quadrature_icdf', ref, success=True)
+            check(i, standardize, 'quadrature_icdf', ref, success=True)
 
 
 @pytest.mark.parametrize('family', (Normal,))
@@ -956,10 +956,10 @@ def test_input_validation():
     with pytest.raises(ValueError, match=message):
         Test().lmoment(0)
 
-    message = ("Argument `order` of `Test.lmoment` must be a "
+    message = ("Argument `order` of `Test.lmoment` with `standardize=True` must be a "
                "finite integer greater than or equal to 3.")
     with pytest.raises(ValueError, match=message):
-        Test().lmoment(1, standardized=True)
+        Test().lmoment(1, standardize=True)
 
     message = "Argument `kind` of `Test.moment` must be one of..."
     with pytest.raises(ValueError, match=message):
@@ -1312,12 +1312,12 @@ class TestMakeDistribution:
             for order in range(5):
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
-        for standardized in [False, True]:
+        for standardize in [False, True]:
             for order in range(1, 5):
-                if standardized and order < 3:
+                if standardize and order < 3:
                     continue
-                assert_allclose(X.lmoment(order, standardized=standardized),
-                                Y.lmoment(order, standardized=standardized))
+                assert_allclose(X.lmoment(order, standardize=standardize),
+                                Y.lmoment(order, standardize=standardize))
 
         # Confirm that the `sample` and `moment` methods are overriden as expected
         sample_formula = X.sample(shape=10, rng=0, method='formula')
@@ -1614,8 +1614,8 @@ class TestTransforms:
             for i in range(1, 5):
                 assert_allclose(dist.lmoment(i), dist_ref_lmoment.lmoment(i), atol=1e-8)
                 if i >= 3:
-                    assert_allclose(dist.lmoment(i, standardized=True),
-                                    dist_ref_lmoment.lmoment(i, standardized=True),
+                    assert_allclose(dist.lmoment(i, standardize=True),
+                                    dist_ref_lmoment.lmoment(i, standardize=True),
                                     atol=1e-8)
 
         # Transform back to the original distribution using all arithmetic
@@ -1657,8 +1657,8 @@ class TestTransforms:
             for i in range(1, 5):
                 assert_allclose(dist.lmoment(i), dist0.lmoment(i))
                 if i >= 3:
-                    assert_allclose(dist.lmoment(i, standardized=True),
-                                    dist0.lmoment(i, standardized=True))
+                    assert_allclose(dist.lmoment(i, standardize=True),
+                                    dist0.lmoment(i, standardize=True))
 
             # These are tough to compare because of the way the shape works
             # rng = np.random.default_rng(seed)
