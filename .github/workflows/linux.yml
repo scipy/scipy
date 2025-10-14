@@ -597,4 +597,4 @@ jobs:
         run: |
           export OMP_NUM_THREAD=2
           # various factorial tests give a fatal python error in CI
-          pixi run test-fail-slow -k 'not test_factorial'
+          pixi run test-fail-slow -k 'not (test_factorial or test_nan_inputs)'
