@@ -65,16 +65,20 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
-    MESON_ARGS are passed through e.g.:
+    MESON_ARGS can be passed via `--setup-args` e.g.:
 
-    spin build -- -Dpkg_config_path=/lib64/pkgconfig
+        spin build --setup-args=-Dpkg_config_path=/lib64/pkgconfig
 
     The package is installed to build-install
 
-    By default builds for release, to be able to use a debugger set CFLAGS
-    appropriately. For example, for linux use
+    By default builds for release.
+    To use alternative build types, you can set the corresponding flags in `-Dc_args`.
+    For example, for a debug build, use:
 
-    CFLAGS="-O0 -g" spin build
+        spin build --setup-args=-Dc_args="-O0 -g"
+
+    Note that `-Dbuildtype=debug` is not sufficient when using default compilers from
+    conda-forge, as this will not override the `-O2` set by the compiler activation.
     """
     MESON_ARGS = "meson_args"
     MESON_COMPILE_ARGS = "meson_compile_args"

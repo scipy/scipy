@@ -9,7 +9,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d
+    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d, make_xp_test_case
 )
 import scipy._lib.array_api_extra as xpx
 from pytest import raises as assert_raises
@@ -42,7 +42,6 @@ from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 @skip_xp_backends(cpu_only=True)
@@ -147,7 +146,8 @@ class TestBSpline:
                         bspl(xx), atol=1e-14)
 
     @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
-    @skip_xp_backends("torch", reason="_naive_eval breaks down on torch. Why?")
+    @skip_xp_backends("jax.numpy", reason="too slow; XXX a slow-if marker?")
+    @skip_xp_backends("torch", reason="OOB on CI")
     def test_rndm_naive_eval(self, xp):
         # test random coefficient spline *on the base interval*,
         # t[k] <= x < t[-k-1]
@@ -1224,7 +1224,7 @@ class TestInterop:
         assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_interp_spline)
 class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
@@ -1766,7 +1766,8 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
-@skip_xp_backends(cpu_only=True)
+
+@make_xp_test_case(make_lsq_spline)
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -2175,7 +2176,7 @@ def data_file(basename):
                         'data', basename)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(make_smoothing_spline)
 class TestSmoothingSpline:
     #
     # test make_smoothing_spline
@@ -3245,7 +3246,7 @@ def _add_knot(x, t, k, residuals):
     return t_new
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(generate_knots)
 class TestGenerateKnots:
     def test_split_add_knot(self):
         # smoke test implementation details: insert a new knot given residuals
@@ -3414,6 +3415,12 @@ index 1afb1900f1..d817e51ad8 100644
         assert len(r) == 1
         xp_assert_equal(knots[-1], tck[0])
 
+    def test_zero_weights(self):
+        # regression test for https://github.com/scipy/scipy/issues/23542
+        gen = generate_knots([0.,1.,2.,3.], [4.,5.,6.,7.], w=[0.,0.,0.,0.], s=1)
+        with pytest.raises(ValueError, match="weights are zero"):
+            list(gen)
+
 
 def disc_naive(t, k):
     """Straitforward way to compute the discontinuity matrix. For testing ONLY.
@@ -3486,7 +3493,7 @@ class F_dense:
 
         return fp - self.s
 
-@skip_xp_backends(cpu_only=True)
+
 class _TestMakeSplrepBase:
 
     bc_type = None
@@ -3714,6 +3721,8 @@ class _TestMakeSplrepBase:
         spl = make_splrep(x, y, s=s, bc_type=self.bc_type, t=t)
         xp_assert_close(spl.c, c[:-k - 1], atol=1e-15)
 
+
+@make_xp_test_case(make_splrep)
 class TestMakeSplrep(_TestMakeSplrepBase):
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
@@ -3862,15 +3871,17 @@ class TestMakeSplrep(_TestMakeSplrepBase):
         assert spl_0.t.shape[0] == n + k + 1
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
+
+@make_xp_test_case(make_splrep)
 class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
     bc_type = 'periodic'
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
-    def test_no_internal_knots(self, k):
+    def test_no_internal_knots(self, k, xp):
         # should not fail if there are no internal knots
-        x = np.linspace(0, 10, 11)    # nodes
-        y = np.ones((11,))
+        x = xp.linspace(0, 10, 11)    # nodes
+        y = xp.ones((11,))
 
         spl = make_splrep(x, y, k=k, s=1, bc_type=self.bc_type)
         assert spl.t.shape[0] == 2*(k+1)
@@ -3890,20 +3901,20 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
         assert spl_0.t.shape[0] == n + 2 * k
 
-    def test_periodic_with_periodic_data(self):
+    def test_periodic_with_periodic_data(self, xp):
         N = 10
-        a, b = 0, 2*np.pi
-        x = np.linspace(a, b, N + 1)    # nodes
+        a, b = 0, 2*xp.pi
+        x = xp.linspace(a, b, N + 1, dtype=xp.float64)    # nodes
 
-        y = np.cos(x)
+        y = xp.cos(x)
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
-        y = np.sin(x) + np.cos(x)
+        y = xp.sin(x) + xp.cos(x)
         spl = make_splrep(x, y, s=1e-12, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-6)
 
-        y = 5*np.sin(x) + np.cos(x)*3
+        y = 5*xp.sin(x) + xp.cos(x)*3
         spl = make_splrep(x, y, s=1e-8, bc_type=self.bc_type)
         xp_assert_close(splev(x, spl), y, atol=1e-5, rtol=1e-4)
 
@@ -3956,7 +3967,8 @@ class TestMakeSplrepPeriodic(_TestMakeSplrepBase):
 
         xp_assert_close(y_check[0], y_check[1])
 
-@skip_xp_backends(cpu_only=True)
+
+@make_xp_test_case(make_splprep)
 class TestMakeSplprep:
     def _get_xyk(self, m=10, k=3, xp=np):
         x = xp.arange(m, dtype=xp.float64) * xp.pi / m
@@ -4063,11 +4075,13 @@ class TestMakeSplprep:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+
+@make_xp_test_case(make_splprep)
 class TestMakeSplprepPeriodic:
 
-    def _get_xyk(self, n=10, k=3):
-        x = np.linspace(0, 2*np.pi, n)
-        y = [np.sin(x), np.cos(x)]
+    def _get_xyk(self, n=10, k=3, xp=np):
+        x = xp.linspace(0, 2*xp.pi, n, dtype=xp.float64)
+        y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
     @pytest.mark.parametrize('s', [0, 1e-4, 1e-5, 1e-6])
@@ -4126,22 +4140,24 @@ class TestMakeSplprepPeriodic:
         with assert_raises(ValueError):
             make_splprep(np.asarray(y).T, s=s, bc_type="periodic")
 
-    def test_default_s_is_zero(self):
-        x, y, k = self._get_xyk(n=10)
+    def test_default_s_is_zero(self, xp):
+        x, y, k = self._get_xyk(n=10, xp=xp)
 
         spl, u = make_splprep(y, bc_type="periodic")
-        xp_assert_close(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
 
-    def test_s_zero_vs_near_zero(self):
+    def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
-        x, y, k = self._get_xyk(n=10)
+        x, y, k = self._get_xyk(n=10, xp=xp)
 
         spl_i, u_i = make_splprep(y, s=0, bc_type="periodic")
         spl_n, u_n = make_splprep(y, s=1e-12, bc_type="periodic")
 
         xp_assert_close(u_i, u_n, atol=1e-15)
-        xp_assert_close(spl_i(u_i), y, atol=1e-15)
-        xp_assert_close(spl_n(u_n), y, atol=1e-7, rtol=1e-6)
+
+        y_arr = xp.stack(y)   #  xp_assert_close chokes on the list `y`
+        xp_assert_close(spl_i(u_i), y_arr, atol=1e-15)
+        xp_assert_close(spl_n(u_n), y_arr, atol=1e-7, rtol=1e-6)
         assert spl_i.axis == spl_n.axis
 
     def test_1D(self):
@@ -4160,6 +4176,7 @@ class TestMakeSplprepPeriodic:
 
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
+
 
 class BatchSpline:
     # BSpline-line class with reference batch behavior

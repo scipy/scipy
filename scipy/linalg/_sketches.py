@@ -67,6 +67,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     with high probability via the Clarkson-Woodruff Transform, otherwise
     known as the CountSketch matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     input_matrix : array_like, shape (..., n, d)
