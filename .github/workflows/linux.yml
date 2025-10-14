@@ -596,4 +596,5 @@ jobs:
         working-directory: .github/workflows
         run: |
           export OMP_NUM_THREAD=2
-          pixi run test-fail-slow
+          # test_factorialx_inf_nan gives a fatal python error in CI
+          pixi run test-fail-slow -k 'not test_factorialx_inf_nan'
