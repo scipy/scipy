@@ -17,6 +17,8 @@ from scipy._lib._array_api import (
     array_namespace,
     is_marray,
     xp_capabilities,
+    is_numpy,
+    is_jax,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -4467,7 +4469,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")], jax_jit=False)
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4616,11 +4618,13 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     array([0.6  , 0.6  , 0.2  , 0.004])
 
     """
-    # Input Validation and Special Cases
-    ps = np.asarray(ps)
+    xp = array_namespace(ps)
 
-    ps_in_range = (np.issubdtype(ps.dtype, np.number)
-                   and np.all(ps == np.clip(ps, 0, 1)))
+    # Input Validation and Special Cases
+    ps = xp.asarray(ps)
+
+    ps_in_range = (xp.isdtype(ps.dtype, ("integral", "real floating"))
+                   and xp.all(ps == xp.clip(ps, 0., 1.)))
     if not ps_in_range:
         raise ValueError("`ps` must include only numbers between 0 and 1.")
 
@@ -4632,16 +4636,17 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     if axis is None:
         axis = 0
-        ps = ps.ravel()
+        ps = xp_ravel(ps)
 
-    axis = np.asarray(axis)[()]
+    axis = np.asarray(axis)[()]  # use of NumPy for input validation is OK
     if not np.issubdtype(axis.dtype, np.integer) or axis.size != 1:
         raise ValueError("`axis` must be an integer or `None`")
+    axis = int(axis)
 
-    if ps.size <= 1 or ps.shape[axis] <= 1:
-        return ps[()]
+    if xp_size(ps) <= 1 or ps.shape[axis] <= 1:
+        return ps[()] if ps.ndim == 0 else ps
 
-    ps = np.moveaxis(ps, axis, -1)
+    ps = xp.moveaxis(ps, axis, -1)
     m = ps.shape[-1]
 
     # Main Algorithm
@@ -4650,25 +4655,42 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     # by R's p.adjust.
 
     # "Let [ps] be the ordered observed p-values..."
-    order = np.argsort(ps, axis=-1)
-    ps = np.take_along_axis(ps, order, axis=-1)  # this copies ps
+    order = xp.argsort(ps, axis=-1)
+    ps = xp.take_along_axis(ps, order, axis=-1)  # this copies ps
 
     # Equation 1 of [1] rearranged to reject when p is less than specified q
-    i = np.arange(1, m+1)
-    ps *= m / i
+    i = xp.arange(1, m+1, dtype=ps.dtype, device=xp_device(ps))
+    # ps *= m / i
+    ps = xpx.at(ps)[...].multiply(m / i)
 
     # Theorem 1.3 of [2]
     if method == 'by':
-        ps *= np.sum(1 / i)
+        # ps *= np.sum(1 / i)
+        ps = xpx.at(ps)[...].multiply(xp.sum(1 / i))
 
     # accounts for rejecting all null hypotheses i for i < k, where k is
     # defined in Eq. 1 of either [1] or [2]. See [3]. Starting with the index j
     # of the second to last element, we replace element j with element j+1 if
     # the latter is smaller.
-    np.minimum.accumulate(ps[..., ::-1], out=ps[..., ::-1], axis=-1)
+    if is_numpy(xp):
+        np.minimum.accumulate(ps[..., ::-1], out=ps[..., ::-1], axis=-1)
+    else:
+        n = ps.shape[-1]
+        for j in range(n-2, -1, -1):
+            # ps[..., j] = xp.minimum(ps[..., j], ps[..., j+1])
+            ps = xpx.at(ps)[..., j].set(xp.minimum(ps[..., j], ps[..., j+1]))
 
     # Restore original order of axes and data
-    np.put_along_axis(ps, order, values=ps.copy(), axis=-1)
-    ps = np.moveaxis(ps, -1, axis)
+    ps = _reorder_along_axis(ps, order, axis=-1, xp=xp)
+    ps = xp.moveaxis(ps, -1, axis)
 
-    return np.clip(ps, 0, 1)
+    return xp.clip(ps, 0., 1.)
+
+def _reorder_along_axis(x, i, *, axis, xp):
+    if is_jax(xp):
+        return xp.put_along_axis(x, i, values=x, axis=axis, inplace=False)
+    if hasattr(xp, 'put_along_axis'):
+        xp.put_along_axis(x, i, values=x.copy(), axis=axis)
+        return x
+    else:
+        return xp.take_along_axis(x, xp.argsort(i, axis=-1), axis=-1)
