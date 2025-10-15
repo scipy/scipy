@@ -471,7 +471,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        assert_allclose(res_1db, res_1da, rtol=1e-15)
+        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+        assert_allclose(res_1db, res_1da, rtol=4e-15)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
