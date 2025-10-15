@@ -331,7 +331,7 @@ ensure that any failures that occur on a backend actually relate to the function
 of interest, and avoids the need to skip backends due to lack of support for
 functions other than ``f``.
 
-To help facillitate such backend isolation, there is a function ``_xp_copy_to_numpy``
+To help facilitate such backend isolation, there is a function ``_xp_copy_to_numpy``
 in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
 array, bypassing any device transfer guards, while preserving dtypes. It is essential
 that this function is only used in tests for functions other than the one being
