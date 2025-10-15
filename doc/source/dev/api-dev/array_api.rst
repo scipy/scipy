@@ -391,6 +391,13 @@ NumPy arrays in order to ensure the default dtype is respected::
   xp_assert_close(b, bp)
   xp_assert_close(a, ap)
 
+The above suggestions mainly concern the bulk conversion of existing tests to
+work with alternative backends. There may be specific cases where such isolation
+is neither necessary nor desirable. Maintainers have discretion to write and
+accept tests as they see fit, so long as they take care to investigate that use
+of the alternative backend across multiple functions in the same test is sound,
+and will not require unnecessary skips or xfails to be added.
+
 
 Testing the JAX JIT compiler
 ----------------------------
