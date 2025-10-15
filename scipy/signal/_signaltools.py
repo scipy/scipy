@@ -16,6 +16,7 @@ from . import _sigtools
 from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
+from scipy.fft import fft2, ifft2, rfft2, irfft2, next_fast_len
 from scipy import ndimage
 from scipy.fft._helper import _init_nd_shape_and_axes
 import numpy as np
@@ -1919,14 +1920,93 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     if swapped_inputs:
         in1, in2 = in2, in1
 
-    val = _valfrommode(mode)
-    bval = _bvalfromboundary(boundary)
-    out = _sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
+    use_fft = _correlate2d_fft_compatible(in1, in2, mode, boundary, fillvalue)
+
+    if use_fft:
+        out = _correlate2d_fft_fill(in1, in2, mode)
+    else:
+        kernel = np.conjugate(in2[::-1, ::-1])
+        out = convolve2d(in1, kernel, mode=mode, boundary=boundary,
+                         fillvalue=fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
 
     return xp.asarray(out)
+
+
+def _correlate2d_fft_compatible(in1, in2, mode, boundary, fillvalue):
+    """Return True when the FFT implementation can be used."""
+    # Ensure the mode string is valid by reusing the shared checker.
+    _ = _valfrommode(mode)
+
+    boundary = boundary.lower() if isinstance(boundary, str) else boundary
+    if boundary not in {"fill", "pad"}:
+        return False
+
+    # Only zero padding is currently supported for the FFT implementation;
+    # other fill values require additional adjustments that are not covered here.
+    if fillvalue != 0:
+        return False
+
+    def _is_supported_dtype(arr):
+        dt = arr.dtype
+        return (np.issubdtype(dt, np.floating) or
+                np.issubdtype(dt, np.complexfloating))
+
+    return _is_supported_dtype(in1) and _is_supported_dtype(in2)
+
+
+def _correlate2d_fft_fill(in1, in2, mode):
+    """Compute correlate2d using an FFT-based algorithm with zero padding."""
+    s1 = in1.shape
+    s2 = in2.shape
+    out_shape = (s1[0] + s2[0] - 1, s1[1] + s2[1] - 1)
+    fft_shape = (next_fast_len(out_shape[0]), next_fast_len(out_shape[1]))
+
+    is_complex = (np.issubdtype(in1.dtype, np.complexfloating) or
+                  np.issubdtype(in2.dtype, np.complexfloating))
+
+    kernel = np.conjugate(in2[::-1, ::-1])
+
+    if is_complex:
+        work_dtype = np.result_type(in1.dtype, in2.dtype, np.complex128)
+        a = np.asarray(in1, dtype=work_dtype)
+        k = np.asarray(kernel, dtype=work_dtype)
+        A = fft2(a, s=fft_shape)
+        K = fft2(k, s=fft_shape)
+        corr = ifft2(A * K, s=fft_shape)
+    else:
+        work_dtype = np.result_type(in1.dtype, in2.dtype, np.float64)
+        a = np.asarray(in1, dtype=work_dtype)
+        k = np.asarray(kernel, dtype=work_dtype)
+        A = rfft2(a, s=fft_shape)
+        K = rfft2(k, s=fft_shape)
+        corr = irfft2(A * K, s=fft_shape)
+
+    corr = corr[:out_shape[0], :out_shape[1]]
+
+    if not np.issubdtype(work_dtype, np.complexfloating):
+        corr = corr.real
+
+    if mode == 'same':
+        corr = _centered(corr, s1)
+    elif mode == 'valid':
+        valid_shape = (s1[0] - s2[0] + 1, s1[1] - s2[1] + 1)
+        if valid_shape[0] <= 0 or valid_shape[1] <= 0:
+            raise ValueError('correlate2d inputs must overlap')
+        start0 = s2[0] - 1
+        start1 = s2[1] - 1
+        end0 = start0 + valid_shape[0]
+        end1 = start1 + valid_shape[1]
+        corr = corr[start0:end0, start1:end1]
+    elif mode != 'full':
+        raise ValueError("Acceptable mode flags are 'valid', 'same', or 'full'.")
+
+    result_dtype = np.result_type(in1.dtype, in2.dtype)
+    return np.asarray(corr, dtype=result_dtype)
+
+
 
 
 def medfilt2d(input, kernel_size=3):
