@@ -371,7 +371,7 @@ but would not produce the correct dtype behavior::
   xp_assert_close(b, bp)
   xp_assert_close(a, ap)
 
-One should instead construct all inputs as ``xp`` arrays and then copy to
+One could instead construct all inputs as ``xp`` arrays and then copy to
 NumPy arrays in order to ensure the default dtype is respected::
 
   # calls to xp.asarray will respect the default dtype.
