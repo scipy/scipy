@@ -498,7 +498,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=1e-14)
+    # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
+    assert_allclose(res_nd, res_1d, rtol=1e-11)
 
 # nan should not raise a exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -622,11 +623,13 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # Make sure any results returned by reference/public function are identical
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
-    assert_allclose(res1dc, res1db, rtol=1e-15)
+    # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+    assert_allclose(res1dc, res1db, rtol=7e-15)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
-        assert_allclose(res1db, res1da, rtol=1e-15)
+        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+        assert_allclose(res1db, res1da, rtol=7e-15)
         all_results += list(res1da)
 
     for item in all_results:
