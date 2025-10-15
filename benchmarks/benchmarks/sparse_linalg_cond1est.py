@@ -12,29 +12,22 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.sparse import random_array
-    from scipy.sparse.linalg import cond1est
+    from scipy.sparse.linalg import LaplacianNd, cond1est
 
 
 class Cond1EstBench(Benchmark):
     params = [
-        [5000],
-        [1e-5, 1e-3, 0.1],
+        list(np.sqrt(np.r_[500, 1000, 2000, 5000, 10_000]).astype(int)),
     ]
-    param_names = ["N", "density"]
+    param_names = ["sqrtN"]
 
-    def setup(self, N, density):
-        rng = np.random.default_rng(56)
-        self.A = random_array(
-            (N, N), density=density, format="csc", dtype=float, rng=rng
-        )
-        # Make the matrix non-singular
-        self.A.setdiag(N * N)
+    def setup(self, sqrtN):
+        self.A = LaplacianNd((sqrtN, sqrtN), dtype=float).tosparse().tocsc()
 
-    def time_cond1est(self, N, density):
+    def time_cond1est(self, sqrtN):
         cond1est(self.A)
 
-    def peakmem_cond1est(self, N, density):
+    def peakmem_cond1est(self, sqrtN):
         cond1est(self.A)
 
 
