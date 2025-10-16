@@ -16,13 +16,13 @@ Dept of MS&E, Stanford University.
 
 """
 
+import numpy as np
 from numpy import array, arange, eye, zeros, ones, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import assert_allclose
 import pytest
 from scipy.sparse import coo_array
-from scipy.sparse.linalg._interface import aslinearoperator
-from scipy.sparse.linalg import lsmr
+from scipy.sparse.linalg import lsmr, LinearOperator, aslinearoperator
 from .test_lsqr import G, b
 
 
@@ -194,3 +194,12 @@ def test_lsmr_maxiter_zero_with_show():
     assert result[0] is not None  # x should exist
     assert result[1] == 0  # istop should be 0
     assert result[2] == 0  # itn should be 0
+
+def test_nD():
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    b = np.ones((2, 2))
+    with pytest.raises(ValueError, match="expected 2-D"):
+        lsmr(A, b)

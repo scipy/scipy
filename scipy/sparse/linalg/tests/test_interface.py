@@ -4,7 +4,7 @@
 from functools import partial
 from itertools import product
 import operator
-from typing import NamedTuple
+from typing import NamedTuple, Literal
 import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal, assert_allclose
@@ -15,6 +15,30 @@ import scipy.sparse as sparse
 import scipy.sparse.linalg._interface as interface
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+
+
+def generate_broadcastable_shapes(nshapes, *, ndim=2, min=0, max=10, rng=None):
+    rng = np.random.default_rng(rng)
+    min = np.broadcast_to(min, ndim)  # so min and max can be scalars or array-like 
+    max = np.broadcast_to(max, ndim)
+    batch_shape = tuple(rng.integers(min_, max_+1) for min_, max_ in zip(min, max))
+    shapes = np.repeat([batch_shape], nshapes, axis=0)
+
+    # make some elements of some shapes 1 (while preserving overall batch shape)
+    for column in shapes.T:
+        column[rng.integers(1, nshapes):] = 1
+    # permute elements between shapes (while preserving overall batch shape)
+    shapes = list(rng.permuted(shapes, axis=0))
+    # potentially trim preceeding 1s from a shape
+    for i in range(len(shapes)):
+        shape = shapes[i]
+        j = np.where(shape != 1)[0][0] if np.any(shape != 1) else ndim
+        if rng.random() < 0.25:
+            shapes[i] = shape[rng.integers(j+1):]
+            break
+
+    assert np.broadcast_shapes(*shapes) == batch_shape
+    return [tuple(int(el) for el in shape) for shape in shapes]
 
 
 class TestLinearOperator:
@@ -223,7 +247,7 @@ class TestDotTests:
     """
     class OperatorArgs(NamedTuple):
         """
-        shape: shape of the operator
+        shape: (core) shape of the operator
         op_dtype: dtype of the operator
         data_dtype: real dtype corresponding to op_dtype for data generation
         complex: the operator has a complex dtype
@@ -284,30 +308,46 @@ class TestDotTests:
         """
         rng = np.random.default_rng(42)
 
-        u = rng.standard_normal(op.shape[-1], dtype=data_dtype)
-        v = rng.standard_normal(op.shape[-2], dtype=data_dtype)
+        dtype = np.dtype(data_dtype)
+        *batch_shape, M, N = op.shape
+        
+        # TODO: handle empty batches
+        # Test `u` and `v` with the batch shape of `op` + 3-D broadcast dims
+        # TODO: test `u` and `v` with no batch dims even when `op` is batched?
+        u_broadcast, v_broadcast = generate_broadcastable_shapes(
+            2, ndim=3, min=0, max=5
+        )
+        u_shape = (*u_broadcast, *batch_shape, N)
+        v_shape = (*v_broadcast, *batch_shape, M)
+        u = rng.standard_normal(u_shape, dtype=dtype)
+        v = rng.standard_normal(v_shape, dtype=dtype)
         if complex_data:
-            u = u + (1j * rng.standard_normal(op.shape[-1], dtype=data_dtype))
-            v = v + (1j * rng.standard_normal(op.shape[-2], dtype=data_dtype))
+            u = u + (1j * rng.standard_normal(u_shape, dtype=dtype))
+            v = v + (1j * rng.standard_normal(v_shape, dtype=dtype))
 
         op_u = op.matvec(u)
         opH_v = op.rmatvec(v)
 
         if check_operators:
-            assert_allclose(op_u, op * u)
-            assert_allclose(op_u, op @ u)
-            assert_allclose(opH_v, op.H * v)
-            assert_allclose(opH_v, op.H @ v)
+            if len(u_shape) < 2 or u_shape[-2] != N: # interpreted as a batch of vectors
+                assert_allclose(op_u, op * u)
+                assert_allclose(op_u, op @ u)
+            if len(v_shape) < 2 or v_shape[-2] != M: # interpreted as a batch of vectors
+                assert_allclose(opH_v, op.H * v)
+                assert_allclose(opH_v, op.H @ v)
 
         if check_dot:
-            assert_allclose(op_u, op.dot(u))
-            assert_allclose(opH_v, op.H.dot(v))
+            if len(u_shape) < 2 or u_shape[-2] != N: # interpreted as a batch of vectors
+                assert_allclose(op_u, op.dot(u))
+            if len(v_shape) < 2 or v_shape[-2] != M: # interpreted as a batch of vectors
+                assert_allclose(opH_v, op.H.dot(v))
 
         op_u_H_v = np.vecdot(op_u, v, axis=-1)
         uH_opH_v = np.vecdot(u, opH_v, axis=-1)
 
         rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
-        assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol)
+        atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+        assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
 
     def check_matmat(
         self, op: interface.LinearOperator, data_dtype: str, complex_data: bool = False,
@@ -335,11 +375,17 @@ class TestDotTests:
         rng = np.random.default_rng(42)
         k = rng.integers(2, 100)
 
-        U = rng.standard_normal(size=(op.shape[-1], k), dtype=data_dtype)
-        V = rng.standard_normal(size=(op.shape[-2], k), dtype=data_dtype)
+        dtype = np.dtype(data_dtype)
+        *batch_shape, M, N = op.shape
+        
+        # TODO: handle empty batches
+        # TODO: test vectors with different but broadcastable batch shapes?
+        # Test `U` and `V` with the same batch shape as `op`
+        U = rng.standard_normal(size=(*batch_shape, N, k), dtype=dtype)
+        V = rng.standard_normal(size=(*batch_shape, M, k), dtype=dtype)
         if complex_data:
-            U = U + (1j * rng.standard_normal(size=(op.shape[-1], k), dtype=data_dtype))
-            V = V + (1j * rng.standard_normal(size=(op.shape[-2], k), dtype=data_dtype))
+            U = U + (1j * rng.standard_normal(size=(*batch_shape, N, k), dtype=dtype))
+            V = V + (1j * rng.standard_normal(size=(*batch_shape, M, k), dtype=dtype))
 
         op_U = op.matmat(U)
         opH_V = op.rmatmat(V)
@@ -354,78 +400,113 @@ class TestDotTests:
             assert_allclose(op_U, op.dot(U))
             assert_allclose(opH_V, op.H.dot(V))
 
-        op_U_H = np.conj(op_U).T
-        UH = np.conj(U).T
+        op_U_H = np.conj(op_U).mT
+        UH = np.conj(U).mT
 
         op_U_H_V = np.matmul(op_U_H, V)
         UH_opH_V = np.matmul(UH, opH_V)
 
-        rtol = 3e-12 if np.finfo(data_dtype).eps < 1e-8 else 6e-4
-        assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol)
+        rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+        atol = 1e-15 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+        assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol, atol=atol)
 
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", square_args_list)
-    def test_identity_square(self, args):
-        """Simple identity operator on square matrices"""
+    def test_identity_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
+        """
+        Simple identity operator on square matrices.
+        Tests batches of RHS via `args.batch_shape`.
+        """
         def identity(x):
             return x
 
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
-            shape=args.shape, dtype=args.op_dtype,
-            matvec=identity, rmatvec=identity
+            shape=shape, dtype=args.op_dtype,
+            matvec=identity, rmatvec=identity,
         )
 
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
     
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", all_args_list)
-    def test_identity_nonsquare(self, args):
-        """Identity operator with zero-padding on non-square matrices"""
+    def test_identity_nonsquare(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
+        """
+        Identity operator with zero-padding on non-square matrices.
+        Tests batches of RHS via `args.batch_shape`.
+        """
+        M, N = args.shape
+        
         def mv(x):
             # handle column vectors too
             # (`LinearOperator` handles reshape in post-processing)
-            x = x.flatten()
+            if x.shape[-2:] == (N, 1): 
+                x = np.reshape(x, (*x.shape[:-2], -1))
+            
+            x_broadcast_dims = x.shape[:-1]
 
-            match np.sign(x.shape[0] - args.shape[-2]):
+            match np.sign(x.shape[-1] - M):
                 case 0:  # square
                     return x
                 case 1:  # crop x to size
-                    return x[:args.shape[-2]]
+                    return x[..., :M]
                 case -1:  # pad with zeros
-                    pad_width = (0, args.shape[-2] - x.shape[0])
-                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+                    no_padding = [(0, 0)] * len(x_broadcast_dims)
+                    pad_width = (0, M - x.shape[-1])
+                    return np.pad(
+                        x, (*no_padding, pad_width),
+                        mode='constant', constant_values=0
+                    )
 
         def rmv(x):
             # handle column vectors too
             # (`LinearOperator` handles reshape in post-processing)
-            x = x.flatten()
+            if x.shape[-2:] == (M, 1): 
+                x = np.reshape(x, (*x.shape[:-2], -1))
+                
+            x_broadcast_dims = x.shape[:-1]
             
-            match np.sign(args.shape[-1] - x.shape[0]):
+            match np.sign(N - x.shape[-1]):
                 case 0:  # square
                     return x
                 case 1:  # pad with zeros
-                    pad_width = (0, args.shape[-1] - x.shape[0])
-                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+                    no_padding = [(0, 0)] * len(x_broadcast_dims)
+                    pad_width = (0, N - x.shape[-1])
+                    return np.pad(
+                        x, (*no_padding, pad_width),
+                        mode='constant', constant_values=0
+                    )
                 case -1:  # crop x to size
-                    return x[:args.shape[-1]]
+                    return x[..., :N]
 
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
-            shape=args.shape, dtype=args.op_dtype, matvec=mv, rmatvec=rmv
+            shape=shape, dtype=args.op_dtype, matvec=mv, rmatvec=rmv
         )
         
         self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
         self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
         
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize("args", square_args_list)
-    def test_scaling_square(self, args):
-        """Simple (complex) scaling operator on square matrices"""
+    def test_scaling_square(self, args: OperatorArgs, batch_shape: tuple[int, ...]):
+        """
+        Simple (complex) scaling operator on square matrices.
+        Tests batches of RHS via `args.batch_shape`.
+        """
         def scale(x):
             return (3 + 2j) * x
 
         def r_scale(x):
             return (3 - 2j) * x
 
+        shape = batch_shape + args.shape
         op = interface.LinearOperator(
-            shape=args.shape, dtype=args.op_dtype, matvec=scale, rmatvec=r_scale
+            shape=shape, dtype=args.op_dtype, matvec=scale, rmatvec=r_scale
         )
         self.check_matvec(
             op, data_dtype=args.data_dtype, complex_data=args.complex,
@@ -436,10 +517,13 @@ class TestDotTests:
             check_operators=True, check_dot=True
         )
 
-    def test_subclass_matmat(self):
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
+    def test_subclass_matmat(self, batch_shape: tuple[int, ...]):
         """
         Simple rotation operator defined by `matmat` and `adjoint`,
         subclassing `LinearOperator`.
+        Tests batches of RHS via `batch_shape`.
         """
         def rmatmat(X):
             theta = np.pi / 2
@@ -469,7 +553,7 @@ class TestDotTests:
             
         theta = np.pi / 2
         dtype = "float64"
-        op = RotOp(shape=(2, 2), dtype=dtype, theta=theta)
+        op = RotOp(shape=(*batch_shape, 2, 2), dtype=dtype, theta=theta)
 
         self.check_matvec(
             op, data_dtype=dtype, complex_data=False,
@@ -479,14 +563,22 @@ class TestDotTests:
             op, data_dtype=dtype, complex_data=False,
             check_operators=True, check_dot=True
         )
-    
+
+    # TODO: batch shape (0,)
+    @pytest.mark.parametrize("batch_shape", [(), (3,), (3, 4, 5,)])
     @pytest.mark.parametrize(
-        "matrix", [
-            np.asarray([[1, 2j, 3j], [4j, 5j, 6]]),
-            sparse.random_array((5, 5))
-        ]
+        "format", ["dense", "sparse"]
     )
-    def test_aslinearop(self, matrix):
+    def test_aslinearop(
+        self, format: Literal["dense", "sparse"], batch_shape: tuple[int, ...]
+    ):
+        """
+        Test operators coming from `aslinearoperator`,
+        *including batched LHS*.
+        """
+        rng = np.random.default_rng(42)
+        constructor = sparse.random_array if format == "sparse" else rng.standard_normal
+        matrix = constructor((*batch_shape, 4, 4))
         op = interface.aslinearoperator(matrix)
         data_dtype = "float64"
         self.check_matvec(op, data_dtype=data_dtype, complex_data=True)

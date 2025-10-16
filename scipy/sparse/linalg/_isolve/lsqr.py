@@ -322,6 +322,8 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     """
     A = convert_pydata_sparse_to_scipy(A)
     A = aslinearoperator(A)
+    if A.ndim > 2:
+        raise ValueError(f"{A.ndim}-dimensional `A` is unsupported, expected 2-D.")
     b = np.atleast_1d(b)
     if b.ndim > 1:
         b = b.squeeze()
