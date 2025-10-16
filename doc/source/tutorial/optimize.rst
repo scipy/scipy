@@ -1168,8 +1168,10 @@ finally plots the original data and the fitted model function:
     >>> plt.legend(loc='lower right')
     >>> plt.show()
 
+.. rubric:: References
+
 .. [1] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
-   a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
+       a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
 
 .. [2] B. M. Averick et al., “The MINPACK-2 Test Problem Collection”.
 
