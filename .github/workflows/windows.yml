@@ -36,32 +36,22 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Python
-        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
-          python-version: "3.12"
-          architecture: "x64"
-          cache: "pip"
-          cache-dependency-path: "environment.yml"
-      - name: Install rtools (mingw-w64)
-        run: |
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-
-      - name: pip-packages
-        run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
-          python -m pip install -r requirements/openblas.txt
+          pixi-version: v0.56.0
+          manifest-path: .github/workflows/pixi.toml
+          cache: false
 
       - name: Build
-        run: |
-          spin build --with-scipy-openblas
+        working-directory: .github/workflows
+        run: pixi run build-scipy-openblas
 
       - name: Test
+        working-directory: .github/workflows
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          spin test -j4 -- --durations=25
+          pixi run test-scipy-openblas -j4 -- --durations=25
 
   #############################################################################
   full_spin_min_numpy:
