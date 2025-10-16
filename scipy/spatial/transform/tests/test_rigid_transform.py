@@ -1017,8 +1017,9 @@ def test_mean(xp, ndim: int):
     atol = 1e-12
     rng = np.random.default_rng(123)
 
-    t = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (3,)))
-    q = rng.normal(size=(ndim,) * (ndim - 1) + (4,))
+    dtype = xpx.default_dtype(xp)
+    t = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (3,)), dtype=dtype)
+    q = xp.asarray(rng.normal(size=(ndim,) * (ndim - 1) + (4,)), dtype=dtype)
     r = rotation_to_xp(Rotation.from_quat(q), xp=xp)
     tf = RigidTransform.from_components(t, r)
 
@@ -1037,7 +1038,7 @@ def test_mean(xp, ndim: int):
         weights = None
         t_mean = t
     else:
-        weights = xp.asarray(rng.random(size=(ndim,) * (ndim - 1)))
+        weights = xp.asarray(rng.random(size=(ndim,) * (ndim - 1)), dtype=dtype)
         norm = xp.sum(weights[..., None], axis=axis)
         wsum = xp.sum(t * weights[..., None], axis=axis)
         t_mean = wsum/norm
@@ -1051,10 +1052,11 @@ def test_mean(xp, ndim: int):
 
 @make_xp_test_case(RigidTransform.mean)
 def test_mean_invalid_weights(xp):
-    tf = RigidTransform.from_matrix(xp.eye(4))
+    tf = RigidTransform.from_matrix(xp.tile(xp.eye(4), (4, 1, 1)))
     if is_lazy_array(tf.as_matrix()):
         m = tf.mean(weights=-xp.ones(4))
-        assert all(xp.isnan(m.as_matrix()))
+        # Only the rotation submatrix will be nan
+        assert xp.all(xp.isnan(m.as_matrix()[:3, :3]))
     else:
         with pytest.raises(ValueError, match="non-negative"):
             tf.mean(weights=-xp.ones(4))

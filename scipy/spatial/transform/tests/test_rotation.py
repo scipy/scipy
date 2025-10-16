@@ -1333,7 +1333,7 @@ def test_mean_invalid_weights(xp):
     r = Rotation.from_quat(xp.eye(4))
     if is_lazy_array(r.as_quat()):
         m = r.mean(weights=-xp.ones(4))
-        assert all(xp.isnan(m._quat))
+        assert xp.all(xp.isnan(m._quat))
     else:
         with pytest.raises(ValueError, match="non-negative"):
             r.mean(weights=-xp.ones(4))

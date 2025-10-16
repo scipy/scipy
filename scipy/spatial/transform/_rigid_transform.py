@@ -1049,10 +1049,9 @@ class RigidTransform:
                [ 0.51801458,  0.13833531, -0.84411151,  0.52429339],
                [0., 0., 0., 1.]])
         """
-        backend = select_backend(self._xp, cython_compatible=False)
-        mean = backend.mean(self._matrix, weights=weights)
+        mean = self._backend.mean(self._matrix, weights=weights)
         return RigidTransform._from_raw_matrix(mean, xp=self._xp,
-                                               backend=backend)
+                                               backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
