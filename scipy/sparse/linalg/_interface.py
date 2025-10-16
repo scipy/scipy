@@ -83,7 +83,7 @@ class LinearOperator:
     Parameters
     ----------
     shape : tuple
-        Matrix dimensions ``(M, N)``.
+        Matrix dimensions ``(..., M, N)``.
     matvec : callable f(v)
         Returns returns ``A @ v``.
     rmatvec : callable f(v)
@@ -148,7 +148,6 @@ class LinearOperator:
 
     """
 
-    ndim = 2
     # Necessary for right matmul with numpy arrays.
     __array_ufunc__ = None
 
@@ -180,11 +179,12 @@ class LinearOperator:
             dtype = np.dtype(dtype)
 
         shape = tuple(shape)
-        if not isshape(shape):
-            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
+        if not isshape(shape, check_nd=False) or len(shape) < 2:
+            raise ValueError(f"invalid shape {shape!r} (must be at least 2-d)")
 
         self.dtype = dtype
         self.shape = shape
+        self.ndim = len(shape)
 
     def _init_dtype(self):
         """Determine the dtype by executing `matvec` on an `int8` test vector.
@@ -198,7 +198,9 @@ class LinearOperator:
         Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros(self.shape[-1], dtype=np.int8)
+            batch_shape = self.shape[:-2]
+            N = self.shape[-1]
+            v = np.zeros((*batch_shape, N), dtype=np.int8)
             try:
                 matvec_v = np.asarray(self.matvec(v))
             except OverflowError:
@@ -213,20 +215,24 @@ class LinearOperator:
         Falls back on the user-defined _matvec method, so defining that will
         define matrix multiplication (though in a very suboptimal way).
         """
-
-        return np.hstack([self.matvec(col.reshape(-1,1)) for col in X.T])
+        # XXX: is this correct in the batch case?
+        return np.hstack([self.matvec(col.reshape(-1, 1)) for col in X.T])
 
     def _matvec(self, x):
         """Default matrix-vector multiplication handler.
 
-        If self is a linear operator of shape (M, N), then this method will
-        be called on a shape (N,) or (N, 1) ndarray, and should return a
-        shape (M,) or (M, 1) ndarray.
+        If self is a linear operator of shape (..., M, N), then this method will
+        be called on a shape (..., N) or (..., N, 1) ndarray, and should return a
+        shape (..., M) or (..., M, 1) ndarray.
 
         This default implementation falls back on _matmat, so defining that
         will define matrix-vector multiplication as well.
         """
-        return self.matmat(x.reshape(-1, 1))
+        N = self.shape[-1]
+        if x.shape[-1] == N:
+            return self.matmat(x.reshape(*x.shape, 1))
+        return self.matmat(x)
+
 
     def matvec(self, x):
         """Matrix-vector multiplication.
@@ -237,13 +243,14 @@ class LinearOperator:
         Parameters
         ----------
         x : {matrix, ndarray}
-            An array with shape (N,) or (N,1).
+            An array with shape (..., N) representing a row vector (or stack of row vectors),
+            or an array with shape (..., N, 1) representing a column vector (or stack of column vectors).
 
         Returns
         -------
         y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,) or (M,1) depending
-            on the type and shape of the x argument.
+            A matrix or ndarray with shape (..., M) or (..., M, 1) depending
+            on the type and shape of `x`.
 
         Notes
         -----
@@ -254,10 +261,16 @@ class LinearOperator:
 
         x = np.asanyarray(x)
 
-        M,N = self.shape
+        *self_broadcast_dims, M, N = self.shape
 
-        if x.shape != (N,) and x.shape != (N,1):
-            raise ValueError('dimension mismatch')
+        x_broadcast_dims: tuple[int, ...] = ()
+        row_vector: bool = False
+        if x.ndim >= 1 and (row_vector := x.shape[-1] == N):
+            x_broadcast_dims = x.shape[:-1]
+        if column_vector := x.shape[-2:] == (N, 1):
+            x_broadcast_dims = x.shape[:-2]
+        if not (row_vector or column_vector):
+            raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({N},)` or `({N}, 1)`. Given shape: {x.shape}')
 
         y = self._matvec(x)
 
@@ -266,12 +279,11 @@ class LinearOperator:
         else:
             y = np.asarray(y)
 
-        if x.ndim == 1:
-            y = y.reshape(M)
-        elif x.ndim == 2:
-            y = y.reshape(M,1)
-        else:
-            raise ValueError('invalid shape returned by user-defined matvec()')
+        broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        if row_vector:
+            y = y.reshape(*broadcasted_dims, M)
+        elif column_vector:
+            y = y.reshape(*broadcasted_dims, M, 1)
 
         return y
 
@@ -284,13 +296,13 @@ class LinearOperator:
         Parameters
         ----------
         x : {matrix, ndarray}
-            An array with shape (M,) or (M,1).
+            An array with shape (..., M) or (..., M, 1).
 
         Returns
         -------
         y : {matrix, ndarray}
-            A matrix or ndarray with shape (N,) or (N,1) depending
-            on the type and shape of the x argument.
+            A matrix or ndarray with shape (..., N) or (..., N, 1) depending
+            on the type and shape of `x`.
 
         Notes
         -----
@@ -301,10 +313,16 @@ class LinearOperator:
 
         x = np.asanyarray(x)
 
-        M,N = self.shape
+        *self_broadcast_dims, M, N = self.shape
 
-        if x.shape != (M,) and x.shape != (M,1):
-            raise ValueError('dimension mismatch')
+        x_broadcast_dims: tuple[int, ...] = ()
+        row_vector: bool = False
+        if x.ndim >= 1 and (row_vector := x.shape[-1] == M):
+            x_broadcast_dims = x.shape[:-1]
+        if column_vector := x.shape[-2:] == (M, 1):
+            x_broadcast_dims = x.shape[:-2]
+        if not (row_vector or column_vector):
+            raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({M},)` or `({M}, 1)`. Given shape: {x.shape}')
 
         y = self._rmatvec(x)
 
@@ -313,12 +331,11 @@ class LinearOperator:
         else:
             y = np.asarray(y)
 
-        if x.ndim == 1:
-            y = y.reshape(N)
-        elif x.ndim == 2:
-            y = y.reshape(N,1)
-        else:
-            raise ValueError('invalid shape returned by user-defined rmatvec()')
+        broadcasted_dims = np.broadcast_shapes(self_broadcast_dims, x_broadcast_dims)
+        if row_vector:
+            y = y.reshape(*broadcasted_dims, N)
+        elif column_vector:
+            y = y.reshape(*broadcasted_dims, N, 1)
 
         return y
 
@@ -329,7 +346,10 @@ class LinearOperator:
             if (hasattr(self, "_rmatmat")
                     and type(self)._rmatmat != LinearOperator._rmatmat):
                 # Try to use _rmatmat as a fallback
-                return self._rmatmat(x.reshape(-1, 1)).reshape(-1)
+                if x.shape[-1] != 1:
+                    return self._rmatmat(x.reshape(*x.shape, 1)).reshape(*x.shape)
+                else:
+                    return self._rmatmat(x)
             raise NotImplementedError
         else:
             return self.H.matvec(x)
@@ -343,13 +363,13 @@ class LinearOperator:
         Parameters
         ----------
         X : {matrix, ndarray}
-            An array with shape (N,K).
+            An array with shape (..., N, K).
 
         Returns
         -------
         Y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,K) depending on
-            the type of the X argument.
+            A matrix or ndarray with shape (..., M, K) depending on
+            the type of `X`.
 
         Notes
         -----
@@ -360,10 +380,10 @@ class LinearOperator:
         if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
-        if X.ndim != 2:
-            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
+        if X.ndim < 2:
+            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
 
-        if X.shape[0] != self.shape[1]:
+        if X.shape[-2] != self.shape[-1]:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         try:
@@ -406,10 +426,10 @@ class LinearOperator:
         if not (issparse(X) or is_pydata_spmatrix(X)):
             X = np.asanyarray(X)
 
-        if X.ndim != 2:
-            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
+        if X.ndim < 2:
+            raise ValueError(f'expected at least 2-d ndarray or matrix, not {X.ndim}-d')
 
-        if X.shape[0] != self.shape[0]:
+        if X.shape[-2] != self.shape[-2]:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         try:
@@ -429,6 +449,7 @@ class LinearOperator:
     def _rmatmat(self, X):
         """Default implementation of _rmatmat defers to rmatvec or adjoint."""
         if type(self)._adjoint == LinearOperator._adjoint:
+            # XXX: is this correct in the batch case?
             return np.hstack([self.rmatvec(col.reshape(-1, 1)) for col in X.T])
         else:
             return self.H.matmat(X)
@@ -468,13 +489,22 @@ class LinearOperator:
             if not issparse(x) and not is_pydata_spmatrix(x):
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
+                
+            N = self.shape[-1]
+    
+            column_vector = x.shape[-2:] == (N, 1) # maintain column vector backwards-compatibility in 2-D case
+            matrix = x.ndim >= 2 and x.shape[-2] == N # maintain matmat backwards-compatibility in 2-D case
+            row_vector = x.shape[-1] == N # otherwise treat as a row-vector
 
-            if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
+            if not (row_vector or column_vector or matrix):
+                raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({N},)` or `({N}, 1)` or `({N}, K)` for some integer K. Given shape: {x.shape}')
+            
+            if column_vector:
                 return self.matvec(x)
-            elif x.ndim == 2:
+            elif matrix:
                 return self.matmat(x)
-            else:
-                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
+            elif row_vector:
+                return self.matvec(x)
 
     def __matmul__(self, other):
         if np.isscalar(other):
@@ -521,14 +551,25 @@ class LinearOperator:
                 # Sparse matrices shouldn't be converted to numpy arrays.
                 x = np.asarray(x)
 
+            M = self.shape[-2]
+    
+            column_vector = x.shape[-2:] == (1, M) # maintain column vector backwards-compatibility in 2-D case
+            matrix = x.shape[-1] == M and x.ndim == 2 # maintain matmat backwards-compatibility in 2-D case
+            row_vector = x.shape[-1] == M # otherwise treat as a row-vector
+            # XXX: for `x.ndim > 2`, the equivalent `np.dot(a, b)` implements a sum product over the last axis of `a` and the second-to-last axis of `b`
+            # see https://numpy.org/doc/stable/reference/generated/numpy.dot.html
+
+            if not (row_vector or column_vector or matrix):
+                raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({M},)` or `(1, {M})` or `(K, {M})` for some integer K. Given shape: {x.shape}')
+            
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
-            if x.ndim == 1 or x.ndim == 2 and x.shape[0] == 1:
+            if column_vector:
                 return self.T.matvec(x.T).T
-            elif x.ndim == 2:
+            elif matrix:
                 return self.T.matmat(x.T).T
-            else:
-                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
+            elif row_vector:
+                return self.T.matvec(x.T).T
 
     def __pow__(self, p):
         if np.isscalar(p):
@@ -549,13 +590,13 @@ class LinearOperator:
         return self.__add__(-x)
 
     def __repr__(self):
-        M,N = self.shape
         if self.dtype is None:
             dt = 'unspecified dtype'
         else:
             dt = 'dtype=' + str(self.dtype)
 
-        return f'<{M}x{N} {self.__class__.__name__} with {dt}>'
+        shape = 'x'.join(str(dim) for dim in self.shape)
+        return f'<{shape} {self.__class__.__name__} with {dt}>'
 
     def adjoint(self):
         """Hermitian adjoint.
@@ -632,7 +673,7 @@ class _CustomLinearOperator(LinearOperator):
             return super()._rmatmat(X)
 
     def _adjoint(self):
-        return _CustomLinearOperator(shape=(self.shape[1], self.shape[0]),
+        return _CustomLinearOperator(shape=(*self.shape[:-2], self.shape[-1], self.shape[-2]),
                                      matvec=self.__rmatvec_impl,
                                      rmatvec=self.__matvec_impl,
                                      matmat=self.__rmatmat_impl,
@@ -644,7 +685,7 @@ class _AdjointLinearOperator(LinearOperator):
     """Adjoint of arbitrary Linear Operator"""
 
     def __init__(self, A):
-        shape = (A.shape[1], A.shape[0])
+        shape = (*A.shape[:-2], A.shape[-1], A.shape[-2])
         super().__init__(dtype=A.dtype, shape=shape)
         self.A = A
         self.args = (A,)
@@ -665,7 +706,7 @@ class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
 
     def __init__(self, A):
-        shape = (A.shape[1], A.shape[0])
+        shape = (*A.shape[:-2], A.shape[-1], A.shape[-2])
         super().__init__(dtype=A.dtype, shape=shape)
         self.A = A
         self.args = (A,)
@@ -698,10 +739,13 @@ class _SumLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator) or \
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
-        if A.shape != B.shape:
+        *A_broadcast_dims, A_M, A_N = A.shape
+        *B_broadcast_dims, B_M, B_N = B.shape
+        if (A_M, A_N) != (B_M, B_N):
             raise ValueError(f'cannot add {A} and {B}: shape mismatch')
+        broadcasted_dims = np.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
         self.args = (A, B)
-        super().__init__(_get_dtype([A, B]), A.shape)
+        super().__init__(_get_dtype([A, B]), (*broadcasted_dims, A_M, A_N))
 
     def _matvec(self, x):
         return self.args[0].matvec(x) + self.args[1].matvec(x)
@@ -725,10 +769,12 @@ class _ProductLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator) or \
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
-        if A.shape[1] != B.shape[0]:
+        *A_broadcast_dims, A_M, A_N = A.shape
+        *B_broadcast_dims, B_M, B_N = B.shape
+        if A_N != B_M:
             raise ValueError(f'cannot multiply {A} and {B}: shape mismatch')
-        super().__init__(_get_dtype([A, B]),
-                                                     (A.shape[0], B.shape[1]))
+        broadcasted_dims = np.broadcast_shapes(A_broadcast_dims, B_broadcast_dims)
+        super().__init__(_get_dtype([A, B]), (*broadcasted_dims, A_M, B_N))
         self.args = (A, B)
 
     def _matvec(self, x):
@@ -786,8 +832,8 @@ class _PowerLinearOperator(LinearOperator):
     def __init__(self, A, p):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
-        if A.shape[0] != A.shape[1]:
-            raise ValueError(f'square LinearOperator expected, got {A!r}')
+        if A.shape[-2] != A.shape[-1]:
+            raise ValueError(f'square core-dimensions of LinearOperator expected, got {A!r}')
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 
@@ -825,7 +871,7 @@ class MatrixLinearOperator(LinearOperator):
         self.args = (A,)
 
     def _matmat(self, X):
-        return self.A.dot(X)
+        return self.A @ X
 
     def _adjoint(self):
         if self.__adj is None:
@@ -837,7 +883,7 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint_array):
         self.A = adjoint_array.T.conj()
         self.args = (adjoint_array,)
-        self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
+        self.shape = *adjoint_array.shape[:-2], adjoint_array.shape[-1], adjoint_array.shape[-2]
 
     @property
     def dtype(self):
@@ -897,8 +943,6 @@ def aslinearoperator(A):
         return A
 
     elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
-        if A.ndim > 2:
-            raise ValueError('array must have ndim <= 2')
         A = np.atleast_2d(np.asarray(A))
         return MatrixLinearOperator(A)
 
