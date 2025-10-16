@@ -10,7 +10,7 @@ on:
       - maintenance/**
 
 permissions:
-   contents: read  # to fetch code (actions/checkout)
+  contents: read # to fetch code (actions/checkout)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -39,10 +39,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: '3.12'
-          architecture: 'x64'
-          cache: 'pip'
-          cache-dependency-path: 'environment.yml'
+          python-version: "3.12"
+          architecture: "x64"
+          cache: "pip"
+          cache-dependency-path: "environment.yml"
       - name: Install rtools (mingw-w64)
         run: |
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
@@ -63,7 +63,6 @@ jobs:
           $env:OPENBLAS_NUM_THREADS=1
           spin test -j4 -- --durations=25
 
-
   #############################################################################
   full_spin_min_numpy:
     name: full, py3.11/npMin, spin
@@ -81,9 +80,9 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: 'environment.yml'
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "environment.yml"
 
       - name: Install rtools (mingw-w64)
         run: |
@@ -106,7 +105,6 @@ jobs:
           $env:OPENBLAS_NUM_THREADS=1
           spin test -j4 --mode full -- --durations=25 --timeout=60
 
-
   #############################################################################
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
@@ -124,9 +122,9 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: 'environment.yml'
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "environment.yml"
 
       - name: Win_amd64 - install rtools
         run: |
@@ -169,13 +167,12 @@ jobs:
           $env:OPENBLAS_NUM_THREADS=1
           pytest --pyargs scipy
 
-
   #############################################################################
   fast_spin_arm64:
     name: fast, py3.12/npAny, spin (Win-ARM64)
     runs-on: windows-11-arm
     needs: get_commit_message
-    if: > 
+    if: >
       needs.get_commit_message.outputs.message == 1 &&
       (github.repository == 'scipy/scipy' || github.repository == '')
     steps:
@@ -187,8 +184,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: '3.12'
-          architecture: 'arm64'
+          python-version: "3.12"
+          architecture: "arm64"
 
       - name: Set up Flang and pkgconf for ARM64
         uses: ./.github/windows_arm64_steps
@@ -210,7 +207,6 @@ jobs:
           $env:OPENBLAS_NUM_THREADS = 1
           spin test -j2 -- --durations=25
 
-
   #############################################################################
   full_build_sdist_wheel_arm64:
     name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest (Win-ARM64)
@@ -228,10 +224,10 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: '3.11'
-          architecture: 'arm64'
-          cache: 'pip'
-          cache-dependency-path: 'environment.yml'
+          python-version: "3.11"
+          architecture: "arm64"
+          cache: "pip"
+          cache-dependency-path: "environment.yml"
 
       - name: Set up Flang and pkgconf for ARM64
         uses: ./.github/windows_arm64_steps
