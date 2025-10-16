@@ -135,7 +135,7 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox'):
     n_nan = np.sum(i_nan, axis=-1)
     count = d.shape[-1] - n_nan
 
-    r, t = _rankdata(abs(d), 'average', return_ties=True)
+    r, _, t = _rankdata(abs(d), 'average', return_ties=True)
 
     r_plus = np.sum((d > 0) * r, axis=-1)
     r_minus = np.sum((d < 0) * r, axis=-1)

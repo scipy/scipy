@@ -7981,21 +7981,22 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
-    if np.ma.is_masked(data1):
-        data1 = data1.compressed()
-    if np.ma.is_masked(data2):
-        data2 = data2.compressed()
+
     data1 = np.sort(data1)
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
+    n = n1 + n2
 
     data_all = np.concatenate([data1, data2])
-    # using searchsorted solves equal data problem
-    cdf1 = np.searchsorted(data1, data_all, side='right') / n1
-    cdf2 = np.searchsorted(data2, data_all, side='right') / n2
+    ranks, data_all = _rankdata(data_all, method='min')
+
+    cdf_counts1 = np.diff(ranks[:n1], prepend=1, append=n + 1)
+    cdf_counts2 = np.diff(ranks[-n2:], prepend=1, append=n + 1)
+    cdf1 = np.repeat(np.linspace(0, 1, n1 + 1), cdf_counts1)
+    cdf2 = np.repeat(np.linspace(0, 1, n2 + 1), cdf_counts2)
     cddiffs = cdf1 - cdf2
 
     # Identify the location of the statistic
@@ -10079,7 +10080,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
-    ranks = _rankdata(x, method, xp=xp)
+    ranks, _ = _rankdata(x, method, xp=xp)
 
     if contains_nan:
         default_float = xp_default_dtype(xp)
@@ -10164,8 +10165,8 @@ def _rankdata(x, method, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
         t[i] = counts
-        return ranks, t
-    return ranks
+        return ranks, y, t
+    return ranks, y
 
 
 @xp_capabilities(np_only=True)
