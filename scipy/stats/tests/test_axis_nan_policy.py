@@ -989,9 +989,9 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays
-    np.random.seed(0)
-    A = np.random.rand(10, 11, 12)
-    B = np.random.rand(12)
+    rng = np.random.default_rng(805715284)
+    A = rng.random((10, 11, 12))
+    B = rng.random(12)
     mask = A < 0.5
     A = np.ma.masked_array(A, mask)
 
@@ -1122,10 +1122,10 @@ def test_masked_stat_1d():
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
-    np.random.seed(0)
-    a = np.random.rand(3, 4, 5)
-    b = np.random.rand(4, 5)
-    c = np.random.rand(4, 1)
+    rng = np.random.default_rng(3679428403)
+    a = rng.random((3, 4, 5))
+    b = rng.random((4, 5))
+    c = rng.random((4, 1))
 
     mask_a = a < 0.1
     mask_c = [False, False, False, True]
