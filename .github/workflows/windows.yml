@@ -44,14 +44,14 @@ jobs:
 
       - name: Build
         working-directory: .github/workflows
-        run: pixi run build-scipy-openblas
+        run: pixi run build
 
       - name: Test
         working-directory: .github/workflows
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
-          pixi run test-scipy-openblas -j4 -- --durations=25
+          pixi run test -j4 -- --durations=25
 
   #############################################################################
   full_spin_min_numpy:
