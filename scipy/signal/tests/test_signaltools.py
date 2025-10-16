@@ -2737,6 +2737,87 @@ class TestCorrelate2d:
                                                                   mode=mode)),
                                     signal.correlate(b, a, mode=mode))
 
+    @skip_xp_backends(np_only=True)
+    @pytest.mark.parametrize(
+        "dtype", [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    def test_correlate2d_full_fill_equals_conv_flip(self, dtype, xp):
+        rng = np.random.default_rng(123)
+        a = rng.standard_normal((80, 70)).astype(dtype)
+        b = rng.standard_normal((17, 11)).astype(dtype)
+        if np.issubdtype(dtype, np.complexfloating):
+            # Match dtype exactly so we exercise complex code paths.
+            a = a + 1j * rng.standard_normal(a.shape).astype(dtype)
+            b = b + 1j * rng.standard_normal(b.shape).astype(dtype)
+
+        ref = convolve2d(
+            a,
+            np.conjugate(b[::-1, ::-1]),
+            mode="full",
+            boundary="fill",
+            fillvalue=0,
+        )
+        out = correlate2d(
+            a,
+            b,
+            mode="full",
+            boundary="fill",
+            fillvalue=0,
+        )
+        tol = 1e3 * np.finfo(np.array(0, dtype=dtype).real.dtype).eps
+        assert np.allclose(out, ref, rtol=tol, atol=tol)
+
+
+    @skip_xp_backends(np_only=True)
+    @pytest.mark.parametrize("mode", ["full", "same", "valid"])
+    def test_correlate2d_fft_modes_real(self, mode, xp):
+        _ = xp  # xp fixture remains for consistency with other backends
+        rng = np.random.default_rng(123)
+        a = rng.standard_normal((9, 7)).astype(np.float64)
+        b = rng.standard_normal((3, 5)).astype(np.float64)
+
+        ref = convolve2d(
+            a,
+            np.conjugate(b[::-1, ::-1]),
+            mode=mode,
+            boundary="fill",
+            fillvalue=0,
+        )
+        out = correlate2d(
+            a,
+            b,
+            mode=mode,
+            boundary="fill",
+            fillvalue=0,
+        )
+
+        tol = 1e3 * np.finfo(np.float64).eps
+        assert np.allclose(out, ref, rtol=tol, atol=tol)
+
+
+    @skip_xp_backends(np_only=True)
+    def test_correlate2d_nonzero_fillvalue_fallback(self, xp):
+        _ = xp  # xp fixture remains for consistency with other backends
+        a = np.arange(12, dtype=np.float64).reshape((3, 4))
+        b = np.arange(6, dtype=np.float64).reshape((2, 3))
+
+        ref = convolve2d(
+            a,
+            np.conjugate(b[::-1, ::-1]),
+            mode="same",
+            boundary="fill",
+            fillvalue=2.5,
+        )
+        out = correlate2d(
+            a,
+            b,
+            mode="same",
+            boundary="fill",
+            fillvalue=2.5,
+        )
+
+        assert np.allclose(out, ref)
+
 
     @skip_xp_backends(np_only=True)
     def test_invalid_shapes(self, xp):
