@@ -688,3 +688,12 @@ def test_real_eigs_real_k_subset():
             assert_allclose(dist, 0, atol=np.sqrt(eps))
 
             prev_w = w
+
+@pytest.mark.parametrize("func", [eigs, eigsh])
+def test_nD(func):
+    """Check that >2-D operators are rejected cleanly."""
+    def id(x):
+        return x
+    A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)
+    with pytest.raises(ValueError, match="expected 2-D"):
+        func(A)
