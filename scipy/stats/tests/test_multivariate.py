@@ -3708,6 +3708,29 @@ class TestMultivariateT:
         _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
         assert_allclose(_entropy1, _entropy2, rtol=1e-5)
 
+    def test_logpdf_df_inf_gh19930(self):
+        # `multivariate_t._logpdf` (and `logpdf`/`pdf`) was not working with infinite
+        # `df` after an update to `multivariate_normal._logpdf`.
+
+        # Reproducible example from the issue
+        res = multivariate_t.logpdf(1, 1, 1, df=np.inf)
+        ref = multivariate_normal.logpdf(1, 1, 1)
+        assert_allclose(res, ref)
+
+        # More extensive test
+        # Generate a valid multivariate normal distribution and corresponding MVT
+        rng = np.random.default_rng(324893259825)
+        mean = rng.random(3)
+        cov = rng.random((3, 3)) + np.eye(3)*3
+        cov = cov.T + cov
+        X = multivariate_normal(mean=mean, cov=cov)
+        Y = multivariate_t(loc=mean, shape=cov, df=np.inf)
+
+        # compare the pdf and logpdf at 10 random points
+        x = X.rvs(10)
+        assert_allclose(Y.logpdf(x), X.logpdf(x))
+        assert_allclose(Y.pdf(x), X.pdf(x))
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(

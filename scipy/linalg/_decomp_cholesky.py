@@ -188,6 +188,11 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
     (c, lower) : tuple, (array, bool)
@@ -338,6 +343,11 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     """
     Solve the linear equations ``A x = b``, given the Cholesky factorization of
     the banded Hermitian ``A``.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
