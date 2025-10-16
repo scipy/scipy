@@ -162,6 +162,12 @@ cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy (default settings)"
 
+[feature.build-task.target.win-64.tasks.build]
+cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true  && cp .github/workflows/.pixi/envs/build/Library/bin/openblas.dll build-install/Lib/site-packages/scipy/linalg/openblas.dll"
+cwd = "../.."
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
+description = "Build SciPy (default settings)"
+
 
 ### Default testing ###
 
@@ -305,6 +311,12 @@ scipy-openblas32 = "*"
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
 cwd = "../.."
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+description = "Build SciPy with scipy-openblas32"
+
+[feature.scipy-openblas.target.win-64.tasks.build-scipy-openblas]
+cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas && cp .github/workflows/.pixi/envs/scipy-openblas/Library/bin/openblas.dll build-scipy-openblas/Lib/site-packages/scipy/linalg/openblas.dll"
+cwd = "../.."
+env = { CC = "ccache clang-cl", CXX = "ccache clang-cl", FC = "ccache $FC", FC_LD = "lld-link" }
 description = "Build SciPy with scipy-openblas32"
 
 [feature.scipy-openblas.tasks.test-scipy-openblas]
