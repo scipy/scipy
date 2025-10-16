@@ -1173,7 +1173,7 @@ finally plots the original data and the fitted model function:
 .. [1] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
        a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
 
-.. [2] Averick, Brett M and Carter, Richard G and Xue, Guo-Liang and Mor{\'e}, JJ,
+.. [2] B. M. Averick, R. G. Carter, G.-L. Xue, and JJ Mor{\'e},
        “The MINPACK-2 Test Problem Collection”, 1992. :doi:`10.2172/79972`
 
 Further examples
