@@ -1,7 +1,6 @@
 from itertools import product
 
 import numpy as np
-import random
 import functools
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
@@ -45,7 +44,6 @@ class TestEppsSingleton:
         assert_almost_equal(p, 0.06364, decimal=3)
 
     def test_epps_singleton_array_like(self):
-        np.random.seed(1234)
         x, y = np.arange(30), np.arange(28)
 
         w1, p1 = epps_singleton_2samp(list(x), list(y))
@@ -469,13 +467,13 @@ class TestMannWhitneyU:
         # is performed on one pair of samples at a time.
         # Tests that gh-12837 and gh-11113 (requests for n-d input)
         # are resolved
-        np.random.seed(0)
+        rng = np.random.default_rng(6083743794)
 
         # arrays are broadcastable except for axis = -3
         axis = -3
         m, n = 7, 10  # sample sizes
-        x = np.random.rand(m, 3, 8)
-        y = np.random.rand(6, n, 1, 8) + 0.1
+        x = rng.random((m, 3, 8))
+        y = rng.random((6, n, 1, 8)) + 0.1
         res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
@@ -1005,7 +1003,6 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
-    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
@@ -1014,16 +1011,16 @@ class TestSomersD(_TestPythranFunc):
         # generate lists of random classes 1-2 (binary)
         classes = [1, 2]
         n_samples = 10 ** 6
-        random.seed(6272161)
-        x = random.choices(classes, k=n_samples)
-        y = random.choices(classes, k=n_samples)
+        rng = np.random.default_rng(6889320191)
+        x = rng.choice(classes, n_samples)
+        y = rng.choice(classes, n_samples)
 
         # get value to compare with: sklearn output
         # from sklearn import metrics
         # val_auc_sklearn = metrics.roc_auc_score(x, y)
         # # convert to the Gini coefficient (Gini = (AUC*2)-1)
         # val_sklearn = 2 * val_auc_sklearn - 1
-        val_sklearn = -0.001528138777036947
+        val_sklearn = 0.000624401938730923
 
         # calculate the Somers' D statistic, which should be equal to the
         # result of val_sklearn until approximately machine precision
@@ -1614,8 +1611,8 @@ class TestTukeyHSD:
 
     def test_rand_symm(self):
         # test some expected identities of the results
-        np.random.seed(1234)
-        data = np.random.rand(3, 100)
+        rng = np.random.default_rng(2699550179)
+        data = rng.random((3, 100))
         res = stats.tukey_hsd(*data)
         conf = res.confidence_interval()
         # the confidence intervals should be negated symmetric of each other
