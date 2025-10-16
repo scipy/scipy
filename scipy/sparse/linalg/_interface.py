@@ -824,6 +824,9 @@ class MatrixLinearOperator(LinearOperator):
         self.__adj = None
         self.args = (A,)
 
+        if hasattr(A, '_matmul_vector'):
+            self._matvec = A._matmul_vector
+
     def _matmat(self, X):
         return self.A.dot(X)
 
@@ -838,6 +841,9 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
         self.A = adjoint_array.T.conj()
         self.args = (adjoint_array,)
         self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
+
+        if hasattr(self.A, '_matmul_vector'):
+            self._matvec = self.A._matmul_vector
 
     @property
     def dtype(self):
