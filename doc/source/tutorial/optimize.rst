@@ -606,6 +606,7 @@ and defined using a :func:`LinearConstraint` object.
     >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
 
 **Defining Nonlinear Constraints**
+
 The nonlinear constraint:
 
 .. math::
@@ -1169,6 +1170,7 @@ finally plots the original data and the fitted model function:
 
 .. [1] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
    a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
+
 .. [2] B. M. Averick et al., “The MINPACK-2 Test Problem Collection”.
 
 Further examples
