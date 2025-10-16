@@ -838,16 +838,10 @@ class MatrixLinearOperator(LinearOperator):
 
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint_array):
-        self.A = adjoint_array.T.conj()
+        A = adjoint_array.T.conj()
+        super().__init__(A)
         self.args = (adjoint_array,)
         self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
-
-        if hasattr(self.A, '_matmul_vector'):
-            self._matvec = self.A._matmul_vector
-
-    @property
-    def dtype(self):
-        return self.args[0].dtype
 
     def _adjoint(self):
         return MatrixLinearOperator(self.args[0])
