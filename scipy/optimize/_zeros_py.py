@@ -135,7 +135,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     ----------
     func : callable
         The function whose root is wanted. It must be a function of a
-        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        single variable of the form ``f(x,a,b,c,...)``, where ``a,b,c,...``
         are extra arguments that can be passed in the `args` parameter.
     x0 : float, sequence, or ndarray
         An initial estimate of the root that should be somewhere near the
@@ -1333,7 +1333,7 @@ def toms748(f, a, b, args=(), k=1,
     Find a root using TOMS Algorithm 748 method.
 
     Implements the Algorithm 748 method of Alefeld, Potro and Shi to find a
-    root of the function `f` on the interval ``[a , b]``, where ``f(a)`` and
+    root of the function `f` on the interval ``[a , b]``, where `f(a)` and
     `f(b)` must have opposite signs.
 
     It uses a mixture of inverse cubic interpolation and
