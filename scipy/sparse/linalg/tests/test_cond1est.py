@@ -203,19 +203,19 @@ class TestCond1Est:
         assert(cond1est(zero_matrix) == np.inf)
 
     def test_singleton_matrix(self, singleton_matrix, dtype, return_dtype):
-        assert_allclose(
-            cond1est(singleton_matrix),
-            np.array(1.0, dtype=return_dtype),
-            strict=True
-        )
+        test_val = cond1est(singleton_matrix)
+        expect_val = np.array(1.0, dtype=return_dtype)
+        assert test_val.dtype == expect_val.dtype
+        assert test_val.shape == expect_val.shape
+        assert_allclose(test_val, expect_val)
 
     def test_identity_matrix(self, identity_matrix, dtype, return_dtype):
         # Check that we output the correct data type
-        assert_allclose(
-            cond1est(identity_matrix),
-            np.array(1.0, dtype=return_dtype),
-            strict=True
-        )
+        test_val = cond1est(identity_matrix)
+        expect_val = np.array(1.0, dtype=return_dtype)
+        assert test_val.dtype == expect_val.dtype
+        assert test_val.shape == expect_val.shape
+        assert_allclose(test_val, expect_val)
 
     def test_exactly_singular_matrix(self, dtype):
         A = generate_matrix(N, dtype, singular='exactly')
@@ -224,10 +224,15 @@ class TestCond1Est:
     def test_nearly_singular_matrix(self, dtype):
         A = generate_matrix(N, dtype, singular='nearly')
         cond_A = np.linalg.cond(np.linalg.inv(A.toarray()), p=1)
-        # NOTE there is a bug in np.linalg.cond that returns np.complex when
-        # the matrix input is complex, so take the real part for comparison.
+        # NOTE in numpy<2.3 there is a bug in np.linalg.cond that returns
+        # np.complex when the matrix input is complex, so take the real part
+        # for comparison.
         rtol = 1e-6 if dtype in {np.single, np.csingle} else 1e-12
-        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=rtol)
+        test_val = cond1est(A)
+        expect_val = cond_A.real
+        assert test_val.dtype == expect_val.dtype
+        assert test_val.shape == expect_val.shape
+        assert_allclose(test_val, expect_val, rtol=rtol)
 
     def test_1D_array(self, array_1D):
         with pytest.raises(
@@ -250,7 +255,12 @@ class TestCond1Est:
     def test_random_nonsingular_matrix(self, random_nonsingular_matrix):
         A = random_nonsingular_matrix
         cond_A = np.linalg.cond(A.toarray(), p=1)
-        # NOTE there is a bug in np.linalg.cond that returns np.complex when
-        # the matrix input is complex, so take the real part for comparison.
+        # NOTE in numpy<2.3 there is a bug in np.linalg.cond that returns
+        # np.complex when the matrix input is complex, so take the real part
+        # for comparison.
         rtol = 1e-6 if A.dtype.type in {np.single, np.csingle} else 1e-12
-        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=rtol)
+        test_val = cond1est(A)
+        expect_val = cond_A.real
+        assert test_val.dtype == expect_val.dtype
+        assert test_val.shape == expect_val.shape
+        assert_allclose(test_val, expect_val, rtol=rtol)
