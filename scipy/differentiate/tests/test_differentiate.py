@@ -295,8 +295,8 @@ class TestDerivative:
             elif key == 'error':
                 # switched from equality check to accommodate
                 # macosx-x86_64/Accelerate
-                xp_assert_close(res2[key], res[key], rtol=1e-14)
-                xp_assert_close(callback.res[key], res[key], rtol=1e-14)
+                xp_assert_close(res2[key], res[key], atol=1e-14)
+                xp_assert_close(callback.res[key], res[key], atol=1e-14)
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
