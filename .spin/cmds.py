@@ -319,7 +319,7 @@ def ipython(*, parent_callback, pythonpath, **kwargs):
 
     OPTIONS are passed through directly to IPython, e.g.:
 
-    spin ipython -i myscript.py
+    spin ipython -- -i myscript.py
     """
     _set_pythonpath(pythonpath)
     parent_callback(**kwargs)
