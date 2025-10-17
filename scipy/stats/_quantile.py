@@ -359,5 +359,5 @@ def _quantile_bc(y, p, n, method, xp):
     elif method == '_higher':
         k = xp.ceil(ij)
     elif method == '_nearest':
-        k = np.round(ij)
+        k = xp.round(ij)
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
