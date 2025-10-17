@@ -252,10 +252,20 @@ def mean(matrix: Array, weights: ArrayLike | None = None) -> Array:
     if matrix.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
 
+    lazy = is_lazy_array(matrix)
     quats = quat_from_matrix(matrix[..., :3, :3])
     if weights is None:
         quats_mean = quat_mean(quats)
     else:
+        neg_weights = weights < 0
+        any_neg_weights = xp.any(neg_weights)
+        if not lazy and any_neg_weights:
+            raise ValueError("`weights` must be non-negative.")
+        if weights.shape != matrix.shape[:-2]:
+            raise ValueError(
+                f"Expected `weights` to match transform shape, got shape "
+                f"{weights.shape} for {matrix.shape[:-2]} transformations."
+            )
         quats_mean = quat_mean(quats, weights=weights)
     r_mean = quat_as_matrix(quats_mean)
 
@@ -268,7 +278,13 @@ def mean(matrix: Array, weights: ArrayLike | None = None) -> Array:
         wsum = xp.sum(t * weights[..., None], axis=axis)
         t_mean = wsum / norm
 
-    return _create_transformation_matrix(t_mean, r_mean)
+    tf = _create_transformation_matrix(t_mean, r_mean)
+    if weights is not None and lazy:
+        # We cannot raise on negative weights because jit code needs to be
+        # non-branching. We return NaN instead
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        tf = mask * tf
+    return tf
 
 
 def setitem(
