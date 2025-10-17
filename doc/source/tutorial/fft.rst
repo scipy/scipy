@@ -107,9 +107,9 @@ the spectral domain this multiplication becomes convolution of the signal
 spectrum with the window function spectrum, being of form :math:`\sin(x)/x`.
 This convolution is the cause of an effect called spectral leakage (see
 [WPW]_). Windowing the signal with a dedicated window function helps mitigate
-spectral leakage. The example below uses a Blackman window from scipy.signal
-and shows the effect of windowing (the zero component of the FFT has been
-truncated for illustrative purposes).
+spectral leakage. The example below uses a Blackman window from
+:mod:`scipy.signal` and shows the effect of windowing
+(the zero component of the FFT has been truncated for illustrative purposes).
 
 .. plot::
     :alt: "This code generates an X-Y log-linear plot with amplitude on the Y axis vs frequency on the X axis. The first trace is the FFT with two peaks at 50 and 80 Hz and a noise floor around an amplitude of 1e-2. The second trace is the windowed FFT and has the same two peaks but the noise floor is much lower around an amplitude of 1e-7 due to the window function."
