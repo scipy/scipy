@@ -1920,14 +1920,31 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     if swapped_inputs:
         in1, in2 = in2, in1
 
-    use_fft = _correlate2d_fft_compatible(in1, in2, mode, boundary, fillvalue)
+    val = _valfrommode(mode)
+    bval = _bvalfromboundary(boundary)
 
-    if use_fft:
-        out = _correlate2d_fft_fill(in1, in2, mode)
-    else:
+    needs_fill_fallback = (bval == 0 and fillvalue != 0)
+
+    if mode == 'valid' and needs_fill_fallback:
         kernel = np.conjugate(in2[::-1, ::-1])
         out = convolve2d(in1, kernel, mode=mode, boundary=boundary,
                          fillvalue=fillvalue)
+    elif mode == 'valid':
+        out = _sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
+    else:
+        use_fft = _correlate2d_fft_compatible(in1, in2, mode, boundary, fillvalue)
+        if use_fft and not _fftconv_faster(in1, in2, mode):
+            use_fft = False
+
+        if use_fft:
+            out = _correlate2d_fft_fill(in1, in2, mode)
+        else:
+            if needs_fill_fallback:
+                kernel = np.conjugate(in2[::-1, ::-1])
+                out = convolve2d(in1, kernel, mode=mode, boundary=boundary,
+                                 fillvalue=fillvalue)
+            else:
+                out = _sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
