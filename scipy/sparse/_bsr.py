@@ -318,10 +318,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                                            other.indptr, other.indices))
 
         bnnz = csr_matmat_maxnnz(M//R, N//C,
-                                 self.indptr.astype(idx_dtype),
-                                 self.indices.astype(idx_dtype),
-                                 other.indptr.astype(idx_dtype),
-                                 other.indices.astype(idx_dtype))
+                                 self.indptr.astype(idx_dtype, copy=False),
+                                 self.indices.astype(idx_dtype, copy=False),
+                                 other.indptr.astype(idx_dtype, copy=False),
+                                 other.indices.astype(idx_dtype, copy=False))
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                            other.indptr, other.indices),
@@ -331,11 +331,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
 
         bsr_matmat(bnnz, M//R, N//C, R, C, n,
-                   self.indptr.astype(idx_dtype),
-                   self.indices.astype(idx_dtype),
+                   self.indptr.astype(idx_dtype, copy=False),
+                   self.indices.astype(idx_dtype, copy=False),
                    np.ravel(self.data),
-                   other.indptr.astype(idx_dtype),
-                   other.indices.astype(idx_dtype),
+                   other.indptr.astype(idx_dtype, copy=False),
+                   other.indices.astype(idx_dtype, copy=False),
                    np.ravel(other.data),
                    indptr,
                    indices,
@@ -410,7 +410,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         indptr_diff = np.diff(self.indptr)
         if indptr_diff.dtype.itemsize > np.dtype(np.intp).itemsize:
             # Check for potential overflow
-            indptr_diff_limited = indptr_diff.astype(np.intp)
+            indptr_diff_limited = indptr_diff.astype(np.intp, copy=False)
             if np.any(indptr_diff_limited != indptr_diff):
                 raise ValueError("Matrix too big to convert")
             indptr_diff = indptr_diff_limited
@@ -584,11 +584,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             data = np.empty(R*C*max_bnnz, dtype=upcast(self.dtype,other.dtype))
 
         fn(self.shape[0]//R, self.shape[1]//C, R, C,
-           self.indptr.astype(idx_dtype),
-           self.indices.astype(idx_dtype),
+           self.indptr.astype(idx_dtype, copy=False),
+           self.indices.astype(idx_dtype, copy=False),
            self.data,
-           other.indptr.astype(idx_dtype),
-           other.indices.astype(idx_dtype),
+           other.indptr.astype(idx_dtype, copy=False),
+           other.indices.astype(idx_dtype, copy=False),
            np.ravel(other.data),
            indptr,
            indices,
