@@ -7354,51 +7354,54 @@ class TestTrim:
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
+@make_xp_test_case(stats.sigmaclip)
 class TestSigmaClip:
-    def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip1(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, a.size)
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == a.shape
 
-    def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip2(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, 4)
-        assert_equal(a.size, 36)  # check original array unchanged
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == (4,)
+        assert a.shape == (36,)
 
-    def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip3(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5, 10.5, 11))
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        xp_assert_equal(c, xp.linspace(9.5, 10.5, 11))
 
-    def test_sigmaclip_result_attributes(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip_result_attributes(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_std_zero(self):
+    def test_std_zero(self, xp):
         # regression test #8632
-        x = np.ones(10)
-        assert_equal(stats.sigmaclip(x)[0], x)
+        x = xp.ones(10)
+        xp_assert_equal(stats.sigmaclip(x)[0], x)
 
 
 @make_xp_test_case(stats.alexandergovern)

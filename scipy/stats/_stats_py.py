@@ -3396,7 +3396,8 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "doesn't know array size")],
+                 jax_jit=False)
 def sigmaclip(a, low=4., high=4.):
     """Perform iterative sigma-clipping of array elements.
 
@@ -3460,16 +3461,17 @@ def sigmaclip(a, low=4., high=4.):
     True
 
     """
-    c = np.asarray(a).ravel()
+    xp = array_namespace(a)
+    c = xp_ravel(xp.asarray(a))
     delta = 1
     while delta:
-        c_std = c.std()
-        c_mean = c.mean()
-        size = c.size
+        c_std = xp.std(c)
+        c_mean = xp.mean(c)
+        size = xp_size(c)
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
         c = c[(c >= critlower) & (c <= critupper)]
-        delta = size - c.size
+        delta = size - xp_size(c)
 
     return SigmaclipResult(c, critlower, critupper)
 
