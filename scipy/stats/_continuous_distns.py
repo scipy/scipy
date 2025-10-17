@@ -5503,7 +5503,7 @@ class norminvgauss_gen(rv_continuous):
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 
     In SciPy, this corresponds to
-    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+    :math:`a=\alpha \delta, b=\beta \delta, \text{loc}=\mu, \text{scale}=\delta`.
 
     References
     ----------
