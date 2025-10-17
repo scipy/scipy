@@ -824,13 +824,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyBytes_Check(input)) {                \
-        s = PyBytes_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                 \
+        s = PyBytes_AsString(input);            \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyBytes_AS_STRING(tmpobj);         \
+        s = PyBytes_AsString(tmpobj);           \
     }                                           \
     else if (PyLong_Check(input)) {              \
         i = PyLong_AsLong(input);                \
