@@ -7816,7 +7816,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=2, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
+def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7972,6 +7972,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # because of the _axis_nan_policy decorator, we can assume the arrays
+    # are broadcasted and `axis=-1`
     mode = method
 
     if mode not in ['auto', 'exact', 'asymp']:
@@ -7982,42 +7984,70 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
 
-    data1 = np.sort(data1)
-    data2 = np.sort(data2)
-    n1 = data1.shape[0]
-    n2 = data2.shape[0]
+    data1 = np.sort(data1, axis=-1)
+    data2 = np.sort(data2, axis=-1)
+    n1 = data1.shape[-1]
+    n2 = data2.shape[-1]
     if min(n1, n2) == 0:
         raise ValueError('Data passed to ks_2samp must not be empty')
     n = n1 + n2
 
-    data_all = np.concatenate([data1, data2])
-    ranks, data_all = _rankdata(data_all, method='min')
+    data_all = np.concatenate([data1, data2], axis=-1)
+    ranks, data_all = _rankdata(data_all, method='min')  # assumes axis=-1
 
-    cdf_counts1 = np.diff(ranks[:n1], prepend=1, append=n + 1)
-    cdf_counts2 = np.diff(ranks[-n2:], prepend=1, append=n + 1)
-    cdf1 = np.repeat(np.linspace(0, 1, n1 + 1), cdf_counts1)
-    cdf2 = np.repeat(np.linspace(0, 1, n2 + 1), cdf_counts2)
-    cddiffs = cdf1 - cdf2
+    cdf_counts1 = np.diff(ranks[..., :n1], prepend=1, append=n + 1, axis=-1)
+    cdf_counts2 = np.diff(ranks[..., -n2:], prepend=1, append=n + 1, axis=-1)
+    cdf1_vals, cdf1_counts = np.broadcast_arrays(np.linspace(0, 1, n1 + 1), cdf_counts1)
+    cdf2_vals, cdf2_counts = np.broadcast_arrays(np.linspace(0, 1, n2 + 1), cdf_counts2)
+    cdf1 = np.repeat(np.ravel(cdf1_vals), np.ravel(cdf1_counts), axis=-1)
+    cdf2 = np.repeat(np.ravel(cdf2_vals), np.ravel(cdf2_counts), axis=-1)
+    cddiffs = np.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
 
     # Identify the location of the statistic
-    argminS = np.argmin(cddiffs)
-    argmaxS = np.argmax(cddiffs)
-    loc_minS = data_all[argminS]
-    loc_maxS = data_all[argmaxS]
+    argminS = np.argmin(cddiffs, axis=-1, keepdims=True)
+    argmaxS = np.argmax(cddiffs, axis=-1, keepdims=True)
+    loc_minS = np.squeeze(np.take_along_axis(data_all, argminS, axis=-1), axis=-1)
+    loc_maxS = np.squeeze(np.take_along_axis(data_all, argmaxS, axis=-1), axis=-1)
 
     # Ensure sign of minS is not negative.
-    minS = np.clip(-cddiffs[argminS], 0, 1)
-    maxS = cddiffs[argmaxS]
+    minS = -np.squeeze(np.take_along_axis(cddiffs, argminS, axis=-1), axis=-1)
+    maxS = np.squeeze(np.take_along_axis(cddiffs, argmaxS, axis=-1), axis=-1)
+    minS = np.clip(minS, 0., 1.)
 
-    if alternative == 'less' or (alternative == 'two-sided' and minS > maxS):
-        d = minS
-        d_location = loc_minS
-        d_sign = -1
+    if alternative == 'less':
+        selector = np.ones(minS.shape, dtype=bool)
+    elif alternative == 'two-sided':
+        selector = minS > maxS
     else:
-        d = maxS
-        d_location = loc_maxS
-        d_sign = 1
-    g = math.gcd(n1, n2)
+        selector = np.zeros(minS.shape, dtype=bool)
+
+    d = np.where(selector, minS, maxS)
+    d_location = np.where(selector, loc_minS, loc_maxS)
+    d_sign = np.where(selector, -1, 1).astype(np.int8)
+    prob = _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative)
+
+    if mode == 'exact' or (max(n1, n2) <= MAX_AUTO_N):
+        g = np.gcd(n1, n2)
+        lcm = (n1 // g) * n2
+        h = np.round(d * lcm)
+        d = h / lcm
+        h_zero = (h == 0)
+        prob[h_zero] = 1.0
+
+    # Currently, `d` is a Python float. We want it to be a NumPy type, so
+    # float64 is appropriate. An enhancement would be for `d` to respect the
+    # dtype of the input.
+    d = d.astype(np.float64, copy=False)
+    return KstestResult(d[()], prob[()], statistic_location=d_location[()],
+                        statistic_sign=d_sign[()])
+
+
+@np.vectorize(excluded={1, 2, 3, 4, 5}, otypes=[np.float64])
+def _ks_2samp_prob(d, n1, n2, mode, MAX_AUTO_N, alternative):
+    # math.gcd used to return an `int`, but now that these return arrays, NumPy can
+    # return an int32. Unless we want the pythranized functions to be compiled for
+    # int32, this needs to produce an int64.
+    g = np.gcd(n1, n2).astype(np.int64)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
@@ -8056,11 +8086,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             prob = np.exp(expt)
 
     prob = np.clip(prob, 0, 1)
-    # Currently, `d` is a Python float. We want it to be a NumPy type, so
-    # float64 is appropriate. An enhancement would be for `d` to respect the
-    # dtype of the input.
-    return KstestResult(np.float64(d), prob, statistic_location=d_location,
-                        statistic_sign=np.int8(d_sign))
+    return prob
 
 
 def _parse_kstest_args(data1, data2, args, N):
@@ -10119,7 +10145,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties
+        return _order_ranks(ordinal_ranks, j, xp=xp), None  # never return ties
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
