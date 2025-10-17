@@ -3372,9 +3372,17 @@ class TestIQR:
         assert_equal(stats.iqr(x, rng=(12.5, 75)), 2.5)
         assert_almost_equal(stats.iqr(x, rng=(10, 50)), 1.6)  # 3-1.4
 
-        assert_raises(ValueError, stats.iqr, x, rng=(0, 101))
-        assert_raises(ValueError, stats.iqr, x, rng=(np.nan, 25))
-        assert_raises(TypeError, stats.iqr, x, rng=(0, 50, 60))
+        message = r"Elements of `rng` must be in the range \[0, 100\]."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, rng=(0, 101))
+
+        message = "`rng` must not contain NaNs."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, rng=(np.nan, 25))
+
+        message = "`rng` must be a two element sequence."
+        with pytest.raises(TypeError, match=message):
+            stats.iqr(x, rng=(0, 50, 60))
 
     def test_interpolation(self):
         x = np.arange(5)
@@ -3495,6 +3503,13 @@ class TestIQR:
 
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
+
+    def test_rng_order(self):
+        # test that order of `rng` doesn't matter (as documented)
+        x = np.arange(8) * 0.5
+        res = stats.iqr(x, rng=(75, 25))
+        ref = stats.iqr(x)
+        assert_equal(res, ref)
 
 
 @make_xp_test_case(stats.moment)
