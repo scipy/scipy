@@ -323,13 +323,19 @@ PyTorch, and JAX on CPU.
 Testing Practice
 ````````````````
 
-It's best if individual tests using the ``xp`` fixture restrict
-use of alternative backends to only a single function ``f`` being tested. Other
-functions evaluated within a test, for the purpose of producing reference values,
-inputs, round-trip calculations, etc. should instead use the NumPy backend. This helps
-ensure that any failures that occur on a backend actually relate to the function
-of interest, and avoids the need to skip backends due to lack of support for
-functions other than ``f``.
+It's important that for any supported function ``f``, there exist tests using
+the ``xp`` fixture that restrict use of alternative backends to only the function
+``f`` being tested. Other functions evaluated within a test, for the purpose of
+producing reference values, inputs, round-trip calculations, etc. should instead
+use the NumPy backend. This helps ensure that any failures that occur on a backend
+actually relate to the function of interest, and avoids the need to skip backends
+due to lack of support for functions other than ``f``. Property based integration
+tests which check that some invariant holds using the same alternative backend
+across different functions can also have value, giving a window into the general
+health of backend support for a module, but in order to ensure the test suite
+actually reflects the state of backend support for each function, it's vital to
+have tests which isolate use of the alternative backend only to the function being
+tested.
 
 To help facilitate such backend isolation, there is a function ``_xp_copy_to_numpy``
 in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
@@ -390,13 +396,6 @@ NumPy arrays in order to ensure the default dtype is respected::
   bp, ap = zpk2tf(z, p, k)
   xp_assert_close(b, bp)
   xp_assert_close(a, ap)
-
-The above suggestions mainly concern the bulk conversion of existing tests to
-work with alternative backends. There may be specific cases where such isolation
-is neither necessary nor desirable. Maintainers have discretion to write and
-accept tests as they see fit, so long as they take care to investigate that use
-of the alternative backend across multiple functions in the same test is sound,
-and will not require unnecessary skips or xfails to be added.
 
 
 Testing the JAX JIT compiler
