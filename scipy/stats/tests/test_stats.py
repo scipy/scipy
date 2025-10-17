@@ -2385,9 +2385,9 @@ class TestRegression:
         rng = np.random.default_rng(7872425088)
         x = np.zeros(10)
         y = rng.random(10)
-        msg = "Cannot calculate a linear regression"
-        with assert_raises(ValueError, match=msg):
-            stats.linregress(x, y)
+        with np.errstate(invalid='ignore'):
+            res = stats.linregress(x, y)
+        assert_allclose(res, np.nan)
 
 
 def test_theilslopes():

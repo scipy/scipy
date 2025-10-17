@@ -10466,7 +10466,7 @@ def _unpack_LinregressResult(res, _):
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
-def linregress(x, y, alternative='two-sided'):
+def linregress(x, y, alternative='two-sided', *, axis=0):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -10483,6 +10483,11 @@ def linregress(x, y, alternative='two-sided'):
         * 'greater':  the slope of the regression line is greater than zero
 
         .. versionadded:: 1.7.0
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -10574,49 +10579,44 @@ def linregress(x, y, alternative='two-sided'):
     intercept (95%): 0.616950 +/- 0.544475
 
     """
+    np = array_namespace(x, y)  # needed for vecdot pre NumPy 2.0
+
     TINY = 1.0e-20
-    x = np.asarray(x)
-    y = np.asarray(y)
 
-    if x.size == 0 or y.size == 0:
-        raise ValueError("Inputs must not be empty.")
-
-    if np.amax(x) == np.amin(x) and len(x) > 1:
-        raise ValueError("Cannot calculate a linear regression "
-                         "if all x values are identical")
-
-    n = len(x)
-    xmean = np.mean(x, None)
-    ymean = np.mean(y, None)
+    axis = -1
+    n = x.shape[axis]
+    xmean = np.mean(x, axis=axis, keepdims=True)
+    ymean = np.mean(y, axis=axis, keepdims=True)
 
     # Average sums of square differences from the mean
     #   ssxm = mean( (x-mean(x))^2 )
     #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
-    ssxm, ssxym, _, ssym = np.cov(x, y, bias=1).flat
+    x_ = _demean(x, xmean, axis=axis, xp=np)
+    y_ = _demean(y, ymean, axis=axis, xp=np, precision_warning=False)
+    xmean = np.squeeze(xmean, axis=-1)
+    ymean = np.squeeze(ymean, axis=-1)
+
+    ssxm = np.vecdot(x_, x_, axis=axis) / n
+    ssym = np.vecdot(y_, y_, axis=axis) / n
+    ssxym = np.vecdot(x_, y_, axis=axis) / n
 
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
-    if ssxm == 0.0 or ssym == 0.0:
-        # If the denominator was going to be 0
-        r = np.asarray(np.nan if ssxym == 0 else 0.0)[()]
-    else:
-        r = ssxym / np.sqrt(ssxm * ssym)
-        # Test for numerical error propagation (make sure -1 < r < 1)
-        if r > 1.0:
-            r = 1.0
-        elif r < -1.0:
-            r = -1.0
+    degenerate = (ssxm == 0.0) | (ssym == 0.0)
+    r = xpx.apply_where(
+        ~degenerate,
+        (ssxym, ssxm, ssym),
+        lambda ssxym, ssxm, ssym: np.clip(ssxym / np.sqrt(ssxm * ssym), -1.0, 1.0),
+        lambda ssxym, ssxm, ssym: np.where(ssxym==0, np.nan, 0.0)
+    )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
     if n == 2:
         # handle case when only two points are passed in
-        if y[0] == y[1]:
-            prob = 1.0
-        else:
-            prob = 0.0
-        slope_stderr = 0.0
-        intercept_stderr = 0.0
+        prob = np.where(y[..., 0] == y[..., 1], 1.0, 0.0)
+        slope_stderr = np.zeros_like(r)
+        intercept_stderr = np.zeros_like(r)
     else:
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
@@ -10636,9 +10636,9 @@ def linregress(x, y, alternative='two-sided'):
         #        = mean( x^2 ) - mean(x)^2
         intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
-                            pvalue=prob, stderr=slope_stderr,
-                            intercept_stderr=intercept_stderr)
+    return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
+                            pvalue=prob[()], stderr=slope_stderr[()],
+                            intercept_stderr=intercept_stderr[()])
 
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
