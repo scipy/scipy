@@ -569,8 +569,8 @@ class TestBootstrap:
 
     def test_jackknife_resample(self, xp):
         shape = 3, 4, 5, 6
-        np.random.seed(0)
-        x = np.random.rand(*shape)
+        rng = np.random.default_rng(5274950392)
+        x = rng.random(size=shape)
         y = next(_resampling._jackknife_resample(xp.asarray(x), xp=xp))
 
         for i in range(shape[-1]):
@@ -588,15 +588,14 @@ class TestBootstrap:
                                   reason="Test uses ... + fancy indexing")
     @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
     def test_bootstrap_resample(self, rng_name, xp):
-        rng = getattr(np.random, rng_name)
-
-        rng1 = rng(0)
-        rng2 = rng(0)
+        rng_gen = getattr(np.random, rng_name)
+        rng1 = rng_gen(3949441460)
+        rng2 = rng_gen(3949441460)
 
         n_resamples = 10
         shape = 3, 4, 5, 6
 
-        rng = np.random.default_rng(5894822712842015040)
+        rng = np.random.default_rng(5274950392)
         x = xp.asarray(rng.random(shape))
         y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1, xp=xp)
 
@@ -614,8 +613,8 @@ class TestBootstrap:
     @pytest.mark.parametrize("axis", [0, 1, 2])
     def test_percentile_of_score(self, score, axis, xp):
         shape = 10, 20, 30
-        np.random.seed(0)
-        x = np.random.rand(*shape)
+        rng = np.random.default_rng(5903363153)
+        x = rng.random(shape)
         dtype = xp_default_dtype(xp)
         p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
                                              xp.asarray(score, dtype=dtype),
