@@ -30,6 +30,7 @@ import numbers
 import numpy as np
 from numpy import pi, arange
 from scipy.fft import fft, ifft, next_fast_len
+from ._support_alternative_backends import _dispatchable
 
 __all__ = ['czt', 'zoom_fft', 'CZT', 'ZoomFFT', 'czt_points']
 
@@ -391,6 +392,7 @@ class ZoomFFT(CZT):
         self._yidx = slice(n-1, n+m-1)
 
 
+@_dispatchable(['x'])
 def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     """
     Compute the frequency response around a spiral in the Z plane.
@@ -505,6 +507,7 @@ def czt(x, m=None, w=None, a=1+0j, *, axis=-1):
     return transform(x, axis=axis)
 
 
+@_dispatchable(['x', 'fn'])
 def zoom_fft(x, fn, m=None, *, fs=2, endpoint=False, axis=-1):
     """
     Compute the DFT of `x` only for frequencies in range `fn`.

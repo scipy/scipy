@@ -3,6 +3,7 @@ from scipy.linalg import lstsq
 from scipy._lib._util import float_factorial
 from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
 from ._arraytools import axis_slice
+from ._support_alternative_backends import _dispatchable
 
 
 def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
@@ -227,6 +228,7 @@ def _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y):
               polyorder, deriv, delta, y)
 
 
+@_dispatchable(['x'])
 def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
                   axis=-1, mode='interp', cval=0.0):
     """ Apply a Savitzky-Golay filter to an array.

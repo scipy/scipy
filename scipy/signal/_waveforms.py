@@ -7,12 +7,14 @@
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
 
+@_dispatchable(['t'])
 def sawtooth(t, width=1):
     """
     Return a periodic sawtooth or triangle waveform.
@@ -81,6 +83,7 @@ def sawtooth(t, width=1):
     return y
 
 
+@_dispatchable(['t'])
 def square(t, duty=0.5):
     """
     Return a periodic square-wave waveform.
@@ -151,6 +154,7 @@ def square(t, duty=0.5):
     return y
 
 
+@_dispatchable(['t'])
 def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
                retenv=False):
     """
@@ -248,6 +252,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yQ, yenv
 
 
+@_dispatchable(['t'])
 def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
           complex=False):
     r"""Frequency-swept cosine generator.
@@ -470,6 +475,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     return phase
 
 
+@_dispatchable(['t', 'poly'])
 def sweep_poly(t, poly, phi=0):
     """
     Frequency-swept cosine generator, with a time-dependent frequency.

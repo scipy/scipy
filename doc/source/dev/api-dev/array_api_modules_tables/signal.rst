@@ -23,22 +23,26 @@ the default NumPy-based implementation and the JAX and CuPy backends. Skipping t
 incompatible backends in unit tests, as described in the
 :ref:`dev-arrayapi_adding_tests` section, is the currently recommended workaround.
 
-The functions are decorated by the code in file
+The functions are decorated inline with ``_dispatchable`` from
 ``scipy/signal/_support_alternative_backends.py``:
 
 .. literalinclude:: ../../../../../scipy/signal/_support_alternative_backends.py
     :lineno-match:
 
-Note that a function will only be decorated if the environment variable
-``SCIPY_ARRAY_API`` is set and its signature is listed in the file
-``scipy/signal/_delegators.py``. E.g., for `~scipy.signal.firwin`, the signature
-function looks like this:
+which is implemented via [``spatch``](https://scientific-python.github.io/spatch/api/for_libraries.html).
 
-.. literalinclude:: ../../../../../scipy/signal/_delegators.py
-    :pyobject: firwin_signature
-    :lineno-match:
+If ``SCIPY_ARRAY_API`` is set, this will set up dispatching based on the
+signature and whether ``cupy=`` and/or ``jax=`` are passed in the decorator.
+The decorator consists of:
 
+* The signature description, either listing all array parameters or a callable
+  which returns a tuple of array parameters.
+* ``cupy=`` argument which defaults to ``True`` and signals if CuPy supports
+  the function. It can be set to a string if CuPy uses a different name.
+* ``jax=`` argument which defaults to ``False`` and has to be set
+  to ``True`` or a string if the function is supported on JAX.
 
+Other arguments are forwarded to ``spatch``.
 
 .. _array_api_support_signal_cpu:
 
