@@ -814,3 +814,19 @@ class RandomTable(Benchmark):
 
     def time_method(self, method, ntot, ncell):
         self.dist.rvs(1000, method=method, random_state=self.rng)
+
+
+class Quantile(Benchmark):
+    param_names = ["size", "d"]
+    params = [
+        [10_000, 100_000, 1_000_000],
+        [1, 100]
+    ]
+
+    def setup(self, size, d):
+        self.rng = np.random.default_rng(2475928)
+        n = size // d
+        self.x = self.rng.uniform(size=(d, n))
+
+    def time_quantile(self, size, d):
+        stats.quantile(self.x, 0.5, axis=1)
