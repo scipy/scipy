@@ -989,7 +989,9 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
+    # _axis_nan_policy decorator does not currently support these for lazy arrays.
+    # We want to run tests with lazy backends, so don't pass the arguments explicitly
+    # unless necessary.
     kwargs = {}
     if keepdims is not False:
         kwargs[keepdims] = keepdims
@@ -1693,8 +1695,8 @@ def _yeojohnson_transform(x, lmbda):
 
 
 @xp_capabilities(np_only=True)
-def yeojohnson_llf(lmb, data):
-    r"""The yeojohnson log-likelihood function.
+def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
+    r"""The Yeo-Johnson log-likelihood function.
 
     Parameters
     ----------
@@ -1702,9 +1704,27 @@ def yeojohnson_llf(lmb, data):
         Parameter for Yeo-Johnson transformation. See `yeojohnson` for
         details.
     data : array_like
-        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
-        multi-dimensional, the log-likelihood is calculated along the first
-        axis.
+        Data to calculate Yeo-Johnson log-likelihood for.
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -1778,25 +1798,35 @@ def yeojohnson_llf(lmb, data):
     >>> plt.show()
 
     """
-    data = np.asarray(data)
-    n_samples = data.shape[0]
+    # _axis_nan_policy decorator does not currently support these for lazy arrays.
+    # We want to run tests with lazy backends, so don't pass the arguments explicitly
+    # unless necessary.
+    kwargs = {}
+    if keepdims is not False:
+        kwargs[keepdims] = keepdims
+    if nan_policy != 'propagate':
+        kwargs[nan_policy] = nan_policy
+    return _yeojohnson_llf(data, lmb=lmb, axis=axis, keepdims=keepdims,
+                           nan_policy=nan_policy)
 
-    if n_samples == 0:
-        return np.nan
 
+@_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
+                          result_to_tuple=lambda x, _: (x,))
+def _yeojohnson_llf(data, *, lmb):
     trans = _yeojohnson_transform(data, lmb)
-    trans_var = trans.var(axis=0)
+    trans_var = trans.var(axis=-1)
     loglike = np.empty_like(trans_var)
 
     # Avoid RuntimeWarning raised by np.log when the variance is too low
     tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
     loglike[tiny_variance] = np.inf
 
+    n = data.shape[-1]
     loglike[~tiny_variance] = (
-        -n_samples / 2 * np.log(trans_var[~tiny_variance]))
+        -n / 2 * np.log(trans_var[~tiny_variance]))
     loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
-    return loglike
+        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=-1))
+    return loglike[()]
 
 
 @xp_capabilities(np_only=True)
@@ -1850,7 +1880,7 @@ def yeojohnson_normmax(x, brack=None):
 
     """
     def _neg_llf(lmbda, data):
-        llf = yeojohnson_llf(lmbda, data)
+        llf = np.asarray(yeojohnson_llf(lmbda, data))
         # reject likelihoods that are inf which are likely due to small
         # variance in the transformed space
         llf[np.isinf(llf)] = -np.inf

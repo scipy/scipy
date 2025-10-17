@@ -2430,7 +2430,9 @@ class TestYeojohnson_llf:
         assert_allclose([llf, llf], llf2, rtol=1e-12)
 
     def test_empty(self):
-        assert_(np.isnan(stats.yeojohnson_llf(1, [])))
+        message = "One or more sample arguments is too small..."
+        with pytest.warns(SmallSampleWarning, match=message):
+            assert_(np.isnan(stats.yeojohnson_llf(1, [])))
 
 
 class TestYeojohnson:
