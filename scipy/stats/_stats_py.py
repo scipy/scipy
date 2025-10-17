@@ -3171,8 +3171,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
            [ 1.]])
 
     """
-    rng = np.asarray(rng)
-
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
@@ -3181,13 +3179,21 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             raise ValueError(f"{scale} not a valid scale for `iqr`")
         scale = _scale_conversions[scale_key]
 
-    if rng.size != 2:
-        raise TypeError("quantile range must be two element sequence")
+    if len(rng) != 2:
+        raise TypeError("`rng` must be a two element sequence.")
 
     if np.isnan(rng).any():
-        raise ValueError("range must not contain NaNs")
+        raise ValueError("`rng` must not contain NaNs.")
 
-    pct = stats.quantile(x, rng/100, axis=-1, method=interpolation, keepdims=True)
+    rng = (rng[0]/100, rng[1]/100) if rng[0] < rng[1] else (rng[1]/100, rng[0]/100)
+
+    if rng[0] < 0 or rng[1] > 1:
+        raise ValueError("Elements of `rng` must be in the range [0, 100].")
+
+    if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
+        interpolation = '_' + interpolation
+
+    pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 
     if scale != 1.0:
