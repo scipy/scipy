@@ -3,7 +3,9 @@ import sys
 import numpy as np
 from numpy import inf
 
+from scipy._lib import array_api_extra as xpx
 from scipy import special
+from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
     _RealParameter, _Parameterization, _combine_docs)
@@ -482,7 +484,7 @@ class Binomial(DiscreteDistribution):
         super().__init__(n=n, p=p, **kwargs)
 
     def _pmf_formula(self, x, *, n, p, **kwargs):
-        return special._ufuncs._binom_pmf(x, n, p)
+        return scu._binom_pmf(x, n, p)
 
     def _logpmf_formula(self, x, *, n, p, **kwargs):
         # This implementation is from the ``scipy.stats.binom`` and could be improved
@@ -494,16 +496,32 @@ class Binomial(DiscreteDistribution):
         return combiln + special.xlogy(x, p) + special.xlog1py(n-x, -p)
 
     def _cdf_formula(self, x, *, n, p, **kwargs):
-        return special._ufuncs._binom_cdf(x, n, p)
+        return scu._binom_cdf(x, n, p)
+
+    def _logcdf_formula(self, x, *, n, p, **kwargs):
+        # todo: add this strategy to infrastructure more generally, but allow dist
+        #   author to specify threshold other than median in case median is expensive
+        median = self._icdf_formula(0.5, n=n, p=p)
+        return xpx.apply_where(x < median, (x, n, p),
+            lambda *args: np.log(scu._binom_cdf(*args)),
+            lambda *args: np.log1p(-scu._binom_sf(*args))
+        )
 
     def _ccdf_formula(self, x, *, n, p, **kwargs):
-        return special._ufuncs._binom_sf(x, n, p)
+        return scu._binom_sf(x, n, p)
+
+    def _logccdf_formula(self, x, *, n, p, **kwargs):
+        median = self._icdf_formula(0.5, n=n, p=p)
+        return xpx.apply_where(x < median, (x, n, p),
+            lambda *args: np.log1p(-scu._binom_cdf(*args)),
+            lambda *args: np.log(scu._binom_sf(*args))
+        )
 
     def _icdf_formula(self, x, *, n, p, **kwargs):
-        return special._ufuncs._binom_ppf(x, n, p)
+        return scu._binom_ppf(x, n, p)
 
     def _iccdf_formula(self, x, *, n, p, **kwargs):
-        return special._ufuncs._binom_isf(x, n, p)
+        return scu._binom_isf(x, n, p)
 
     def _mode_formula(self, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Mode
