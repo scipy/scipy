@@ -1614,8 +1614,9 @@ class TestBilinear:
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_basic(self, xp):
         # reference output values computed with sympy
-        b = xp.asarray([0.14879732743343033])
-        a = xp.asarray([1, 0.54552236880522209, 0.14879732743343033])
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+        b, a = map(xp.asarray, (b, a))
 
         b_zref = xp.asarray(
             [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
@@ -1648,8 +1649,9 @@ class TestBilinear:
         # regression for gh-6606
         # results shouldn't change when leading zeros are added to
         # input numerator or denominator
-        b = xp.asarray([0.14879732743343033])
-        a = xp.asarray([1, 0.54552236880522209, 0.14879732743343033])
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+        b, a = map(xp.asarray, (b, a))
 
         b_zref = xp.asarray(
             [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
