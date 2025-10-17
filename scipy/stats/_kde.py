@@ -158,22 +158,18 @@ class gaussian_kde:
            https://en.wikipedia.org/wiki/Kernel_density_estimation
 
     Examples
-    --------
-    Generate some random two-dimensional data:
+--------
+Estimate a smooth probability density function from 1D data:
 
-    >>> import numpy as np
-    >>> from scipy import stats
-    >>> def measure(n):
-    ...     "Measurement model, return two coupled measurements."
-    ...     m1 = np.random.normal(size=n)
-    ...     m2 = np.random.normal(scale=0.5, size=n)
-    ...     return m1+m2, m1-m2
+>>> import numpy as np
+>>> from scipy.stats import gaussian_kde
+>>> data = np.random.normal(0, 1, size=1000)
+>>> kde = gaussian_kde(data)
+>>> xs = np.linspace(-5, 5, 100)
+>>> ys = kde(xs)
+>>> ys.shape
+(100,)
 
-    >>> m1, m2 = measure(2000)
-    >>> xmin = m1.min()
-    >>> xmax = m1.max()
-    >>> ymin = m2.min()
-    >>> ymax = m2.max()
 
     Perform a kernel density estimate on the data:
 
