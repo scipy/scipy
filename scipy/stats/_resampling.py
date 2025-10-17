@@ -1349,7 +1349,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
         significance = xpx.expand_dims(significance, axis=newdims)
 
-    float_dtype = xp_result_type(significance, xp=xp)
+    float_dtype = xp_result_type(significance, pvalues, xp=xp)
     powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)
 
     return PowerResult(power=powers, pvalues=pvalues)
