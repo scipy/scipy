@@ -10,7 +10,7 @@ from . import _dierckx  # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities
 
 from ._bsplines import _not_a_knot, BSpline
 
@@ -25,6 +25,13 @@ def _get_dtype(dtype):
         return np.float64
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class NdBSpline:
     """Tensor product spline object.
 

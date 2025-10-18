@@ -6,7 +6,7 @@ from types import GenericAlias
 import numpy as np
 
 import scipy.sparse.linalg as ssl
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities
 from scipy._lib.array_api_compat import numpy as np_compat, is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
@@ -56,6 +56,13 @@ def _check_dimensionality(points, values):
             )
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class RegularGridInterpolator:
     """Interpolator of specified order on a rectilinear grid in N ≥ 1 dimensions.
 
