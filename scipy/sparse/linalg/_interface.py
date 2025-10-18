@@ -824,6 +824,9 @@ class MatrixLinearOperator(LinearOperator):
         self.__adj = None
         self.args = (A,)
 
+        if hasattr(A, '_matmul_vector'):
+            self._matvec = A._matmul_vector
+
     def _matmat(self, X):
         return self.A.dot(X)
 
@@ -835,13 +838,10 @@ class MatrixLinearOperator(LinearOperator):
 
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint_array):
-        self.A = adjoint_array.T.conj()
+        A = adjoint_array.T.conj()
+        super().__init__(A)
         self.args = (adjoint_array,)
         self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
-
-    @property
-    def dtype(self):
-        return self.args[0].dtype
 
     def _adjoint(self):
         return MatrixLinearOperator(self.args[0])
