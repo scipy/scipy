@@ -8,7 +8,7 @@ from importlib import import_module
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table
+    xp_capabilities_table, _xp_copy_to_numpy
 )
 from scipy._lib._array_api_docs_tables import is_named_function_like_object
 from scipy._lib import array_api_extra as xpx
@@ -143,6 +143,27 @@ class TestArrayAPI:
                 pass
             else:
                 assert x[0] != y[0]
+
+    @pytest.mark.parametrize(
+        "dtype",
+        ["float32", "float64", "complex64", "complex128", "int32", "int64"],
+    )
+    @pytest.mark.parametrize(
+        "data", [[], 1, [1, 2, 3], [[1, 2], [2, 3]]],
+    )
+    def test_copy_to_numpy(self, xp, data, dtype):
+        xp_dtype = getattr(xp, dtype)
+        np_dtype = getattr(np, dtype)
+        x = xp.asarray(data, dtype=xp_dtype)
+        y = _xp_copy_to_numpy(x)
+        assert isinstance(y, np.ndarray)
+        assert y.dtype == np_dtype
+        assert x.shape == y.shape
+        np.testing.assert_equal(y, np.asarray(data, dtype=np_dtype))
+        if is_numpy(xp):
+            # Ensure y is a copy when xp is numpy.
+            assert id(x) != id(y)
+
     
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
