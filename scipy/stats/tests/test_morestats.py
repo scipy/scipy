@@ -2413,24 +2413,29 @@ class TestBoxcoxNormplot:
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
+@make_xp_test_case(stats.yeojohnson_llf)
 class TestYeojohnson_llf:
 
     def test_array_like(self):
+        # array_like not applicable with SCIPY_ARRAY_API=1
         x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
-    def test_2d_input(self):
+    def test_2d_input(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
+        x = xp.asarray(x)
         lmbda = 1
-        llf = stats.yeojohnson_llf(lmbda, x)
-        llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
-        assert_allclose([llf, llf], llf2, rtol=1e-12)
+        ref = stats.yeojohnson_llf(lmbda, x)
+        res = stats.yeojohnson_llf(lmbda, xp.stack([x, x]).T)
+        xp_assert_close(res, xp.stack((ref, ref)), rtol=1e-12)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.yeojohnson_llf(1, [])))
+    def test_empty(self, xp):
+        message = "One or more sample arguments is too small..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
+            assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
 
 
 class TestYeojohnson:
