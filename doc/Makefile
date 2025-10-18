@@ -80,8 +80,6 @@ dist:
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
-doc-dist: VERSIONWARNING=-t versionwarning
-
 doc-dist: html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
@@ -112,7 +110,7 @@ upload:
 html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
+	$(SPHINXBUILD) -WT --keep-going -b html $(ALLSPHINXOPTS) build/html $(FILES)
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees
