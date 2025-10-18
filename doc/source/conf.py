@@ -269,7 +269,6 @@ html_last_updated_fmt = '%b %d, %Y'
 
 html_css_files = [
     "scipy.css",
-    "try_examples.css",
 ]
 
 # html_additional_pages = {
