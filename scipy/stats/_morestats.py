@@ -1808,28 +1808,27 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
         kwargs[keepdims] = keepdims
     if nan_policy != 'propagate':
         kwargs[nan_policy] = nan_policy
-    return _yeojohnson_llf(data, lmb=lmb, axis=axis, keepdims=keepdims,
-                           nan_policy=nan_policy)
+    res = _yeojohnson_llf(data, lmb=lmb, axis=axis, keepdims=keepdims,
+                          nan_policy=nan_policy)
+    return res[()] if res.ndim == 0 else res
 
 
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
                           result_to_tuple=lambda x, _: (x,))
 def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
-    trans = _yeojohnson_transform(data, lmb, xp=xp)
-    trans_var = xp.var(trans, axis=axis)
-    loglike = xp.empty_like(trans_var)
+    y = _yeojohnson_transform(data, lmb, xp=xp)
+    sigma = xp.var(y, axis=axis)
 
-    # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < xp.finfo(trans_var.dtype).smallest_normal
-    loglike[tiny_variance] = xp.inf
+    # Suppress RuntimeWarning raised by np.log when the variance is too low
+    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
+    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
 
     n = data.shape[axis]
-    loglike[~tiny_variance] = (
-        -n / 2 * xp.log(trans_var[~tiny_variance]))
-    loglike[~tiny_variance] += (
-        (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
-    return loglike[()] if loglike.ndim == 0 else loglike
+    loglike = (-n / 2 * log_sigma
+               + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
+
+    return loglike
 
 
 @xp_capabilities(np_only=True)
