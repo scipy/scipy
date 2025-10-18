@@ -2421,7 +2421,7 @@ class NdBSpline0:
         return np.asarray(result)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(NdBSpline)
 class TestNdBSpline:
 
     def test_1D(self, xp):

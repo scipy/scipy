@@ -6,7 +6,8 @@ import numpy as np
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
-    xp_assert_equal, xp_assert_close, assert_array_almost_equal
+    xp_assert_equal, xp_assert_close, assert_array_almost_equal,
+    make_xp_test_case
 )
 from scipy.conftest import skip_xp_invalid_arg
 
@@ -19,14 +20,12 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import _run_concurrent_barrier
 
-skip_xp_backends = pytest.mark.skip_xp_backends
-
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
     "method", RegularGridInterpolator._ALL_METHODS
 )
 
-@skip_xp_backends(cpu_only=True, reason="compliled code")
+@make_xp_test_case(RegularGridInterpolator)
 class TestRegularGridInterpolator:
     def _get_sample_4d(self, xp):
         # create a 4-D grid of 3 points in each dimension
