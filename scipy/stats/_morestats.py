@@ -1682,21 +1682,22 @@ def _yeojohnson_transform(x, lmbda, xp=None):
 
     # when x >= 0
     if abs(lmbda) < eps:
-        out[pos] = xp.log1p(x[pos])
+        out = xpx.at(out)[pos].set(xp.log1p(x[pos]))
     else:  # lmbda != 0
         # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
-        out[pos] = xp.expm1(lmbda * xp.log1p(x[pos])) / lmbda
+        out = xpx.at(out)[pos].set(xp.expm1(lmbda * xp.log1p(x[pos])) / lmbda)
 
     # when x < 0
     if abs(lmbda - 2) > eps:
-        out[~pos] = -xp.expm1((2 - lmbda) * xp.log1p(-x[~pos])) / (2 - lmbda)
+        out = xpx.at(out)[~pos].set(
+            -xp.expm1((2 - lmbda) * xp.log1p(-x[~pos])) / (2 - lmbda))
     else:  # lmbda == 2
-        out[~pos] = -xp.log1p(-x[~pos])
+        out = xpx.at(out)[~pos].set(-xp.log1p(-x[~pos]))
 
     return out
 
 
-@xp_capabilities(np_only=True, exceptions=['array_api_strict', 'torch'])
+@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")])
 def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
     r"""The Yeo-Johnson log-likelihood function.
 
@@ -1808,8 +1809,7 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
         kwargs[keepdims] = keepdims
     if nan_policy != 'propagate':
         kwargs[nan_policy] = nan_policy
-    res = _yeojohnson_llf(data, lmb=lmb, axis=axis, keepdims=keepdims,
-                          nan_policy=nan_policy)
+    res = _yeojohnson_llf(data, lmb=lmb, axis=axis, **kwargs)
     return res[()] if res.ndim == 0 else res
 
 

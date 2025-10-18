@@ -2430,7 +2430,7 @@ class TestYeojohnson_llf:
         lmbda = 1
         ref = stats.yeojohnson_llf(lmbda, x)
         res = stats.yeojohnson_llf(lmbda, xp.stack([x, x]).T)
-        assert_allclose(res, ref, rtol=1e-12)
+        xp_assert_close(res, xp.stack((ref, ref)), rtol=1e-12)
 
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
