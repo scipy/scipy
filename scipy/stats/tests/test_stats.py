@@ -8456,176 +8456,149 @@ class TestEnergyDistance:
                 np.nan)
 
 
+@make_xp_test_case(stats.brunnermunzel)
 class TestBrunnerMunzel:
     # Data from (Lumley, 1996)
     X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
     Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
-    significant = 13
 
-    def test_brunnermunzel_one_sided(self):
+    def test_brunnermunzel_one_sided(self, xp):
         # Results are compared with R's lawstat package.
-        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='less')
-        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='greater')
-        u3, p3 = stats.brunnermunzel(self.X, self.Y, alternative='greater')
-        u4, p4 = stats.brunnermunzel(self.Y, self.X, alternative='less')
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.brunnermunzel(X, Y, alternative='less')
+        u2, p2 = stats.brunnermunzel(Y, X, alternative='greater')
+        u3, p3 = stats.brunnermunzel(X, Y, alternative='greater')
+        u4, p4 = stats.brunnermunzel(Y, X, alternative='less')
 
-        assert_approx_equal(p1, p2, significant=self.significant)
-        assert_approx_equal(p3, p4, significant=self.significant)
-        assert_(p1 != p3)
-        assert_approx_equal(u1, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u2, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u3, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u4, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(p1, 0.0028931043330757342,
-                            significant=self.significant)
-        assert_approx_equal(p3, 0.99710689566692423,
-                            significant=self.significant)
+        xp_assert_close(p1, p2)
+        xp_assert_close(p3, p4)
+        assert p1 != p3
+        xp_assert_close(u1, xp.asarray(3.1374674823029505))
+        xp_assert_close(u2, xp.asarray(-3.1374674823029505))
+        xp_assert_close(u3, xp.asarray(3.1374674823029505))
+        xp_assert_close(u4, xp.asarray(-3.1374674823029505))
 
-    def test_brunnermunzel_two_sided(self):
+        xp_assert_close(p1, xp.asarray(0.0028931043330757342))
+        xp_assert_close(p3, xp.asarray(0.99710689566692423))
+
+    def test_brunnermunzel_two_sided(self, xp):
         # Results are compared with R's lawstat package.
-        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='two-sided')
-        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.brunnermunzel(X, Y, alternative='two-sided')
+        u2, p2 = stats.brunnermunzel(Y, X, alternative='two-sided')
 
-        assert_approx_equal(p1, p2, significant=self.significant)
-        assert_approx_equal(u1, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u2, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(p1, 0.0057862086661515377,
-                            significant=self.significant)
+        xp_assert_close(p1, xp.asarray(p2))
+        xp_assert_close(u1, xp.asarray(3.1374674823029505))
+        xp_assert_close(u2, xp.asarray(-3.1374674823029505))
+        xp_assert_close(p1, xp.asarray(0.0057862086661515377))
 
-    def test_brunnermunzel_default(self):
+    def test_brunnermunzel_default(self, xp):
         # The default value for alternative is two-sided
-        u1, p1 = stats.brunnermunzel(self.X, self.Y)
-        u2, p2 = stats.brunnermunzel(self.Y, self.X)
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.brunnermunzel(X, Y)
+        u2, p2 = stats.brunnermunzel(Y, X)
 
-        assert_approx_equal(p1, p2, significant=self.significant)
-        assert_approx_equal(u1, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u2, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(p1, 0.0057862086661515377,
-                            significant=self.significant)
+        xp_assert_close(p1, p2)
+        xp_assert_close(u1, xp.asarray(3.1374674823029505))
+        xp_assert_close(u2, xp.asarray(-3.1374674823029505))
+        xp_assert_close(p1, xp.asarray(0.0057862086661515377))
 
-    def test_brunnermunzel_alternative_error(self):
+    def test_brunnermunzel_alternative_error(self, xp):
         alternative = "error"
         distribution = "t"
         nan_policy = "propagate"
-        assert_(alternative not in ["two-sided", "greater", "less"])
-        assert_raises(ValueError,
-                      stats.brunnermunzel,
-                      self.X,
-                      self.Y,
-                      alternative,
-                      distribution,
-                      nan_policy)
+        assert alternative not in ["two-sided", "greater", "less"]
+        message = "`alternative` must be 'less', 'greater', or 'two-sided'."
+        with pytest.raises(ValueError, match=message):
+            stats.brunnermunzel(xp.asarray(self.X), xp.asarray(self.Y),
+                                alternative, distribution, nan_policy)
 
-    def test_brunnermunzel_distribution_norm(self):
-        u1, p1 = stats.brunnermunzel(self.X, self.Y, distribution="normal")
-        u2, p2 = stats.brunnermunzel(self.Y, self.X, distribution="normal")
-        assert_approx_equal(p1, p2, significant=self.significant)
-        assert_approx_equal(u1, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u2, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(p1, 0.0017041417600383024,
-                            significant=self.significant)
+    def test_brunnermunzel_distribution_norm(self, xp):
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.brunnermunzel(X, Y, distribution="normal")
+        u2, p2 = stats.brunnermunzel(Y, X, distribution="normal")
+        xp_assert_close(p1, xp.asarray(p2))
+        xp_assert_close(u1, xp.asarray(3.1374674823029505))
+        xp_assert_close(u2, xp.asarray(-3.1374674823029505))
+        xp_assert_close(p1, xp.asarray(0.0017041417600383024))
 
-    def test_brunnermunzel_distribution_error(self):
+    def test_brunnermunzel_distribution_error(self, xp):
         alternative = "two-sided"
         distribution = "error"
         nan_policy = "propagate"
-        assert_(alternative not in ["t", "normal"])
-        assert_raises(ValueError,
-                      stats.brunnermunzel,
-                      self.X,
-                      self.Y,
-                      alternative,
-                      distribution,
-                      nan_policy)
+        assert distribution not in ["t", "normal"]
+        message = "distribution should be 't' or 'normal'"
+        with pytest.raises(ValueError, match=message):
+            stats.brunnermunzel(xp.asarray(self.X), xp.asarray(self.Y),
+                                alternative, distribution, nan_policy)
 
     @pytest.mark.parametrize("kwarg_update", [{'y': []}, {'x': []},
                                               {'x': [], 'y': []}])
-    def test_brunnermunzel_empty_imput(self, kwarg_update):
+    def test_brunnermunzel_empty_imput(self, kwarg_update, xp):
         kwargs = {'x': self.X, 'y': self.Y}
         kwargs.update(kwarg_update)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        kwargs = {key:xp.asarray(val, dtype=xp_default_dtype(xp)) for key, val in kwargs.items()}
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             statistic, pvalue = stats.brunnermunzel(**kwargs)
-        assert_equal(statistic, np.nan)
-        assert_equal(pvalue, np.nan)
+        xp_assert_equal(statistic, xp.asarray(xp.nan))
+        xp_assert_equal(pvalue, xp.asarray(xp.nan))
 
-    def test_brunnermunzel_nan_input_propagate(self):
-        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
-        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    def test_brunnermunzel_nan_input_propagate(self, xp):
+        X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
+        Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
         u1, p1 = stats.brunnermunzel(X, Y, nan_policy="propagate")
         u2, p2 = stats.brunnermunzel(Y, X, nan_policy="propagate")
 
-        assert_equal(u1, np.nan)
-        assert_equal(p1, np.nan)
-        assert_equal(u2, np.nan)
-        assert_equal(p2, np.nan)
+        xp_assert_equal(u1, xp.asarray(xp.nan))
+        xp_assert_equal(p1, xp.asarray(xp.nan))
+        xp_assert_equal(u2, xp.asarray(xp.nan))
+        xp_assert_equal(p2, xp.asarray(xp.nan))
 
-    def test_brunnermunzel_nan_input_raise(self):
-        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
-        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    def test_brunnermunzel_nan_input_raise(self, xp):
+        X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
+        Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
         alternative = "two-sided"
         distribution = "t"
         nan_policy = "raise"
 
-        assert_raises(ValueError,
-                      stats.brunnermunzel,
-                      X,
-                      Y,
-                      alternative,
-                      distribution,
-                      nan_policy)
-        assert_raises(ValueError,
-                      stats.brunnermunzel,
-                      Y,
-                      X,
-                      alternative,
-                      distribution,
-                      nan_policy)
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.brunnermunzel(X, Y, alternative, distribution, nan_policy)
+        with pytest.raises(ValueError, match=message):
+            stats.brunnermunzel(Y, X, alternative, distribution, nan_policy)
 
-    def test_brunnermunzel_nan_input_omit(self):
-        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
-        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    def test_brunnermunzel_nan_input_omit(self, xp):
+        X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan])
+        Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
         u1, p1 = stats.brunnermunzel(X, Y, nan_policy="omit")
         u2, p2 = stats.brunnermunzel(Y, X, nan_policy="omit")
 
-        assert_approx_equal(p1, p2, significant=self.significant)
-        assert_approx_equal(u1, 3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(u2, -3.1374674823029505,
-                            significant=self.significant)
-        assert_approx_equal(p1, 0.0057862086661515377,
-                            significant=self.significant)
+        xp_assert_close(p1, p2)
+        xp_assert_close(u1, xp.asarray(3.1374674823029505))
+        xp_assert_close(u2, xp.asarray(-3.1374674823029505))
+        xp_assert_close(p1, xp.asarray(0.0057862086661515377))
 
-    def test_brunnermunzel_return_nan(self):
+    def test_brunnermunzel_return_nan(self, xp):
         """ tests that a warning is emitted when p is nan
         p-value with t-distributions can be nan (0/0) (see gh-15843)
         """
-        x = [1, 2, 3]
-        y = [5, 6, 7, 8, 9]
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([5., 6., 7., 8., 9.])
 
         msg = "p-value cannot be estimated|divide by zero|invalid value encountered"
-        with pytest.warns(RuntimeWarning, match=msg):
+        with eager_warns(RuntimeWarning, match=msg, xp=xp):
             stats.brunnermunzel(x, y, distribution="t")
 
-    def test_brunnermunzel_normal_dist(self):
+    def test_brunnermunzel_normal_dist(self, xp):
         """ tests that a p is 0 for datasets that cause p->nan
         when t-distribution is used (see gh-15843)
         """
-        x = [1, 2, 3]
-        y = [5, 6, 7, 8, 9]
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([5., 6., 7., 8., 9.])
 
-        with pytest.warns(RuntimeWarning, match='divide by zero'):
+        with eager_warns(RuntimeWarning, match='divide by zero', xp=xp):
             _, p = stats.brunnermunzel(x, y, distribution="normal")
-        assert_equal(p, 0)
+        xp_assert_equal(p, xp.asarray(0.))
 
 
 class TestQuantileTest:
