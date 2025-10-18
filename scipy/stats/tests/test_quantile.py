@@ -29,7 +29,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
         if nan_policy == 'propagate' and np.any(np.isnan(x)):
             res[:] = np.nan
     else:
-        res = np.quantile(x, p)
+        res = np.quantile(x, p, method=method)
     res[p_mask] = np.nan
     return res
 
@@ -89,7 +89,8 @@ class TestQuantile:
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
-          'median_unbiased', 'normal_unbiased', 'weibull'])
+          'median_unbiased', 'normal_unbiased', 'weibull',
+          '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
           ((10, 2), None, 0), ((10, 2), None, 0),])
@@ -98,8 +99,8 @@ class TestQuantile:
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        ref = np.quantile(x, p, method=method, axis=axis)
-
+        ref = np.quantile(x, p, axis=axis,
+                          method=method[1:] if method.startswith('_') else method)
         x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
         res = stats.quantile(x, p, method=method, axis=axis)
 
@@ -191,14 +192,15 @@ class TestQuantile:
         assert res.shape == tuple(out_shape)
 
     @pytest.mark.parametrize('method',
-        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'])
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+         '_lower', '_higher', '_midpoint', '_nearest'])
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
         if method == 'closest_observation' and np.__version__ < '2.0.1':
             pytest.skip('Bug in np.quantile (numpy/numpy#26656) fixed in 2.0.1')
         x = np.arange(8., dtype=np.float64)
-        p = np.arange(0, 1.0625, 0.0625)
+        p = np.arange(0, 1.03125, 0.03125)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
-        ref = np.quantile(x, p, method=method)
+        ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
