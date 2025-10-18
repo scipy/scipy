@@ -3225,7 +3225,10 @@ class TestMedianAbsDeviation:
     @pytest.mark.parametrize('axis', [0, 1, 2, None])
     def test_size_zero_with_axis(self, axis):
         x = np.zeros((3, 0, 4))
-        mad = stats.median_abs_deviation(x, axis=axis)
+        context = (eager_warns(SmallSampleWarning, match='too small', xp=np)
+                   if axis in {1, None} else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, axis=axis)
         assert_equal(mad, np.full_like(x.sum(axis=axis), fill_value=np.nan))
 
     @pytest.mark.parametrize('nan_policy, expected',
@@ -3235,8 +3238,12 @@ class TestMedianAbsDeviation:
         x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
                       [1, 5, 3, 6, np.nan, np.nan],
                       [5, 6, 7, 9, 9, 10]])
-        mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
-        assert_equal(mad, expected)
+
+        context = (eager_warns(SmallSampleWarning, match="too small", xp=np)
+                   if nan_policy == 'omit' else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
+            assert_equal(mad, expected)
 
     @pytest.mark.parametrize('axis, expected',
                              [(1, [2.5, 2.0, 12.0]), (None, 4.5)])
