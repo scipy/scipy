@@ -3,6 +3,7 @@ from types import EllipsisType
 from scipy._lib._array_api import (
     array_namespace,
     Array,
+    ArrayLike,
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
@@ -18,6 +19,7 @@ from scipy.spatial.transform._rotation_xp import (
     compose_quat,
     from_quat,
     inv as quat_inv,
+    mean as quat_mean,
 )
 from scipy._lib.array_api_compat import device as xp_device
 from scipy._lib._util import broadcastable
@@ -243,6 +245,46 @@ def pow(matrix: Array, n: float | Array) -> Array:
     elif n == 1:
         return matrix
     return from_exp_coords(as_exp_coords(matrix) * n)
+
+
+def mean(matrix: Array, weights: ArrayLike | None = None) -> Array:
+    xp = array_namespace(matrix)
+    if matrix.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+
+    lazy = is_lazy_array(matrix)
+    quats = quat_from_matrix(matrix[..., :3, :3])
+    if weights is None:
+        quats_mean = quat_mean(quats)
+    else:
+        neg_weights = weights < 0
+        any_neg_weights = xp.any(neg_weights)
+        if not lazy and any_neg_weights:
+            raise ValueError("`weights` must be non-negative.")
+        if weights.shape != matrix.shape[:-2]:
+            raise ValueError(
+                f"Expected `weights` to match transform shape, got shape "
+                f"{weights.shape} for {matrix.shape[:-2]} transformations."
+            )
+        quats_mean = quat_mean(quats, weights=weights)
+    r_mean = quat_as_matrix(quats_mean)
+
+    t = matrix[..., :3, 3]
+    axis = tuple(range(t.ndim - 1))
+    if weights is None:
+        t_mean = xp.mean(t, axis=axis)
+    else:
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum / norm
+
+    tf = _create_transformation_matrix(t_mean, r_mean)
+    if weights is not None and lazy:
+        # We cannot raise on negative weights because jit code needs to be
+        # non-branching. We return NaN instead
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        tf = mask * tf
+    return tf
 
 
 def setitem(
