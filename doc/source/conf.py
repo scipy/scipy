@@ -251,18 +251,6 @@ if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
     html_theme_options["show_version_warning_banner"] = False
 
-if 'versionwarning' in tags:  # noqa: F821
-    # Specific to docs.scipy.org deployment.
-    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
-    src = ('var script = document.createElement("script");\n'
-           'script.type = "text/javascript";\n'
-           'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);')
-    html_context = {
-        'VERSIONCHECK_JS': src
-    }
-    html_js_files += ['versioncheck.js', ]
-
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
