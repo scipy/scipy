@@ -1670,31 +1670,33 @@ def yeojohnson(x, lmbda=None):
     return y, lmax
 
 
-def _yeojohnson_transform(x, lmbda):
+def _yeojohnson_transform(x, lmbda, xp=None):
     """Returns `x` transformed by the Yeo-Johnson power transform with given
     parameter `lmbda`.
     """
-    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-    out = np.zeros_like(x, dtype=dtype)
+    xp = array_namespace(x) if xp is None else xp
+    dtype = xp_result_type(x, lmbda, force_floating=True, xp=xp)
+    eps = xp.finfo(dtype).eps
+    out = xp.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
     # when x >= 0
-    if abs(lmbda) < np.spacing(1.):
-        out[pos] = np.log1p(x[pos])
+    if abs(lmbda) < eps:
+        out[pos] = xp.log1p(x[pos])
     else:  # lmbda != 0
         # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
-        out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
+        out[pos] = xp.expm1(lmbda * xp.log1p(x[pos])) / lmbda
 
     # when x < 0
-    if abs(lmbda - 2) > np.spacing(1.):
-        out[~pos] = -np.expm1((2 - lmbda) * np.log1p(-x[~pos])) / (2 - lmbda)
+    if abs(lmbda - 2) > eps:
+        out[~pos] = -xp.expm1((2 - lmbda) * xp.log1p(-x[~pos])) / (2 - lmbda)
     else:  # lmbda == 2
-        out[~pos] = -np.log1p(-x[~pos])
+        out[~pos] = -xp.log1p(-x[~pos])
 
     return out
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(np_only=True, exceptions=['array_api_strict', 'torch'])
 def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
     r"""The Yeo-Johnson log-likelihood function.
 
@@ -1812,21 +1814,22 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
 
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
                           result_to_tuple=lambda x, _: (x,))
-def _yeojohnson_llf(data, *, lmb):
-    trans = _yeojohnson_transform(data, lmb)
-    trans_var = trans.var(axis=-1)
-    loglike = np.empty_like(trans_var)
+def _yeojohnson_llf(data, *, lmb, axis=0):
+    xp = array_namespace(data)
+    trans = _yeojohnson_transform(data, lmb, xp=xp)
+    trans_var = xp.var(trans, axis=axis)
+    loglike = xp.empty_like(trans_var)
 
     # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
-    loglike[tiny_variance] = np.inf
+    tiny_variance = trans_var < xp.finfo(trans_var.dtype).smallest_normal
+    loglike[tiny_variance] = xp.inf
 
-    n = data.shape[-1]
+    n = data.shape[axis]
     loglike[~tiny_variance] = (
-        -n / 2 * np.log(trans_var[~tiny_variance]))
+        -n / 2 * xp.log(trans_var[~tiny_variance]))
     loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=-1))
-    return loglike[()]
+        (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
+    return loglike[()] if loglike.ndim == 0 else loglike
 
 
 @xp_capabilities(np_only=True)
