@@ -71,7 +71,13 @@ def prepare_input(x, y, axis, dydx=None, xp=None):
     return x, dx, y, axis, dydx
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
@@ -163,6 +169,13 @@ class CubicHermiteSpline(PPoly):
         self.axis = axis
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -600,7 +613,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
                                   "an Akima interpolator.")
 
 
-@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=1)
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
 
