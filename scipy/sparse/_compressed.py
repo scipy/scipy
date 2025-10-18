@@ -585,7 +585,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+        self_indptr = self.indptr.astype(idx_dtype, copy=False)
+        self_indices = self.indices.astype(idx_dtype, copy=False)
+
+        row_nnz = self_indptr[indices + 1] - self_indptr[indices]
         res_indptr = np.zeros(M + 1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
@@ -595,8 +598,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_row_index(
             M,
             indices,
-            self.indptr.astype(idx_dtype, copy=False),
-            self.indices.astype(idx_dtype, copy=False),
+            self_indptr,
+            self_indices,
             self.data,
             res_indices,
             res_data
