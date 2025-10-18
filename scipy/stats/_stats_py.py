@@ -8626,7 +8626,10 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True, exceptions=['array_api_strict', 'torch'])  # rankdata
+@xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 skip_backends=[('dask.array', 'needs rankdata'),
+                                ('cupy', 'needs rankdata'),
+                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate', *, axis=0):

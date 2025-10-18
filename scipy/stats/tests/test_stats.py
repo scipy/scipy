@@ -8537,7 +8537,8 @@ class TestBrunnerMunzel:
     def test_brunnermunzel_empty_imput(self, kwarg_update, xp):
         kwargs = {'x': self.X, 'y': self.Y}
         kwargs.update(kwarg_update)
-        kwargs = {key:xp.asarray(val, dtype=xp_default_dtype(xp)) for key, val in kwargs.items()}
+        kwargs = {key:xp.asarray(val, dtype=xp_default_dtype(xp))
+                  for key, val in kwargs.items()}
         with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             statistic, pvalue = stats.brunnermunzel(**kwargs)
         xp_assert_equal(statistic, xp.asarray(xp.nan))
