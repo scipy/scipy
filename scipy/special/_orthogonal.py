@@ -390,15 +390,22 @@ def jacobi(n, alpha, beta, monic=False):
 
 
 def roots_sh_jacobi(n, p1, q1, mu=False):
-    """Gauss-Jacobi (shifted) quadrature.
+    r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the nth degree
-    shifted Jacobi polynomial, :math:`G^{p,q}_n(x)`. These sample
-    points and weights correctly integrate polynomials of degree
-    :math:`2n - 1` or less over the interval :math:`[0, 1]` with
+    quadrature. The sample points are the roots of the n-th degree
+    shifted Jacobi polynomial
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1).
+
+    These sample points and weights correctly integrate polynomials of
+    degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
     weight function :math:`w(x) = (1 - x)^{p-q} x^{q-1}`. See 22.2.2
-    in [AS]_ for details.
+    in [AS]_ for details. Note that here, in contrast to `roots_sh_legendre`,
+    `roots_sh_chebyt`, and `roots_sh_chebyu`, not only the argument is shifted.
 
     Parameters
     ----------
@@ -453,16 +460,19 @@ def sh_jacobi(n, p, q, monic=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
+    `sh_chebyu`, not only the argument is shifted. See 22.2.2
+    in [AS]_ for details.
 
     Parameters
     ----------
     n : int
         Degree of the polynomial.
     p : float
-        Parameter, must have :math:`p > q - 1`.
+        Parameter, must satisfy :math:`p - q > -1`.
     q : float
         Parameter, must be greater than 0.
     monic : bool, optional
@@ -479,6 +489,12 @@ def sh_jacobi(n, p, q, monic=False):
     For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
     orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
     x)^{p - q}x^{q - 1}`.
+
+    References
+    ----------
+    .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
+        Handbook of Mathematical Functions with Formulas,
+        Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     """
     if n < 0:
