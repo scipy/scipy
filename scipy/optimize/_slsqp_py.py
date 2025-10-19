@@ -225,8 +225,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Minimize a scalar function of one or more variables using Sequential
     Least Squares Programming (SLSQP).
 
-    Parameters
-    ----------
+    Options
+    -------
     ftol : float
         Precision target for the value of f in the stopping criterion. This value
         controls the final accuracy for checking various optimality conditions;
