@@ -252,7 +252,7 @@ class TestCDFlib:
             0,
             [ProbArg(), Arg(0, 1e3, inclusive_a=False),
              Arg(0, 1e4, inclusive_a=False)],
-            rtol=1e-7,
+            rtol=1e-12,
             endpt_atol=[None, 1e-7, 1e-10])
 
     def test_gdtrib(self):
