@@ -1127,8 +1127,9 @@ class TestMonteCarloHypothesisTest:
 
 @make_xp_test_case(power)
 class TestPower:
-    def xp_normal(self, rng, *, xp):
-        return lambda size: xp.asarray(rng.normal(size=size))
+    def xp_normal(self, rng, *, xp, dtype=None):
+        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
 
     def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
