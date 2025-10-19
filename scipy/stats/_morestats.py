@@ -4686,6 +4686,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     return xp.clip(ps, 0., 1.)
 
+
 def _reorder_along_axis(x, i, *, axis, xp):
     if is_jax(xp):
         return xp.put_along_axis(x, i, values=x, axis=axis, inplace=False)
