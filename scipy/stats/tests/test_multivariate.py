@@ -1040,8 +1040,8 @@ class TestMultivariateNormal:
         assert_allclose(cdf, cdf[0]*expected_signs)
 
     @pytest.mark.slow
-    def test_cdf_vs_cubature(self):
-        ndim = 3
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_cdf_vs_cubature(self, ndim):
         rng = np.random.default_rng(123)
         a = rng.uniform(size=(ndim, ndim))
         cov = a.T @ a
