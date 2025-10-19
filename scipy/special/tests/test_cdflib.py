@@ -844,3 +844,30 @@ class TestNoncentralChiSquaredFunctions:
 @pytest.mark.parametrize("x", [0.1, 100])
 def test_chdtriv_p_equals_1_returns_0(x):
     assert sp.chdtriv(1, x) == 0
+
+@pytest.mark.parametrize("a, b, p, ref", [
+    (0, 0, 0, np.nan),
+    (0, 0, 1, np.nan),
+    (0, np.inf, 0, np.nan),
+    (0, np.inf, 1, np.nan),
+    (np.inf, 0, 0, np.nan),
+    (np.inf, 0, 1, np.nan),
+    (np.inf, np.inf, 0, np.nan),
+    (np.inf, np.inf, 1, np.nan)
+])
+def test_gdtrix_edge_cases(a, b, p, ref):
+    assert_allclose(sp.gdtrix(a, b, p), ref, rtol=0)
+
+
+@pytest.mark.parametrize("p, b, x, ref", [
+    (0, 0, 0, np.nan),
+    (0, 0, np.inf, np.nan),
+    (0, 1, 0, np.nan),
+    (0, 1, np.inf, 0),
+    (np.inf, 0, 0, np.nan),
+    (np.inf, 0, np.inf, np.nan),
+    (np.inf, 1, 0, np.nan),
+    (np.inf, 1, np.inf, np.nan)
+])
+def test_gdtria_edge_cases(p, b, x, ref):
+    assert_allclose(sp.gdtria(p, b, x), ref, rtol=0)

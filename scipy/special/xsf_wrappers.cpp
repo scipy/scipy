@@ -590,9 +590,27 @@ double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
 
-double special_gdtria(double p, double b, double x) { return xsf::gammaincinv(b, p) / x; }
+double special_gdtria(double p, double b, double x) { 
+    if (x == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    if ((b == 0) & (p == 0)) {
+        if (std::isinf(x) && (x > 0)) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+        return 0.0;
+    }
+    return xsf::gammaincinv(b, p) / x; }
 
-double special_gdtrix(double a, double b, double p) { return xsf::gammaincinv(b, p) / a; }
+double special_gdtrix(double a, double b, double p) { 
+    if ((a == 0) && (b == 0)) {
+            return std::numeric_limits<double>::quiet_NaN();
+    }
+    // if a or b is positive infinite, return NaN
+    if ((std::isinf(a) || std::isinf(b)) && (a >= 0 && b >= 0)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return xsf::gammaincinv(b, p) / a; }
 
 double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
