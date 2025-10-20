@@ -1320,7 +1320,8 @@ def test_mean_axis(xp, ndim: int):
     xp_assert_close(r.mean(axis=(0, -1)).magnitude(), desired, atol=atol)
     # Empty axis tuple should return Rotation unchanged
     r_mean = r.mean(axis=())
-    xp_assert_close(r_mean.as_quat(canonical=True), r.as_quat(canonical=True), atol=atol)
+    xp_assert_close(r_mean.as_quat(canonical=True), r.as_quat(canonical=True),
+                    atol=atol)
 
 
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
