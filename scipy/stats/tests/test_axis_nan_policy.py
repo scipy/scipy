@@ -131,7 +131,7 @@ axis_nan_policy_cases = [
     (stats.normaltest, tuple(), dict(), 1, 2, False, None),
     (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
      lambda res: (res.statistic, res.pvalue)),
-    (stats.cramervonmises_2samp, tuple(), dict(), 2, 2, False,
+    (stats.cramervonmises_2samp, tuple(), dict(method='asymptotic'), 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.epps_singleton_2samp, tuple(), dict(), 2, 2, False, None),
     (stats.bartlett, tuple(), {}, 2, 2, False, None),
@@ -338,7 +338,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
-    if hypotest in {stats.cramervonmises_2samp, stats.kruskal} and not SCIPY_XSLOW:
+    if hypotest in {stats.kruskal} and not SCIPY_XSLOW:
         pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)
