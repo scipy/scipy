@@ -8,7 +8,6 @@
 # 8   Means test runs forever
 
 ###  test_besselpoly
-###  test_mathieu_a
 ###  test_mathieu_even_coef
 ###  test_mathieu_odd_coef
 ###  test_modfresnelp
@@ -544,11 +543,41 @@ class TestCephes:
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
 
-    def test_mathieu_a(self):
-        assert_equal(cephes.mathieu_a(1,0),1.0)
+    def test_mathieu_a_q0(self):
+        # When q is 0, the exact result is m**2.
+        m = np.array([1, 2, 5])
+        assert_equal(cephes.mathieu_a(m, 0), m**2)
 
-    def test_mathieu_b(self):
-        assert_equal(cephes.mathieu_b(1,0),1.0)
+    # Reference values were computed with Wolfram Alpha:
+    #     MathieuCharacteristicA[m, q]
+    @pytest.mark.parametrize(
+        'm, q, ref',
+        [(0, 8, -10.6067292355526479852024),
+         (3, 3/2, 9.19330104768060974047804),
+         (5, 1/4, 25.0013021454698022809572),
+         (8, -10, 64.8008910105046444848962)]
+    )
+    def test_mathieu_a(self, m, q, ref):
+        y = cephes.mathieu_a(m, q)
+        assert_allclose(y, ref, rtol=1e-15)
+
+    def test_mathieu_b_q0(self):
+        # When q is 0, the exact result is m**2.
+        m = np.array([1, 2, 5])
+        assert_equal(cephes.mathieu_b(m, 0), m**2)
+
+    # Reference values were computed with Wolfram Alpha:
+    #     MathieuCharacteristicB[m, q]
+    @pytest.mark.parametrize(
+        'm, q, ref',
+        [(1, 15, -22.5130034974234666335),
+         (5, 3, 25.1870798027185125480),
+         (9, 1/4, 81.00039062627570760760),
+         (10, -3, 100.0454683359769326164)]
+    )
+    def test_mathieu_b(self, m, q, ref):
+        y = cephes.mathieu_b(m, q)
+        assert_allclose(y, ref, rtol=1e-15)
 
     def test_mathieu_cem(self):
         assert_equal(cephes.mathieu_cem(1,0,0),(1.0,0.0))
