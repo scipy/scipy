@@ -27,6 +27,7 @@ References
 
 """
 import math
+import itertools
 import operator
 import warnings
 from collections import namedtuple
@@ -8507,23 +8508,19 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = np.asarray([sample.shape[-1] for sample in samples])
-    totaln = np.sum(n)
-
+    n = [sample.shape[-1] for sample in samples]
+    totaln = sum(n)
     if np.any(n) < 1:  # Only needed for `test_axis_nan_policy`
         raise ValueError("Inputs must not be empty.")
 
     alldata = np.concatenate(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
-
-    # ties = tiecorrect(ranked)
-    ties = 1 - (t**3 - t).sum(axis=-1) / (totaln**3 - totaln)
+    ties = 1 - (t**3 - t).sum(axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
-    j = np.cumsum(n, axis=-1)
-    ssbn = np.sum(ranked[..., :j[0]], axis=-1)**2 / n[0]
-    for i in range(1, num_groups):
-        ssbn += np.sum(ranked[..., j[i-1]:j[i]], axis=-1)**2 / n[i]
+    j = list(itertools.accumulate(n, initial=0))
+    ssbn = sum(np.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+               for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = num_groups - 1
