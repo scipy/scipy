@@ -1640,7 +1640,7 @@ def mathieu_even_coef(m, q):
 
 
 def mathieu_odd_coef(m, q):
-    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+    r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
