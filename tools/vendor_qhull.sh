@@ -6,7 +6,8 @@ set -o nounset
 set -o errexit
 
 REPO_URL="https://github.com/qhull/qhull"
-COMMIT_HASH="613debeaea72ee66626dace9ba1a2eff11b5d37d"
+# commit for v8.1-alpha6 of qhull
+COMMIT_HASH="d1c2fc0caa5f644f3a0f220290d4a868c68ed4f6"
 
 # XXX: run this from the repo top level like `./tools/vendor_qhull.sh`
 ROOT_DIR="subprojects/qhull_r/libqhull_r"
