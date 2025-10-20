@@ -972,7 +972,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     message = "Array shapes are incompatible for broadcasting."
     with pytest.raises(ValueError, match=message):
-        hypotest(*samples, *args, **kwds)
+        hypotest(*samples, *args, axis=axis, **kwds)
 
     if not paired:  # there's another test for paired-sample statistics
         return
@@ -986,7 +986,7 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     shape[axis] += 1
     other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
-        hypotest(other_sample, *most_samples, *args, **kwds)
+        hypotest(other_sample, *most_samples, *args, axis=axis, **kwds)
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays

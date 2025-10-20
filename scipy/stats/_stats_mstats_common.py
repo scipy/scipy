@@ -1,10 +1,11 @@
 import warnings
 import numpy as np
 from . import distributions
-from .._lib._array_api import xp_capabilities
+from .._lib._array_api import xp_capabilities, xp_promote
 from .._lib._bunch import _make_tuple_bunch
 from ._axis_nan_policy import _axis_nan_policy_factory
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
+import scipy.stats._stats_py as _stats_py
 
 __all__ = ['_find_repeats', 'theilslopes', 'siegelslopes']
 
@@ -25,7 +26,7 @@ def _n_samples_optional_x(kwargs):
                           n_samples=_n_samples_optional_x,
                           result_to_tuple=lambda x, _: tuple(x), paired=True,
                           too_small=1)
-def theilslopes(y, x=None, alpha=0.95, method='separate'):
+def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -53,6 +54,12 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         The default is 'separate'.
 
         .. versionadded:: 1.8.0
+
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -135,55 +142,53 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     if method not in ['joint', 'separate']:
         raise ValueError("method must be either 'joint' or 'separate'."
                          f"'{method}' is invalid.")
-    # We copy both x and y so we can use _find_repeats.
-    y = np.array(y, dtype=float, copy=True).ravel()
-    if x is None:
-        x = np.arange(len(y), dtype=float)
-    else:
-        x = np.array(x, dtype=float, copy=True).ravel()
-        if len(x) != len(y):
-            raise ValueError("Array shapes are incompatible for broadcasting.")
-    if len(x) < 2:
-        raise ValueError("`x` and `y` must have length at least 2.")
+
+    y, x = xp_promote(y, x, force_floating=True, xp=np)
+    x = np.arange(y.shape[-1], dtype=y.dtype) if x is None else x
+    y, x = np.broadcast_arrays(y, x)
 
     # Compute sorted slopes only when deltax > 0
-    deltax = x[:, np.newaxis] - x
-    deltay = y[:, np.newaxis] - y
-    slopes = deltay[deltax > 0] / deltax[deltax > 0]
-    if not slopes.size:
-        msg = "All `x` coordinates are identical."
-        warnings.warn(msg, RuntimeWarning, stacklevel=2)
-    slopes.sort()
-    medslope = np.median(slopes)
+    deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
+    deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
+    i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
+    deltax = np.reshape(deltax, deltax.shape[:-2] + (-1,))
+    deltay = np.reshape(deltay, deltay.shape[:-2] + (-1,))
+    i = np.ravel(i)
+    deltax, deltay = deltax[..., i], deltay[..., i]
+    deltax[deltax == 0] = np.nan
+    slopes = deltay / deltax
+    slopes = np.sort(slopes, axis=-1)
+    medslope = np.nanmedian(slopes, axis=-1)
     if method == 'joint':
-        medinter = np.median(y - medslope * x)
+        medinter = np.nanmedian(y - medslope * x, axis=-1)
     else:
-        medinter = np.median(y) - medslope * np.median(x)
+        medinter = np.nanmedian(y, axis=-1) - medslope * np.nanmedian(x, axis=-1)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
 
     z = distributions.norm.ppf(alpha / 2.)
     # This implements (2.6) from Sen (1968)
-    _, nxreps = _find_repeats(x)
-    _, nyreps = _find_repeats(y)
-    nt = len(slopes)       # N in Sen (1968)
-    ny = len(y)            # n in Sen (1968)
+    _, nxreps = _stats_py._rankdata(x, method='average', return_ties=True)
+    _, nyreps = _stats_py._rankdata(y, method='average', return_ties=True)
+    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen (1968)
+    ny = y.shape[-1]                                                    # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
-    sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
-                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
-                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
+    sigsq = 1/18. * (
+        ny * (ny-1) * (2*ny+5)
+        - np.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
+        - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
-    try:
-        sigma = np.sqrt(sigsq)
-        Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
-        Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
-        delta = slopes[[Rl, Ru]]
-    except (ValueError, IndexError):
-        delta = (np.nan, np.nan)
+    sigma = np.sqrt(sigsq)
+    Ru = np.minimum(np.astype(np.round((nt - z*sigma)/2.), int), nt-1)
+    Rl = np.maximum(np.astype(np.round((nt + z*sigma)/2.), int) - 1, 0)
+    R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
+    delta = np.take_along_axis(slopes, R, axis=-1)
+    i_nan = np.broadcast_to(sigsq < 0, delta.shape)
+    delta[i_nan] = np.nan
 
-    return TheilslopesResult(slope=medslope, intercept=medinter,
-                             low_slope=delta[0], high_slope=delta[1])
+    return TheilslopesResult(slope=medslope[()], intercept=medinter[()],
+                             low_slope=delta[..., 0][()], high_slope=delta[..., 1][()])
 
 
 def _find_repeats(arr):
