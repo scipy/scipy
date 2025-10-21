@@ -178,7 +178,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
         - np.sum(nxreps * (nxreps-1) * (2*nxreps + 5), axis=-1, keepdims=True)
         - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
-    sigma = np.sqrt(sigsq)
+    sigma = np.sqrt(np.maximum(sigsq, 0.))
     Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
     Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
     R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
