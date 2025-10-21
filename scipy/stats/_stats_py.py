@@ -49,7 +49,7 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats_mstats_common import _find_repeats, theilslopes, siegelslopes
+from ._stats_mstats_common import theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
