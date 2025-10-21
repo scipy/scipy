@@ -14,8 +14,8 @@
    Only reference qh for qhmem or qhstat.  Otherwise the matching code in qset.c will bring in qhT
 
    Copyright (c) 1993-2020 The Geometry Center.
-   $Id: //main/2019/qhull/src/libqhull_r/qset_r.c#9 $$Change: 3978 $
-   $DateTime: 2025/08/24 21:38:45 $$Author: bbarber $
+   $Id: //main/2019/qhull/src/libqhull_r/qset_r.c#8 $$Change: 2953 $
+   $DateTime: 2020/05/21 22:05:32 $$Author: bbarber $
 */
 
 #include "libqhull_r.h" /* for qhT and QHULL_CRTDBG */
@@ -1096,11 +1096,11 @@ void qh_setprint(qhT *qh, FILE *fp, const char* string, setT *set) {
   else {
     SETreturnsize_(set, size);
     qh_fprintf(qh, fp, 9347, "%s set=%p maxsize=%d size=%d elems=",
-             string, (void *) set, set->maxsize, size);
+             string, set, set->maxsize, size);
     if (size > set->maxsize)
       size= set->maxsize+1;
     for (k=0; k < size; k++)
-      qh_fprintf(qh, fp, 9348, " %p", (void *) set->e[k].p);
+      qh_fprintf(qh, fp, 9348, " %p", set->e[k].p);
     qh_fprintf(qh, fp, 9349, "\n");
   }
 } /* setprint */
@@ -1193,7 +1193,7 @@ setT *qh_settemp(qhT *qh, int setsize) {
   qh_setappend(qh, &qh->qhmem.tempstack, newset);
   if (qh->qhmem.IStracing >= 5)
     qh_fprintf(qh, qh->qhmem.ferr, 8123, "qh_settemp: temp set %p of %d elements, depth %d\n",
-       (void *) newset, newset->maxsize, qh_setsize(qh, qh->qhmem.tempstack));
+       newset, newset->maxsize, qh_setsize(qh, qh->qhmem.tempstack));
   return newset;
 } /* settemp */
 
@@ -1223,8 +1223,8 @@ void qh_settempfree(qhT *qh, setT **set) {
   if (stackedset != *set) {
     qh_settemppush(qh, stackedset);
     qh_fprintf(qh, qh->qhmem.ferr, 6179, "qhull internal error (qh_settempfree): set %p(size %d) was not last temporary allocated(depth %d, set %p, size %d)\n",
-             (void *) *set, qh_setsize(qh, *set), qh_setsize(qh, qh->qhmem.tempstack)+1,
-             (void *) stackedset, qh_setsize(qh, stackedset));
+             *set, qh_setsize(qh, *set), qh_setsize(qh, qh->qhmem.tempstack)+1,
+             stackedset, qh_setsize(qh, stackedset));
     qh_errexit(qh, qhmem_ERRqhull, NULL, NULL);
   }
   qh_setfree(qh, set);
@@ -1271,7 +1271,7 @@ setT *qh_settemppop(qhT *qh) {
   }
   if (qh->qhmem.IStracing >= 5)
     qh_fprintf(qh, qh->qhmem.ferr, 8124, "qh_settemppop: depth %d temp set %p of %d elements\n",
-       qh_setsize(qh, qh->qhmem.tempstack)+1, (void *) stackedset, qh_setsize(qh, stackedset));
+       qh_setsize(qh, qh->qhmem.tempstack)+1, stackedset, qh_setsize(qh, stackedset));
   return stackedset;
 } /* settemppop */
 
@@ -1295,7 +1295,7 @@ void qh_settemppush(qhT *qh, setT *set) {
   qh_setappend(qh, &qh->qhmem.tempstack, set);
   if (qh->qhmem.IStracing >= 5)
     qh_fprintf(qh, qh->qhmem.ferr, 8125, "qh_settemppush: depth %d temp set %p of %d elements\n",
-      qh_setsize(qh, qh->qhmem.tempstack), (void *) set, qh_setsize(qh, set));
+      qh_setsize(qh, qh->qhmem.tempstack), set, qh_setsize(qh, set));
 } /* settemppush */
 
 

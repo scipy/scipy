@@ -7,8 +7,8 @@
    see qh-qhull_r.htm, qhull_ra.h
 
    Copyright (c) 1993-2020 The Geometry Center.
-   $Id: //main/2019/qhull/src/libqhull_r/libqhull_r.h#19 $$Change: 3978 $
-   $DateTime: 2025/08/24 21:38:45 $$Author: bbarber $
+   $Id: //main/2019/qhull/src/libqhull_r/libqhull_r.h#16 $$Change: 3037 $
+   $DateTime: 2020/09/03 17:28:32 $$Author: bbarber $
 
    includes function prototypes for libqhull_r.c, geom_r.c, global_r.c, io_r.c, user_r.c
 
@@ -46,26 +46,6 @@
 #error  your compiler is a standard C compiler, you can delete this warning from libqhull_r.h
 #endif
 #endif
-#endif
-
-#if defined(__GNUC__)
-/* See https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-format-function-attribute */
-#define QH_PRINTF_LIKE(string_index, first_to_check) __attribute__((format(printf, string_index, first_to_check)))
-#else
-#define QH_PRINTF_LIKE(string_index, first_to_check)
-#endif
-
-/* QH_NORETURN marks as a function as never returning. This is primarily
-   beneficial for aiding static analyzers and reducing compiler warnings.
-   It must come before function declarations, as MSVC only supports this syntax. */
-#if defined(__GNUC__)
-/* Compilers that support the GNU C syntax. Use __noreturn__ instead of 'noreturn' as the latter is a macro in C11. */
-#define QH_NORETURN __attribute__((__noreturn__))
-#elif defined(_MSC_VER)
-/* Compilers that support the MSVC syntax. */
-#define QH_NORETURN __declspec(noreturn)
-#else
-#define QH_NORETURN /* empty */
 #endif
 
 /*============ constants and basic types ====================*/
@@ -511,7 +491,7 @@ struct qhT {
   boolT BESToutside;      /* true 'Qf' if partition points into best outsideset */
   boolT CDDinput;         /* true 'Pc' if input uses CDD format (1.0/offset first) */
   boolT CDDoutput;        /* true 'PC' if print normals in CDD format (offset first) */
-  boolT CHECKduplicates;  /* true 'Q17' if qh_maybe_duplicateridges after each qh_mergefacet */
+  boolT CHECKduplicates;  /* true 'Q15' if qh_maybe_duplicateridges after each qh_mergefacet */
   boolT CHECKfrequently;  /* true 'Tc' if checking frequently */
   realT premerge_cos;     /*   'A-n'   cos_max when pre merging */
   realT postmerge_cos;    /*   'An'    cos_max when post merging */
@@ -850,9 +830,9 @@ struct qhT {
   realT last_newhigh;
   realT lastcpu;          /* for qh_buildtracing */
   int   lastfacets;       /*   last qh.num_facets */
-  int   lastmerges;       /*   last zzval_(Ztotmerge) */
-  int   lastplanes;       /*   last zzval_(Zsetplane) */
-  int   lastdist;         /*   last zzval_(Zdistplane) */
+  int   lastmerges;       /*   last zzval_(Ztotmerge) */ 
+  int   lastplanes;       /*   last zzval_(Zsetplane) */ 
+  int   lastdist;         /*   last zzval_(Zdistplane) */ 
   unsigned int lastreport; /*  last qh.facet_id */
   int mergereport;        /* for qh_tracemerging */
   setT *old_tempstack;    /* for saving qh->qhmem.tempstack in save_qhull */
@@ -1132,12 +1112,12 @@ extern "C" {
 
 void    qh_qhull(qhT *qh);
 boolT   qh_addpoint(qhT *qh, pointT *furthest, facetT *facet, boolT checkdist);
-void    QH_NORETURN qh_errexit2(qhT *qh, int exitcode, facetT *facet, facetT *otherfacet);
+void    qh_errexit2(qhT *qh, int exitcode, facetT *facet, facetT *otherfacet);
 void    qh_printsummary(qhT *qh, FILE *fp);
 
 /********* -user_r.c prototypes (alphabetical) **********************/
 
-void    QH_NORETURN qh_errexit(qhT *qh, int exitcode, facetT *facet, ridgeT *ridge);
+void    qh_errexit(qhT *qh, int exitcode, facetT *facet, ridgeT *ridge);
 void    qh_errprint(qhT *qh, const char* string, facetT *atfacet, facetT *otherfacet, ridgeT *atridge, vertexT *atvertex);
 int     qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
                 char *qhull_cmd, FILE *outfile, FILE *errfile);
@@ -1151,14 +1131,14 @@ void    qh_printhelp_wide(qhT *qh, FILE *fp);
 void    qh_user_memsizes(qhT *qh);
 
 /********* -usermem_r.c prototypes (alphabetical) **********************/
-void    QH_NORETURN qh_exit(int exitcode);
-void    qh_fprintf_stderr(int msgcode, const char *fmt, ... ) QH_PRINTF_LIKE(2, 3);
+void    qh_exit(int exitcode);
+void    qh_fprintf_stderr(int msgcode, const char *fmt, ... );
 void    qh_free(void *mem);
 void   *qh_malloc(size_t size);
 
 /********* -userprintf_r.c and userprintf_rbox_r.c prototypes **********************/
-void    qh_fprintf(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) QH_PRINTF_LIKE(4, 5);
-void    qh_fprintf_rbox(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... ) QH_PRINTF_LIKE(4, 5);
+void    qh_fprintf(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... );
+void    qh_fprintf_rbox(qhT *qh, FILE *fp, int msgcode, const char *fmt, ... );
 
 /***** -geom_r.c/geom2_r.c/random_r.c prototypes (duplicated from geom_r.h, random_r.h) ****************/
 
@@ -1169,6 +1149,7 @@ facetT *qh_findbestnew(qhT *qh, pointT *point, facetT *startfacet,
                      realT *dist, boolT bestoutside, boolT *isoutside, int *numpart);
 boolT   qh_gram_schmidt(qhT *qh, int dim, realT **rows);
 void    qh_outerinner(qhT *qh, facetT *facet, realT *outerplane, realT *innerplane);
+void    qh_printsummary(qhT *qh, FILE *fp);
 void    qh_projectinput(qhT *qh);
 void    qh_randommatrix(qhT *qh, realT *buffer, int dim, realT **row);
 void    qh_rotateinput(qhT *qh, realT **rows);
@@ -1208,6 +1189,11 @@ void    qh_produce_output(qhT *qh);
 coordT *qh_readpoints(qhT *qh, int *numpoints, int *dimension, boolT *ismalloc);
 
 
+/********* -mem_r.c prototypes (duplicated from mem_r.h) **********************/
+
+void qh_meminit(qhT *qh, FILE *ferr);
+void qh_memfreeshort(qhT *qh, int *curlong, int *totlong);
+
 /********* -poly_r.c/poly2_r.c prototypes (duplicated from poly_r.h) **********************/
 
 void    qh_check_output(qhT *qh);
@@ -1225,54 +1211,12 @@ void    qh_triangulate(qhT *qh /* qh.facet_list */);
 
 /********* -rboxlib_r.c prototypes **********************/
 int     qh_rboxpoints(qhT *qh, char* rbox_command);
-void    QH_NORETURN qh_errexit_rbox(qhT *qh, int exitcode);
+void    qh_errexit_rbox(qhT *qh, int exitcode);
 
-/************************** accessors.c prototypes ******************************/
+/********* -stat_r.c prototypes (duplicated from stat_r.h) **********************/
 
-#define QH_GETTER(TYPE, FIELD) TYPE qh_get_##FIELD(const qhT *qh)
-#define QH_SETTER(TYPE, FIELD) void qh_set_##FIELD(qhT *qh, TYPE _val_)
-QH_GETTER(facetT*, facet_list);
-QH_GETTER(pointT*, first_point);
-QH_GETTER(int, hull_dim);
-QH_GETTER(int, num_facets);
-QH_GETTER(int, num_points);
-QH_GETTER(int, num_vertices);
-QH_GETTER(vertexT*, vertex_list);
-QH_GETTER(realT, totarea);
-QH_GETTER(realT, totvol);
-QH_GETTER(boolT, hasAreaVolume);
-QH_SETTER(boolT, hasAreaVolume);
-QH_GETTER(boolT, hasTriangulation);
-QH_SETTER(boolT, hasTriangulation);
-QH_GETTER(int, num_good);
-QH_GETTER(setT*, del_vertices);
-QH_GETTER(int, input_dim);
-QH_GETTER(boolT, DELAUNAY);
-QH_GETTER(boolT, SCALElast);
-QH_GETTER(boolT, KEEPcoplanar);
-QH_GETTER(boolT, MERGEexact);
-QH_GETTER(boolT, NOerrexit);
-QH_GETTER(boolT, PROJECTdelaunay);
-QH_GETTER(boolT, ATinfinity);
-QH_GETTER(boolT, UPPERdelaunay);
-QH_GETTER(int, normal_size);
-QH_GETTER(int, num_visible);
-QH_GETTER(int, center_size);
-QH_GETTER(const char *, qhull_command);
-QH_GETTER(facetT*, facet_tail);
-QH_GETTER(vertexT*, vertex_tail);
-QH_GETTER(unsigned int, facet_id);
-QH_GETTER(unsigned int, visit_id);
-QH_GETTER(unsigned int, vertex_visit);
-QH_GETTER(pointT*, input_points);
-QH_GETTER(coordT*, feasible_point);
-QH_GETTER(realT, last_low);
-QH_GETTER(realT, last_high);
-QH_GETTER(realT, last_newhigh);
-QH_GETTER(realT, max_outside);
-QH_GETTER(realT, MINoutside);
-QH_GETTER(realT, DISTround);
-QH_GETTER(setT*, other_points);
+void    qh_collectstatistics(qhT *qh);
+void    qh_printallstatistics(qhT *qh, FILE *fp, const char *string);
 
 #ifdef __cplusplus
 } /* extern "C" */

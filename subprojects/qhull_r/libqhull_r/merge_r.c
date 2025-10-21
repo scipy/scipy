@@ -21,8 +21,8 @@
    vertex->neighbors not set until the first merge occurs
 
    Copyright (c) 1993-2020 C.B. Barber.
-   $Id: //main/2019/qhull/src/libqhull_r/merge_r.c#16 $$Change: 3978 $
-   $DateTime: 2025/08/24 21:38:45 $$Author: bbarber $
+   $Id: //main/2019/qhull/src/libqhull_r/merge_r.c#14 $$Change: 2953 $
+   $DateTime: 2020/05/21 22:05:32 $$Author: bbarber $
 */
 
 #include "qhull_ra.h"
@@ -427,8 +427,8 @@ void qh_appendmergeset(qhT *qh, facetT *facet, facetT *neighbor, mergeType merge
     return;
   }
   if (!qh->facet_mergeset || !qh->degen_mergeset) {
-    qh_fprintf(qh, qh->ferr, 6403, "qhull internal error (qh_appendmergeset): expecting temp set defined for qh.facet_mergeset (%p) and qh.degen_mergeset (%p).  Got NULL\n",
-      (void *) qh->facet_mergeset, (void *) qh->degen_mergeset);
+    qh_fprintf(qh, qh->ferr, 6403, "qhull internal error (qh_appendmergeset): expecting temp set defined for qh.facet_mergeset (0x%x) and qh.degen_mergeset (0x%x).  Got NULL\n",
+      qh->facet_mergeset, qh->degen_mergeset);
     /* otherwise qh_setappend creates a new set that is not freed by qh_freebuild() */
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }
@@ -513,7 +513,8 @@ void qh_appendvertexmerge(qhT *qh, vertexT *vertex, vertexT *destination, mergeT
   const char *mergename;
 
   if (!qh->vertex_mergeset) {
-    qh_fprintf(qh, qh->ferr, 6387, "qhull internal error (qh_appendvertexmerge): expecting temp set defined for qh.vertex_mergeset.  Got NULL\n");
+    qh_fprintf(qh, qh->ferr, 6387, "qhull internal error (qh_appendvertexmerge): expecting temp set defined for qh.vertex_mergeset (0x%x).  Got NULL\n",
+      qh->vertex_mergeset);
     /* otherwise qh_setappend creates a new set that is not freed by qh_freebuild() */
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }
@@ -1653,8 +1654,8 @@ void qh_forcedmerges(qhT *qh, boolT *wasmerge) {
 void qh_freemergesets(qhT *qh) {
 
   if (!qh->facet_mergeset || !qh->degen_mergeset || !qh->vertex_mergeset) {
-    qh_fprintf(qh, qh->ferr, 6388, "qhull internal error (qh_freemergesets): expecting mergesets.  Got a NULL mergeset, qh.facet_mergeset (%p), qh.degen_mergeset (%p), qh.vertex_mergeset (%p)\n",
-      (void *) qh->facet_mergeset, (void *) qh->degen_mergeset, (void *) qh->vertex_mergeset);
+    qh_fprintf(qh, qh->ferr, 6388, "qhull internal error (qh_freemergesets): expecting mergesets.  Got a NULL mergeset, qh.facet_mergeset (0x%x), qh.degen_mergeset (0x%x), qh.vertex_mergeset (0x%x)\n",
+      qh->facet_mergeset, qh->degen_mergeset, qh->vertex_mergeset);
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }
   if (!SETempty_(qh->facet_mergeset) || !SETempty_(qh->degen_mergeset) || !SETempty_(qh->vertex_mergeset)) {
@@ -2033,8 +2034,8 @@ ridgeT *qh_hashridge_find(qhT *qh, setT *hashtable, int hashsize, ridgeT *ridge,
 void qh_initmergesets(qhT *qh /* qh.facet_mergeset,degen_mergeset,vertex_mergeset */) {
 
   if (qh->facet_mergeset || qh->degen_mergeset || qh->vertex_mergeset) {
-    qh_fprintf(qh, qh->ferr, 6386, "qhull internal error (qh_initmergesets): expecting NULL mergesets.  Got qh.facet_mergeset (%p), qh.degen_mergeset (%p), qh.vertex_mergeset (%p)\n",
-      (void *) qh->facet_mergeset, (void *) qh->degen_mergeset, (void *) qh->vertex_mergeset);
+    qh_fprintf(qh, qh->ferr, 6386, "qhull internal error (qh_initmergesets): expecting NULL mergesets.  Got qh.facet_mergeset (0x%x), qh.degen_mergeset (0x%x), qh.vertex_mergeset (0x%x)\n",
+      qh->facet_mergeset, qh->degen_mergeset, qh->vertex_mergeset);
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }
   qh->degen_mergeset= qh_settemp(qh, qh->TEMPsize);
@@ -2303,7 +2304,7 @@ void qh_maybe_duplicateridge(qhT *qh, ridgeT *ridgeA) {
             if (k == last) {
               vertex= qh_findbest_ridgevertex(qh, ridge, &pinched, &dist);
               trace2((qh, qh->ferr, 2069, "qh_maybe_duplicateridge: will merge v%d into v%d (dist %2.2g) due to duplicate ridges r%d/r%d with the same vertices.  mergevertex set\n",
-                pinched->id, vertex->id, dist, ridgeA->id, ridge->id));
+                pinched->id, vertex->id, dist, ridgeA->id, ridge->id, ridgeA->top->id, ridgeA->bottom->id, ridge->top->id, ridge->bottom->id));
               qh_appendvertexmerge(qh, pinched, vertex, MRGvertices, dist, ridgeA, ridge);
               ridge->mergevertex= True; /* disables check for duplicate vertices in qh_checkfacet */
               ridgeA->mergevertex= True;
@@ -2319,14 +2320,14 @@ void qh_maybe_duplicateridge(qhT *qh, ridgeT *ridgeA) {
   >-------------------------------</a><a name="maybe_duplicateridges">-</a>
 
   qh_maybe_duplicateridges(qh, facet )
-    if Q17, add MRGvertices if facet has ridges with the same vertices
+    if Q15, add MRGvertices if facet has ridges with the same vertices
 
   returns:
     adds rename requests to qh.vertex_mergeset
 
   notes:
     called at end of qh_mergefacet and qh_mergecycle_all
-    only enabled if qh.CHECKduplicates ('Q17') and 3-D or more
+    only enabled if qh.CHECKduplicates ('Q15') and 3-D or more
     expensive test, not worth it
     same as qh_maybe_duplicateridge
 
@@ -3355,7 +3356,7 @@ void qh_mergecycle_vneighbors(qhT *qh, facetT *samecycle, facetT *newfacet) {
       test facet2 for redundant neighbors
       test facet1 for degenerate neighbors
       test for redundant facet2
-      maybe test for duplicate ridges ('Q17')
+      maybe test for duplicate ridges ('Q15')
     move facet1 to qh.visible_list for later deletion
 */
 void qh_mergefacet(qhT *qh, facetT *facet1, facetT *facet2, mergeType mergetype, realT *mindist, realT *maxdist, boolT mergeapex) {
@@ -3437,7 +3438,7 @@ void qh_mergefacet(qhT *qh, facetT *facet1, facetT *facet2, mergeType mergetype,
     qh_errexit2(qh, qh_ERRqhull, facet1, facet2);
   }
   if (qh->num_facets - qh->num_visible <= qh->hull_dim + 1) {
-    qh_fprintf(qh, qh->ferr, 6227, "qhull topology error: Only %d facets remain.  The input is too degenerate or the convexity constraints are too strong.\n",
+    qh_fprintf(qh, qh->ferr, 6227, "qhull topology error: Only %d facets remain.  The input is too degenerate or the convexity constraints are too strong.\n", 
           qh->hull_dim+1);
     if (qh->hull_dim >= 5 && !qh->MERGEexact)
       qh_fprintf(qh, qh->ferr, 8079, "    Option 'Qx' may avoid this problem.\n");
@@ -3881,7 +3882,7 @@ void qh_mergevertex_neighbors(qhT *qh, facetT *facet1, facetT *facet2) {
           facet1->id, facet2->id));
   if (qh->tracevertex) {
     qh_fprintf(qh, qh->ferr, 8081, "qh_mergevertex_neighbors: of f%d into f%d at furthest p%d f0= %p\n",
-             facet1->id, facet2->id, qh->furthest_id, (void *) qh->tracevertex->neighbors->e[0].p);
+             facet1->id, facet2->id, qh->furthest_id, qh->tracevertex->neighbors->e[0].p);
     qh_errprint(qh, "TRACE", NULL, NULL, NULL, qh->tracevertex);
   }
   FOREACHvertex_(facet1->vertices) {
@@ -5572,7 +5573,7 @@ void qh_checkdelridge(qhT *qh /* qh.visible_facets, vertex_mergeset */) {
 boolT qh_checkzero(qhT *qh, boolT testall) {
   QHULL_UNUSED(qh)
   QHULL_UNUSED(testall)
-
+    
   return True;
 }
 void qh_freemergesets(qhT *qh) {
