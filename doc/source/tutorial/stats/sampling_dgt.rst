@@ -9,8 +9,8 @@ Discrete Guide Table (DGT)
 * Required: probability vector (PV) or the PMF along with a finite domain
 * Speed:
 
-    * Set-up: slow (linear with the vector-length)
-    * Sampling: very fast
+  * Set-up: slow (linear with the vector-length)
+  * Sampling: very fast
 
 
 DGT samples from arbitrary but finite probability vectors. Random numbers
