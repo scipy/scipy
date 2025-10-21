@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 from . import distributions
 from .._lib._array_api import xp_capabilities, xp_promote
@@ -151,10 +150,10 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
     deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
     i = np.triu(np.ones(deltax.shape[-2:], dtype=bool), k=1)
-    deltax = np.reshape(deltax, deltax.shape[:-2] + (-1,))
-    deltay = np.reshape(deltay, deltay.shape[:-2] + (-1,))
-    i = np.ravel(i)
+    # with NumPy:
     deltax, deltay = deltax[..., i], deltay[..., i]
+    # with array API, mask must be sole index, so we'll need to broadcast it.
+    # indexing will ravel the array, so we'll need to reshape it after
     deltax[deltax == 0] = np.nan
     slopes = deltay / deltax
     slopes = np.sort(slopes, axis=-1)
@@ -171,8 +170,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     # This implements (2.6) from Sen (1968)
     _, nxreps = _stats_py._rankdata(x, method='average', return_ties=True)
     _, nyreps = _stats_py._rankdata(y, method='average', return_ties=True)
-    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen (1968)
-    ny = y.shape[-1]                                                    # n in Sen (1968)
+    nt = np.count_nonzero(np.isfinite(slopes), axis=-1, keepdims=True)  # N in Sen 1968
+    ny = y.shape[-1]                                                    # n in Sen 1968
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (
         ny * (ny-1) * (2*ny+5)
@@ -180,8 +179,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
         - np.sum(nyreps * (nyreps-1) * (2*nyreps + 5), axis=-1, keepdims=True))
     # Find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
-    Ru = np.minimum(np.astype(np.round((nt - z*sigma)/2.), int), nt-1)
-    Rl = np.maximum(np.astype(np.round((nt + z*sigma)/2.), int) - 1, 0)
+    Ru = np.minimum(np.round((nt - z*sigma)/2.).astype(np.int64), nt-1)
+    Rl = np.maximum(np.round((nt + z*sigma)/2.).astype(np.int64) - 1, 0)
     R = np.concatenate((np.atleast_1d(Rl), np.atleast_1d(Ru)), axis=-1)
     delta = np.take_along_axis(slopes, R, axis=-1)
     i_nan = np.broadcast_to(sigsq < 0, delta.shape)
