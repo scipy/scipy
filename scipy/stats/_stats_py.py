@@ -8534,7 +8534,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
-def friedmanchisquare(*samples):
+def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
 
     The Friedman test tests the null hypothesis that repeated samples of
@@ -8549,6 +8549,11 @@ def friedmanchisquare(*samples):
     sample1, sample2, sample3... : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8595,20 +8600,27 @@ def friedmanchisquare(*samples):
         raise ValueError('At least 3 sets of samples must be given '
                          f'for Friedman test, got {k}.')
 
-    n = len(samples[0])
+    n = samples[0].shape[-1]
+    if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
+        raise ValueError("One or more sample arguments is too small.")
 
     # Rank data
+    # axis-slices are aligned with axis -1 by decorator; stack puts samples along axis 0
+    # The transpose flips this so we can work with axis-slices along -1. This is a
+    # reducing statistic, so both axes 0 and -1 are consumed, but what's left has to be
+    # transposed back at the end.
     data = np.stack(samples).T
     data = data.astype(float)
     data, t = _rankdata(data, method='average', return_ties=True)
 
     # # Handle ties
-    ties = np.sum(t * (t*t - 1))
+    ties = np.sum(t * (t*t - 1), axis=(0, -1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
-    ssbn = np.sum(data.sum(axis=0)**2)
+    ssbn = np.sum(data.sum(axis=0)**2, axis=-1)
     statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
+    statistic = statistic.T
     chi2 = _SimpleChi2(k - 1)
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FriedmanchisquareResult(statistic, pvalue)
