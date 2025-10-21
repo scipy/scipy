@@ -48,8 +48,7 @@ class _MatrixM1PowerOperator(LinearOperator):
             raise ValueError('expected p to be a non-negative integer')
         self._A = A
         self._p = p
-        self.ndim = A.ndim
-        self.shape = A.shape
+        super().__init__(dtype=A.dtype, shape=A.shape)
 
     def _matvec(self, x):
         for i in range(self._p):

@@ -595,8 +595,10 @@ class TestAsLinearOperator:
                 args = ()
 
                 def __init__(self, dtype):
-                    self.dtype = np.dtype(dtype)
-                    self.shape = original.shape
+                    super().__init__(
+                        dtype=np.dtype(dtype),
+                        shape=original.shape
+                    )
 
                 def _matvec(self, x):
                     return mv(x, self.dtype)

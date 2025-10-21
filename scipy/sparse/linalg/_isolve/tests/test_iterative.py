@@ -813,6 +813,9 @@ class TestGMRES:
 
 def test_nD(solver):
     """Check that >2-D operators are rejected cleanly."""
+    if solver is cg:
+        # cg has batch support
+        return
     def id(x):
         return x
     A = LinearOperator(shape=(2, 2, 2), matvec=id, dtype=np.float64)

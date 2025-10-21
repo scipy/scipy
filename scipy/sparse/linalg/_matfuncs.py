@@ -178,9 +178,7 @@ class MatrixPowerOperator(LinearOperator):
         self._A = A
         self._p = p
         self._structure = structure
-        self.dtype = A.dtype
-        self.ndim = A.ndim
-        self.shape = A.shape
+        super().__init__(dtype = A.dtype, shape=A.shape)
 
     def _matvec(self, x):
         for i in range(self._p):
@@ -216,6 +214,7 @@ class ProductOperator(LinearOperator):
                 raise ValueError(
                         'For now, the ProductOperator implementation is '
                         'limited to the product of multiple square matrices.')
+        shape = None
         if args:
             n = args[0].shape[0]
             for A in args:
@@ -224,9 +223,9 @@ class ProductOperator(LinearOperator):
                         raise ValueError(
                                 'The square matrices of the ProductOperator '
                                 'must all have the same shape.')
-            self.shape = (n, n)
-            self.ndim = len(self.shape)
-        self.dtype = np.result_type(*[x.dtype for x in args])
+            shape = (n, n)
+        dtype = np.result_type(*[x.dtype for x in args])
+        super().__init__(dtype=dtype, shape=shape)
         self._operator_sequence = args
 
     def _matvec(self, x):
