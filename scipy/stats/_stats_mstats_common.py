@@ -146,6 +146,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate', *, axis=None):
     x = np.arange(y.shape[-1], dtype=y.dtype) if x is None else x
     y, x = np.broadcast_arrays(y, x)
 
+    if x.shape[-1] < 2 or y.shape[-1] < 2:  # only needed by test_axis_nan_policy
+        raise ValueError("`x` and `y` must have length at least 2.")
+
     # Compute sorted slopes only when deltax > 0
     deltax = x[..., :, np.newaxis] - x[..., np.newaxis, :]
     deltay = y[..., :, np.newaxis] - y[..., np.newaxis, :]
