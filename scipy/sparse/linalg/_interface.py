@@ -243,8 +243,10 @@ class LinearOperator:
         Parameters
         ----------
         x : {matrix, ndarray}
-            An array with shape (..., N) representing a row vector (or stack of row vectors),
-            or an array with shape (..., N, 1) representing a column vector (or stack of column vectors).
+            An array with shape (..., N) representing a row vector
+            (or stack of row vectors),
+            or an array with shape (..., N, 1) representing a column vector
+            (or stack of column vectors).
 
         Returns
         -------
@@ -270,7 +272,11 @@ class LinearOperator:
         if column_vector := x.shape[-2:] == (N, 1):
             x_broadcast_dims = x.shape[:-2]
         if not (row_vector or column_vector):
-            raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({N},)` or `({N}, 1)`. Given shape: {x.shape}')
+            msg = (
+                f"Dimension mismatch: `x` must have a shape ending in "
+                f"`({N},)` or `({N}, 1)`. Given shape: {x.shape}"
+            )
+            raise ValueError(msg)
 
         y = self._matvec(x)
 
@@ -322,7 +328,11 @@ class LinearOperator:
         if column_vector := x.shape[-2:] == (M, 1):
             x_broadcast_dims = x.shape[:-2]
         if not (row_vector or column_vector):
-            raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({M},)` or `({M}, 1)`. Given shape: {x.shape}')
+            msg = (
+                f"Dimension mismatch: `x` must have a shape ending in "
+                f"`({M},)` or `({M}, 1)`. Given shape: {x.shape}"
+            )
+            raise ValueError(msg)
 
         y = self._rmatvec(x)
 
@@ -492,12 +502,20 @@ class LinearOperator:
                 
             N = self.shape[-1]
     
-            column_vector = x.shape[-2:] == (N, 1) # maintain column vector backwards-compatibility in 2-D case
-            matrix = x.ndim >= 2 and x.shape[-2] == N # maintain matmat backwards-compatibility in 2-D case
-            row_vector = x.shape[-1] == N # otherwise treat as a row-vector
+            # maintain column vector backwards-compatibility in 2-D case
+            column_vector = x.shape[-2:] == (N, 1)
+            # maintain matmat backwards-compatibility in 2-D case
+            matrix = x.ndim >= 2 and x.shape[-2] == N
+            # otherwise treat as a row-vector
+            row_vector = x.shape[-1] == N
 
             if not (row_vector or column_vector or matrix):
-                raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({N},)` or `({N}, 1)` or `({N}, K)` for some integer K. Given shape: {x.shape}')
+                msg = (
+                    f"Dimension mismatch: `x` must have a shape ending in "
+                    f"`({N},)` or `({N}, 1)` or `({N}, K)` for some integer K. "
+                    f"Given shape: {x.shape}"
+                )
+                raise ValueError(msg)
             
             if column_vector:
                 return self.matvec(x)
@@ -553,14 +571,23 @@ class LinearOperator:
 
             M = self.shape[-2]
     
-            column_vector = x.shape[-2:] == (1, M) # maintain column vector backwards-compatibility in 2-D case
-            matrix = x.shape[-1] == M and x.ndim == 2 # maintain matmat backwards-compatibility in 2-D case
-            row_vector = x.shape[-1] == M # otherwise treat as a row-vector
-            # XXX: for `x.ndim > 2`, the equivalent `np.dot(a, b)` implements a sum product over the last axis of `a` and the second-to-last axis of `b`
+            # maintain column vector backwards-compatibility in 2-D case
+            column_vector = x.shape[-2:] == (1, M)
+            # maintain matmat backwards-compatibility in 2-D case
+            matrix = x.shape[-1] == M and x.ndim == 2
+            # otherwise treat as a row-vector
+            row_vector = x.shape[-1] == M
+            # XXX: for `x.ndim > 2`, the equivalent `np.dot(a, b)` implements a
+            # sum product over the last axis of `a` and the second-to-last axis of `b`.
             # see https://numpy.org/doc/stable/reference/generated/numpy.dot.html
 
             if not (row_vector or column_vector or matrix):
-                raise ValueError(f'Dimension mismatch: `x` must have a shape ending in `({M},)` or `(1, {M})` or `(K, {M})` for some integer K. Given shape: {x.shape}')
+                msg = (
+                    f"Dimension mismatch: `x` must have a shape ending in "
+                    f"`({M},)` or `(1, {M})` or `(K, {M})` for some integer K. "
+                    f"Given shape: {x.shape}"
+                )
+                raise ValueError(msg)
             
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
@@ -673,12 +700,14 @@ class _CustomLinearOperator(LinearOperator):
             return super()._rmatmat(X)
 
     def _adjoint(self):
-        return _CustomLinearOperator(shape=(*self.shape[:-2], self.shape[-1], self.shape[-2]),
-                                     matvec=self.__rmatvec_impl,
-                                     rmatvec=self.__matvec_impl,
-                                     matmat=self.__rmatmat_impl,
-                                     rmatmat=self.__matmat_impl,
-                                     dtype=self.dtype)
+        return _CustomLinearOperator(
+            shape=(*self.shape[:-2], self.shape[-1], self.shape[-2]),
+            matvec=self.__rmatvec_impl,
+            rmatvec=self.__matvec_impl,
+            matmat=self.__rmatmat_impl,
+            rmatmat=self.__matmat_impl,
+            dtype=self.dtype
+        )
 
 
 class _AdjointLinearOperator(LinearOperator):
@@ -833,7 +862,8 @@ class _PowerLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[-2] != A.shape[-1]:
-            raise ValueError(f'square core-dimensions of LinearOperator expected, got {A!r}')
+            msg = f'square core-dimensions of LinearOperator expected, got {A!r}'
+            raise ValueError(msg)
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 
@@ -883,7 +913,9 @@ class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint_array):
         self.A = adjoint_array.T.conj()
         self.args = (adjoint_array,)
-        self.shape = *adjoint_array.shape[:-2], adjoint_array.shape[-1], adjoint_array.shape[-2]
+        self.shape = (
+            *adjoint_array.shape[:-2], adjoint_array.shape[-1], adjoint_array.shape[-2]
+        )
 
     @property
     def dtype(self):
