@@ -8596,22 +8596,14 @@ def friedmanchisquare(*samples):
                          f'for Friedman test, got {k}.')
 
     n = len(samples[0])
-    for i in range(1, k):
-        if len(samples[i]) != n:
-            raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = np.vstack(samples).T
+    data = np.stack(samples).T
     data = data.astype(float)
-    for i in range(len(data)):
-        data[i] = rankdata(data[i])
+    data, t = _rankdata(data, method='average', return_ties=True)
 
-    # Handle ties
-    ties = 0
-    for d in data:
-        _, repnum = _find_repeats(np.array(d, dtype=np.float64))
-        for t in repnum:
-            ties += t * (t*t - 1)
+    # # Handle ties
+    ties = np.sum(t * (t*t - 1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
     ssbn = np.sum(data.sum(axis=0)**2)
