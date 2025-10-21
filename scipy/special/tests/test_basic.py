@@ -8,8 +8,6 @@
 # 8   Means test runs forever
 
 ###  test_besselpoly
-###  test_mathieu_even_coef
-###  test_mathieu_odd_coef
 ###  test_modfresnelp
 ###  test_modfresnelm
 #    test_pbdv_seq
@@ -47,6 +45,7 @@ from scipy.special._basic import (
 )
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
+from scipy.integrate import quad
 
 import math
 
@@ -4041,18 +4040,90 @@ class TestLog1p:
         assert_allclose(l1pm, l1pmrl, atol=1.5e-8, rtol=0)
 
 
+def ce_fourier_coefficient_using_integral(k, n, q):
+    """
+    Compute the Fourier coefficient of the even Mathieu function.
+    The integral definition of a Fourier coefficient is used.
+    This function is used as an alternative implementation of
+    mathieu_even_coef().
+    """
+    period = 180 if n % 2 == 0 else 360
+    # For k = 0, the factor outside the integral is (1/period).
+    # For k = 1, 2, 3, ..., the factor is (2/period).
+    c = (1/period)*quad(lambda t: special.mathieu_cem(n, q, t)[0],
+                        -period/2, period/2,
+                        weight='cos', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
+    if k > 0:
+        c *= 2
+    return c
+
+
+def se_fourier_coefficient_using_integral(k, n, q):
+    """
+    Compute the Fourier coefficient of the odd Mathieu function.
+    The integral definition of a Fourier coefficient is used.
+    This function is used as an alternative implementation of
+    mathieu_odd_coef().
+    """
+    # For k == 0, the result is 0. (The test code won't call this
+    # function with k == 0, but we'll check anyway.)
+    if k == 0:
+        return 0.0
+    period = 180 if n % 2 == 0 else 360
+    c = (2/period)*quad(lambda t: special.mathieu_sem(n, q, t)[0],
+                        -period/2, period/2,
+                        weight='sin', wvar=2*np.pi*k/period, epsrel=1e-14)[0]
+    return c
+
+
 class TestMathieu:
 
-    def test_mathieu_a(self):
-        pass
+    @pytest.mark.parametrize('n, q', [(4, 3.5), (8, 4.25)])
+    def test_mathieu_even_coef_against_integral_n_even(self, n, q):
+        # Get the nonzero Fourier coefficients.  For the even Mathieu functions
+        # with even n, these are the coefficients of the cosine series. None of
+        # the coefficients are 0 for k = 0, 1, 2, 3, ...
+        A = special.mathieu_even_coef(n, q)
+        # Compare the first four nonzero Fourier coefficients to the coefficients
+        # computed using the integral definition.
+        c = [ce_fourier_coefficient_using_integral(k, n, q) for k in range(4)]
+        assert_allclose(c, A[:len(c)], rtol=1e-10)
 
-    def test_mathieu_even_coef(self):
-        special.mathieu_even_coef(2,5)
-        # Q not defined broken and cannot figure out proper reporting order
+    @pytest.mark.parametrize('n, q', [(3, 3.5), (7, 2)])
+    def test_mathieu_even_coef_against_integral_n_odd(self, n, q):
+        # Get the nonzero Fourier coefficients.  For the even Mathieu functions
+        # with odd n, these are the coefficients of the cosine series. Only the
+        # coefficients c[k] for k = 1, 3, 5, 7, ... are nonzero.  These are the
+        # values returned by mathieu_even_coef(n, q).
+        A = special.mathieu_even_coef(n, q)
+        # Compare the first 4 nonzero Fourier coefficients to the coefficients
+        # computed using the integral definition.
+        c = [ce_fourier_coefficient_using_integral(k, n, q) for k in range(1, 9, 2)]
+        assert_allclose(c, A[:len(c)], rtol=1e-10)
 
-    def test_mathieu_odd_coef(self):
-        # same problem as above
-        pass
+    @pytest.mark.parametrize('n, q', [(2, 3.5), (10, 2)])
+    def test_mathieu_odd_coef_against_integral_n_even(self, n, q):
+        # Get the nonzero Fourier coefficients.  For the odd Mathieu functions
+        # with even n, these are the coefficients of the sine series. Only the
+        # coefficients c[k] for k = 1, 2, 3, 4, ... are nonzero.  These are the
+        # values returned by mathieu_odd_coef(n, q).
+        B = special.mathieu_odd_coef(n, q)
+        # Compare the first 4 nonzero Fourier coefficients to the coefficients
+        # computed using the integral definition.
+        c = [se_fourier_coefficient_using_integral(k, n, q) for k in range(1, 5)]
+        assert_allclose(c, B[:len(c)], rtol=1e-10)
+
+    @pytest.mark.parametrize('n, q', [(3, 3.5), (7, 2)])
+    def test_mathieu_odd_coef_against_integral_n_odd(self, n, q):
+        # Get the nonzero Fourier coefficients.  For the odd Mathieu functions
+        # with odd n, these are the coefficients of the sine series. Only the
+        # coefficients c[k] for k = 1, 3, 5, 7, ... are nonzero.  These are the
+        # values returned by mathieu_odd_coef(n, q).
+        B = special.mathieu_odd_coef(n, q)
+        # Compare the first 4 nonzero Fourier coefficients to the coefficients
+        # computed using the integral definition.
+        c = [se_fourier_coefficient_using_integral(k, n, q) for k in range(1, 9, 2)]
+        assert_allclose(c, B[:len(c)], rtol=1e-10)
 
 
 class TestFresnelIntegral:
