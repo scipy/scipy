@@ -376,7 +376,7 @@ def kstatvar(data, n=2, *, axis=None):
     .. math::
 
         \mathrm{var}(k_1) &= \frac{k_2}{n}, \\
-        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n - 1)}.
+        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n + 1)}.
 
     References
     ----------
