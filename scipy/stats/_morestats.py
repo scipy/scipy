@@ -3350,6 +3350,26 @@ def _mood_inner_lc(x, y, t, n, m, N, axis):
     return (z,)
 
 
+def _mood_statistic_no_ties(xy, m, n, N, axis):
+    if axis != 0:
+        xy = np.moveaxis(xy, axis, 0)
+
+    xy = xy.reshape(xy.shape[0], -1)
+    # Generalized to the n-dimensional case by adding the axis argument,
+    # and using for loops, since rankdata is not vectorized.  For improving
+    # performance consider vectorizing rankdata function.
+    all_ranks = np.empty_like(xy)
+    for j in range(xy.shape[1]):
+        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
+
+    Ri = all_ranks[:n]
+    M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
+    # Approx stat.
+    mnM = n * (N * N - 1.0) / 12
+    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+    return (M - mnM) / sqrt(varM)
+
+
 def _mood_too_small(samples, kwargs, axis=-1):
     x, y = samples
     n = x.shape[axis]
@@ -3480,23 +3500,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     if np.any(t > 1):
         z = np.asarray(_mood_inner_lc(x, y, t, n, m, N, axis=axis))
     else:
-        if axis != 0:
-            xy = np.moveaxis(xy, axis, 0)
+        z = _mood_statistic_no_ties(xy, m, n, N, axis=axis)
 
-        xy = xy.reshape(xy.shape[0], -1)
-        # Generalized to the n-dimensional case by adding the axis argument,
-        # and using for loops, since rankdata is not vectorized.  For improving
-        # performance consider vectorizing rankdata function.
-        all_ranks = np.empty_like(xy)
-        for j in range(xy.shape[1]):
-            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
-
-        Ri = all_ranks[:n]
-        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
-        # Approx stat.
-        mnM = n * (N * N - 1.0) / 12
-        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-        z = (M - mnM) / sqrt(varM)
     pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
     if res_shape == ():
