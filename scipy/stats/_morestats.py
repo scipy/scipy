@@ -3355,12 +3355,7 @@ def _mood_statistic_no_ties(xy, m, n, N, axis):
         xy = np.moveaxis(xy, axis, 0)
 
     xy = xy.reshape(xy.shape[0], -1)
-    # Generalized to the n-dimensional case by adding the axis argument,
-    # and using for loops, since rankdata is not vectorized.  For improving
-    # performance consider vectorizing rankdata function.
-    all_ranks = np.empty_like(xy)
-    for j in range(xy.shape[1]):
-        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
+    all_ranks = _stats_py.rankdata(xy, axis=0)
 
     Ri = all_ranks[:n]
     M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
