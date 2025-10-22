@@ -148,12 +148,12 @@ jobs:
             echo "PATH=$PATH" >> "$GITHUB_ENV"
             LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
-          XCODE_VER='16.0'
-          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
-          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+          #          XCODE_VER='16.0'
+          #          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
+          #          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
-          sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
+          # sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
           CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
             SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
             PKG_CONFIG_PATH=${{ github.workspace }}"
