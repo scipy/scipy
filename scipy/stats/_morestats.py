@@ -32,7 +32,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2)
+                        _SimpleNormal, _SimpleChi2, _SimpleF)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -3000,7 +3000,7 @@ LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
-def levene(*samples, center='median', proportiontocut=0.05):
+def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
@@ -3011,8 +3011,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample data, possibly with different lengths. Only one-dimensional
-        samples are accepted.
+        The sample data, possibly with different lengths.
     center : {'mean', 'median', 'trimmed'}, optional
         Which statistics to use to center data points within each sample.  Default
         is 'median'.
@@ -3020,6 +3019,11 @@ def levene(*samples, center='median', proportiontocut=0.05):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -3090,55 +3094,45 @@ def levene(*samples, center='median', proportiontocut=0.05):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    Ni = np.empty(k)
-    Yci = np.empty(k, 'd')
-
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=0)
+            return np.median(x, axis=-1, keepdims=True)
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=0)
+            return np.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-
-    for j in range(k):
-        Ni[j] = len(samples[j])
-        Yci[j] = func(samples[j])
-    Ntot = np.sum(Ni, axis=0)
+    Nis = [sample.shape[-1] for sample in samples]
+    Ycis = [func(sample) for sample in samples]
+    Ntot = sum(Nis)
 
     # compute Zij's
-    Zij = [None] * k
-    for i in range(k):
-        Zij[i] = abs(asarray(samples[i]) - Yci[i])
+    Zijs = [np.abs(sample - Yc) for sample, Yc in zip(samples, Ycis)]
 
     # compute Zbari
-    Zbari = np.empty(k, 'd')
-    Zbar = 0.0
-    for i in range(k):
-        Zbari[i] = np.mean(Zij[i], axis=0)
-        Zbar += Zbari[i] * Ni[i]
-
+    Zbaris = [np.mean(Zij, axis=-1, keepdims=True) for Zij in Zijs]
+    Zbar = sum(Ni*Zbari for Ni, Zbari in zip(Nis, Zbaris))
     Zbar /= Ntot
-    numer = (Ntot - k) * np.sum(Ni * (Zbari - Zbar)**2, axis=0)
 
-    # compute denom_variance
-    dvar = 0.0
-    for i in range(k):
-        dvar += np.sum((Zij[i] - Zbari[i])**2, axis=0)
-
-    denom = (k - 1.0) * dvar
+    # compute numerator and denominator
+    dfd = (Ntot - k)
+    numer = dfd * sum(Ni * (Zbari - Zbar)**2
+                      for Ni, Zbari in zip(Nis, Zbaris))
+    dfn = (k - 1.0)
+    denom = dfn * sum(np.sum((Zij - Zbari)**2, axis=-1, keepdims=True)
+                      for Zij, Zbari in zip(Zijs, Zbaris))
 
     W = numer / denom
-    pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
-    return LeveneResult(W, pval)
+    W = np.squeeze(W, axis=-1)
+    pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=np)
+    return LeveneResult(W[()], pval[()])
 
 
 def _apply_func(x, g, func):

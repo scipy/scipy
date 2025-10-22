@@ -3652,6 +3652,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
 
 @xp_capabilities(np_only=True)
+@_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
 
@@ -3717,7 +3718,7 @@ def trim_mean(a, proportiontocut, axis=0):
     a = np.asarray(a)
 
     if a.size == 0:
-        return np.nan
+        return _get_nan(a)
 
     if axis is None:
         a = a.ravel()
@@ -10897,3 +10898,17 @@ class _SimpleStudentT:
 
     def sf(self, t):
         return special.stdtr(self.df, -t)
+
+
+class _SimpleF:
+    # A very simple, array-API compatible F distribution for use in
+    # hypothesis tests.
+    def __init__(self, dfn, dfd):
+        self.dfn = dfn
+        self.dfd = dfd
+
+    def cdf(self, x):
+        return special.fdtr(self.dfn, self.dfd, x)
+
+    def sf(self, x):
+        return special.fdtrc(self.dfn, self.dfd, x)
