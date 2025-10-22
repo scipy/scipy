@@ -3293,7 +3293,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(statistic, pval)
 
 
-def _mood_inner_lc(x, y, t, n, m, N, axis):
+def _mood_statistic_with_ties(x, y, t, n, m, N):
     # First equation of "Mood's Squared Rank Test", Mielke pg 313
     E_0_T = n * (N * N - 1) / 12
 
@@ -3346,20 +3346,12 @@ def _mood_inner_lc(x, y, t, n, m, N, axis):
     # Mielke pg 312 defines test statistic `T` as the inner product `a` and `phi`
     T = np.vecdot(a, phi, axis=-1)
 
-    z = (T - E_0_T) / np.sqrt(varM)
-    return (z,)
+    return (T - E_0_T) / np.sqrt(varM)
 
 
-def _mood_statistic_no_ties(xy, m, n, N, axis):
-    if axis != 0:
-        xy = np.moveaxis(xy, axis, 0)
-
-    xy = xy.reshape(xy.shape[0], -1)
-    all_ranks = _stats_py.rankdata(xy, axis=0)
-
-    Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
-    # Approx stat.
+def _mood_statistic_no_ties(r, m, n, N):
+    rx = r[..., :n]
+    M = np.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
     mnM = n * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     return (M - mnM) / sqrt(varM)
@@ -3465,22 +3457,11 @@ def mood(x, y, axis=0, alternative="two-sided"):
                        pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
-    xy = np.concatenate((x, y), axis=axis)
+    # _axis_nan_policy decorator ensures axis=-1
+    xy = np.concatenate((x, y), axis=-1)
 
-    if axis < 0:
-        axis = x.ndim + axis
-
-    # Determine shape of the result arrays
-    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
-    if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
-                                ax != axis])):
-        raise ValueError("Dimensions of x and y on all axes except `axis` "
-                         "should match")
-
-    n = x.shape[axis]
-    m = y.shape[axis]
+    n = x.shape[-1]
+    m = y.shape[-1]
     N = m + n
 
     if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
@@ -3489,23 +3470,15 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
-    # As an improvement, eliminate the redundant sort.
-    _, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if np.any(t > 1):
-        z = np.asarray(_mood_inner_lc(x, y, t, n, m, N, axis=axis))
+        z = _mood_statistic_with_ties(x, y, t, n, m, N)
     else:
-        z = _mood_statistic_no_ties(xy, m, n, N, axis=axis)
+        z = _mood_statistic_no_ties(r, m, n, N)
 
     pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
-    if res_shape == ():
-        # Return scalars, not 0-D arrays
-        z = z[0]
-        pval = pval[0]
-    else:
-        z = z.reshape(res_shape)
-        pval = pval.reshape(res_shape)
     return SignificanceResult(z[()], pval[()])
 
 
