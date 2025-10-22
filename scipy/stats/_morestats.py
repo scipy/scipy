@@ -3300,6 +3300,7 @@ def _mood_statistic_with_ties(x, y, t, n, m, N):
     # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
     # The only difference is that our `t` has zeros interspersed with the relevant
     # numbers to keep the array rectangular, but these terms nothing to the sum.
+    np = array_namespace(x, y, t)  # needed to use `cumulative_sum`
     S = np.cumulative_sum(t, include_initial=True, axis=-1)
     S_i, S_i_m1 = S[..., 1:], S[..., :-1]
     # Second equation of "Mood's Squared Rank Test", Mielke pg 313
