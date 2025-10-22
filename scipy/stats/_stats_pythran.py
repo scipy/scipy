@@ -224,6 +224,8 @@ def np_dot(x, y):
 # function p = bvnu( dh, dk, r )
 #pythran export _bvnu(float64, float64, float64)
 def _bvnu(dh, dk, r):
+    # Adapted from the MATLAB original implementation by Dr. Alan Genz;
+    # see license information in _qmvnt.py
     math_inf, math_pi = np.inf, np.pi
     # if dh ==  inf | dk ==  inf:p = 0;
     if (dh == math_inf) or (dk == math_inf):
