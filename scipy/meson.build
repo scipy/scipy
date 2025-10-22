@@ -597,6 +597,7 @@ cpp_args_pythran += [
   _cpp_Wno_unused_function,
   _cpp_Wno_unused_variable,
   _cpp_Wno_int_in_bool_context,
+  _cpp_Wno_unused_local_typedefs,
 ]
 
 # Fortran warning flags
