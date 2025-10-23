@@ -3652,6 +3652,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
 
 @xp_capabilities(np_only=True)
+@_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
 

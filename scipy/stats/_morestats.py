@@ -3146,7 +3146,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
-def fligner(*samples, center='median', proportiontocut=0.05):
+def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -3164,6 +3164,11 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -3247,35 +3252,35 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=0)
+            return np.median(x, axis=-1, keepdims=True)
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=0)
+            return np.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-    Ni = np.asarray([len(samples[j]) for j in range(k)])
+    Ni = np.asarray([samples[j].shape[-1] for j in range(k)])
     Yci = np.asarray([func(samples[j]) for j in range(k)])
-    Ntot = np.sum(Ni, axis=0)
+    Ntot = np.sum(Ni)
     # compute Zij's
     Zij = [np.abs(samples[i] - Yci[i]) for i in range(k)]
     allZij = np.concatenate(Zij, axis=-1)
 
-    ranks = _stats_py.rankdata(allZij)
+    ranks = _stats_py._rankdata(allZij, method='average')
     sample = special.ndtri(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
     splits = np.cumsum(Ni[:-1])
-    Ais = np.split(sample,  splits)
-    Aibar = [np.mean(Ai) for Ai in Ais]
-    anbar = np.mean(sample, axis=0)
-    varsq = np.var(sample, axis=0, ddof=1)
-    statistic = np.sum(Ni * (np.stack(Aibar) - anbar)**2.0, axis=0) / varsq
+    Ais = np.split(sample,  splits, axis=-1)
+    Aibar = [np.mean(Ai, axis=-1) for Ai in Ais]
+    anbar = np.mean(sample, axis=-1)
+    varsq = np.var(sample, axis=-1, ddof=1)
+    statistic = sum(Ni_ * (Aibar_ - anbar)**2.0 for Ni_, Aibar_ in zip(Ni, Aibar)) / varsq
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
