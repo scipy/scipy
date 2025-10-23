@@ -3274,8 +3274,8 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     splits = np.cumsum(ni[:-1])
-    Ais = np.split(a_Ni,  splits, axis=-1)
-    Aibar = [np.mean(Ai, axis=-1) for Ai in Ais]
+    Ai = np.split(a_Ni,  splits, axis=-1)
+    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = np.mean(a_Ni, axis=-1)
     V2 = np.var(a_Ni, axis=-1, ddof=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
