@@ -3265,20 +3265,23 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
     ni = [sample.shape[-1] for sample in samples]
-    Xibar = [func(sample) for sample in samples]
     N = sum(ni)
+
+    # Implementation follows [3] pg 355 F-K.
+    Xibar = [func(sample) for sample in samples]
     Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
     Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
-
     ranks = _stats_py._rankdata(Xij_Xibar, method='average')
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
+    # [3] Equation 2.1
     splits = np.cumsum(ni[:-1])
     Ai = np.split(a_Ni,  splits, axis=-1)
     Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
     abar = np.mean(a_Ni, axis=-1)
     V2 = np.var(a_Ni, axis=-1, ddof=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
+
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
