@@ -3264,9 +3264,9 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
         def func(x):
             return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-    Ni = [sample.shape[-1] for sample in samples]
+    ni = [sample.shape[-1] for sample in samples]
     Yci = [func(sample) for sample in samples]
-    Ntot = sum(Ni)
+    Ntot = sum(ni)
     # compute Zij's
     Zij = [np.abs(sample - Yci_) for sample, Yci_ in zip(samples, Yci)]
     allZij = np.concatenate(Zij, axis=-1)
@@ -3274,12 +3274,12 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     ranks = _stats_py._rankdata(allZij, method='average')
     a_Ni = special.ndtri(ranks / (2*(Ntot + 1.0)) + 0.5)
 
-    splits = np.cumsum(Ni[:-1])
+    splits = np.cumsum(ni[:-1])
     Ais = np.split(a_Ni,  splits, axis=-1)
     Aibar = [np.mean(Ai, axis=-1) for Ai in Ais]
     anbar = np.mean(a_Ni, axis=-1)
     varsq = np.var(a_Ni, axis=-1, ddof=1)
-    statistic = sum(Ni_ * (Aibar_ - anbar)**2 for Ni_, Aibar_ in zip(Ni, Aibar)) / varsq
+    statistic = sum(ni_ * (Aibar_ - anbar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / varsq
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
