@@ -4763,7 +4763,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`method` must be `None` if arguments are not NumPy arrays.'
         raise ValueError(message)
     elif method is not None:
-        message = ('`method` must be an instance of `PermutationMethod`,'
+        message = ('`method` must be an instance of `PermutationMethod`, '
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
