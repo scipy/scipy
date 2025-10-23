@@ -91,9 +91,9 @@ _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
 
 
 def diric(x, n):
-    """Periodic sinc function, also called the Dirichlet function.
+    """Periodic sinc function, also called the Dirichlet kernel.
 
-    The Dirichlet function is defined as::
+    The Dirichlet kernel is defined as::
 
         diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
@@ -1147,7 +1147,7 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h1v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel1` itself.
 
     Returns
     -------
@@ -1216,7 +1216,7 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h2v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel2` itself.
 
     Returns
     -------
@@ -1275,14 +1275,14 @@ def h2vp(v, z, n=1):
 
 
 def riccati_jn(n, x):
-    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
+    r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
-    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    The Riccati-Bessel function of the first kind is defined as :math:`x
     j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
     kind of order :math:`n`.
 
     This function computes the value and first derivative of the
-    Ricatti-Bessel function for all orders up to and including `n`.
+    Riccati-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -1331,9 +1331,9 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and its derivative.
+    """Compute Riccati-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined here as :math:`+x
+    The Riccati-Bessel function of the second kind is defined here as :math:`+x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
     kind of order :math:`n`. *Note that this is in contrast to a common convention
     that includes a minus sign in the definition.*
@@ -1640,7 +1640,7 @@ def mathieu_even_coef(m, q):
 
 
 def mathieu_odd_coef(m, q):
-    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+    r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form

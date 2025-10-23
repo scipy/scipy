@@ -25,13 +25,13 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_torch, make_xp_test_case, eager_warns
+from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
+                                   is_numpy)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
     xp_assert_less,
 )
-
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -816,8 +816,8 @@ class TestLevene:
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
+        rng = np.random.default_rng(4058827756)
+        x2 = rng.permutation(x)
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
@@ -1235,9 +1235,9 @@ class TestMood:
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
-        np.random.seed(1234)
-        x1 = np.random.randn(10, 1)
-        x2 = np.random.randn(15, 1)
+        rng = np.random.default_rng(4058827756)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
         z1, p1 = stats.mood(x1, x2)
         z2, p2 = stats.mood(x2, x1)
         assert_array_almost_equal([z1, p1], [-z2, p2])
@@ -1272,9 +1272,9 @@ class TestMood:
         # Test if the results of mood test in 2-D case are consistent with the
         # R result for the same inputs.  Numbers from R mood.test().
         ny = 5
-        np.random.seed(1234)
-        x1 = np.random.randn(10, ny)
-        x2 = np.random.randn(15, ny)
+        rng = np.random.default_rng()
+        x1 = rng.standard_normal((10, ny))
+        x2 = rng.standard_normal((15, ny))
         z_vectest, pval_vectest = stats.mood(x1, x2)
 
         for j in range(ny):
@@ -1293,9 +1293,9 @@ class TestMood:
 
     def test_mood_3d(self):
         shape = (10, 5, 6)
-        np.random.seed(1234)
-        x1 = np.random.randn(*shape)
-        x2 = np.random.randn(*shape)
+        rng = np.random.default_rng(3602349075)
+        x1 = rng.standard_normal(shape)
+        x2 = rng.standard_normal(shape)
 
         for axis in range(3):
             z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
@@ -3138,32 +3138,33 @@ class TestDirectionalStats:
                         xp.asarray(ref.mean_resultant_length))
 
 
+@make_xp_test_case(stats.false_discovery_control)
 class TestFDRControl:
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         message = "`ps` must include only numbers between 0 and 1"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([-1, 0.5, 0.7])
+            stats.false_discovery_control(xp.asarray([-1, 0.5, 0.7]))
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 2])
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 2]))
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, np.nan])
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, xp.nan]))
 
         message = "Unrecognized `method` 'YAK'"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], method='YAK')
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), method='YAK')
 
         message = "`axis` must be an integer or `None`"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], axis=1.5)
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), axis=1.5)
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], axis=(1, 2))
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), axis=(1, 2))
 
-    def test_against_TileStats(self):
+    def test_against_TileStats(self, xp):
         # See reference [3] of false_discovery_control
-        ps = [0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387]
+        ps = xp.asarray([0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387])
         res = stats.false_discovery_control(ps)
-        ref = [0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387]
-        assert_allclose(res, ref, atol=1e-3)
+        ref = xp.asarray([0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387])
+        xp_assert_close(res, ref, atol=1e-3)
 
     @pytest.mark.parametrize("case",
                              [([0.24617028, 0.01140030, 0.05652047, 0.06841983,
@@ -3172,36 +3173,42 @@ class TestFDRControl:
                               ([0.72102493, 0.03339112, 0.16554665, 0.20039952,
                                 0.23402122, 0.05393666, 0.51376399, 0.20039952,
                                 0.20039952, 0.74583488], 'by')])
-    def test_against_R(self, case):
+    def test_against_R(self, case, xp):
         # Test against p.adjust, e.g.
         # p = c(0.22155325, 0.00114003,..., 0.0364813 , 0.25464082)
         # p.adjust(p, "BY")
         ref, method = case
         rng = np.random.default_rng(6134137338861652935)
-        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng).tolist()
         ps[3] = ps[7]  # force a tie
-        res = stats.false_discovery_control(ps, method=method)
-        assert_allclose(res, ref, atol=1e-6)
+        res = stats.false_discovery_control(xp.asarray(ps), method=method)
+        xp_assert_close(res, xp.asarray(ref), atol=1e-6)
 
-    def test_axis_None(self):
+    def test_axis_None(self, xp):
         rng = np.random.default_rng(6134137338861652935)
         ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        ps = xp.asarray(ps)
         res = stats.false_discovery_control(ps, axis=None)
-        ref = stats.false_discovery_control(ps.ravel())
-        assert_equal(res, ref)
+        ref = stats.false_discovery_control(xp_ravel(ps))
+        xp_assert_equal(res, ref)
 
     @pytest.mark.parametrize("axis", [0, 1, -1])
-    def test_axis(self, axis):
+    def test_axis(self, axis, xp):
         rng = np.random.default_rng(6134137338861652935)
         ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
-        res = stats.false_discovery_control(ps, axis=axis)
+        res = stats.false_discovery_control(xp.asarray(ps), axis=axis)
         ref = np.apply_along_axis(stats.false_discovery_control, axis, ps)
-        assert_equal(res, ref)
+        xp_assert_close(res, xp.asarray(ref))  # torch isn't *equal*
 
-    def test_edge_cases(self):
-        assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
-        assert_array_equal(stats.false_discovery_control(0.25), 0.25)
-        assert_array_equal(stats.false_discovery_control([]), [])
+    def test_edge_cases(self, xp):
+        ps = xp.asarray([0.25])
+        xp_assert_equal(stats.false_discovery_control(ps), ps)
+
+        ps = xp.asarray([])
+        xp_assert_equal(stats.false_discovery_control(ps), ps)
+
+        if is_numpy(xp):
+            xp_assert_equal(stats.false_discovery_control(0.25), 0.25)
 
 
 class TestCommonAxis:

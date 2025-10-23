@@ -361,7 +361,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     a : array_like
         Input array, masked array or object that can be converted to an array.
     p : int or float
-        Exponent.
+        Exponent. Must be finite.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -437,6 +437,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
                          "float.")
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
+    elif math.isinf(p):
+        message = "Power mean only implemented for finite `p`"
+        raise NotImplementedError(message)
 
     xp = array_namespace(a, weights)
     a = xp.asarray(a, dtype=dtype)
@@ -3393,7 +3396,8 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "doesn't know array size")],
+                 jax_jit=False)
 def sigmaclip(a, low=4., high=4.):
     """Perform iterative sigma-clipping of array elements.
 
@@ -3457,16 +3461,17 @@ def sigmaclip(a, low=4., high=4.):
     True
 
     """
-    c = np.asarray(a).ravel()
+    xp = array_namespace(a)
+    c = xp_ravel(xp.asarray(a))
     delta = 1
     while delta:
-        c_std = c.std()
-        c_mean = c.mean()
-        size = c.size
+        c_std = xp.std(c)
+        c_mean = xp.mean(c)
+        size = xp_size(c)
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
         c = c[(c >= critlower) & (c <= critupper)]
-        delta = size - c.size
+        delta = size - xp_size(c)
 
     return SigmaclipResult(c, critlower, critupper)
 
