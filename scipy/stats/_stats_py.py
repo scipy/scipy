@@ -8626,10 +8626,13 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 skip_backends=[('dask.array', 'needs rankdata'),
+                                ('cupy', 'needs rankdata'),
+                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
-                  nan_policy='propagate'):
+                  nan_policy='propagate', *, axis=0):
     """Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
@@ -8664,6 +8667,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
 
     Returns
     -------
@@ -8704,33 +8712,36 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    nx = len(x)
-    ny = len(y)
+    xp = array_namespace(x, y)
+    nx = x.shape[axis]
+    ny = y.shape[axis]
 
-    rankc = rankdata(np.concatenate((x, y)))
-    rankcx = rankc[0:nx]
-    rankcy = rankc[nx:nx+ny]
-    rankcx_mean = np.mean(rankcx)
-    rankcy_mean = np.mean(rankcy)
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    rankx_mean = np.mean(rankx)
-    ranky_mean = np.mean(ranky)
+    rankc = rankdata(xp.concat((x, y), axis=axis), axis=axis)
+    rankcx = rankc[..., 0:nx]
+    rankcy = rankc[..., nx:nx+ny]
+    rankcx_mean = xp.mean(rankcx, axis=axis, keepdims=True)
+    rankcy_mean = xp.mean(rankcy, axis=axis, keepdims=True)
+    rankx = rankdata(x, axis=axis)
+    ranky = rankdata(y, axis=axis)
+    rankx_mean = xp.mean(rankx, axis=axis, keepdims=True)
+    ranky_mean = xp.mean(ranky, axis=axis, keepdims=True)
 
     temp_x = rankcx - rankx - rankcx_mean + rankx_mean
-    Sx = np_vecdot(temp_x, temp_x)
+    Sx = xp.vecdot(temp_x, temp_x, axis=-1)
     Sx /= nx - 1
     temp_y = rankcy - ranky - rankcy_mean + ranky_mean
-    Sy = np_vecdot(temp_y, temp_y)
+    Sy = xp.vecdot(temp_y, temp_y, axis=-1)
     Sy /= ny - 1
 
+    rankcx_mean = xp.squeeze(rankcx_mean, axis=axis)
+    rankcy_mean = xp.squeeze(rankcy_mean, axis=axis)
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
-    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+    wbfn /= (nx + ny) * xp.sqrt(nx * Sx + ny * Sy)
 
     if distribution == "t":
-        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
-        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
-        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df_numer = xp.pow(nx * Sx + ny * Sy, 2.0)
+        df_denom = xp.pow(nx * Sx, 2.0) / (nx - 1)
+        df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
         if (df_numer == 0) and (df_denom == 0):
@@ -8746,7 +8757,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=xp)
 
     return BrunnerMunzelResult(wbfn, p)
 
