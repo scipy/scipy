@@ -3264,23 +3264,22 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
         def func(x):
             return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-    Ni = np.asarray([samples[j].shape[-1] for j in range(k)])
-    Yci = np.asarray([func(samples[j]) for j in range(k)])
-    Ntot = np.sum(Ni)
+    Ni = [sample.shape[-1] for sample in samples]
+    Yci = [func(sample) for sample in samples]
+    Ntot = sum(Ni)
     # compute Zij's
-    Zij = [np.abs(samples[i] - Yci[i]) for i in range(k)]
+    Zij = [np.abs(sample - Yci_) for sample, Yci_ in zip(samples, Yci)]
     allZij = np.concatenate(Zij, axis=-1)
 
     ranks = _stats_py._rankdata(allZij, method='average')
-    sample = special.ndtri(ranks / (2*(Ntot + 1.0)) + 0.5)
+    a_Ni = special.ndtri(ranks / (2*(Ntot + 1.0)) + 0.5)
 
-    # compute Aibar
     splits = np.cumsum(Ni[:-1])
-    Ais = np.split(sample,  splits, axis=-1)
+    Ais = np.split(a_Ni,  splits, axis=-1)
     Aibar = [np.mean(Ai, axis=-1) for Ai in Ais]
-    anbar = np.mean(sample, axis=-1)
-    varsq = np.var(sample, axis=-1, ddof=1)
-    statistic = sum(Ni_ * (Aibar_ - anbar)**2.0 for Ni_, Aibar_ in zip(Ni, Aibar)) / varsq
+    anbar = np.mean(a_Ni, axis=-1)
+    varsq = np.var(a_Ni, axis=-1, ddof=1)
+    statistic = sum(Ni_ * (Aibar_ - anbar)**2 for Ni_, Aibar_ in zip(Ni, Aibar)) / varsq
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
