@@ -3267,11 +3267,10 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     ni = [sample.shape[-1] for sample in samples]
     Xibar = [func(sample) for sample in samples]
     N = sum(ni)
-    # compute Zij's
-    Zij = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
-    allZij = np.concatenate(Zij, axis=-1)
+    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
 
-    ranks = _stats_py._rankdata(allZij, method='average')
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     splits = np.cumsum(ni[:-1])
