@@ -68,7 +68,8 @@ class LinearOperator:
 
     A subclass must implement either one of the methods ``_matvec``
     and ``_matmat``, and the attributes/properties ``shape`` (pair of
-    integers) and ``dtype`` (may be None). It may call the ``__init__``
+    integers, optionally with additional batch dimensions at the front)
+    and ``dtype`` (may be None). It may call the ``__init__``
     on this class to have these attributes validated. Implementing
     ``_matvec`` automatically implements ``_matmat`` (using a naive
     algorithm) and vice-versa.
@@ -89,11 +90,11 @@ class LinearOperator:
     rmatvec : callable f(v)
         Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``.
     matmat : callable f(V)
-        Returns ``A @ V``, where ``V`` is a dense matrix with dimensions ``(N, K)``.
+        Returns ``A @ V``, where ``V`` is a dense matrix with dimensions ``(..., N, K)``.
     dtype : dtype
         Data type of the matrix.
     rmatmat : callable f(V)
-        Returns ``A^H @ V``, where ``V`` is a dense matrix with dimensions ``(M, K)``.
+        Returns ``A^H @ V``, where ``V`` is a dense matrix with dimensions ``(..., M, K)``.
 
     Attributes
     ----------
@@ -101,7 +102,7 @@ class LinearOperator:
         For linear operators describing products etc. of other linear
         operators, the operands of the binary operation.
     ndim : int
-        Number of dimensions (this is always 2)
+        Number of dimensions (greater than 2 in the case of batch dimensions)
 
     See Also
     --------
@@ -110,8 +111,8 @@ class LinearOperator:
     Notes
     -----
     The user-defined `matvec` function must properly handle the case
-    where ``v`` has shape ``(N,)`` as well as the ``(N,1)`` case.  The shape of
-    the return type is handled internally by `LinearOperator`.
+    where ``v`` has shape ``(..., N)`` as well as the ``(..., N, 1)`` case.
+    The shape of the return type is handled internally by `LinearOperator`.
 
     It is highly recommended to explicitly specify the `dtype`, otherwise
     it is determined automatically at the cost of a single matvec application
@@ -173,7 +174,7 @@ class LinearOperator:
         """Initialize this LinearOperator.
 
         To be called by subclasses. ``dtype`` may be None; ``shape`` should
-        be convertible to a length-2 tuple.
+        be convertible to a length >=2 tuple.
         """
         if dtype is not None:
             dtype = np.dtype(dtype)
@@ -211,6 +212,10 @@ class LinearOperator:
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
+        
+        If self is a linear operator of shape (..., M, N), then this method will
+        be called on a shape (..., N, K) ndarray, and should return a
+        shape (..., M, K) ndarray.
 
         Falls back on the user-defined _matvec method, so defining that will
         define matrix multiplication (though in a very suboptimal way).
@@ -238,7 +243,8 @@ class LinearOperator:
         """Matrix-vector multiplication.
 
         Performs the operation y=A@x where A is an MxN linear
-        operator and x is a column vector or 1-d array.
+        operator (or stack of linear operators)
+        and x is a column vector or 1-d array (or stack of such vectors).
 
         Parameters
         ----------
@@ -297,7 +303,8 @@ class LinearOperator:
         """Adjoint matrix-vector multiplication.
 
         Performs the operation y = A^H @ x where A is an MxN linear
-        operator and x is a column vector or 1-d array.
+        operator (or stack of linear operators)
+        and x is a column vector or 1-d array (or stack of such vectors).
 
         Parameters
         ----------
@@ -414,19 +421,21 @@ class LinearOperator:
     def rmatmat(self, X):
         """Adjoint matrix-matrix multiplication.
 
-        Performs the operation y = A^H @ x where A is an MxN linear
-        operator and x is a column vector or 1-d array, or 2-d array.
+        Performs the operation y = A^H @ X where A is an MxN linear
+        operator (or stack of linear operators)
+        and X is a 2-d array (or stack of arrays).
         The default implementation defers to the adjoint.
 
         Parameters
         ----------
         X : {matrix, ndarray}
-            A matrix or 2D array.
+            # XXX: is this correct, rather than (..., K, M)?
+            A matrix or array with shape (..., M, K).
 
         Returns
         -------
         Y : {matrix, ndarray}
-            A matrix or 2D array depending on the type of the input.
+            A matrix or array with shape (..., N, K) depending on the type of the input.
 
         Notes
         -----
@@ -482,6 +491,7 @@ class LinearOperator:
         Parameters
         ----------
         x : array_like
+            # TODO: shape info here
             1-d or 2-d array, representing a vector or matrix.
 
         Returns
@@ -548,6 +558,7 @@ class LinearOperator:
         Parameters
         ----------
         x : array_like
+            # TODO: shape info here
             1-d or 2-d array, representing a vector or matrix.
 
         Returns
