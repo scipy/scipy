@@ -3265,10 +3265,10 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
             return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
     ni = [sample.shape[-1] for sample in samples]
-    Yci = [func(sample) for sample in samples]
+    Xibar = [func(sample) for sample in samples]
     Ntot = sum(ni)
     # compute Zij's
-    Zij = [np.abs(sample - Yci_) for sample, Yci_ in zip(samples, Yci)]
+    Zij = [np.abs(sample - Yci_) for sample, Yci_ in zip(samples, Xibar)]
     allZij = np.concatenate(Zij, axis=-1)
 
     ranks = _stats_py._rankdata(allZij, method='average')
