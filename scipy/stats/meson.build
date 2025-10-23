@@ -77,7 +77,8 @@ py3.extension_module('_biasedurn',
 if use_pythran
   py3.extension_module('_stats_pythran',
     pythran_gen.process('_stats_pythran.py'),
-    cpp_args: cpp_args_pythran,
+    # `_cpp_Wno_unused_local_typedefs` can be removed when we require pythran >= 0.19.0
+    cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,
