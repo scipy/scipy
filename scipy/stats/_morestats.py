@@ -3141,16 +3141,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
-def _apply_func(x, g, func):
-    # g is list of indices into x
-    #  separating x into different groups
-    #  func should be applied over the groups
-    g = unique(r_[0, g, len(x)])
-    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
-
-    return asarray(output)
-
-
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
@@ -3269,25 +3259,23 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         def func(x):
             return _stats_py.trim_mean(x, proportiontocut, axis=0)
 
-    Ni = asarray([len(samples[j]) for j in range(k)])
-    Yci = asarray([func(samples[j]) for j in range(k)])
+    Ni = np.asarray([len(samples[j]) for j in range(k)])
+    Yci = np.asarray([func(samples[j]) for j in range(k)])
     Ntot = np.sum(Ni, axis=0)
     # compute Zij's
-    Zij = [abs(asarray(samples[i]) - Yci[i]) for i in range(k)]
-    allZij = []
-    g = [0]
-    for i in range(k):
-        allZij.extend(list(Zij[i]))
-        g.append(len(allZij))
+    Zij = [np.abs(samples[i] - Yci[i]) for i in range(k)]
+    allZij = np.concatenate(Zij, axis=-1)
 
     ranks = _stats_py.rankdata(allZij)
-    sample = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    sample = special.ndtri(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(sample, g, np.sum) / Ni
+    splits = np.cumsum(Ni[:-1])
+    Ais = np.split(sample,  splits)
+    Aibar = [np.mean(Ai) for Ai in Ais]
     anbar = np.mean(sample, axis=0)
     varsq = np.var(sample, axis=0, ddof=1)
-    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    statistic = np.sum(Ni * (np.stack(Aibar) - anbar)**2.0, axis=0) / varsq
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
