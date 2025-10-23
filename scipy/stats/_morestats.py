@@ -3276,9 +3276,9 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     splits = np.cumsum(ni[:-1])
     Ais = np.split(a_Ni,  splits, axis=-1)
     Aibar = [np.mean(Ai, axis=-1) for Ai in Ais]
-    anbar = np.mean(a_Ni, axis=-1)
+    abar = np.mean(a_Ni, axis=-1)
     V2 = np.var(a_Ni, axis=-1, ddof=1)
-    statistic = sum(ni_ * (Aibar_ - anbar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
+    statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
