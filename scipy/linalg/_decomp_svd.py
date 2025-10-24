@@ -3,17 +3,37 @@ import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 from scipy._lib._util import _apply_over_batch
+from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import get_lapack_funcs, _compute_lwork
+from .lapack import _normalize_lapack_dtype
 from ._decomp import _asarray_validated
 
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
-@_apply_over_batch(('a', 2))
+def _format_errors(err_lst, lapack_driver):
+    """Format/emit errors/warnings from a lowlevel batched routine.
+    """
+    # NB the low-level routine currently stops processing a batch at the first error
+    for entry in err_lst:
+        info = entry["lapack_info"]
+        num = entry["num"]
+        if info != 0:
+            if info > 0:
+                raise LinAlgError(f"SVD did not converge for slice = {num}.")
+            if info < 0:
+                if lapack_driver == "gesdd" and info == -4:
+                    msg = f"slice {num} has a NaN entry"
+                    raise ValueError(msg)
+                raise ValueError(
+                    f'illegal value in {-info}th argument of internal {lapack_driver}'
+                    f'  for slice {num}.'
+                )
+
+
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """
@@ -26,7 +46,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     Parameters
     ----------
-    a : (M, N) array_like
+    a : (..., M, N) array_like
         Matrix to decompose.
     full_matrices : bool, optional
         If True (default), `U` and `Vh` are of shape ``(M, M)``, ``(N, N)``.
@@ -107,10 +127,27 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     True
 
     """
+    if not isinstance(lapack_driver, str):
+        raise TypeError('lapack_driver must be a string')
+    if lapack_driver not in ('gesdd', 'gesvd'):
+        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
+        raise ValueError(message)
+
+    # basic sanity checks of the input matrix
     a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2:
-        raise ValueError('expected matrix')
-    m, n = a1.shape
+
+    overwrite_a = overwrite_a or (_datacopied(a1, a))
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+
+    m, n = a1.shape[-2], a1.shape[-1]
+
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
 
     # accommodate empty matrix
     if a1.size == 0:
@@ -130,14 +167,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         else:
             return s
 
-    overwrite_a = overwrite_a or (_datacopied(a1, a))
-
-    if not isinstance(lapack_driver, str):
-        raise TypeError('lapack_driver must be a string')
-    if lapack_driver not in ('gesdd', 'gesvd'):
-        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
-        raise ValueError(message)
-
     if compute_uv:
         # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
@@ -153,33 +182,19 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
                                   "incur an in integer overflow in LAPACK. "
                                   "Try using numpy.linalg.svd instead.")
 
-    funcs = (lapack_driver, lapack_driver + '_lwork')
-    # XXX: As of 1.14.1 it isn't possible to build SciPy with ILP64,
-    # so the following line always yields a LP64 (32-bit pointer size) variant
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64="preferred")
+    res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
 
-    # compute optimal lwork
-    lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
-                           compute_uv=compute_uv, full_matrices=full_matrices)
+    # emit helpful errors/warnings
+    err_lst = res[-1]
+    if err_lst:
+        _format_errors(err_lst, lapack_driver)
 
-    # perform decomposition
-    u, s, v, info = gesXd(a1, compute_uv=compute_uv, lwork=lwork,
-                          full_matrices=full_matrices, overwrite_a=overwrite_a)
-
-    if info > 0:
-        raise LinAlgError("SVD did not converge")
-    if info < 0:
-        if lapack_driver == "gesdd" and info == -4:
-            msg = "A has a NaN entry"
-            raise ValueError(msg)
-        raise ValueError(f'illegal value in {-info}th argument of internal gesdd')
     if compute_uv:
-        return u, s, v
+        return res[:-1]    # u, s, v
     else:
-        return s
+        return res[0]   # s
 
 
-@_apply_over_batch(('a', 2))
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
