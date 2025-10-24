@@ -370,8 +370,8 @@
         }
     },
     "gdtria": {
-        "_cdflib_wrappers.pxd": {
-            "gdtria": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtria": "ddd->d"
         }
     },
     "gdtrib": {
@@ -380,8 +380,8 @@
         }
     },
     "gdtrix": {
-        "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {
