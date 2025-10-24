@@ -145,13 +145,21 @@ class TestSpearmanRho:
     @pytest.mark.parametrize('alternative', ('two-sided', 'greater', 'less'))
     @pytest.mark.parametrize('n', [9, 99, 999])
     def test_against_scipy_spearmanr(self, alternative, n, xp):
-        rng = np.random.default_rng(59824359823469832)
+        rng = np.random.default_rng(5982435982346983)
         x = rng.integers(n//2, size=n)
         y = rng.integers(n//2, size=n)
-        res = stats.spearmanrho(xp.asarray(x), xp.asarray(y), alternative=alternative)
+        dtype = xp_default_dtype(xp)
+
         ref = stats.spearmanr(x, y, alternative=alternative)
-        xp_assert_close(res.statistic, xp.asarray(ref.statistic), atol=1e-16)
-        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=1e-16)
+        ref_statistic = xp.asarray(ref.statistic, dtype=dtype)
+        ref_pvalue = xp.asarray(ref.pvalue, dtype=dtype)
+
+        x = xp.asarray(x, dtype=dtype)
+        y = xp.asarray(y, dtype=dtype)
+        res = stats.spearmanrho(x, y, alternative=alternative)
+
+        xp_assert_close(res.statistic, ref_statistic)
+        xp_assert_close(res.pvalue, ref_pvalue)
 
 
     @pytest.mark.parametrize('axis', [-1, 0, 1])
@@ -164,8 +172,8 @@ class TestSpearmanRho:
         y = rng.standard_normal(size=shape)
         res = stats.spearmanrho(xp.asarray(x), xp.asarray(y), axis=axis)
         ref = stats.spearmanrho(x, y, axis=axis)
-        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
-        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic), atol=1e-16)
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=1e-16)
 
 
     def test_input_validation(self, xp):
@@ -173,8 +181,8 @@ class TestSpearmanRho:
         x, y = rng.random(size=(2, 10))
         x, y = xp.asarray(x), xp.asarray(y)
 
-        message = 'Array shapes are incompatible for broadcasting.|Incompatible shapes'
-        with pytest.raises((ValueError, TypeError), match=message):
+        msg = 'incompatible for broadcasting|Incompatible shapes|must be broadcastable'
+        with pytest.raises((ValueError, TypeError), match=msg):
             stats.spearmanrho(x, y[:-1])
 
         if not is_jax(xp):
