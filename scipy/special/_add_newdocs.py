@@ -5875,6 +5875,15 @@ add_newdoc("nrdtrimn",
     nrdtrisd : Inverse of normal distribution CDF with respect to
                standard deviation
 
+    Notes
+    -----
+    This function is a wrapper for the `find_scale` routine from the
+    Boost.Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     Examples
     --------
     `nrdtrimn` can be used to recover the mean of a normal distribution
@@ -5894,7 +5903,7 @@ add_newdoc("nrdtrimn",
 
     >>> from scipy.special import nrdtrimn
     >>> nrdtrimn(p, std, x)
-    3.0000000000000004
+    3.0
 
     """)
 

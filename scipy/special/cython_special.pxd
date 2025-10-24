@@ -199,7 +199,7 @@ cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil
 cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil
 cpdef double ndtri(double x0) noexcept nogil
-cpdef double nrdtrimn(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t nrdtrimn(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double nrdtrisd(double x0, double x1, double x2) noexcept nogil
 cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil
 cdef void obl_ang1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) noexcept nogil
