@@ -172,8 +172,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         axis to contain the number of quantiles given by ``p.size``. Therefore:
 
         - By default, the axis will be reduced away if possible (i.e. if there is
-          exactly one element of `q` per axis-slice of `x`) and not reduced away
-          otherwise.
+          exactly one element of `q` per axis-slice of `x`).
         - If `keepdims` is set to True, the axis will not be reduced away.
         - If `keepdims` is set to False, the axis will be reduced away
           if possible, and an error will be raised otherwise.
