@@ -543,7 +543,7 @@ def test_show(case, capsys):
     def cb(x):
         pass
 
-    ctx = np.errstate(divide='ignore') if case.name == "nonsymposdef" else nullcontext()
+    ctx = np.errstate(all='ignore') if case.name == "nonsymposdef" else nullcontext()
     with ctx:
         x, info = tfqmr(case.A, case.b, callback=cb, show=True)
 
