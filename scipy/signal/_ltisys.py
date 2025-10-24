@@ -19,7 +19,12 @@ time invariant systems.
 #   Split lti class into subclasses
 #   Merged discrete systems and added dlti
 
+import copy
 import warnings
+
+import numpy as np
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
+                   dot, transpose, ones, linspace)
 
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
@@ -31,11 +36,8 @@ from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                               cont2discrete)
+from ._support_alternative_backends import _dispatchable
 
-import numpy as np
-from numpy import (real, atleast_1d, squeeze, asarray, zeros,
-                   dot, transpose, ones, linspace)
-import copy
 
 __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'lsim', 'impulse', 'step', 'bode',
@@ -1758,6 +1760,11 @@ class StateSpaceDiscrete(StateSpace, dlti):
     pass
 
 
+def lsim_signature(system, U, T, X0=None, interp=True):
+    return (U, T, X0, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(lsim_signature)
 def lsim(system, U, T, X0=None, interp=True):
     """
     Simulate output of a continuous-time linear system.
@@ -2004,6 +2011,11 @@ def _default_response_times(A, n):
     return t
 
 
+def impulse_signature(system, X0=None, T=None, N=None):
+    return (X0, T, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(impulse_signature)
 def impulse(system, X0=None, T=None, N=None):
     """Impulse response of continuous-time system.
 
@@ -2074,6 +2086,11 @@ def impulse(system, X0=None, T=None, N=None):
     return T, h
 
 
+def step_signature(system, X0=None, T=None, N=None):
+    return (X0, T, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(step_signature)
 def step(system, X0=None, T=None, N=None):
     """Step response of continuous-time system.
 
@@ -2141,6 +2158,11 @@ def step(system, X0=None, T=None, N=None):
     return vals[0], vals[1]
 
 
+def bode_signature(system, w=None, n=100):
+    return (w, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(bode_signature)
 def bode(system, w=None, n=100):
     """
     Calculate Bode magnitude and phase data of a continuous-time system.
@@ -2205,6 +2227,11 @@ def bode(system, w=None, n=100):
     return w, mag, phase
 
 
+def freqresp_signature(system, w=None, n=10000):
+    return (w, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(freqresp_signature)
 def freqresp(system, w=None, n=10000):
     r"""Calculate the frequency response of a continuous-time system.
 
@@ -2682,6 +2709,7 @@ def _KNV0_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     return stop, cur_rtol, nb_try
 
 
+@_dispatchable(['A', 'B', 'poles'])
 def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     """
     Compute K such that eigenvalues (A - dot(B, K))=poles.
@@ -3033,6 +3061,11 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     return full_state_feedback
 
 
+def dlsim_signature(system, u, t=None, x0=None):
+    return (u, t, x0, *(system if isinstance(system, tuple) else ()), t, x0)
+
+
+@_dispatchable(dlsim_signature)
 def dlsim(system, u, t=None, x0=None):
     r"""Simulate output of a discrete-time linear system.
 
@@ -3153,6 +3186,11 @@ def dlsim(system, u, t=None, x0=None):
         return tout, yout
 
 
+def dimpulse_signature(system, x0=None, t=None, n=None):
+    return (x0, t, n, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(dimpulse_signature)
 def dimpulse(system, x0=None, t=None, n=None):
     r"""Impulse response of discrete-time system.
 
@@ -3246,6 +3284,11 @@ def dimpulse(system, x0=None, t=None, n=None):
     return tout, yout
 
 
+def dstep_signature(system, x0=None, t=None, n=None):
+    return (x0, t, n, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(dstep_signature)
 def dstep(system, x0=None, t=None, n=None):
     r"""Step response of discrete-time system.
 
@@ -3342,6 +3385,11 @@ def dstep(system, x0=None, t=None, n=None):
     return tout, yout
 
 
+def dfreqresp_signature(system, w=None, n=None, whole=None):
+    return (w, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(dfreqresp_signature)
 def dfreqresp(system, w=None, n=10000, whole=False):
     r"""
     Calculate the frequency response of a discrete-time system.
@@ -3448,6 +3496,11 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     return w, h
 
 
+def dbode_signature(system, w=None, n=None):
+    return (w, *(system if isinstance(system, tuple) else ()))
+
+
+@_dispatchable(dbode_signature)
 def dbode(system, w=None, n=100):
     r"""Calculate Bode magnitude and phase data of a discrete-time system.
 

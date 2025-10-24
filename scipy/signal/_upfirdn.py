@@ -35,6 +35,7 @@ import numpy as np
 
 from scipy._lib._array_api import array_namespace
 from ._upfirdn_apply import _output_len, _apply, mode_enum
+from ._support_alternative_backends import _dispatchable
 
 __all__ = ['upfirdn', '_output_len']
 
@@ -105,6 +106,7 @@ class _UpFIRDn:
         return out
 
 
+@_dispatchable(['h', 'x'])
 def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     """Upsample, FIR filter, and downsample.
 
