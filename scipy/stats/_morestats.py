@@ -1806,9 +1806,9 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
     # unless necessary.
     kwargs = {}
     if keepdims is not False:
-        kwargs[keepdims] = keepdims
+        kwargs['keepdims'] = keepdims
     if nan_policy != 'propagate':
-        kwargs[nan_policy] = nan_policy
+        kwargs['nan_policy'] = nan_policy
     res = _yeojohnson_llf(data, lmb=lmb, axis=axis, **kwargs)
     return res[()] if res.ndim == 0 else res
 
