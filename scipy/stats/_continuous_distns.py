@@ -11834,7 +11834,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
-           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
+           vol. 1, 2023. :doi:`10.1080/27684520.2023.2279060`
 
     .. versionadded:: 0.19.0
 
