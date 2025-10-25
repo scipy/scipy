@@ -8431,7 +8431,8 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 jax_jit=False)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
 def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
@@ -8504,26 +8505,32 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
     n = [sample.shape[-1] for sample in samples]
     totaln = sum(n)
-    if np.any(n) < 1:  # Only needed for `test_axis_nan_policy`
+    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
         raise ValueError("Inputs must not be empty.")
 
-    alldata = np.concatenate(samples, axis=-1)
+    alldata = xp.concat(samples, axis=-1)
     ranked, t = _rankdata(alldata, method='average', return_ties=True)
-    ties = 1 - (t**3 - t).sum(axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
+    # should adjust output dtype of _rankdata
+    ranked = xp.astype(ranked, alldata.dtype, copy=False)
+    t = xp.astype(t, alldata.dtype, copy=False)
+    ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
     j = list(itertools.accumulate(n, initial=0))
-    ssbn = sum(np.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
                for i in range(num_groups))
 
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = num_groups - 1
+    df = xp.asarray(num_groups - 1, dtype=h.dtype)
     h /= ties
 
     chi2 = _SimpleChi2(df)
@@ -10168,7 +10175,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
-        t[i] = counts
+        t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
         return ranks, t
     return ranks
 
