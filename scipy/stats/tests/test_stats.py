@@ -7350,8 +7350,10 @@ class TestTrim:
         assert_raises(ValueError, stats.trim_mean, a, 0.6)
 
         # empty input
-        assert_equal(stats.trim_mean([], 0.0), np.nan)
-        assert_equal(stats.trim_mean([], 0.6), np.nan)
+        with pytest.warns(SmallSampleWarning, match='too small'):
+            assert_equal(stats.trim_mean([], 0.0), np.nan)
+        with pytest.warns(SmallSampleWarning, match='too small'):
+            assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
 @make_xp_test_case(stats.sigmaclip)
