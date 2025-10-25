@@ -161,7 +161,11 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     T* work = &buffer[2*n*n + n*nrhs];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
-    if (ipiv == NULL) { free(ipiv); info = -102; return (int)info; }
+    if (ipiv == NULL) {
+        free(buffer);
+        info = -102;
+        return (int)info;
+    }
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
@@ -170,7 +174,12 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
     }
-    if (irwork == NULL) { free(irwork); info = -102; return (int)info; }
+    if (irwork == NULL) {
+        free(buffer);
+        free(ipiv);
+        info = -102;
+        return (int)info;
+    }
 
     // normalize the structure detection inputs
     uplo = lower ? 'L' : 'U';
