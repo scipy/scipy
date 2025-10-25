@@ -1,6 +1,7 @@
 """ Test functions for the sparse.linalg._isolve module
 """
 
+from contextlib import nullcontext
 import itertools
 import platform
 import pytest
@@ -542,7 +543,10 @@ def test_show(case, capsys):
     def cb(x):
         pass
 
-    x, info = tfqmr(case.A, case.b, callback=cb, show=True)
+    ctx = np.errstate(all='ignore') if case.name == "nonsymposdef" else nullcontext()
+    with ctx:
+        x, info = tfqmr(case.A, case.b, callback=cb, show=True)
+
     out, err = capsys.readouterr()
 
     if case.name == "sym-nonpd":
