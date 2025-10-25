@@ -156,6 +156,8 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.spearmanrho, tuple(), dict(), 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
     (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
      lambda res: (res.statistic, res.pvalue, res.correlation)),
     (stats.kendalltau, tuple(), dict(), 2, 3, True,
