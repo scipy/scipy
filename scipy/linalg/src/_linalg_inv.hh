@@ -3,6 +3,7 @@
  */
 #include "Python.h"
 #include <iostream>
+#include <vector>
 #include "numpy/arrayobject.h"
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
@@ -12,9 +13,9 @@
 
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
-inline CBLAS_INT invert_slice_general(
+void invert_slice_general(
     CBLAS_INT N, T *data, CBLAS_INT *ipiv, void *irwork, T *work, CBLAS_INT lwork,
-    int* isIllconditioned, int* isSingular
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
@@ -25,24 +26,24 @@ inline CBLAS_INT invert_slice_general(
 
     getrf(&N, &N, data, &N, ipiv, &info);
 
+    status.lapack_info = (Py_ssize_t)info;
     if (info == 0){
         // getrf success, check the condition number
         gecon(&norm, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
+        status.rcond = (double)rcond;
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, invert
             getri(&N, data, &N, ipiv, work, &lwork, &info);
-            *isSingular = (info > 0);
+            status.is_singular = (info > 0);
         }
     }
     else if (info > 0) {
         // trf detected singularity
-        *isSingular = 1;
+        status.is_singular = 1;
     }
-
-    return info;
 }
 
 
@@ -50,9 +51,9 @@ inline CBLAS_INT invert_slice_general(
 
 // Symmetric/hermitian array inversion with potrf, pocon and potri
 template<typename T>
-inline CBLAS_INT invert_slice_cholesky(
+void invert_slice_cholesky(
     char uplo, CBLAS_INT N, T *data, T* work, void *irwork,
-    int* isIllconditioned, int* isSingular
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
@@ -62,32 +63,33 @@ inline CBLAS_INT invert_slice_cholesky(
     real_type rcond;
 
     potrf(&uplo, &N, data, &N, &info);
+
+    status.lapack_info = (Py_ssize_t)info;
     if (info == 0) {
         // potrf success
         pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
 
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.rcond = (double)rcond;
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, invert
             potri(&uplo, &N, data, &N, &info);
-            *isSingular = (info > 0);
+            status.is_singular = (info > 0);
         }
     }
     else if (info > 0) {
         // trf detected singularity
-        *isSingular = 1;
+        status.is_singular = 1;
     }
-
-    return info;
 }
 
 
 // triangular array inversion with trtri
 template<typename T>
-inline CBLAS_INT invert_slice_triangular(
+void invert_slice_triangular(
     char uplo, char diag, CBLAS_INT N, T *data, T *work, void *irwork,
-    int* isIllconditioned, int* isSingular
+    SliceStatus& status
 ) {
     using real_type = typename type_traits<T>::real_type;
 
@@ -96,31 +98,32 @@ inline CBLAS_INT invert_slice_triangular(
     real_type rcond;
 
     trtri(&uplo, &diag, &N, data, &N, &info);
-    *isSingular  = (info > 0);
+    status.is_singular  = (info > 0);
 
+    status.lapack_info = (Py_ssize_t)info;
     if(info >= 0) {
 
         trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
         if (info >= 0) {
-            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+            status.rcond = (double)rcond;
         }
     }
-    return info;
 }
 
 
 template<typename T>
-void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, CBLAS_INT* info)
+int
+_inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwrite_a, SliceStatusVec& vec_status)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
-    *isIllconditioned = 0;
-    *isSingular = 0;
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false;
     char uplo;
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
+    SliceStatus slice_status;
 
     // --------------------------------------------------------------------
     // Input Array Attributes
@@ -141,10 +144,10 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     T tmp = numeric_limits<T>::zero;
-    CBLAS_INT intn = (CBLAS_INT)n, lwork = -1;
+    CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
-    getri(&intn, NULL, &intn, NULL, &tmp, &lwork, info);
-    if (*info != 0) { *info = -100; return; }
+    getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
+    if (info != 0) { info = -100; return (int)info; }
 
     /*
      * The factor of 1.01 here mirrors
@@ -158,7 +161,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
 
     lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
     T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
-    if (NULL == buffer) { *info = -101; return; }
+    if (NULL == buffer) { info = -101; return (int)info; }
 
     // Chop buffer into parts, one for data and one for work
     T* data = &buffer[0];
@@ -166,7 +169,11 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     T* work = &buffer[2*n*n];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
-    if (ipiv == NULL) { free(ipiv); *info = -102; return; }
+    if (ipiv == NULL) {
+        free(buffer);
+        info = -102;
+        return (int)info;
+    }
 
     // {ge,po,tr}con need rwork or iwork
     void *irwork;
@@ -175,25 +182,17 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     } else {
         irwork = malloc(n*sizeof(CBLAS_INT));
     }
-    if (irwork == NULL) { free(irwork); *info = -102; return; }
+    if (irwork == NULL) {
+        free(buffer);
+        free(ipiv);
+        info = -102;
+        return (int)info;
+    }
 
     // normalize the structure detection inputs
-    uplo = 'U';
+    uplo = lower? 'L' : 'U';
     if (structure == St::POS_DEF) {
-        uplo = 'U';
         posdef_fallback = false;
-    }
-    else {
-        if (structure == St::POS_DEF_UPPER) {
-            structure = St::POS_DEF;
-            uplo = 'U';
-            posdef_fallback = false;
-        }
-        else if (structure == St::POS_DEF_LOWER) {
-            structure = St::POS_DEF;
-            uplo = 'L';
-            posdef_fallback = false;
-        }
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -232,7 +231,6 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
                 is_symm = is_sym_herm(data, n);
                 if (is_symm) {
                     slice_structure = St::POS_DEF;
-                    uplo = 'U';
                 }
                 else {
                     // give up auto-detection
@@ -241,23 +239,34 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             }
         }
 
+        init_status(slice_status, idx, slice_structure);
+
         switch(slice_structure) {
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
                 char diag = 'N';
-                *info = invert_slice_triangular(uplo, diag, intn, data, work, irwork, isIllconditioned, isSingular);
+                invert_slice_triangular(uplo, diag, intn, data, work, irwork, slice_status);
 
-                if ((*info < 0) || (*isSingular )) { goto free_exit;}
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
                 zero_other_triangle(uplo, data, intn);
                 break;
             }
             case St::POS_DEF:
             {
-                *info = invert_slice_cholesky(uplo, intn, data, work, irwork, isIllconditioned, isSingular);
+                invert_slice_cholesky(uplo, intn, data, work, irwork, slice_status);
 
-                if ((*info == 0) || (*isSingular == 0) ) {
-                    // success
+                if ((slice_status.lapack_info == 0) || (!slice_status.is_singular) ) {
+                    // success (maybe ill-conditioned)
+                    if(slice_status.is_ill_conditioned) {
+                        vec_status.push_back(slice_status);
+                    }
                     fill_other_triangle(uplo, data, intn);
                     break;
                 }
@@ -266,11 +275,13 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
                         // restore
                         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
                         swap_cf(scratch, data, n, n, n);
+                        init_status(slice_status, idx, slice_structure);
 
                         // no break: fall back to the general solver
                     }
                     else {
                         // potrf failed but no fallback
+                        vec_status.push_back(slice_status);
                         break;
                     }
                 }
@@ -278,11 +289,16 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             default:
             {
                 // general matrix inverse
-                *info = invert_slice_general(intn, data, ipiv, irwork, work, lwork, isIllconditioned, isSingular);
+                invert_slice_general(intn, data, ipiv, irwork, work, lwork, slice_status);
+
+                if ((slice_status.lapack_info != 0) || slice_status.is_singular || slice_status.is_ill_conditioned) {
+                    // some problem detected, store data to report
+                    vec_status.push_back(slice_status);
+                }
             }
         }
 
-        if (*isSingular == 1) {
+        if (slice_status.is_singular == 1) {
             // nan_matrix(data, n);
             goto free_exit;     // fail fast and loud
         }
@@ -295,6 +311,6 @@ free_exit:
     free(buffer);
     free(irwork);
     free(ipiv);
-    return;
+    return 1;
 }
 
