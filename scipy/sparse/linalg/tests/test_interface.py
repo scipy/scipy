@@ -4,9 +4,10 @@
 from functools import partial
 from itertools import product
 import operator
+from typing import NamedTuple
 import pytest
 from pytest import raises as assert_raises, warns
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 
 import numpy as np
 import scipy.sparse as sparse
@@ -212,6 +213,154 @@ class TestLinearOperator:
         assert_equal(operator.matmul(B, A.adjoint()), B @ A.adjoint())
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
+
+
+class TestDotTests:
+    class par_tuple(NamedTuple):
+        ny: int
+        nx: int
+        imag: int
+        dtype: str
+        
+    par1: par_tuple = par_tuple(11, 11, 0, "float64")  # real square
+    
+    def dottest(
+        self,
+        Op: interface.LinearOperator,
+        nr: int | None = None,
+        nc: int | None = None,
+        rtol: float = 1e-6,
+        atol: float = 1e-21,
+        complexflag: int = 0,
+        raiseerror: bool = True,
+        verb: bool = False,
+    ) -> bool:
+        r"""Dot test.
+    
+        Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
+        and perform dot-test to verify the validity of forward and adjoint
+        operators. This test can help to detect errors in the operator
+        implementation.
+    
+        Parameters
+        ----------
+        Op : :obj:`pylops.LinearOperator`
+            Linear operator to test.
+        nr : :obj:`int`
+            Number of rows of operator (i.e., elements in data)
+        nc : :obj:`int`
+            Number of columns of operator (i.e., elements in model)
+        rtol : :obj:`float`, optional
+            Relative dottest tolerance
+        atol : :obj:`float`, optional
+            Absolute dottest tolerance
+            .. versionadded:: 2.0.0
+        complexflag : :obj:`bool`, optional
+            Generate random vectors with
+    
+            * ``0``: Real entries for model and data
+    
+            * ``1``: Complex entries for model and real entries for data
+    
+            * ``2``: Real entries for model and complex entries for data
+    
+            * ``3``: Complex entries for model and  data
+        raiseerror : :obj:`bool`, optional
+            Raise error or simply return ``False`` when dottest fails
+        verb : :obj:`bool`, optional
+            Verbosity
+    
+        Returns
+        -------
+        passed : :obj:`bool`
+            Passed flag.
+    
+        Raises
+        ------
+        AssertionError
+            If dot-test is not verified within chosen tolerances.
+    
+        Notes
+        -----
+        A dot-test is mathematical tool used in the development of numerical
+        linear operators.
+    
+        More specifically, a correct implementation of forward and adjoint for
+        a linear operator should verify the following *equality*
+        within a numerical tolerance:
+    
+        .. math::
+            (\mathbf{Op}\,\mathbf{u})^H\mathbf{v} =
+            \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
+    
+        """
+        if nr is None:
+            nr = Op.shape[0]
+        if nc is None:
+            nc = Op.shape[1]
+    
+        if (nr, nc) != Op.shape:
+            raise AssertionError("Provided nr and nc do not match Operator shape.")
+    
+        # make u and v vectors
+        rdtype = np.ones(1, Op.dtype).real.dtype
+    
+        u = np.random.randn(nc).astype(rdtype)
+        if complexflag not in (0, 2):
+            u = u + 1j * np.random.randn(nc).astype(rdtype)
+    
+        v = np.random.randn(nr).astype(rdtype)
+        if complexflag not in (0, 1):
+            v = v + 1j * np.random.randn(nr).astype(rdtype)
+    
+        y = Op.matvec(u)  # Op * u
+        x = Op.rmatvec(v)  # Op'* v
+    
+        if getattr(Op, "clinear", True):
+            yy = np.vdot(y, v)  # (Op  * u)' * v
+            xx = np.vdot(u, x)  # u' * (Op' * v)
+        else:
+            # Op is only R-linear, so treat complex numbers as elements of R^2
+            yy = np.dot(y.real, v.real) + np.dot(y.imag, v.imag)
+            xx = np.dot(u.real, x.real) + np.dot(u.imag, x.imag)
+    
+        # evaluate if dot test passed
+        passed = np.isclose(xx, yy, rtol, atol)
+    
+        # verbosity or error raising
+        if (not passed and raiseerror) or verb:
+            passed_status = "passed" if passed else "failed"
+            msg = f"Dot test {passed_status}, v^H(Opu)={yy} - u^H(Op^Hv)={xx}"
+            if not passed and raiseerror:
+                raise AssertionError(msg)
+            else:
+                print(msg)
+    
+        return passed
+        
+        
+    @pytest.mark.parametrize("par", [par1])
+    def test_identity(self, par):
+        """Dot-test, forward and adjoint for a simple identity operator"""
+        identity = lambda x: x
+        Iop = interface.LinearOperator(shape=(par.ny, par.nx), dtype=par.dtype, matvec=identity, rmatvec=identity)
+        assert self.dottest(
+            Iop,
+            par.ny,
+            par.nx,
+            complexflag=0 if par.imag == 0 else 3,
+        )
+    
+        x = np.ones(par.nx) + par.imag * np.ones(par.nx)
+        y = Iop * x
+        x1 = Iop.H * y
+    
+        assert_allclose(
+            x[: min(par.ny, par.nx)], y[: min(par.ny, par.nx)]
+        )
+        assert_allclose(
+            x[: min(par.ny, par.nx)], x1[: min(par.ny, par.nx)]
+        )
 
 
 class TestAsLinearOperator:
