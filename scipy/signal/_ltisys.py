@@ -173,10 +173,10 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti(1, 2, 3, 4)
     StateSpaceContinuous(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: None
     )
 
@@ -346,19 +346,19 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti(1, 2, 3, 4)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: True
     )
 
     >>> signal.dlti(1, 2, 3, 4, dt=0.1)
     StateSpaceDiscrete(
-    array([[1]]),
-    array([[2]]),
-    array([[3]]),
-    array([[4]]),
+    array([[1.]]),
+    array([[2.]]),
+    array([[3.]]),
+    array([[4.]]),
     dt: 0.1
     )
 
@@ -1250,11 +1250,20 @@ class StateSpace(LinearTimeInvariant):
 
     Notes
     -----
+    If the parameter `system` is a tuple (A, B, C, D) with four state space matrices,
+    then those matrices are converted into two-dimensional arrays by calling
+    `abcd_normalize`. Their dtypes will be "complex128" if any of the matrices are
+    complex-valued. Otherwise, they will be of type "float64".
+
     Changing the value of properties that are not part of the
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
     ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
 
     Examples
     --------
@@ -1268,12 +1277,12 @@ class StateSpace(LinearTimeInvariant):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1283,8 +1292,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1297,8 +1306,8 @@ class StateSpace(LinearTimeInvariant):
            [0. , 1. ]]),
     array([[0.005],
            [0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
@@ -1340,6 +1349,7 @@ class StateSpace(LinearTimeInvariant):
         self._C = None
         self._D = None
 
+        # Convert A, B, C, D into 2d arrays of dtype float64 or complex128:
         self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
