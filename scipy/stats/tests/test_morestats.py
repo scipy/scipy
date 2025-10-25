@@ -1268,13 +1268,16 @@ class TestMood:
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 
-    def test_mood_2d(self):
-        # Test if the results of mood test in 2-D case are consistent with the
-        # R result for the same inputs.  Numbers from R mood.test().
+    @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
+                                                  ('integers', (8,))])
+    def test_mood_2d(self, rng_method, args):
+        # Test if the results of mood test in 2-D vectorized call are consistent
+        # result when looping over the slices.
         ny = 5
         rng = np.random.default_rng()
-        x1 = rng.standard_normal((10, ny))
-        x2 = rng.standard_normal((15, ny))
+        rng_method = getattr(rng, rng_method)
+        x1 = rng_method(*args, size=(10, ny))
+        x2 = rng_method(*args, size=(15, ny))
         z_vectest, pval_vectest = stats.mood(x1, x2)
 
         for j in range(ny):
@@ -1291,11 +1294,14 @@ class TestMood:
             assert_array_almost_equal([z_vectest[i], pval_vectest[i]],
                                       stats.mood(x1[i, :], x2[i, :]))
 
-    def test_mood_3d(self):
+    @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
+                                                  ('integers', (8,))])
+    def test_mood_3d(self, rng_method, args):
         shape = (10, 5, 6)
         rng = np.random.default_rng(3602349075)
-        x1 = rng.standard_normal(shape)
-        x2 = rng.standard_normal(shape)
+        rng_method = getattr(rng, rng_method)
+        x1 = rng_method(*args, size=shape)
+        x2 = rng_method(*args, size=shape)
 
         for axis in range(3):
             z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
