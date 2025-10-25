@@ -309,7 +309,7 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
         The observation matrix. Each row is an observation. Its dtype must be
         float32 or float64.
     labels : ndarray
-        The label of each observation. Must be an 1d array.
+        The label of each observation. Must be a 1d array.
     nc : int
         The number of centroids.
 
@@ -338,7 +338,7 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
     if labels.dtype.type is not np.int32:
         labels = labels.astype(np.int32)
     if labels.ndim != 1:
-        raise ValueError('labels must be an 1d array')
+        raise ValueError('labels must be a 1d array')
 
     if obs.ndim == 1:
         nfeat = 1
