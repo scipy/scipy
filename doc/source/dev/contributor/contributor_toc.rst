@@ -91,6 +91,7 @@ Compiled code
 
 .. toctree::
     :hidden:
+    :caption: Contributor Guide
 
     development_workflow
     pep8
