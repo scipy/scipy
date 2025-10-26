@@ -1689,7 +1689,7 @@ def test_random_rotation():
     assert_equal(Rotation.random(1, rng=rng).as_quat().shape, (1, 4))
     assert_equal(Rotation.random(5, rng=rng).as_quat().shape, (5, 4))
     # Shape argument
-    assert_equal(Rotation.random(rng=rng,shape=()).as_quat().shape, (4,))
+    assert_equal(Rotation.random(rng=rng, shape=()).as_quat().shape, (4,))
     assert_equal(Rotation.random(rng=rng, shape=(3,)).as_quat().shape, (3, 4))
     assert_equal(Rotation.random(rng=rng, shape=(2, 3)).as_quat().shape, (2, 3, 4))
     # Values should be the same for num=prod(shape)
