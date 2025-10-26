@@ -30,7 +30,7 @@ import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
-from scipy import optimize
+from scipy import optimize, special
 from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
@@ -7890,95 +7890,112 @@ class TestFOneWay:
             stats.f_oneway(a, b, axis=1)
 
 
+@make_xp_test_case(stats.kruskal)
 class TestKruskal:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1808365978)
-
-    def test_simple(self):
-        x = [1]
-        y = [2]
-        h, p = stats.kruskal(x, y)
+    def test_array_like(self):
+        h, p = stats.kruskal([1], [2])
         assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
+        assert_allclose(p, stats.chi2.sf(h, 1))
 
-    def test_basic(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
+    def test_simple(self, xp):
+        x = xp.asarray([1])
+        y = xp.asarray([2])
         h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
+        xp_assert_close(h, xp.asarray(1.0))
+        dtype = xp_default_dtype(xp)
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(1, 1), dtype=dtype))
 
-    def test_simple_tie(self):
+    @pytest.mark.parametrize("dtype", ['float32', 'float64', None])
+    def test_basic(self, xp, dtype):
+        if dtype == 'float32' and np.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 3, 5, 7, 9], dtype=dtype)
+        y = xp.asarray([2, 4, 6, 8, 10], dtype=dtype)
+        h, p = stats.kruskal(x, y)
+        xp_assert_close(h, xp.asarray(3/11, dtype=dtype))
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(3/11, 1), dtype=dtype))
+
+    def test_simple_tie(self, xp):
         x = [1]
         y = [1, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = 1.5**2 + 2*2.25**2 - 12
         corr = 0.75
-        expected = h_uncorr / corr   # 0.5
-        h, p = stats.kruskal(x, y)
+        expected = xp.asarray(h_uncorr / corr)   # 0.5
+
         # Since the expression is simple and the exact answer is 0.5, it
         # should be safe to use assert_equal().
-        assert_equal(h, expected)
+        xp_assert_equal(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
 
-    def test_another_tie(self):
+    def test_another_tie(self, xp):
         x = [1, 1, 1, 2]
         y = [2, 2, 2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = (12. / 8. / 9.) * 4 * (3**2 + 6**2) - 3 * 9
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr
-        h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, expected)
+        expected = xp.asarray(h_uncorr / corr)
 
-    def test_three_groups(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
+
+    def test_three_groups(self, xp):
         # A test of stats.kruskal with three groups, with ties.
         x = [1, 1, 1]
         y = [2, 2, 2]
         z = [2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y), xp.asarray(z))
+
         h_uncorr = (12. / 8. / 9.) * (3*2**2 + 3*6**2 + 2*6**2) - 3 * 9  # 5.0
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr  # 7.0
-        h, p = stats.kruskal(x, y, z)
-        assert_approx_equal(h, expected)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 2))
+        expected = xp.asarray(h_uncorr / corr)  # 7.0
 
-    def test_empty(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(2.), expected))
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_empty(self, xp):
         # A test of stats.kruskal with three groups, with ties.
-        x = [1, 1, 1]
-        y = [2, 2, 2]
-        z = []
+        x = xp.asarray([1, 1, 1])
+        y = xp.asarray([2, 2, 2])
+        z = xp.asarray([], dtype=y.dtype)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+            res = stats.kruskal(x, y, z)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_kruskal_result_attributes(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
-        res = stats.kruskal(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        x[9] = xp.nan
 
-    def test_nan_policy(self):
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.kruskal(x, x), (np.nan, np.nan))
-        assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
+        res = stats.kruskal(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_large_no_samples(self):
+        res = stats.kruskal(x, x, nan_policy='omit')
+        xp_assert_equal(res.statistic, xp.asarray(0.0))
+        xp_assert_equal(res.pvalue, xp.asarray(1.0))
+
+        with pytest.raises(ValueError, match='The input contains nan values'):
+            stats.kruskal(x, x, nan_policy='raise')
+
+        with pytest.raises(ValueError, match='nan_policy must be one of...'):
+            stats.kruskal(x, x, nan_policy='foobar')
+
+    def test_large_samples(self, xp):
         # Test to see if large samples are handled correctly.
         n = 50000
-        x = self.rng.standard_normal(n)
-        y = self.rng.standard_normal(n) + 50
+        rng = np.random.default_rng(1808365978)
+        x = xp.asarray(rng.standard_normal(n))
+        y = xp.asarray(rng.standard_normal(n) + 50)
         h, p = stats.kruskal(x, y)
-        expected = 0
-        assert_approx_equal(p, expected)
+        xp_assert_close(p, xp.asarray(0., dtype=x.dtype))
 
-    def test_no_args_gh20661(self):
+    def test_no_args_gh20661(self, xp):
         message = r"Need at least two groups in stats.kruskal\(\)"
         with pytest.raises(ValueError, match=message):
             stats.kruskal()
