@@ -996,9 +996,9 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     # unless necessary.
     kwargs = {}
     if keepdims is not False:
-        kwargs[keepdims] = keepdims
+        kwargs['keepdims'] = keepdims
     if nan_policy != 'propagate':
-        kwargs[nan_policy] = nan_policy
+        kwargs['nan_policy'] = nan_policy
     return _boxcox_llf(data, lmb=lmb, axis=axis, **kwargs)
 
 
