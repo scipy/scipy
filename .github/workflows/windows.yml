@@ -39,15 +39,12 @@ jobs:
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
           pixi-version: v0.56.0
-          manifest-path: .github/workflows/pixi.toml
           cache: false
 
       - name: Build
-        working-directory: .github/workflows
         run: pixi run build
 
       - name: Test
-        working-directory: .github/workflows
         run: |
           # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
