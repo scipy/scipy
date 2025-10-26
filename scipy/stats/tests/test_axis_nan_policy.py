@@ -185,6 +185,7 @@ axis_nan_policy_cases = [
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
+    (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]

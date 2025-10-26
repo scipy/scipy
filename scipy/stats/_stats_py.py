@@ -3234,8 +3234,12 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(np_only=True)
-def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+@xp_capabilities(skip_backends=[('jax.numpy', 'not supported by `quantile`'),
+                                ('dask.array', 'not supported by `quantile`')])
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
+)
+def median_abs_deviation(x, axis=0, center=None, scale=1.0,
                          nan_policy='propagate'):
     r"""
     Compute the median absolute deviation of the data along the given axis.
@@ -3345,6 +3349,11 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     1.9996446978061115
 
     """
+    xp = array_namespace(x)
+    xp_median = (xp.median if is_numpy(xp)
+                 else lambda x, axis: stats.quantile(x, 0.5, axis=axis))
+    center = (xp_median if center is None else center)
+
     if not callable(center):
         raise TypeError("The argument 'center' must be callable. The given "
                         f"value {repr(center)} is not callable.")
@@ -3357,34 +3366,10 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
 
-    x = asarray(x)
-
-    # Consistent with `np.var` and `np.std`.
-    if not x.size:
-        if axis is None:
-            return np.nan
-        nan_shape = tuple(item for i, item in enumerate(x.shape) if i != axis)
-        if nan_shape == ():
-            # Return nan, not array(nan)
-            return np.nan
-        return np.full(nan_shape, np.nan)
-
-    contains_nan = _contains_nan(x, nan_policy)
-
-    if contains_nan:
-        if axis is None:
-            mad = _mad_1d(x.ravel(), center, nan_policy)
-        else:
-            mad = np.apply_along_axis(_mad_1d, axis, x, center, nan_policy)
-    else:
-        if axis is None:
-            med = center(x, axis=None)
-            mad = np.median(np.abs(x - med))
-        else:
-            # Wrap the call to center() in expand_dims() so it acts like
-            # keepdims=True was used.
-            med = np.expand_dims(center(x, axis=axis), axis)
-            mad = np.median(np.abs(x - med), axis=axis)
+    # Wrap the call to center() in expand_dims() so it acts like
+    # keepdims=True was used.
+    med = xp.expand_dims(center(x, axis=axis), axis=axis)
+    mad = xp_median(xp.abs(x - med), axis=axis)
 
     return mad / scale
 

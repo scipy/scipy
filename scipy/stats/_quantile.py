@@ -341,7 +341,7 @@ def _quantile_hf(y, p, n, method, xp):
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
 
-    g[j < 0] = 0
+    g = xpx.at(g)[j < 0].set(0)
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 
