@@ -885,24 +885,36 @@ def inv(double[:, :] quat) -> double[:, :]:
 
 
 @cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
 @_transition_to_rng('random_state', position_num=1)
-def random(num=None, rng=None):
+def random(num: int | None = None, rng=None, shape: int | tuple[int, ...] | None = None):
     rng = check_random_state(rng)
-
-    if num is None:
-        sample = rng.normal(size=4)
-    else:
-        sample = rng.normal(size=(num, 4))
-
-    return sample
+    if num is None and shape is None:
+        shape = ()
+    elif num is not None:
+        shape = (num,)
+    elif isinstance(shape, int):
+        shape = (shape,)
+    elif not isinstance(shape, tuple):
+        raise ValueError("`shape` must be an int or a tuple of ints or None.")
+    return rng.normal(size=shape + (4,))
 
 
 @cython.embedsignature(True)
-def identity(num: int | None = None) -> double[:, :]:
-    if num is None:
-        return np.array([0, 0, 0, 1], dtype=np.float64)
-    q = np.zeros((num, 4), dtype=np.float64)
-    q[:, 3] = 1
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def identity(num: int | None, shape: int | tuple[int, ...] | None = None):
+    if num is None and shape is None:
+        shape = ()
+    elif num is not None:
+        shape = (num,)
+    elif isinstance(shape, int):
+        shape = (shape,)
+    elif not isinstance(shape, tuple):
+        raise ValueError("`shape` must be an int or a tuple of ints or None.")
+    q = np.zeros(shape + (4,), dtype=np.float64)
+    q[..., 3] = 1
     return q
 
 
