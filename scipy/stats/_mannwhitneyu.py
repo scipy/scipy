@@ -451,10 +451,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     n1, n2 = x.shape[-1], y.shape[-1]
 
     # Follows [2]
-    ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)                      # method 2, step 2
-    U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
-    U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
+    ranks, _, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
+    R1 = ranks[..., :n1].sum(axis=-1)                         # method 2, step 2
+    U1 = R1 - n1*(n1+1)/2                                     # method 2, step 3
+    U2 = n1 * n2 - U1                                         # as U1 + U2 = n1 * n2
 
     if alternative == "greater":
         U, f = U1, 1  # U is the statistic to use for p-value, f is a factor
