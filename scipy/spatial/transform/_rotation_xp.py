@@ -480,6 +480,23 @@ def mean(
     dtype = xp_result_type(quat, force_floating=True, xp=xp)
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
+    # Axis logic: For None, we reduce over all axes. For int, we only reduce over that
+    # axis. For tuple, we reduce over all specified axes.
+    all_axes = tuple(range(quat.ndim - 1))
+    if axis is None:
+        axis = all_axes
+    elif isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    # Ensure all axes are within bounds
+    if axis != () and ( min(axis) < -(quat.ndim - 1) or max(axis) > (quat.ndim - 2)):
+        raise ValueError(
+            f"axis {axis} is out of bounds for rotation with shape "
+            f"{quat.shape[:-1]}."
+        )
+    # Ensure all axes are positive and unique
+    axis = tuple(sorted(set(x % (quat.ndim - 1) for x in axis)))
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
@@ -506,25 +523,10 @@ def mean(
         weighted_quat = weights[..., None, None] * quat_expand
         K = xp.matrix_transpose(weighted_quat) @ quat_expand
 
-    # Axis logic: For None, we reduce over all axes. For int, we only reduce over that
-    # axis. For tuple, we reduce over all specified axes.
-    if axis is None:
-        axis = tuple(range(quat.ndim - 1))
-    elif isinstance(axis, int):
-        axis = (axis,)
-    if not isinstance(axis, tuple):
-        raise ValueError("`axis` must be None, int, or tuple of ints.")
-    # Ensure all axes are positive, within bounds, unique and sorted
-    axis = tuple(sorted(set(x if x >= 0 else x + (quat.ndim - 1) for x in axis)))
-    if axis != () and (max(axis) > (quat.ndim - 2) or min(axis) < 0):
-        raise ValueError(
-            f"axis {axis} is out of bounds for rotation with shape "
-            f"{quat.shape[:-1]}."
-        )
     # Move reduction axes to the end
     keep_axes = tuple(i for i in range(quat.ndim - 1) if i not in axis)
     axes_order = keep_axes + axis
-    K_reordered = xp.moveaxis(K, axes_order, tuple(range(quat.ndim - 1)))
+    K_reordered = xp.moveaxis(K, axes_order, all_axes)
     # Reshape to flatten reduction axes
     new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
     K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)

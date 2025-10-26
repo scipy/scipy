@@ -1324,6 +1324,26 @@ def test_mean_axis(xp, ndim: int):
                     atol=atol)
 
 
+@make_xp_test_case(Rotation.mean, Rotation.magnitude)
+def test_mean_compare_axis(xp):
+    # Create a random set of rotations and compare the mean over an axis with the
+    # mean without axis of the sliced quaternion
+    rng = np.random.default_rng(0)
+    q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    r = Rotation.from_quat(q)
+    mean_0 = r.mean(axis=0)
+    for i in range(q.shape[1]):
+        for j in range(q.shape[2]):
+            mean_slice = Rotation.from_quat(q[:, i, j, ...]).mean()
+            xp_assert_close((mean_0[i][j] * mean_slice.inv()).magnitude(),
+                            xp.asarray(0.0)[()], atol=1e-10)
+    mean_1_2 = r.mean(axis=(1, 2))
+    for i in range(q.shape[0]):
+        mean_slice = Rotation.from_quat(q[i, ...]).mean()
+        xp_assert_close((mean_1_2[i] * mean_slice.inv()).magnitude(),
+                        xp.asarray(0.0)[()], atol=1e-10)
+
+
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
                    Rotation.magnitude)
 @pytest.mark.parametrize("ndim", range(1, 4))
