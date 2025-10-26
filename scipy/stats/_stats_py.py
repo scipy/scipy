@@ -27,6 +27,7 @@ References
 
 """
 import math
+import itertools
 import operator
 import warnings
 from collections import namedtuple
@@ -8432,7 +8433,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
-def kruskal(*samples, nan_policy='propagate'):
+def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -8454,6 +8455,11 @@ def kruskal(*samples, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8498,27 +8504,24 @@ def kruskal(*samples, nan_policy='propagate'):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
-    samples = list(map(np.asarray, samples))
-
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = np.asarray(list(map(len, samples)))
+    n = [sample.shape[-1] for sample in samples]
+    totaln = sum(n)
+    if np.any(n) < 1:  # Only needed for `test_axis_nan_policy`
+        raise ValueError("Inputs must not be empty.")
 
-    alldata = np.concatenate(samples)
-    ranked = rankdata(alldata)
-    ties = tiecorrect(ranked)
-    if ties == 0:
-        raise ValueError('All numbers are identical in kruskal')
+    alldata = np.concatenate(samples, axis=-1)
+    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    ties = 1 - (t**3 - t).sum(axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
-    j = np.insert(np.cumsum(n), 0, 0)
-    ssbn = 0
-    for i in range(num_groups):
-        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
+    j = list(itertools.accumulate(n, initial=0))
+    ssbn = sum(np.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+               for i in range(num_groups))
 
-    totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
     df = num_groups - 1
     h /= ties
