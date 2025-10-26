@@ -118,7 +118,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         "Please also check CXXFLAGS and FFLAGS.")
 
     if asan:
-        meson_args = meson_args + ('-Db_sanitize=address,undefined', )
+        meson_args = meson_args + ('-Db_sanitize=address,undefined',)
 
     if setup_args:
         meson_args = meson_args + tuple([str(arg) for arg in setup_args])
