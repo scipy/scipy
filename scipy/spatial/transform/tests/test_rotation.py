@@ -1193,6 +1193,9 @@ def test_identity_shape():  # Not an xp test, identity is using numpy only for n
     assert r.as_quat().shape == (5, 4)
     r = Rotation.identity(shape=(2, 3))
     assert r.as_quat().shape == (2, 3, 4)
+    # Test values
+    r = Rotation.identity(shape=(2, 2, 3))
+    xp_assert_equal(r.as_quat().reshape(-1, 4), np.tile(np.eye(4)[-1], (2 * 2 * 3, 1)))
     # Errors
     with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
         Rotation.identity(shape=2.5)
@@ -1678,7 +1681,7 @@ def test_n_rotations(xp):
     assert_equal(len(r[:-1]), 1)
 
 
-def test_random_rotation_shape():
+def test_random_rotation():
     # No xp testing since random rotations are always using NumPy
     rng = np.random.default_rng(0)
     assert_equal(Rotation.random(rng=rng).as_quat().shape, (4,))
@@ -1689,6 +1692,11 @@ def test_random_rotation_shape():
     assert_equal(Rotation.random(rng=rng,shape=()).as_quat().shape, (4,))
     assert_equal(Rotation.random(rng=rng, shape=(3,)).as_quat().shape, (3, 4))
     assert_equal(Rotation.random(rng=rng, shape=(2, 3)).as_quat().shape, (2, 3, 4))
+    # Values should be the same for num=prod(shape)
+    rng1, rng2 = np.random.default_rng(42), np.random.default_rng(42)
+    r_num = Rotation.random(6, rng=rng1)
+    r_shape = Rotation.random(rng=rng2, shape=(2, 3))
+    xp_assert_equal(r_num.as_quat(), r_shape.as_quat().reshape(6, 4))
     # Errors
     with pytest.raises(ValueError, match="Only one of `num` or `shape` can be"):
         Rotation.random(num=3,rng=rng, shape=(2, 2))
