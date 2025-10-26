@@ -73,6 +73,18 @@ def weightedtau_weighted(x, y, rank, **kwargs):
     return stats.weightedtau(x, y, rank, **kwargs)
 
 
+def boxcox_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._morestats._boxcox_llf(data, lmb=lmb, axis=axis)
+    return stats.boxcox_llf(lmb, data, axis=axis, **kwargs)
+
+
+def yeojohnson_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._morestats._yeojohnson_llf(data, lmb=lmb, axis=axis)
+    return stats.yeojohnson_llf(lmb, data, axis=axis, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -173,8 +185,9 @@ axis_nan_policy_cases = [
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
-    (stats._morestats._boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
     (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in

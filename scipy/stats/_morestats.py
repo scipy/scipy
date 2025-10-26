@@ -17,6 +17,8 @@ from scipy._lib._array_api import (
     array_namespace,
     is_marray,
     xp_capabilities,
+    is_numpy,
+    is_jax,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -374,7 +376,7 @@ def kstatvar(data, n=2, *, axis=None):
     .. math::
 
         \mathrm{var}(k_1) &= \frac{k_2}{n}, \\
-        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n - 1)}.
+        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n + 1)}.
 
     References
     ----------
@@ -989,12 +991,14 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
+    # _axis_nan_policy decorator does not currently support these for lazy arrays.
+    # We want to run tests with lazy backends, so don't pass the arguments explicitly
+    # unless necessary.
     kwargs = {}
     if keepdims is not False:
-        kwargs[keepdims] = keepdims
+        kwargs['keepdims'] = keepdims
     if nan_policy != 'propagate':
-        kwargs[nan_policy] = nan_policy
+        kwargs['nan_policy'] = nan_policy
     return _boxcox_llf(data, lmb=lmb, axis=axis, **kwargs)
 
 
@@ -1668,33 +1672,36 @@ def yeojohnson(x, lmbda=None):
     return y, lmax
 
 
-def _yeojohnson_transform(x, lmbda):
+def _yeojohnson_transform(x, lmbda, xp=None):
     """Returns `x` transformed by the Yeo-Johnson power transform with given
     parameter `lmbda`.
     """
-    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-    out = np.zeros_like(x, dtype=dtype)
+    xp = array_namespace(x) if xp is None else xp
+    dtype = xp_result_type(x, lmbda, force_floating=True, xp=xp)
+    eps = xp.finfo(dtype).eps
+    out = xp.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
     # when x >= 0
-    if abs(lmbda) < np.spacing(1.):
-        out[pos] = np.log1p(x[pos])
+    if abs(lmbda) < eps:
+        out = xpx.at(out)[pos].set(xp.log1p(x[pos]))
     else:  # lmbda != 0
         # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
-        out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
+        out = xpx.at(out)[pos].set(xp.expm1(lmbda * xp.log1p(x[pos])) / lmbda)
 
     # when x < 0
-    if abs(lmbda - 2) > np.spacing(1.):
-        out[~pos] = -np.expm1((2 - lmbda) * np.log1p(-x[~pos])) / (2 - lmbda)
+    if abs(lmbda - 2) > eps:
+        out = xpx.at(out)[~pos].set(
+            -xp.expm1((2 - lmbda) * xp.log1p(-x[~pos])) / (2 - lmbda))
     else:  # lmbda == 2
-        out[~pos] = -np.log1p(-x[~pos])
+        out = xpx.at(out)[~pos].set(-xp.log1p(-x[~pos]))
 
     return out
 
 
-@xp_capabilities(np_only=True)
-def yeojohnson_llf(lmb, data):
-    r"""The yeojohnson log-likelihood function.
+@xp_capabilities(skip_backends=[("dask.array", "Dask can't broadcast nan shapes")])
+def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False):
+    r"""The Yeo-Johnson log-likelihood function.
 
     Parameters
     ----------
@@ -1702,9 +1709,27 @@ def yeojohnson_llf(lmb, data):
         Parameter for Yeo-Johnson transformation. See `yeojohnson` for
         details.
     data : array_like
-        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
-        multi-dimensional, the log-likelihood is calculated along the first
-        axis.
+        Data to calculate Yeo-Johnson log-likelihood for.
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -1778,24 +1803,33 @@ def yeojohnson_llf(lmb, data):
     >>> plt.show()
 
     """
-    data = np.asarray(data)
-    n_samples = data.shape[0]
+    # _axis_nan_policy decorator does not currently support these for lazy arrays.
+    # We want to run tests with lazy backends, so don't pass the arguments explicitly
+    # unless necessary.
+    kwargs = {}
+    if keepdims is not False:
+        kwargs['keepdims'] = keepdims
+    if nan_policy != 'propagate':
+        kwargs['nan_policy'] = nan_policy
+    res = _yeojohnson_llf(data, lmb=lmb, axis=axis, **kwargs)
+    return res[()] if res.ndim == 0 else res
 
-    if n_samples == 0:
-        return np.nan
 
-    trans = _yeojohnson_transform(data, lmb)
-    trans_var = trans.var(axis=0)
-    loglike = np.empty_like(trans_var)
+@_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
+                          result_to_tuple=lambda x, _: (x,))
+def _yeojohnson_llf(data, *, lmb, axis=0):
+    xp = array_namespace(data)
+    y = _yeojohnson_transform(data, lmb, xp=xp)
+    sigma = xp.var(y, axis=axis)
 
-    # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
-    loglike[tiny_variance] = np.inf
+    # Suppress RuntimeWarning raised by np.log when the variance is too low
+    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
+    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
 
-    loglike[~tiny_variance] = (
-        -n_samples / 2 * np.log(trans_var[~tiny_variance]))
-    loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
+    n = data.shape[axis]
+    loglike = (-n / 2 * log_sigma
+               + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
+
     return loglike
 
 
@@ -1850,7 +1884,7 @@ def yeojohnson_normmax(x, brack=None):
 
     """
     def _neg_llf(lmbda, data):
-        llf = yeojohnson_llf(lmbda, data)
+        llf = np.asarray(yeojohnson_llf(lmbda, data))
         # reject likelihoods that are inf which are likely due to small
         # variance in the transformed space
         llf[np.isinf(llf)] = -np.inf
@@ -4467,7 +4501,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     return DirectionalStats(mean_direction, mean_resultant_length)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "no take_along_axis")], jax_jit=False)
 def false_discovery_control(ps, *, axis=0, method='bh'):
     """Adjust p-values to control the false discovery rate.
 
@@ -4616,11 +4650,13 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     array([0.6  , 0.6  , 0.2  , 0.004])
 
     """
-    # Input Validation and Special Cases
-    ps = np.asarray(ps)
+    xp = array_namespace(ps)
 
-    ps_in_range = (np.issubdtype(ps.dtype, np.number)
-                   and np.all(ps == np.clip(ps, 0, 1)))
+    # Input Validation and Special Cases
+    ps = xp.asarray(ps)
+
+    ps_in_range = (xp.isdtype(ps.dtype, ("integral", "real floating"))
+                   and xp.all(ps == xp.clip(ps, 0., 1.)))
     if not ps_in_range:
         raise ValueError("`ps` must include only numbers between 0 and 1.")
 
@@ -4632,16 +4668,17 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
     if axis is None:
         axis = 0
-        ps = ps.ravel()
+        ps = xp_ravel(ps)
 
-    axis = np.asarray(axis)[()]
+    axis = np.asarray(axis)[()]  # use of NumPy for input validation is OK
     if not np.issubdtype(axis.dtype, np.integer) or axis.size != 1:
         raise ValueError("`axis` must be an integer or `None`")
+    axis = int(axis)
 
-    if ps.size <= 1 or ps.shape[axis] <= 1:
-        return ps[()]
+    if xp_size(ps) <= 1 or ps.shape[axis] <= 1:
+        return ps[()] if ps.ndim == 0 else ps
 
-    ps = np.moveaxis(ps, axis, -1)
+    ps = xp.moveaxis(ps, axis, -1)
     m = ps.shape[-1]
 
     # Main Algorithm
@@ -4650,25 +4687,43 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
     # by R's p.adjust.
 
     # "Let [ps] be the ordered observed p-values..."
-    order = np.argsort(ps, axis=-1)
-    ps = np.take_along_axis(ps, order, axis=-1)  # this copies ps
+    order = xp.argsort(ps, axis=-1)
+    ps = xp.take_along_axis(ps, order, axis=-1)  # this copies ps
 
     # Equation 1 of [1] rearranged to reject when p is less than specified q
-    i = np.arange(1, m+1)
-    ps *= m / i
+    i = xp.arange(1, m+1, dtype=ps.dtype, device=xp_device(ps))
+    # ps *= m / i
+    ps = xpx.at(ps)[...].multiply(m / i)
 
     # Theorem 1.3 of [2]
     if method == 'by':
-        ps *= np.sum(1 / i)
+        # ps *= np.sum(1 / i)
+        ps = xpx.at(ps)[...].multiply(xp.sum(1 / i))
 
     # accounts for rejecting all null hypotheses i for i < k, where k is
     # defined in Eq. 1 of either [1] or [2]. See [3]. Starting with the index j
     # of the second to last element, we replace element j with element j+1 if
     # the latter is smaller.
-    np.minimum.accumulate(ps[..., ::-1], out=ps[..., ::-1], axis=-1)
+    if is_numpy(xp):
+        np.minimum.accumulate(ps[..., ::-1], out=ps[..., ::-1], axis=-1)
+    else:
+        n = ps.shape[-1]
+        for j in range(n-2, -1, -1):
+            # ps[..., j] = xp.minimum(ps[..., j], ps[..., j+1])
+            ps = xpx.at(ps)[..., j].set(xp.minimum(ps[..., j], ps[..., j+1]))
 
     # Restore original order of axes and data
-    np.put_along_axis(ps, order, values=ps.copy(), axis=-1)
-    ps = np.moveaxis(ps, -1, axis)
+    ps = _reorder_along_axis(ps, order, axis=-1, xp=xp)
+    ps = xp.moveaxis(ps, -1, axis)
 
-    return np.clip(ps, 0, 1)
+    return xp.clip(ps, 0., 1.)
+
+
+def _reorder_along_axis(x, i, *, axis, xp):
+    if is_jax(xp):
+        return xp.put_along_axis(x, i, values=x, axis=axis, inplace=False)
+    if hasattr(xp, 'put_along_axis'):
+        xp.put_along_axis(x, i, values=x.copy(), axis=axis)
+        return x
+    else:
+        return xp.take_along_axis(x, xp.argsort(i, axis=-1), axis=-1)
