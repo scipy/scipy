@@ -1186,6 +1186,22 @@ def test_single_identity_invariance(xp):
     xp_assert_close(result.magnitude(), xp.zeros(n), atol=atol)
 
 
+def test_identity_shape():  # Not an xp test, identity is using numpy only for now
+    r = Rotation.identity(shape=())
+    assert r.as_quat().shape == (4,)
+    r = Rotation.identity(shape=5)  # Shape can be int
+    assert r.as_quat().shape == (5, 4)
+    r = Rotation.identity(shape=(2, 3))
+    assert r.as_quat().shape == (2, 3, 4)
+    # Errors
+    with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
+        Rotation.identity(shape=2.5)
+    with pytest.raises(ValueError, match="Only one of `num` or `shape` can be"):
+        Rotation.identity(num=3, shape=(2, 2))
+    with pytest.raises(TypeError, match="takes from 0 to 1 positional arguments"):
+        Rotation.identity(3, 3)
+
+
 @make_xp_test_case(Rotation.magnitude)
 @pytest.mark.parametrize("ndim", range(1, 4))
 def test_magnitude(xp, ndim: int):
@@ -1664,12 +1680,22 @@ def test_n_rotations(xp):
 
 def test_random_rotation_shape():
     # No xp testing since random rotations are always using NumPy
-    rng = np.random.default_rng(146972845698875399755764481408308808739)
+    rng = np.random.default_rng(0)
     assert_equal(Rotation.random(rng=rng).as_quat().shape, (4,))
     assert_equal(Rotation.random(None, rng=rng).as_quat().shape, (4,))
-
     assert_equal(Rotation.random(1, rng=rng).as_quat().shape, (1, 4))
     assert_equal(Rotation.random(5, rng=rng).as_quat().shape, (5, 4))
+    # Shape argument
+    assert_equal(Rotation.random(rng=rng,shape=()).as_quat().shape, (4,))
+    assert_equal(Rotation.random(rng=rng, shape=(3,)).as_quat().shape, (3, 4))
+    assert_equal(Rotation.random(rng=rng, shape=(2, 3)).as_quat().shape, (2, 3, 4))
+    # Errors
+    with pytest.raises(ValueError, match="Only one of `num` or `shape` can be"):
+        Rotation.random(num=3,rng=rng, shape=(2, 2))
+    with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
+        Rotation.random(rng=rng, shape=2.5)
+    with pytest.raises(TypeError, match="takes from 0 to 2 positional arguments"):
+        Rotation.random(1, rng, None)  # Shape should be kwarg only
 
 
 @make_xp_test_case(Rotation.align_vectors, Rotation.as_matrix)
