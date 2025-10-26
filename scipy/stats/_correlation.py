@@ -6,7 +6,7 @@ from scipy.stats._stats_py import _SimpleNormal, SignificanceResult, _get_pvalue
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
-__all__ = ['chatterjeexi']
+__all__ = ['chatterjeexi', 'spearmanrho']
 
 
 def _xi_statistic(x, y, y_continuous, xp):
@@ -248,7 +248,7 @@ def chatterjeexi(x, y, *, axis=0, y_continuous=False, method='asymptotic'):
 )
 @_axis_nan_policy_factory(SignificanceResult, paired=True, n_samples=2,
                           result_to_tuple=_unpack, n_outputs=2, too_small=1)
-def spearmanrho(x, y, *, alternative='two-sided', method=None, axis=0):
+def spearmanrho(x, y, /, *, alternative='two-sided', method=None, axis=0):
     r"""Calculate a Spearman rho correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
@@ -295,9 +295,9 @@ def spearmanrho(x, y, *, alternative='two-sided', method=None, axis=0):
     res : SignificanceResult
         An object containing attributes:
 
-        statistic : float or ndarray (2-D square)
+        statistic : floating point array or NumPy scalar
             Spearman correlation coefficient
-        pvalue : float
+        pvalue : floating point array NumPy scalar
             The p-value - the probabilitiy of realizing such an extreme statistic
             value under the null hypothesis that two samples have no ordinal
             correlation. See `alternative` above for alternative hypotheses.
