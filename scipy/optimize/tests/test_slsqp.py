@@ -413,14 +413,19 @@ class TestSLSQP:
         def ineq_con(x):
             return x[1] - 10
 
+        tol = 1e-10
         x0 = np.array([0.5, 0.5])
         cons = [
             {"type": "eq", "fun": eq_con},
             {"type": "ineq", "fun": ineq_con},
         ]
 
-        minimize(obj, x0, method="SLSQP", constraints=cons, callback=callback)
+        res = minimize(obj, x0, method="SLSQP", constraints=cons, callback=callback, tol=tol)
 
+        # Check that tolerances acheived
+        assert res.success
+        assert res.optimality <= 10*tol
+        assert res.constr_violation <= 10*tol
 
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the
