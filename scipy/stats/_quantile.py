@@ -61,7 +61,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
 
-    y = xp.sort(x, axis=axis)
+    y = xp.sort(x, axis=axis, stable=False)
     y, p = _broadcast_arrays((y, p), axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
