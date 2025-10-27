@@ -27,6 +27,7 @@ References
 
 """
 import math
+import itertools
 import operator
 import warnings
 from collections import namedtuple
@@ -3233,8 +3234,12 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(np_only=True)
-def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+@xp_capabilities(skip_backends=[('jax.numpy', 'not supported by `quantile`'),
+                                ('dask.array', 'not supported by `quantile`')])
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
+)
+def median_abs_deviation(x, axis=0, center=None, scale=1.0,
                          nan_policy='propagate'):
     r"""
     Compute the median absolute deviation of the data along the given axis.
@@ -3344,6 +3349,11 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     1.9996446978061115
 
     """
+    xp = array_namespace(x)
+    xp_median = (xp.median if is_numpy(xp)
+                 else lambda x, axis: stats.quantile(x, 0.5, axis=axis))
+    center = (xp_median if center is None else center)
+
     if not callable(center):
         raise TypeError("The argument 'center' must be callable. The given "
                         f"value {repr(center)} is not callable.")
@@ -3356,34 +3366,10 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
 
-    x = asarray(x)
-
-    # Consistent with `np.var` and `np.std`.
-    if not x.size:
-        if axis is None:
-            return np.nan
-        nan_shape = tuple(item for i, item in enumerate(x.shape) if i != axis)
-        if nan_shape == ():
-            # Return nan, not array(nan)
-            return np.nan
-        return np.full(nan_shape, np.nan)
-
-    contains_nan = _contains_nan(x, nan_policy)
-
-    if contains_nan:
-        if axis is None:
-            mad = _mad_1d(x.ravel(), center, nan_policy)
-        else:
-            mad = np.apply_along_axis(_mad_1d, axis, x, center, nan_policy)
-    else:
-        if axis is None:
-            med = center(x, axis=None)
-            mad = np.median(np.abs(x - med))
-        else:
-            # Wrap the call to center() in expand_dims() so it acts like
-            # keepdims=True was used.
-            med = np.expand_dims(center(x, axis=axis), axis)
-            mad = np.median(np.abs(x - med), axis=axis)
+    # Wrap the call to center() in expand_dims() so it acts like
+    # keepdims=True was used.
+    med = xp.expand_dims(center(x, axis=axis), axis=axis)
+    mad = xp_median(xp.abs(x - med), axis=axis)
 
     return mad / scale
 
@@ -8430,9 +8416,10 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 jax_jit=False)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
-def kruskal(*samples, nan_policy='propagate'):
+def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -8454,6 +8441,11 @@ def kruskal(*samples, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8498,29 +8490,32 @@ def kruskal(*samples, nan_policy='propagate'):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
-    samples = list(map(np.asarray, samples))
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = np.asarray(list(map(len, samples)))
+    n = [sample.shape[-1] for sample in samples]
+    totaln = sum(n)
+    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
+        raise ValueError("Inputs must not be empty.")
 
-    alldata = np.concatenate(samples)
-    ranked = rankdata(alldata)
-    ties = tiecorrect(ranked)
-    if ties == 0:
-        raise ValueError('All numbers are identical in kruskal')
+    alldata = xp.concat(samples, axis=-1)
+    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    # should adjust output dtype of _rankdata
+    ranked = xp.astype(ranked, alldata.dtype, copy=False)
+    t = xp.astype(t, alldata.dtype, copy=False)
+    ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
-    j = np.insert(np.cumsum(n), 0, 0)
-    ssbn = 0
-    for i in range(num_groups):
-        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
+    j = list(itertools.accumulate(n, initial=0))
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+               for i in range(num_groups))
 
-    totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = num_groups - 1
+    df = xp.asarray(num_groups - 1, dtype=h.dtype)
     h /= ties
 
     chi2 = _SimpleChi2(df)
@@ -10165,7 +10160,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
-        t[i] = counts
+        t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
         return ranks, t
     return ranks
 

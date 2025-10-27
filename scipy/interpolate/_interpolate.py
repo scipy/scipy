@@ -173,6 +173,7 @@ def _do_extrapolate(fill_value):
             fill_value == 'extrapolate')
 
 
+@xp_capabilities(out_of_scope=True)
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function (legacy).
