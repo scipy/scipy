@@ -244,7 +244,8 @@ class _spbase(SparseABC):
 
         dtype = getdtype(dtype)
         if self.dtype != dtype:
-            return self.tocsr().astype(dtype, casting, copy).asformat(self.format)
+            return self.tocsr().astype(
+                dtype, casting=casting, copy=copy).asformat(self.format)
         elif copy:
             return self.copy()
         else:
