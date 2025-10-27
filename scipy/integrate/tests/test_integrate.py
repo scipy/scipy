@@ -142,6 +142,7 @@ class TestOde(TestODEClass):
                 continue
             self._do_problem(problem, 'dop853')
 
+    @pytest.mark.thread_unsafe(reason="fails in parallel")
     def test_concurrent_fail(self):
         for sol in ('vode', 'zvode', 'lsoda'):
             def f(t, y):

@@ -117,7 +117,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     p : array_like of float
         Probability or sequence of probabilities of the quantiles to compute.
         Values must be between 0 and 1 (inclusive).
-        Must have length 1 along `axis` unless ``keepdims=True``.
+        While `numpy.quantile` can only compute quantiles according to the Cartesian
+        product of the first two arguments, this function enables calculation of
+        quantiles at different probabilities for each axis slice by following
+        broadcasting rules like those of `scipy.stats` reducing functions.
+        See `axis`, `keepdims`, and the examples.
     method : str, default: 'linear'
         The method to use for estimating the quantile.
         The available options, numbered as they appear in [1]_, are:
@@ -139,6 +143,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         Axis along which the quantiles are computed.
         ``None`` ravels both `x` and `p` before performing the calculation,
         without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x` or `p` as needed until the two arrays
+        have the same dimensionality. When providing `x` and `p` with different
+        dimensionality, consider using negative `axis` integers for clarity.
     nan_policy : str, default: 'propagate'
         Defines how to handle NaNs in the input data `x`.
 
@@ -246,22 +254,36 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     >>> x = np.asarray([[10, 8, 7, 5, 4],
     ...                 [0, 1, 2, 3, 5]])
 
-    Take the median along the last axis.
+    Take the median of each row.
 
     >>> stats.quantile(x, 0.5, axis=-1)
     array([7.,  2.])
 
-    Take a different quantile along each axis.
+    Take a different quantile for each row.
 
     >>> stats.quantile(x, [[0.25], [0.75]], axis=-1, keepdims=True)
     array([[5.],
            [3.]])
 
-    Take multiple quantiles along each axis.
+    Take multiple quantiles for each row.
 
     >>> stats.quantile(x, [0.25, 0.75], axis=-1)
     array([[5., 8.],
            [1., 3.]])
+
+    Take different quantiles for each row.
+
+    >>> p = np.asarray([[0.25, 0.75],
+    ...                 [0.5, 1.0]])
+    >>> stats.quantile(x, p, axis=-1)
+    array([[5., 8.],
+           [2., 5.]])
+
+    Take different quantiles for each column.
+
+    >>> stats.quantile(x.T, p.T, axis=0)
+    array([[5., 2.],
+           [8., 5.]])
 
     References
     ----------
@@ -319,7 +341,7 @@ def _quantile_hf(y, p, n, method, xp):
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
 
-    g[j < 0] = 0
+    g = xpx.at(g)[j < 0].set(0)
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 
