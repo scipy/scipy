@@ -234,10 +234,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         gradient of the lagrangian and absolute sum of the constraint violations
         should be lower than ``ftol``. Similarly, computed step size and the
         objective function changes are checked against this value. Default is 1e-6.
-    iprint : int
-        Set to 1 to print a post-optimization summary. Set to 2 to print the
-        progress of the optimization at each iteration. `disp` must be set
-        `True` for this parameter to function.
     disp : bool
         Set to True to print convergence messages. If False,
         `verbosity` is ignored and set to 0.
