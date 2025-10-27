@@ -684,7 +684,7 @@ def test_identity():
     expected = np.tile(np.eye(4), (2, 3, 1, 1))
     xp_assert_close(tf.as_matrix(), expected, atol=atol)
     # Test errors
-    with pytest.raises(ValueError, match="Only one of `num` and `shape` can be specified."):
+    with pytest.raises(ValueError, match="Only one of `num` and `shape` can be."):
         RigidTransform.identity(10, shape=(2, 3))
     with pytest.raises(TypeError, match="takes from 0 to 1 positional arguments"):
         RigidTransform.identity(None, (-1, 3))  # Shape is kwarg only
