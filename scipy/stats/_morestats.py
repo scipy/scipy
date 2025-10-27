@@ -1137,8 +1137,8 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
         y =
         \begin{cases}
-        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
-        \log(x),                       &\text{for } \lambda = 0
+          \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0 \\
+          \log(x),                       &\text{for } \lambda = 0
         \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
