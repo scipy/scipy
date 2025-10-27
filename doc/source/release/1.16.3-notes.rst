@@ -12,13 +12,16 @@ compared to 1.16.2.
 Authors
 =======
 * Name (commits)
+* ChrisAB (1) +
+* Lucas Colley (1)
 * Ralf Gommers (3)
-* Matt Haberland (1)
-* Nick ODell (1)
+* Matt Haberland (8)
+* Nick ODell (2)
 * Ilhan Polat (1)
-* Tyler Reddy (14)
+* Tyler Reddy (28)
+* Lucas Roberts (2)
 
-    A total of 5 people contributed to this release.
+    A total of 8 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -28,9 +31,11 @@ Issues closed for 1.16.3
 
 * `#23336 <https://github.com/scipy/scipy/issues/23336>`__: BUG: linalg: wrong handling of args/kwargs in ``_apply_over_batch``
 * `#23469 <https://github.com/scipy/scipy/issues/23469>`__: BUG: huge speed and quality regression for stats.multivariate_normal.cdf
+* `#23589 <https://github.com/scipy/scipy/issues/23589>`__: BUG: ``lqmn(1,1,0)`` and ``lqmn(1,1,0j)`` return incompatible...
 * `#23642 <https://github.com/scipy/scipy/issues/23642>`__: CI: meson setup fails with "invalid int value: 'Sentinel.UNSET'"
 * `#23738 <https://github.com/scipy/scipy/issues/23738>`__: BUG: ``special.expi(inf)`` is ``nan``\ , should be ``inf``
 * `#23820 <https://github.com/scipy/scipy/issues/23820>`__: MAINT, TST: optimize test_input_validation torch failure
+* `#23859 <https://github.com/scipy/scipy/issues/23859>`__: TST, MAINT: boxcox_llf failing again
 
 
 Pull requests for 1.16.3
@@ -46,3 +51,4 @@ Pull requests for 1.16.3
 * `#23817 <https://github.com/scipy/scipy/pull/23817>`__: BUG/TST: Bump xsf to v0.1.3 add tests for expi limits
 * `#23821 <https://github.com/scipy/scipy/pull/23821>`__: CI: optimize: allow new Pytorch message
 * `#23829 <https://github.com/scipy/scipy/pull/23829>`__: MAINT: patch vendored qhull source for security fix
+* `#23864 <https://github.com/scipy/scipy/pull/23864>`__: TST: stats.boxcox_llf: bump test tolerance
