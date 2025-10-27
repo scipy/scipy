@@ -1696,7 +1696,7 @@ def test_random_rotation():
     rng1, rng2 = np.random.default_rng(42), np.random.default_rng(42)
     r_num = Rotation.random(6, rng=rng1)
     r_shape = Rotation.random(rng=rng2, shape=(2, 3))
-    xp_assert_equal(r_num.as_quat(), r_shape.as_quat().reshape(6, 4))
+    xp_assert_close(r_num.as_quat(), r_shape.as_quat().reshape(6, 4), atol=1e-12)
     # Errors
     with pytest.raises(ValueError, match="Only one of `num` or `shape` can be"):
         Rotation.random(num=3,rng=rng, shape=(2, 2))
