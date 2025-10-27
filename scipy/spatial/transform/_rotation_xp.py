@@ -524,7 +524,7 @@ def mean(
         K = xp.matrix_transpose(weighted_quat) @ quat_expand
 
     # Move reduction axes to the end
-    keep_axes = tuple(i for i in range(quat.ndim - 1) if i not in axis)
+    keep_axes = tuple(i for i in all_axes if i not in axis)
     axes_order = keep_axes + axis
     K_reordered = xp.moveaxis(K, axes_order, all_axes)
     # Reshape to flatten reduction axes
