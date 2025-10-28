@@ -17,7 +17,7 @@ from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
-from scipy._lib._array_api import make_xp_test_case, xp_default_dtype
+from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
@@ -300,6 +300,8 @@ class TestMannWhitneyU:
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     def test_basic(self, kwds, expected, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x, y = xp.asarray(self.x, dtype=dtype), xp.asarray(self.y, dtype=dtype)
         res = mannwhitneyu(x, y, **kwds)
