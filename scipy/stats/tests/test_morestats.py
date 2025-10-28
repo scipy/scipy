@@ -2048,7 +2048,7 @@ class TestBoxcox_llf:
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
-                        rtol=1e-7)
+                        rtol=5e-7)  # bumped tolerance from 1e-7 for Accelerate
 
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
