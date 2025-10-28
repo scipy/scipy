@@ -965,16 +965,15 @@ def mean(double[:, :] quat, weights=None):
         weights = np.ones(quat.shape[0])
     else:
         weights = np.asarray(weights)
-        if weights.ndim != 1:
-            raise ValueError("Expected `weights` to be 1 dimensional, got "
-                                "shape {}.".format(weights.shape))
-        if weights.shape[0] != quat.shape[0]:
-            raise ValueError("Expected `weights` to have number of values "
-                                "equal to number of rotations, got "
-                                "{} values and {} rotations.".format(
-                                weights.shape[0], quat.shape[0]))
         if np.any(weights < 0):
             raise ValueError("`weights` must be non-negative.")
+        if weights.ndim != 1:
+            raise ValueError(f"Expected `weights` to be 1 dimensional, got "
+                             f"{weights.shape}.")
+        if weights.shape[0] != quat.shape[0]:
+            raise ValueError("Expected `weights` to have number of values equal to "
+                             f"number of rotations, got {weights.shape[0]} values and "
+                             f"{quat.shape[0]} rotations.")
 
     quat = np.asarray(quat)
     K = np.dot(weights * quat.T, quat)
