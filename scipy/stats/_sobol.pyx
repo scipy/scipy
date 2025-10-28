@@ -194,13 +194,11 @@ cdef int low_0_bit(cnp.uint64_t x) noexcept nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 0
-    if (~x) == 0:
-        # If number is all 1s, the first 0 is at one after the last 1
-        return 65
-    while x & (1L << i) != 0:
+    cdef int i = 1
+    while x & 1UL:
+        x >>= 1
         i += 1
-    return i + 1
+    return i
 
 
 @cython.boundscheck(False)
