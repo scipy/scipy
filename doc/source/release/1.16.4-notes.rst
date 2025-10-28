@@ -1,0 +1,23 @@
+==========================
+SciPy 1.16.4 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.16.4 is a bug-fix release with no new features
+compared to 1.16.3.
+
+
+
+Authors
+=======
+* Name (commits)
+
+
+Issues closed for 1.16.4
+------------------------
+
+
+
+Pull requests for 1.16.4
+------------------------
