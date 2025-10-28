@@ -44,3 +44,11 @@ jobs:
         shell: bash
         working-directory: .github/workflows
         run: pixi run check-python-h
+
+      - name: Check module interdependencies
+        working-directory: .github/workflows
+        run: pixi run tach-check
+
+      - name: Check external dependencies
+        working-directory: .github/workflows
+        run: pixi run tach-check-external
