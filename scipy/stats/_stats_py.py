@@ -58,7 +58,8 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
-                               _broadcast_array_shapes_remove_axis, SmallSampleWarning,
+                               _broadcast_array_shapes_remove_axis,
+                               _broadcast_arrays, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
                                too_small_nd_not_omit, too_small_nd_omit)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -9600,7 +9601,7 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
 
 
 @xp_capabilities(np_only=True)
-def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
+def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None, *, axis=0):
     r"""
     Compute the Wasserstein-1 distance between two 1D discrete distributions.
 
@@ -9626,8 +9627,15 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     u_weights, v_weights : 1d array_like, optional
         Weights or counts corresponding with the sample or probability masses
-        corresponding with the support values. Sum of elements must be positive
-        and finite. If unspecified, each value is assigned the same weight.
+        corresponding with the support values. Must be broadcastable with corresponding
+        sample/support. All elements must be positive and finite. If unspecified, each
+        value is assigned the same weight.
+
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, all inputs will be raveled before computing the statistic.
 
     Returns
     -------
@@ -9689,11 +9697,11 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     4.0781331438047861
 
     """
-    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+    return _cdf_distance(1, u_values, v_values, u_weights, v_weights, axis=axis)
 
 
 @xp_capabilities(np_only=True)
-def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
+def energy_distance(u_values, v_values, u_weights=None, v_weights=None, *, axis=0):
     r"""Compute the energy distance between two 1D distributions.
 
     .. versionadded:: 1.0.0
@@ -9702,13 +9710,16 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     ----------
     u_values, v_values : array_like
         Values observed in the (empirical) distribution.
-    u_weights, v_weights : array_like, optional
-        Weight for each value. If unspecified, each value is assigned the same
-        weight.
-        `u_weights` (resp. `v_weights`) must have the same length as
-        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
-        must still be positive and finite so that the weights can be normalized
-        to sum to 1.
+    u_weights, v_weights : 1d array_like, optional
+        Weights or counts corresponding with the sample or probability masses
+        corresponding with the support values. Must be broadcastable with corresponding
+        sample/support. All elements must be positive and finite. If unspecified, each
+        value is assigned the same weight.
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, all inputs will be raveled before computing the statistic.
 
     Returns
     -------
@@ -9775,11 +9786,12 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     0.88003340976158217
 
     """
-    return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
-                                      u_weights, v_weights)
+    return 2**0.5 * _cdf_distance(2, u_values, v_values,
+                                  u_weights, v_weights, axis=axis)
 
 
-def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
+# now used only for testing
+def _cdf_distance_ref(p, u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute, between two one-dimensional distributions :math:`u` and
     :math:`v`, whose respective CDFs are :math:`U` and :math:`V`, the
@@ -9863,6 +9875,98 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 2:
         return np.sqrt(np_vecdot(np.square(u_cdf - v_cdf), deltas))
     return np.power(np_vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
+
+
+def _cdf_distance_iv(x, y, wx, wy, axis):
+    xp = array_namespace(x, y, wx, wy)
+    x, y, wx, wy = xp_promote(x, y, wx, wy, force_floating=True, xp=xp)
+
+    x, wx = xp.broadcast_arrays(x, wx) if wx is not None else (x, wx)
+    y, wy = xp.broadcast_arrays(y, wy) if wy is not None else (y, wy)
+
+    if axis is None:
+        x, y = xp_ravel(x), xp_ravel(y)
+        wx = wx if wx is None else xp_ravel(wx)
+        wy = wy if wy is None else xp_ravel(wy)
+        axis = -1
+
+    if wx is None and wy is None:
+        x, y = _broadcast_arrays((x, y), axis=axis, xp=xp)
+        x, y, = xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1)
+    elif wx is None:
+        x, y, wy = _broadcast_arrays((x, y, wy), axis=axis, xp=xp)
+        x, y, wy = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
+                    xp.moveaxis(wy, axis, -1))
+    elif wy is None:
+        x, y, wx = _broadcast_arrays((x, y, wx), axis=axis, xp=xp)
+        x, y, wx = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
+                    xp.moveaxis(wx, axis, -1))
+    else:
+        x, y, wx, wy = _broadcast_arrays((x, y, wx, wy), axis=axis, xp=xp)
+        x, y, wx, wy = (xp.moveaxis(x, axis, -1), xp.moveaxis(y, axis, -1),
+                        xp.moveaxis(wx, axis, -1), xp.moveaxis(wy, axis, -1))
+
+    # technically, if only one of wx were infinite along `axis`, we could
+    # treat it as if that weight were unity and all the rest were zero.
+    wx = wx if wx is None else xp.where((wx < 0) | xp.isinf(wx), xp.nan, wx)
+    wy = wy if wy is None else xp.where((wy < 0) | xp.isinf(wy), xp.nan, wy)
+
+    return x, y, wx, wy, axis, xp
+
+
+def _cdf_distance(p, x, y, wx=None, wy=None, axis=0):
+    # vectorized version of _cdf_distance_ref.
+    x, y, wx, wy, axis, xp = _cdf_distance_iv(x, y, wx, wy, axis)
+
+    # special case: either array is empty
+    if xp_size(x) == 0 or xp_size(y) == 0:
+        return xp.full(x.shape[:-1], xp.nan, dtype=x.dtype)[()]
+
+    ix = xp.argsort(x, axis=-1)
+    iy = xp.argsort(y, axis=-1)
+    x = xp.take_along_axis(x, ix, axis=-1)
+    y = xp.take_along_axis(y, iy, axis=-1)
+    wx = wx if wx is None else xp.take_along_axis(wx, ix, axis=-1)
+    wy = wy if wy is None else xp.take_along_axis(wy, iy, axis=-1)
+    xy = xp.concat((x, y), axis=-1)
+
+    nx = x.shape[-1]
+    ny = y.shape[-1]
+    n = xy.shape[-1]
+    ranks = _rankdata(xy, method='min')
+    rank_counts_x = xp.diff(ranks[..., :nx], prepend=1, append=n + 1, axis=-1)
+    rank_counts_y = xp.diff(ranks[..., -ny:], prepend=1, append=n + 1, axis=-1)
+
+    if wx is None:
+        cdf_vals_x = xp.linspace(0, 1, nx + 1, dtype=xy.dtype)
+    else:
+        cdf_vals_x = xp.cumulative_sum(wx, axis=-1, include_initial=True)
+        cdf_vals_x /= cdf_vals_x[..., -1:]
+
+    if wy is None:
+        cdf_vals_y = xp.linspace(0, 1, ny + 1, dtype=xy.dtype)
+    else:
+        cdf_vals_y = xp.cumulative_sum(wy, axis=-1, include_initial=True)
+        cdf_vals_y /= cdf_vals_y[..., -1:]
+
+    cdf_vals_x, rank_counts_x = xp.broadcast_arrays(cdf_vals_x, rank_counts_x)
+    cdf_vals_y, rank_counts_y = xp.broadcast_arrays(cdf_vals_y, rank_counts_y)
+    cdf_x = xp.repeat(xp_ravel(cdf_vals_x), xp_ravel(rank_counts_x), axis=-1)
+    cdf_y = xp.repeat(xp_ravel(cdf_vals_y), xp_ravel(rank_counts_y), axis=-1)
+    shape = xy.shape[:-1] + (-1,)
+    cdf_x = xp.reshape(cdf_x, shape)[..., :-1]
+    cdf_y = xp.reshape(cdf_y, shape)[..., :-1]
+
+    deltas = xp.diff(xp.sort(xy, axis=-1), axis=-1)
+    if p == 1:
+        res = xp.vecdot(xp.abs(cdf_x - cdf_y), deltas, axis=-1)
+    elif p == 2:
+        res = xp.sqrt(xp.vecdot(xp.square(cdf_x - cdf_y), deltas))
+    elif p % 2:
+        res = xp.vecdot(xp.abs(cdf_x - cdf_y)**p, deltas)**(1 / p)
+    else:
+        res = xp.vecdot((cdf_x - cdf_y)**p, deltas)**(1 / p)
+    return res[()]
 
 
 def _validate_distribution(values, weights):
