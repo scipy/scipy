@@ -1322,6 +1322,49 @@ def test_mean(xp, ndim: int):
         xp_assert_close(r_mean.magnitude(), desired, atol=atol)
 
 
+@make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.magnitude)
+@pytest.mark.parametrize("ndim", range(1, 5))
+def test_mean_axis(xp, ndim: int):
+    axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
+    theta = xp.pi / 4
+    r = Rotation.from_rotvec(theta * axes)
+    desired = xp.full(axes.shape[:-2], 0.0)
+    if ndim == 1:
+        desired = desired[()]
+    atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
+    xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
+    # Test tuple axes
+    desired = xp.full(axes.shape[1:-2], 0.0)
+    if ndim < 3:
+        desired = desired[()]
+    xp_assert_close(r.mean(axis=(0, -1)).magnitude(), desired, atol=atol)
+    # Empty axis tuple should return Rotation unchanged
+    r_mean = r.mean(axis=())
+    xp_assert_close(r_mean.as_quat(canonical=True), r.as_quat(canonical=True),
+                    atol=atol)
+
+
+@make_xp_test_case(Rotation.mean, Rotation.magnitude)
+def test_mean_compare_axis(xp):
+    # Create a random set of rotations and compare the mean over an axis with the
+    # mean without axis of the sliced quaternion
+    atol = 1e-10 if xpx.default_dtype(xp) == xp.float64 else 1e-6
+    rng = np.random.default_rng(0)
+    q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
+    r = Rotation.from_quat(q)
+    mean_0 = r.mean(axis=0)
+    for i in range(q.shape[1]):
+        for j in range(q.shape[2]):
+            mean_slice = Rotation.from_quat(q[:, i, j, ...]).mean()
+            xp_assert_close((mean_0[i][j] * mean_slice.inv()).magnitude(),
+                            xp.asarray(0.0)[()], atol=atol)
+    mean_1_2 = r.mean(axis=(1, 2))
+    for i in range(q.shape[0]):
+        mean_slice = Rotation.from_quat(q[i, ...]).mean()
+        xp_assert_close((mean_1_2[i] * mean_slice.inv()).magnitude(),
+                        xp.asarray(0.0)[()], atol=atol)
+
+
 @make_xp_test_case(Rotation.from_rotvec, Rotation.mean, Rotation.inv,
                    Rotation.magnitude)
 @pytest.mark.parametrize("ndim", range(1, 4))
@@ -1348,7 +1391,7 @@ def test_weighted_mean(xp, ndim: int):
 
 
 @make_xp_test_case(Rotation.mean)
-def test_mean_invalid_weights(xp):
+def test_mean_input_validation(xp):
     r = Rotation.from_quat(xp.eye(4))
     if is_lazy_array(r.as_quat()):
         m = r.mean(weights=-xp.ones(4))
@@ -1358,12 +1401,22 @@ def test_mean_invalid_weights(xp):
             r.mean(weights=-xp.ones(4))
 
     # Test weight shape mismatch
-    r = Rotation.from_quat(xp.ones((4,)))
+    r = Rotation.from_quat(xp.ones((3, 4)))
     with pytest.raises(ValueError, match="Expected `weights` to"):
         r.mean(weights=xp.ones((2,)))
     r = Rotation.from_quat(xp.ones((2, 3, 4)))
     with pytest.raises(ValueError, match="Expected `weights` to"):
-        r.mean(weights=xp.ones((2, 1)))
+        r.mean(weights=xp.ones((2, 2)))
+
+    # Test wrong axis
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=3)
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=(-1, 2))
+    with pytest.raises(ValueError, match="`axis` must be None, int, or tuple of ints."):
+        r.mean(axis="0")
+    with pytest.raises(ValueError, match=r"axis .* is out of bounds"):
+        r.mean(axis=-12)
 
 
 @make_xp_test_case(Rotation.reduce)
