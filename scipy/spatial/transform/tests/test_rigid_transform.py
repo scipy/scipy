@@ -670,14 +670,26 @@ def test_from_as_internal_consistency(xp, ndim: int):
 def test_identity():
     # We do not use xp here because identity always returns numpy arrays
     atol = 1e-12
-
     # Test single identity
     tf = RigidTransform.identity()
     xp_assert_close(tf.as_matrix(), np.eye(4), atol=atol)
-
     # Test multiple identities
     tf = RigidTransform.identity(5)
     xp_assert_close(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
+    # Test shape
+    tf = RigidTransform.identity(shape=3)
+    expected = np.tile(np.eye(4), (3, 1, 1))
+    xp_assert_close(tf.as_matrix(), expected, atol=atol)
+    tf = RigidTransform.identity(shape=(2, 3))
+    expected = np.tile(np.eye(4), (2, 3, 1, 1))
+    xp_assert_close(tf.as_matrix(), expected, atol=atol)
+    # Test errors
+    with pytest.raises(ValueError, match="Only one of `num` and `shape` can be."):
+        RigidTransform.identity(10, shape=(2, 3))
+    with pytest.raises(TypeError, match="takes from 0 to 1 positional arguments"):
+        RigidTransform.identity(None, (-1, 3))  # Shape is kwarg only
+    with pytest.raises(ValueError, match="`shape` must be an int or a tuple of ints"):
+        RigidTransform.identity(shape="invalid")
 
 
 @make_xp_test_case(RigidTransform.apply)

@@ -864,7 +864,9 @@ class RigidTransform:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def identity(num: int | None = None) -> RigidTransform:
+    def identity(
+        num: int | None = None, *, shape: int | tuple[int, ...] | None = None
+    ) -> RigidTransform:
         """Initialize an identity transform.
 
         Composition with the identity transform has no effect, and
@@ -875,6 +877,9 @@ class RigidTransform:
         num : int, optional
             Number of identity transforms to generate. If None (default),
             then a single transform is generated.
+        shape : int or tuple of ints, optional
+            Shape of the identity transforms. If specified, `num` must
+            be None.
 
         Returns
         -------
@@ -931,10 +936,17 @@ class RigidTransform:
         >>> len(tf)
         2
         """
-        if num is None:
-            matrix = np.eye(4)
-        else:
-            matrix = np.tile(np.eye(4), (num, 1, 1))
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` and `shape` can be specified.")
+        if num is None and shape is None:
+            shape = ()
+        elif num is not None:
+            shape = (num,)
+        elif isinstance(shape, int):
+            shape = (shape,)
+        elif not isinstance(shape, tuple):
+            raise ValueError("`shape` must be an int or a tuple of ints or None.")
+        matrix = np.tile(np.eye(4), shape + (1, 1))
         # No need for a backend call here since identity is easy to construct and we are
         # currently not offering a backend-specific identity matrix
         return RigidTransform._from_raw_matrix(matrix, array_namespace(matrix))
