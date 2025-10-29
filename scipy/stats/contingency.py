@@ -28,7 +28,7 @@ from ._stats_py import power_divergence, _untabulate
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
-from scipy._lib._array_api import xp_capabilities
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_result_type
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -420,6 +420,36 @@ def _chi2_monte_carlo_method(observed, expected, method):
 
     return stats.monte_carlo_test(observed.ravel(), rvs, statistic,
                                   alternative='greater', **method)
+
+
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
+def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
+    # vectorized implementation of chi2_contingency for batches of 2D tables
+    # (chi2_contingency works for ND tables, so it can't be vectorized)
+    xp = array_namespace(observed) if xp is None else xp
+    dtype = xp_result_type(observed.dtype, force_floating=True, xp=xp)
+    batch_shape = observed.shape[:-2]
+    table_shape = observed.shape[-2:]
+    rowsum = xp.sum(observed, axis=-1, keepdims=True)
+    colsum = xp.sum(observed, axis=-2, keepdims=True)
+    tablesum = xp.sum(rowsum, axis=-2, keepdims=True)
+    expected = rowsum * colsum / tablesum
+    dof = math.prod(table_shape) - sum(table_shape) + 1
+    ddof = sum(table_shape) - 2
+    if dof == 0:
+        return (xp.zeros(batch_shape, dtype=dtype)[()],
+                xp.ones(batch_shape, dtype=dtype)[()])
+    elif correction and dof == 1:
+        diff = expected - observed
+        direction = xp.sign(diff)
+        magnitude = xp.minimum(xp.asarray(0.5, dtype=diff.dtype), xp.abs(diff))
+        observed = observed + magnitude * direction
+
+    observed = xp.reshape(observed, batch_shape + (-1,))
+    expected = xp.reshape(expected, batch_shape + (-1,))
+
+    return stats.power_divergence(observed, expected, lambda_=lambda_,
+                                  ddof=ddof, axis=-1)
 
 
 @xp_capabilities(np_only=True)
