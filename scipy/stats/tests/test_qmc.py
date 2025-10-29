@@ -883,7 +883,6 @@ class TestSobol(QMCEngineTests):
         assert_array_equal(self.unscramble_nd, sample)
 
 
-
 class TestLow0Bit:
     def test_examples(self):
         test_vector = [
