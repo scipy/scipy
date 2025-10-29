@@ -728,6 +728,15 @@ class beta_gen(rv_continuous):
     the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
     methods. [1]_
 
+    Maximum likelihood estimates of parameters are only available when the location and
+    scale are fixed. When either of these parameters is free, ``beta.fit`` resorts to
+    numerical optimization, but this problem is unbounded: the location and scale may be
+    chosen to make the minimum and maximum elements of the data coincide with the
+    endpoints of the support, and the shape parameters may be chosen to make the PDF at
+    these points infinite. For best results, pass ``floc`` and ``fscale`` keyword
+    arguments to fix the location and scale, or use `scipy.stats.fit` with
+    ``method='mse'``.
+
     %(after_notes)s
 
     References
@@ -5494,7 +5503,7 @@ class norminvgauss_gen(rv_continuous):
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 
     In SciPy, this corresponds to
-    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+    :math:`a=\alpha \delta, b=\beta \delta, \text{loc}=\mu, \text{scale}=\delta`.
 
     References
     ----------
@@ -7583,10 +7592,10 @@ class moyal_gen(rv_continuous):
            The London, Edinburgh, and Dublin Philosophical Magazine
            and Journal of Science, vol 46, 263-280, (1955).
            :doi:`10.1080/14786440308521076` (gated)
-    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+    .. [2] G. Cordeiro et al., "The beta Moyal: A useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
            vol 10, 171-192, (2012).
-           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+           https://www.arpapress.com/files/volumes/vol10issue2/ijrras_10_2_02.pdf
     .. [3] C. Walck, "Handbook on Statistical Distributions for
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
@@ -11825,7 +11834,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
-           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
+           vol. 1, 2023. :doi:`10.1080/27684520.2023.2279060`
 
     .. versionadded:: 0.19.0
 

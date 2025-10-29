@@ -159,9 +159,9 @@ class TestBinnedStatistic:
 
     def test_1d_range_keyword(self):
         # Regression test for gh-3063, range can be (min, max) or [(min, max)]
-        np.random.seed(9865)
+        rng = np.random.default_rng(6823616729)
         x = np.arange(30)
-        data = np.random.random(30)
+        data = rng.random(30)
 
         mean, bins, _ = binned_statistic(x[:15], data[:15])
         mean_range, bins_range, _ = binned_statistic(x, data, range=[(0, 14)])
@@ -479,8 +479,9 @@ class TestBinnedStatistic:
 
     def test_dd_binned_statistic_result(self):
         # NOTE: tests the reuse of bin_edges from previous call
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(8111360615)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = (bins, bins, bins)
 
@@ -494,8 +495,9 @@ class TestBinnedStatistic:
         assert_allclose(stat, stat2)
 
     def test_dd_zero_dedges(self):
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(1132724173)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)

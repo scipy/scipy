@@ -937,6 +937,14 @@ class logser_gen(rv_discrete):
         # logser.pmf(k) = - p**k / (k*log(1-p))
         return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
+    def _sf(self, k, p):
+        tiny = 1e-100
+        # Ideally, this is the unregularized beta function with `b=0`. We don't have
+        # an unregularized beta function (yet, although we could get it from Boost),
+        # and neither technically support `b=0` - despite the function being accurate
+        # for `b` super close to zero. See https://github.com/scipy/scipy/issues/3890.
+        return -special.betainc(k+1, tiny, p) * special.beta(k+1, tiny) / np.log1p(-p)
+
     def _stats(self, p):
         r = special.log1p(-p)
         mu = p / (p - 1.0) / r
