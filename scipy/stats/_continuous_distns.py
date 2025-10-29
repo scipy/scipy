@@ -5503,7 +5503,7 @@ class norminvgauss_gen(rv_continuous):
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 
     In SciPy, this corresponds to
-    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+    :math:`a=\alpha \delta, b=\beta \delta, \text{loc}=\mu, \text{scale}=\delta`.
 
     References
     ----------
@@ -7592,10 +7592,10 @@ class moyal_gen(rv_continuous):
            The London, Edinburgh, and Dublin Philosophical Magazine
            and Journal of Science, vol 46, 263-280, (1955).
            :doi:`10.1080/14786440308521076` (gated)
-    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+    .. [2] G. Cordeiro et al., "The beta Moyal: A useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
            vol 10, 171-192, (2012).
-           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+           https://www.arpapress.com/files/volumes/vol10issue2/ijrras_10_2_02.pdf
     .. [3] C. Walck, "Handbook on Statistical Distributions for
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
@@ -11834,7 +11834,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
-           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
+           vol. 1, 2023. :doi:`10.1080/27684520.2023.2279060`
 
     .. versionadded:: 0.19.0
 

@@ -17,6 +17,8 @@ mkdir $ROOT_DIR/.tmp
 git clone $REPO_URL $ROOT_DIR/.tmp
 pushd $ROOT_DIR/.tmp
 git checkout $COMMIT_HASH
+# TODO: delete this git apply when qhull v8.2.0 is released
+git apply ../../patches/poly2rc.patch
 pushd src/libqhull_r/
 rm *.htm
 rm *.pro

@@ -30,7 +30,7 @@ import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
-from scipy import optimize
+from scipy import optimize, special
 from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
@@ -3190,67 +3190,79 @@ class TestGZscore:
         assert isinstance(z, np.ma.MaskedArray)
 
 
+@make_xp_test_case(stats.median_abs_deviation)
 class TestMedianAbsDeviation:
     def setup_method(self):
-        self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
-                                 3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
-                                 3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan])
-        self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                             3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7,
-                             3.7, 3.7, 3.7, 3.77, 5.28, 28.95])
+        self.dat_nan = [2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
+                        3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
+                        3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan]
+        self.dat = [2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                    3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7,
+                    3.7, 3.7, 3.7, 3.77, 5.28, 28.95]
 
-    def test_median_abs_deviation(self):
-        assert_almost_equal(stats.median_abs_deviation(self.dat, axis=None),
-                            0.355)
-        dat = self.dat.reshape(6, 4)
+    def test_median_abs_deviation(self, xp):
+        xp_assert_close(stats.median_abs_deviation(xp.asarray(self.dat), axis=None),
+                        xp.asarray(0.355))
+        dat = xp.reshape(xp.asarray(self.dat), (6, 4))
         mad = stats.median_abs_deviation(dat, axis=0)
-        mad_expected = np.asarray([0.435, 0.5, 0.45, 0.4])
-        assert_array_almost_equal(mad, mad_expected)
+        mad_expected = xp.asarray([0.435, 0.5, 0.45, 0.4])
+        xp_assert_close(mad, mad_expected)
 
-    def test_mad_nan_omit(self):
-        mad = stats.median_abs_deviation(self.dat_nan, nan_policy='omit')
-        assert_almost_equal(mad, 0.34)
+    def test_mad_nan_omit(self, xp):
+        mad = stats.median_abs_deviation(xp.asarray(self.dat_nan), nan_policy='omit')
+        xp_assert_close(mad, xp.asarray(0.34))
 
-    def test_axis_and_nan(self):
-        x = np.array([[1.0, 2.0, 3.0, 4.0, np.nan],
-                      [1.0, 4.0, 5.0, 8.0, 9.0]])
+    def test_axis_and_nan(self, xp):
+        x = xp.asarray([[1.0, 2.0, 3.0, 4.0, np.nan],
+                        [1.0, 4.0, 5.0, 8.0, 9.0]])
         mad = stats.median_abs_deviation(x, axis=1)
-        assert_equal(mad, np.array([np.nan, 3.0]))
+        xp_assert_close(mad, xp.asarray([np.nan, 3.0]))
 
-    def test_nan_policy_omit_with_inf(self):
-        z = np.array([1, 3, 4, 6, 99, np.nan, np.inf])
+    def test_nan_policy_omit_with_inf(self, xp):
+        z = xp.asarray([1, 3, 4, 6, 99, np.nan, np.inf])
         mad = stats.median_abs_deviation(z, nan_policy='omit')
-        assert_equal(mad, 3.0)
+        xp_assert_close(mad, xp.asarray(3.0))
 
     @pytest.mark.parametrize('axis', [0, 1, 2, None])
-    def test_size_zero_with_axis(self, axis):
-        x = np.zeros((3, 0, 4))
-        mad = stats.median_abs_deviation(x, axis=axis)
-        assert_equal(mad, np.full_like(x.sum(axis=axis), fill_value=np.nan))
+    def test_size_zero_with_axis(self, axis, xp):
+        x = xp.zeros((3, 0, 4))
+        context = (eager_warns(SmallSampleWarning, match='too small', xp=np)
+                   if axis in {1, None} else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, axis=axis)
+        xp_assert_close(mad, xp.full_like(xp.sum(x, axis=axis), fill_value=xp.nan))
 
     @pytest.mark.parametrize('nan_policy, expected',
-                             [('omit', np.array([np.nan, 1.5, 1.5])),
-                              ('propagate', np.array([np.nan, np.nan, 1.5]))])
-    def test_nan_policy_with_axis(self, nan_policy, expected):
-        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                      [1, 5, 3, 6, np.nan, np.nan],
-                      [5, 6, 7, 9, 9, 10]])
-        mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
-        assert_equal(mad, expected)
+                             [('omit', [np.nan, 1.5, 1.5]),
+                              ('propagate', [np.nan, np.nan, 1.5])])
+    def test_nan_policy_with_axis(self, nan_policy, expected, xp):
+        if nan_policy=='omit' and not is_numpy(xp):
+            pytest.skip("nan_policy='omit' with n-d input only supported by NumPy")
+
+        x = xp.asarray([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                        [1, 5, 3, 6, np.nan, np.nan],
+                        [5, 6, 7, 9, 9, 10]])
+
+        context = (eager_warns(SmallSampleWarning, match="too small", xp=np)
+                   if nan_policy == 'omit' else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
+            xp_assert_close(mad, xp.asarray(expected))
 
     @pytest.mark.parametrize('axis, expected',
                              [(1, [2.5, 2.0, 12.0]), (None, 4.5)])
     def test_center_mean_with_nan(self, axis, expected):
+        # nan_policy='omit' with multidimensional input only supported by NumPy
         x = np.array([[1, 2, 4, 9, np.nan],
                       [0, 1, 1, 1, 12],
                       [-10, -10, -10, 20, 20]])
         mad = stats.median_abs_deviation(x, center=np.mean, nan_policy='omit',
                                          axis=axis)
-        assert_allclose(mad, expected, rtol=1e-15, atol=1e-15)
+        xp_assert_close(mad, expected, rtol=1e-15, atol=1e-15)
 
-    def test_center_not_callable(self):
+    def test_center_not_callable(self, xp):
         with pytest.raises(TypeError, match='callable'):
-            stats.median_abs_deviation([1, 2, 3, 5], center=99)
+            stats.median_abs_deviation(xp.asarray([1, 2, 3, 5]), center=99)
 
 
 def _check_warnings(warn_list, expected_type, expected_len):
@@ -7354,51 +7366,54 @@ class TestTrim:
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
+@make_xp_test_case(stats.sigmaclip)
 class TestSigmaClip:
-    def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip1(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, a.size)
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == a.shape
 
-    def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip2(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, 4)
-        assert_equal(a.size, 36)  # check original array unchanged
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == (4,)
+        assert a.shape == (36,)
 
-    def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip3(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5, 10.5, 11))
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        xp_assert_equal(c, xp.linspace(9.5, 10.5, 11))
 
-    def test_sigmaclip_result_attributes(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip_result_attributes(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_std_zero(self):
+    def test_std_zero(self, xp):
         # regression test #8632
-        x = np.ones(10)
-        assert_equal(stats.sigmaclip(x)[0], x)
+        x = xp.ones(10)
+        xp_assert_equal(stats.sigmaclip(x)[0], x)
 
 
 @make_xp_test_case(stats.alexandergovern)
@@ -7887,95 +7902,112 @@ class TestFOneWay:
             stats.f_oneway(a, b, axis=1)
 
 
+@make_xp_test_case(stats.kruskal)
 class TestKruskal:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1808365978)
-
-    def test_simple(self):
-        x = [1]
-        y = [2]
-        h, p = stats.kruskal(x, y)
+    def test_array_like(self):
+        h, p = stats.kruskal([1], [2])
         assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
+        assert_allclose(p, stats.chi2.sf(h, 1))
 
-    def test_basic(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
+    def test_simple(self, xp):
+        x = xp.asarray([1])
+        y = xp.asarray([2])
         h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
+        xp_assert_close(h, xp.asarray(1.0))
+        dtype = xp_default_dtype(xp)
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(1, 1), dtype=dtype))
 
-    def test_simple_tie(self):
+    @pytest.mark.parametrize("dtype", ['float32', 'float64', None])
+    def test_basic(self, xp, dtype):
+        if dtype == 'float32' and np.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 3, 5, 7, 9], dtype=dtype)
+        y = xp.asarray([2, 4, 6, 8, 10], dtype=dtype)
+        h, p = stats.kruskal(x, y)
+        xp_assert_close(h, xp.asarray(3/11, dtype=dtype))
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(3/11, 1), dtype=dtype))
+
+    def test_simple_tie(self, xp):
         x = [1]
         y = [1, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = 1.5**2 + 2*2.25**2 - 12
         corr = 0.75
-        expected = h_uncorr / corr   # 0.5
-        h, p = stats.kruskal(x, y)
+        expected = xp.asarray(h_uncorr / corr)   # 0.5
+
         # Since the expression is simple and the exact answer is 0.5, it
         # should be safe to use assert_equal().
-        assert_equal(h, expected)
+        xp_assert_equal(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
 
-    def test_another_tie(self):
+    def test_another_tie(self, xp):
         x = [1, 1, 1, 2]
         y = [2, 2, 2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = (12. / 8. / 9.) * 4 * (3**2 + 6**2) - 3 * 9
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr
-        h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, expected)
+        expected = xp.asarray(h_uncorr / corr)
 
-    def test_three_groups(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
+
+    def test_three_groups(self, xp):
         # A test of stats.kruskal with three groups, with ties.
         x = [1, 1, 1]
         y = [2, 2, 2]
         z = [2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y), xp.asarray(z))
+
         h_uncorr = (12. / 8. / 9.) * (3*2**2 + 3*6**2 + 2*6**2) - 3 * 9  # 5.0
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr  # 7.0
-        h, p = stats.kruskal(x, y, z)
-        assert_approx_equal(h, expected)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 2))
+        expected = xp.asarray(h_uncorr / corr)  # 7.0
 
-    def test_empty(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(2.), expected))
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_empty(self, xp):
         # A test of stats.kruskal with three groups, with ties.
-        x = [1, 1, 1]
-        y = [2, 2, 2]
-        z = []
+        x = xp.asarray([1, 1, 1])
+        y = xp.asarray([2, 2, 2])
+        z = xp.asarray([], dtype=y.dtype)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+            res = stats.kruskal(x, y, z)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_kruskal_result_attributes(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
-        res = stats.kruskal(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        x[9] = xp.nan
 
-    def test_nan_policy(self):
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.kruskal(x, x), (np.nan, np.nan))
-        assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
+        res = stats.kruskal(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_large_no_samples(self):
+        res = stats.kruskal(x, x, nan_policy='omit')
+        xp_assert_equal(res.statistic, xp.asarray(0.0))
+        xp_assert_equal(res.pvalue, xp.asarray(1.0))
+
+        with pytest.raises(ValueError, match='The input contains nan values'):
+            stats.kruskal(x, x, nan_policy='raise')
+
+        with pytest.raises(ValueError, match='nan_policy must be one of...'):
+            stats.kruskal(x, x, nan_policy='foobar')
+
+    def test_large_samples(self, xp):
         # Test to see if large samples are handled correctly.
         n = 50000
-        x = self.rng.standard_normal(n)
-        y = self.rng.standard_normal(n) + 50
+        rng = np.random.default_rng(1808365978)
+        x = xp.asarray(rng.standard_normal(n))
+        y = xp.asarray(rng.standard_normal(n) + 50)
         h, p = stats.kruskal(x, y)
-        expected = 0
-        assert_approx_equal(p, expected)
+        xp_assert_close(p, xp.asarray(0., dtype=x.dtype))
 
-    def test_no_args_gh20661(self):
+    def test_no_args_gh20661(self, xp):
         message = r"Need at least two groups in stats.kruskal\(\)"
         with pytest.raises(ValueError, match=message):
             stats.kruskal()
