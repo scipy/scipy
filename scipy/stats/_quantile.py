@@ -42,7 +42,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis'}
+               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -306,6 +306,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         res = _quantile_hf(y, p, n, method, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
+    elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
+        res = _quantile_bc(y, p, n, method, xp)
 
     res = xpx.at(res, p_mask).set(xp.nan)
 
@@ -364,3 +366,20 @@ def _quantile_hd(y, p, n, xp):
     w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
+
+
+def _quantile_bc(y, p, n, method, xp):
+    # Methods retained for backward compatibility. NumPy documentation is not
+    # quite right about what these methods do: if `p * (n - 1)` is integral,
+    # that is used as the index. See numpy/numpy#28910.
+    ij = p * (n - 1)
+    if method == '_midpoint':
+        return (xp.take_along_axis(y, xp.astype(xp.floor(ij), xp.int64), axis=-1)
+                + xp.take_along_axis(y, xp.astype(xp.ceil(ij), xp.int64), axis=-1)) / 2
+    elif method == '_lower':
+        k = xp.floor(ij)
+    elif method == '_higher':
+        k = xp.ceil(ij)
+    elif method == '_nearest':
+        k = xp.round(ij)
+    return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)

@@ -3172,13 +3172,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
            [ 1.]])
 
     """
-    x = asarray(x)
-
-    # This check prevents percentile from raising an error later. Also, it is
-    # consistent with `np.var` and `np.std`.
-    if not x.size:
-        return _get_nan(x)
-
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
@@ -3187,29 +3180,27 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             raise ValueError(f"{scale} not a valid scale for `iqr`")
         scale = _scale_conversions[scale_key]
 
-    # Select the percentile function to use based on nans and policy
-    contains_nan = _contains_nan(x, nan_policy)
-
-    if nan_policy == 'omit' and contains_nan:
-        percentile_func = np.nanpercentile
-    else:
-        percentile_func = np.percentile
-
     if len(rng) != 2:
-        raise TypeError("quantile range must be two element sequence")
+        raise TypeError("`rng` must be a two element sequence.")
 
     if np.isnan(rng).any():
-        raise ValueError("range must not contain NaNs")
+        raise ValueError("`rng` must not contain NaNs.")
 
-    rng = sorted(rng)
-    pct = percentile_func(x, rng, axis=axis, method=interpolation,
-                          keepdims=keepdims)
-    out = np.subtract(pct[1], pct[0])
+    rng = (rng[0]/100, rng[1]/100) if rng[0] < rng[1] else (rng[1]/100, rng[0]/100)
+
+    if rng[0] < 0 or rng[1] > 1:
+        raise ValueError("Elements of `rng` must be in the range [0, 100].")
+
+    if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
+        interpolation = '_' + interpolation
+
+    pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
+    out = pct[..., 1:2] - pct[..., 0:1]
 
     if scale != 1.0:
         out /= scale
 
-    return out
+    return out[()] if keepdims else np.squeeze(out, axis=axis)[()]
 
 
 def _mad_1d(x, center, nan_policy):
