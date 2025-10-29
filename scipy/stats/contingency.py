@@ -23,12 +23,14 @@ Functions for creating and analyzing contingency tables.
 
 from functools import reduce
 import math
+import warnings
 import numpy as np
-from ._stats_py import power_divergence, _untabulate
+from ._stats_py import power_divergence, _untabulate, Power_divergenceResult
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_result_type
+from scipy._lib._array_api import (array_namespace, xp_capabilities, xp_result_type,
+                                   xp_size)
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 
@@ -430,6 +432,12 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
     dtype = xp_result_type(observed.dtype, force_floating=True, xp=xp)
     batch_shape = observed.shape[:-2]
     table_shape = observed.shape[-2:]
+
+    # Validate the sizes and shapes of the arguments.
+    if xp_size(observed) == 0:
+        nan = xp.full(batch_shape, xp.nan, dtype=dtype)
+        return Power_divergenceResult(nan, nan)
+
     rowsum = xp.sum(observed, axis=-1, keepdims=True)
     colsum = xp.sum(observed, axis=-2, keepdims=True)
     tablesum = xp.sum(rowsum, axis=-2, keepdims=True)

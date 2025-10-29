@@ -36,7 +36,8 @@ from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+                               too_small_nd_not_omit, SmallSampleWarning)
 
 
 __all__ = ['mvsdist',
@@ -3969,10 +3970,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     """
     # Todo:
-    #   - deal with empty smaples
-    #   - replace errors with NaN results
-    #   - vectorize nan_policy='propagate'
-    #   - correct nan_policy='omit'
+    #   - avoid warnings
     np = array_namespace(*samples)
     n_samples = len(samples)
 
@@ -3989,19 +3987,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     data = xp_promote(*data, force_floating=True, xp=np)
     batch_shape, dtype = data[0].shape[:-1], data[0].dtype
 
-    # Validate the sizes and shapes of the arguments.
-    for k, d in enumerate(data):
-        if d.size == 0:
-            raise ValueError(f"Sample {k + 1} is empty. All samples must "
-                             f"contain at least one value.")
-
     cdata = np.concat(data, axis=-1)
     contains_nan = _contains_nan(cdata, nan_policy)
-    if nan_policy == 'propagate' and contains_nan:
-        nan = np.full(batch_shape, np.nan, dtype=dtype)[()]
-        return MedianTestResult(nan, nan, nan, None)
 
-    if contains_nan:
+    # Todo: prevent this from warning
+    if nan_policy == 'omit' and contains_nan:
         grand_median = np.nanmedian(cdata, axis=-1, keepdims=True)
     else:
         grand_median = np.median(cdata, axis=-1, keepdims=True)
@@ -4012,7 +4002,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         nnan = count_nonzero(np.isnan(sample), axis=-1)
         nabove = count_nonzero(sample > grand_median, axis=-1)
         nbelow = count_nonzero(sample < grand_median, axis=-1)
-        nequal = sample.shape[-1] - (nabove + nbelow + nnan)
+        nequal = (count_nonzero(sample == grand_median, axis=-1)
+                  if nan_policy=='propagate'
+                  else sample.shape[-1] - (nabove + nbelow + nnan))
         table[..., 0, k] += nabove
         table[..., 1, k] += nbelow
         if ties == "below":
@@ -4022,6 +4014,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     grand_median = np.squeeze(grand_median, axis=-1)
 
+    # Todo: revive these as warnings?
     # Check that no row or column of the table is all zero.
     # Such a table can not be given to chi2_contingency, because it would have
     # a zero in the table of expected frequencies.
@@ -4042,9 +4035,14 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     #             f"median ({grand_median!r}), so they are ignored, resulting in an "
     #             f"empty sample."
     #         )
+    if any(array.shape[-1] == 0 for array in data):
+        warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
+        nan = np.full(batch_shape, np.nan, dtype=dtype)
+        MedianTestResult(nan, nan, grand_median[()], table[()])
 
-    stat, p = stats.contingency._chi2_contingency_2d(
-        table, lambda_=lambda_, correction=correction)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        stat, p = stats.contingency._chi2_contingency_2d(
+            table, lambda_=lambda_, correction=correction)
     return MedianTestResult(stat[()], p[()], grand_median[()], table[()])
 
 
