@@ -289,7 +289,8 @@ def _random_covariance(dim, evals, rng, singular=False):
 
 
 def _sample_orthonormal_matrix(n):
-    M = np.random.randn(n, n)
+    rng = np.random.default_rng(9086764251)
+    M = rng.standard_normal((n, n))
     u, s, v = scipy.linalg.svd(M)
     return u
 
@@ -1039,8 +1040,8 @@ class TestMultivariateNormal:
         assert_allclose(cdf, cdf[0]*expected_signs)
 
     @pytest.mark.slow
-    def test_cdf_vs_cubature(self):
-        ndim = 3
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_cdf_vs_cubature(self, ndim):
         rng = np.random.default_rng(123)
         a = rng.uniform(size=(ndim, ndim))
         cov = a.T @ a
@@ -3331,7 +3332,8 @@ class TestMultivariateT:
         # pdf() and logpdf() should return probabilities of shape
         # (n_samples,) when x has n_samples.
         n_samples = 7
-        x = np.random.random((n_samples, dim))
+        rng = np.random.default_rng(2767231913)
+        x = rng.random((n_samples, dim))
         res = multivariate_t(loc, shape, df).pdf(x)
         assert (res.shape == (n_samples,))
         res = multivariate_t(loc, shape, df).logpdf(x)

@@ -73,6 +73,18 @@ def weightedtau_weighted(x, y, rank, **kwargs):
     return stats.weightedtau(x, y, rank, **kwargs)
 
 
+def boxcox_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._morestats._boxcox_llf(data, lmb=lmb, axis=axis)
+    return stats.boxcox_llf(lmb, data, axis=axis, **kwargs)
+
+
+def yeojohnson_llf(data, lmb, axis=0, _no_deco=False, **kwargs):
+    if _no_deco:
+        return stats._morestats._yeojohnson_llf(data, lmb=lmb, axis=axis)
+    return stats.yeojohnson_llf(lmb, data, axis=axis, **kwargs)
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -89,6 +101,7 @@ axis_nan_policy_cases = [
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.trim_mean, (0.05,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -173,7 +186,9 @@ axis_nan_policy_cases = [
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
-    (stats._morestats._boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (stats.median_abs_deviation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
+    (yeojohnson_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -471,7 +486,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         res_1db = unpacker(res)
 
-        assert_allclose(res_1db, res_1da, rtol=1e-15)
+        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+        assert_allclose(res_1db, res_1da, rtol=4e-15)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -498,7 +514,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # Compare against the output against looping over 1D slices
     res_nd = unpacker(res)
 
-    assert_allclose(res_nd, res_1d, rtol=1e-14)
+    # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
+    assert_allclose(res_nd, res_1d, rtol=1e-11)
 
 # nan should not raise a exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
@@ -622,11 +639,13 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # Make sure any results returned by reference/public function are identical
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
-    assert_equal(res1dc, res1db)
+    # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+    assert_allclose(res1dc, res1db, rtol=7e-15)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
-        assert_allclose(res1db, res1da, rtol=1e-15)
+        # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
+        assert_allclose(res1db, res1da, rtol=7e-15)
         all_results += list(res1da)
 
     for item in all_results:
@@ -986,9 +1005,9 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays
-    np.random.seed(0)
-    A = np.random.rand(10, 11, 12)
-    B = np.random.rand(12)
+    rng = np.random.default_rng(805715284)
+    A = rng.random((10, 11, 12))
+    B = rng.random(12)
     mask = A < 0.5
     A = np.ma.masked_array(A, mask)
 
@@ -1119,10 +1138,10 @@ def test_masked_stat_1d():
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
-    np.random.seed(0)
-    a = np.random.rand(3, 4, 5)
-    b = np.random.rand(4, 5)
-    c = np.random.rand(4, 1)
+    rng = np.random.default_rng(3679428403)
+    a = rng.random((3, 4, 5))
+    b = rng.random((4, 5))
+    c = rng.random((4, 1))
 
     mask_a = a < 0.1
     mask_c = [False, False, False, True]

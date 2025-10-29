@@ -2514,8 +2514,9 @@ def hilbert(x, N=None, axis=-1):
     >>> ax0.plot(t, signal, label='Signal')
     >>> ax0.plot(t, amplitude_envelope, label='Envelope')
     >>> ax0.legend()
-    >>> ax1.set(xlabel="Time in seconds", ylabel="Phase in rad", ylim=(0, 120))
-    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-', label='Instantaneous Phase')
+    >>> ax1.set(xlabel="Time in seconds", ylabel="Frequency in Hz", ylim=(0, 120))
+    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-',
+    ...          label='Instantaneous Frequency')
     >>> ax1.legend()
     >>> plt.show()
 

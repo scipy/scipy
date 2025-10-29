@@ -6,755 +6,744 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy, make_xp_test_case
+from scipy._lib._array_api import is_numpy, make_xp_test_case, xp_default_dtype
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
+from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 import scipy.stats._resampling as _resampling
 
 
-def test_bootstrap_iv():
+@make_xp_test_case(bootstrap)
+class TestBootstrap:
+    @skip_xp_backends('numpy', reason='NumPy does not raise')
+    def test_bootstrap_iv_other(self, xp):
+        message = f"When using array library {xp.__name__}"
+        with pytest.raises(TypeError, match=message):
+            bootstrap((xp.asarray([1, 2, 3]),), lambda x: xp.mean(x))
 
-    message = "`data` must be a sequence of samples."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(1, np.mean)
+    def test_bootstrap_iv(self, xp):
+        sample = xp.asarray([1, 2, 3])
 
-    message = "`data` must contain at least one sample."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(tuple(), np.mean)
+        message = "`data` must contain at least one sample."
+        with pytest.raises(ValueError, match=message):
+            bootstrap(tuple(), xp.mean)
 
-    message = "each sample in `data` must contain two or more observations..."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3], [1]), np.mean)
+        message = "each sample in `data` must contain two or more observations..."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample, xp.asarray([1])), xp.mean)
 
-    message = ("When `paired is True`, all samples must have the same length ")
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
+        message = ("When `paired is True`, all samples must have the same length ")
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample, xp.asarray([1, 2, 3, 4])), xp.mean, paired=True)
 
-    message = "`vectorized` must be `True`, `False`, or `None`."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(1, np.mean, vectorized='ekki')
+        message = "`vectorized` must be `True`, `False`, or `None`."
+        with pytest.raises(ValueError, match=message):
+            bootstrap(sample, xp.mean, vectorized='ekki')
 
-    message = "`axis` must be an integer."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, axis=1.5)
+        message = "`axis` must be an integer."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, axis=1.5)
 
-    message = "could not convert string to float"
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, confidence_level='ni')
+        message = "could not convert string to float"
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, confidence_level='ni')
 
-    message = "`n_resamples` must be a non-negative integer."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, n_resamples=-1000)
+        message = "`n_resamples` must be a non-negative integer."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, n_resamples=-1000)
 
-    message = "`n_resamples` must be a non-negative integer."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, n_resamples=1000.5)
+        message = "`n_resamples` must be a non-negative integer."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, n_resamples=1000.5)
 
-    message = "`batch` must be a positive integer or None."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, batch=-1000)
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, batch=-1000)
 
-    message = "`batch` must be a positive integer or None."
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, batch=1000.5)
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, batch=1000.5)
 
-    message = "`method` must be in"
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, method='ekki')
+        message = "`method` must be in"
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, method='ekki')
 
-    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, bootstrap_result=10)
+        message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, bootstrap_result=10)
 
-    message = "Either `bootstrap_result.bootstrap_distribution.size`"
-    with pytest.raises(ValueError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, n_resamples=0)
+        message = "Either `bootstrap_result.bootstrap_distribution.size`"
+        with pytest.raises(ValueError, match=message):
+            bootstrap((sample,), xp.mean, n_resamples=0)
 
-    message = "SeedSequence expects int or sequence of ints"
-    with pytest.raises(TypeError, match=message):
-        bootstrap(([1, 2, 3],), np.mean, rng='herring')
+        message = "SeedSequence expects int or sequence of ints"
+        with pytest.raises(TypeError, match=message):
+            bootstrap((sample,), xp.mean, rng='herring')
 
+    @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+    @pytest.mark.parametrize("axis", [0, 1, 2])
+    def test_bootstrap_batch(self, method, axis, xp):
+        # for one-sample statistics, batch size shouldn't affect the result
+        rng = np.random.RandomState(0)
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-@pytest.mark.parametrize("axis", [0, 1, 2])
-def test_bootstrap_batch(method, axis):
-    # for one-sample statistics, batch size shouldn't affect the result
-    rng = np.random.RandomState(0)
+        x = rng.rand(10, 11, 12)
+        # SPEC-007 leave one call with random_state to ensure it still works
+        res1 = bootstrap((xp.asarray(x),), xp.mean, batch=None, method=method,
+                         random_state=0, axis=axis, n_resamples=100)
+        rng = np.random.RandomState(0)
+        res2 = bootstrap((xp.asarray(x),), xp.mean, batch=10, method=method,
+                         axis=axis, n_resamples=100, random_state=rng)
 
-    x = rng.rand(10, 11, 12)
-    # SPEC-007 leave one call with random_state to ensure it still works
-    res1 = bootstrap((x,), np.mean, batch=None, method=method,
-                     random_state=0, axis=axis, n_resamples=100)
-    rng = np.random.RandomState(0)
-    res2 = bootstrap((x,), np.mean, batch=10, method=method,
-                     axis=axis, n_resamples=100, random_state=rng)
+        xp_assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
+        xp_assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
+        xp_assert_equal(res2.standard_error, res1.standard_error)
 
-    assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
-    assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
-    assert_equal(res2.standard_error, res1.standard_error)
+    @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+    def test_bootstrap_paired(self, method, xp):
+        # test that `paired` works as expected
+        rng = np.random.RandomState(0)
+        n = 100
+        x = xp.asarray(rng.rand(n))
+        y = xp.asarray(rng.rand(n))
 
+        def my_statistic(x, y, axis=-1):
+            return xp.mean((x-y)**2, axis=axis)
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-def test_bootstrap_paired(method):
-    # test that `paired` works as expected
-    rng = np.random.RandomState(0)
-    n = 100
-    x = rng.rand(n)
-    y = rng.rand(n)
+        def my_paired_statistic(i, axis=-1):
+            a = x[i]
+            b = y[i]
+            res = my_statistic(a, b)
+            return res
 
-    def my_statistic(x, y, axis=-1):
-        return ((x-y)**2).mean(axis=axis)
+        i = xp.arange(x.shape[0])
 
-    def my_paired_statistic(i, axis=-1):
-        a = x[i]
-        b = y[i]
-        res = my_statistic(a, b)
-        return res
+        res1 = bootstrap((i,), my_paired_statistic, rng=0)
+        res2 = bootstrap((x, y), my_statistic, paired=True, rng=0)
 
-    i = np.arange(len(x))
+        xp_assert_close(res1.confidence_interval.low, res2.confidence_interval.low)
+        xp_assert_close(res1.confidence_interval.high, res2.confidence_interval.high)
+        xp_assert_close(res1.standard_error, res2.standard_error)
 
-    res1 = bootstrap((i,), my_paired_statistic, rng=0)
-    res2 = bootstrap((x, y), my_statistic, paired=True, rng=0)
+    @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+    @pytest.mark.parametrize("axis", [0, 1, 2])
+    @pytest.mark.parametrize("paired", [True, False])
+    def test_bootstrap_vectorized(self, method, axis, paired, xp):
+        # test that paired is vectorized as expected: when samples are tiled,
+        # CI and standard_error of each axis-slice is the same as those of the
+        # original 1d sample
 
-    assert_allclose(res1.confidence_interval, res2.confidence_interval)
-    assert_allclose(res1.standard_error, res2.standard_error)
+        rng = np.random.RandomState(0)
 
+        def my_statistic(x, y, z, axis=-1):
+            return xp.mean(x, axis=axis) + xp.mean(y, axis=axis) + xp.mean(z, axis=axis)
 
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-@pytest.mark.parametrize("axis", [0, 1, 2])
-@pytest.mark.parametrize("paired", [True, False])
-def test_bootstrap_vectorized(method, axis, paired):
-    # test that paired is vectorized as expected: when samples are tiled,
-    # CI and standard_error of each axis-slice is the same as those of the
-    # original 1d sample
+        shape = 10, 11, 12
+        n_samples = shape[axis]
 
-    rng = np.random.RandomState(0)
+        x = rng.rand(n_samples)
+        y = rng.rand(n_samples)
+        z = rng.rand(n_samples)
+        x, y, z = xp.asarray(x), xp.asarray(y), xp.asarray(z)
 
-    def my_statistic(x, y, z, axis=-1):
-        return x.mean(axis=axis) + y.mean(axis=axis) + z.mean(axis=axis)
+        res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
+                         rng=0, axis=0, n_resamples=100)
+        assert (res1.bootstrap_distribution.shape
+                == res1.standard_error.shape + (100,))
 
-    shape = 10, 11, 12
-    n_samples = shape[axis]
+        reshape = [1, 1, 1]
+        reshape[axis] = n_samples
+        reshape = tuple(reshape)
+        x = xp.broadcast_to(xp.reshape(x, reshape), shape)
+        y = xp.broadcast_to(xp.reshape(y, reshape), shape)
+        z = xp.broadcast_to(xp.reshape(z, reshape), shape)
+        res2 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
+                         rng=0, axis=axis, n_resamples=100)
 
-    x = rng.rand(n_samples)
-    y = rng.rand(n_samples)
-    z = rng.rand(n_samples)
-    res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
-                     rng=0, axis=0, n_resamples=100)
-    assert (res1.bootstrap_distribution.shape
-            == res1.standard_error.shape + (100,))
+        result_shape = list(shape)
+        result_shape.pop(axis)
 
-    reshape = [1, 1, 1]
-    reshape[axis] = n_samples
-    x = np.broadcast_to(x.reshape(reshape), shape)
-    y = np.broadcast_to(y.reshape(reshape), shape)
-    z = np.broadcast_to(z.reshape(reshape), shape)
-    res2 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
-                     rng=0, axis=axis, n_resamples=100)
+        ref_ci_low = xp.broadcast_to(res2.confidence_interval.low, result_shape)
+        ref_ci_high = xp.broadcast_to(res2.confidence_interval.high, result_shape)
+        ref_ci_standard_error = xp.broadcast_to(res2.standard_error, result_shape)
 
-    assert_allclose(res2.confidence_interval.low,
-                    res1.confidence_interval.low)
-    assert_allclose(res2.confidence_interval.high,
-                    res1.confidence_interval.high)
-    assert_allclose(res2.standard_error, res1.standard_error)
+        xp_assert_close(res2.confidence_interval.low, ref_ci_low)
+        xp_assert_close(res2.confidence_interval.high, ref_ci_high)
+        xp_assert_close(res2.standard_error, ref_ci_standard_error)
 
-    result_shape = list(shape)
-    result_shape.pop(axis)
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("MemoryError with BCa observed in CI")
+    @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+    def test_bootstrap_against_theory(self, method, xp):
+        # based on https://www.statology.org/confidence-intervals-python/
+        rng = np.random.default_rng(2442101192988600726)
+        data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=rng)
+        alpha = 0.95
+        dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
+        ref_low, ref_high = dist.interval(confidence=alpha)
+        ref_se = dist.std()
 
-    assert_equal(res2.confidence_interval.low.shape, result_shape)
-    assert_equal(res2.confidence_interval.high.shape, result_shape)
-    assert_equal(res2.standard_error.shape, result_shape)
+        config = dict(data=(xp.asarray(data),), statistic=xp.mean, n_resamples=5000,
+                      method=method, rng=rng)
+        res = bootstrap(**config, confidence_level=alpha)
 
+        xp_assert_close(res.confidence_interval.low, xp.asarray(ref_low), rtol=5e-4)
+        xp_assert_close(res.confidence_interval.high, xp.asarray(ref_high), rtol=5e-4)
+        xp_assert_close(res.standard_error, xp.asarray(ref_se), atol=3e-4)
 
-@pytest.mark.slow
-@pytest.mark.xfail_on_32bit("MemoryError with BCa observed in CI")
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-def test_bootstrap_against_theory(method):
-    # based on https://www.statology.org/confidence-intervals-python/
-    rng = np.random.default_rng(2442101192988600726)
-    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=rng)
-    alpha = 0.95
-    dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
-    expected_interval = dist.interval(confidence=alpha)
-    expected_se = dist.std()
+        config.update(dict(n_resamples=0, bootstrap_result=res))
+        res = bootstrap(**config, confidence_level=alpha, alternative='less')
+        xp_assert_close(res.confidence_interval.high,
+                        xp.asarray(dist.ppf(alpha)), rtol=5e-4)
 
-    config = dict(data=(data,), statistic=np.mean, n_resamples=5000,
-                  method=method, rng=rng)
-    res = bootstrap(**config, confidence_level=alpha)
-    assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
-    assert_allclose(res.standard_error, expected_se, atol=3e-4)
+        config.update(dict(n_resamples=0, bootstrap_result=res))
+        res = bootstrap(**config, confidence_level=alpha, alternative='greater')
+        xp_assert_close(res.confidence_interval.low,
+                        xp.asarray(dist.ppf(1-alpha)), rtol=5e-4)
 
-    config.update(dict(n_resamples=0, bootstrap_result=res))
-    res = bootstrap(**config, confidence_level=alpha, alternative='less')
-    assert_allclose(res.confidence_interval.high, dist.ppf(alpha), rtol=5e-4)
+    tests_R = [("basic", 23.77, 79.12),
+               ("percentile", 28.86, 84.21),
+               ("BCa", 32.31, 91.43)]
 
-    config.update(dict(n_resamples=0, bootstrap_result=res))
-    res = bootstrap(**config, confidence_level=alpha, alternative='greater')
-    assert_allclose(res.confidence_interval.low, dist.ppf(1-alpha), rtol=5e-4)
+    @pytest.mark.parametrize("method, ref_low, ref_high", tests_R)
+    def test_bootstrap_against_R(self, method, ref_low, ref_high, xp):
+        # Compare against R's "boot" library
+        # library(boot)
 
+        # stat <- function (x, a) {
+        #     mean(x[a])
+        # }
 
-tests_R = {"basic": (23.77, 79.12),
-           "percentile": (28.86, 84.21),
-           "BCa": (32.31, 91.43)}
+        # x <- c(10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
+        #        23, 34, 50, 81, 89, 121, 134, 213)
 
+        # # Use a large value so we get a few significant digits for the CI.
+        # n = 1000000
+        # bootresult = boot(x, stat, n)
+        # result <- boot.ci(bootresult)
+        # print(result)
+        x = xp.asarray([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
+                        23, 34, 50, 81, 89, 121, 134, 213])
+        res = bootstrap((x,), xp.mean, n_resamples=1000000, method=method, rng=0)
+        xp_assert_close(res.confidence_interval.low, xp.asarray(ref_low), rtol=0.005)
+        xp_assert_close(res.confidence_interval.high, xp.asarray(ref_high), rtol=0.005)
 
-@pytest.mark.parametrize("method, expected", tests_R.items())
-def test_bootstrap_against_R(method, expected):
-    # Compare against R's "boot" library
-    # library(boot)
+    def test_multisample_BCa_against_R(self, xp):
+        # Because bootstrap is stochastic, it's tricky to test against reference
+        # behavior. Here, we show that SciPy's BCa CI matches R wboot's BCa CI
+        # much more closely than the other SciPy CIs do.
 
-    # stat <- function (x, a) {
-    #     mean(x[a])
-    # }
+        # arbitrary skewed data
+        x = xp.asarray([0.75859206, 0.5910282, -0.4419409, -0.36654601,
+                        0.34955357, -1.38835871, 0.76735821])
+        y = xp.asarray([1.41186073, 0.49775975, 0.08275588, 0.24086388,
+                        0.03567057, 0.52024419, 0.31966611, 1.32067634])
 
-    # x <- c(10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
-    #        23, 34, 50, 81, 89, 121, 134, 213)
+        # a multi-sample statistic for which the BCa CI tends to be different
+        # from the other CIs
+        def statistic(x, y, axis):
+            s1 = stats.skew(x, axis=axis)
+            s2 = stats.skew(y, axis=axis)
+            return s1 - s2
 
-    # # Use a large value so we get a few significant digits for the CI.
-    # n = 1000000
-    # bootresult = boot(x, stat, n)
-    # result <- boot.ci(bootresult)
-    # print(result)
-    x = np.array([10, 12, 12.5, 12.5, 13.9, 15, 21, 22,
-                  23, 34, 50, 81, 89, 121, 134, 213])
-    res = bootstrap((x,), np.mean, n_resamples=1000000, method=method,
-                    rng=0)
-    assert_allclose(res.confidence_interval, expected, rtol=0.005)
+        # compute confidence intervals using each method
+        rng = np.random.default_rng(468865032284792692)
 
-
-def test_multisample_BCa_against_R():
-    # Because bootstrap is stochastic, it's tricky to test against reference
-    # behavior. Here, we show that SciPy's BCa CI matches R wboot's BCa CI
-    # much more closely than the other SciPy CIs do.
-
-    # arbitrary skewed data
-    x = [0.75859206, 0.5910282, -0.4419409, -0.36654601,
-         0.34955357, -1.38835871, 0.76735821]
-    y = [1.41186073, 0.49775975, 0.08275588, 0.24086388,
-         0.03567057, 0.52024419, 0.31966611, 1.32067634]
-
-    # a multi-sample statistic for which the BCa CI tends to be different
-    # from the other CIs
-    def statistic(x, y, axis):
-        s1 = stats.skew(x, axis=axis)
-        s2 = stats.skew(y, axis=axis)
-        return s1 - s2
-
-    # compute confidence intervals using each method
-    rng = np.random.default_rng(468865032284792692)
-
-    res_basic = stats.bootstrap((x, y), statistic, method='basic',
-                                batch=100, rng=rng)
-    res_percent = stats.bootstrap((x, y), statistic, method='percentile',
+        res_basic = stats.bootstrap((x, y), statistic, method='basic',
+                                    batch=100, rng=rng)
+        res_percent = stats.bootstrap((x, y), statistic, method='percentile',
+                                      batch=100, rng=rng)
+        res_bca = stats.bootstrap((x, y), statistic, method='bca',
                                   batch=100, rng=rng)
-    res_bca = stats.bootstrap((x, y), statistic, method='bca',
-                              batch=100, rng=rng)
-
-    # compute midpoints so we can compare just one number for each
-    mid_basic = np.mean(res_basic.confidence_interval)
-    mid_percent = np.mean(res_percent.confidence_interval)
-    mid_bca = np.mean(res_bca.confidence_interval)
-
-    # reference for BCA CI computed using R wboot package:
-    # library(wBoot)
-    # library(moments)
-
-    # x = c(0.75859206, 0.5910282, -0.4419409, -0.36654601,
-    #       0.34955357, -1.38835871,  0.76735821)
-    # y = c(1.41186073, 0.49775975, 0.08275588, 0.24086388,
-    #       0.03567057, 0.52024419, 0.31966611, 1.32067634)
-
-    # twoskew <- function(x1, y1) {skewness(x1) - skewness(y1)}
-    # boot.two.bca(x, y, skewness, conf.level = 0.95,
-    #              R = 9999, stacked = FALSE)
-    mid_wboot = -1.5519
-
-    # compute percent difference relative to wboot BCA method
-    diff_basic = (mid_basic - mid_wboot)/abs(mid_wboot)
-    diff_percent = (mid_percent - mid_wboot)/abs(mid_wboot)
-    diff_bca = (mid_bca - mid_wboot)/abs(mid_wboot)
-
-    # SciPy's BCa CI midpoint is much closer than that of the other methods
-    assert diff_basic < -0.15
-    assert diff_percent > 0.15
-    assert abs(diff_bca) < 0.03
-
-
-def test_BCa_acceleration_against_reference():
-    # Compare the (deterministic) acceleration parameter for a multi-sample
-    # problem against a reference value. The example is from [1], but Efron's
-    # value seems inaccurate. Straightforward code for computing the
-    # reference acceleration (0.011008228344026734) is available at:
-    # https://github.com/scipy/scipy/pull/16455#issuecomment-1193400981
-
-    y = np.array([10, 27, 31, 40, 46, 50, 52, 104, 146])
-    z = np.array([16, 23, 38, 94, 99, 141, 197])
-
-    def statistic(z, y, axis=0):
-        return np.mean(z, axis=axis) - np.mean(y, axis=axis)
-
-    data = [z, y]
-    res = stats.bootstrap(data, statistic)
-
-    axis = -1
-    alpha = 0.95
-    theta_hat_b = res.bootstrap_distribution
-    batch = 100
-    _, _, a_hat = _resampling._bca_interval(data, statistic, axis, alpha,
-                                            theta_hat_b, batch)
-    assert_allclose(a_hat, 0.011008228344026734)
-
-
-tests_against_itself_1samp = {"basic": 1789,
-                              "percentile": 1790,
-                              "BCa": 1789}
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("method, expected",
-                         tests_against_itself_1samp.items())
-def test_bootstrap_against_itself_1samp(method, expected):
-    # The expected values in this test were generated using bootstrap
-    # to check for unintended changes in behavior. The test also makes sure
-    # that bootstrap works with multi-sample statistics and that the
-    # `axis` argument works as expected / function is vectorized.
-    rng = np.random.default_rng(9123847)
-
-    n = 100  # size of sample
-    n_resamples = 999  # number of bootstrap resamples used to form each CI
-    confidence_level = 0.9
-
-    # The true mean is 5
-    dist = stats.norm(loc=5, scale=1)
-    stat_true = dist.mean()
-
-    # Do the same thing 2000 times. (The code is fully vectorized.)
-    n_replications = 2000
-    data = dist.rvs(size=(n_replications, n), random_state=rng)
-    res = bootstrap((data,),
-                    statistic=np.mean,
-                    confidence_level=confidence_level,
-                    n_resamples=n_resamples,
-                    batch=50,
-                    method=method,
-                    axis=-1,
-                    rng=rng)
-    ci = res.confidence_interval
-
-    # ci contains vectors of lower and upper confidence interval bounds
-    ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
-    assert ci_contains_true == expected
-
-    # ci_contains_true is not inconsistent with confidence_level
-    pvalue = stats.binomtest(ci_contains_true, n_replications,
-                             confidence_level).pvalue
-    assert pvalue > 0.1
-
-
-tests_against_itself_2samp = {"basic": 892,
-                              "percentile": 890}
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("method, expected",
-                         tests_against_itself_2samp.items())
-def test_bootstrap_against_itself_2samp(method, expected):
-    # The expected values in this test were generated using bootstrap
-    # to check for unintended changes in behavior. The test also makes sure
-    # that bootstrap works with multi-sample statistics and that the
-    # `axis` argument works as expected / function is vectorized.
-    rng = np.random.RandomState(0)
-
-    n1 = 100  # size of sample 1
-    n2 = 120  # size of sample 2
-    n_resamples = 999  # number of bootstrap resamples used to form each CI
-    confidence_level = 0.9
-
-    # The statistic we're interested in is the difference in means
-    def my_stat(data1, data2, axis=-1):
-        mean1 = np.mean(data1, axis=axis)
-        mean2 = np.mean(data2, axis=axis)
-        return mean1 - mean2
-
-    # The true difference in the means is -0.1
-    dist1 = stats.norm(loc=0, scale=1)
-    dist2 = stats.norm(loc=0.1, scale=1)
-    stat_true = dist1.mean() - dist2.mean()
-
-    # Do the same thing 1000 times. (The code is fully vectorized.)
-    n_replications = 1000
-    data1 = dist1.rvs(size=(n_replications, n1), random_state=rng)
-    data2 = dist2.rvs(size=(n_replications, n2), random_state=rng)
-    res = bootstrap((data1, data2),
-                    statistic=my_stat,
-                    confidence_level=confidence_level,
-                    n_resamples=n_resamples,
-                    batch=50,
-                    method=method,
-                    axis=-1,
-                    random_state=rng)
-    ci = res.confidence_interval
-
-    # ci contains vectors of lower and upper confidence interval bounds
-    ci_contains_true = np.sum((ci[0] < stat_true) & (stat_true < ci[1]))
-    assert ci_contains_true == expected
-
-    # ci_contains_true is not inconsistent with confidence_level
-    pvalue = stats.binomtest(ci_contains_true, n_replications,
-                             confidence_level).pvalue
-    assert pvalue > 0.1
-
-
-@pytest.mark.parametrize("method", ["basic", "percentile"])
-@pytest.mark.parametrize("axis", [0, 1])
-def test_bootstrap_vectorized_3samp(method, axis):
-    def statistic(*data, axis=0):
-        # an arbitrary, vectorized statistic
-        return sum(sample.mean(axis) for sample in data)
-
-    def statistic_1d(*data):
-        # the same statistic, not vectorized
-        for sample in data:
-            assert sample.ndim == 1
-        return statistic(*data, axis=0)
-
-    rng = np.random.RandomState(0)
-    x = rng.rand(4, 5)
-    y = rng.rand(4, 5)
-    z = rng.rand(4, 5)
-    res1 = bootstrap((x, y, z), statistic, vectorized=True,
-                     axis=axis, n_resamples=100, method=method, rng=0)
-    res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
-                     axis=axis, n_resamples=100, method=method, rng=0)
-    assert_allclose(res1.confidence_interval, res2.confidence_interval)
-    assert_allclose(res1.standard_error, res2.standard_error)
-
-
-@pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
-@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
-@pytest.mark.parametrize("axis", [0, 1])
-def test_bootstrap_vectorized_1samp(method, axis):
-    def statistic(x, axis=0):
-        # an arbitrary, vectorized statistic
-        return x.mean(axis=axis)
-
-    def statistic_1d(x):
-        # the same statistic, not vectorized
-        assert x.ndim == 1
-        return statistic(x, axis=0)
-
-    rng = np.random.RandomState(0)
-    x = rng.rand(4, 5)
-    res1 = bootstrap((x,), statistic, vectorized=True, axis=axis,
-                     n_resamples=100, batch=None, method=method,
-                     rng=0)
-    res2 = bootstrap((x,), statistic_1d, vectorized=False, axis=axis,
-                     n_resamples=100, batch=10, method=method,
-                     rng=0)
-    assert_allclose(res1.confidence_interval, res2.confidence_interval)
-    assert_allclose(res1.standard_error, res2.standard_error)
-
-
-@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
-def test_bootstrap_degenerate(method):
-    data = 35 * [10000.]
-    if method == "BCa":
-        with np.errstate(invalid='ignore'):
-            msg = "The BCa confidence interval cannot be calculated"
-            with pytest.warns(stats.DegenerateDataWarning, match=msg):
-                res = bootstrap([data, ], np.mean, method=method)
-                assert_equal(res.confidence_interval, (np.nan, np.nan))
-    else:
-        res = bootstrap([data, ], np.mean, method=method)
-        assert_equal(res.confidence_interval, (10000., 10000.))
-    assert_equal(res.standard_error, 0)
-
-
-@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
-def test_bootstrap_gh15678(method):
-    # Check that gh-15678 is fixed: when statistic function returned a Python
-    # float, method="BCa" failed when trying to add a dimension to the float
-    rng = np.random.default_rng(354645618886684)
-    dist = stats.norm(loc=2, scale=4)
-    data = dist.rvs(size=100, random_state=rng)
-    data = (data,)
-    res = bootstrap(data, stats.skew, method=method, n_resamples=100,
-                    rng=np.random.default_rng(9563))
-    # this always worked because np.apply_along_axis returns NumPy data type
-    ref = bootstrap(data, stats.skew, method=method, n_resamples=100,
-                    rng=np.random.default_rng(9563), vectorized=False)
-    assert_allclose(res.confidence_interval, ref.confidence_interval)
-    assert_allclose(res.standard_error, ref.standard_error)
-    assert isinstance(res.standard_error, np.float64)
-
-
-def test_bootstrap_min():
-    # Check that gh-15883 is fixed: percentileofscore should
-    # behave according to the 'mean' behavior and not trigger nan for BCa
-    rng = np.random.default_rng(1891289180021102)
-    dist = stats.norm(loc=2, scale=4)
-    data = dist.rvs(size=100, random_state=rng)
-    true_min = np.min(data)
-    data = (data,)
-    res = bootstrap(data, np.min, method="BCa", n_resamples=100,
-                    rng=np.random.default_rng(3942))
-    assert true_min == res.confidence_interval.low
-    res2 = bootstrap(-np.array(data), np.max, method="BCa", n_resamples=100,
-                     rng=np.random.default_rng(3942))
-    assert_allclose(-res.confidence_interval.low,
-                    res2.confidence_interval.high)
-    assert_allclose(-res.confidence_interval.high,
-                    res2.confidence_interval.low)
-
-
-@pytest.mark.parametrize("additional_resamples", [0, 1000])
-def test_re_bootstrap(additional_resamples):
-    # Test behavior of parameter `bootstrap_result`
-    rng = np.random.default_rng(8958153316228384)
-    x = rng.random(size=100)
-
-    n1 = 1000
-    n2 = additional_resamples
-    n3 = n1 + additional_resamples
-
-    rng = np.random.default_rng(296689032789913033)
-    res = stats.bootstrap((x,), np.mean, n_resamples=n1, rng=rng,
-                          confidence_level=0.95, method='percentile')
-    res = stats.bootstrap((x,), np.mean, n_resamples=n2, rng=rng,
-                          confidence_level=0.90, method='BCa',
-                          bootstrap_result=res)
-
-    rng = np.random.default_rng(296689032789913033)
-    ref = stats.bootstrap((x,), np.mean, n_resamples=n3, rng=rng,
-                          confidence_level=0.90, method='BCa')
-
-    assert_allclose(res.standard_error, ref.standard_error, rtol=1e-14)
-    assert_allclose(res.confidence_interval, ref.confidence_interval,
-                    rtol=1e-14)
-
-
-@pytest.mark.xfail_on_32bit("Sensible to machine precision")
-@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
-def test_bootstrap_alternative(method):
-    rng = np.random.default_rng(5894822712842015040)
-    dist = stats.norm(loc=2, scale=4)
-    data = (dist.rvs(size=(100), random_state=rng),)
-
-    config = dict(data=data, statistic=np.std, rng=rng, axis=-1)
-    t = stats.bootstrap(**config, confidence_level=0.9)
-
-    config.update(dict(n_resamples=0, bootstrap_result=t))
-    l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
-    g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
-
-    assert_allclose(l.confidence_interval.high, t.confidence_interval.high,
-                    rtol=1e-14)
-    assert_allclose(g.confidence_interval.low, t.confidence_interval.low,
-                    rtol=1e-14)
-    assert np.isneginf(l.confidence_interval.low)
-    assert np.isposinf(g.confidence_interval.high)
-
-    with pytest.raises(ValueError, match='`alternative` must be one of'):
-        stats.bootstrap(**config, alternative='ekki-ekki')
-
-
-def test_jackknife_resample():
-    shape = 3, 4, 5, 6
-    np.random.seed(0)
-    x = np.random.rand(*shape)
-    y = next(_resampling._jackknife_resample(x))
-
-    for i in range(shape[-1]):
-        # each resample is indexed along second to last axis
-        # (last axis is the one the statistic will be taken over / consumed)
-        slc = y[..., i, :]
-        expected = np.delete(x, i, axis=-1)
-
-        assert np.array_equal(slc, expected)
-
-    y2 = np.concatenate(list(_resampling._jackknife_resample(x, batch=2)),
-                        axis=-2)
-    assert np.array_equal(y2, y)
-
-
-@pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
-def test_bootstrap_resample(rng_name):
-    rng = getattr(np.random, rng_name, None)
-    if rng is None:
-        pytest.skip(f"{rng_name} not available.")
-    rng1 = rng(0)
-    rng2 = rng(0)
-
-    n_resamples = 10
-    shape = 3, 4, 5, 6
-
-    np.random.seed(0)
-    x = np.random.rand(*shape)
-    y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1)
-
-    for i in range(n_resamples):
-        # each resample is indexed along second to last axis
-        # (last axis is the one the statistic will be taken over / consumed)
-        slc = y[..., i, :]
-
-        js = rng_integers(rng2, 0, shape[-1], shape[-1])
-        expected = x[..., js]
-
-        assert np.array_equal(slc, expected)
-
-
-@pytest.mark.parametrize("score", [0, 0.5, 1])
-@pytest.mark.parametrize("axis", [0, 1, 2])
-def test_percentile_of_score(score, axis):
-    shape = 10, 20, 30
-    np.random.seed(0)
-    x = np.random.rand(*shape)
-    p = _resampling._percentile_of_score(x, score, axis=-1)
-
-    def vectorized_pos(a, score, axis):
-        return np.apply_along_axis(stats.percentileofscore, axis, a, score)
-
-    p2 = vectorized_pos(x, score, axis=-1)/100
-
-    assert_allclose(p, p2, 1e-15)
-
-
-def test_percentile_along_axis():
-    # the difference between _percentile_along_axis and np.percentile is that
-    # np.percentile gets _all_ the qs for each axis slice, whereas
-    # _percentile_along_axis gets the q corresponding with each axis slice
-
-    shape = 10, 20
-    rng = np.random.RandomState(0)
-    x = rng.rand(*shape)
-    q = rng.rand(*shape[:-1]) * 100
-    y = _resampling._percentile_along_axis(x, q)
-
-    for i in range(shape[0]):
-        res = y[i]
-        expected = np.percentile(x[i], q[i], axis=-1)
-        assert_allclose(res, expected, 1e-15)
-
-
-@pytest.mark.parametrize("axis", [0, 1, 2])
-def test_vectorize_statistic(axis):
-    # test that _vectorize_statistic vectorizes a statistic along `axis`
-
-    def statistic(*data, axis):
-        # an arbitrary, vectorized statistic
-        return sum(sample.mean(axis) for sample in data)
-
-    def statistic_1d(*data):
-        # the same statistic, not vectorized
-        for sample in data:
-            assert sample.ndim == 1
-        return statistic(*data, axis=0)
-
-    # vectorize the non-vectorized statistic
-    statistic2 = _resampling._vectorize_statistic(statistic_1d)
-
-    rng = np.random.RandomState(0)
-    x = rng.rand(4, 5, 6)
-    y = rng.rand(4, 1, 6)
-    z = rng.rand(1, 5, 6)
-
-    res1 = statistic(x, y, z, axis=axis)
-    res2 = statistic2(x, y, z, axis=axis)
-    assert_allclose(res1, res2)
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
-def test_vector_valued_statistic(method):
-    # Generate 95% confidence interval around MLE of normal distribution
-    # parameters. Repeat 100 times, each time on sample of size 100.
-    # Check that confidence interval contains true parameters ~95 times.
-    # Confidence intervals are estimated and stochastic; a test failure
-    # does not necessarily indicate that something is wrong. More important
-    # than values of `counts` below is that the shapes of the outputs are
-    # correct.
-
-    rng = np.random.default_rng(2196847219)
-    params = 1, 0.5
-    sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
-
-    def statistic(data, axis):
-        return np.asarray([np.mean(data, axis),
-                           np.std(data, axis, ddof=1)])
-
-    res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    n_resamples=9999, batch=200, random_state=rng)
-
-    counts = np.sum((res.confidence_interval.low.T < params)
-                    & (res.confidence_interval.high.T > params),
-                    axis=0)
-    assert np.all(counts >= 90)
-    assert np.all(counts <= 100)
-    assert res.confidence_interval.low.shape == (2, 100)
-    assert res.confidence_interval.high.shape == (2, 100)
-    assert res.standard_error.shape == (2, 100)
-    assert res.bootstrap_distribution.shape == (2, 100, 9999)
-
-
-@pytest.mark.slow
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-def test_vector_valued_statistic_gh17715():
-    # gh-17715 reported a mistake introduced in the extension of BCa to
-    # multi-sample statistics; a `len` should have been `.shape[-1]`. Check
-    # that this is resolved.
-
-    rng = np.random.default_rng(141921000979291141)
-
-    def concordance(x, y, axis):
-        xm = x.mean(axis)
-        ym = y.mean(axis)
-        cov = ((x - xm[..., None]) * (y - ym[..., None])).mean(axis)
-        return (2 * cov) / (x.var(axis) + y.var(axis) + (xm - ym) ** 2)
-
-    def statistic(tp, tn, fp, fn, axis):
-        actual = tp + fp
-        expected = tp + fn
-        return np.nan_to_num(concordance(actual, expected, axis))
-
-    def statistic_extradim(*args, axis):
-        return statistic(*args, axis)[np.newaxis, ...]
-
-    data = [[4, 0, 0, 2],  # (tp, tn, fp, fn)
-            [2, 1, 2, 1],
-            [0, 6, 0, 0],
-            [0, 6, 3, 0],
-            [0, 8, 1, 0]]
-    data = np.array(data).T
-
-    res = bootstrap(data, statistic_extradim, rng=rng, paired=True)
-    ref = bootstrap(data, statistic, rng=rng, paired=True)
-    assert_allclose(res.confidence_interval.low[0],
-                    ref.confidence_interval.low, atol=1e-15)
-    assert_allclose(res.confidence_interval.high[0],
-                    ref.confidence_interval.high, atol=1e-15)
-
-
-def test_gh_20850():
-    rng = np.random.default_rng(2085020850)
-    x = rng.random((10, 2))
-    y = rng.random((11, 2))
-    def statistic(x, y, axis):
-        return stats.ttest_ind(x, y, axis=axis).statistic
-
-    # The shapes do *not* need to be the same along axis
-    stats.bootstrap((x, y), statistic)
-    stats.bootstrap((x.T, y.T), statistic, axis=1)
-    # But even when the shapes *are* the same along axis, the lengths
-    # along other dimensions have to be the same (or `bootstrap` warns).
-    message = "Array shapes are incompatible for broadcasting."
-    with pytest.raises(ValueError, match=message):
-        stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
-    stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
-    stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
 
+        # compute midpoints so we can compare just one number for each
+        mid_basic = xp.mean(xp.stack(res_basic.confidence_interval))
+        mid_percent = xp.mean(xp.stack(res_percent.confidence_interval))
+        mid_bca = xp.mean(xp.stack(res_bca.confidence_interval))
+
+        # reference for BCA CI computed using R wboot package:
+        # library(wBoot)
+        # library(moments)
+
+        # x = c(0.75859206, 0.5910282, -0.4419409, -0.36654601,
+        #       0.34955357, -1.38835871,  0.76735821)
+        # y = c(1.41186073, 0.49775975, 0.08275588, 0.24086388,
+        #       0.03567057, 0.52024419, 0.31966611, 1.32067634)
+
+        # twoskew <- function(x1, y1) {skewness(x1) - skewness(y1)}
+        # boot.two.bca(x, y, skewness, conf.level = 0.95,
+        #              R = 9999, stacked = FALSE)
+        mid_wboot = -1.5519
+
+        # compute percent difference relative to wboot BCA method
+        diff_basic = (mid_basic - mid_wboot)/abs(mid_wboot)
+        diff_percent = (mid_percent - mid_wboot)/abs(mid_wboot)
+        diff_bca = (mid_bca - mid_wboot)/abs(mid_wboot)
+
+        # SciPy's BCa CI midpoint is much closer than that of the other methods
+        assert diff_basic < -0.15
+        assert diff_percent > 0.15
+        assert abs(diff_bca) < 0.03
+
+    def test_BCa_acceleration_against_reference(self, xp):
+        # Compare the (deterministic) acceleration parameter for a multi-sample
+        # problem against a reference value. The example is from [1], but Efron's
+        # value seems inaccurate. Straightforward code for computing the
+        # reference acceleration (0.011008228344026734) is available at:
+        # https://github.com/scipy/scipy/pull/16455#issuecomment-1193400981
+
+        y = xp.asarray([10., 27., 31., 40., 46., 50., 52., 104., 146.])
+        z = xp.asarray([16., 23., 38., 94., 99., 141., 197.])
+
+        def statistic(z, y, axis=0):
+            return xp.mean(z, axis=axis) - xp.mean(y, axis=axis)
+
+        data = [z, y]
+        res = stats.bootstrap(data, statistic)
+
+        axis = -1
+        alpha = 0.95
+        theta_hat_b = res.bootstrap_distribution
+        batch = 100
+        _, _, a_hat = _resampling._bca_interval(data, statistic, axis, alpha,
+                                                theta_hat_b, batch, xp)
+        xp_assert_close(a_hat, xp.asarray(0.011008228344026734))
+
+    tests_against_itself_1samp = {"basic": 1789,
+                                  "percentile": 1790,
+                                  "BCa": 1789}
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("method, expected",
+                             tests_against_itself_1samp.items())
+    def test_bootstrap_against_itself_1samp(self, method, expected, xp):
+        # The expected values in this test were generated using bootstrap
+        # to check for unintended changes in behavior. The test also makes sure
+        # that bootstrap works with multi-sample statistics and that the
+        # `axis` argument works as expected / function is vectorized.
+        rng = np.random.default_rng(9123847)
+
+        n = 100  # size of sample
+        n_resamples = 999  # number of bootstrap resamples used to form each CI
+        confidence_level = 0.9
+
+        # The true mean is 5
+        dist = stats.norm(loc=5, scale=1)
+        stat_true = float(dist.mean())
+
+        # Do the same thing 2000 times. (The code is fully vectorized.)
+        n_replications = 2000
+        data = dist.rvs(size=(n_replications, n), random_state=rng)
+        res = bootstrap((xp.asarray(data),),
+                        statistic=xp.mean,
+                        confidence_level=confidence_level,
+                        n_resamples=n_resamples,
+                        batch=50,
+                        method=method,
+                        axis=-1,
+                        rng=rng)
+        ci = res.confidence_interval
+
+        # ci contains vectors of lower and upper confidence interval bounds
+        ci_contains_true = xp.count_nonzero((ci[0] < stat_true) & (stat_true < ci[1]))
+        assert ci_contains_true == expected
+
+        # ci_contains_true is not inconsistent with confidence_level
+        pvalue = stats.binomtest(int(ci_contains_true), n_replications,
+                                 confidence_level).pvalue
+        assert pvalue > 0.1
+
+    tests_against_itself_2samp = {"basic": 892,
+                                  "percentile": 890}
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("method, expected",
+                             tests_against_itself_2samp.items())
+    def test_bootstrap_against_itself_2samp(self, method, expected, xp):
+        # The expected values in this test were generated using bootstrap
+        # to check for unintended changes in behavior. The test also makes sure
+        # that bootstrap works with multi-sample statistics and that the
+        # `axis` argument works as expected / function is vectorized.
+        rng = np.random.RandomState(0)
+
+        n1 = 100  # size of sample 1
+        n2 = 120  # size of sample 2
+        n_resamples = 999  # number of bootstrap resamples used to form each CI
+        confidence_level = 0.9
+
+        # The statistic we're interested in is the difference in means
+        def my_stat(data1, data2, axis=-1):
+            mean1 = xp.mean(data1, axis=axis)
+            mean2 = xp.mean(data2, axis=axis)
+            return mean1 - mean2
+
+        # The true difference in the means is -0.1
+        dist1 = stats.norm(loc=0, scale=1)
+        dist2 = stats.norm(loc=0.1, scale=1)
+        stat_true = float(dist1.mean() - dist2.mean())
+
+        # Do the same thing 1000 times. (The code is fully vectorized.)
+        n_replications = 1000
+        data1 = dist1.rvs(size=(n_replications, n1), random_state=rng)
+        data2 = dist2.rvs(size=(n_replications, n2), random_state=rng)
+        res = bootstrap((xp.asarray(data1), xp.asarray(data2)),
+                        statistic=my_stat,
+                        confidence_level=confidence_level,
+                        n_resamples=n_resamples,
+                        batch=50,
+                        method=method,
+                        axis=-1,
+                        random_state=rng)
+        ci = res.confidence_interval
+
+        # ci contains vectors of lower and upper confidence interval bounds
+        ci_contains_true = xp.count_nonzero((ci[0] < stat_true) & (stat_true < ci[1]))
+        assert ci_contains_true == expected
+
+        # ci_contains_true is not inconsistent with confidence_level
+        pvalue = stats.binomtest(int(ci_contains_true), n_replications,
+                                 confidence_level).pvalue
+        assert pvalue > 0.1
+
+    @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+    @pytest.mark.parametrize("axis", [0, 1])
+    @pytest.mark.parametrize("dtype", ['float32', 'float64'])
+    def test_bootstrap_vectorized_3samp(self, method, axis, dtype, xp):
+        def statistic(*data, axis=0):
+            # an arbitrary, vectorized statistic
+            return sum(xp.mean(sample, axis=axis) for sample in data)
+
+        def statistic_1d(*data):
+            # the same statistic, not vectorized
+            for sample in data:
+                assert sample.ndim == 1
+            return np.asarray(sum(sample.mean() for sample in data), dtype=dtype)
+
+        rng = np.random.RandomState(0)
+        x = rng.rand(4, 5).astype(dtype)
+        y = rng.rand(4, 5).astype(dtype)
+        z = rng.rand(4, 5).astype(dtype)
+        res1 = bootstrap((xp.asarray(x), xp.asarray(y), xp.asarray(z)),
+                         statistic, vectorized=True, axis=axis, n_resamples=100,
+                         method=method, rng=0)
+        res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
+                         axis=axis, n_resamples=100, method=method, rng=0)
+
+        rtol = 1e-6 if dtype == 'float32' else 1e-14
+        xp_assert_close(res1.confidence_interval.low,
+                        xp.asarray(res2.confidence_interval.low), rtol=rtol)
+        xp_assert_close(res1.confidence_interval.high,
+                        xp.asarray(res2.confidence_interval.high), rtol=rtol)
+        xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error), rtol=rtol)
+
+    @pytest.mark.xfail_on_32bit("Failure is not concerning; see gh-14107")
+    @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_bootstrap_vectorized_1samp(self, method, axis, xp):
+        def statistic(x, axis=0):
+            # an arbitrary, vectorized statistic
+            return xp.mean(x, axis=axis)
+
+        def statistic_1d(x):
+            # the same statistic, not vectorized
+            assert x.ndim == 1
+            return x.mean(axis=0)
+
+        rng = np.random.default_rng(7939952824)
+        x = rng.random((2, 3))
+        res1 = bootstrap((xp.asarray(x),), statistic, vectorized=True, axis=axis,
+                         n_resamples=100, batch=None, method=method, rng=0)
+        res2 = bootstrap((x,), statistic_1d, vectorized=False, axis=axis,
+                         n_resamples=100, batch=10, method=method, rng=0)
+        xp_assert_close(res1.confidence_interval.low,
+                        xp.asarray(res2.confidence_interval.low))
+        xp_assert_close(res1.confidence_interval.high,
+                        xp.asarray(res2.confidence_interval.high))
+        xp_assert_close(res1.standard_error, xp.asarray(res2.standard_error))
+
+    @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+    def test_bootstrap_degenerate(self, method, xp):
+        data = xp.full((35,), 10000.)
+        if method == "BCa":
+            with np.errstate(invalid='ignore'):
+                msg = "The BCa confidence interval cannot be calculated"
+                with pytest.warns(stats.DegenerateDataWarning, match=msg):
+                    res = bootstrap([data, ], xp.mean, method=method)
+                    xp_assert_equal(res.confidence_interval.low, xp.asarray(xp.nan))
+                    xp_assert_equal(res.confidence_interval.high, xp.asarray(xp.nan))
+        else:
+            res = bootstrap([data, ], xp.mean, method=method)
+            xp_assert_equal(res.confidence_interval.low, xp.asarray(10000.))
+            xp_assert_equal(res.confidence_interval.high, xp.asarray(10000.))
+        xp_assert_equal(res.standard_error, xp.asarray(0.))
+
+    @pytest.mark.parametrize("method", ["BCa", "basic", "percentile"])
+    def test_bootstrap_gh15678(self, method, xp):
+        # Check that gh-15678 is fixed: when statistic function returned a Python
+        # float, method="BCa" failed when trying to add a dimension to the float
+        rng = np.random.default_rng(354645618886684)
+        dist = stats.norm(loc=2, scale=4)
+        data = dist.rvs(size=100, random_state=rng)
+        res = bootstrap((xp.asarray(data),), stats.skew, method=method, n_resamples=100,
+                        rng=np.random.default_rng(9563))
+        # this always worked because np.apply_along_axis returns NumPy data type
+        ref = bootstrap((data,), stats.skew, method=method, n_resamples=100,
+                        rng=np.random.default_rng(9563), vectorized=False)
+        xp_assert_close(res.confidence_interval.low,
+                        xp.asarray(ref.confidence_interval.low))
+        xp_assert_close(res.confidence_interval.high,
+                        xp.asarray(ref.confidence_interval.high))
+        xp_assert_close(res.standard_error, xp.asarray(ref.standard_error))
+
+    def test_bootstrap_min(self, xp):
+        # Check that gh-15883 is fixed: percentileofscore should
+        # behave according to the 'mean' behavior and not trigger nan for BCa
+        rng = np.random.default_rng(1891289180021102)
+        dist = stats.norm(loc=2, scale=4)
+        data = dist.rvs(size=100, random_state=rng)
+        true_min = np.min(data)
+        data = xp.asarray(data)
+        res = bootstrap((data,), xp.min, method="BCa", n_resamples=100,
+                        rng=np.random.default_rng(3942))
+        xp_assert_equal(res.confidence_interval.low, xp.asarray(true_min))
+        res2 = bootstrap((-data,), xp.max, method="BCa", n_resamples=100,
+                         rng=np.random.default_rng(3942))
+        xp_assert_close(-res.confidence_interval.low, res2.confidence_interval.high)
+        xp_assert_close(-res.confidence_interval.high, res2.confidence_interval.low)
+
+    @pytest.mark.parametrize("additional_resamples", [0, 1000])
+    def test_re_bootstrap(self, additional_resamples, xp):
+        # Test behavior of parameter `bootstrap_result`
+        rng = np.random.default_rng(8958153316228384)
+        x = rng.random(size=100)
+
+        n1 = 1000
+        n2 = additional_resamples
+        n3 = n1 + additional_resamples
+
+        rng = np.random.default_rng(296689032789913033)
+        res = stats.bootstrap((xp.asarray(x),), xp.mean, n_resamples=n1, rng=rng,
+                              confidence_level=0.95, method='percentile')
+        res = stats.bootstrap((xp.asarray(x),), xp.mean, n_resamples=n2, rng=rng,
+                              confidence_level=0.90, method='BCa',
+                              bootstrap_result=res)
+
+        rng = np.random.default_rng(296689032789913033)
+        ref = stats.bootstrap((xp.asarray(x),), xp.mean, n_resamples=n3, rng=rng,
+                              confidence_level=0.90, method='BCa')
+
+        xp_assert_close(res.confidence_interval.low,
+                        xp.asarray(ref.confidence_interval.low),
+                        rtol=1e-14)
+        xp_assert_close(res.confidence_interval.high,
+                        xp.asarray(ref.confidence_interval.high),
+                        rtol=1e-14)
+        xp_assert_close(res.standard_error, xp.asarray(ref.standard_error), rtol=1e-14)
+
+    @pytest.mark.xfail_on_32bit("Sensitive to machine precision")
+    @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+    def test_bootstrap_alternative(self, method, xp):
+        rng = np.random.default_rng(5894822712842015040)
+        dist = stats.norm(loc=2, scale=4)
+        data = (xp.asarray(dist.rvs(size=(100), random_state=rng)),)
+
+        config = dict(data=data, statistic=xp.std, rng=rng, axis=-1)
+        t = stats.bootstrap(**config, confidence_level=0.9)
+
+        config.update(dict(n_resamples=0, bootstrap_result=t))
+        l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
+        g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
+
+        xp_assert_close(l.confidence_interval.high, t.confidence_interval.high,
+                        rtol=1e-14)
+        xp_assert_close(g.confidence_interval.low, t.confidence_interval.low,
+                        rtol=1e-14)
+        assert xp.isinf(l.confidence_interval.low) and l.confidence_interval.low < 0
+        assert xp.isinf(g.confidence_interval.high) and g.confidence_interval.high > 0
+
+        with pytest.raises(ValueError, match='`alternative` must be one of'):
+            stats.bootstrap(**config, alternative='ekki-ekki')
+
+    def test_jackknife_resample(self, xp):
+        shape = 3, 4, 5, 6
+        rng = np.random.default_rng(5274950392)
+        x = rng.random(size=shape)
+        y = next(_resampling._jackknife_resample(xp.asarray(x), xp=xp))
+
+        for i in range(shape[-1]):
+            # each resample is indexed along second to last axis
+            # (last axis is the one the statistic will be taken over / consumed)
+            slc = y[..., i, :]
+            expected = np.delete(x, i, axis=-1)
+
+            xp_assert_equal(slc, xp.asarray(expected))
+
+        y2 = list(_resampling._jackknife_resample(xp.asarray(x), batch=2, xp=xp))
+        xp_assert_equal(xp.concat(y2, axis=-2), y)
+
+    @pytest.mark.skip_xp_backends("array_api_strict",
+                                  reason="Test uses ... + fancy indexing")
+    @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
+    def test_bootstrap_resample(self, rng_name, xp):
+        rng_gen = getattr(np.random, rng_name)
+        rng1 = rng_gen(3949441460)
+        rng2 = rng_gen(3949441460)
+
+        n_resamples = 10
+        shape = 3, 4, 5, 6
+
+        rng = np.random.default_rng(5274950392)
+        x = xp.asarray(rng.random(shape))
+        y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1, xp=xp)
+
+        for i in range(n_resamples):
+            # each resample is indexed along second to last axis
+            # (last axis is the one the statistic will be taken over / consumed)
+            slc = y[..., i, :]
+
+            js = xp.asarray(rng_integers(rng2, 0, shape[-1], shape[-1]))
+            expected = x[..., js]
+
+            xp_assert_equal(slc, expected)
+
+    @pytest.mark.parametrize("score", [0, 0.5, 1])
+    @pytest.mark.parametrize("axis", [0, 1, 2])
+    def test_percentile_of_score(self, score, axis, xp):
+        shape = 10, 20, 30
+        rng = np.random.default_rng(5903363153)
+        x = rng.random(shape)
+        dtype = xp_default_dtype(xp)
+        p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
+                                             xp.asarray(score, dtype=dtype),
+                                             axis=-1, xp=xp)
+
+        def vectorized_pos(a, score, axis):
+            return np.apply_along_axis(stats.percentileofscore, axis, a, score)
+
+        p2 = vectorized_pos(x, score, axis=-1)/100
+
+        xp_assert_close(p, xp.asarray(p2, dtype=dtype), rtol=1e-15)
+
+    @pytest.mark.parametrize("axis", [0, 1, 2])
+    def test_vectorize_statistic(self, axis):
+        # test that _vectorize_statistic vectorizes a statistic along `axis`
+        # only used with NumPy arrays
+
+        def statistic(*data, axis):
+            # an arbitrary, vectorized statistic
+            return sum(sample.mean(axis) for sample in data)
+
+        def statistic_1d(*data):
+            # the same statistic, not vectorized
+            for sample in data:
+                assert sample.ndim == 1
+            return statistic(*data, axis=0)
+
+        # vectorize the non-vectorized statistic
+        statistic2 = _resampling._vectorize_statistic(statistic_1d)
+
+        rng = np.random.RandomState(0)
+        x = rng.rand(4, 5, 6)
+        y = rng.rand(4, 1, 6)
+        z = rng.rand(1, 5, 6)
+
+        res1 = statistic(x, y, z, axis=axis)
+        res2 = statistic2(x, y, z, axis=axis)
+        assert_allclose(res1, res2)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+    def test_vector_valued_statistic(self, method, xp):
+        # Generate 95% confidence interval around MLE of normal distribution
+        # parameters. Repeat 100 times, each time on sample of size 100.
+        # Check that confidence interval contains true parameters ~95 times.
+        # Confidence intervals are estimated and stochastic; a test failure
+        # does not necessarily indicate that something is wrong. More important
+        # than values of `counts` below is that the shapes of the outputs are
+        # correct.
+
+        rng = np.random.default_rng(2196847219)
+        params = 1, 0.5
+        sample = xp.asarray(rng.normal(*params, size=(100, 100)))
+
+        def statistic(data, axis):
+            return xp.stack([xp.mean(data, axis=axis),
+                             xp.std(data, axis=axis, correction=1)])
+
+        res = bootstrap((sample,), statistic, method=method, axis=-1,
+                        n_resamples=9999, batch=200, random_state=rng)
+
+        params = xp.asarray([1, 0.5])
+        counts = xp.count_nonzero((res.confidence_interval.low.T < params)
+                                  & (res.confidence_interval.high.T > params),
+                                  axis=0)
+        assert xp.all(counts >= 90)
+        assert xp.all(counts <= 100)
+        assert res.confidence_interval.low.shape == (2, 100)
+        assert res.confidence_interval.high.shape == (2, 100)
+        assert res.standard_error.shape == (2, 100)
+        assert res.bootstrap_distribution.shape == (2, 100, 9999)
+
+    @pytest.mark.slow
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_vector_valued_statistic_gh17715(self):
+        # gh-17715 reported a mistake introduced in the extension of BCa to
+        # multi-sample statistics; a `len` should have been `.shape[-1]`. Check
+        # that this is resolved.
+        # If this is resolved for NumPy, it's resolved for the rest,
+        # let's only run this for NumPy.
+
+        rng = np.random.default_rng(141921000979291141)
+
+        def concordance(x, y, axis):
+            xm = x.mean(axis)
+            ym = y.mean(axis)
+            cov = ((x - xm[..., None]) * (y - ym[..., None])).mean(axis)
+            return (2 * cov) / (x.var(axis) + y.var(axis) + (xm - ym) ** 2)
+
+        def statistic(tp, tn, fp, fn, axis):
+            actual = tp + fp
+            expected = tp + fn
+            return np.nan_to_num(concordance(actual, expected, axis))
+
+        def statistic_extradim(*args, axis):
+            return statistic(*args, axis)[np.newaxis, ...]
+
+        data = [[4, 0, 0, 2],  # (tp, tn, fp, fn)
+                [2, 1, 2, 1],
+                [0, 6, 0, 0],
+                [0, 6, 3, 0],
+                [0, 8, 1, 0]]
+        data = np.array(data).T
+
+        res = bootstrap(data, statistic_extradim, rng=rng, paired=True)
+        ref = bootstrap(data, statistic, rng=rng, paired=True)
+        assert_allclose(res.confidence_interval.low[0],
+                        ref.confidence_interval.low, atol=1e-15)
+        assert_allclose(res.confidence_interval.high[0],
+                        ref.confidence_interval.high, atol=1e-15)
+
+    # torch doesn't have T distribution CDF and can't fall back to NumPy on GPU
+    @pytest.mark.skip_xp_backends(np_only=True, exceptions=['cupy'])
+    def test_gh_20850(self, xp):
+        rng = np.random.default_rng(2085020850)
+        x = xp.asarray(rng.random((10, 2)))
+        y = xp.asarray(rng.random((11, 2)))
+        def statistic(x, y, axis):
+            return stats.ttest_ind(x, y, axis=axis).statistic
+
+        # The shapes do *not* need to be the same along axis
+        stats.bootstrap((x, y), statistic)
+        stats.bootstrap((x.T, y.T), statistic, axis=1)
+        # But even when the shapes *are* the same along axis, the lengths
+        # along other dimensions have to be the same (or `bootstrap` warns).
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
+            stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
+        stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
+        stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
 
 # --- Test Monte Carlo Hypothesis Test --- #
 
