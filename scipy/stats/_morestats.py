@@ -3828,7 +3828,7 @@ MedianTestResult = _make_tuple_bunch(
 
 @xp_capabilities(np_only=True)
 def median_test(*samples, ties='below', correction=True, lambda_=1,
-                nan_policy='propagate', axis=0):
+                nan_policy='propagate'):
     """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
@@ -3844,8 +3844,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     ----------
     sample1, sample2, ... : array_like
         The set of samples.  There must be at least two samples.
-        Each sample must be a one-dimensional sequence containing at least
-        one value.  The samples are not required to have the same length.
+        The samples are not required to have the same length.
+        Arrays may be multidimensional, in which case each slice along
+        the last axis is treated independently.
     ties : str, optional
         Determines how values equal to the grand median are classified in
         the contingency table.  The string must be one of::
@@ -3969,8 +3970,6 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    # Todo:
-    #   - avoid warnings
     np = array_namespace(*samples)
     n_samples = len(samples)
 
@@ -3982,15 +3981,20 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
                          f"of: {str(ties_options)[1:-1]}")
 
-    data = _broadcast_arrays(samples, axis=axis, xp=np)
-    data = [np.moveaxis(array, axis, -1) for array in data]
+    data = _broadcast_arrays(samples, axis=-1, xp=np)
     data = xp_promote(*data, force_floating=True, xp=np)
     batch_shape, dtype = data[0].shape[:-1], data[0].dtype
 
     cdata = np.concat(data, axis=-1)
     contains_nan = _contains_nan(cdata, nan_policy)
 
-    # Todo: prevent this from warning
+    if cdata.shape[-1] == 0:
+        # If all samples are empty, there's nothing we can calculate. Return now.
+        warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
+        nan = np.full(batch_shape, np.nan, dtype=dtype)
+        zeros = np.zeros(batch_shape + (2, n_samples), dtype=dtype)
+        return MedianTestResult(nan, nan, nan, zeros)
+
     if nan_policy == 'omit' and contains_nan:
         grand_median = np.nanmedian(cdata, axis=-1, keepdims=True)
     else:
@@ -4002,9 +4006,8 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         nnan = count_nonzero(np.isnan(sample), axis=-1)
         nabove = count_nonzero(sample > grand_median, axis=-1)
         nbelow = count_nonzero(sample < grand_median, axis=-1)
-        nequal = (count_nonzero(sample == grand_median, axis=-1)
-                  if nan_policy=='propagate'
-                  else sample.shape[-1] - (nabove + nbelow + nnan))
+        nequal = (sample.shape[-1] - (nabove + nbelow + nnan) if nan_policy=='omit'
+                  else count_nonzero(sample == grand_median, axis=-1))
         table[..., 0, k] += nabove
         table[..., 1, k] += nbelow
         if ties == "below":
@@ -4014,35 +4017,37 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     grand_median = np.squeeze(grand_median, axis=-1)
 
-    # Todo: revive these as warnings?
     # Check that no row or column of the table is all zero.
-    # Such a table can not be given to chi2_contingency, because it would have
-    # a zero in the table of expected frequencies.
-    # rowsums = table.sum(axis=-1)
-    # if rowsums[0] == 0:
-    #     raise ValueError(f"All values are below the grand median ({grand_median}).")
-    # if rowsums[1] == 0:
-    #     raise ValueError(f"All values are above the grand median ({grand_median}).")
-    # if ties == "ignore":
-    #     # We already checked that each sample has at least one value, but it
-    #     # is possible that all those values equal the grand median.  If `ties`
-    #     # is "ignore", that would result in a column of zeros in `table`.  We
-    #     # check for that case here.
-    #     zero_cols = np.nonzero((table == 0).all(axis=0))[0]
-    #     if len(zero_cols) > 0:
-    #         raise ValueError(
-    #             f"All values in sample {zero_cols[0] + 1} are equal to the grand "
-    #             f"median ({grand_median!r}), so they are ignored, resulting in an "
-    #             f"empty sample."
-    #         )
+    # Such a table will result in NaN statistic and p-value.
+    rowsums = table.sum(axis=-1)
+    if batch_shape == () and not np.isnan(grand_median) and rowsums[0] == 0:
+        raise ValueError(f"All values are below the grand median ({grand_median}).")
+    if batch_shape == () and not np.isnan(grand_median) and rowsums[1] == 0:
+        raise ValueError(f"All values are above the grand median ({grand_median}).")
+
+    if batch_shape == () and (ties == "ignore" or nan_policy == 'omit'):
+        # We already checked that each sample has at least one value, but it
+        # is possible that all those values equal the grand median.  If `ties`
+        # is "ignore", that would result in a column of zeros in `table`.
+        # Similarly, observations in a sample could be omitted NaNs.
+        # We check for these cases here.
+        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
+        if len(zero_cols) > 0:
+            raise ValueError(
+                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                f"median ({grand_median!r}), so they are ignored, resulting in an "
+                f"empty sample."
+            )
+
     if any(array.shape[-1] == 0 for array in data):
+        # if only some samples are empty, we have the grand_median and `table`,
+        # but `_chi2_contingency_2d` would make noise, so return now.
         warnings.warn(too_small_nd_not_omit, SmallSampleWarning, stacklevel=2)
         nan = np.full(batch_shape, np.nan, dtype=dtype)
-        MedianTestResult(nan, nan, grand_median[()], table[()])
+        return MedianTestResult(nan, nan, grand_median[()], table[()])
 
-    with np.errstate(invalid='ignore', divide='ignore'):
-        stat, p = stats.contingency._chi2_contingency_2d(
-            table, lambda_=lambda_, correction=correction)
+    stat, p = stats.contingency._chi2_contingency_2d(
+        table, lambda_=lambda_, correction=correction)
     return MedianTestResult(stat[()], p[()], grand_median[()], table[()])
 
 

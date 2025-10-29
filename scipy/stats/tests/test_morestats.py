@@ -2924,25 +2924,25 @@ class TestMedianTest:
         assert_equal(res.statistic, np.nan)
         assert_equal(res.pvalue, np.nan)
 
-    # def test_empty_when_ties_ignored(self):
-    #     # The grand median is 1, and all values in the first argument are
-    #     # equal to the grand median.  With ties="ignore", those values are
-    #     # ignored, which results in the first sample being (in effect) empty.
-    #     # This should raise a ValueError.
-    #     assert_raises(ValueError, stats.median_test,
-    #                   [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
-    #
-    # def test_empty_contingency_row(self):
-    #     # The grand median is 1, and with the default ties="below", all the
-    #     # values in the samples are counted as being below the grand median.
-    #     # This would result a row of zeros in the contingency table, which is
-    #     # an error.
-    #     assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
-    #
-    #     # With ties="above", all the values are counted as above the
-    #     # grand median.
-    #     assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
-    #                   ties="above")
+    def test_empty_when_ties_ignored(self):
+        # The grand median is 1, and all values in the first argument are
+        # equal to the grand median.  With ties="ignore", those values are
+        # ignored, which results in the first sample being (in effect) empty.
+        # This should raise a ValueError.
+        assert_raises(ValueError, stats.median_test,
+                      [1, 1, 1, 1], [2, 0, 1], [2, 0], ties="ignore")
+
+    def test_empty_contingency_row(self):
+        # The grand median is 1, and with the default ties="below", all the
+        # values in the samples are counted as being below the grand median.
+        # This would result a row of zeros in the contingency table, which is
+        # an error.
+        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1])
+
+        # With ties="above", all the values are counted as above the
+        # grand median.
+        assert_raises(ValueError, stats.median_test, [1, 1, 1], [1, 1, 1],
+                      ties="above")
 
     def test_bad_ties(self):
         message = "invalid 'ties' option 'foo'..."
@@ -3043,6 +3043,18 @@ class TestMedianTest:
 
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+    def test_multidimensional(self):
+        rng = np.random.default_rng(723482348929883)
+        x = rng.random((3, 15))
+        y = rng.random(16)
+        res = stats.median_test(x, y)
+        for i, xi in enumerate(x):
+            ref = stats.median_test(xi, y)
+            assert_equal(res.statistic[i, ...], ref.statistic)
+            assert_equal(res.pvalue[i, ...], ref.pvalue)
+            assert_equal(res.median[i, ...], ref.median)
+            assert_equal(res.table[i, ...], ref.table)
 
 
 @make_xp_test_case(stats.directional_stats)

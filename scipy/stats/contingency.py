@@ -441,7 +441,8 @@ def _chi2_contingency_2d(observed, *, correction=True, lambda_=1, xp=None):
     rowsum = xp.sum(observed, axis=-1, keepdims=True)
     colsum = xp.sum(observed, axis=-2, keepdims=True)
     tablesum = xp.sum(rowsum, axis=-2, keepdims=True)
-    expected = rowsum * colsum / tablesum
+    with np.errstate(invalid='ignore', divide='ignore'):  # NaN is a valid result
+        expected = rowsum * colsum / tablesum
     dof = math.prod(table_shape) - sum(table_shape) + 1
     ddof = sum(table_shape) - 2
     if dof == 0:
