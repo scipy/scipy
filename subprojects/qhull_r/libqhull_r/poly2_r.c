@@ -799,7 +799,7 @@ void qh_checkfacet(qhT *qh, facetT *facet, boolT newmerge, boolT *waserrorp) {
          facet->id, numvertices, numneighbors);
        waserror= True;
     }
-    /* in 3-d, can get a vertex twice in a edge list, e.g., RBOX 1000 s W1e-13 t995849315 D2 | QHULL d Tc Tv TP624 TW1e-13 T4 */
+    /* in 3-d, can get a vertex twice in an edge list, e.g., RBOX 1000 s W1e-13 t995849315 D2 | QHULL d Tc Tv TP624 TW1e-13 T4 */
     if (numridges < numneighbors
     ||(qh->hull_dim == 3 && numvertices > numridges && !qh->NEWfacets)
     ||(qh->hull_dim == 2 && numridges + numvertices + numneighbors != 6)) {
@@ -1377,7 +1377,7 @@ void qh_checkpolygon(qhT *qh, facetT *facetlist) {
       waserror= True;
     }
     if (qh->hull_dim == 3 && numvertices + numfacets - numridges/2 != 2) {
-      qh_fprintf(qh, qh->ferr, 7063, "qhull warning: #vertices %d + #facets %d - #edges %d != 2.  A vertex appears twice in an edge list.  May occur during merging.\n",
+      qh_fprintf(qh, qh->ferr, 7063, "qhull warning: #vertices %d + #facets %d - #edges %d != 2.  A vertex appears twice in a edge list.  May occur during merging.\n",
           numvertices, numfacets, numridges/2);
       /* occurs if lots of merging and a vertex ends up twice in an edge list.  e.g., RBOX 1000 s W1e-13 t995849315 D2 | QHULL d Tc Tv */
     }
@@ -2980,7 +2980,7 @@ facetT *qh_nextfacet2d(facetT *facet, vertexT **nextvertexp) {
 
   notes:
     in qh_ORIENTclock order
-    this is an O(n^2) implementation to trace all ridges
+    this is a O(n^2) implementation to trace all ridges
     be sure to stop on any 2nd visit
     same as QhullRidge::nextRidge3d
     does not use qhT or qh_errexit [QhullFacet.cpp]
