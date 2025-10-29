@@ -29,6 +29,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+# remove when array-api-extra#502 is resolved 
 @_apply_over_batch(('x', 2))
 def cov(x):
     return xpx.cov(x)
@@ -110,6 +111,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """
     np = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
+    # and `axis` is guaranteed to be -1.
     t = np.asarray(t)
     # check if x and y are valid inputs
     nx, ny = x.shape[-1], y.shape[-1]
@@ -126,7 +128,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if np.any(t < 0):
+    if np.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
