@@ -349,7 +349,7 @@ def _quantile_hd(y, p, n, xp):
 def _quantile_bc(y, p, n, method, xp):
     # Methods retained for backward compatibility. NumPy documentation is not
     # quite right about what these methods do: if `p * (n - 1)` is integral,
-    # that is used as the index.
+    # that is used as the index. See numpy/numpy#28910.
     ij = p * (n - 1)
     if method == '_midpoint':
         return (xp.take_along_axis(y, xp.astype(xp.floor(ij), xp.int64), axis=-1)
