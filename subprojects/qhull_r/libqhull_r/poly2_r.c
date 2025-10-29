@@ -799,7 +799,7 @@ void qh_checkfacet(qhT *qh, facetT *facet, boolT newmerge, boolT *waserrorp) {
          facet->id, numvertices, numneighbors);
        waserror= True;
     }
-    /* in 3-d, can get a vertex twice in an edge list, e.g., RBOX 1000 s W1e-13 t995849315 D2 | QHULL d Tc Tv TP624 TW1e-13 T4 */
+    /* in 3-d, can get a vertex twice in a edge list, e.g., RBOX 1000 s W1e-13 t995849315 D2 | QHULL d Tc Tv TP624 TW1e-13 T4 */
     if (numridges < numneighbors
     ||(qh->hull_dim == 3 && numvertices > numridges && !qh->NEWfacets)
     ||(qh->hull_dim == 2 && numridges + numvertices + numneighbors != 6)) {
