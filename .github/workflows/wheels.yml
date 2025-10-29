@@ -77,17 +77,17 @@ jobs:
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
         # should also be able to do multi-archs on a single entry, e.g.
-        # [windows-2022, win*, "AMD64 x86"]. However, those two require a different compiler setup
+        # [windows-2025, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
         - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
         - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-13, macosx, x86_64, openblas, "10.14"]
-        - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        - [macos-15-intel, macosx, x86_64, openblas, "10.14"]
+        - [macos-15-intel, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2022, win, AMD64, "", ""]
+        - [windows-2025, win, AMD64, "", ""]
         - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314"], ["cp314t", "cp314"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -148,17 +148,12 @@ jobs:
             echo "PATH=$PATH" >> "$GITHUB_ENV"
             LIB_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           fi
-          if [[ ${{ matrix.buildplat[4] }} == '10.13' ]]; then
-            # 20241017 macos-13 images span Xcode 14.1-->15.2
-            XCODE_VER='14.1'
-          else
-            XCODE_VER='15.2'
-          fi
-          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
-          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+          #          XCODE_VER='16.0'
+          #          CIBW="sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app"
+          #          echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
-          sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
+          # sudo xcode-select -s /Applications/Xcode_${XCODE_VER}.app
           CIBW="MACOSX_DEPLOYMENT_TARGET=${{ matrix.buildplat[4] }}\
             SDKROOT=$(xcrun --sdk macosx --show-sdk-path)\
             PKG_CONFIG_PATH=${{ github.workspace }}"
@@ -177,12 +172,6 @@ jobs:
             {delocate_archs} -w {dest_dir} {wheel} && echo "-----------" &&\
             delocate-listdeps -d {dest_dir}/*.whl && echo "-----------" &&\
             $POSTFIX"
-
-          # Rename x86 Accelerate wheel to test on macOS 13 runner
-          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
-            CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
-              {dest_dir}/\$(echo \$(basename {wheel}) | sed 's/14_0/13_0/')"
-          fi
 
           # macos-arm64-openblas wheels that target macos-12 need a
           # MACOS_DEPLOYMENT_TARGET of 12.3 otherwise delocate complains.
@@ -227,15 +216,6 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
-
-      - name: Rename macOS wheels
-        if: startsWith( matrix.buildplat[0], 'macos-' )
-        run: |
-          # macos-x86_64-accelerate wheels targeting macos-14 were renamed to 13
-          # so they could be tested. Shift wheel name back to targeting 14.
-          if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
-            mv ./wheelhouse/*.whl $(find ./wheelhouse -type f -name '*.whl' | sed 's/13_0/14_0/')
-          fi
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

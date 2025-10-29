@@ -456,6 +456,8 @@ class AAA(_BarycentricRational):
         A = np.empty((M, max_terms), dtype=dtype)
         errors = np.empty(max_terms, dtype=A.real.dtype)
         R = np.repeat(np.mean(f), M)
+        ill_conditioned = False
+        ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
 
         # AAA iteration
         for m in range(max_terms):
@@ -481,13 +483,25 @@ class AAA(_BarycentricRational):
             rows = mask.sum()
             if rows >= m + 1:
                 # The usual tall-skinny case
-                _, s, V = scipy.linalg.svd(
-                    A[mask, : m + 1], full_matrices=False, check_finite=False,
-                )
+                if not ill_conditioned:
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1], full_matrices=False, check_finite=False,
+                    )
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        if s[0]/s[-1] > ill_conditioned_tol:
+                            ill_conditioned = True
+                if ill_conditioned:
+                    col_norm = np.linalg.norm(A[mask, : m + 1], axis=0)
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1]/col_norm, full_matrices=False,
+                        check_finite=False,
+                    )
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
                 # Aim for non-sparse weight vector
                 wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
+                if ill_conditioned:
+                    wj /= col_norm
             else:
                 # Fewer rows than columns
                 V = scipy.linalg.null_space(A[mask, : m + 1], check_finite=False)

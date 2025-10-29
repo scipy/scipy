@@ -8,13 +8,16 @@ from importlib import import_module
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype, xp_result_type, is_torch,
-    xp_capabilities_table
+    xp_capabilities_table, _xp_copy_to_numpy
 )
 from scipy._lib._array_api_docs_tables import is_named_function_like_object
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
+# Run all tests in this module in the Array API CI,
+# including those without the `xp` fixture
+pytestmark = pytest.mark.array_api_backends
 
 lazy_xp_function(_asarray)
 lazy_xp_function(xp_copy)
@@ -84,11 +87,19 @@ class TestArrayAPI:
         assert array_namespace(1, x) is xp
         assert array_namespace(None, x) is xp
 
-        if not is_numpy(xp):
+        if is_numpy(xp):
+            assert array_namespace(x, [1, 2]) is xp
+        else:
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, [1, 2])
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, np.int64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                 # Subclass of float; matches array_api_compat behavior
+                array_namespace(x, np.float64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                # Subclass of complex; matches array_api_compat behavior
+                array_namespace(x, np.complex128(1))
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by
@@ -97,6 +108,27 @@ class TestArrayAPI:
         msg = "only boolean and numerical dtypes are supported"
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
+
+    def test_jax_zero_gradient_array(self):
+        """Test array_namespace special case for JAX zero-gradient arrays, which are
+        numpy arrays but must be treated as JAX arrays.
+        See matching code and tests in array_api_compat.
+        """
+        jax = pytest.importorskip("jax")
+        xp = pytest.importorskip("jax.numpy")
+        # Create numpy array with dtype=jax.float0
+        jax_zero = jax.vmap(jax.grad(xp.float32, allow_int=True))(xp.arange(4))
+        assert array_namespace(jax_zero) is xp
+
+    def test_void_but_not_jax_zero_gradient_array(self):
+        """A void dtype that is not a jax.float0 must not be caught in the
+        special case for JAX zero-gradient arrays.
+        """
+        void = np.empty(0, dtype=np.dtype([]))
+        with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
+            array_namespace(void)
+        with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
+            array_namespace([void, void])
 
     def test_copy(self, xp):
         for _xp in [xp, None]:
@@ -111,6 +143,27 @@ class TestArrayAPI:
                 pass
             else:
                 assert x[0] != y[0]
+
+    @pytest.mark.parametrize(
+        "dtype",
+        ["float32", "float64", "complex64", "complex128", "int32", "int64"],
+    )
+    @pytest.mark.parametrize(
+        "data", [[], 1, [1, 2, 3], [[1, 2], [2, 3]]],
+    )
+    def test_copy_to_numpy(self, xp, data, dtype):
+        xp_dtype = getattr(xp, dtype)
+        np_dtype = getattr(np, dtype)
+        x = xp.asarray(data, dtype=xp_dtype)
+        y = _xp_copy_to_numpy(x)
+        assert isinstance(y, np.ndarray)
+        assert y.dtype == np_dtype
+        assert x.shape == y.shape
+        np.testing.assert_equal(y, np.asarray(data, dtype=np_dtype))
+        if is_numpy(xp):
+            # Ensure y is a copy when xp is numpy.
+            assert id(x) != id(y)
+
     
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])

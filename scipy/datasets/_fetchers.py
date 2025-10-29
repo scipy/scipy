@@ -222,8 +222,7 @@ def face(gray=False):
     with open(fname, 'rb') as f:
         rawdata = f.read()
     face_data = bz2.decompress(rawdata)
-    face = frombuffer(face_data, dtype='uint8')
-    face.shape = (768, 1024, 3)
+    face = frombuffer(face_data, dtype='uint8').reshape((768, 1024, 3))
     if gray is True:
         face = (0.21 * face[:, :, 0] + 0.71 * face[:, :, 1] +
                 0.07 * face[:, :, 2]).astype('uint8')

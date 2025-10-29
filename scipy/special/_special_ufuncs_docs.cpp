@@ -2,6 +2,30 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_gen_harmonic_doc = R"(
+    _gen_harmonic(n, a)
+
+    Internal private function.
+
+    Compute sum_{i=1}^{n} i**-a for 1 <= m <= n.
+
+    This is the generalized harmonic number.
+
+    nan is returned if n < 1.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
+const char *_normalized_gen_harmonic_doc = R"(
+    _normalized_gen_harmonic(j, k, n, a)
+
+    Internal private function.
+
+    Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
 const char *besselpoly_doc = R"(
     besselpoly(a, lmb, nu, out=None)
 
@@ -3725,7 +3749,7 @@ const char *iv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -4145,7 +4169,7 @@ const char *jv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -5647,7 +5671,7 @@ const char *modfresnelm_doc = R"(
     fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km : scalar or ndarray
-        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fm``
 
     See Also
     --------
@@ -7173,7 +7197,7 @@ const char *yv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

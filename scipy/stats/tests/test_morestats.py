@@ -2,7 +2,6 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-import contextlib
 import math
 import re
 import sys
@@ -26,13 +25,13 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
+from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
+                                   is_numpy)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
     xp_assert_less,
 )
-
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -763,23 +762,14 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.bartlett(*args)
-        else:
-            with warnings.catch_warnings():
-                # torch/array_api_strict
-                warnings.filterwarnings(
-                    "ignore", "invalid value encountered", RuntimeWarning)
-                warnings.filterwarnings(
-                    "ignore", r"var\(\): degrees of freedom is <= 0.", UserWarning)
-                warnings.filterwarnings(
-                    "ignore", "Degrees of freedom <= 0 for slice", RuntimeWarning)
-                res = stats.bartlett(*args)
+
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.bartlett(*args)
+
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
@@ -801,6 +791,13 @@ class TestLevene:
         assert_almost_equal(W, 1.7059176930008939, 7)
         assert_almost_equal(pval, 0.0990829755522, 7)
 
+    def test_mean(self):
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="mean")
+        assert_allclose(W, 2.15945985647285, rtol=5e-14)
+        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
@@ -811,27 +808,16 @@ class TestLevene:
         assert_almost_equal(pval1, pval2)
 
     def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
-
-        # Use center='trimmed'
-        W0, pval0 = stats.levene(x, y, center='trimmed',
-                                 proportiontocut=0.125)
-        W1, pval1 = stats.levene(x2, y, center='trimmed',
-                                 proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(W0, W2)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        # numbers from R: leveneTest in package car
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 2.07712845686874, rtol=5e-14)
+        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
 
     def test_equal_mean_median(self):
         x = np.linspace(-1, 1, 21)
-        np.random.seed(1234)
-        x2 = np.random.permutation(x)
+        rng = np.random.default_rng(4058827756)
+        x2 = rng.permutation(x)
         y = x**3
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
@@ -1127,17 +1113,15 @@ class TestFligner:
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
-    def test_trimmed2(self):
-        x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
-        y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
-        # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
-                                    proportiontocut=0.125)
-        # Trim the data here, and use center='mean'
-        Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
-        # Result should be the same.
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
+    def test_trimmed_nonregression(self):
+        # This is a non-regression test
+        # Expected results are *not* from an external gold standard,
+        # we're just making sure the results remain consistent
+        # in the future in case of changes
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        assert_allclose(W, 15.953569890010614, rtol=5e-14)
+        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
 
     # The following test looks reasonable at first, but fligner() uses the
     # function stats.rankdata(), and in one of the cases in this test,
@@ -1251,9 +1235,9 @@ class TestMood:
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
-        np.random.seed(1234)
-        x1 = np.random.randn(10, 1)
-        x2 = np.random.randn(15, 1)
+        rng = np.random.default_rng(4058827756)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
         z1, p1 = stats.mood(x1, x2)
         z2, p2 = stats.mood(x2, x1)
         assert_array_almost_equal([z1, p1], [-z2, p2])
@@ -1279,10 +1263,8 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1)
-        x2 = np.array(x2)
-        x1.shape = (10, 2)
-        x2.shape = (15, 2)
+        x1 = np.array(x1).reshape((10,2))
+        x2 = np.array(x2).reshape((15,2))
         assert_array_almost_equal(stats.mood(x1, x2, axis=None),
                                   [-1.31716607555, 0.18778296257])
 
@@ -1290,9 +1272,9 @@ class TestMood:
         # Test if the results of mood test in 2-D case are consistent with the
         # R result for the same inputs.  Numbers from R mood.test().
         ny = 5
-        np.random.seed(1234)
-        x1 = np.random.randn(10, ny)
-        x2 = np.random.randn(15, ny)
+        rng = np.random.default_rng()
+        x1 = rng.standard_normal((10, ny))
+        x2 = rng.standard_normal((15, ny))
         z_vectest, pval_vectest = stats.mood(x1, x2)
 
         for j in range(ny):
@@ -1311,9 +1293,9 @@ class TestMood:
 
     def test_mood_3d(self):
         shape = (10, 5, 6)
-        np.random.seed(1234)
-        x1 = np.random.randn(*shape)
-        x2 = np.random.randn(*shape)
+        rng = np.random.default_rng(3602349075)
+        x1 = rng.standard_normal(shape)
+        x2 = rng.standard_normal(shape)
 
         for axis in range(3):
             z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
@@ -1820,14 +1802,10 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstat(xp.asarray([]))
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstat(xp.asarray([]))
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.kstat(xp.asarray([]))
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -1864,15 +1842,11 @@ class TestKstat:
 
 @make_xp_test_case(stats.kstatvar)
 class TestKstatVar:
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered")  # Dask
     def test_empty_input(self, xp):
         x = xp.asarray([])
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstatvar(x)
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstatvar(x)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = stats.kstatvar(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -2034,9 +2008,7 @@ class TestBoxcox_llf:
 
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
-        context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
-                   else contextlib.nullcontext())
-        with context:
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
@@ -2053,7 +2025,7 @@ class TestBoxcox_llf:
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
-                        rtol=1e-7)
+                        rtol=5e-7)  # bumped tolerance from 1e-7 for Accelerate
 
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
@@ -2441,24 +2413,29 @@ class TestBoxcoxNormplot:
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
+@make_xp_test_case(stats.yeojohnson_llf)
 class TestYeojohnson_llf:
 
     def test_array_like(self):
+        # array_like not applicable with SCIPY_ARRAY_API=1
         x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
-    def test_2d_input(self):
+    def test_2d_input(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
+        x = xp.asarray(x)
         lmbda = 1
-        llf = stats.yeojohnson_llf(lmbda, x)
-        llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
-        assert_allclose([llf, llf], llf2, rtol=1e-12)
+        ref = stats.yeojohnson_llf(lmbda, x)
+        res = stats.yeojohnson_llf(lmbda, xp.stack([x, x]).T)
+        xp_assert_close(res, xp.stack((ref, ref)), rtol=1e-12)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.yeojohnson_llf(1, [])))
+    def test_empty(self, xp):
+        message = "One or more sample arguments is too small..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
+            assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
 
 
 class TestYeojohnson:
@@ -2757,16 +2734,9 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = test_func(x)
-        else:
-            with warnings.catch_warnings():
-                # for array_api_strict
-                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
-                warnings.filterwarnings(
-                    "ignore", "invalid value encountered", RuntimeWarning)
-                res = test_func(x)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            res = test_func(x)
+
         xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
@@ -3173,32 +3143,33 @@ class TestDirectionalStats:
                         xp.asarray(ref.mean_resultant_length))
 
 
+@make_xp_test_case(stats.false_discovery_control)
 class TestFDRControl:
-    def test_input_validation(self):
+    def test_input_validation(self, xp):
         message = "`ps` must include only numbers between 0 and 1"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([-1, 0.5, 0.7])
+            stats.false_discovery_control(xp.asarray([-1, 0.5, 0.7]))
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 2])
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 2]))
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, np.nan])
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, xp.nan]))
 
         message = "Unrecognized `method` 'YAK'"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], method='YAK')
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), method='YAK')
 
         message = "`axis` must be an integer or `None`"
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], axis=1.5)
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), axis=1.5)
         with pytest.raises(ValueError, match=message):
-            stats.false_discovery_control([0.5, 0.7, 0.9], axis=(1, 2))
+            stats.false_discovery_control(xp.asarray([0.5, 0.7, 0.9]), axis=(1, 2))
 
-    def test_against_TileStats(self):
+    def test_against_TileStats(self, xp):
         # See reference [3] of false_discovery_control
-        ps = [0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387]
+        ps = xp.asarray([0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387])
         res = stats.false_discovery_control(ps)
-        ref = [0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387]
-        assert_allclose(res, ref, atol=1e-3)
+        ref = xp.asarray([0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387])
+        xp_assert_close(res, ref, atol=1e-3)
 
     @pytest.mark.parametrize("case",
                              [([0.24617028, 0.01140030, 0.05652047, 0.06841983,
@@ -3207,36 +3178,42 @@ class TestFDRControl:
                               ([0.72102493, 0.03339112, 0.16554665, 0.20039952,
                                 0.23402122, 0.05393666, 0.51376399, 0.20039952,
                                 0.20039952, 0.74583488], 'by')])
-    def test_against_R(self, case):
+    def test_against_R(self, case, xp):
         # Test against p.adjust, e.g.
         # p = c(0.22155325, 0.00114003,..., 0.0364813 , 0.25464082)
         # p.adjust(p, "BY")
         ref, method = case
         rng = np.random.default_rng(6134137338861652935)
-        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng).tolist()
         ps[3] = ps[7]  # force a tie
-        res = stats.false_discovery_control(ps, method=method)
-        assert_allclose(res, ref, atol=1e-6)
+        res = stats.false_discovery_control(xp.asarray(ps), method=method)
+        xp_assert_close(res, xp.asarray(ref), atol=1e-6)
 
-    def test_axis_None(self):
+    def test_axis_None(self, xp):
         rng = np.random.default_rng(6134137338861652935)
         ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        ps = xp.asarray(ps)
         res = stats.false_discovery_control(ps, axis=None)
-        ref = stats.false_discovery_control(ps.ravel())
-        assert_equal(res, ref)
+        ref = stats.false_discovery_control(xp_ravel(ps))
+        xp_assert_equal(res, ref)
 
     @pytest.mark.parametrize("axis", [0, 1, -1])
-    def test_axis(self, axis):
+    def test_axis(self, axis, xp):
         rng = np.random.default_rng(6134137338861652935)
         ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
-        res = stats.false_discovery_control(ps, axis=axis)
+        res = stats.false_discovery_control(xp.asarray(ps), axis=axis)
         ref = np.apply_along_axis(stats.false_discovery_control, axis, ps)
-        assert_equal(res, ref)
+        xp_assert_close(res, xp.asarray(ref))  # torch isn't *equal*
 
-    def test_edge_cases(self):
-        assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
-        assert_array_equal(stats.false_discovery_control(0.25), 0.25)
-        assert_array_equal(stats.false_discovery_control([]), [])
+    def test_edge_cases(self, xp):
+        ps = xp.asarray([0.25])
+        xp_assert_equal(stats.false_discovery_control(ps), ps)
+
+        ps = xp.asarray([])
+        xp_assert_equal(stats.false_discovery_control(ps), ps)
+
+        if is_numpy(xp):
+            xp_assert_equal(stats.false_discovery_control(0.25), 0.25)
 
 
 class TestCommonAxis:

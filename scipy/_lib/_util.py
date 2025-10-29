@@ -363,7 +363,7 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
                 new_doc = [_desc] + old_doc_keep
                 _rng_parameter_doc = Parameter('rng', _type, new_doc)
                 doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
-                doc = str(doc).split("\n", 1)[1]  # remove signature
+                doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
                 wrapper.__doc__ = str(doc)
         return wrapper
 
@@ -875,9 +875,6 @@ def _contains_nan(
         if is_lazy_array(a):
             msg = "nan_policy='omit' is not supported for lazy arrays."
             raise TypeError(msg)
-        if contains_nan:
-            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-            raise ValueError(msg)
 
     return contains_nan
 
@@ -1143,11 +1140,13 @@ def _apply_over_batch(*argdefs):
                     else:
                         arrays.append(kwargs.pop(name))
 
+            xp = array_namespace(*arrays)
+
             # Determine core and batch shapes
             batch_shapes = []
             core_shapes = []
             for i, (array, ndim) in enumerate(zip(arrays, ndims)):
-                array = None if array is None else np.asarray(array)
+                array = None if array is None else xp.asarray(array)
                 shape = () if array is None else array.shape
 
                 if ndim == "1|2":  # special case for `solve`, etc.
@@ -1168,12 +1167,13 @@ def _apply_over_batch(*argdefs):
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
                     continue
-                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+                arrays[i] = xp.broadcast_to(array, batch_shape + core_shape)
 
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
+                result = f(*((array[index] if array is not None else None)
+                             for array in arrays), *other_args, **kwargs)
                 # Assume `result` is either a tuple or single array. This is easily
                 # generalized by allowing the contributor to pass an `unpack_result`
                 # callable to the decorator factory.
@@ -1183,9 +1183,9 @@ def _apply_over_batch(*argdefs):
 
             # Reshape results
             for i, result in enumerate(results):
-                result = np.stack(result)
+                result = xp.stack(result)
                 core_shape = result.shape[1:]
-                results[i] = np.reshape(result, batch_shape + core_shape)
+                results[i] = xp.reshape(result, batch_shape + core_shape)
 
             # Assume `result` should be a single array if there is only one element or
             # a `tuple` otherwise. This is easily generalized by allowing the
@@ -1194,7 +1194,7 @@ def _apply_over_batch(*argdefs):
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper
     return decorator

@@ -8,7 +8,6 @@ The following functions still need tests:
 - ncfdtrinc
 - nbdtrik
 - nbdtrin
-- pdtrik
 - nctdtridf
 - nctdtrinc
 
@@ -16,7 +15,7 @@ The following functions still need tests:
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, assert_array_equal
 import pytest
 
 import scipy.special as sp
@@ -503,7 +502,9 @@ def test_bdtrik_nbdtrik_inf():
      [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
      [0.1, 0.1, 1.0, 1.0, 0.3136335813423239],
      [100.0, 100.0, 0.1, 10.0, 1.0],
-     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
+     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897],
+     [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+    ]
 )
 def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
@@ -670,6 +671,8 @@ class TestNoncentralTFunctions:
         (980, 3.8, 15, 1.0),
         (980, 38, 0.0015, 3.0547506e-316),
         (980, 38, 0.15, 8.6191646313e-314),
+        # revisit when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
         pytest.param(980, 38, 1.5, 1.1824454111413493e-291,
                      marks=pytest.mark.xfail(
                         reason="Bug in underlying Boost math implementation")),
@@ -691,7 +694,9 @@ class TestNoncentralTFunctions:
 
     @pytest.mark.parametrize(
         "df, nc, x, expected, rtol",
-        [[3., 5., -2., 1.5645373999149622e-09, 5e-9],
+        # revisit tolerances when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
+        [[3., 5., -2., 1.5645373999149622e-09, 2e-8],
          [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
          [1e-5, -6., 2., 0.9999999990135003, 1e-13],
          [10., 20., 0.15, 6.426530505957303e-88, 1e-13],
@@ -833,3 +838,41 @@ class TestNoncentralChiSquaredFunctions:
     )
     def test_chndtr_edge_cases(self, x, df, nc, expected):
         assert_allclose(sp.chndtr(x, df, nc), expected, rtol=1e-15)
+
+
+@pytest.mark.parametrize("x", [0.1, 100])
+def test_chdtriv_p_equals_1_returns_0(x):
+    assert sp.chdtriv(1, x) == 0
+
+
+class TestPdtrik:
+    @pytest.mark.parametrize("p, m, expected",
+                             [(0, 0.5, 0),
+                              (0.5, 0, 0)])
+    def test_edge_cases(self, p, m, expected):
+        assert sp.pdtrik(p, m) == expected
+
+    @pytest.mark.parametrize("m", (0.1, 1, 10))
+    def test_p_equals_1_returns_nan(self, m):
+        assert np.isnan(sp.pdtrik(1, m))
+
+    def test_small_probabilities(self):
+        # Edge case: m = 0 or very small.
+        k = sp.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
+        assert_array_equal(k, np.zeros((3, 3)))
+
+    def test_roundtrip_against_pdtr(self):
+        m = [10, 50, 500]
+        k = 5
+        p = sp.pdtr(k, m)
+        assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
+
+    @pytest.mark.parametrize("p, m, k",
+                             [(1.8976107553682285e-40, 100, 2),
+                              (0.48670120172085135, 100, 99),
+                              (8.30383406699052e-69, 1000, 500),
+                              (2.252837804125894e-227, 100_000, 90_000)])
+    def test_accuracy(self, p, m, k):
+        # Reference values for p were computed with mpmath using
+        # mp.gammainc(k+1, a=m, regularized=True)
+        assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)

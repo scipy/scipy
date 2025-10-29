@@ -226,6 +226,7 @@ conversion will raise an exception. The reason for that is that silent data
 transfer between devices is considered bad practice, as it is likely to be a
 large and hard-to-detect performance bottleneck.
 
+.. _dev-arrayapi_adding_tests:
 
 Adding tests
 ------------
@@ -318,6 +319,83 @@ backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
+
+Testing Practice
+````````````````
+
+It's important that for any supported function ``f``, there exist tests using
+the ``xp`` fixture that restrict use of alternative backends to only the function
+``f`` being tested. Other functions evaluated within a test, for the purpose of
+producing reference values, inputs, round-trip calculations, etc. should instead
+use the NumPy backend. This helps ensure that any failures that occur on a backend
+actually relate to the function of interest, and avoids the need to skip backends
+due to lack of support for functions other than ``f``. Property based integration
+tests which check that some invariant holds using the same alternative backend
+across different functions can also have value, giving a window into the general
+health of backend support for a module, but in order to ensure the test suite
+actually reflects the state of backend support for each function, it's vital to
+have tests which isolate use of the alternative backend only to the function being
+tested.
+
+To help facilitate such backend isolation, there is a function ``_xp_copy_to_numpy``
+in ``scipy._lib._array_api`` which can copy an arbitrary ``xp`` array to a NumPy
+array, bypassing any device transfer guards, while preserving dtypes. It is essential
+that this function is only used in tests for functions other than the one being
+tested. Attempts to copy a device array to NumPy outside of tests should fail,
+because otherwise it can become opaque whether a function is working on GPU or not.
+
+When attempting to isolate use of alternative backends to a particular function, one
+must be mindful that PyTorch allows for setting a default dtype, and SciPy is tested
+with both default dtype ``float32`` and ``float64`` (this is controlled with the
+environment variable ``SCIPY_DEFAULT_DTYPE``). Tests using the ``xp`` fixture rely on
+``xp.asarray`` producing arrays with the default dtype when list input is given and
+no explicit dtype specified. This means that if a test involves taking input arrays
+and passing them to a function other than the one being tested in order to produce
+inputs for the function being tested, the following may appear natural to write
+but would not produce the correct dtype behavior::
+
+  # z, p, k will have dtype float64 regardless of the value of
+  # SCIPY_DEFAULT_DTYPE
+  z = np.asarray([1j, -1j, 2j, -2j])
+  p = np.asarray([1+1j, 3-100j, 3+100j, 1-1j])
+  k = 23
+
+  # np.poly will preserve dtype
+  b = k * np.poly(z_np).real
+  a = np.poly(p_np).real
+  # Input arrays z, p, and reference outputs b, a will all have
+  # dtype float64.
+  z, p, b, a = map(xp.asarray, (z, p, b, a))
+
+  # With float64 inputs, the outputs bp and ap will be of dtype
+  # float64. Note that the parameter k is a Python scalar which does
+  # not impact output dtype for NumPy >= 2.0.
+  bp, ap = zpk2tf(z, p, k)
+  # xp_assert_close checks for matching dtype. Due to the way the
+  # code was written above, zpk2tf is not tested with float32 inputs
+  # when SCIPY_DEFAULT_DTYPE is float32.
+  xp_assert_close(b, bp)
+  xp_assert_close(a, ap)
+
+One could instead construct all inputs as ``xp`` arrays and then copy to
+NumPy arrays in order to ensure the default dtype is respected::
+
+  # calls to xp.asarray will respect the default dtype.
+  z = xp.asarray([1j, -1j, 2j, -2j])
+  p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
+  k = 23
+
+  # _xp_copy_to_numpy preserves dtype, as does np.poly.
+  b = k * np.poly(_xp_copy_to_numpy(z)).real
+  a = np.poly(_xp_copy_to_numpy(p)).real
+  # b and a will have dtype float32
+  b, a = map(xp.asarray, (b, a))
+
+  # zpk2tf is tested with float32 inputs when SCIPY_DEFAULT_DTYPE=float32
+  # as intended.
+  bp, ap = zpk2tf(z, p, k)
+  xp_assert_close(b, bp)
+  xp_assert_close(a, ap)
 
 
 Testing the JAX JIT compiler
@@ -521,4 +599,3 @@ Support with JIT
    :stats: array_api_support_stats_jit
    :stats.contingency: array_api_support_stats_contingency_jit
    :stats.qmc: array_api_support_stats_qmc_jit
-

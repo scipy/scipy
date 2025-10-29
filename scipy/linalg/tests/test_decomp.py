@@ -34,6 +34,7 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 try:
     from scipy.__config__ import CONFIG
 except ImportError:
@@ -926,6 +927,7 @@ class TestEigh:
         w, z = eigh(a)
         w, z = eigh(a, b)
 
+    @skip_xp_invalid_arg
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse
@@ -1215,6 +1217,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
 # Allocating an array of such a size leads to _ArrayMemoryError(s)
 # since the maximum memory that can be in 32-bit (WASM) is 4GB
 @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
 @pytest.mark.parallel_threads(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
@@ -2765,7 +2768,7 @@ def test_aligned_mem_float():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=2, count=100, dtype=float32)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2780,7 +2783,7 @@ def test_aligned_mem():
 
     # Create an array with boundary offset 4
     z = np.frombuffer(a.data, offset=4, count=100, dtype=float)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     eig(z.T, overwrite_a=True)
@@ -2793,7 +2796,7 @@ def test_aligned_mem_complex():
 
     # Create an array with boundary offset 8
     z = np.frombuffer(a.data, offset=8, count=100, dtype=complex)
-    z.shape = 10, 10
+    z = z.reshape((10, 10))
 
     eig(z, overwrite_a=True)
     # This does not need special handling
@@ -2809,7 +2812,7 @@ def check_lapack_misaligned(func, args, kwargs):
             aa = np.zeros(a[i].size*a[i].dtype.itemsize+8, dtype=np.uint8)
             aa = np.frombuffer(aa.data, offset=4, count=a[i].size,
                                dtype=a[i].dtype)
-            aa.shape = a[i].shape
+            aa = aa.reshape(a[i].shape)
             aa[...] = a[i]
             a[i] = aa
             func(*a, **kwargs)
@@ -2822,11 +2825,10 @@ def check_lapack_misaligned(func, args, kwargs):
                    reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10, dtype=float)
-    R = np.arange(100)
-    R.shape = 10, 10
+    R = np.arange(100).reshape((10, 10))
     S = np.arange(20000, dtype=np.uint8)
     S = np.frombuffer(S.data, offset=4, count=100, dtype=float)
-    S.shape = 10, 10
+    S = S.reshape((10, 10))
     b = np.ones(10)
     LU, piv = lu_factor(S)
     for (func, args, kwargs) in [

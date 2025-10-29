@@ -606,6 +606,7 @@ and defined using a :func:`LinearConstraint` object.
     >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
 
 **Defining Nonlinear Constraints**
+
 The nonlinear constraint:
 
 .. math::
@@ -1167,9 +1168,13 @@ finally plots the original data and the fitted model function:
     >>> plt.legend(loc='lower right')
     >>> plt.show()
 
+.. rubric:: References
+
 .. [1] J. Kowalik and J. F. Morrison, “Analysis of kinetic data for allosteric enzyme reactions as
-   a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
-.. [2] B. M. Averick et al., “The MINPACK-2 Test Problem Collection”.
+       a nonlinear regression problem”, Math. Biosci., vol. 2, pp. 57-66, 1968.
+
+.. [2] B. M. Averick, R. G. Carter, G.-L. Xue, and JJ Mor{\'e},
+       “The MINPACK-2 Test Problem Collection”, 1992. :doi:`10.2172/79972`
 
 Further examples
 ^^^^^^^^^^^^^^^^
@@ -1923,7 +1928,7 @@ Then the problem is:
 
 .. math::
 
-    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in \{0, 1\}
 
 Although the objective function and inequality constraints are linear in the
 *decision variables* :math:`x_i`, this differs from a typical linear
