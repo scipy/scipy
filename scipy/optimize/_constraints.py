@@ -72,7 +72,7 @@ class NonlinearConstraint:
         Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints.
     finite_diff_rel_step: None or array_like, optional
         Relative step size for the finite difference approximation. Default is
@@ -154,7 +154,7 @@ class LinearConstraint:
         and ``ub = np.inf`` (no limits).
     keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. A single value sets this property for all components.
         Default is False. Has no effect for equality constraints.
     """
     def _input_validation(self):

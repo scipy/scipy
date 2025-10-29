@@ -473,6 +473,11 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     # construct the colocation matrix
     matr = NdBSpline.design_matrix(xvals, t, k)
 
+    # Remove zeros from the sparse matrix
+    # If k=1, then solve() doesn't take long enough for this to help
+    if k[0] >= 3:
+        matr.eliminate_zeros()
+
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, the rest are batch
     # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.

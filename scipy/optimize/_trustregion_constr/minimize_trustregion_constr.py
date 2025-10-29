@@ -338,8 +338,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
-        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf)
-        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf)
+        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf,
+                                   out=None)
+        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf,
+                                   out=None)
         modified_lb = np.where(np.isfinite(bounds.lb), modified_lb, bounds.lb)
         modified_ub = np.where(np.isfinite(bounds.ub), modified_ub, bounds.ub)
         bounds = Bounds(modified_lb, modified_ub, keep_feasible=bounds.keep_feasible)

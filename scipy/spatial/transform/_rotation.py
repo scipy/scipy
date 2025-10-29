@@ -80,8 +80,13 @@ class Rotation:
     - Rotation Inversion
     - Rotation Indexing
 
-    Indexing within a rotation is supported since multiple rotation transforms
-    can be stored within a single `Rotation` instance.
+    A `Rotation` instance can contain a single rotation transform or rotations of
+    multiple leading dimensions. E.g., it is possible to have an N-dimensional array of
+    (N, M, K) rotations. When applied to other rotations or vectors, standard
+    broadcasting rules apply.
+
+    Indexing within a rotation is supported to access a subset of the rotations stored
+    in a `Rotation` instance.
 
     To create `Rotation` objects use ``from_...`` methods (see examples below).
     ``Rotation(...)`` is not supposed to be instantiated directly.
@@ -225,8 +230,7 @@ class Rotation:
            [ 2.82842712,  2.        ,  1.41421356],
            [ 2.24452282,  0.78093109,  2.89002836]])
 
-    A `Rotation` instance can be indexed and sliced as if it were a single
-    1D array or list:
+    A `Rotation` instance can be indexed and sliced as if it were an ND array:
 
     >>> r.as_quat()
     array([[0.        , 0.        , 0.70710678, 0.70710678],
@@ -404,7 +408,7 @@ class Rotation:
 
         Parameters
         ----------
-        quat : array_like, shape (N, 4) or (4,)
+        quat : array_like, shape (..., 4)
             Each row is a (possibly non-unit norm) quaternion representing an
             active rotation. Each quaternion will be normalized to unit norm.
         scalar_first : bool, optional
@@ -441,17 +445,17 @@ class Rotation:
                [0., 0., 1.]])
 
         It is possible to initialize multiple rotations in a single object by
-        passing a 2-dimensional array:
+        passing an N-dimensional array:
 
-        >>> r = R.from_quat([
+        >>> r = R.from_quat([[
         ... [1, 0, 0, 0],
         ... [0, 0, 0, 1]
-        ... ])
+        ... ]])
         >>> r.as_quat()
-        array([[1., 0., 0., 0.],
-               [0., 0., 0., 1.]])
+        array([[[1., 0., 0., 0.],
+                [0., 0., 0., 1.]]])
         >>> r.as_quat().shape
-        (2, 4)
+        (1, 2, 4)
 
         It is also possible to have a stack of a single rotation:
 
@@ -485,9 +489,9 @@ class Rotation:
 
         Parameters
         ----------
-        matrix : array_like, shape (N, 3, 3) or (3, 3)
-            A single matrix or a stack of matrices, where ``matrix[i]`` is
-            the i-th matrix.
+        matrix : array_like, shape (..., 3, 3)
+            A single matrix or an ND array of matrices, where the last two dimensions
+            contain the rotation matrices.
 
         Returns
         -------
@@ -570,6 +574,12 @@ class Rotation:
         >>> r.as_matrix().shape
         (1, 3, 3)
 
+        We can also create an N-dimensional array of rotations:
+
+        >>> r = R.from_matrix(np.tile(np.eye(3), (2, 3, 1, 1)))
+        >>> r.shape
+        (2, 3)
+
         Notes
         -----
         This function was called from_dcm before.
@@ -595,9 +605,9 @@ class Rotation:
 
         Parameters
         ----------
-        rotvec : array_like, shape (N, 3) or (3,)
-            A single vector or a stack of vectors, where `rot_vec[i]` gives
-            the ith rotation vector.
+        rotvec : array_like, shape (..., 3)
+            A single vector or an ND array of vectors, where the last dimension
+            contains the rotation vectors.
         degrees : bool, optional
             If True, then the given magnitudes are assumed to be in degrees.
             Default is False.
@@ -884,9 +894,9 @@ class Rotation:
 
         Parameters
         ----------
-        mrp : array_like, shape (N, 3) or (3,)
-            A single vector or a stack of vectors, where `mrp[i]` gives
-            the ith set of MRPs.
+        mrp : array_like, shape (..., 3)
+            A single vector or an ND array of vectors, where the last dimension
+            contains the rotation parameters.
 
         Returns
         -------
@@ -986,7 +996,7 @@ class Rotation:
 
         Returns
         -------
-        quat : `numpy.ndarray`, shape (4,) or (N, 4)
+        quat : `numpy.ndarray`, shape (..., 4)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -1008,12 +1018,14 @@ class Rotation:
         >>> r.as_quat(scalar_first=True)
         array([1., 0., 0., 0.])
 
-        When multiple rotations are stored in a single Rotation object, the
-        result will be a 2-dimensional array:
+        The resulting shape of the quaternion is always the shape of the Rotation
+        object with an added last dimension of size 4. E.g. when the `Rotation` object
+        contains an N-dimensional array (N, M, K) of rotations, the result will be a
+        4-dimensional array:
 
-        >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
+        >>> r = R.from_rotvec(np.ones((2, 3, 4, 3)))
         >>> r.as_quat().shape
-        (2, 4)
+        (2, 3, 4, 4)
 
         Quaternions can be mapped from a redundant double cover of the
         rotation space to a canonical representation with a positive w term.
@@ -1042,7 +1054,7 @@ class Rotation:
 
         Returns
         -------
-        matrix : ndarray, shape (3, 3) or (N, 3, 3)
+        matrix : ndarray, shape (..., 3)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -1117,7 +1129,7 @@ class Rotation:
 
         Returns
         -------
-        rotvec : ndarray, shape (3,) or (N, 3)
+        rotvec : ndarray, shape (..., 3)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -1207,7 +1219,7 @@ class Rotation:
 
         Returns
         -------
-        angles : ndarray, shape (3,) or (N, 3)
+        angles : ndarray, shape (..., 3)
             Shape depends on shape of inputs used to initialize object.
             The returned angles are in the range:
 
@@ -1314,14 +1326,14 @@ class Rotation:
 
         Parameters
         ----------
-        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimensional. If two dimensional, describes the
-            sequence of axes for rotations, where each axes[i, :] is the ith
+        axes : array_like, shape (..., [1 or 2 or 3], 3) or (..., 3)
+            Axis of rotation, if one dimensional. If N dimensional, describes the
+            sequence of axes for rotations, where each axes[..., i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
         order : string
             If it belongs to the set {'e', 'extrinsic'}, the sequence will be
-            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence
+            extrinsic. If it belongs to the set {'i', 'intrinsic'}, sequence
             will be treated as intrinsic.
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
@@ -1331,7 +1343,7 @@ class Rotation:
 
         Returns
         -------
-        angles : ndarray, shape (3,) or (N, 3)
+        angles : ndarray, shape (..., 3)
             Shape depends on shape of inputs used to initialize object.
             The returned angles are in the range:
 
@@ -1419,7 +1431,7 @@ class Rotation:
 
         Returns
         -------
-        mrps : ndarray, shape (3,) or (N, 3)
+        mrps : ndarray, shape (..., 3)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -1554,10 +1566,9 @@ class Rotation:
 
         Parameters
         ----------
-        vectors : array_like, shape (3,) or (N, 3)
-            Each `vectors[i]` represents a vector in 3D space. A single vector
-            can either be specified with shape `(3, )` or `(1, 3)`. The number
-            of rotations and number of vectors given must follow standard numpy
+        vectors : array_like, shape (..., 3)
+            Each `vectors[..., :]` represents a vector in 3D space. The shape of
+            rotations and shape of vectors given must follow standard numpy
             broadcasting rules: either one of them equals unity or they both
             equal each other.
         inverse : boolean, optional
@@ -1566,15 +1577,10 @@ class Rotation:
 
         Returns
         -------
-        rotated_vectors : ndarray, shape (3,) or (N, 3)
+        rotated_vectors : ndarray, shape (..., 3)
             Result of applying rotation on input vectors.
-            Shape depends on the following cases:
-
-                - If object contains a single rotation (as opposed to a stack
-                  with a single rotation) and a single vector is specified with
-                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
-                - In all other cases, `rotated_vectors` has shape ``(N, 3)``,
-                  where ``N`` is either the number of rotations or vectors.
+            Shape is determined according to numpy broadcasting rules. I.e., the result
+            will have the shape `np.broadcast_shapes(r.shape, v.shape[:-1]) + (3,)`
 
         Examples
         --------
@@ -1642,6 +1648,15 @@ class Rotation:
         >>> r.apply(vectors).shape
         (2, 3)
 
+        Broadcasting rules apply:
+
+        >>> r = R.from_rotvec(np.tile([0, 0, np.pi/4], (5, 1, 4, 1)))
+        >>> vectors = np.ones((3, 4, 3))
+        >>> r.shape, vectors.shape
+        ((5, 1, 4), (3, 4, 3))
+        >>> r.apply(vectors).shape
+        (5, 3, 4, 3)
+
         It is also possible to apply the inverse rotation:
 
         >>> r = R.from_euler('zxy', [
@@ -1694,14 +1709,12 @@ class Rotation:
         -------
         composition : `Rotation` instance
             This function supports composition of multiple rotations at a time.
-            The following cases are possible:
-
-            - Either ``p`` or ``q`` contains a single rotation. In this case
-              `composition` contains the result of composing each rotation in
-              the other object with the single rotation.
-            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each
-              rotation ``p[i]`` is composed with the corresponding rotation
-              ``q[i]`` and `output` contains ``N`` rotations.
+            Composition follows standard numpy broadcasting rules. The resulting
+            `Rotation` object will have the shape
+            `np.broadcast_shapes(p.shape, q.shape)`. In dimensions with size > 1,
+            rotations are composed with matching indices. In dimensions with only
+            one rotation, the single rotation is composed with each rotation in the
+            other object.
 
         Examples
         --------
@@ -1741,6 +1754,14 @@ class Rotation:
         array([[ 0.27059805,  0.27059805,  0.65328148,  0.65328148],
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
+        Broadcasting rules apply:
+        >>> p = R.from_quat(np.tile(np.array([0, 0, 1, 1]), (5, 1, 1)))
+        >>> q = R.from_quat(np.tile(np.array([1, 0, 0, 1]), (1, 6, 1)))
+        >>> p.shape, q.shape
+        ((5, 1), (1, 6))
+        >>> r = p * q
+        >>> r.shape
+        (5, 6)
         """
         # Check that other is a Rotation object. We want to return NotImplemented
         # instead of raising an error to allow other types to implement __rmul__.
@@ -1788,9 +1809,9 @@ class Rotation:
         Returns
         -------
         power : `Rotation` instance
-            If the input Rotation ``p`` contains ``N`` multiple rotations, then
-            the output will contain ``N`` rotations where the ``i`` th rotation
-            is equal to ``p[i] ** n``
+            The resulting rotation will be of the same shape as the original rotation
+            object. Each element of the output is the corresponding element of the
+            input rotation raised to the power of ``n``.
 
         Notes
         -----
@@ -1886,7 +1907,7 @@ class Rotation:
         -------
         magnitude : ndarray or float
             Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations. The magnitude
+            and ndarray if object contains ND rotations. The magnitude
             will always be in the range [0, pi].
 
         Examples
@@ -1969,7 +1990,11 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def mean(self, weights: ArrayLike | None = None) -> Rotation:
+    def mean(
+        self,
+        weights: ArrayLike | None = None,
+        axis: None | int | tuple[int, ...] = None,
+    ) -> Rotation:
         """Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or
@@ -1986,16 +2011,20 @@ class Rotation:
 
         Parameters
         ----------
-        weights : array_like shape (N,), optional
+        weights : array_like shape (..., N), optional
             Weights describing the relative importance of the rotations. If
             None (default), then all values in `weights` are assumed to be
-            equal.
+            equal. If given, the shape of `weights` must be broadcastable to
+            the rotation shape. Weights must be non-negative.
+        axis : None, int, or tuple of ints, optional
+            Axis or axes along which the means are computed. The default is to
+            compute the mean of all rotations.
 
         Returns
         -------
         mean : `Rotation` instance
-            Object containing the mean of the rotations in the current
-            instance.
+            Single rotation containing the mean of the rotations in the
+            current instance.
 
         References
         ----------
@@ -2013,7 +2042,7 @@ class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
-        mean = self._backend.mean(self._quat, weights=weights)
+        mean = self._backend.mean(self._quat, weights=weights, axis=axis)
         return Rotation._from_raw_quat(mean, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
@@ -2228,7 +2257,9 @@ class Rotation:
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
     @staticmethod
-    def identity(num: int | None = None) -> Rotation:
+    def identity(
+        num: int | None = None, *, shape: int | tuple[int, ...] | None = None
+    ) -> Rotation:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -2238,22 +2269,32 @@ class Rotation:
         num : int or None, optional
             Number of identity rotations to generate. If None (default), then a
             single rotation is generated.
+        shape : int or tuple of ints, optional
+            Shape of identity rotations to generate. If specified, `num` must
+            be None.
 
         Returns
         -------
         identity : Rotation object
             The identity rotation.
         """
-        quat = cython_backend.identity(num)
+        # TODO: We should move to one single way of specifying the output shape and
+        # deprecate `num`.
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` or `shape` can be specified.")
+        quat = cython_backend.identity(num, shape=shape)
         return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
-    @classmethod
+    @staticmethod
     @_transition_to_rng("random_state", position_num=2)
     def random(
-        cls, num: int | None = None, rng: np.random.Generator | None = None
+        num: int | None = None,
+        rng: np.random.Generator | None = None,
+        *,
+        shape: tuple[int, ...] | None = None,
     ) -> Rotation:
         r"""Generate rotations that are uniformly distributed on a sphere.
-        
+
         Formally, the rotations follow the Haar-uniform distribution over the SO(3)
         group.
 
@@ -2267,6 +2308,8 @@ class Rotation:
             `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` are
             passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        shape : tuple of ints, optional
+            Shape of random rotations to generate. If specified, `num` must be None.
 
         Returns
         -------
@@ -2303,11 +2346,12 @@ class Rotation:
         scipy.stats.special_ortho_group
 
         """
-        # TODO: The array API does not have a unified random interface. This method only
-        # creates numpy arrays. If we do want to support other frameworks, we need a way
-        # to handle other rng implementations.
-        sample = cython_backend.random(num, rng)
-        return cls(sample, normalize=True, copy=False)
+        # TODO: We should move to one single way of specifying the output shape and
+        # deprecate `num`.
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` or `shape` can be specified.")
+        sample = cython_backend.random(num, rng, shape=shape)
+        return Rotation(sample, normalize=True, copy=False)
 
     @staticmethod
     @xp_capabilities(
@@ -2338,6 +2382,11 @@ class Rotation:
 
         The rotation is estimated with Kabsch algorithm [1]_, and solves what
         is known as the "pointing problem", or "Wahba's problem" [2]_.
+
+        Note that the length of each vector in this formulation acts as an
+        implicit weight. So for use cases where all vectors need to be
+        weighted equally, you should normalize them to unit length prior to
+        calling this method.
 
         There are two special cases. The first is if a single vector is given
         for `a` and `b`, in which the shortest distance rotation that aligns
@@ -2388,9 +2437,9 @@ class Rotation:
             optimal rotation.
             Note that the result will also be weighted by the vectors'
             magnitudes, so perfectly aligned vector pairs will have nonzero
-            `rssd` if they are not of the same length. So, depending on the
-            use case it may be desirable to normalize the input vectors to unit
-            length before calling this method.
+            `rssd` if they are not of the same length. This can be avoided by
+            normalizing them to unit length prior to calling this method,
+            though note that doing this will change the resulting rotation.
         sensitivity_matrix : ndarray, shape (3, 3)
             Sensitivity matrix of the estimated rotation estimate as explained
             in Notes. Returned only when `return_sensitivity` is True. Not
@@ -2416,6 +2465,8 @@ class Rotation:
         Refer to [5]_ for more rigorous discussion of the covariance
         estimation. See [6]_ for more discussion of the pointing problem and
         minimal proper pointing.
+
+        This function does not support broadcasting or ND arrays with N > 2.
 
         References
         ----------
@@ -2646,6 +2697,9 @@ class Slerp:
 
     Notes
     -----
+    This class only supports interpolation of rotations with a single leading
+    dimension.
+
     .. versionadded:: 1.2.0
 
     References

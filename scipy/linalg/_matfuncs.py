@@ -119,10 +119,11 @@ def fractional_matrix_power(A, t):
 
     References
     ----------
-    .. [1] Nicholas J. Higham and Lijing lin (2011)
+    .. [1] Nicholas J. Higham and Lijing Lin (2011)
            "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
            SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+           32 (3). pp. 1056-1078. ISSN 0895-4798.
+           :doi:`10.1137/10081232X`
 
     Examples
     --------
@@ -232,6 +233,10 @@ def logm(A, disp=_NoValue):
 
 def expm(A):
     """Compute the matrix exponential of an array.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -418,6 +423,10 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     Moreover, not every real matrix has a real square root. Hence, for
     real-valued matrices the return type can be complex if, numerically, there
     is an eigenvalue on the negative real axis.
+
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
