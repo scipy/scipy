@@ -1267,9 +1267,14 @@ add_newdoc("chdtriv",
     --------
     chdtr, chdtrc, chdtri
 
+    Notes
+    -----
+    This function wraps routines from the Boost Math C++ library [1]_.
+
     References
     ----------
-    .. [1] Chi-Square distribution,
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [2] Chi-Square distribution,
         https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm
 
     Examples
@@ -1280,10 +1285,10 @@ add_newdoc("chdtriv",
 
     >>> p, x = 0.5, 1
     >>> sc.chdtr(sc.chdtriv(p, x), x)
-    0.5000000000202172
+    0.5000000000000003
     >>> v = 1
     >>> sc.chdtriv(sc.chdtr(v, x), v)
-    1.0000000000000013
+    1.0
 
     """)
 
@@ -6177,6 +6182,15 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    Notes
+    -----
+    This function relies on the ``gamma_q_inva`` function from the Boost
+    Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     See Also
     --------
     pdtr : Poisson cumulative distribution function
@@ -7107,6 +7121,13 @@ add_newdoc(
     Calling `stdtr` directly can improve performance compared to the
     ``cdf`` method of `scipy.stats.t` (see last example below).
 
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, http://www.boost.org/
+
     Examples
     --------
     Calculate the function for ``df=3`` at ``t=1``.
@@ -7244,6 +7265,13 @@ add_newdoc("stdtrit",
     The student t distribution is also available as `scipy.stats.t`. Calling
     `stdtrit` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.t` (see last example below).
+
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, http://www.boost.org/
 
     Examples
     --------
@@ -7493,7 +7521,7 @@ add_newdoc("yn",
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

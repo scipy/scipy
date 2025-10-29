@@ -27,6 +27,7 @@ import numpy as np
 
 from . import _fitpack_impl
 from . import _dfitpack as dfitpack
+from scipy._lib._array_api import xp_capabilities
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -70,6 +71,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
+@xp_capabilities(out_of_scope=True)
 class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
@@ -655,6 +657,7 @@ class UnivariateSpline:
         return UnivariateSpline._from_tck(tck, self.ext)
 
 
+@xp_capabilities(out_of_scope=True)
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     1-D interpolating spline for a given set of data points.
@@ -777,6 +780,7 @@ This means that at least one of the following conditions is violated:
 """
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
@@ -1186,6 +1190,7 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
 
+@xp_capabilities(out_of_scope=True)
 class BivariateSpline(_BivariateSplineBase):
     """
     Base class for bivariate splines.
@@ -1352,6 +1357,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
         raise AttributeError(f"method \"get_residual\" {self._invalid_why}")
 
 
+@xp_capabilities(out_of_scope=True)
 class SmoothBivariateSpline(BivariateSpline):
     """
     Smooth bivariate spline approximation.
@@ -1416,9 +1422,8 @@ class SmoothBivariateSpline(BivariateSpline):
     and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
     of `bisplrep`.
 
-    For linear interpolation, prefer `LinearNDInterpolator`.
-    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
-    for discussion.
+    For linear interpolation, `LinearNDInterpolator` is preferred.
+    Consult the :ref:`interp-transition-guide` for discussion.
 
     """
 
@@ -1451,6 +1456,7 @@ class SmoothBivariateSpline(BivariateSpline):
         self.degrees = kx, ky
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQBivariateSpline(BivariateSpline):
     """
     Weighted least-squares bivariate spline approximation.
@@ -1551,6 +1557,7 @@ class LSQBivariateSpline(BivariateSpline):
         self.degrees = kx, ky
 
 
+@xp_capabilities(out_of_scope=True)
 class RectBivariateSpline(BivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh.
@@ -1667,6 +1674,7 @@ WARNING. The coefficients of the spline returned have been computed as the
          the value of eps."""
 
 
+@xp_capabilities(out_of_scope=True)
 class SphereBivariateSpline(_BivariateSplineBase):
     """
     Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
@@ -1834,6 +1842,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
 
+@xp_capabilities(out_of_scope=True)
 class SmoothSphereBivariateSpline(SphereBivariateSpline):
     """
     Smooth bivariate spline approximation in spherical coordinates.
@@ -1976,6 +1985,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
                                               dphi=dphi, grid=grid)
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
@@ -2160,6 +2170,7 @@ ERROR: on entry, the input data are controlled on validity
        approximation returned."""
 
 
+@xp_capabilities(out_of_scope=True)
 class RectSphereBivariateSpline(SphereBivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.

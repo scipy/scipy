@@ -55,7 +55,7 @@ cpdef double cbrt(double x0) noexcept nogil
 cpdef double chdtr(double x0, double x1) noexcept nogil
 cpdef double chdtrc(double x0, double x1) noexcept nogil
 cpdef double chdtri(double x0, double x1) noexcept nogil
-cpdef double chdtriv(double x0, double x1) noexcept nogil
+cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
@@ -215,7 +215,7 @@ cdef void pbwa(double x0, double x1, double *y0, double *y1) noexcept nogil
 cpdef double pdtr(double x0, double x1) noexcept nogil
 cpdef double pdtrc(double x0, double x1) noexcept nogil
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil
-cpdef double pdtrik(double x0, double x1) noexcept nogil
+cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double poch(double x0, double x1) noexcept nogil
 cpdef df_number_t powm1(df_number_t x0, df_number_t x1) noexcept nogil
 cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil
@@ -237,9 +237,9 @@ cpdef double sindg(double x0) noexcept nogil
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil
-cpdef double stdtr(double x0, double x1) noexcept nogil
+cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double stdtridf(double x0, double x1) noexcept nogil
-cpdef double stdtrit(double x0, double x1) noexcept nogil
+cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double struve(double x0, double x1) noexcept nogil
 cpdef double tandg(double x0) noexcept nogil
 cpdef double tklmbda(double x0, double x1) noexcept nogil

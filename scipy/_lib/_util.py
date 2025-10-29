@@ -363,7 +363,7 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
                 new_doc = [_desc] + old_doc_keep
                 _rng_parameter_doc = Parameter('rng', _type, new_doc)
                 doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
-                doc = str(doc).split("\n", 1)[1]  # remove signature
+                doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
                 wrapper.__doc__ = str(doc)
         return wrapper
 
@@ -875,9 +875,6 @@ def _contains_nan(
         if is_lazy_array(a):
             msg = "nan_policy='omit' is not supported for lazy arrays."
             raise TypeError(msg)
-        if contains_nan:
-            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-            raise ValueError(msg)
 
     return contains_nan
 
@@ -1175,7 +1172,8 @@ def _apply_over_batch(*argdefs):
             # Main loop
             results = []
             for index in np.ndindex(batch_shape):
-                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
+                result = f(*((array[index] if array is not None else None)
+                             for array in arrays), *other_args, **kwargs)
                 # Assume `result` is either a tuple or single array. This is easily
                 # generalized by allowing the contributor to pass an `unpack_result`
                 # callable to the decorator factory.
@@ -1196,7 +1194,7 @@ def _apply_over_batch(*argdefs):
 
         doc = FunctionDoc(wrapper)
         doc['Extended Summary'].append(_batch_note.rstrip())
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper
     return decorator

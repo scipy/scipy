@@ -7,6 +7,8 @@ from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
 from scipy._lib._array_api import xp_assert_equal, make_xp_test_case
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 class TestTieCorrect:
 
     def test_empty(self):
@@ -171,12 +173,13 @@ class TestRankData:
         val = np.array([0, 1, 2, 2.718, 3, 3.141], dtype='object')
         check_ranks(np.random.choice(val, 200).astype('object'))
 
-    def test_large_int(self, xp):
-        if hasattr(xp, 'uint64'):
-            data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
-            r = rankdata(data)
-            xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
+    @pytest.mark.skip_xp_backends("torch", reason="`take_along_axis` fails with uint64")
+    def test_large_uint(self, xp):
+        data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
+        r = rankdata(data)
+        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
 
+    def test_large_int(self, xp):
         data = xp.asarray([2**60, 2**60+1], dtype=xp.int64)
         r = rankdata(data)
         xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))

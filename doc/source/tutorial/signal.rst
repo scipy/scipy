@@ -519,64 +519,32 @@ for designing both types of filters.
 FIR Filter
 """"""""""
 
-The function :func:`firwin` designs filters according to the window method.
-Depending on the provided arguments, the function returns different filter
-types (e.g., low-pass, band-pass...).
+The function :func:`firwin` designs filters according to the window method. Depending
+on the provided arguments, the function returns different filter types (e.g., low-pass,
+band-pass...). The following example designs a low-pass and a band-stop filter and
+plots their frequency responses. The low-pass corner frequency of 0.5 Hz and the stop
+band interval of 0.3 Hz to 0.8 Hz are denoted by vertical dashed lines. Since the
+sampling frequency is set to 2 Hz, only the frequency range between 0 Hz and the
+Nyquist frequency of 1 Hz is plotted.
 
-The example below designs a low-pass and a band-stop filter, respectively.
+.. plot:: tutorial/examples/signal_Filtering_firwin_example.py
+    :alt: Example of utilizing `firwin` to design a low-pass and a band-stop filter.
 
-.. plot::
-   :alt: "This code displays an X-Y plot with the amplitude response on the Y axis vs frequency on the X axis. The first (low-pass) trace in blue starts with a pass-band at 0 dB and curves down around halfway through with some ripple in the stop-band about 80 dB down. The second (band-stop) trace in red starts and ends at 0 dB, but the middle third is down about 60 dB from the peak with some ripple where the filter would suppress a signal."
+The function :func:`firwin2` allows design of almost arbitrary frequency responses by
+specifying an array of corner frequencies and corresponding gains, respectively. The
+example below designs a filter with such an arbitrary amplitude response and plots the
+its frequency response on a linear magnitude scale. The four specified gains corner are
+denoted by gray dots connected by a dashed line, whereas the response of the filter is
+depicted by a continuous blue line.
 
-   >>> import numpy as np
-   >>> import scipy.signal as signal
-   >>> import matplotlib.pyplot as plt
+.. plot:: tutorial/examples/signal_Filtering_firwin2_example.py
+    :alt: Example of utilizing `firwin2` to design an arbitrary response filter.
 
-   >>> b1 = signal.firwin(40, 0.5)
-   >>> b2 = signal.firwin(41, [0.3, 0.8])
-   >>> w1, h1 = signal.freqz(b1)
-   >>> w2, h2 = signal.freqz(b2)
+The deviations between the desired gains and the calculated response can be reduced
+by increasing the number of taps.
 
-   >>> plt.title('Digital filter frequency response')
-   >>> plt.plot(w1, 20*np.log10(np.abs(h1)), 'b')
-   >>> plt.plot(w2, 20*np.log10(np.abs(h2)), 'r')
-   >>> plt.ylabel('Amplitude Response (dB)')
-   >>> plt.xlabel('Frequency (rad/sample)')
-   >>> plt.grid()
-   >>> plt.show()
-
-Note that :func:`firwin` uses, per default, a normalized frequency defined such
-that the value :math:`1` corresponds to the Nyquist frequency, whereas the
-function :func:`freqz` is defined such that the value :math:`\pi` corresponds
-to the Nyquist frequency.
-
-
-The function :func:`firwin2` allows design of almost arbitrary frequency
-responses by specifying an array of corner frequencies and corresponding
-gains, respectively.
-
-The example below designs a filter with such an arbitrary amplitude response.
-
-.. plot::
-   :alt: "This code displays an X-Y plot with amplitude response on the Y axis vs frequency on the X axis. A single trace forms a shape similar to a heartbeat signal."
-
-   >>> import numpy as np
-   >>> import scipy.signal as signal
-   >>> import matplotlib.pyplot as plt
-
-   >>> b = signal.firwin2(150, [0.0, 0.3, 0.6, 1.0], [1.0, 2.0, 0.5, 0.0])
-   >>> w, h = signal.freqz(b)
-
-   >>> plt.title('Digital filter frequency response')
-   >>> plt.plot(w, np.abs(h))
-   >>> plt.title('Digital filter frequency response')
-   >>> plt.ylabel('Amplitude Response')
-   >>> plt.xlabel('Frequency (rad/sample)')
-   >>> plt.grid()
-   >>> plt.show()
-
-Note the linear scaling of the y-axis and the different definition of the
-Nyquist frequency in :func:`firwin2` and :func:`freqz` (as explained above).
+Note that the functions :func:`firwin`, :func:`firwin2` and :func:`freqz` use different
+default sampling frequencies.
 
 
 IIR Filter
@@ -1477,7 +1445,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
        :label: eq_STFT_windowing
 
        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
-                \quad m = 0, \ldots M-1\ ,
+                \quad m = 0, \ldots, M-1\ ,
 
    where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e., it is
    the mid point of the window (`m_num_mid`). For notational convenience,

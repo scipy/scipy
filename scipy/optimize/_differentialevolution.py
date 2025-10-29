@@ -2,6 +2,7 @@
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
+from functools import partial
 import warnings
 
 import numpy as np
@@ -159,19 +160,32 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.
 
-    polish : bool, optional
+    polish : {bool, callable}, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+        Alternatively supply a callable that has a `minimize`-like signature,
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ``x``, ``nfev``, ``jac``.
 
         .. versionchanged:: 1.15.0
             If `workers` is specified then the map-like callable that wraps
             `func` is supplied to `minimize` instead of it using `func`
             directly. This allows the caller to control how and where the
             invocations actually run.
+
+        .. versionchanged:: 1.17.0
+            A callable obeying the `minimize` signature can be supplied to
+            polish the best population member.
 
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
@@ -318,10 +332,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     or the original candidate is made with a binomial distribution (the 'bin'
     in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
-    ``b'``, otherwise it is loaded from the original candidate. A randomly 
-    selected parameter is always loaded from ``b'``. For binomial crossover, 
-    this is a single random parameter. For exponential crossover, this is the 
-    starting point of a consecutive sequence of parameters from ``b'``. Once 
+    ``b'``, otherwise it is loaded from the original candidate. A randomly
+    selected parameter is always loaded from ``b'``. For binomial crossover,
+    this is a single random parameter. For exponential crossover, this is the
+    starting point of a consecutive sequence of parameters from ``b'``. Once
     the trial candidate is built its fitness is assessed. If the trial is
     better than the original candidate then it takes its place. If it is
     also better than the best overall candidate it also replaces that.
@@ -389,7 +403,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            2002.
     .. [6] https://mpi4py.readthedocs.io/en/stable/
     .. [7] https://schwimmbad.readthedocs.io/en/latest/
- 
+
 
     Examples
     --------
@@ -447,6 +461,21 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     >>> result = differential_evolution(
     ...     ackley, bounds, vectorized=True, updating='deferred', rng=1
+    ... )
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
+
+    The final polishing step can be customised by providing a callable that
+    mimics the `minimize` interface. The user is responsible for ensuring that
+    the minimizer obeys any bounds and constraints.
+
+    >>> from functools import partial
+    >>> from scipy.optimize import minimize
+    >>> # supply extra parameters to the polishing function using partial
+    >>> polish_func = partial(minimize, method="SLSQP")
+    >>> result = differential_evolution(
+    ...     ackley, bounds, vectorized=True, updating='deferred', rng=1,
+    ...     polish=polish_func
     ... )
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
@@ -597,7 +626,7 @@ class DifferentialEvolutionSolver:
         stability.
 
     rng : {None, int, `numpy.random.Generator`}, optional
-        
+
         ..versionchanged:: 1.15.0
             As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
             transition from use of `numpy.random.RandomState` to
@@ -610,17 +639,17 @@ class DifferentialEvolutionSolver:
         passed to `numpy.random.default_rng` to instantiate a `Generator`.
         If `rng` is already a `Generator` instance, then the provided instance is
         used.
-        
+
         If this argument is passed by position or `seed` is passed by keyword, the
         behavior is:
-        
+
         - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
           singleton is used.
         - If `seed` is an int, a new `RandomState` instance is used,
           seeded with `seed`.
         - If `seed` is already a `Generator` or `RandomState` instance then
           that instance is used.
-        
+
         Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
@@ -650,13 +679,22 @@ class DifferentialEvolutionSolver:
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.
 
-    polish : bool, optional
+    polish : {bool, callable}, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+        Alternatively supply a callable that has a `minimize`-like signature,
+        ``polish_func(func, x0, **kwds)`` and returns an `OptimizeResult`. This
+        allows the user to have fine control over how the polishing occurs.
+        `bounds` and `constraints` will be present in ``kwds``. Extra keywords
+        could be supplied to `polish_func` using `functools.partial`. It is the
+        user's responsibility to ensure that the polishing function obeys
+        bounds, any constraints (including integrality constraints), and that
+        appropriate attributes are set in the `OptimizeResult`, such as ``fun``,
+        ```x``, ``nfev``, ``jac``.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -842,6 +880,7 @@ class DifferentialEvolutionSolver:
 
         # we create a wrapped function to allow the use of map (and Pool.map
         # in the future)
+        self.original_func = func
         self.func = _FunctionWrapper(func, args)
         self.args = args
 
@@ -1245,16 +1284,31 @@ class DifferentialEvolutionSolver:
                                   "attempting to polish from the least "
                                   "infeasible solution",
                                   UserWarning, stacklevel=2)
-            if self.disp:
-                print(f"Polishing solution with '{polish_method}'")
-            result = minimize(lambda x:
-                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
-                              np.copy(DE_result.x),
-                              method=polish_method,
-                              bounds=self.limits.T,
-                              constraints=self.constraints)
 
-            self._nfev += result.nfev
+            pf = self.polish
+            _f = self.original_func
+            if not callable(pf):
+                pf = partial(minimize, method=polish_method)
+                def _f(x):
+                    return list(self._mapwrapper(self.func, np.atleast_2d(x)))[0]
+
+                if self.disp:
+                    print(f"Polishing solution with '{polish_method}'")
+
+            result = pf(
+                _f,
+                np.copy(DE_result.x),
+                bounds=Bounds(lb=self.limits[0], ub=self.limits[1]),
+                constraints=self.constraints
+            )
+
+            if not isinstance(result, OptimizeResult):
+                raise ValueError(
+                    "The result from a user defined polishing function "
+                     "should return an OptimizeResult."
+                )
+
+            self._nfev += result.get("nfev", 0)
             DE_result.nfev = self._nfev
 
             # Polishing solution is only accepted if there is an improvement in
@@ -1266,7 +1320,7 @@ class DifferentialEvolutionSolver:
                     np.all(self.limits[0] <= result.x)):
                 DE_result.fun = result.fun
                 DE_result.x = result.x
-                DE_result.jac = result.jac
+                DE_result.jac = result.get("jac", None)
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
@@ -1733,7 +1787,7 @@ class DifferentialEvolutionSolver:
         if self.strategy in self._binomial:
             # A randomly selected parameter is always from the bprime vector for
             # binomial crossover. The fill_point ensures at least one parameter
-            # comes from bprime, preventing the possibility of no mutation 
+            # comes from bprime, preventing the possibility of no mutation
             # influence in the trial vector.
             i = np.arange(S)
             crossovers[i, fill_point[i]] = True
@@ -1744,7 +1798,7 @@ class DifferentialEvolutionSolver:
             # For exponential crossover, fill_point determines the starting index
             # for a consecutive sequence of parameters from bprime. The sequence
             # continues until a crossover probability check fails. The starting
-            # index is always from the bprime vector ensuring at least one 
+            # index is always from the bprime vector ensuring at least one
             # parameter comes from bprime.
             crossovers[..., 0] = True
             for j in range(S):
@@ -1789,7 +1843,7 @@ class DifferentialEvolutionSolver:
             # For exponential crossover, fill_point determines the starting index
             # for a consecutive sequence of parameters from bprime. The sequence
             # continues until a crossover probability check fails. The starting
-            # index is always from the bprime vector ensuring at least one 
+            # index is always from the bprime vector ensuring at least one
             # parameter comes from bprime.
             i = 0
             crossovers[0] = True

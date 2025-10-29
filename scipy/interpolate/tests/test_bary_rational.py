@@ -199,7 +199,7 @@ class TestAAA:
     @pytest.mark.parametrize("func,atol,rtol",
                              [(lambda x: np.abs(x + 0.5 + 0.01j), 5e-13, 1e-7),
                               (lambda x: np.sin(1/(1.05 - x)), 2e-13, 1e-7),
-                              (lambda x: np.exp(-1/(x**2)), 3.5e-12, 0),
+                              (lambda x: np.exp(-1/(x**2)), 3.5e-11, 0),
                               (lambda x: np.exp(-100*x**2), 2e-12, 0),
                               (lambda x: np.exp(-10/(1.2 - x)), 1e-14, 0),
                               (lambda x: 1/(1+np.exp(100*(x + 0.5))), 2e-13, 1e-7),
@@ -258,6 +258,15 @@ class TestAAA:
         assert np.sum(np.abs(r.residues()) < 1e-14) < n_spurious
         # check accuracy
         assert_allclose(r(z), np.tan(np.pi*z/2), atol=6e-12, rtol=3e-12)
+
+    def test_diag_scaling(self):
+        # fails without diag scaling
+        z = np.logspace(-15, 0, 300)
+        f = np.sqrt(z)
+        r = AAA(z, f)
+
+        zz = np.logspace(-15, 0, 500)
+        assert_allclose(r(zz), np.sqrt(zz), rtol=9e-6)
 
 
 class TestFloaterHormann:

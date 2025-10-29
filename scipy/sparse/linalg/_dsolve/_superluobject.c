@@ -158,8 +158,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_r;
     }
     else if (strcmp(name, "perm_c") == 0) {
@@ -173,8 +176,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_c;
     }
     else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
@@ -818,13 +824,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyBytes_Check(input)) {                \
-        s = PyBytes_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                 \
+        s = PyBytes_AsString(input);            \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyBytes_AS_STRING(tmpobj);         \
+        s = PyBytes_AsString(tmpobj);           \
     }                                           \
     else if (PyLong_Check(input)) {              \
         i = PyLong_AsLong(input);                \

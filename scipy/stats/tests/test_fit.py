@@ -36,7 +36,7 @@ mle_failing_fits = [
         'tukeylambda',
         'vonmises',
         'levy_stable',
-        'trapezoid',
+        'truncpareto',
         'truncweibull_min',
         'studentized_range',
 ]
@@ -71,7 +71,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'rel_breitwigner', 'skewcauchy', 't', 'triang',
                    'truncpareto', 'truncweibull_min', 'tukeylambda',
                    'studentized_range']
 
@@ -249,7 +249,8 @@ def cases_test_fit_mle():
                       'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
                       'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
-                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy',
+                      'zipfian'}
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'dpareto_lognorm',
@@ -260,7 +261,7 @@ def cases_test_fit_mle():
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
                        'skellam', 'trapezoid', 'triang',
-                       'tukeylambda', 'vonmises', 'zipfian'}
+                       'tukeylambda', 'vonmises'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -306,7 +307,8 @@ def cases_test_fit_mse():
                       'semicircular',
                       't', 'triang', 'truncexpon', 'truncpareto',
                       'uniform',
-                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy',
+                      'zipfian'}
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
@@ -318,7 +320,7 @@ def cases_test_fit_mse():
                        'pearson3', 'powerlognorm',
                        'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'truncweibull_min',
-                       'vonmises_line', 'zipfian'}
+                       'vonmises_line'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 

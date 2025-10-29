@@ -226,7 +226,7 @@ class TestDifferentialEntropy:
         )
 
     def test_input_validation(self, xp):
-        x = np.random.rand(10)
+        x = np.ones(10)
         x = xp.asarray(x.tolist())
 
         message = "`base` must be a positive number or `None`."

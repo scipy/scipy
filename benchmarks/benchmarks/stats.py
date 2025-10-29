@@ -649,6 +649,26 @@ class BenchQMCDiscrepancy(Benchmark):
         stats.qmc.discrepancy(self.sample, method=method)
 
 
+class BenchQMCGeometricDiscrepancy(Benchmark):
+    param_names = ['method', 'metric', 'ndims']
+    params = [
+        ['mindist', 'mst'],
+        ['euclidean', 'cityblock', 'chebyshev', 'cosine'],
+        [2, 3, 10],
+    ]
+
+    def setup(self, method, metric, ndims):
+        rng = np.random.default_rng(1234)
+        sample = rng.random((1000, ndims))
+        self.sample = sample
+
+    def time_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+    def peakmem_geo_discrepancy(self, method, metric, ndims):
+        stats.qmc.geometric_discrepancy(self.sample, method=method, metric=metric)
+
+
 class BenchQMCHalton(Benchmark):
     param_names = ['d', 'scramble', 'n', 'workers']
     params = [
@@ -794,3 +814,19 @@ class RandomTable(Benchmark):
 
     def time_method(self, method, ntot, ncell):
         self.dist.rvs(1000, method=method, random_state=self.rng)
+
+
+class Quantile(Benchmark):
+    param_names = ["size", "d"]
+    params = [
+        [10_000, 100_000, 1_000_000],
+        [1, 100]
+    ]
+
+    def setup(self, size, d):
+        self.rng = np.random.default_rng(2475928)
+        n = size // d
+        self.x = self.rng.uniform(size=(d, n))
+
+    def time_quantile(self, size, d):
+        stats.quantile(self.x, 0.5, axis=1)
