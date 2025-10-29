@@ -3827,7 +3827,7 @@ MedianTestResult = _make_tuple_bunch(
 
 @xp_capabilities(np_only=True)
 def median_test(*samples, ties='below', correction=True, lambda_=1,
-                nan_policy='propagate'):
+                nan_policy='propagate', axis=0):
     """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
@@ -3968,7 +3968,15 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    if len(samples) < 2:
+    # Todo:
+    #   - deal with empty smaples
+    #   - replace errors with NaN results
+    #   - vectorize nan_policy='propagate'
+    #   - correct nan_policy='omit'
+    np = array_namespace(*samples)
+    n_samples = len(samples)
+
+    if n_samples < 2:
         raise ValueError('median_test requires two or more samples.')
 
     ties_options = ['below', 'above', 'ignore']
@@ -3976,69 +3984,68 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         raise ValueError(f"invalid 'ties' option '{ties}'; 'ties' must be one "
                          f"of: {str(ties_options)[1:-1]}")
 
-    data = [np.asarray(sample) for sample in samples]
+    data = _broadcast_arrays(samples, axis=axis, xp=np)
+    data = [np.moveaxis(array, axis, -1) for array in data]
+    data = xp_promote(*data, force_floating=True, xp=np)
+    batch_shape, dtype = data[0].shape[:-1], data[0].dtype
 
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
             raise ValueError(f"Sample {k + 1} is empty. All samples must "
                              f"contain at least one value.")
-        if d.ndim != 1:
-            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
-                             f"All samples must be one-dimensional sequences.")
 
-    cdata = np.concatenate(data)
+    cdata = np.concat(data, axis=-1)
     contains_nan = _contains_nan(cdata, nan_policy)
     if nan_policy == 'propagate' and contains_nan:
-        return MedianTestResult(np.nan, np.nan, np.nan, None)
+        nan = np.full(batch_shape, np.nan, dtype=dtype)[()]
+        return MedianTestResult(nan, nan, nan, None)
 
     if contains_nan:
-        grand_median = np.median(cdata[~np.isnan(cdata)])
+        grand_median = np.nanmedian(cdata, axis=-1, keepdims=True)
     else:
-        grand_median = np.median(cdata)
-    # When the minimum version of numpy supported by scipy is 1.9.0,
-    # the above if/else statement can be replaced by the single line:
-    #     grand_median = np.nanmedian(cdata)
+        grand_median = np.median(cdata, axis=-1, keepdims=True)
 
     # Create the contingency table.
-    table = np.zeros((2, len(data)), dtype=np.int64)
+    table = np.zeros(batch_shape + (2, n_samples), dtype=np.int64)
     for k, sample in enumerate(data):
-        sample = sample[~np.isnan(sample)]
-
-        nabove = count_nonzero(sample > grand_median)
-        nbelow = count_nonzero(sample < grand_median)
-        nequal = sample.size - (nabove + nbelow)
-        table[0, k] += nabove
-        table[1, k] += nbelow
+        nnan = count_nonzero(np.isnan(sample), axis=-1)
+        nabove = count_nonzero(sample > grand_median, axis=-1)
+        nbelow = count_nonzero(sample < grand_median, axis=-1)
+        nequal = sample.shape[-1] - (nabove + nbelow + nnan)
+        table[..., 0, k] += nabove
+        table[..., 1, k] += nbelow
         if ties == "below":
-            table[1, k] += nequal
+            table[..., 1, k] += nequal
         elif ties == "above":
-            table[0, k] += nequal
+            table[..., 0, k] += nequal
+
+    grand_median = np.squeeze(grand_median, axis=-1)
 
     # Check that no row or column of the table is all zero.
     # Such a table can not be given to chi2_contingency, because it would have
     # a zero in the table of expected frequencies.
-    rowsums = table.sum(axis=1)
-    if rowsums[0] == 0:
-        raise ValueError(f"All values are below the grand median ({grand_median}).")
-    if rowsums[1] == 0:
-        raise ValueError(f"All values are above the grand median ({grand_median}).")
-    if ties == "ignore":
-        # We already checked that each sample has at least one value, but it
-        # is possible that all those values equal the grand median.  If `ties`
-        # is "ignore", that would result in a column of zeros in `table`.  We
-        # check for that case here.
-        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
-        if len(zero_cols) > 0:
-            raise ValueError(
-                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
-                f"median ({grand_median!r}), so they are ignored, resulting in an "
-                f"empty sample."
-            )
+    # rowsums = table.sum(axis=-1)
+    # if rowsums[0] == 0:
+    #     raise ValueError(f"All values are below the grand median ({grand_median}).")
+    # if rowsums[1] == 0:
+    #     raise ValueError(f"All values are above the grand median ({grand_median}).")
+    # if ties == "ignore":
+    #     # We already checked that each sample has at least one value, but it
+    #     # is possible that all those values equal the grand median.  If `ties`
+    #     # is "ignore", that would result in a column of zeros in `table`.  We
+    #     # check for that case here.
+    #     zero_cols = np.nonzero((table == 0).all(axis=0))[0]
+    #     if len(zero_cols) > 0:
+    #         raise ValueError(
+    #             f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+    #             f"median ({grand_median!r}), so they are ignored, resulting in an "
+    #             f"empty sample."
+    #         )
 
-    stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
-                                              correction=correction)
-    return MedianTestResult(stat, p, grand_median, table)
+    stat, p = stats.contingency._chi2_contingency_2d(
+        table, lambda_=lambda_, correction=correction)
+    return MedianTestResult(stat[()], p[()], grand_median[()], table[()])
 
 
 def _circfuncs_common(samples, period, xp=None):
