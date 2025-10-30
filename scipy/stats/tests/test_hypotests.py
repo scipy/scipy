@@ -65,9 +65,22 @@ class TestEppsSingleton:
             assert_equal(res.pvalue, np.nan)
 
     def test_epps_singleton_nonfinite(self):
-        # raise error if there are non-finite values
-        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
+        rng = np.random.default_rng(83249872384543)
+        x = rng.random(size=(10, 11))
+        y = rng.random(size=(10, 12))
+        i = np.asarray([1, 4, 9])  # arbitrary rows
+
+        w_ref, p_ref = epps_singleton_2samp(x, y, axis=-1)
+        w_ref[i] = np.nan
+        p_ref[i] = np.nan
+
+        x[i[0], 0] = np.nan
+        x[i[1], 1] = np.inf
+        y[i[2], 2] = -np.inf
+        w_res, p_res = epps_singleton_2samp(x, y, axis=-1)
+
+        assert_equal(w_ref, w_res)
+        assert_equal(p_ref, p_res)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)

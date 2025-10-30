@@ -8433,7 +8433,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
