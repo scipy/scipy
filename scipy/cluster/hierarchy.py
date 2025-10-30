@@ -971,7 +971,22 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     Returns
     -------
     Z : ndarray
-        The hierarchical clustering encoded as a linkage matrix.
+    The hierarchical clustering encoded as a linkage matrix.
+
+    The linkage matrix ``Z`` has shape ``(n-1, 4)``, where each row
+    ``[idx1, idx2, dist, sample_count]`` represents a merge in the
+    hierarchical clustering:
+    
+    * ``idx1`` and ``idx2`` — indices of the clusters that were merged.
+      Clusters numbered less than ``n`` correspond to original observations.
+    * ``dist`` — the distance between those clusters at the time of merging.
+    * ``sample_count`` — the total number of original observations
+      contained in the newly formed cluster.
+
+    This matrix can be visualized as a dendrogram; see
+    :func:`scipy.cluster.hierarchy.dendrogram`.
+
+
 
     Notes
     -----
@@ -2626,10 +2641,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
            [18.        , 19.        ,  5.77350269,  6.        ],
            [20.        , 21.        ,  8.16496581, 12.        ]])
 
-    This matrix represents a dendrogram, where the first and second elements
-    are the two clusters merged at each step, the third element is the
-    distance between these clusters, and the fourth element is the size of
-    the new cluster - the number of original data points included.
+    For more details about the structure and interpretation of the linkage
+    matrix, see :func:`scipy.cluster.hierarchy.linkage`.
 
     `scipy.cluster.hierarchy.fcluster` can be used to flatten the
     dendrogram, obtaining as a result an assignation of the original data
