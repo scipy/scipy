@@ -19,6 +19,7 @@ from scipy._lib._array_api import (
     xp_capabilities,
     is_numpy,
     is_jax,
+    is_dask,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -3030,7 +3031,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3051,7 +3052,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -3119,50 +3120,55 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_levene`.
     """
+    xp = array_namespace(*samples)
+
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(samples)
     if k < 2:
-        raise ValueError("Must enter at least two input sample vectors.")
+        raise ValueError("Must provide at least two samples.")
 
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=-1, keepdims=True)
+            return (xp.median(x, axis=-1, keepdims=True)
+                    if (is_numpy(xp) or is_dask(xp))
+                    else stats.quantile(x, 0.5, axis=-1, keepdims=True))
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=-1, keepdims=True)
+            return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
+            # keepdims=True doesn't currently work for lazy arrays
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
     Nis = [sample.shape[-1] for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
     # compute Zij's
-    Zijs = [np.abs(sample - Yc) for sample, Yc in zip(samples, Ycis)]
+    Zijs = [xp.abs(sample - Yc) for sample, Yc in zip(samples, Ycis)]
 
     # compute Zbari
-    Zbaris = [np.mean(Zij, axis=-1, keepdims=True) for Zij in Zijs]
-    Zbar = sum(Ni*Zbari for Ni, Zbari in zip(Nis, Zbaris))
-    Zbar /= Ntot
+    Zbaris = [xp.mean(Zij, axis=-1, keepdims=True) for Zij in Zijs]
+    Zbar = sum(Ni*Zbari for Ni, Zbari in zip(Nis, Zbaris)) / Ntot
 
     # compute numerator and denominator
     dfd = (Ntot - k)
     numer = dfd * sum(Ni * (Zbari - Zbar)**2
                       for Ni, Zbari in zip(Nis, Zbaris))
     dfn = (k - 1.0)
-    denom = dfn * sum(np.sum((Zij - Zbari)**2, axis=-1, keepdims=True)
+    denom = dfn * sum(xp.sum((Zij - Zbari)**2, axis=-1, keepdims=True)
                       for Zij, Zbari in zip(Zijs, Zbaris))
 
     W = numer / denom
-    W = np.squeeze(W, axis=-1)
+    W = xp.squeeze(W, axis=-1)
+    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
     pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=np)
     return LeveneResult(W[()], pval[()])
 
