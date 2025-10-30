@@ -8549,7 +8549,7 @@ def friedmanchisquare(*samples, axis=0):
     sample1, sample2, sample3... : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -8613,7 +8613,7 @@ def friedmanchisquare(*samples, axis=0):
     data = data.astype(float)
     data, t = _rankdata(data, method='average', return_ties=True)
 
-    # # Handle ties
+    # Handle ties
     ties = np.sum(t * (t*t - 1), axis=(0, -1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
