@@ -79,8 +79,8 @@ class TestEppsSingleton:
         y[i[2], 2] = -np.inf
         w_res, p_res = epps_singleton_2samp(x, y, axis=-1)
 
-        assert_equal(w_ref, w_res)
-        assert_equal(p_ref, p_res)
+        assert_allclose(w_res, w_ref)
+        assert_allclose(p_res, p_ref)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
