@@ -1217,9 +1217,11 @@ class TestSVD_GESVD(TestSVD_GESDD):
 @pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
 @pytest.mark.parallel_threads_limit(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
-def test_svd_gesdd_nofegfault():
+@pytest.mark.skipif(HAS_ILP64, reason="does not fail; is too slow")
+def test_svd_gesdd_nosegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
     # cf https://github.com/scipy/scipy/issues/14001
+    check_free_memory(free_mb=19_000)
     df=np.ones((4799, 53130), dtype=np.float64)
     with assert_raises(ValueError):
         svd(df)
