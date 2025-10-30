@@ -7,7 +7,7 @@ from . import _batched_linalg
 
 # Local imports.
 from ._misc import LinAlgError, _datacopied
-from .lapack import _normalize_lapack_dtype
+from .lapack import _normalize_lapack_dtype, HAS_ILP64
 from ._decomp import _asarray_validated
 
 
@@ -168,19 +168,20 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
             return s
 
     if compute_uv:
-        # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
-            if max_mn*max_mn > np.iinfo(np.int32).max:
+            if not HAS_ILP64 and max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
                                   "would incur integer overflow in LAPACK. "
-                                  "Try using numpy.linalg.svd instead.")
+                                  "Instead, either use using numpy.linalg.svd or build"
+                                  "SciPy with ILP64 support.")
         else:
             sz = max(m * min_mn, n * min_mn)
-            if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
+            if not HAS_ILP64 and max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
                                   "incur an in integer overflow in LAPACK. "
-                                  "Try using numpy.linalg.svd instead.")
+                                  "Instead, either use using numpy.linalg.svd or build"
+                                  "SciPy with ILP64 support.")
 
     res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
 
