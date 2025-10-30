@@ -1556,11 +1556,14 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_mannwhitneyu(self, alternative):
-        # statistic only available for NumPy
-
+    @pytest.mark.skip_xp_backends('cupy', reason='no kruskal')
+    @pytest.mark.skip_xp_backends('dask.array', reason='no kruskal')
+    @pytest.mark.skip_xp_backends(eager_only=True)
+    @pytest.mark.skip_xp_backends(cpu_only=True)
+    def test_against_mannwhitneyu(self, alternative, xp):
         x = stats.uniform.rvs(size=(3, 5, 2), loc=0, random_state=self.rng)
         y = stats.uniform.rvs(size=(3, 5, 2), loc=0.05, random_state=self.rng)
+        x, y = xp.asarray(x), xp.asarray(y)
 
         expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
 
@@ -1571,8 +1574,8 @@ class TestPermutationTest:
                                n_resamples=np.inf, alternative=alternative,
                                axis=1, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, expected.statistic, rtol=self.rtol)
+        xp_assert_close(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     def test_against_cvm(self):
         # statistic only available for NumPy
