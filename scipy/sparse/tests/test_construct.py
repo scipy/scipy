@@ -339,6 +339,17 @@ class TestConstructUtils:
         assert isinstance(construct.eye_array(3), sparray)
         assert not isinstance(construct.eye(3), sparray)
 
+    @pytest.mark.parametrize("arr,kw_format,out_format", [
+        ([[0, 0], [0, 1]], None, 'coo'),  # 2D sparse
+        ([[1, 0], [1, 1]], None, 'bsr'),  # 2D dense
+        ([[[1, 0], [1, 1]]], None, 'coo'),  # 3D dense
+    ])
+    def test_kron_output_format(self, arr, kw_format, out_format):
+        sparr = coo_array(arr)
+        assert construct.kron(sparr, sparr, format=kw_format).format == out_format
+        assert construct.kron(sparr, arr, format=kw_format).format == out_format
+        assert construct.kron(arr, sparr, format=kw_format).format == out_format
+
     def test_kron(self):
         cases = []
 
