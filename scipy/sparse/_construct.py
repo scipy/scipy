@@ -55,6 +55,14 @@ def expand_dims(A, /, *, axis=0):
     ValueError
         If provided a non-integer or out of range ``[-N-1, N]`` axis,
         where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, permute_dims
+    >>> A = csr_array([[1, 2], [2, 0]])
+    >>> expand_dims(A, axis=1).shape
+    (2, 1, 2)
+
     """
     if not isintlike(axis):
         raise ValueError(f"Invalid axis {axis}. Must be an integer.")
@@ -93,6 +101,14 @@ def swapaxes(A, axis1, axis2):
     ValueError
         If provided a non-integer or out of range ``[-N, N-1]`` axis,
         where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, permute_dims
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> swapaxes(A, 1, 2).shape
+    (1, 3, 2)
+
     """
     axes = np.arange(A.ndim)
     try:
@@ -134,6 +150,14 @@ def permute_dims(A, axes=None, copy=False):
     ValueError
         If provided a non-integer or out of range ``[-N, N-1]`` axis,
         where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, permute_dims
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> permute_dims(A, axes=(1, 2, 0)).shape
+    (2, 3, 1)
+
     """
     ndim = A.ndim
     if axes is None:
