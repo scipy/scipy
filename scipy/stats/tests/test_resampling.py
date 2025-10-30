@@ -1593,9 +1593,11 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    @pytest.mark.xslow()
     @pytest.mark.parametrize('axis', (-1, 2))
-    def test_vectorized_nsamp_ptype_both(self, axis):
+    @pytest.mark.skip_xp_backends('cupy', reason='no kruskal')
+    @pytest.mark.skip_xp_backends('dask.array', reason='no kruskal')
+    @pytest.mark.skip_xp_backends(eager_only=True)
+    def test_vectorized_nsamp_ptype_both(self, axis, xp):
         # statistic only available for NumPy
 
         # Test that permutation_test with permutation_type='independent' works
@@ -1607,39 +1609,33 @@ class TestPermutationTest:
 
         # Three samples, different (but compatible) shapes with different ndims
         rng = np.random.default_rng(6709265303529651545)
-        x = rng.random(size=(3))
-        y = rng.random(size=(1, 3, 2))
-        z = rng.random(size=(2, 1, 4))
+        x = xp.asarray(rng.random(size=(3)))
+        y = xp.asarray(rng.random(size=(1, 3, 2)))
+        z = xp.asarray(rng.random(size=(2, 1, 4)))
         data = (x, y, z)
 
         # Define the statistic (and pvalue for comparison)
-        def statistic1d(*data):
-            return stats.kruskal(*data).statistic
+        def statistic(*data, axis):
+            return stats.kruskal(*data, axis=axis).statistic
 
-        def pvalue1d(*data):
-            return stats.kruskal(*data).pvalue
-
-        statistic = _resampling._vectorize_statistic(statistic1d)
-        pvalue = _resampling._vectorize_statistic(pvalue1d)
+        def pvalue(*data, axis):
+            return stats.kruskal(*data, axis=axis).pvalue
 
         # Calculate the expected results
-        x2 = np.broadcast_to(x, (2, 3, 3))  # broadcast manually because
-        y2 = np.broadcast_to(y, (2, 3, 2))  # _vectorize_statistic doesn't
-        z2 = np.broadcast_to(z, (2, 3, 4))
-        expected_statistic = statistic(x2, y2, z2, axis=axis)
-        expected_pvalue = pvalue(x2, y2, z2, axis=axis)
+        expected_statistic = statistic(x, y, z, axis=axis)
+        expected_pvalue = pvalue(x, y, z, axis=axis)
 
         # Calculate exact and randomized permutation results
-        kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
+        kwds = {'axis': axis, 'alternative': 'greater',
                 'permutation_type': 'independent', 'rng': self.rng}
-        res = permutation_test(data, statistic1d, n_resamples=np.inf, **kwds)
-        res2 = permutation_test(data, statistic1d, n_resamples=1000, **kwds)
+        res = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=1000, **kwds)
 
         # Check results
-        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_pvalue, atol=6e-2)
-        assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
+        xp_assert_close(res.statistic, expected_statistic, rtol=self.rtol)
+        xp_assert_close(res.statistic, res2.statistic, rtol=self.rtol)
+        xp_assert_close(res.pvalue, expected_pvalue, atol=6e-2)
+        xp_assert_close(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Paired-Sample Tests -- #
 
