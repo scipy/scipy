@@ -1699,7 +1699,8 @@ class TestPermutationTest:
         expected = stats.binomtest(k, n, p, alternative=alternative)
 
         res = stats.permutation_test((xp.asarray(x, dtype=xp.float64),), statistic,
-                                     permutation_type='samples', n_resamples=np.inf,
+                                     vectorized=True,
+                                     permutation_type='samples', n_resamples=xp.inf,
                                      rng=self.rng, alternative=alternative)
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 

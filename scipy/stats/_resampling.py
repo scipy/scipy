@@ -180,7 +180,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if not vectorized:
         if not is_numpy(xp):
             message = (f"When using array library {xp.__name__}, `func` must be "
-                       "be vectorized and accept argument `axis`.")
+                       "vectorized and accept argument `axis`.")
             raise TypeError(message)
 
         statistic = _vectorize_statistic(statistic)
