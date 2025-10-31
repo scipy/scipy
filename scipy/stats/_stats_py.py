@@ -8713,8 +8713,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
     """
     xp = array_namespace(x, y)
-    nx = x.shape[axis]
-    ny = y.shape[axis]
+    nx = x.shape[-1]
+    ny = y.shape[-1]
 
     # _axis_nan_policy decorator ensures we can work along the last axis
     rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
