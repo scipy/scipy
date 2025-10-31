@@ -9,7 +9,7 @@ from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size, xp_promote
 from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
@@ -29,7 +29,7 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-# remove when array-api-extra#502 is resolved 
+# remove when array-api-extra#502 is resolved
 @_apply_over_batch(('x', 2))
 def cov(x):
     return xpx.cov(x)
@@ -54,7 +54,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
         to be evaluated. It should be positive distinct numbers. The default
         value (0.4, 0.8) is proposed in [1]_. Input must not have more than
         one dimension.
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -112,17 +112,13 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     np = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
     # and `axis` is guaranteed to be -1.
-    t = np.asarray(t)
+    x, y = xp_promote(x, y, force_floating=True, xp=np)
+    t = np.asarray(t, dtype=x.dtype)
     # check if x and y are valid inputs
     nx, ny = x.shape[-1], y.shape[-1]
     if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
         raise ValueError('x and y should have at least 5 elements, but len(x) '
                          f'= {nx} and len(y) = {ny}.')
-    # should replace this behavior by returning NaN
-    if not np.isfinite(x).all():
-        raise ValueError('x must not contain nonfinite values.')
-    if not np.isfinite(y).all():
-        raise ValueError('y must not contain nonfinite values.')
     n = nx + ny
 
     # check if t is valid
@@ -130,6 +126,15 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
     if np.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
+
+    # Previously, non-finite input caused an error in linalg functions.
+    # To prevent an issue in one slice from halting the calculation, replace non-finite
+    # values with a harmless one, and replace results with NaN at the end.
+    i_x = ~np.isfinite(x)
+    i_y = ~np.isfinite(y)
+    x = xpx.at(x)[i_x].set(1)
+    y = xpx.at(y)[i_y].set(1)
+    invalid_result = np.any(i_x, axis=-1) | np.any(i_y, axis=-1)
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
@@ -165,6 +170,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     chi2 = _stats_py._SimpleChi2(r)
     p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
+    w = xpx.at(w)[invalid_result].set(np.nan)
+    p = xpx.at(p)[invalid_result].set(np.nan)
     return Epps_Singleton_2sampResult(w[()], p[()])
 
 

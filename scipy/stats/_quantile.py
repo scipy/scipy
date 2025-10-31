@@ -104,8 +104,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
 
 
-@xp_capabilities(skip_backends=(("dask.array", "No take_along_axis yet."),
-                                ("jax.numpy", "No mutation.")))
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the p-th quantile of the data along the specified axis.
