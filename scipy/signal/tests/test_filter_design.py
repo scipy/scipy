@@ -3821,8 +3821,8 @@ class TestEllip:
         assert_array_almost_equal(a, xp.asarray([1., 1]))
 
         z, p, k = ellip(1, 1, 55, xp.asarray(0.3), output='zpk')
-        xp_assert_close(z, xp.asarray([-9.999999999999998e-01]), rtol=1e-14)
-        xp_assert_close(p, xp.asarray([-6.660721153525525e-04]), rtol=1e-10)
+        xp_assert_close(z, xp.asarray([-9.999999999999998e-01 + 0j]), rtol=1e-14)
+        xp_assert_close(p, xp.asarray([-6.660721153525525e-04 + 0j]), rtol=1e-10)
         assert math.isclose(k, 5.003330360576763e-01, rel_tol=1e-14)
 
     def test_basic(self, xp):
