@@ -6,6 +6,7 @@ from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
     is_torch,
+    is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
 )
@@ -29,7 +30,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
         if nan_policy == 'propagate' and np.any(np.isnan(x)):
             res[:] = np.nan
     else:
-        res = np.quantile(x, p)
+        res = np.quantile(x, p, method=method)
     res[p_mask] = np.nan
     return res
 
@@ -70,9 +71,10 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, p, axis=2)
 
-        message = "The input contains nan values"
-        with pytest.raises(ValueError, match=message):
-            stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
+        if not is_jax(xp):  # no data-dependent input validation for lazy arrays
+            message = "The input contains nan values"
+            with pytest.raises(ValueError, match=message):
+                stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
 
         message = "method` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -89,7 +91,8 @@ class TestQuantile:
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
-          'median_unbiased', 'normal_unbiased', 'weibull'])
+          'median_unbiased', 'normal_unbiased', 'weibull',
+          '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
           ((10, 2), None, 0), ((10, 2), None, 0),])
@@ -98,20 +101,23 @@ class TestQuantile:
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        ref = np.quantile(x, p, method=method, axis=axis)
-
+        ref = np.quantile(x, p, axis=axis,
+                          method=method[1:] if method.startswith('_') else method)
         x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
         res = stats.quantile(x, p, method=method, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
-    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
+        if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
+            pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)
@@ -191,14 +197,15 @@ class TestQuantile:
         assert res.shape == tuple(out_shape)
 
     @pytest.mark.parametrize('method',
-        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'])
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+         '_lower', '_higher', '_midpoint', '_nearest'])
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
         if method == 'closest_observation' and np.__version__ < '2.0.1':
             pytest.skip('Bug in np.quantile (numpy/numpy#26656) fixed in 2.0.1')
         x = np.arange(8., dtype=np.float64)
-        p = np.arange(0, 1.0625, 0.0625)
+        p = np.arange(0, 1.03125, 0.03125)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
-        ref = np.quantile(x, p, method=method)
+        ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
