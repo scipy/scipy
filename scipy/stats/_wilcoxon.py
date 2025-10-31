@@ -6,7 +6,7 @@ from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size
+from scipy._lib._array_api import array_namespace, xp_promote, xp_size, xp_copy
 import scipy._lib.array_api_extra as xpx
 
 
@@ -128,6 +128,7 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
         # Wilcoxon's method for treating zeros was to remove them from
         # the calculation. We do this by replacing 0s with NaNs, which
         # are ignored anyway.
+        d = xp_copy(d)  # this was required for array-api-strict, but it shouldn't be
         d = xpx.at(d)[i_zeros].set(xp.nan)
 
     i_nan = xp.isnan(d)
@@ -252,7 +253,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
             p = 2 * np.minimum(dist.sf(np.floor(r_plus_np)),
                                dist.cdf(np.ceil(r_plus_np)))
             p = np.clip(p, 0, 1)
-        p = xp.asarray(p)
+        p = xp.asarray(p, dtype=d.dtype)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
             (d,), lambda d: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
