@@ -608,8 +608,10 @@
         }
     },
     "pdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "pdtrik": "dd->d"        }
+        "boost_special_functions.h++": {
+            "pdtrik_float": "ff->f",
+            "pdtrik_double": "dd->d"
+        }
     },
     "poch": {
         "xsf_wrappers.h": {

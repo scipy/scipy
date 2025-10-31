@@ -119,10 +119,11 @@ def fractional_matrix_power(A, t):
 
     References
     ----------
-    .. [1] Nicholas J. Higham and Lijing lin (2011)
+    .. [1] Nicholas J. Higham and Lijing Lin (2011)
            "A Schur-Pade Algorithm for Fractional Powers of a Matrix."
            SIAM Journal on Matrix Analysis and Applications,
-           32 (3). pp. 1056-1078. ISSN 0895-4798
+           32 (3). pp. 1056-1078. ISSN 0895-4798.
+           :doi:`10.1137/10081232X`
 
     Examples
     --------

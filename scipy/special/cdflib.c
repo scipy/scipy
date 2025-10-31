@@ -159,7 +159,6 @@ static struct TupleDDI cumfnc(double, double, double, double);
 static struct TupleDD cumgam(double, double);
 static struct TupleDD cumnbn(double, double, double, double);
 static struct TupleDD cumnor(double);
-static struct TupleDD cumpoi(double, double);
 static struct TupleDD cumt(double, double);
 static struct TupleDD cumtnc(double, double, double);
 static double devlpl(double *, int, double);
@@ -2244,146 +2243,6 @@ struct TupleDID cdfnor_which4(double p, double q, double x, double mean)
 
 
     //               Cumulative Distribution Function
-    //               POIsson distribution
-    //
-    //
-    //                              Function
-    //
-    //
-    //     Calculates any one parameter of the Poisson
-    //     distribution given values for the others.
-    //
-    //
-    //                              Arguments
-    //
-    //
-    //     WHICH --> Integer indicating which  argument
-    //               value is to be calculated from the others.
-    //               Legal range: 1..3
-    //               iwhich = 1 : Calculate P and Q from S and XLAM
-    //               iwhich = 2 : Calculate S from P,Q and XLAM
-    //               iwhich = 3 : Calculate XLAM from P,Q and S
-    //                    INTEGER WHICH
-    //
-    //        P <--> The cumulation from 0 to S of the poisson density.
-    //               Input range: [0,1].
-    //                    DOUBLE PRECISION P
-    //
-    //        Q <--> 1-P.
-    //               Input range: (0, 1].
-    //               P + Q = 1.0.
-    //                    DOUBLE PRECISION Q
-    //
-    //        S <--> Upper limit of cumulation of the Poisson.
-    //               Input range: [0, +infinity).
-    //               Search range: [0,1E100]
-    //                    DOUBLE PRECISION S
-    //
-    //     XLAM <--> Mean of the Poisson distribution.
-    //               Input range: [0, +infinity).
-    //               Search range: [0,1E100]
-    //                    DOUBLE PRECISION XLAM
-    //
-    //     STATUS <-- 0 if calculation completed correctly
-    //               -I if input parameter number I is out of range
-    //                1 if answer appears to be lower than lowest
-    //                  search bound
-    //                2 if answer appears to be higher than greatest
-    //                  search bound
-    //                3 if P + Q .ne. 1
-    //                    INTEGER STATUS
-    //
-    //     BOUND <-- Undefined if STATUS is 0
-    //
-    //               Bound exceeded by parameter number I if STATUS
-    //               is negative.
-    //
-    //               Lower search bound if STATUS is 1.
-    //
-    //               Upper search bound if STATUS is 2.
-    //
-    //
-    //                              Method
-    //
-    //
-    //     Formula   26.4.21  of   Abramowitz  and   Stegun,   Handbook  of
-    //     Mathematical Functions (1966) is used  to reduce the computation
-    //     of  the cumulative distribution function to that  of computing a
-    //     chi-square, hence an incomplete gamma function.
-    //
-    //     Cumulative  distribution function  (P) is  calculated  directly.
-    //     Computation of other parameters involve a search for a value that
-    //     produces  the desired value of  P.   The  search relies  on  the
-    //     monotinicity of P with the other parameter.
-    //
-    //
-    //**********************************************************************
-
-
-struct TupleDID cdfpoi_which2(double p, double q, double xlam)
-{
-    double tol = 1e-10;
-    double atol = 1e-50;
-    int qporq = (p <= q);
-    DinvrState DS = {0};
-    DzrorState DZ = {0};
-
-    DS.small = 0.;
-    DS.big = 1e100;
-    DS.absstp = 0.5;
-    DS.relstp = 0.5;
-    DS.stpmul = 5.0;
-    DS.abstol = atol;
-    DS.reltol = tol;
-    DS.x = 5.0;
-    struct TupleDD poiret;
-    struct TupleDID ret = {0};
-
-    if (!((0 <= p) && (p <= 1))) {
-        ret.i1 = -1;
-        ret.d2 = (!(p > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (!((0 < q) && (q <= 1))) {
-        ret.i1 = -2;
-        ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
-        return ret;
-    }
-    if (!(xlam >= 0.0)) {
-        ret.i1 = -3;
-        return ret;
-    }
-    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
-        ret.i1 = 3;
-        ret.d2 = (p+q < 0 ? 0.0 : 1.0);
-        return ret;
-    }
-
-    if ((xlam < 0.01) && (p < 0.975)) {
-        // For sufficiently small xlam and p, the result is 0.
-        return ret;
-    }
-
-    dinvr(&DS, &DZ);
-    while (DS.status == 1) {
-        poiret = cumpoi(DS.x, xlam);
-        DS.fx = (qporq ? poiret.d1 - p : poiret.d2 - q);
-        dinvr(&DS, &DZ);
-    }
-
-    if (DS.status == -1) {
-        ret.d1 = DS.x;
-        ret.i1 = (DS.qleft ? 1 : 2);
-        ret.d2 = (DS.qleft ? 0.0 : 1e100);
-        return ret;
-    } else {
-        ret.d1 = DS.x;
-        return ret;
-    }
-}
-
-
-    //               Cumulative Distribution Function
     //                         T distribution
     //
     //
@@ -3400,46 +3259,6 @@ struct TupleDD cumnor(double x)
     }
 
     return (struct TupleDD){.d1 = result, .d2 = ccum};
-}
-
-
-struct TupleDD cumpoi(double s, double xlam)
-{
-    //                CUMulative POIsson distribution
-    //
-    //
-    //                            Function
-    //
-    //
-    //    Returns the  probability  of  S   or  fewer events in  a   Poisson
-    //    distribution with mean XLAM.
-    //
-    //
-    //                            Arguments
-    //
-    //
-    //    S --> Upper limit of cumulation of the Poisson.
-    //                                                S is DOUBLE PRECISION
-    //
-    //    XLAM --> Mean of the Poisson distribution.
-    //                                                XLAM is DOUBLE PRECIS
-    //
-    //    CUM <-- Cumulative poisson distribution.
-    //                                    CUM is DOUBLE PRECISION
-    //
-    //    CCUM <-- Compliment of Cumulative poisson distribution.
-    //                                                CCUM is DOUBLE PRECIS
-    //
-    //
-    //                            Method
-    //
-    //
-    //    Uses formula  26.4.21   of   Abramowitz and  Stegun,  Handbook  of
-    //    Mathematical   Functions  to reduce   the   cumulative Poisson  to
-    //    the cumulative chi-square distribution.
-
-    struct TupleDD res = cumchi(2*xlam, 2.*(s + 1.));
-    return (struct TupleDD){.d1 = res.d2, .d2 = res.d1};
 }
 
 

@@ -42,7 +42,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis'}
+               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -61,7 +61,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
 
-    y = xp.sort(x, axis=axis)
+    y = xp.sort(x, axis=axis, stable=False)
     y, p = _broadcast_arrays((y, p), axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
@@ -104,8 +104,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
 
 
-@xp_capabilities(skip_backends=(("dask.array", "No take_along_axis yet."),
-                                ("jax.numpy", "No mutation.")))
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the p-th quantile of the data along the specified axis.
@@ -117,7 +116,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     p : array_like of float
         Probability or sequence of probabilities of the quantiles to compute.
         Values must be between 0 and 1 (inclusive).
-        Must have length 1 along `axis` unless ``keepdims=True``.
+        While `numpy.quantile` can only compute quantiles according to the Cartesian
+        product of the first two arguments, this function enables calculation of
+        quantiles at different probabilities for each axis slice by following
+        broadcasting rules like those of `scipy.stats` reducing functions.
+        See `axis`, `keepdims`, and the examples.
     method : str, default: 'linear'
         The method to use for estimating the quantile.
         The available options, numbered as they appear in [1]_, are:
@@ -139,6 +142,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         Axis along which the quantiles are computed.
         ``None`` ravels both `x` and `p` before performing the calculation,
         without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x` or `p` as needed until the two arrays
+        have the same dimensionality. When providing `x` and `p` with different
+        dimensionality, consider using negative `axis` integers for clarity.
     nan_policy : str, default: 'propagate'
         Defines how to handle NaNs in the input data `x`.
 
@@ -246,22 +253,36 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     >>> x = np.asarray([[10, 8, 7, 5, 4],
     ...                 [0, 1, 2, 3, 5]])
 
-    Take the median along the last axis.
+    Take the median of each row.
 
     >>> stats.quantile(x, 0.5, axis=-1)
     array([7.,  2.])
 
-    Take a different quantile along each axis.
+    Take a different quantile for each row.
 
     >>> stats.quantile(x, [[0.25], [0.75]], axis=-1, keepdims=True)
     array([[5.],
            [3.]])
 
-    Take multiple quantiles along each axis.
+    Take multiple quantiles for each row.
 
     >>> stats.quantile(x, [0.25, 0.75], axis=-1)
     array([[5., 8.],
            [1., 3.]])
+
+    Take different quantiles for each row.
+
+    >>> p = np.asarray([[0.25, 0.75],
+    ...                 [0.5, 1.0]])
+    >>> stats.quantile(x, p, axis=-1)
+    array([[5., 8.],
+           [2., 5.]])
+
+    Take different quantiles for each column.
+
+    >>> stats.quantile(x.T, p.T, axis=0)
+    array([[5., 2.],
+           [8., 5.]])
 
     References
     ----------
@@ -284,6 +305,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         res = _quantile_hf(y, p, n, method, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
+    elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
+        res = _quantile_bc(y, p, n, method, xp)
 
     res = xpx.at(res, p_mask).set(xp.nan)
 
@@ -319,7 +342,7 @@ def _quantile_hf(y, p, n, method, xp):
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
 
-    g[j < 0] = 0
+    g = xpx.at(g)[j < 0].set(0)
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 
@@ -342,3 +365,20 @@ def _quantile_hd(y, p, n, xp):
     w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
+
+
+def _quantile_bc(y, p, n, method, xp):
+    # Methods retained for backward compatibility. NumPy documentation is not
+    # quite right about what these methods do: if `p * (n - 1)` is integral,
+    # that is used as the index. See numpy/numpy#28910.
+    ij = p * (n - 1)
+    if method == '_midpoint':
+        return (xp.take_along_axis(y, xp.astype(xp.floor(ij), xp.int64), axis=-1)
+                + xp.take_along_axis(y, xp.astype(xp.ceil(ij), xp.int64), axis=-1)) / 2
+    elif method == '_lower':
+        k = xp.floor(ij)
+    elif method == '_higher':
+        k = xp.ceil(ij)
+    elif method == '_nearest':
+        k = xp.round(ij)
+    return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)

@@ -867,6 +867,7 @@ Available functions
 - :py:func:`~scipy.special.pdtrik`::
 
         double pdtrik(double, double)
+        float pdtrik(float, float)
 
 - :py:func:`~scipy.special.poch`::
 
@@ -1739,10 +1740,6 @@ cdef _proto_nrdtrisd_t *_proto_nrdtrisd_t_var = &_func_nrdtrisd
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
 cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
-
-from ._cdflib_wrappers cimport pdtrik as _func_pdtrik
-ctypedef double _proto_pdtrik_t(double, double) noexcept nogil
-cdef _proto_pdtrik_t *_proto_pdtrik_t_var = &_func_pdtrik
 
 from ._convex_analysis cimport pseudo_huber as _func_pseudo_huber
 ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
@@ -3319,9 +3316,14 @@ cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
     else:
         return NAN
 
-cpdef double pdtrik(double x0, double x1) noexcept nogil:
+cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.pdtrik"""
-    return _func_pdtrik(x0, x1)
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef double poch(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.poch"""
