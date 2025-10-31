@@ -3190,7 +3190,7 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
