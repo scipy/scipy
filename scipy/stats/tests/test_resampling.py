@@ -1504,7 +1504,7 @@ class TestPermutationTest:
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'rng': rng}
         res = permutation_test(data, statistic, n_resamples=permutations, **kwds)
-        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
 
         assert res.statistic == res2.statistic
         xp_assert_close(res.pvalue, res2.pvalue, atol=1e-2)
@@ -1556,8 +1556,8 @@ class TestPermutationTest:
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    @pytest.mark.skip_xp_backends('cupy', reason='no kruskal')
-    @pytest.mark.skip_xp_backends('dask.array', reason='no kruskal')
+    @pytest.mark.skip_xp_backends('cupy', reason='no mwu')
+    @pytest.mark.skip_xp_backends('dask.array', reason='no mwu')
     @pytest.mark.skip_xp_backends(eager_only=True)
     @pytest.mark.skip_xp_backends(cpu_only=True)
     def test_against_mannwhitneyu(self, alternative, xp):
@@ -1571,7 +1571,7 @@ class TestPermutationTest:
             return stats.mannwhitneyu(x, y, axis=axis).statistic
 
         res = permutation_test((x, y), statistic, vectorized=True,
-                               n_resamples=np.inf, alternative=alternative,
+                               n_resamples=xp.inf, alternative=alternative,
                                axis=1, rng=self.rng)
 
         xp_assert_close(res.statistic, expected.statistic, rtol=self.rtol)
@@ -1630,8 +1630,8 @@ class TestPermutationTest:
 
         # Calculate exact and randomized permutation results
         kwds = {'axis': axis, 'alternative': 'greater',
-                'permutation_type': 'independent', 'rng': self.rng}
-        res = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+                'permutation_type': 'independent', 'rng': rng}
+        res = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
         res2 = permutation_test(data, statistic, n_resamples=1000, **kwds)
 
         # Check results
@@ -1904,7 +1904,7 @@ class TestPermutationTest:
             return stats.pearsonr(x, y, axis=axis).statistic
 
         res = permutation_test((x,), statistic, permutation_type='pairings',
-                               n_resamples=np.inf, alternative=alternative)
+                               n_resamples=xp.inf, alternative=alternative)
 
         xp_assert_close(res.statistic, xp.asarray(expected_statistic), rtol=self.rtol)
         xp_assert_close(res.pvalue, xp.asarray(expected_pvalue), atol=1e-13)

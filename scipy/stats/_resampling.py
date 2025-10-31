@@ -1616,7 +1616,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if not vectorized:
         if not is_numpy(xp):
             message = (f"When using array library {xp.__name__}, `func` must be "
-                       "be vectorized and accept argument `axis`.")
+                       "vectorized and accept argument `axis`.")
             raise TypeError(message)
 
         statistic = _vectorize_statistic(statistic)
