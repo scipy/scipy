@@ -185,7 +185,7 @@ class NquadOscillatory(Benchmark):
         self.ranges = [(0, 1) for _ in range(self.ndim)]
 
         if ndim == 5 and not is_xslow():
-            raise SkipNotImplemented(f"Takes too long to run in CI")
+            raise SkipNotImplemented("Takes too long to run in CI")
 
     def f(self, *x):
         x_arr = np.array(x)
@@ -361,7 +361,7 @@ class CubatureOscillatory(Benchmark):
             raise SkipNotImplemented(f"{rule} uses too much memory for ndim > 5")
 
         if rule == "gk-21" and ndim >= 5 and fdim == 8 and not is_xslow():
-            raise SkipNotImplemented(f"Takes too long to run in CI")
+            raise SkipNotImplemented("Takes too long to run in CI")
 
     def f(self, x):
         npoints, ndim = x.shape[0], x.shape[-1]
