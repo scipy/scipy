@@ -15,6 +15,7 @@ from scipy._lib._util import _apply_over_batch
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+lazy_xp_modules = [stats]
 
 @_apply_over_batch(('x', 1), ('p', 1))
 def quantile_reference_last_axis(x, p, nan_policy, method):
