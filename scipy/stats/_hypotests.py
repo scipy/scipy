@@ -9,7 +9,8 @@ from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
-from scipy._lib._array_api import xp_capabilities
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size, xp_promote
+from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -28,9 +29,15 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
+# remove when array-api-extra#502 is resolved
+@_apply_over_batch(('x', 2))
+def cov(x):
+    return xpx.cov(x)
+
+
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
-def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
+def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
 
     Test the null hypothesis that two samples have the same underlying
@@ -47,6 +54,11 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         to be evaluated. It should be positive distinct numbers. The default
         value (0.4, 0.8) is proposed in [1]_. Input must not have more than
         one dimension.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -97,58 +109,70 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
+    np = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
-    t = np.asarray(t)
+    # and `axis` is guaranteed to be -1.
+    x, y = xp_promote(x, y, force_floating=True, xp=np)
+    t = np.asarray(t, dtype=x.dtype)
     # check if x and y are valid inputs
-    nx, ny = len(x), len(y)
-    if (nx < 5) or (ny < 5):
+    nx, ny = x.shape[-1], y.shape[-1]
+    if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
         raise ValueError('x and y should have at least 5 elements, but len(x) '
                          f'= {nx} and len(y) = {ny}.')
-    if not np.isfinite(x).all():
-        raise ValueError('x must not contain nonfinite values.')
-    if not np.isfinite(y).all():
-        raise ValueError('y must not contain nonfinite values.')
     n = nx + ny
 
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if np.less_equal(t, 0).any():
+    if np.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
+
+    # Previously, non-finite input caused an error in linalg functions.
+    # To prevent an issue in one slice from halting the calculation, replace non-finite
+    # values with a harmless one, and replace results with NaN at the end.
+    i_x = ~np.isfinite(x)
+    i_y = ~np.isfinite(y)
+    x = xpx.at(x)[i_x].set(1)
+    y = xpx.at(y)[i_y].set(1)
+    invalid_result = np.any(i_x, axis=-1) | np.any(i_y, axis=-1)
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
     from scipy.stats import iqr
-    sigma = iqr(np.hstack((x, y))) / 2
-    ts = np.reshape(t, (-1, 1)) / sigma
+    sigma = iqr(np.concat((x, y), axis=-1), axis=-1, keepdims=True) / 2
+    ts = np.reshape(t, (-1,) + (1,)*x.ndim) / sigma
 
     # covariance estimation of ES test
-    gx = np.vstack((np.cos(ts*x), np.sin(ts*x))).T  # shape = (nx, 2*len(t))
-    gy = np.vstack((np.cos(ts*y), np.sin(ts*y))).T
-    cov_x = np.cov(gx.T, bias=True)  # the test uses biased cov-estimate
-    cov_y = np.cov(gy.T, bias=True)
+    gx = np.concat((np.cos(ts*x), np.sin(ts*x)), axis=0)
+    gy = np.concat((np.cos(ts*y), np.sin(ts*y)), axis=0)
+    gx, gy = np.moveaxis(gx, 0, -2), np.moveaxis(gy, 0, -2)
+    cov_x = cov(gx) * (nx-1)/nx  # the test uses biased cov-estimate
+    cov_y = cov(gy) * (ny-1)/ny
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
     est_cov_inv = np.linalg.pinv(est_cov)
     r = np.linalg.matrix_rank(est_cov_inv)
-    if r < 2*len(t):
+    if np.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
                       stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
-    g_diff = np.mean(gx, axis=0) - np.mean(gy, axis=0)
-    w = n*np.dot(g_diff.T, np.dot(est_cov_inv, g_diff))
+    g_diff = np.mean(gx, axis=-1, keepdims=True) - np.mean(gy, axis=-1, keepdims=True)
+    w = n*np.matmul(np.matrix_transpose(g_diff), np.matmul(est_cov_inv, g_diff))
+    w = w[..., 0, 0]
 
     # apply small-sample correction
     if (max(nx, ny) < 25):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
-        w = corr * w
+        w *= corr
 
     chi2 = _stats_py._SimpleChi2(r)
     p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
-    return Epps_Singleton_2sampResult(w, p)
+    w = xpx.at(w)[invalid_result].set(np.nan)
+    p = xpx.at(p)[invalid_result].set(np.nan)
+    return Epps_Singleton_2sampResult(w[()], p[()])
 
 
 @xp_capabilities(np_only=True)

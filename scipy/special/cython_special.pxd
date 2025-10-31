@@ -215,7 +215,7 @@ cdef void pbwa(double x0, double x1, double *y0, double *y1) noexcept nogil
 cpdef double pdtr(double x0, double x1) noexcept nogil
 cpdef double pdtrc(double x0, double x1) noexcept nogil
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil
-cpdef double pdtrik(double x0, double x1) noexcept nogil
+cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double poch(double x0, double x1) noexcept nogil
 cpdef df_number_t powm1(df_number_t x0, df_number_t x1) noexcept nogil
 cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil
