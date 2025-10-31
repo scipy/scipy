@@ -8716,15 +8716,16 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     nx = x.shape[axis]
     ny = y.shape[axis]
 
-    rankc = rankdata(xp.concat((x, y), axis=axis), axis=axis)
+    # _axis_nan_policy decorator ensures we can work along the last axis
+    rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
     rankcx = rankc[..., 0:nx]
     rankcy = rankc[..., nx:nx+ny]
-    rankcx_mean = xp.mean(rankcx, axis=axis, keepdims=True)
-    rankcy_mean = xp.mean(rankcy, axis=axis, keepdims=True)
-    rankx = rankdata(x, axis=axis)
-    ranky = rankdata(y, axis=axis)
-    rankx_mean = xp.mean(rankx, axis=axis, keepdims=True)
-    ranky_mean = xp.mean(ranky, axis=axis, keepdims=True)
+    rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
+    rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
+    rankx = rankdata(x, axis=-1)
+    ranky = rankdata(y, axis=-1)
+    rankx_mean = xp.mean(rankx, axis=-1, keepdims=True)
+    ranky_mean = xp.mean(ranky, axis=-1, keepdims=True)
 
     temp_x = rankcx - rankx - rankcx_mean + rankx_mean
     Sx = xp.vecdot(temp_x, temp_x, axis=-1)
@@ -8733,8 +8734,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     Sy = xp.vecdot(temp_y, temp_y, axis=-1)
     Sy /= ny - 1
 
-    rankcx_mean = xp.squeeze(rankcx_mean, axis=axis)
-    rankcy_mean = xp.squeeze(rankcy_mean, axis=axis)
+    rankcx_mean = xp.squeeze(rankcx_mean, axis=-1)
+    rankcy_mean = xp.squeeze(rankcy_mean, axis=-1)
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
     wbfn /= (nx + ny) * xp.sqrt(nx * Sx + ny * Sy)
 
