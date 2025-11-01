@@ -58,8 +58,10 @@ def expand_dims(A, /, *, axis=0):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_array, permute_dims
+    >>> from scipy.sparse import csr_array, expand_dims
     >>> A = csr_array([[1, 2], [2, 0]])
+    >>> A.shape
+    (2, 2)
     >>> expand_dims(A, axis=1).shape
     (2, 1, 2)
 
@@ -104,8 +106,10 @@ def swapaxes(A, axis1, axis2):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_array, permute_dims
+    >>> from scipy.sparse import coo_array, swapaxes
     >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
     >>> swapaxes(A, 1, 2).shape
     (1, 3, 2)
 
@@ -155,6 +159,8 @@ def permute_dims(A, axes=None, copy=False):
     --------
     >>> from scipy.sparse import coo_array, permute_dims
     >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
     >>> permute_dims(A, axes=(1, 2, 0)).shape
     (2, 3, 1)
 
