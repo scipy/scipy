@@ -604,7 +604,7 @@ def kron(A, B, format=None):
 
     B = coo_sparse(B)
 
-    # B is 2D and fairly dense, use BSR
+    # B is 2D and fairly dense, and format aligns with bsr, compute using BSR
     if (
         (format is None or format == "bsr") and
         B.ndim == 2 and 2*B.nnz >= math.prod(B.shape)
@@ -628,7 +628,7 @@ def kron(A, B, format=None):
     else:
         A = coo_sparse(A)  # no copy needed as we use np.repeat below
 
-    # use COO
+    # compute using COO (convert to desired format just before return)
     if coo_sparse is coo_matrix:
         output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
         ndim_diff = 0
