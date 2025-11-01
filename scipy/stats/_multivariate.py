@@ -7285,7 +7285,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _rejection_sampling(self, dim, kappa, size, random_state):
         """
-        Generate samples from a n-dimensional von Mises-Fisher distribution
+        Generate samples from an n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
         Reference: https://doi.org/10.1080/03610919408813161

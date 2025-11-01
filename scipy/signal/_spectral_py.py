@@ -1704,7 +1704,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     function.
 
     An STFT which has been modified (via masking or otherwise) is not
-    guaranteed to correspond to a exactly realizible signal. This
+    guaranteed to correspond to an exactly realizible signal. This
     function implements the iSTFT via the least-squares estimation
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and

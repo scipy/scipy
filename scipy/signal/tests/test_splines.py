@@ -63,7 +63,7 @@ class TestSymIIR:
         xp_assert_close(symiirorder1_ic(x, b, precision), expected,
                         atol=2e-6, rtol=2e-7)
 
-        # Check the conditions for a exponential decreasing signal with base 2.
+        # Check the conditions for an exponential decreasing signal with base 2.
         # Same conditions hold, as the product of 0.5^n * 0.85^n is
         # still a geometric series
         b_d = xp.asarray(b, dtype=dtype)

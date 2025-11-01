@@ -414,7 +414,7 @@ def _clean_inputs(lp):
     # (2) a 1-D or 2-D sequence or array with 2 scalars
     # (3) None (or an empty sequence or array)
     # Unspecified bounds can be represented by None or (-)np.inf.
-    # All formats are converted into a N x 2 np.array with (-)np.inf where
+    # All formats are converted into an N x 2 np.array with (-)np.inf where
     # bounds are unspecified.
 
     # Prepare clean bounds array

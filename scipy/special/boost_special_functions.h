@@ -535,7 +535,7 @@ powm1_double(double x, double y)
 //
 // This wrapper of hypergeometric_pFq is here because there are a couple
 // edge cases where hypergeometric_1F1 in Boost version 1.80 and earlier
-// has a either bug or an inconsistent behavior.  It turns out that
+// has either a bug or an inconsistent behavior.  It turns out that
 // hypergeometric_pFq does the right thing in those cases, so we'll use
 // it until our copy of Boost is updated.
 //

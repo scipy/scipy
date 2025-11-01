@@ -5737,7 +5737,7 @@ def log(X, /):
     >>> Gamma = stats.make_distribution(stats.gamma)
     >>> X = Gamma(a=1.0)
 
-    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    We wish to have an exp-gamma distributed random variable :math:`Y`,
     a random variable whose natural exponential is :math:`X`.
     If :math:`X` is to be the natural exponential of :math:`Y`, then we
     must take :math:`Y` to be the natural logarithm of :math:`X`.

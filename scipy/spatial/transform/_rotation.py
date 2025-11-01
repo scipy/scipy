@@ -430,7 +430,7 @@ class Rotation:
         --------
         >>> from scipy.spatial.transform import Rotation as R
 
-        A rotation can be initialzied from a quaternion with the scalar-last
+        A rotation can be initialized from a quaternion with the scalar-last
         (default) or scalar-first component order as shown below:
 
         >>> r = R.from_quat([0, 0, 0, 1])

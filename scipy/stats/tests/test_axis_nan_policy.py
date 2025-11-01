@@ -517,7 +517,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
     assert_allclose(res_nd, res_1d, rtol=1e-11)
 
-# nan should not raise a exception in np.mean()
+# nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
 # see https://github.com/scipy/scipy/issues/22360
 # and https://github.com/numpy/numpy/issues/23158
