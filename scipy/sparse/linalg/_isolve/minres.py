@@ -1,4 +1,4 @@
-from numpy import inner, zeros, inf, finfo
+from numpy import inner, vdot, iscomplexobj, zeros, inf, finfo
 from numpy.linalg import norm
 from math import sqrt
 
@@ -10,9 +10,9 @@ __all__ = ['minres']
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
-    Solve ``Ax = b`` with the MINimum RESidual method, for a symmetric `A`.
+    Solve ``Ax = b`` with the MINimum RESidual method, for a real symmetric or complex hermitian matrix `A`.
 
-    MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
+    MINRES minimizes norm(Ax - b) for a real symmetric or complex hermitian matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
 
     If shift != 0 then the method solves (A - shift*I)x = b
@@ -20,7 +20,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     Parameters
     ----------
     A : {sparse array, ndarray, LinearOperator}
-        The real symmetric N-by-N matrix of the linear system
+        The real symmetric or complex hermitian N-by-N matrix of the linear system
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
         ``scipy.sparse.linalg.LinearOperator``.
@@ -91,6 +91,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     """
     A, M, x, b = make_system(A, M, x0, b)
 
+    dotprod = vdot if iscomplexobj(A) else inner
     matvec = A.matvec
     psolve = M.matvec
 
@@ -141,7 +142,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         r1 = b - A@x
     y = psolve(r1)
 
-    beta1 = inner(r1, y)
+    beta1 = dotprod(r1, y)
 
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
@@ -153,7 +154,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         x = b
         return (x, 0)
 
-    beta1 = sqrt(beta1)
+    beta1 = sqrt(beta1.real)
 
     if check:
         # are these too strict?
@@ -161,8 +162,8 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         # see if A is symmetric
         w = matvec(y)
         r2 = matvec(w)
-        s = inner(w,w)
-        t = inner(y,r2)
+        s = dotprod(w,w)
+        t = dotprod(y,r2)
         z = abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
@@ -170,8 +171,8 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # see if M is symmetric
         r2 = psolve(y)
-        s = inner(y,y)
-        t = inner(r1,r2)
+        s = dotprod(y,y)
+        t = dotprod(r1,r2)
         z = abs(s - t)
         epsa = (s + eps) * eps**(1.0/3.0)
         if z > epsa:
@@ -212,16 +213,16 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         if itn >= 2:
             y = y - (beta/oldb)*r1
 
-        alfa = inner(v,y)
+        alfa = dotprod(v,y)
         y = y - (alfa/beta)*r2
         r1 = r2
         r2 = y
         y = psolve(r2)
         oldb = beta
-        beta = inner(r2,y)
+        beta = dotprod(r2,y)
         if beta < 0:
             raise ValueError('non-symmetric matrix')
-        beta = sqrt(beta)
+        beta = sqrt(beta.real)
         tnorm2 += alfa**2 + oldb**2 + beta**2
 
         if itn == 1:
@@ -267,7 +268,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
 
         # Estimate various norms and test for convergence.
 
-        Anorm = sqrt(tnorm2)
+        Anorm = sqrt(tnorm2.real)
         ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
