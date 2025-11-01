@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 
 from scipy import stats
+from scipy.stats._quantile import _xp_searchsorted
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
@@ -209,3 +210,24 @@ class TestQuantile:
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
+
+
+@_apply_over_batch(('a', 1), ('v', 1))
+def np_searchsorted(a, v):
+    return np.searchsorted(a, v)
+
+
+@make_xp_test_case(_xp_searchsorted)
+class Test_XPSearchsorted:
+    @pytest.mark.parametrize('shape', [1, 2, 10, 11, (2, 10), (2, 3, 11)])
+    def test_nd(self, shape, xp):
+        rng = np.random.default_rng(945298725498274853)
+        x = np.sort(rng.random(shape), axis=-1)
+        xr = np.nextafter(x, np.inf)
+        xl = np.nextafter(x, -np.inf)
+        x_ = np.asarray([-np.inf, np.inf, np.nan])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
+        y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
+        ref = xp.asarray(np_searchsorted(x, y))
+        res = _xp_searchsorted(xp.asarray(x), xp.asarray(y))
+        xp_assert_equal(res, ref)

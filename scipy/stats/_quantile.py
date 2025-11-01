@@ -382,3 +382,24 @@ def _quantile_bc(y, p, n, method, xp):
     elif method == '_nearest':
         k = xp.round(ij)
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
+
+
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
+                 jax_jit=False)
+def _xp_searchsorted(x, y, *, xp=None):
+    # Vectorize np.searchsorted w/ side='left'. Assumes search is along last axis.
+    xp = array_namespace(x, y) if xp is None else xp
+    x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
+    n = x.shape[-1]
+    a = xp.full(y.shape, 0)
+    b = xp.full(y.shape, n)
+
+    # could refactor to for loop with ~log2(n) iterations for JAX JIT
+    while xp.any(b - a > 1):
+        c = (a + b) // 2
+        x0 = xp.take_along_axis(x, c, axis=-1)
+        j = x0 >= y
+        b = xp.where(j, c, b)
+        a = xp.where(j, a, c)
+
+    return xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
