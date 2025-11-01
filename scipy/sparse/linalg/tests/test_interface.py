@@ -4,9 +4,10 @@
 from functools import partial
 from itertools import product
 import operator
+from typing import NamedTuple
 import pytest
 from pytest import raises as assert_raises, warns
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 
 import numpy as np
 import scipy.sparse as sparse
@@ -212,6 +213,237 @@ class TestLinearOperator:
         assert_equal(operator.matmul(B, A.adjoint()), B @ A.adjoint())
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
+
+
+class TestDotTests:
+    class OpArgs(NamedTuple):
+        ny: int
+        nx: int
+        complex: bool
+        dtype: str
+        
+    args1: OpArgs = OpArgs(11, 11, False, "int32")  # real integer square
+    args2: OpArgs = OpArgs(21, 11, False, "float64")  # overdetermined real
+    args1j: OpArgs = OpArgs(11, 11, True, "complex128")  # square complex
+    args2j: OpArgs = OpArgs(21, 11, True, "complex128")  # overdetermined complex
+    args3: OpArgs = OpArgs(11, 21, False, "float64")  # underdetermined real
+    
+    def dottest(
+        self,
+        Op: interface.LinearOperator,
+        rtol: float = 1e-6,
+        atol: float = 1e-21,
+        complexflag: bool = False,
+    ) -> bool:
+        r"""Dot test.
+    
+        Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
+        and perform dot-test to verify the validity of forward and adjoint
+        operators. This test can help to detect errors in the operator
+        implementation.
+    
+        Parameters
+        ----------
+        Op : LinearOperator
+            Linear operator to test
+        rtol : float, optional
+            Relative dottest tolerance
+        atol : float, optional
+            Absolute dottest tolerance
+        complexflag : bool, optional
+            Generate random vectors with complex entries for model and data.
+            Default: False
+    
+        Raises
+        ------
+        AssertionError
+            If dot-test is not verified within chosen tolerances.
+    
+        Notes
+        -----
+        A dot-test is mathematical tool used in the development of numerical
+        linear operators.
+    
+        More specifically, a correct implementation of forward and adjoint for
+        a linear operator should verify the following *equality*
+        within a numerical tolerance:
+    
+        .. math::
+            (\mathbf{Op}\,\mathbf{u})^H\mathbf{v} =
+            \mathbf{u}^H(\mathbf{Op}^H\mathbf{v})
+    
+        """
+        nr = Op.shape[0]
+        nc = Op.shape[1]
+
+        # make u and v vectors
+        rdtype = np.ones(1, Op.dtype).real.dtype
+
+        rng = np.random.default_rng()
+        u = rng.standard_normal(nc).astype(rdtype)
+
+        if complexflag:
+            u = u + 1j * rng.standard_normal(nc).astype(rdtype)
+
+        v = rng.standard_normal(nr).astype(rdtype)
+        if complexflag:
+            v = v + 1j * rng.standard_normal(nr).astype(rdtype)
+
+        op_u = Op.matvec(u)
+        opH_v = Op.rmatvec(v)
+
+        # check operator equivalence
+        assert_allclose(op_u, Op * u)
+        assert_allclose(opH_v, Op.H * v)
+        
+        # check dot equivalence
+        assert_allclose(op_u, Op.dot(u))
+        assert_allclose(opH_v, Op.H.dot(v))
+
+        op_u_H_v = np.vdot(op_u, v)
+        uH_opH_v = np.vdot(u, opH_v)
+
+        assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol, atol=atol)
+
+    def matmultest(
+        self,
+        Op: interface.LinearOperator,
+        rtol: float = 1e-6,
+        atol: float = 1e-21,
+        complexflag: bool = False,
+    ) -> bool:
+        r"""Matmul test.
+    
+        Generate random vectors :math:`\mathbf{u}` and :math:`\mathbf{v}`
+        and perform matmul-test to verify the validity of forward and adjoint
+        matmul operators. This test can help to detect errors in the operator
+        implementation.
+    
+        Parameters
+        ----------
+        Op : LinearOperator
+            Linear operator to test
+        rtol : float, optional
+            Relative matmul-test tolerance
+        atol : float, optional
+            Absolute matmul-test tolerance
+        complexflag : bool, optional
+            Generate random matrices with complex entries for model and data.
+            Default: False
+    
+        Raises
+        ------
+        AssertionError
+            If matmul-test is not verified within chosen tolerances.
+    
+        Notes
+        -----
+        A matmul-test is mathematical tool used in the development of numerical
+        linear operators.
+    
+        More specifically, a correct implementation of forward and adjoint for
+        a linear operator should verify the following *equality*
+        within a numerical tolerance:
+    
+        .. math::
+            (\mathbf{Op}\,\mathbf{U})^{H}\mathbf{V} = 
+            \mathbf{U}^{H}(\mathbf{Op}^{H}\mathbf{V})
+    
+        """
+        nr = Op.shape[0]
+        nc = Op.shape[1]
+
+        # make U and V matrices
+        rdtype = np.ones(1, Op.dtype).real.dtype
+        
+        rng = np.random.default_rng()
+        k = rng.integers(2, 100)
+
+        U = rng.standard_normal(size=(nc, k)).astype(rdtype)
+        if complexflag:
+            U = U + 1j * rng.standard_normal(size=(nc, k)).astype(rdtype)
+
+        V = rng.standard_normal(size=(nr, k)).astype(rdtype)
+        if complexflag:
+            V = V + 1j * rng.standard_normal(size=(nr, k)).astype(rdtype)
+
+        Op_U = Op.matmat(U)
+        OpH_V = Op.rmatmat(V)
+        
+        # check operator equivalence
+        assert_allclose(Op_U, Op @ U)
+        assert_allclose(OpH_V, Op.H @ V)
+        
+        # check dot equivalence
+        assert_allclose(Op_U, Op.dot(U))
+        assert_allclose(OpH_V, Op.H.dot(V))
+
+        Op_U_H_V = Op_U.conj().T @ V
+        UH_OpH_V = U.conj().T @ OpH_V
+
+        assert_allclose(Op_U_H_V, UH_OpH_V, rtol=rtol, atol=atol)
+
+    @pytest.mark.parametrize("args", [args1, args1j])
+    def test_identity_square(self, args):
+        """Simple identity operator on square matrices"""
+        def identity(x):
+            return x
+        Iop = interface.LinearOperator(
+            shape=(args.ny, args.nx), dtype=args.dtype,
+            matvec=identity, rmatvec=identity
+        )
+        self.dottest(Iop, complexflag=args.complex)
+        self.matmultest(Iop, complexflag=args.complex)
+
+    @pytest.mark.parametrize("args", [args1, args1j, args2, args2j, args3])
+    def test_identity_nonsquare(self, args):
+        """Identity operator with zero-padding on non-square matrices"""
+        def mv(x):
+            # handle column vectors too
+            # (`LinearOperator` handles reshape in post-processing)
+            x = x.flatten()
+
+            match np.sign(x.shape[0] - args.ny):
+                case 0:  # square
+                    return x
+                case 1:  # crop x to size
+                    return x[:args.ny]
+                case -1:  # pad with zeros
+                    pad_width = (0, args.ny - x.shape[0])
+                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+
+        def rmv(x):
+            # handle column vectors too
+            # (`LinearOperator` handles reshape in post-processing)
+            x = x.flatten()
+            
+            match np.sign(args.nx - x.shape[0]):
+                case 0:  # square
+                    return x
+                case 1:  # pad with zeros
+                    pad_width = (0, args.nx - x.shape[0])
+                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+                case -1:  # crop x to size
+                    return x[:args.nx]
+
+        Iop = interface.LinearOperator(
+            shape=(args.ny, args.nx), dtype=args.dtype, matvec=mv, rmatvec=rmv
+        )
+        self.dottest(Iop, complexflag=args.complex)
+        self.matmultest(Iop, complexflag=args.complex)
+        
+    @pytest.mark.parametrize("args", [args1, args1j])
+    def test_scaling_square(self, args):
+        """Simple (complex) scaling operator on square matrices"""
+        def scale(x):
+            return (3 + 2j) * x
+        def r_scale(x):
+            return (3 - 2j) * x
+        ScaleOp = interface.LinearOperator(
+            shape=(args.ny, args.nx), dtype=args.dtype, matvec=scale, rmatvec=r_scale
+        )
+        self.dottest(ScaleOp, complexflag=args.complex)
+        self.matmultest(ScaleOp, complexflag=args.complex)
 
 
 class TestAsLinearOperator:
