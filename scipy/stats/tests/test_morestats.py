@@ -782,69 +782,70 @@ class TestBartlett:
         assert xp.all(res.statistic >= 0)
 
 
+@make_xp_test_case(stats.levene)
 class TestLevene:
 
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args)
-        assert_almost_equal(W, 1.7059176930008939, 7)
-        assert_almost_equal(pval, 0.0990829755522, 7)
+        xp_assert_close(W, xp.asarray(1.7059176930008939))
+        xp_assert_close(pval, xp.asarray(0.0990829755522))
 
-    def test_mean(self):
+    def test_mean(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="mean")
-        assert_allclose(W, 2.15945985647285, rtol=5e-14)
-        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.15945985647285))
+        xp_assert_close(pval, xp.asarray(0.032236826559783))
 
-    def test_trimmed1(self):
+    def test_trimmed1(self, xp):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        W1, pval1 = stats.levene(g1, g2, g3, center='mean')
-        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed',
-                                 proportiontocut=0.0)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        args = (xp.asarray(g1), xp.asarray(g2), xp.asarray(g3))
+        W1, pval1 = stats.levene(*args, center='mean')
+        W2, pval2 = stats.levene(*args, center='trimmed', proportiontocut=0.0)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_trimmed2(self):
+    def test_trimmed2(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
-        assert_allclose(W, 2.07712845686874, rtol=5e-14)
-        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.07712845686874))
+        xp_assert_close(pval, xp.asarray(0.0397269688035377))
 
-    def test_equal_mean_median(self):
+    def test_equal_mean_median(self, xp):
         x = np.linspace(-1, 1, 21)
         rng = np.random.default_rng(4058827756)
         x2 = rng.permutation(x)
         y = x**3
+        x, x2, y = xp.asarray(x), xp.asarray(x2), xp.asarray(y)
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_bad_keyword(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
+    def test_bad_center_value(self, xp):
+        x = xp.linspace(-1, 1, 21)
+        message = "center must be 'mean', 'median' or 'trimmed'."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(x, x, center='trim')
 
-    def test_bad_center_value(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(ValueError, stats.levene, x, x, center='trim')
+    def test_too_few_args(self, xp):
+        message = "Must provide at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(xp.asarray([1]))
 
-    def test_too_few_args(self):
-        assert_raises(ValueError, stats.levene, [1])
-
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.levene(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.levene, g1, x)
+        check_named_results(res, attributes, xp=xp)
 
 
 class TestBinomTest:
