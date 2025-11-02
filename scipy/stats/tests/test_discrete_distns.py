@@ -396,6 +396,13 @@ class TestZipfian:
         m = zipfian.mean(a, n)
         assert_allclose(m, ref, rtol=8e-15)
 
+    def test_ridiculously_large_n(self):
+        # This should return nan with no errors or warnings.
+        a = 2.5
+        n = 1e100
+        p = zipfian.pmf(10, a, n)
+        assert_equal(p, np.nan)
+
 
 class TestNCH:
     def setup_method(self):
