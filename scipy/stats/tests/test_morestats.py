@@ -1096,6 +1096,8 @@ class TestFligner:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_data(self, dtype, xp):
+        if is_numpy(xp) and dtype == 'float32' and xp.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
         # numbers from R: fligner.test in package stats
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x1 = xp.arange(5, dtype=dtype)
