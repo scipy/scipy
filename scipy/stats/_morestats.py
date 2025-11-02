@@ -3167,22 +3167,12 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     return LeveneResult(W[()], pval[()])
 
 
-def _apply_func(x, g, func):
-    # g is list of indices into x
-    #  separating x into different groups
-    #  func should be applied over the groups
-    g = unique(r_[0, g, len(x)])
-    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
-
-    return asarray(output)
-
-
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
-def fligner(*samples, center='median', proportiontocut=0.05):
+def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -3200,6 +3190,11 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -3283,37 +3278,36 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=0)
+            return np.median(x, axis=-1, keepdims=True)
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=0)
+            return np.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-    Ni = asarray([len(samples[j]) for j in range(k)])
-    Yci = asarray([func(samples[j]) for j in range(k)])
-    Ntot = np.sum(Ni, axis=0)
-    # compute Zij's
-    Zij = [abs(asarray(samples[i]) - Yci[i]) for i in range(k)]
-    allZij = []
-    g = [0]
-    for i in range(k):
-        allZij.extend(list(Zij[i]))
-        g.append(len(allZij))
+    ni = [sample.shape[-1] for sample in samples]
+    N = sum(ni)
 
-    ranks = _stats_py.rankdata(allZij)
-    sample = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    # Implementation follows [3] pg 355 F-K.
+    Xibar = [func(sample) for sample in samples]
+    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
+    a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
-    # compute Aibar
-    Aibar = _apply_func(sample, g, np.sum) / Ni
-    anbar = np.mean(sample, axis=0)
-    varsq = np.var(sample, axis=0, ddof=1)
-    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    # [3] Equation 2.1
+    splits = np.cumsum(ni[:-1])
+    Ai = np.split(a_Ni,  splits, axis=-1)
+    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
+    abar = np.mean(a_Ni, axis=-1)
+    V2 = np.var(a_Ni, axis=-1, ddof=1)
+    statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
+
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
