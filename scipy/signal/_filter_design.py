@@ -2754,6 +2754,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     -----
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
+
     Examples
     --------
     Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
@@ -3417,6 +3421,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+
     sos : ndarray
         Second-order sections representation of the IIR filter.
         Only returned if ``output='sos'``.
@@ -3444,6 +3449,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         numerical precision issues. Consider inspecting output filter
         characteristics `freqz` or designing the filters with second-order
         sections via ``output='sos'``.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3562,6 +3571,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
+
     Examples
     --------
     Design an analog filter and plot its frequency response, showing the
@@ -3674,6 +3687,10 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     Type II filters do not roll off as fast as Type I (`cheby1`).
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3797,6 +3814,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     unity for odd-order filters, or -rp dB for even-order filters.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3933,6 +3954,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     References
     ----------
