@@ -30,3 +30,6 @@
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
+[submodule "scipy/_lib/spatch"]
+	path = scipy/_lib/spatch
+	url = https://github.com/scientific-python/spatch.git

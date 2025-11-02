@@ -14,6 +14,7 @@ from . import _sigtools
 
 from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
 import scipy._lib.array_api_extra as xpx
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
@@ -250,6 +251,7 @@ def kaiserord(ripple, width):
     return int(ceil(numtaps)), beta
 
 
+@_dispatchable(['cutoff'])
 def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
            scale=True, fs=None):
     r"""FIR filter design using the window method.
@@ -574,6 +576,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 # Original version of firwin2 from scipy ticket #457, submitted by "tash".
 #
 # Rewritten by Warren Weckesser, 2010.
+@_dispatchable(['freq', 'gain'])
 def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
             antisymmetric=False, fs=None):
     """
@@ -777,6 +780,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
     return out
 
 
+@_dispatchable(['bands', 'desired', 'weight'], cupy=False)
 def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
           maxiter=25, grid_density=16, fs=None):
     """
@@ -955,6 +959,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     return xp.asarray(result)
 
 
+@_dispatchable(['bands', 'desired', 'weight'])
 def firls(numtaps, bands, desired, *, weight=None, fs=None):
     """
     FIR filter design using least-squares error minimization.
@@ -1197,6 +1202,7 @@ def _dhtm(mag, xp):
     return recon
 
 
+@_dispatchable(['h'])
 def minimum_phase(h,
                   method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
                   n_fft: int | None = None, *, half: bool = True):
