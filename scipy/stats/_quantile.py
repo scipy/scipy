@@ -12,13 +12,26 @@ import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
     xp = array_namespace(x, p)
+
+    if function == "quantile":
+        methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+                   'hazen', 'interpolated_inverted_cdf', 'linear',
+                   'median_unbiased', 'normal_unbiased', 'weibull',
+                   'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
+        allowed_types = 'real floating'
+        def mask_fun(p): return (p > 1) | (p < 0) | xp.isnan(p)
+    else:
+        methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
+                   'median_unbiased', 'normal_unbiased', 'weibull'}
+        allowed_types = ('integral', 'real floating')
+        mask_fun = xp.isnan
 
     if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
         raise ValueError("`x` must have real dtype.")
 
-    if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
+    if not xp.isdtype(xp.asarray(p).dtype, allowed_types):
         raise ValueError("`p` must have real floating dtype.")
 
     x, p = xp_promote(x, p, force_floating=True, xp=xp)
@@ -39,10 +52,6 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         raise ValueError(message)
     axis = int(axis)
 
-    methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
-               'hazen', 'interpolated_inverted_cdf', 'linear',
-               'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -96,7 +105,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
             y = xp.asarray(y, copy=True)  # ensure writable
             y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
 
-    p_mask = (p > 1) | (p < 0) | xp.isnan(p)
+    p_mask = mask_fun(p)
     if xp.any(p_mask):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
@@ -308,6 +317,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
         res = _quantile_bc(y, p, n, method, xp)
 
+    return _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp)
+
+
+def _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp):
     res = xpx.at(res, p_mask).set(xp.nan)
 
     # Reshape per axis/keepdims
@@ -390,9 +403,11 @@ def _xp_searchsorted(x, y, *, xp=None):
     # Vectorize np.searchsorted w/ side='left'. Assumes search is along last axis.
     xp = array_namespace(x, y) if xp is None else xp
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
-    n = x.shape[-1]
+    # n = x.shape[-1]
     a = xp.full(y.shape, 0)
-    b = xp.full(y.shape, n)
+    n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
+    b = xp.broadcast_to(n, y.shape)
+    # b = xp.full(y.shape, n)
 
     # could refactor to for loop with ~log2(n) iterations for JAX JIT
     while xp.any(b - a > 1):
@@ -408,9 +423,6 @@ def _xp_searchsorted(x, y, *, xp=None):
 def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the empirical distribution function of the data along the specified axis.
-
-    The distribution function and quantile function are inverses of one another, hence
-    the name.
 
     Parameters
     ----------
@@ -430,6 +442,7 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
         8. 'median_unbiased'
         9. 'normal_unbiased'
 
+        Only the continuous methods are available at this time.
         See Notes for details.
     axis : int or None, default: 0
         Axis along which the quantiles are computed.
@@ -483,15 +496,16 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     By default, this is done by computing the "fractional index" ``p`` at which ``y``
     would appear within ``z``, a sorted copy of `x`::
 
-        p = (j + (y - z[j]) / (z[j+1] - z[j]) / (n - 1)
+        p = 1 / (n - 1) * (j +  (     y - z[j])
+                              / (z[j+1] - z[j]))
 
     where the index ``j`` is that of the largest element of ``z`` that does not exceed
     ``y``, and ``n`` is the number of elements in the sample. Note that if ``y`` is an
     element of ``z``, then ``j`` is the index such that ``y = z[j]``, and the formula
-    simplifies to the intuitive ``j / (n - 1)``. The formula above simply interpolates
+    simplifies to the intuitive ``j / (n - 1)``. The full formula linearly interpolates
     between ``j / (n - 1)`` and ``(j + 1) / (n - 1)``.
 
-    This is a special case of the more general relationship:
+    This is a special case of the more general:
 
         p = (j + (y - z[j]) / (z[j+1] - z[j] + 1 - m) / n
 
@@ -514,6 +528,11 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     range of non-negative indices, and resulting ``p`` is clipped to the range
     ``0`` to ``1``.
 
+    When all the data in ``x`` are unique, the empirical distribution and quantile
+    functions are inverses of one another within a certain domain, hence the name.
+    Although `quantile` with ``method='linear'`` is invertible over the whole domain
+    of ``p`` from ``0`` to ``1``, this is not true of other methods.
+
     References
     ----------
     .. [1] R. J. Hyndman and Y. Fan,
@@ -524,66 +543,73 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> x = np.asarray([[10, 8, 7, 5, 4],
-    ...                 [0, 1, 2, 3, 5]])
+    >>> x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-    Take the median of each row.
+    Calculate the empirical distribution function of one sample at a single point.
 
-    >>> stats.quantile(x, 0.5, axis=-1)
-    array([7.,  2.])
+    >>> stats.iquantile(x, 5, axis=-1)
+    np.float64(0.5)
 
-    Take a different quantile for each row.
+    Calculate the empirical distribution function of one sample at two points.
 
-    >>> stats.quantile(x, [[0.25], [0.75]], axis=-1, keepdims=True)
-    array([[5.],
-           [3.]])
+    >>> stats.iquantile(x, [2.5, 7.5], axis=-1)
+    array([0.25, 0.75])
 
-    Take multiple quantiles for each row.
+    Calculate the empirical distribution function of two samples at different points.
 
-    >>> stats.quantile(x, [0.25, 0.75], axis=-1)
-    array([[5., 8.],
-           [1., 3.]])
+    >>> x = np.stack((np.arange(0, 11), np.arange(10, 21)))
+    >>> stats.iquantile(x, [[2.5], [17.5]], axis=-1, keepdims=True)
+    array([[0.25],
+           [0.75]])
 
-    Take different quantiles for each row.
+    Calculate the empirical distribution function at many points for each of two
+    samples.
 
-    >>> p = np.asarray([[0.25, 0.75],
-    ...                 [0.5, 1.0]])
-    >>> stats.quantile(x, p, axis=-1)
-    array([[5., 8.],
-           [2., 5.]])
+    >>> rng = np.random.default_rng(6110515095)
+    >>> x = stats.Normal(mu=[-1, 1]).sample(10000)
+    >>> y = np.linspace(-4, 4, 5000)[:, np.newaxis]
+    >>> p = stats.iquantile(x, y, axis=0)
+    >>> plt.plot(y, p)
+    >>> plt.show()
 
-    Take different quantiles for each column.
+    Note that the `quantile` and `iquantile` functions are inverses of one another
+    within a certain domain.
 
-    >>> stats.quantile(x.T, p.T, axis=0)
-    array([[5., 2.],
-           [8., 5.]])
+    >>> p = np.linspace(0, 1, 300)
+    >>> x = rng.standard_normal(300)
+    >>> y = stats.quantile(x, p)
+    >>> p2 = stats.iquantile(x, y)
+    >>> np.testing.assert_allclose(p2, p)
+    >>> y2 = stats.quantile(x, p2)
+    >>> np.testing.assert_allclose(y2, y)
+
+    However, the domain over which `quantile` can be inverted by `iquantile` depends on
+    the `method` used. This is most noticeable when there are few observations in the
+    sample.
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.asarray([0, 1])
+    >>> y_linear = stats.quantile(x, p, method='linear')
+    >>> y_weibull = stats.quantile(x, p, method='weibull')
+    >>> y_iicdf = stats.quantile(x, p, method='interpolated_inverted_cdf')
+    >>> plt.plot(p, y_linear, p, y_weibull, p, y_iicdf)
+    >>> plt.legend(['linear', 'weibull', 'iicdf'])
+    >>> plt.xlabel('p')
+    >>> plt.ylabel('y = quantile(x, p)')
+    >>> plt.show()
+
+    For example, while `iquantile` can invert `quantile` from ``p = 0.0`` to ``p = 1.0``
+    with ``method == 'linear'`, in this case, `quantile` can only be inverted from
+    ``p == 0.5`` to ``p = 1.0` with ``method = 'interpolated_inverted_cdf'``. This is a
+    fundamental characteristic of the methods, not a shortcoming of `iquantile`.
 
     """
-    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims)
-    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, _, xp = temp
+    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, function='iquantile')
+    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, xp = temp
 
-    methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
-               'median_unbiased', 'normal_unbiased', 'weibull'}
-    if method in methods:
-        res = _iquantile_hf(x, y, n, method, xp)
-    else:
-        message = f"`method` must be one of {methods}"
-        raise ValueError(message)
+    res = _iquantile_hf(x, y, n, method, xp)
 
-    # res = xpx.at(res, y_mask).set(xp.nan)
-
-    # Reshape per axis/keepdims
-    if axis_none and keepdims:
-        shape = (1,)*(ndim - 1) + res.shape
-        res = xp.reshape(res, shape)
-        axis = -1
-
-    res = xp.moveaxis(res, -1, axis)
-
-    if not keepdims:
-        res = xp.squeeze(res, axis=axis)
-
-    return res[()] if res.ndim == 0 else res
+    return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
 
 
 def _iquantile_hf(x, y, n, method, xp):
@@ -596,14 +622,9 @@ def _iquantile_hf(x, y, n, method, xp):
         normal_unbiased=(3 / 8, 3 / 8),
     )
     a, b = methods[method]
-
-    # OK to use shape of array rather than number of non-masked elements?
-    n_int = x.shape[-1]
-    j = xp.clip(_xp_searchsorted(x, y) - 1, 0, n_int - 2)
-    xj = xp.take_along_axis(x, j, axis=-1)
-    xjp1 = xp.take_along_axis(x, j+1, axis=-1)
-    p = (j + 1 + (y - xj) / (xjp1 - xj) - a) / (n + 1 - a - b)
-    # invalid = ((y < xp.min(x, axis=-1, keepdims=True))
-    #            | (y > xp.max(x, axis=-1, keepdims=True)))
-    # p = xp.where(invalid, xp.nan, p)
+    n_int = xp.astype(n, xp.int64)
+    jp1 = xp.clip(_xp_searchsorted(x, y), 1, n_int - 1)
+    xj = xp.take_along_axis(x, jp1-1, axis=-1)
+    xjp1 = xp.take_along_axis(x, jp1, axis=-1)
+    p = (jp1 + (y - xj) / (xjp1 - xj) - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)
