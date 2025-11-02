@@ -3169,7 +3169,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     W = numer / denom
     W = xp.squeeze(W, axis=-1)
     dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
-    pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=np)
+    pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
     return LeveneResult(W[()], pval[()])
 
 
