@@ -133,7 +133,7 @@ class SVDSCommonTests:
     _A_empty_msg = "`A` must not be empty."
     _A_dtype_msg = "`A` must be of numeric data type"
     _A_type_msg = "type not understood"
-    _A_ndim_msg = "array must have ndim <= 2"
+    _A_ndim_msg = "Only 2-D input"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
         (np.array([['a', 'b'], ['c', 'd']], dtype='object'), ValueError, _A_dtype_msg),
