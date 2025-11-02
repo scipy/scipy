@@ -1252,6 +1252,30 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res.x
     5.33144184241
 
+Linewalker minimization (``method='linewalker'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some settings the function being minimized can be non-convex or computationally 
+expensive. The `linewalker` method in :func:`minimize_scalar` constructs
+a smooth surrogate on a set of equally-spaced grid points by evaluating
+the true function at a sparse set of judiciously chosen grid points. At each 
+iteration, the surrogate`s non-tabu local minima and maxima are 
+identified as candidates for sampling. Tabu search constructs
+are also used to promote diversification. If no non-tabu extrema are
+identified, a simple exploration step is taken by sampling the midpoint
+of the largest unexplored interval. The algorithm continues until a
+user-defined function evaluation limit is reached.
+
+For example, to find the minimum of :math:`J_{1}\left( x \right)` near
+:math:`x=5` , :func:`minimize_scalar` can be called using the interval
+:math:`\left[ 4, 7 \right]` as a constraint. The result is
+:math:`x_{\textrm{min}}=5.3303` :
+
+    >>> from scipy.special import j1
+    >>> res = minimize_scalar(j1, bracket=(4, 7), method='linewalker')
+    >>> res.x
+    5.33033033033
+
 
 
 Custom minimizers
