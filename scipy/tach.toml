@@ -1,0 +1,151 @@
+[[modules]]
+path = "_lib"
+depends_on = ["io"]
+
+[[modules]]
+path = "cluster"
+depends_on = ["cluster.vq", "cluster.hierarchy"]
+
+[[modules]]
+path = "cluster.hierarchy"
+depends_on = ["cluster"]
+
+[[modules]]
+path = "cluster.vq"
+depends_on = ["cluster"]
+
+[[modules]]
+path = "constants"
+depends_on = []
+
+[[modules]]
+path = "datasets"
+depends_on = []
+
+[[modules]]
+path = "differentiate"
+depends_on = []
+
+[[modules]]
+path = "fft"
+depends_on = ["special"]
+
+[[modules]]
+path = "fftpack"
+depends_on = []
+
+[[modules]]
+path = "integrate"
+depends_on = ["io"]
+
+[[modules]]
+path = "interpolate"
+depends_on = ["io"]
+
+[[modules]]
+path = "io"
+depends_on = ["io.matlab", "io.arff", "io.wavfile"]
+
+[[modules]]
+path = "io.arff"
+depends_on = ["io"]
+
+[[modules]]
+path = "io.matlab"
+depends_on = ["io"]
+
+[[modules]]
+path = "io.wavfile"
+depends_on = ["io"]
+
+[[modules]]
+path = "linalg"
+depends_on = ["fft", "linalg.blas", "linalg.lapack"]
+
+[[modules]]
+path = "linalg.blas"
+depends_on = []
+
+[[modules]]
+path = "linalg.lapack"
+depends_on = ["linalg.blas"]
+
+[[modules]]
+path = "linalg.interpolative"
+depends_on = []
+
+[[modules]]
+path = "ndimage"
+depends_on = []
+
+[[modules]]
+path = "odr"
+depends_on = []
+
+[[modules]]
+path = "optimize"
+depends_on = ["sparse"]
+
+[[modules]]
+path = "optimize.cython_optimize"
+depends_on = []
+
+[[modules]]
+path = "optimize.elementwise"
+depends_on = ["optimize"]
+
+[[modules]]
+path = "signal"
+depends_on = ["signal.windows"]
+
+[[modules]]
+path = "signal.windows"
+depends_on = []
+
+[[modules]]
+path = "sparse"
+depends_on = ["_lib", "sparse.linalg"]
+
+[[modules]]
+path = "sparse.csgraph"
+depends_on = ["sparse", "io"]
+
+[[modules]]
+path = "sparse.linalg"
+depends_on = ["sparse"]
+
+[[modules]]
+path = "spatial"
+depends_on = ["spatial.transform"]
+
+[[modules]]
+path = "spatial.transform"
+depends_on = []
+
+[[modules]]
+path = "special"
+depends_on = ["signal"]
+
+[[modules]]
+path = "stats"
+depends_on = ["_lib", "stats.contingency", "stats.mstats", "stats.qmc", "stats.distributions"]
+
+[[modules]]
+path = "stats.contingency"
+depends_on = ["stats"]
+
+[[modules]]
+path = "stats.distributions"
+depends_on = ["stats"]
+
+[[modules]]
+path = "stats.mstats"
+depends_on = ["stats"]
+
+[[modules]]
+path = "stats.qmc"
+depends_on = ["stats"]
+
+[[modules]]
+path = "stats.sampling"
+depends_on = ["stats"]
