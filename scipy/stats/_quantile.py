@@ -403,3 +403,207 @@ def _xp_searchsorted(x, y, *, xp=None):
         a = xp.where(j, a, c)
 
     return xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
+
+
+def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
+    """
+    Compute the empirical distribution function of the data along the specified axis.
+
+    The distribution function and quantile function are inverses of one another, hence
+    the name.
+
+    Parameters
+    ----------
+    x : array_like of real numbers
+        Data array.
+    y : array_like of real numbers
+        Datum or data for which to estimate the cumulative probabilities.
+        See `axis`, `keepdims`, and the examples for broadcasting behavior.
+    method : str, default: 'linear'
+        The method to use for estimating the empirical distribution function.
+        The available options, numbered as they appear in [1]_, are:
+
+        4. 'interpolated_inverted_cdf'
+        5. 'hazen'
+        6. 'weibull'
+        7. 'linear'  (default)
+        8. 'median_unbiased'
+        9. 'normal_unbiased'
+
+        See Notes for details.
+    axis : int or None, default: 0
+        Axis along which the quantiles are computed.
+        ``None`` ravels both `x` and `y` before performing the calculation,
+        without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x` or `y` as needed until the two arrays
+        have the same dimensionality. When providing `x` and `y` with different
+        dimensionality, consider using negative `axis` integers for clarity.
+    nan_policy : str, default: 'propagate'
+        Defines how to handle NaNs in the input data `x`.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding slice of the output
+          will contain NaN(s).
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding slice of the output will
+          contain NaN(s).
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+        If NaNs are present in `y`, the corresponding entries in the output will be NaN.
+    keepdims : bool, optional
+        Consider the case in which `x` is 1-D and `y` is a scalar: the empirical
+        distribution function is a reducing statistic, and the default behavior is to
+        return a scalar.
+        If `keepdims` is set to True, the axis will not be reduced away, and the
+        result will be a 1-D array with one element.
+
+        The general case is more subtle, since multiple probabilities may be
+        requested for each axis-slice of `x`. For instance, if both `x` and `y`
+        are 1-D and ``y.size > 1``, no axis can be reduced away; there must be an
+        axis to contain the number of probabilities given by ``y.size``. Therefore:
+
+        - By default, the axis will be reduced away if possible (i.e. if there is
+          exactly one element of `y` per axis-slice of `x`).
+        - If `keepdims` is set to True, the axis will not be reduced away.
+        - If `keepdims` is set to False, the axis will be reduced away
+          if possible, and an error will be raised otherwise.
+
+    Returns
+    -------
+    probability : scalar or ndarray
+        The resulting probabilities(s). The dtype is the result dtype of `x` and `y`.
+
+    Notes
+    -----
+    Given a sample `x` from an underlying distribution, `iquantile` provides a
+    nonparametric estimate of the empirical distribution function.
+
+    By default, this is done by computing the "fractional index" ``p`` at which ``y``
+    would appear within ``z``, a sorted copy of `x`::
+
+        p = (j + (y - z[j]) / (z[j+1] - z[j]) / (n - 1)
+
+    where the index ``j`` is that of the largest element of ``z`` that does not exceed
+    ``y``, and ``n`` is the number of elements in the sample. Note that if ``y`` is an
+    element of ``z``, then ``j`` is the index such that ``y = z[j]``, and the formula
+    simplifies to the intuitive ``j / (n - 1)``. The formula above simply interpolates
+    between ``j / (n - 1)`` and ``(j + 1) / (n - 1)``.
+
+    This is a special case of the more general relationship:
+
+        p = (j + (y - z[j]) / (z[j+1] - z[j] + 1 - m) / n
+
+    where ``m`` may be defined according to several different conventions.
+    The preferred convention may be selected using the ``method`` parameter:
+
+    =============================== =============== ===============
+    ``method``                      number in H&F   ``m``
+    =============================== =============== ===============
+    ``interpolated_inverted_cdf``   4               ``0``
+    ``hazen``                       5               ``1/2``
+    ``weibull``                     6               ``p``
+    ``linear`` (default)            7               ``1 - p``
+    ``median_unbiased``             8               ``p/3 + 1/3``
+    ``normal_unbiased``             9               ``p/4 + 3/8``
+    =============================== =============== ===============
+
+    Note that indices ``j`` and ``j + 1`` are clipped to the range ``0`` to
+    ``n - 1`` when the results of the formula would be outside the allowed
+    range of non-negative indices, and resulting ``p`` is clipped to the range
+    ``0`` to ``1``.
+
+    References
+    ----------
+    .. [1] R. J. Hyndman and Y. Fan,
+       "Sample quantiles in statistical packages,"
+       The American Statistician, 50(4), pp. 361-365, 1996
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> x = np.asarray([[10, 8, 7, 5, 4],
+    ...                 [0, 1, 2, 3, 5]])
+
+    Take the median of each row.
+
+    >>> stats.quantile(x, 0.5, axis=-1)
+    array([7.,  2.])
+
+    Take a different quantile for each row.
+
+    >>> stats.quantile(x, [[0.25], [0.75]], axis=-1, keepdims=True)
+    array([[5.],
+           [3.]])
+
+    Take multiple quantiles for each row.
+
+    >>> stats.quantile(x, [0.25, 0.75], axis=-1)
+    array([[5., 8.],
+           [1., 3.]])
+
+    Take different quantiles for each row.
+
+    >>> p = np.asarray([[0.25, 0.75],
+    ...                 [0.5, 1.0]])
+    >>> stats.quantile(x, p, axis=-1)
+    array([[5., 8.],
+           [2., 5.]])
+
+    Take different quantiles for each column.
+
+    >>> stats.quantile(x.T, p.T, axis=0)
+    array([[5., 2.],
+           [8., 5.]])
+
+    """
+    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims)
+    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, _, xp = temp
+
+    methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
+               'median_unbiased', 'normal_unbiased', 'weibull'}
+    if method in methods:
+        res = _iquantile_hf(x, y, n, method, xp)
+    else:
+        message = f"`method` must be one of {methods}"
+        raise ValueError(message)
+
+    # res = xpx.at(res, y_mask).set(xp.nan)
+
+    # Reshape per axis/keepdims
+    if axis_none and keepdims:
+        shape = (1,)*(ndim - 1) + res.shape
+        res = xp.reshape(res, shape)
+        axis = -1
+
+    res = xp.moveaxis(res, -1, axis)
+
+    if not keepdims:
+        res = xp.squeeze(res, axis=axis)
+
+    return res[()] if res.ndim == 0 else res
+
+
+def _iquantile_hf(x, y, n, method, xp):
+    methods = dict(
+        interpolated_inverted_cdf=(0, 1),
+        hazen=(0.5, 0.5),
+        weibull=(0, 0),
+        linear=(1, 1),
+        median_unbiased=(1 / 3, 1 / 3),
+        normal_unbiased=(3 / 8, 3 / 8),
+    )
+    a, b = methods[method]
+
+    # OK to use shape of array rather than number of non-masked elements?
+    n_int = x.shape[-1]
+    j = xp.clip(_xp_searchsorted(x, y) - 1, 0, n_int - 2)
+    xj = xp.take_along_axis(x, j, axis=-1)
+    xjp1 = xp.take_along_axis(x, j+1, axis=-1)
+    p = (j + 1 + (y - xj) / (xjp1 - xj) - a) / (n + 1 - a - b)
+    # invalid = ((y < xp.min(x, axis=-1, keepdims=True))
+    #            | (y > xp.max(x, axis=-1, keepdims=True)))
+    # p = xp.where(invalid, xp.nan, p)
+    return xp.clip(p, 0., 1.)

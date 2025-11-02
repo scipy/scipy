@@ -219,7 +219,7 @@ def np_searchsorted(a, v):
 
 @make_xp_test_case(_xp_searchsorted)
 class Test_XPSearchsorted:
-    @pytest.mark.parametrize('shape', [1, 2, 10, 11, (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
     def test_nd(self, shape, xp):
         rng = np.random.default_rng(945298725498274853)
         x = np.sort(rng.random(shape), axis=-1)
