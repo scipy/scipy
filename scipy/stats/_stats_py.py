@@ -3628,7 +3628,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
@@ -3692,13 +3692,15 @@ def trim_mean(a, proportiontocut, axis=0):
     array([ 2.5, 25. ])
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
 
-    if a.size == 0:
-        return _get_nan(a)
+    a = xp.asarray(a)
+
+    if xp_size(a) == 0:
+        return _get_nan(a, xp=xp)
 
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
@@ -3707,11 +3709,13 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return np.mean(atmp[tuple(sl)], axis=axis)
+    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    return xp.mean(trimmed, axis=axis)
 
 
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
