@@ -4,9 +4,12 @@ from numpy.testing import (assert_equal, assert_array_equal,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
+from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib._util import _apply_over_batch
 from scipy import stats
 from scipy.special import xlogy
-from scipy.stats.contingency import (margins, expected_freq,
+from scipy.stats.contingency import (margins, expected_freq, _chi2_contingency_2d,
                                      chi2_contingency, association)
 
 
@@ -267,6 +270,30 @@ class TestChi2Contingency:
         message = "If the `method` argument of `chi2_contingency` is..."
         with pytest.raises(ValueError, match=message):
             chi2_contingency(table, correction=False, method=method)
+
+
+@_apply_over_batch(("observed", 2))
+def _chi2_contingency_ref(observed, correction=True, lambda_=1):
+    return tuple(chi2_contingency(observed, correction=correction, lambda_=lambda_))
+
+
+@make_xp_test_case(_chi2_contingency_2d)
+class TestChi2Contingency2d:
+    # test vectorized _chi2_contengency_2d
+    @pytest.mark.parametrize("correction", [False, True])
+    @pytest.mark.parametrize("lambda_", [None, 2])
+    @pytest.mark.parametrize("shape", [(1, 1), (1, 2), (2, 1), (2, 2),
+                                       (3, 2, 2), (3, 3, 4), (3, 4, 5, 6)])
+    def test_against_ref(self, correction, lambda_, shape, xp):
+        rng = np.random.default_rng(735847239109239455)
+        observed = rng.integers(10, size=shape)
+        dtype = xp.float64
+        ref = _chi2_contingency_ref(observed, correction=correction, lambda_=lambda_)
+
+        res = _chi2_contingency_2d(xp.asarray(observed, dtype=dtype),
+                                   correction=correction, lambda_=lambda_)
+        xp_assert_close(res[0], xp.asarray(ref[0], dtype=dtype))
+        xp_assert_close(res[1], xp.asarray(ref[1], dtype=dtype))
 
 
 def test_bad_association_args():
