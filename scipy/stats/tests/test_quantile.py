@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy.stats._quantile import _xp_searchsorted
+from scipy.stats._quantile import _xp_searchsorted, _iquantile_methods
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
@@ -219,15 +219,161 @@ def np_searchsorted(a, v):
 
 @make_xp_test_case(_xp_searchsorted)
 class Test_XPSearchsorted:
+    @pytest.mark.parametrize('ties', [False, True])
     @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
-    def test_nd(self, shape, xp):
+    def test_nd(self, ties, shape, xp):
+        dtype = xp.float64
         rng = np.random.default_rng(945298725498274853)
-        x = np.sort(rng.random(shape), axis=-1)
+        if ties:
+            sample = rng.integers(5, size=shape)
+        else:
+            sample = rng.random(shape)
+        x = np.sort(sample, axis=-1)
         xr = np.nextafter(x, np.inf)
         xl = np.nextafter(x, -np.inf)
         x_ = np.asarray([-np.inf, np.inf, np.nan])
         x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
         y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
         ref = xp.asarray(np_searchsorted(x, y))
-        res = _xp_searchsorted(xp.asarray(x), xp.asarray(y))
+        res = _xp_searchsorted(xp.asarray(x, dtype=dtype), xp.asarray(y))
+        xp_assert_equal(res, ref)
+
+
+@make_xp_test_case(stats.iquantile)
+class TestIQuantile:
+    # size 0 and 1 arrays for `x`? `y`? All NaN arrays with nan_policy='omit'? infs?
+    # masked arrays?
+    # ties
+    def test_input_validation(self, xp):
+        x = xp.asarray([1, 2, 3])
+        y = xp.asarray(2)
+
+        message = "`x` must have real dtype."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(xp.asarray([True, False]), y)
+        with pytest.raises(ValueError):
+            stats.iquantile(xp.asarray([1+1j, 2]), y)
+
+        message = "`y` must have real dtype."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, xp.asarray([0+1j, 1]))
+
+        message = "`axis` must be an integer or None."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, y, axis=0.5)
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, y, axis=(0, -1))
+
+        message = "`axis` is not compatible with the shapes of the inputs."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, y, axis=2)
+
+        if not is_jax(xp):  # no data-dependent input validation for lazy arrays
+            message = "The input contains nan values"
+            with pytest.raises(ValueError, match=message):
+                stats.iquantile(xp.asarray([xp.nan, 1, 2]), y, nan_policy='raise')
+
+        message = "method` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, y, method='a duck')
+
+        message = "If specified, `keepdims` must be True or False."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, y, keepdims=42)
+
+        message = "`keepdims` may be False only if the length of `y` along `axis` is 1."
+        with pytest.raises(ValueError, match=message):
+            stats.iquantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
+
+    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('y_shape', [None, 25])
+    def test_against_quantile(self, method, ab, dtype, x_shape, y_shape, xp):
+        a, b = ab
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(394529872549827485)
+        y_shape = x_shape if y_shape is None else y_shape
+
+        x = xp.asarray(rng.standard_normal(size=x_shape), dtype=dtype)
+        p = xp.asarray(rng.random(size=y_shape), dtype=dtype)
+        y = stats.quantile(x, p, method=method, axis=-1)
+        res = stats.iquantile(x, y, method=method, axis=-1)
+        ref = xp.broadcast_to(p, (*x.shape[:-1], y.shape[-1]))
+
+        # not invertible outside this domain
+        n = x.shape[-1]
+        p_min = (1 - a) / (n + 1 - a - b)
+        p_max = (n - a) / (n + 1 - a - b)
+        i_low = ref <= p_min
+        i_high = ref >= p_max
+        i_ok = ~i_low & ~i_high
+
+        # check for correct inversion within the domain
+        xp_assert_close(res[i_ok], ref[i_ok])
+
+        # check that all other values get mapped to bottom or top of range
+        kwargs = dict(check_shape=False, check_dtype=False, check_0d=True)
+        xp_assert_close(res[i_low], xp.asarray(p_min), **kwargs)
+        xp_assert_close(res[i_high], xp.asarray(p_max), **kwargs)
+
+
+    @pytest.mark.parametrize('n', [50, 500])
+    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
+    def test_plotting_positions(self, n, method, ab, xp):
+        a, b = ab
+        rng = np.random.default_rng(539452987254982748)
+        x = rng.standard_normal(n)
+
+        mask = rng.random(n) < 0.1
+        x[mask] = np.nan
+        mask = xp.asarray(mask)
+
+        x_masked = np.ma.masked_invalid(x)
+        ref = stats.mstats.plotting_positions(x_masked, a, b)
+        ref = xp.asarray(ref.data)
+
+        x = xp.asarray(x)
+        res = stats.iquantile(x, x, nan_policy='omit', method=method)
+
+        xp_assert_close(res[~mask], ref[~mask])
+        assert xp.all(xp.isnan(res[mask]))
+
+    def test_against_ecdf_percentileofscore(self, xp):
+        rng = np.random.default_rng(853945298725498274)
+        n = 50
+        x = rng.standard_normal(n)
+        y = rng.standard_normal(25)
+        ref = stats.ecdf(x).cdf.evaluate(y)
+        ref2 = stats.percentileofscore(x, y)
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.iquantile(x, y, method='interpolated_inverted_cdf')
+        ref, ref2 = xp.asarray(ref), xp.asarray(ref2)
+        xp_assert_close(xp.floor(res * n) / n, ref)
+        xp_assert_close(xp.floor(res * n) / n, ref2 / 100)
+
+    def test_integer_input_output_dtype(self, xp):
+        x = xp.arange(10, dtype=xp.int64)
+        res = stats.iquantile(x, x)
+        assert res.dtype == xp_default_dtype(xp)
+
+    @pytest.mark.parametrize('x, y, ref, kwargs',
+        [
+         # ([], 0.5, np.nan, {}),
+         ([1, 2, 3], [0.999, 3.001, np.nan], [0., 1., np.nan], {}),
+         ([1, 2, 3], [], [], {}),
+         # ([[np.nan, 2]], 0.5, [np.nan, 2], {'nan_policy': 'omit'}),
+         # ([[], []], 0.5, np.full(2, np.nan), {'axis': -1}),
+         # ([[], []], 0.5, np.zeros((0,)), {'axis': 0, 'keepdims': False}),
+         # ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
+         # ([], [0.5, 0.6], np.full(2, np.nan), {}),
+         (np.arange(1, 28).reshape((3, 3, 3)), 14., [[[0.5]]],
+          {'axis': None, 'keepdims': True}),
+         ([[1, 2], [3, 4]], [1.75, 2.5, 3.25], [[0.25, 0.5, 0.75]],
+          {'axis': None, 'keepdims': True}),
+         ])
+    def test_edge_cases(self, x, y, ref, kwargs, xp):
+        default_dtype = xp_default_dtype(xp)
+        x, y, ref = xp.asarray(x), xp.asarray(y), xp.asarray(ref, dtype=default_dtype)
+        res = stats.iquantile(x, y, **kwargs)
         xp_assert_equal(res, ref)

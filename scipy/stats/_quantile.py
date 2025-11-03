@@ -22,17 +22,21 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
                    'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
         allowed_types = 'real floating'
         def mask_fun(p): return (p > 1) | (p < 0) | xp.isnan(p)
+        var2_name = 'p'
+        var2_type_msg = '`p` must have real floating dtype.'
     else:
         methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
                    'median_unbiased', 'normal_unbiased', 'weibull'}
         allowed_types = ('integral', 'real floating')
         mask_fun = xp.isnan
+        var2_name = 'y'
+        var2_type_msg = '`y` must have real dtype.'
 
     if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
         raise ValueError("`x` must have real dtype.")
 
     if not xp.isdtype(xp.asarray(p).dtype, allowed_types):
-        raise ValueError("`p` must have real floating dtype.")
+        raise ValueError(var2_type_msg)
 
     x, p = xp_promote(x, p, force_floating=True, xp=xp)
     p = xp.asarray(p, device=xp_device(x))
@@ -74,7 +78,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
     y, p = _broadcast_arrays((y, p), axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
-        message = "`keepdims` may be False only if the length of `p` along `axis` is 1."
+        message = ("`keepdims` may be False only if the length of "
+                   f"`{var2_name}` along `axis` is 1.")
         raise ValueError(message)
     keepdims = (p.shape[axis] != 1) if keepdims is None else keepdims
 
@@ -397,17 +402,16 @@ def _quantile_bc(y, p, n, method, xp):
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
 
 
-@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet."),
+                                ("jax.numpy", "Not handling ties like other backends")])
 def _xp_searchsorted(x, y, *, xp=None):
     # Vectorize np.searchsorted w/ side='left'. Assumes search is along last axis.
     xp = array_namespace(x, y) if xp is None else xp
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
-    # n = x.shape[-1]
+
     a = xp.full(y.shape, 0)
     n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
     b = xp.broadcast_to(n, y.shape)
-    # b = xp.full(y.shape, n)
 
     # could refactor to for loop with ~log2(n) iterations for JAX JIT
     while xp.any(b - a > 1):
@@ -420,6 +424,8 @@ def _xp_searchsorted(x, y, *, xp=None):
     return xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
 
 
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet."),
+                                ("jax.numpy", "_xp_searchsorted issues with ties")])
 def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the empirical distribution function of the data along the specified axis.
@@ -612,19 +618,22 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
 
 
+_iquantile_methods = dict(
+    interpolated_inverted_cdf=(0, 1),
+    hazen=(0.5, 0.5),
+    weibull=(0, 0),
+    linear=(1, 1),
+    median_unbiased=(1 / 3, 1 / 3),
+    normal_unbiased=(3 / 8, 3 / 8),
+)
+
+
 def _iquantile_hf(x, y, n, method, xp):
-    methods = dict(
-        interpolated_inverted_cdf=(0, 1),
-        hazen=(0.5, 0.5),
-        weibull=(0, 0),
-        linear=(1, 1),
-        median_unbiased=(1 / 3, 1 / 3),
-        normal_unbiased=(3 / 8, 3 / 8),
-    )
-    a, b = methods[method]
+    a, b = _iquantile_methods[method]
     n_int = xp.astype(n, xp.int64)
     jp1 = xp.clip(_xp_searchsorted(x, y), 1, n_int - 1)
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
+    jp1 = xp.astype(jp1, x.dtype)
     p = (jp1 + (y - xj) / (xjp1 - xj) - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)
