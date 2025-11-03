@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
+from scipy.stats._axis_nan_policy import _broadcast_arrays
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -223,25 +224,54 @@ class Test_XPSearchsorted:
     @pytest.mark.parametrize('side', ['left', 'right'])
     @pytest.mark.parametrize('ties', [False, True])
     @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
-    def test_nd(self, side, ties, shape, xp):
+    @pytest.mark.parametrize('nans', [False, True])
+    def test_nd(self, side, ties, shape, nans, xp):
         rng = np.random.default_rng(945298725498274853)
         if ties:
-            sample = rng.integers(5, size=shape)
+            x = rng.integers(5, size=shape)
         else:
-            sample = rng.random(shape)
+            x = rng.random(shape)
         # float32 is to accommodate JAX - nextafter with `float64` is too small?
-        sample = np.asarray(sample, dtype=np.float32)
-        x = np.sort(sample, axis=-1)
+        x = np.asarray(x, dtype=np.float32)
         xr = np.nextafter(x, np.inf)
         xl = np.nextafter(x, -np.inf)
         x_ = np.asarray([-np.inf, np.inf])
         x_ = np.broadcast_to(x_, x.shape[:-1] + (2,))
         y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
+        if nans:
+            # all elements of a slice are NaN and side='right',
+            # _xp_searchsorted has a different convention
+            mask = rng.random(shape) < 0.1
+            x[mask] = np.nan
+        x = np.sort(x, axis=-1)
         x, y = np.astype(x, np.float64), np.astype(y, np.float64)
         ref = xp.asarray(np_searchsorted(x, y, side=side))
         x, y = xp.asarray(x), xp.asarray(y)
         res = _xp_searchsorted(x, y, side=side)
         xp_assert_equal(res, ref)
+
+
+@_apply_over_batch(('x', 1), ('y', 1))
+def iquantile_reference_last_axis(x, y, nan_policy, method):
+    i_nan = np.isnan(x)
+    if nan_policy == 'propagate' and np.any(i_nan):
+        return np.full_like(y, np.nan)
+    elif nan_policy == 'omit':
+        x = x[~i_nan]
+    return stats.iquantile(x, y, keepdims=True, method=method)
+
+
+def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
+                        keepdims=None, method='linear'):
+    x, y = _broadcast_arrays((x, y), axis=axis)
+    # if keepdims is None:
+    #     keepdims = False if y.shape[axis] == 1 else True
+    x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
+    res = iquantile_reference_last_axis(x, y, nan_policy, method)
+    res = np.moveaxis(res, -1, axis)
+    if not keepdims:
+        res = np.squeeze(res, axis=axis)
+    return res
 
 
 @make_xp_test_case(stats.iquantile)
@@ -294,19 +324,33 @@ class TestIQuantile:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
     @pytest.mark.parametrize('y_shape', [None, 25])
-    def test_against_quantile(self, method, ab, dtype, x_shape, y_shape, xp):
+    @pytest.mark.parametrize('ties', [False, True])
+    def test_against_quantile(self, method, ab, dtype, x_shape, y_shape, ties, xp):
         a, b = ab
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(394529872549827485)
         y_shape = x_shape if y_shape is None else y_shape
 
-        x = xp.asarray(rng.standard_normal(size=x_shape), dtype=dtype)
+        if ties:
+            x = xp.asarray(rng.integers(9, size=x_shape), dtype=dtype)
+        else:
+            x = xp.asarray(rng.standard_normal(size=x_shape), dtype=dtype)
+
         p = xp.asarray(rng.random(size=y_shape), dtype=dtype)
         y = stats.quantile(x, p, method=method, axis=-1)
         res = stats.iquantile(x, y, method=method, axis=-1)
         ref = xp.broadcast_to(p, (*x.shape[:-1], y.shape[-1]))
 
-        # not invertible outside this domain
+        # check that `quantile` is the inverse of `iquantile`
+        y2 = stats.quantile(x, res, method=method, axis=-1)
+        atol = 1e-6 if dtype == xp.float32 else 1e-12
+        xp_assert_close(y2, y, atol=atol)
+
+        # if there are ties, `quantile` is not invertible
+        if ties:
+            return
+
+        # `quantile` is not invertible outside this domain
         n = x.shape[-1]
         p_min = (1 - a) / (n + 1 - a - b)
         p_max = (n - a) / (n + 1 - a - b)
@@ -322,6 +366,35 @@ class TestIQuantile:
         xp_assert_close(res[i_low], xp.asarray(p_min), **kwargs)
         xp_assert_close(res[i_high], xp.asarray(p_max), **kwargs)
 
+    @pytest.mark.parametrize('axis', [0, 1])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    @pytest.mark.parametrize('nan_policy', ['omit'])  #, 'propagate', 'marray'])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    @pytest.mark.parametrize('nans', [False, True])
+    @pytest.mark.parametrize('meth', ['linear', 'interpolated_inverted_cdf'])
+    def test_against_reference(self, axis, keepdims, nan_policy, dtype, nans, meth, xp):
+        # if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
+        #     pytest.skip("`marray` currently incompatible with JAX")
+        rng = np.random.default_rng(23458924568734956)
+        shape = (5, 6)
+        x = rng.integers(size=shape).astype(dtype)
+        y = rng.integers(size=shape).astype(dtype)
+
+        if nans:
+            mask = rng.random(size=shape) > 0.8
+            assert np.any(mask)
+            x[mask] = np.nan
+
+        if not keepdims:
+            y = np.mean(y, axis=axis, keepdims=True)
+
+        dtype = getattr(xp, dtype)
+
+        kwargs = dict(axis=axis, keepdims=keepdims,
+                      nan_policy=nan_policy, method=meth)
+        res = stats.iquantile(xp.asarray(x), xp.asarray(y), **kwargs)
+        ref = iquantile_reference(x, y, **kwargs)
+        xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
     @pytest.mark.parametrize('n', [50, 500])
     @pytest.mark.parametrize('method, ab', _iquantile_methods.items())

@@ -419,6 +419,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     if side=='right':
         n_nans = x.shape[-1] - n
         a, b = a + n_nans, b + n_nans
+        b = xp.where(n > 0, b, b - 1)  # handle all nan case?
         x, y = -xp.flip(x, axis=-1), -y
 
     # while xp.any(b - a > 1):
@@ -645,7 +646,7 @@ def _iquantile_hf(x, y, n, method, xp):
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
     jp1 = xp.astype(jp1, x.dtype)
-    with np.errstate(divide='ignore', invalid='ignore'):
+    with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
         delta = xp.where(xjp1 > xj, (y - xj) / (xjp1 - xj), 1.)
     p = (jp1 + delta - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)
