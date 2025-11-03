@@ -89,6 +89,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
+
+    nan_out = None
     if contains_nans:
         nans = xp.isnan(y)
 
@@ -111,7 +113,11 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
             y = xp.asarray(y, copy=True)  # ensure writable
             y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
 
-    p_mask = mask_fun(p)
+    # apparently xpx.at is accepting nan_out as a mask even though it doesn't have the
+    # same number of dimensions as `y`, yet it still appears to work correctly?
+    # should refactor for clarity, and p_mask that gets returned here should probably
+    # get a different name - `nan_out` would be more appropriate!
+    p_mask = mask_fun(p) if nan_out is None else mask_fun(p) | nan_out[..., xp.newaxis]
     if xp.any(p_mask):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end

@@ -278,7 +278,6 @@ def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
 class TestIQuantile:
     # size 0 and 1 arrays for `x`? `y`? All NaN arrays with nan_policy='omit'? infs?
     # masked arrays?
-    # ties
     def test_input_validation(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray(2)
@@ -368,7 +367,7 @@ class TestIQuantile:
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    @pytest.mark.parametrize('nan_policy', ['omit'])  #, 'propagate', 'marray'])
+    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])  #, 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('nans', [False, True])
     @pytest.mark.parametrize('meth', ['linear', 'interpolated_inverted_cdf'])
@@ -377,8 +376,8 @@ class TestIQuantile:
         #     pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
-        x = rng.integers(size=shape).astype(dtype)
-        y = rng.integers(size=shape).astype(dtype)
+        x = rng.standard_normal(size=shape).astype(dtype)
+        y = rng.standard_normal(size=shape).astype(dtype)
 
         if nans:
             mask = rng.random(size=shape) > 0.8
