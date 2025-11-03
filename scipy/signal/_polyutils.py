@@ -101,7 +101,7 @@ def poly(seq_of_zeros, *, xp):
     seq_of_zeros = xpx.atleast_nd(seq_of_zeros, ndim=1, xp=xp)
 
     if seq_of_zeros.shape[0] == 0:
-        return 1.0
+        return xp.asarray(1.0, dtype=xp.real(seq_of_zeros).dtype)
 
     # prefer np.convolve etc, if available
     convolve_func = getattr(xp, 'convolve', None)

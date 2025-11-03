@@ -1294,9 +1294,12 @@ def zpk2tf(z, p, k):
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
             k_i = xp.asarray(k[i], dtype=xp.int64)
-            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
+            b[i, ...] = xp.multiply(k_i, _pu.poly(z[i, ...], xp=xp))
     else:
-        b = k * _pu.poly(z, xp=xp)
+        # Use xp.multiply to work around torch type promotion
+        # non-compliance for operations between 0d and higher
+        # dimensional arrays.
+        b = xp.multiply(k, _pu.poly(z, xp=xp))
 
     a = _pu.poly(p, xp=xp)
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
@@ -2801,7 +2804,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     """
     xp = array_namespace(Wn)
-    Wn = xp_promote(Wn, force_floating=True, xp=xp)
+    # For now, outputs will have float64 base dtype regardless of
+    # the dtype of Wn, so cast to float64 here to ensure 64 bit
+    # precision for all calculations.
+    Wn = xp.asarray(Wn, dtype=xp.float64)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -4688,7 +4694,7 @@ def buttap(N, *, xp=None, device=None, dtype=None):
     m = xp.arange(-N+1, N, 2, device=device, dtype=dtype)
     # Middle value is 0 to ensure an exactly real pole
     p = -xp.exp(1j * xp.pi * m / (2 * N))
-    k = 1
+    k = 1.0
     return z, p, k
 
 
