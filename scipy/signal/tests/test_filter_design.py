@@ -2453,7 +2453,14 @@ class TestEllipord:
             ellipord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
+# Currently the filter functions tested below (bessel, butter, cheby1, cheby2,
+# and ellip) all return float64 (or complex128) output regardless of input
+# dtype. Therefore reference arrays in these tests are all given an explicit 64
+# bit dtype, because the output will not match the xp_default_dtype when the
+# default dtype is float32. Although the output arrays and all internal
+# calculations are in 64 bit precision, tolerances are still loosened for the
+# float32 case when results are impacted by reduced precision in the inputs.
+
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestBessel:
@@ -2462,24 +2469,29 @@ class TestBessel:
         for norm in ('delay', 'phase', 'mag'):
             # 0-order filter is just a passthrough
             b, a = bessel(0, xp.asarray(1), analog=True, norm=norm)
-            xp_assert_equal(b, xp.asarray([1.0]))
-            xp_assert_equal(a, xp.asarray([1.0]))
+            xp_assert_equal(b, xp.asarray([1.0], dtype=xp.float64))
+            xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
             # 1-order filter is same for all types
             b, a = bessel(1, xp.asarray(1.), analog=True, norm=norm)
-            xp_assert_close(b, xp.asarray([1.0]), rtol=1e-15)
-            xp_assert_close(a, xp.asarray([1.0, 1]), rtol=1e-15)
+            xp_assert_close(b, xp.asarray([1.0], dtype=xp.float64), rtol=1e-15)
+            xp_assert_close(a, xp.asarray([1.0, 1], dtype=xp.float64), rtol=1e-15)
 
             z, p, k = bessel(1, xp.asarray(0.3), analog=True, output='zpk', norm=norm)
-            xp_assert_equal(z, xp.asarray([]))
-            xp_assert_close(p, xp.asarray([-0.3+0j]), rtol=1e-14)
-            assert math.isclose(k, 0.3, rel_tol=1e-14)
+            xp_assert_equal(z, xp.asarray([], dtype=xp.float64))
+            xp_assert_close(
+                p, xp.asarray([-0.3+0j], dtype=xp.complex128),
+                rtol=1e-14 if not DEFAULT_F32 else 1e-7
+            )
+            assert math.isclose(
+                k, 0.3, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6
+            )
 
     @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_high_order(self, xp):
         # high even order, 'phase'
         z, p, k = bessel(24, xp.asarray(100), analog=True, output='zpk')
-        z2 = xp.asarray([])
+        z2 = xp.asarray([], dtype=xp.float64)
         p2 = [
              -9.055312334014323e+01 + 4.844005815403969e+00j,
              -8.983105162681878e+01 + 1.454056170018573e+01j,
@@ -2495,7 +2507,7 @@ class TestBessel:
              -2.433481337524861e+01 + 1.207298683731973e+02j,
              ]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.999999999999989e+47
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp),
@@ -2504,7 +2516,7 @@ class TestBessel:
 
         # high odd order, 'phase'
         z, p, k = bessel(23, xp.asarray(1000.), analog=True, output='zpk')
-        z2 = xp.asarray([])
+        z2 = xp.asarray([], dtype=xp.float64)
         p2 = [
              -2.497697202208956e+02 + 1.202813187870698e+03j,
              -4.126986617510172e+02 + 1.065328794475509e+03j,
@@ -2519,7 +2531,7 @@ class TestBessel:
              -6.225903228776276e+02 + 8.301558302815096e+02j,
              -9.066732476324988e+02]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.999999999999983e+68
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp),
@@ -2547,7 +2559,7 @@ class TestBessel:
               - 4.792045 + 28.406037j,
               ]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         xp_assert_close(_sort_cmplx(p, xp=xp),
                         _sort_cmplx(p2, xp=xp))
 
@@ -2570,15 +2582,15 @@ class TestBessel:
               - 4.734679 + 27.435615j,
               ]
         p2 = np.union1d(p2, np.conj(p2))
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         xp_assert_close(_sort_cmplx(p, xp=xp),
                         _sort_cmplx(p2, xp=xp))
 
     def test_refs(self, xp):
         # Compare to http://www.crbond.com/papers/bsf2.pdf
         # "Delay Normalized Bessel Polynomial Coefficients"
-        bond_b = xp.asarray([10395.0])
-        bond_a = xp.asarray([1.0, 21, 210, 1260, 4725, 10395, 10395])
+        bond_b = xp.asarray([10395.0], dtype=xp.float64)
+        bond_a = xp.asarray([1.0, 21, 210, 1260, 4725, 10395, 10395], dtype=xp.float64)
         b, a = bessel(6, xp.asarray(1.0), norm='delay', analog=True)
         xp_assert_close(b, bond_b)
         xp_assert_close(a, bond_a)
@@ -2607,7 +2619,7 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            z, p, k = besselap(N, 'delay', xp=xp)
+            z, p, k = besselap(N, 'delay', xp=xp, dtype=xp.float64)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
@@ -2636,36 +2648,36 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            z, p, k = besselap(N, 'mag', xp=xp)
+            z, p, k = besselap(N, 'mag', xp=xp, dtype=xp.float64)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
-        a = xp.asarray([1, 1, 1/3])
+        a = xp.asarray([1, 1, 1/3], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='delay', analog=True)
         xp_assert_close(xp.flip(a), a2/b2)
 
-        a = xp.asarray([1, 1, 2/5, 1/15])
+        a = xp.asarray([1, 1, 2/5, 1/15], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='delay', analog=True)
         xp_assert_close(xp.flip(a), a2/b2)
 
-        a = xp.asarray([1, 1, 9/21, 2/21, 1/105])
+        a = xp.asarray([1, 1, 9/21, 2/21, 1/105], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='delay', analog=True)
         xp_assert_close(xp.flip(a), a2/b2)
 
-        a = xp.asarray([1, math.sqrt(3), 1])
+        a = xp.asarray([1, math.sqrt(3), 1], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='phase', analog=True)
         xp_assert_close(xp.flip(a), a2/b2)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = xp.asarray([1, 2.481, 2.463, 1.018])
+        a = xp.asarray([1, 2.481, 2.463, 1.018], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='phase', analog=True)
         assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
 
         # TODO: Why so inaccurate?  Is reference flawed?
-        a = xp.asarray([1, 3.240, 4.5, 3.240, 1.050])
+        a = xp.asarray([1, 3.240, 4.5, 3.240, 1.050], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='phase', analog=True)
         assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
 
@@ -2860,10 +2872,13 @@ class TestBessel:
                  -.2373280669322028974199184 + 1.211476658382565356579418j],
             }
         for N in originals:
-            p1 = xp.asarray(np.union1d(originals[N], np.conj(originals[N])))
-            p2 = besselap(N, xp=xp)[1]
+            p1 = xp.asarray(
+                np.union1d(originals[N], np.conj(originals[N])),
+                dtype=xp.complex128
+            )
+            p2 = besselap(N, xp=xp, dtype=xp.float64)[1]
             xp_assert_close(_sort_cmplx(p1, xp=xp),
-                            _sort_cmplx(p2, xp=xp), rtol=1e-14, check_dtype=False)
+                            _sort_cmplx(p2, xp=xp), rtol=1e-14)
 
     def test_norm_phase(self, xp):
         # Test some orders and frequencies and see that they have the right
@@ -2876,7 +2891,8 @@ class TestBessel:
                 w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
                 phase = np.unwrap(np.angle(h))
                 xp_assert_close(
-                    xp.asarray(phase[[0, -1]]), xp.asarray([0, -N*xp.pi/4]), rtol=1e-1
+                    xp.asarray(phase[[0, -1]], dtype=xp.float64),
+                    xp.asarray([0, -N*xp.pi/4], dtype=xp.float64), rtol=1e-1
                 )
 
     def test_norm_mag(self, xp):
@@ -2889,7 +2905,9 @@ class TestBessel:
                 w = [0.0, w0]
                 w, h = freqs(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a), w)
                 mag = np.abs(h)
-                xp_assert_close(xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)]))
+                xp_assert_close(
+                    xp.asarray(mag), xp.asarray([1, 1/math.sqrt(2)], dtype=xp.float64)
+                )
 
     def test_norm_delay(self, xp):
         # Test some orders and frequencies and see that they have the right
@@ -2957,14 +2975,6 @@ class TestBessel:
                                 for ba1_, ba2_ in zip(ba1, ba2):
                                     xp_assert_close(ba1_, ba2_)
 
-
-# Currently the filter functions tested below (butter, cheby1, cheby2, ellip,
-# and bessel) all return float64 (or complex128) output regardless of input
-# dtype. Therefore reference arrays in these tests are all given an explicit 64
-# bit dtype, because the output will not match the xp_default_dtype when the
-# default dtype is float32. Although the output arrays and all internal
-# calculations are in 64 bit precision, tolerances are still loosened for the
-# float32 case when results are impacted by reduced precision in the inputs.
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
