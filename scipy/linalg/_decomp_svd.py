@@ -1,6 +1,6 @@
 """SVD decomposition functions."""
 import numpy as np
-from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
+from numpy import dot, arccos, arcsin, where, clip
 
 from scipy._lib._util import _apply_over_batch
 from . import _batched_linalg
@@ -314,13 +314,13 @@ def diagsvd(s, M, N):
            [0, 0, 0]])
 
     """
-    part = diag(s)
+    part = np.diag(s)
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return np.hstack((part, zeros((M, N - M), dtype=typ)))
+        return np.hstack((part, np.zeros((M, N - M), dtype=typ)))
     elif MorN == N:
-        return r_[part, zeros((M - N, N), dtype=typ)]
+        return np.r_[part, np.zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
