@@ -6,6 +6,7 @@ directly using Cython:
 
 - `~scipy.optimize.bisect`
 - `~scipy.optimize.ridder`
+- `~scipy.optimize.chandrupatla`
 - `~scipy.optimize.brenth`
 - `~scipy.optimize.brentq`
 
@@ -13,7 +14,7 @@ The Cython API for the root finding functions is similar except there is no
 ``disp`` argument. Import the root finding functions using ``cimport`` from
 `scipy.optimize.cython_optimize`. ::
 
-    from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
+    from scipy.optimize.cython_optimize cimport bisect, ridder, chandrupatla, brentq, brenth
 
 
 Callback signature
@@ -64,7 +65,7 @@ These are the basic steps:
        cdef double brentq_wrapper_example(dict args, double xa, double xb,
                                           double xtol, double rtol, int mitr):
            # Cython automatically casts dictionary to struct
-           cdef test_params myargs = args
+           cdef test_params myargs = argsRidder
            return brentq(
                f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
 

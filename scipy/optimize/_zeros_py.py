@@ -11,7 +11,7 @@ _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
-           'RootResults']
+           'chandrupatla', 'RootResults']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
@@ -707,6 +707,121 @@ def ridder(f, a, b, args=(),
     f = _wrap_nan_raise(f)
     r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r, "ridder")
+
+
+def chandrupatla(
+    f,
+    a,
+    b,
+    args=(),
+    xtol=_xtol,
+    rtol=_rtol,
+    maxiter=_iter,
+    full_output=False,
+    disp=True,
+):
+    """
+    Find a root of a function in an interval using Chandrupatla's method.
+
+    .. versionadded:: 1.17.0
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number. f must be continuous, and f(a) and
+        f(b) must have opposite signs.
+    a : scalar
+        One end of the bracketing interval [a,b].
+    b : scalar
+        The other end of the bracketing interval [a,b].
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be positive.
+    rtol : number, optional
+        The computed root ``x0`` will satisfy ``np.isclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``.
+    maxiter : int, optional
+        If convergence is not achieved in `maxiter` iterations, an error is
+        raised. Must be >= 0.
+    args : tuple, optional
+        Containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned. If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a `RootResults` object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+        Otherwise, the convergence status is recorded in any `RootResults`
+        return object.
+
+    Returns
+    -------
+    root : float
+        Root of `f` between `a` and `b`.
+    r : `RootResults` (present if ``full_output = True``)
+        Object containing information about the convergence.
+        In particular, ``r.converged`` is True if the routine converged.
+
+    See Also
+    --------
+    brentq, brenth, bisect, newton, ridder : 1-D root-finding
+    fixed_point : scalar fixed-point finder
+    elementwise.find_root : efficient elementwise 1-D root-finder
+
+    Notes
+    -----
+    Uses [Chandrupatla1997]_ method to find a root of the function `f` between the
+    arguments `a` and `b`. Chandrupatla's method combines bisection and inverse
+    quadratic interpolation. It perform generally comparable to Brent's method,
+    but is faster in cases where plain bisection would outperform Brent's method
+    (especially in case of multiple zeros). The algorithm is generally much simpler
+    than Brent's.
+    [Chandrupatla1997]_ provides the classic description and source of the
+    algorithm.
+
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x0)``.
+
+    References
+    ----------
+    .. [Chandrupatla1997]
+       T. R. Chandrupatla, “A new hybrid quadratic/bisection algorithm for
+       finding the zero of a nonlinear function without using derivatives,”
+       Advances in Engineering Software, vol. 28, no. 3, pp. 145–149,
+       Apr. 1997, doi: 10.1016/S0965-9978(96)00051-8.
+
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.chandrupatla(f, 0, 2)
+    >>> root
+    1.0
+
+    >>> root = optimize.chandrupatla(f, -2, 0)
+    >>> root
+    -1.0
+    """
+    if not isinstance(args, tuple):
+        args = (args,)
+    maxiter = operator.index(maxiter)
+    if xtol <= 0:
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
+    if rtol < _rtol:
+        raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
+    f = _wrap_nan_raise(f)
+    r = _zeros._chandrupatla(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
+    return results_c(full_output, r, "chandrupatla")
 
 
 def brentq(f, a, b, args=(),

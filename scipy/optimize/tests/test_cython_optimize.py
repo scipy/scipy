@@ -1,5 +1,5 @@
 """
-Test Cython optimize zeros API functions: ``bisect``, ``ridder``, ``brenth``,
+Test Cython optimize zeros API functions: ``bisect``, ``ridder``, ``chandrupatla``, ``brenth``,
 and ``brentq`` in `scipy.optimize.cython_optimize`, by finding the roots of a
 3rd order polynomial given a sequence of constant terms, ``a0``, and fixed 1st,
 2nd, and 3rd order terms in ``args``.
@@ -55,6 +55,17 @@ def test_ridder():
         EXPECTED,
         list(
             _zeros.loop_example('ridder', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
+        ),
+        rtol=RTOL, atol=XTOL
+    )
+
+
+# test chandrupatla
+def test_chandrupatla():
+    npt.assert_allclose(
+        EXPECTED,
+        list(
+            _zeros.loop_example('chandrupatla', A0, ARGS, XLO, XHI, XTOL, RTOL, MITR)
         ),
         rtol=RTOL, atol=XTOL
     )

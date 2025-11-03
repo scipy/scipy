@@ -12,7 +12,6 @@ typedef struct {
     int error_num;
 } scipy_zeros_info;
 
-
 /* Must agree with _ECONVERGED, _ESIGNERR, _ECONVERR  in zeros.py */
 #define CONVERGED 0
 #define SIGNERR -1
@@ -28,6 +27,9 @@ extern double bisect(callback_type f, double xa, double xb, double xtol,
                      double rtol, int iter, void *func_data_param,
                      scipy_zeros_info *solver_stats);
 extern double ridder(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data_param,
+                     scipy_zeros_info *solver_stats);
+extern double chandrupatla(callback_type f, double xa, double xb, double xtol,
                      double rtol, int iter, void *func_data_param,
                      scipy_zeros_info *solver_stats);
 extern double brenth(callback_type f, double xa, double xb, double xtol,

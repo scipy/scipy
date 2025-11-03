@@ -158,6 +158,7 @@ Scalar functions
    brentq - quadratic interpolation Brent method.
    brenth - Brent method, modified by Harris with hyperbolic extrapolation.
    ridder - Ridder's method.
+   chandrupatla - Chandrupatla's method.
    bisect - Bisection method.
    newton - Newton's method (also Secant and Halley's methods).
    toms748 - Alefeld, Potra & Shi Algorithm 748.
@@ -171,6 +172,7 @@ The `root_scalar` function supports the following methods:
    optimize.root_scalar-brenth
    optimize.root_scalar-bisect
    optimize.root_scalar-ridder
+   optimize.root_scalar-chandrupatla
    optimize.root_scalar-newton
    optimize.root_scalar-toms748
    optimize.root_scalar-secant

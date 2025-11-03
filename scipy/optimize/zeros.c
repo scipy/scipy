@@ -160,6 +160,12 @@ _ridder(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+_chandrupatla(PyObject *self, PyObject *args)
+{
+        return call_solver(chandrupatla,self,args);
+}
+
+static PyObject *
 _brenth(PyObject *self, PyObject *args)
 {
         return call_solver(brenth,self,args);
@@ -179,6 +185,7 @@ static PyMethodDef
 Zerosmethods[] = {
 	{"_bisect", _bisect, METH_VARARGS, "a"},
 	{"_ridder", _ridder, METH_VARARGS, "a"},
+	{"_chandrupatla", _chandrupatla, METH_VARARGS, "a"},
 	{"_brenth", _brenth, METH_VARARGS, "a"},
 	{"_brentq", _brentq, METH_VARARGS, "a"},
 	{NULL, NULL}

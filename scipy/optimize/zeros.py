@@ -6,13 +6,14 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'RootResults',
-    'bisect',
-    'brenth',
-    'brentq',
-    'newton',
-    'ridder',
-    'toms748',
+    "RootResults",
+    "bisect",
+    "brenth",
+    "brentq",
+    "newton",
+    "ridder",
+    "chandrupatla",
+    "toms748",
 ]
 
 
@@ -21,6 +22,10 @@ def __dir__():
 
 
 def __getattr__(name):
-    return _sub_module_deprecation(sub_package="optimize", module="zeros",
-                                   private_modules=["_zeros_py"], all=__all__,
-                                   attribute=name)
+    return _sub_module_deprecation(
+        sub_package="optimize",
+        module="zeros",
+        private_modules=["_zeros_py"],
+        all=__all__,
+        attribute=name,
+    )
