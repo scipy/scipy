@@ -275,9 +275,9 @@ class TestZpk2Tf:
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
-    
+
     @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
-    @skip_xp_backends("jax.numpy", 
+    @skip_xp_backends("jax.numpy",
                       reason="zpk2tf not compatible with jax yet on multi-dim arrays")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
         z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
@@ -2985,9 +2985,11 @@ class TestButter:
         xp_assert_close(
             p,
             xp.asarray([3.249196962329063e-01 + 0j], dtype=xp.complex128),
-            rtol=1e-14
+            rtol=1e-14 if not DEFAULT_F32 else 1e-7
         )
-        assert math.isclose(k, 3.375401518835469e-01, rel_tol=1e-14)
+        assert math.isclose(
+            k, 3.375401518835469e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         # analog s-plane
@@ -2999,7 +3001,7 @@ class TestButter:
             # All poles should be at distance wn from origin
             assert_array_almost_equal(xp.abs(p), xp.asarray(wn, dtype=xp.float64))
             assert all(xp.real(p) <= 0)  # No poles in right half of S-plane
-            assert math.isclose(k, wn**N)
+            assert math.isclose(k, wn**N, rel_tol=1e-9 if not DEFAULT_F32 else 1e-6)
 
         # digital z-plane
         for N in range(25):
@@ -3094,7 +3096,7 @@ class TestButter:
         k2 = 1.446671081817286e-06
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-7)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        assert math.isclose(k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6)
 
         # highpass, high odd order
         z, p, k = butter(27, xp.asarray(0.56), 'high', output='zpk')
@@ -3131,7 +3133,10 @@ class TestButter:
         p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.585686688851069e-09
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-8)
+        xp_assert_close(
+            _sort_cmplx(p, xp), _sort_cmplx(p2, xp),
+            rtol=1e-8 if not DEFAULT_F32 else 1e-6
+        )
         assert math.isclose(k, k2, abs_tol=1e-13)
 
     def test_bandpass(self, xp):
@@ -3160,8 +3165,11 @@ class TestButter:
         p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.398854055800844e-08
         xp_assert_equal(z, z2, check_dtype=False)
-        xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-13)
+        xp_assert_close(
+            _sort_cmplx(p, xp), _sort_cmplx(p2, xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-13 if not DEFAULT_F32 else 1e-5)
 
         # bandpass analog
         z, p, k = butter(4, xp.asarray([90.5, 110.5]), 'bp', analog=True, output='zpk')
@@ -3217,7 +3225,7 @@ class TestButter:
         k2 = 4.577122512960063e-01
         xp_assert_close(_sort_cmplx(z, xp), _sort_cmplx(z2, xp))
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp))
-        assert math.isclose(k, k2, rel_tol=1e-14)
+        assert math.isclose(k, k2, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6)
 
     def test_ba_output(self, xp):
         b, a = butter(4, xp.asarray([100, 300]), 'bandpass', analog=True)
