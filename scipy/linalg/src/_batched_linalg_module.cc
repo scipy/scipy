@@ -279,16 +279,16 @@ _linalg_svd(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     switch(typenum) {
         case(NPY_FLOAT32):
-            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+            info = _svd<float>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
             break;
         case(NPY_FLOAT64):
-            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+            info = _svd<double>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
             break;
         case(NPY_COMPLEX64):
-            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+            info = _svd<npy_complex64>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
             break;
         case(NPY_COMPLEX128):
-            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, vec_status);
+            info = _svd<npy_complex128>(ap_Am, ap_U, ap_S, ap_Vh, jobz, lapack_driver, vec_status);
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown array type.");

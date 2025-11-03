@@ -642,6 +642,21 @@ CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
 }
 
 
+/*
+ * Given an array of ndim >= 2, compute a pointer to the start of the 2D "slice" idx
+ */
+template<typename T>
+T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, npy_intp *strides) {
+    npy_intp offset = 0;
+    npy_intp temp_idx = idx;
+    for (int i = ndim - 3; i >= 0; i--) {
+        offset += (temp_idx % shape[i]) * strides[i];
+        temp_idx /= shape[i];
+    }
+    T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
+    return slice_ptr;
+}
+
 
 /*
  * Copy n-by-m slice from slice_ptr to dst.
