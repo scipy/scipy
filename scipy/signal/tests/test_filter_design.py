@@ -2958,10 +2958,11 @@ class TestBessel:
                                     xp_assert_close(ba1_, ba2_)
 
 
-# Currently the filter functions below all return float64 (or complex128) output
-# regardless of input dtype. Therefore reference arrays below are all given an
-# explicit 64 bit dtype, because the output will not match the xp_default_dtype
-# when the default dtype is float32. Although the output arrays and all internal
+# Currently the filter functions tested below (butter, cheby1, cheby2, ellip,
+# and bessel) all return float64 (or complex128) output regardless of input
+# dtype. Therefore reference arrays in these tests are all given an explicit 64
+# bit dtype, because the output will not match the xp_default_dtype when the
+# default dtype is float32. Although the output arrays and all internal
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.
 
