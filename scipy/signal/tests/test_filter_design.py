@@ -2622,7 +2622,7 @@ class TestBessel:
             z, p, k = besselap(N, 'delay', xp=xp, dtype=xp.float64)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
-            assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
+            assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # "Frequency Normalized Bessel Pole Locations"
         bond_poles = {
@@ -2651,35 +2651,35 @@ class TestBessel:
             z, p, k = besselap(N, 'mag', xp=xp, dtype=xp.float64)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
-            assert_array_almost_equal(xp.asarray(p1), xp.asarray(p2), decimal=10)
+            assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
 
         # Compare to https://www.ranecommercial.com/legacy/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
         a = xp.asarray([1, 1, 1/3], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
         a = xp.asarray([1, 1, 2/5, 1/15], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
         a = xp.asarray([1, 1, 9/21, 2/21, 1/105], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='delay', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
         a = xp.asarray([1, math.sqrt(3), 1], dtype=xp.float64)
         b2, a2 = bessel(2, xp.asarray(1.), norm='phase', analog=True)
-        xp_assert_close(xp.flip(a), a2/b2)
+        xp_assert_close(a2/b2, xp.flip(a))
 
         # TODO: Why so inaccurate?  Is reference flawed?
         a = xp.asarray([1, 2.481, 2.463, 1.018], dtype=xp.float64)
         b2, a2 = bessel(3, xp.asarray(1.), norm='phase', analog=True)
-        assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
+        assert_array_almost_equal(a2/b2, xp.flip(a), decimal=1)
 
         # TODO: Why so inaccurate?  Is reference flawed?
         a = xp.asarray([1, 3.240, 4.5, 3.240, 1.050], dtype=xp.float64)
         b2, a2 = bessel(4, xp.asarray(1.), norm='phase', analog=True)
-        assert_array_almost_equal(xp.flip(a), a2/b2, decimal=1)
+        assert_array_almost_equal(a2/b2, xp.flip(a), decimal=1)
 
         # Table of -3 dB factors:
         N, scale = 2, xp.asarray([1.272, 1.272], dtype=xp.complex128)
@@ -2694,7 +2694,7 @@ class TestBessel:
         # TODO: Why so inaccurate?  Is reference flawed?
         N, scale = 4, xp.asarray([1.533]*4, dtype=xp.complex128)
         scale2 = besselap(N, 'mag', xp=xp)[1] / besselap(N, 'phase', xp=xp)[1]
-        assert_array_almost_equal(scale, scale2, decimal=1)
+        assert_array_almost_equal(scale2, scale, decimal=1)
 
     @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_hardcoded(self, xp):
@@ -2877,8 +2877,8 @@ class TestBessel:
                 dtype=xp.complex128
             )
             p2 = besselap(N, xp=xp, dtype=xp.float64)[1]
-            xp_assert_close(_sort_cmplx(p1, xp=xp),
-                            _sort_cmplx(p2, xp=xp), rtol=1e-14)
+            xp_assert_close(_sort_cmplx(p2, xp=xp),
+                            _sort_cmplx(p1, xp=xp), rtol=1e-14)
 
     def test_norm_phase(self, xp):
         # Test some orders and frequencies and see that they have the right
@@ -2939,7 +2939,7 @@ class TestBessel:
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            xp_assert_close(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
+            xp_assert_close(_norm_factor(p, k), mpmath_values[N], rtol=1e-13)
 
     def test_bessel_poly(self):
         xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
