@@ -3917,7 +3917,6 @@ class TestCheby2:
                                 xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestEllip:
@@ -3927,18 +3926,26 @@ class TestEllip:
         # Even-order filters have DC gain of -rp dB
         # Stopband ripple factor doesn't matter
         b, a = ellip(0, 10*math.log10(2), 123.456, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1/math.sqrt(2)]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        assert_array_almost_equal(b, xp.asarray([1/math.sqrt(2)], dtype=xp.float64))
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = ellip(1, 10*math.log10(2), 1, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1.]))
-        assert_array_almost_equal(a, xp.asarray([1., 1]))
+        assert_array_almost_equal(b, xp.asarray([1.], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1., 1], dtype=xp.float64))
 
         z, p, k = ellip(1, 1, 55, xp.asarray(0.3), output='zpk')
-        xp_assert_close(z, xp.asarray([-9.999999999999998e-01 + 0j]), rtol=1e-14)
-        xp_assert_close(p, xp.asarray([-6.660721153525525e-04 + 0j]), rtol=1e-10)
-        assert math.isclose(k, 5.003330360576763e-01, rel_tol=1e-14)
+        xp_assert_close(
+            z, xp.asarray([-9.999999999999998e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14
+        )
+        xp_assert_close(
+            p, xp.asarray([-6.660721153525525e-04 + 0j], dtype=xp.complex128),
+            rtol=1e-10 if not DEFAULT_F32 else 5e-5
+        )
+        assert math.isclose(
+            k, 5.003330360576763e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         for N in range(25):
@@ -3953,17 +3960,27 @@ class TestEllip:
             assert xp.all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         b3, a3 = ellip(5, 3, 26, xp.asarray(1.), analog=True)
-        assert_array_almost_equal(b3, xp.asarray([0.1420, 0, 0.3764, 0, 0.2409]),
-                                  decimal=4)
         assert_array_almost_equal(
-            a3, xp.asarray([1, 0.5686, 1.8061, 0.8017, 0.8012, 0.2409]), decimal=4
+            b3, xp.asarray([0.1420, 0, 0.3764, 0, 0.2409], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a3,
+            xp.asarray([1, 0.5686, 1.8061, 0.8017, 0.8012, 0.2409], dtype=xp.float64),
+            decimal=4
         )
 
         b, a = ellip(3, 1, 60, xp.asarray([0.4, 0.7]), 'stop')
-        assert_array_almost_equal(b, xp.asarray([0.3310, 0.3469, 1.1042, 0.7044, 1.1042,
-                                      0.3469, 0.3310]), decimal=4)
-        assert_array_almost_equal(a, xp.asarray([1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
-                                      0.1131, -0.0060]), decimal=4)
+        assert_array_almost_equal(
+            b, xp.asarray([0.3310, 0.3469, 1.1042, 0.7044, 1.1042,
+                           0.3469, 0.3310], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a, xp.asarray([1.0000, 0.6973, 1.1441, 0.5878, 0.7323,
+                           0.1131, -0.0060], dtype=xp.float64),
+            decimal=4
+        )
 
     def test_highpass(self, xp):
         # high even order
@@ -4016,8 +4033,8 @@ class TestEllip:
                5.876904783532237e-01 - 8.090127161018823e-01j,
                5.877753105317594e-01 + 8.090050577978136e-01j,
                5.877753105317594e-01 - 8.090050577978136e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 4.918081266957108e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4073,8 +4090,8 @@ class TestEllip:
               -5.687071588789117e-05 - 9.999527573294513e-01j,
               -6.948417068525226e-07 + 9.999882737700173e-01j,
               -6.948417068525226e-07 - 9.999882737700173e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.220910020289434e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4112,8 +4129,8 @@ class TestEllip:
               9.679465190411238e-01 - 2.228772501848216e-01j,
               9.747235066273385e-01 + 2.178937926146544e-01j,
               9.747235066273385e-01 - 2.178937926146544e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 8.354782670263239e-03
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4141,8 +4158,8 @@ class TestEllip:
               -2.180456023925693e+00 - 9.379206865455268e+01j,
               -7.230484977485752e-01 + 9.056598800801140e+01j,
               -7.230484977485752e-01 - 9.056598800801140e+01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.774571622827070e-02
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-4)
@@ -4185,8 +4202,8 @@ class TestEllip:
                8.066158014414928e-01 - 5.649811440393374e-01j,
                8.062787978834571e-01 + 5.855780880424964e-01j,
                8.062787978834571e-01 - 5.855780880424964e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 2.068622545291259e-01
         xp_assert_close(_sort_cmplx(z, xp=xp),
                         _sort_cmplx(z2, xp=xp), rtol=1e-6)
@@ -4213,8 +4230,8 @@ class TestEllip:
              2.791577695211466e+19, 7.241811142725384e+20,
              2.612380874940182e+23
              ]
-        b2 = xp.asarray(b2)
-        a2 = xp.asarray(a2)
+        b2 = xp.asarray(b2, dtype=xp.float64)
+        a2 = xp.asarray(a2, dtype=xp.float64)
         xp_assert_close(b, b2, rtol=1e-6)
         xp_assert_close(a, a2, rtol=1e-4)
 
