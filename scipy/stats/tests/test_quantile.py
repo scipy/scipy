@@ -16,6 +16,7 @@ from scipy._lib._util import _apply_over_batch
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+lazy_xp_modules = [stats]
 
 @_apply_over_batch(('x', 1), ('p', 1))
 def quantile_reference_last_axis(x, p, nan_policy, method):
@@ -213,29 +214,33 @@ class TestQuantile:
 
 
 @_apply_over_batch(('a', 1), ('v', 1))
-def np_searchsorted(a, v):
-    return np.searchsorted(a, v)
+def np_searchsorted(a, v, side):
+    return np.searchsorted(a, v, side=side)
 
 
 @make_xp_test_case(_xp_searchsorted)
 class Test_XPSearchsorted:
+    @pytest.mark.parametrize('side', ['left', 'right'])
     @pytest.mark.parametrize('ties', [False, True])
     @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
-    def test_nd(self, ties, shape, xp):
-        dtype = xp.float64
+    def test_nd(self, side, ties, shape, xp):
         rng = np.random.default_rng(945298725498274853)
         if ties:
             sample = rng.integers(5, size=shape)
         else:
             sample = rng.random(shape)
+        # float32 is to accommodate JAX - nextafter with `float64` is too small?
+        sample = np.asarray(sample, dtype=np.float32)
         x = np.sort(sample, axis=-1)
         xr = np.nextafter(x, np.inf)
         xl = np.nextafter(x, -np.inf)
-        x_ = np.asarray([-np.inf, np.inf, np.nan])
-        x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
+        x_ = np.asarray([-np.inf, np.inf])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (2,))
         y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
-        ref = xp.asarray(np_searchsorted(x, y))
-        res = _xp_searchsorted(xp.asarray(x, dtype=dtype), xp.asarray(y))
+        x, y = np.astype(x, np.float64), np.astype(y, np.float64)
+        ref = xp.asarray(np_searchsorted(x, y, side=side))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = _xp_searchsorted(x, y, side=side)
         xp_assert_equal(res, ref)
 
 
