@@ -1280,12 +1280,21 @@ def zpk2tf(z, p, k):
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     xp = array_namespace(z, p)
-    z, p, k = map(xp.asarray, (z, p, k))
+    z, p = map(xp.asarray, (z, p))
+    # Setting dtype explicitly here avoids premature overflow when
+    # k is a Python scalar, z has 64-bit precision, and the default
+    # dtype for xp is float32.
+    if not hasattr(k, "dtype"):
+        if isinstance(k, complex):
+            k_dtype = xp.complex128 if xp.real(z).dtype == xp.float64 else xp.complex64
+        else:
+            k_dtype = xp.real(z).dtype
+        k = xp.asarray(k, dtype=k_dtype)
+    else:
+        k = xp.asarray(k)
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     k = xpx.atleast_nd(k, ndim=1, xp=xp)
-    if xp.isdtype(k.dtype, 'integral'):
-        k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
