@@ -153,15 +153,16 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if a1.size == 0:
         u0, s0, v0 = svd(np.eye(2, dtype=a1.dtype))
 
-        s = np.empty_like(a1, shape=(0,), dtype=s0.dtype)
+        batch_shape = a1.shape[:-2]
+        s = np.empty_like(a1, shape=batch_shape + (0,), dtype=s0.dtype)
         if full_matrices:
-            u = np.empty_like(a1, shape=(m, m), dtype=u0.dtype)
+            u = np.empty_like(a1, shape=batch_shape + (m, m), dtype=u0.dtype)
             u[...] = np.identity(m)
-            v = np.empty_like(a1, shape=(n, n), dtype=v0.dtype)
+            v = np.empty_like(a1, shape=batch_shape + (n, n), dtype=v0.dtype)
             v[...] = np.identity(n)
         else:
-            u = np.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
-            v = np.empty_like(a1, shape=(0, n), dtype=v0.dtype)
+            u = np.empty_like(a1, shape=batch_shape + (m, 0), dtype=u0.dtype)
+            v = np.empty_like(a1, shape=batch_shape + (0, n), dtype=v0.dtype)
         if compute_uv:
             return u, s, v
         else:
