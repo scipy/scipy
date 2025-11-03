@@ -641,9 +641,11 @@ _iquantile_methods = dict(
 def _iquantile_hf(x, y, n, method, xp):
     a, b = _iquantile_methods[method]
     n_int = xp.astype(n, xp.int64)
-    jp1 = xp.clip(_xp_searchsorted(x, y), 1, n_int - 1)
+    jp1 = xp.clip(_xp_searchsorted(x, y, side='right'), 1, n_int - 1)
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
     jp1 = xp.astype(jp1, x.dtype)
-    p = (jp1 + (y - xj) / (xjp1 - xj) - a) / (n + 1 - a - b)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        delta = xp.where(xjp1 > xj, (y - xj) / (xjp1 - xj), 1.)
+    p = (jp1 + delta - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)

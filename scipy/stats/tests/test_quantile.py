@@ -344,18 +344,20 @@ class TestIQuantile:
         xp_assert_close(res[~mask], ref[~mask])
         assert xp.all(xp.isnan(res[mask]))
 
-    def test_against_ecdf_percentileofscore(self, xp):
+    @pytest.mark.parametrize('ties', [False, True])
+    def test_against_ecdf_percentileofscore(self, ties, xp):
         rng = np.random.default_rng(853945298725498274)
         n = 50
-        x = rng.standard_normal(n)
-        y = rng.standard_normal(25)
+        eps = 1e-8  # small tolerance needed to ensure that iquantile rounds correctly
+        x = rng.integers(10, size=n) if ties else rng.standard_normal(size=n)
+        y = rng.integers(10, size=25) if ties else rng.standard_normal(size=25)
         ref = stats.ecdf(x).cdf.evaluate(y)
-        ref2 = stats.percentileofscore(x, y)
+        ref2 = stats.percentileofscore(x, y, 'weak')
         x, y = xp.asarray(x), xp.asarray(y)
         res = stats.iquantile(x, y, method='interpolated_inverted_cdf')
         ref, ref2 = xp.asarray(ref), xp.asarray(ref2)
-        xp_assert_close(xp.floor(res * n) / n, ref)
-        xp_assert_close(xp.floor(res * n) / n, ref2 / 100)
+        xp_assert_close(xp.floor(res * n + eps) / n, ref)
+        xp_assert_close(xp.floor(res * n + eps) / n, ref2 / 100)
 
     def test_integer_input_output_dtype(self, xp):
         x = xp.arange(10, dtype=xp.int64)
