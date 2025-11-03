@@ -142,11 +142,6 @@ class TestQuantile:
         dtype = getattr(xp, dtype)
 
         if nan_policy == 'marray':
-            if method == 'harrell-davis':
-                pytest.skip("Needs gh-22490")
-            if is_torch(xp):
-                pytest.skip("sum_cpu not implemented for UInt64, see "
-                            "data-apis/array-api-compat#242")
             if not SCIPY_ARRAY_API:
                 pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
@@ -277,7 +272,6 @@ def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
 @make_xp_test_case(stats.iquantile)
 class TestIQuantile:
     # size 0 and 1 arrays for `x`? `y`? All NaN arrays with nan_policy='omit'? infs?
-    # masked arrays?
     def test_input_validation(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray(2)
@@ -367,18 +361,19 @@ class TestIQuantile:
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])  #, 'marray'])
+    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('nans', [False, True])
     @pytest.mark.parametrize('meth', ['linear', 'interpolated_inverted_cdf'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, nans, meth, xp):
-        # if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
-        #     pytest.skip("`marray` currently incompatible with JAX")
+        if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
+            pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
         x = rng.standard_normal(size=shape).astype(dtype)
         y = rng.standard_normal(size=shape).astype(dtype)
 
+        mask = None
         if nans:
             mask = rng.random(size=shape) > 0.8
             assert np.any(mask)
@@ -388,6 +383,18 @@ class TestIQuantile:
             y = np.mean(y, axis=axis, keepdims=True)
 
         dtype = getattr(xp, dtype)
+
+        if nan_policy == 'marray':
+            if not SCIPY_ARRAY_API:
+                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
+            marray = pytest.importorskip('marray')
+            kwargs = dict(axis=axis, keepdims=keepdims, method=meth)
+            mxp = marray._get_namespace(xp)
+            x_mp = mxp.asarray(x, mask=mask)
+            res = stats.iquantile(x_mp, mxp.asarray(y), **kwargs)
+            ref = iquantile_reference(x, y, nan_policy='omit', **kwargs)
+            xp_assert_close(res.data, xp.asarray(ref, dtype=dtype))
+            return
 
         kwargs = dict(axis=axis, keepdims=keepdims,
                       nan_policy=nan_policy, method=meth)
