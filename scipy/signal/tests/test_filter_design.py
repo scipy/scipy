@@ -3260,7 +3260,6 @@ class TestButter:
                                 xp_assert_close(ba1_, ba2_)
 
 
-@pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestCheby1:
@@ -3269,88 +3268,126 @@ class TestCheby1:
         # 0-order filter is just a passthrough
         # Even-order filters have DC gain of -rp dB
         b, a = cheby1(0, 10*math.log10(2), xp.asarray(1), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1 / math.sqrt(2)]))
-        xp_assert_equal(a, xp.asarray([1.0]))
+        assert_array_almost_equal(
+            b, xp.asarray([1 / math.sqrt(2)], dtype=xp.float64)
+        )
+        xp_assert_equal(a, xp.asarray([1.0], dtype=xp.float64))
 
         # 1-order filter is same for all types
         b, a = cheby1(1, 10*math.log10(2), xp.asarray(1), analog=True)
-        assert_array_almost_equal(b, xp.asarray([1.]))
-        assert_array_almost_equal(a, xp.asarray([1., 1]))
+        assert_array_almost_equal(b, xp.asarray([1.], dtype=xp.float64))
+        assert_array_almost_equal(a, xp.asarray([1., 1], dtype=xp.float64))
 
         z, p, k = cheby1(1, 0.1, xp.asarray(0.3), output='zpk')
-        xp_assert_equal(z, xp.asarray([-1.0]))
-        xp_assert_close(p, xp.asarray([-5.390126972799615e-01 + 0j]), rtol=1e-14)
-        assert math.isclose(k, 7.695063486399808e-01, rel_tol=1e-14)
+        xp_assert_equal(z, xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_close(
+            p, xp.asarray([-5.390126972799615e-01 + 0j], dtype=xp.complex128),
+            rtol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, 7.695063486399808e-01, rel_tol=1e-14 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_basic(self, xp):
         for N in range(25):
             wn = xp.asarray(0.01)
             z, p, k = cheby1(N, 1, wn, 'low', analog=True, output='zpk')
-            assert_array_almost_equal(z, xp.asarray([]))
+            assert_array_almost_equal(z, xp.asarray([], dtype=xp.float64))
             assert p.shape[0] == N
             assert xp.all(xp.real(p) <= 0)  # No poles in right half of S-plane
 
         for N in range(25):
             wn = xp.asarray(0.01)
             z, p, k = cheby1(N, 1, wn, 'high', analog=False, output='zpk')
-            xp_assert_equal(z, xp.ones(N))  # All zeros exactly at DC
+            xp_assert_equal(z, xp.ones(N, dtype=xp.float64))  # All zeros exactly at DC
             assert xp.all(xp.abs(p) <= 1)  # No poles outside unit circle
 
         # Same test as TestNormalize
         b, a = cheby1(8, 0.5, xp.asarray(0.048))
-        xp_assert_close(b, xp.asarray([2.150733144728282e-11, 1.720586515782626e-10,
-                            6.022052805239190e-10, 1.204410561047838e-09,
-                            1.505513201309798e-09, 1.204410561047838e-09,
-                            6.022052805239190e-10, 1.720586515782626e-10,
-                            2.150733144728282e-11]),
-                        rtol=0, atol=1.5e-14)
-        xp_assert_close(a, xp.asarray([1.000000000000000e+00, -7.782402035027959e+00,
-                            2.654354569747454e+01, -5.182182531666387e+01,
-                            6.334127355102684e+01, -4.963358186631157e+01,
-                            2.434862182949389e+01, -6.836925348604676e+00,
-                            8.412934944449140e-01]),
-                        rtol=0, atol=5e-14)
+        xp_assert_close(
+            b, xp.asarray([2.150733144728282e-11, 1.720586515782626e-10,
+                           6.022052805239190e-10, 1.204410561047838e-09,
+                           1.505513201309798e-09, 1.204410561047838e-09,
+                           6.022052805239190e-10, 1.720586515782626e-10,
+                           2.150733144728282e-11], dtype=xp.float64),
+            rtol=0, atol=1.5e-14
+        )
+        xp_assert_close(
+            a, xp.asarray([1.000000000000000e+00, -7.782402035027959e+00,
+                           2.654354569747454e+01, -5.182182531666387e+01,
+                           6.334127355102684e+01, -4.963358186631157e+01,
+                           2.434862182949389e+01, -6.836925348604676e+00,
+                           8.412934944449140e-01], dtype=xp.float64),
+            rtol=0, atol=5e-14 if not DEFAULT_F32 else 1e-7
+        )
 
         b, a = cheby1(4, 1, xp.asarray([0.4, 0.7]), btype='band')
-        assert_array_almost_equal(b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
-                                      -0.0335, 0, 0.0084]), decimal=4)
-        assert_array_almost_equal(a, xp.asarray([1.0, 1.1191, 2.862, 2.2986, 3.4137,
-                                      1.8653, 1.8982, 0.5676, 0.4103]),
-                                  decimal=4)
+        assert_array_almost_equal(
+            b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
+                           -0.0335, 0, 0.0084], dtype=xp.float64),
+            decimal=4
+        )
+        assert_array_almost_equal(
+            a, xp.asarray([1.0, 1.1191, 2.862, 2.2986, 3.4137,
+                           1.8653, 1.8982, 0.5676, 0.4103], dtype=xp.float64),
+            decimal=4
+        )
 
         b2, a2 = cheby1(5, 3, xp.asarray(1), analog=True)
-        assert_array_almost_equal(b2, xp.asarray([0.0626]), decimal=4)
-        assert_array_almost_equal(a2, xp.asarray([1, 0.5745, 1.4150, 0.5489, 0.4080,
-                                       0.0626]), decimal=4)
+        assert_array_almost_equal(
+            b2, xp.asarray([0.0626], dtype=xp.float64), decimal=4
+        )
+        assert_array_almost_equal(
+            a2, xp.asarray([1, 0.5745, 1.4150, 0.5489, 0.4080,
+                            0.0626], dtype=xp.float64),
+            decimal=4)
 
         b, a = cheby1(8, 0.5, xp.asarray(0.1))
-        assert_array_almost_equal(b, 1.0e-006 * xp.asarray([
-            0.00703924326028, 0.05631394608227, 0.19709881128793,
-            0.39419762257586, 0.49274702821983, 0.39419762257586,
-            0.19709881128793, 0.05631394608227, 0.00703924326028]),
-            decimal=13)
-        assert_array_almost_equal(a, xp.asarray([
-              1.00000000000000, -7.44912258934158, 24.46749067762108,
-              -46.27560200466141, 55.11160187999928, -42.31640010161038,
-              20.45543300484147, -5.69110270561444, 0.69770374759022]),
-            decimal=13)
+        assert_array_almost_equal(
+            b,
+            1.0e-006 * xp.asarray(
+                [0.00703924326028, 0.05631394608227, 0.19709881128793,
+                 0.39419762257586, 0.49274702821983, 0.39419762257586,
+                 0.19709881128793, 0.05631394608227, 0.00703924326028
+                ], dtype=xp.float64
+            ),
+            decimal=13
+        )
+        assert_array_almost_equal(
+            a, xp.asarray(
+                [1.00000000000000, -7.44912258934158, 24.46749067762108,
+                 -46.27560200466141, 55.11160187999928, -42.31640010161038,
+                 20.45543300484147, -5.69110270561444, 0.69770374759022
+                ], dtype=xp.float64
+            ),
+            decimal=13 if not DEFAULT_F32 else 6
+        )
 
         b, a = cheby1(8, 0.5, xp.asarray(0.25))
-        assert_array_almost_equal(b, 1.0e-003 * xp.asarray([
-            0.00895261138923, 0.07162089111382, 0.25067311889837,
-            0.50134623779673, 0.62668279724591, 0.50134623779673,
-            0.25067311889837, 0.07162089111382, 0.00895261138923]),
+        assert_array_almost_equal(
+            b,
+            1.0e-003 * xp.asarray(
+                [0.00895261138923, 0.07162089111382, 0.25067311889837,
+                 0.50134623779673, 0.62668279724591, 0.50134623779673,
+                 0.25067311889837, 0.07162089111382, 0.00895261138923
+                ], dtype=xp.float64
+            ),
             decimal=13)
-        assert_array_almost_equal(a, xp.asarray([1.00000000000000, -5.97529229188545,
-                                      16.58122329202101, -27.71423273542923,
-                                      30.39509758355313, -22.34729670426879,
-                                      10.74509800434910, -3.08924633697497,
-                                      0.40707685889802]), decimal=13)
+        assert_array_almost_equal(
+            a,
+            xp.asarray(
+                [1.00000000000000, -5.97529229188545,
+                 16.58122329202101, -27.71423273542923,
+                 30.39509758355313, -22.34729670426879,
+                 10.74509800434910, -3.08924633697497,
+                 0.40707685889802
+                 ], dtype=xp.float64
+            ), decimal=13)
 
     def test_highpass(self, xp):
         # high even order
         z, p, k = cheby1(24, 0.7, xp.asarray(0.2), 'high', output='zpk')
-        z2 = xp.ones(24)
+        z2 = xp.ones(24, dtype=xp.float64)
         p2 = [-6.136558509657073e-01 + 2.700091504942893e-01j,
               -6.136558509657073e-01 - 2.700091504942893e-01j,
               -3.303348340927516e-01 + 6.659400861114254e-01j,
@@ -3375,15 +3412,18 @@ class TestCheby1:
               7.967253874772997e-01 - 5.911966597313203e-01j,
               8.069756417293870e-01 + 5.862214589217275e-01j,
               8.069756417293870e-01 - 5.862214589217275e-01j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 6.190427617192018e-04
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-10)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-10 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6)
 
         # high odd order
         z, p, k = cheby1(23, 0.8, xp.asarray(0.3), 'high', output='zpk')
-        z2 = xp.ones(23)
+        z2 = xp.ones(23, dtype=xp.float64)
         p2 = [-7.676400532011010e-01,
               -6.754621070166477e-01 + 3.970502605619561e-01j,
               -6.754621070166477e-01 - 3.970502605619561e-01j,
@@ -3407,14 +3447,19 @@ class TestCheby1:
               5.855636993537203e-01 - 8.060680937701062e-01j,
               5.688812849391721e-01 + 8.086497795114683e-01j,
               5.688812849391721e-01 - 8.086497795114683e-01j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 1.941697029206324e-05
         xp_assert_equal(z, z2)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-10)
-        assert math.isclose(k, k2, rel_tol=1e-10)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-10 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(
+            k, k2, rel_tol=1e-10 if not DEFAULT_F32 else 1e-6
+        )
 
         z, p, k = cheby1(10, 1, xp.asarray(1000), 'high', analog=True, output='zpk')
-        z2 = xp.zeros(10)
+        z2 = xp.zeros(10, dtype=xp.float64)
         p2 = [-3.144743169501551e+03 + 3.511680029092744e+03j,
               -3.144743169501551e+03 - 3.511680029092744e+03j,
               -5.633065604514602e+02 + 2.023615191183945e+03j,
@@ -3425,7 +3470,7 @@ class TestCheby1:
               -7.987162953085479e+01 - 1.105207708045358e+03j,
               -2.250315039031946e+01 + 1.001723931471477e+03j,
               -2.250315039031946e+01 - 1.001723931471477e+03j]
-        p2 = xp.asarray(p2)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 8.912509381337453e-01
         xp_assert_equal(z, z2)
         xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
@@ -3450,12 +3495,15 @@ class TestCheby1:
               5.844717632289875e-01 - 8.052901363500210e-01j,
               5.615189063336070e-01 + 8.100667803850766e-01j,
               5.615189063336070e-01 - 8.100667803850766e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.float64)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 5.007028718074307e-09
         xp_assert_equal(z, z2, check_dtype=False)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=1e-13)
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-7
+        )
+        assert math.isclose(k, k2, rel_tol=1e-13 if not DEFAULT_F32 else 1e-6)
 
     def test_bandstop(self, xp):
         z, p, k = cheby1(7, 1, xp.asarray([0.5, 0.6]), 'stop', output='zpk')
@@ -3487,12 +3535,20 @@ class TestCheby1:
               -3.307805547127368e-01 - 9.133455018206508e-01j,
               -3.072658345097743e-01 + 9.443589759799366e-01j,
               -3.072658345097743e-01 - 9.443589759799366e-01j]
-        z2 = xp.asarray(z2)
-        p2 = xp.asarray(p2)
+        z2 = xp.asarray(z2, dtype=xp.complex128)
+        p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 3.619438310405028e-01
-        xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp), rtol=1e-13)
-        xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp), rtol=1e-13)
-        assert math.isclose(k, k2, rel_tol=0, abs_tol=5e-16)
+        xp_assert_close(
+            _sort_cmplx(z, xp=xp), _sort_cmplx(z2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        xp_assert_close(
+            _sort_cmplx(p, xp=xp), _sort_cmplx(p2, xp=xp),
+            rtol=1e-13 if not DEFAULT_F32 else 1e-6
+        )
+        assert math.isclose(
+            k, k2, rel_tol=0, abs_tol=5e-16 if not DEFAULT_F32 else 1e-7
+        )
 
     def test_ba_output(self, xp):
         # with transfer function conversion,  without digital conversion
@@ -3511,9 +3567,9 @@ class TestCheby1:
               1.114411200988328e+20, 8.316815934908471e+21,
               1.169243442282517e+24
               ]
-        b2, a2 = map(xp.asarray, (b2, a2))
-        xp_assert_close(b, b2, rtol=1e-14)
-        xp_assert_close(a, a2, rtol=1e-14)
+        b2, a2 = map(lambda t: xp.asarray(t, dtype=xp.float64), (b2, a2))
+        xp_assert_close(b, b2, rtol=1e-14 if not DEFAULT_F32 else 1e-7)
+        xp_assert_close(a, a2, rtol=1e-14 if not DEFAULT_F32 else 1e-7)
 
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
