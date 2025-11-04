@@ -38,7 +38,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.pseudo_diffs',
     'scipy.fftpack.realtransforms',
     'scipy.integrate.dop',
-    'scipy.integrate.lsoda',
     'scipy.integrate.odepack',
     'scipy.integrate.quadpack',
     'scipy.integrate.vode',
