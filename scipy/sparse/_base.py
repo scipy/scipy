@@ -555,16 +555,20 @@ class _spbase(SparseABC):
                      " dense matrix.", SparseEfficiencyWarning, stacklevel=3)
                 return self.__class__(np_op(self.toarray(), other))
             else:
-                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csr', 'csc') else self.tocsr()
+                    return cs_self._scalar_binopt(other, np_op)
+                csr_self = self.reshape(1, -1).tocsr()
                 result = csr_self._scalar_binopt(other, np_op)
-                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+                return result.tocoo().reshape(self.shape)
         elif isdense(other):
             return np_op(self.todense(), other)
         elif issparse(other):
             if self.shape != other.shape:
                 raise ValueError(f"inconsistent shapes {self.shape=} {other.shape=}")
             if self.ndim < 3:  # shape is same so other.ndim < 3
-                return self.tocsr()._binopt(other, f'_{np_op.__name__}_')
+                cs_self = self if self.format in ('csr', 'csc') else self.tocsr()
+                return cs_self._binopt(other, f'_{np_op.__name__}_')
             csr_self = self.reshape(1, -1).tocsr()
             csr_other = other.reshape(1, -1).tocsr()
             result = csr_self._binopt(csr_other, f'_{np_op.__name__}_')
@@ -632,10 +636,12 @@ class _spbase(SparseABC):
             if not op(0, other):
                 if np.isnan(other):  # op is not `ne`, so results are all False.
                     return self.__class__(self.shape, dtype=np.bool_)
-                else:
-                    csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-                    res = csr_self._scalar_binopt(other, op)
-                    return res if self.ndim < 3 else res.tocoo().reshape(self.shape)
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                    return cs_self._scalar_binopt(other, op)
+                csr_self = self.reshape(1, -1).to_csr()
+                result = csr_self._scalar_binopt(other, op)
+                return result.tocoo().reshape(self.shape)
             else:
                 warn(f"Comparing a sparse matrix with {other} using {op_sym[op]} "
                      f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
@@ -645,11 +651,17 @@ class _spbase(SparseABC):
                     return self.__class__(np.ones(self.shape, dtype=np.bool_))
 
                 # op is eq, le, or ge. Use negated op and then negate.
-                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                if self.ndim < 3:
+                    cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                    inv = cs_self._scalar_binopt(other, op_neg[op])
+                    all_true = cs_self.__class__(np.ones(cs_self.shape, dtype=np.bool_))
+                    return all_true - inv
+
+                csr_self = self.reshape(1, -1).tocsr()
                 inv = csr_self._scalar_binopt(other, op_neg[op])
                 all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
                 result = all_true - inv
-                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+                return result.tocoo().reshape(self.shape)
 
         elif isdense(other):
             return op(self.todense(), other)
@@ -663,18 +675,22 @@ class _spbase(SparseABC):
                     return op is operator.ne
                 raise ValueError("inconsistent shape")
 
-            csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-            csr_other = (other if other.ndim < 3 else other.reshape(1, -1)).tocsr()
+            if self.ndim < 3:
+                cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                cs_other = other
+            else:
+                cs_self = self.reshape(1, -1).tocsr()
+                cs_other = other.reshape(1, -1).tocsr()
             if not op(0, 0):
-                result = csr_self._binopt(csr_other, f'_{op.__name__}_')
+                result = cs_self._binopt(cs_other, f'_{op.__name__}_')
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
             else:
                 # result will not be sparse. Use negated op and then negate.
                 warn(f"Comparing two sparse matrices using {op_sym[op]} "
                      f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
-                inv = csr_self._binopt(csr_other, f'_{op_neg[op].__name__}_')
-                all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
+                inv = cs_self._binopt(cs_other, f'_{op_neg[op].__name__}_')
+                all_true = cs_self.__class__(np.ones(cs_self.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         else:
