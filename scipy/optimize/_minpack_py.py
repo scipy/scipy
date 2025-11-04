@@ -7,7 +7,7 @@ from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
-from scipy._lib._util import _asarray_validated, _contains_nan
+from scipy._lib._util import _asarray_validated, _contains_nan, wrapped_inspect_signature
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 import scipy._lib.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
@@ -901,8 +901,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        sig = _getfullargspec(f)
-        args = sig.args
+        args = wrapped_inspect_signature(f).parameters
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
         n = len(args) - 1

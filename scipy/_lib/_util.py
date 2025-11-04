@@ -60,6 +60,28 @@ else:
         copy_if_needed = False
 
 
+# Wrapped function for inspect.signature for compatibility with Python 3.14+
+# See gh-23913
+#
+# PEP 649/749 allows for underfined annotations at runtime, and added the
+# `annotation_format` parameter to handle these cases.
+# `annotationlib.Format.FORWARDREF` is the closest to previous behavior,
+# returning ForwardRef objects fornew undefined annotations cases.
+#
+# Consider dropping this wrapper when support for Python 3.13 is dropped.
+if sys.version_info >= (3, 14):
+    import annotationlib
+    def wrapped_inspect_signature(callable):
+        """Get a signature object for the passed callable."""
+        return inspect.signature(callable,
+                                 annotation_format=annotationlib.Format.FORWARDREF)
+else:
+    def wrapped_inspect_signature(callable):
+        """Get a signature object for the passed callable."""
+        return inspect.signature(callable)
+
+
+
 _RNG: TypeAlias = np.random.Generator | np.random.RandomState
 SeedType: TypeAlias = IntNumber | _RNG | None
 
