@@ -7,6 +7,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_promote,
     xp_device,
+    xp_size,
     _length_nonmasked
 )
 import scipy._lib.array_api_extra as xpx
@@ -70,7 +71,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
     # If data has length zero along `axis`, the result will be an array of NaNs just
     # as if the data had length 1 along axis and were filled with NaNs. This is treated
     # naturally below whether `nan_policy` is `'propagate'` or `'omit'`.
-    if x.shape[axis] == 0:
+    if x.shape[axis] == 0 and function == 'quantile':
         shape = list(x.shape)
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
@@ -630,7 +631,10 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, function='iquantile')
     x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, xp = temp
 
-    res = _iquantile_hf(x, y, n, method, xp)
+    if xp_size(x) == 0:
+        res = xp.full_like(y, xp.nan)
+    else:
+        res = _iquantile_hf(x, y, n, method, xp)
 
     return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
 
@@ -648,7 +652,9 @@ _iquantile_methods = dict(
 def _iquantile_hf(x, y, n, method, xp):
     a, b = _iquantile_methods[method]
     n_int = xp.astype(n, xp.int64)
-    jp1 = xp.clip(_xp_searchsorted(x, y, side='right'), 1, n_int - 1)
+    j_max = n_int - 1
+    j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype))
+    jp1 = xp.clip(_xp_searchsorted(x, y, side='right'), j_min, j_max)
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
     jp1 = xp.astype(jp1, x.dtype)

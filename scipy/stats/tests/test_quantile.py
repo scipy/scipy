@@ -271,7 +271,11 @@ def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
 
 @make_xp_test_case(stats.iquantile)
 class TestIQuantile:
-    # size 0 and 1 arrays for `x`? `y`? All NaN arrays with nan_policy='omit'? infs?
+    # test size 0 arrays with ndim > 1
+    # test infs in x
+    # check that we're testing infs in y
+    # correct infs in sample *and* in y?
+    # correct results with size 1 arrays when x != y
     def test_input_validation(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray(2)
@@ -443,22 +447,91 @@ class TestIQuantile:
         res = stats.iquantile(x, x)
         assert res.dtype == xp_default_dtype(xp)
 
+    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
+    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
+    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
+    def test_size_one_sample(self, nan_policy, method, ab, xp):
+        a, b = ab
+        x = xp.arange(10.)
+        y = xp.asarray([0.])
+        # y = xp.asarray([0., -1., 1.])  # this should work
+        n = xp.asarray(1.)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ref = xp.asarray((n - a) / (n + 1 - a - b))  # for method = 'linear'
+            # but we don't get the expected result for y != x
+            # ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
+
+        if nan_policy == 'propagate':
+            x = x[:1]
+            kwargs = {'nan_policy': 'propagate'}
+        elif nan_policy == 'omit':
+            x[1:] = xp.nan
+            kwargs = {'nan_policy': 'omit'}
+        elif nan_policy == 'marray':
+            if not SCIPY_ARRAY_API:
+                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
+            marray = pytest.importorskip('marray')
+            mxp = marray._get_namespace(xp)
+            mask = (x > 0.)
+            x = mxp.asarray(x, mask=mask)
+            y = mxp.asarray(y)
+            kwargs = {}
+
+        with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
+            res = stats.iquantile(x, y, method=method, **kwargs)
+        res = res.data[()] if nan_policy == 'marray' else res
+        xp_assert_close(res, ref)
+
+    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
+    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
+    @pytest.mark.parametrize('method', _iquantile_methods.keys())
+    def test_size_zero_sample(self, nan_policy, method, xp):
+        x = xp.arange(10.)
+        y = xp.asarray([0., -1., 1.])  # this should work
+        ref = xp.full_like(y, xp.nan)
+
+        if nan_policy == 'propagate':
+            x = x[0:0]
+            kwargs = {'nan_policy': 'propagate'}
+        elif nan_policy == 'omit':
+            x[:] = xp.nan
+            kwargs = {'nan_policy': 'omit'}
+        elif nan_policy == 'marray':
+            if not SCIPY_ARRAY_API:
+                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
+            marray = pytest.importorskip('marray')
+            mxp = marray._get_namespace(xp)
+            mask = (x >= 0.)
+            x = mxp.asarray(x, mask=mask)
+            y = mxp.asarray(y)
+            kwargs = {}
+
+        with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
+            res = stats.iquantile(x, y, method=method, **kwargs)
+
+        if nan_policy == 'marray':
+            assert xp.all(res.mask)
+        else:
+            xp_assert_close(res, ref)
+
     @pytest.mark.parametrize('x, y, ref, kwargs',
         [
-         # ([], 0.5, np.nan, {}),
+         ([], 0.5, np.nan, {}),
          ([1, 2, 3], [0.999, 3.001, np.nan], [0., 1., np.nan], {}),
          ([1, 2, 3], [], [], {}),
-         # ([[np.nan, 2]], 0.5, [np.nan, 2], {'nan_policy': 'omit'}),
-         # ([[], []], 0.5, np.full(2, np.nan), {'axis': -1}),
-         # ([[], []], 0.5, np.zeros((0,)), {'axis': 0, 'keepdims': False}),
-         # ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
-         # ([], [0.5, 0.6], np.full(2, np.nan), {}),
+         ([[np.nan, 2]], 2, [np.nan, 0.5], {'nan_policy': 'omit', 'method': 'weibull'}),
+         ([[], []], 0.5, np.full(2, np.nan), {'axis': -1}),
+         ([[], []], 0.5, np.zeros((0,)), {'axis': 0, 'keepdims': False}),
+         ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
+         ([], [0.5, 0.6], np.full(2, np.nan), {}),
          (np.arange(1, 28).reshape((3, 3, 3)), 14., [[[0.5]]],
           {'axis': None, 'keepdims': True}),
          ([[1, 2], [3, 4]], [1.75, 2.5, 3.25], [[0.25, 0.5, 0.75]],
           {'axis': None, 'keepdims': True}),
          ])
     def test_edge_cases(self, x, y, ref, kwargs, xp):
+        if kwargs.get('method', None) == 'weibull' and is_torch(xp):
+            pytest.skip('data-apis/array-api-compat#360')
         default_dtype = xp_default_dtype(xp)
         x, y, ref = xp.asarray(x), xp.asarray(y), xp.asarray(ref, dtype=default_dtype)
         res = stats.iquantile(x, y, **kwargs)
