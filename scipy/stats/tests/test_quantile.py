@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy.stats._quantile import _xp_searchsorted, _iquantile_methods
+from scipy.stats._quantile import (_xp_searchsorted, _iquantile_methods,
+    _iquantile_discontinuous_methods, _iquantile_continuous_methods)
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
@@ -13,6 +14,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
+import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -317,13 +319,13 @@ class TestIQuantile:
         with pytest.raises(ValueError, match=message):
             stats.iquantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
-    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
+    @pytest.mark.parametrize('method', _iquantile_methods)
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
     @pytest.mark.parametrize('y_shape', [None, 25])
     @pytest.mark.parametrize('ties', [False, True])
-    def test_against_quantile(self, method, ab, dtype, x_shape, y_shape, ties, xp):
-        a, b = ab
+    def test_against_quantile(self, method, dtype, x_shape, y_shape, ties, xp):
+        discontinuous = method in _iquantile_discontinuous_methods
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(394529872549827485)
         y_shape = x_shape if y_shape is None else y_shape
@@ -339,15 +341,21 @@ class TestIQuantile:
         ref = xp.broadcast_to(p, (*x.shape[:-1], y.shape[-1]))
 
         # check that `quantile` is the inverse of `iquantile`
+        # note that for discontinuous methods, res is right on the cusp of a transition,
+        # and there can be a tiny bit of error to the right or left. We shift it left
+        # to ensure we're on the correct side of the transition, producing the same `y2`
+        # as if the probability calculation were exact.
+        res = res - 1e-6 if discontinuous else res
         y2 = stats.quantile(x, res, method=method, axis=-1)
         atol = 1e-6 if dtype == xp.float32 else 1e-12
         xp_assert_close(y2, y, atol=atol)
 
-        # if there are ties, `quantile` is not invertible
-        if ties:
+        # if there are ties or method is discontinuous, `quantile` is not invertible
+        if ties or discontinuous:
             return
 
         # `quantile` is not invertible outside this domain
+        a, b = _iquantile_continuous_methods[method]
         n = x.shape[-1]
         p_min = (1 - a) / (n + 1 - a - b)
         p_max = (n - a) / (n + 1 - a - b)
@@ -368,7 +376,7 @@ class TestIQuantile:
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('nans', [False, True])
-    @pytest.mark.parametrize('meth', ['linear', 'interpolated_inverted_cdf'])
+    @pytest.mark.parametrize('meth', ['linear', 'inverted_cdf'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, nans, meth, xp):
         if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
             pytest.skip("`marray` currently incompatible with JAX")
@@ -407,7 +415,7 @@ class TestIQuantile:
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
     @pytest.mark.parametrize('n', [50, 500])
-    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
+    @pytest.mark.parametrize('method, ab', _iquantile_continuous_methods.items())
     def test_plotting_positions(self, n, method, ab, xp):
         a, b = ab
         rng = np.random.default_rng(539452987254982748)
@@ -431,16 +439,16 @@ class TestIQuantile:
     def test_against_ecdf_percentileofscore(self, ties, xp):
         rng = np.random.default_rng(853945298725498274)
         n = 50
-        eps = 1e-8  # small tolerance needed to ensure that iquantile rounds correctly
+        dtype = xp_default_dtype(xp)
         x = rng.integers(10, size=n) if ties else rng.standard_normal(size=n)
         y = rng.integers(10, size=25) if ties else rng.standard_normal(size=25)
         ref = stats.ecdf(x).cdf.evaluate(y)
         ref2 = stats.percentileofscore(x, y, 'weak')
-        x, y = xp.asarray(x), xp.asarray(y)
-        res = stats.iquantile(x, y, method='interpolated_inverted_cdf')
-        ref, ref2 = xp.asarray(ref), xp.asarray(ref2)
-        xp_assert_close(xp.floor(res * n + eps) / n, ref)
-        xp_assert_close(xp.floor(res * n + eps) / n, ref2 / 100)
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
+        res = stats.iquantile(x, y, method='inverted_cdf')
+        ref, ref2 = xp.asarray(ref, dtype=dtype), xp.asarray(ref2, dtype=dtype)
+        xp_assert_close(res, ref)
+        xp_assert_close(res, ref2 / 100)
 
     def test_integer_input_output_dtype(self, xp):
         x = xp.arange(10, dtype=xp.int64)
@@ -449,25 +457,36 @@ class TestIQuantile:
 
     @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
-    @pytest.mark.parametrize('method, ab', _iquantile_methods.items())
-    def test_size_one_sample(self, nan_policy, method, ab, xp):
-        a, b = ab
+    @pytest.mark.parametrize('method', _iquantile_methods)
+    def test_size_one_sample(self, nan_policy, method, xp):
+        discontinuous = method in _iquantile_discontinuous_methods
         x = xp.arange(10.)
         y = xp.asarray([0.])
-        # y = xp.asarray([0., -1., 1.])  # this should work
+        # this should work but doesn't. It would be easy to fix in postprocessing -
+        # if y < min(x), result is always 0.0; if y > max(x), result is always 1.0 -
+        # but is there a more elegant way? Probably not - the current strategy of
+        # clipping the interpolated / extrapolated result doesn't actually work for
+        # methods other than 'linear', so best to replace that.
+        # y = xp.asarray([0., -1., 1.])
+        # but we don't get the expected result for y != x
+        # ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
         n = xp.asarray(1.)
-        with np.errstate(divide='ignore', invalid='ignore'):
-            ref = xp.asarray((n - a) / (n + 1 - a - b))  # for method = 'linear'
-            # but we don't get the expected result for y != x
-            # ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
+        with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
+            if discontinuous:
+                ref = xp.asarray(1.)
+            else:
+                a, b = _iquantile_continuous_methods[method]
+                ref = xp.asarray((n - a) / (n + 1 - a - b))
 
         if nan_policy == 'propagate':
             x = x[:1]
             kwargs = {'nan_policy': 'propagate'}
         elif nan_policy == 'omit':
-            x[1:] = xp.nan
+            x = xpx.at(x)[1:].set(xp.nan)
             kwargs = {'nan_policy': 'omit'}
         elif nan_policy == 'marray':
+            if is_jax(xp):
+                pytest.skip("JAX currently incompatible with `marray`")
             if not SCIPY_ARRAY_API:
                 pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
@@ -484,7 +503,7 @@ class TestIQuantile:
 
     @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
-    @pytest.mark.parametrize('method', _iquantile_methods.keys())
+    @pytest.mark.parametrize('method', _iquantile_methods)
     def test_size_zero_sample(self, nan_policy, method, xp):
         x = xp.arange(10.)
         y = xp.asarray([0., -1., 1.])  # this should work
@@ -494,11 +513,13 @@ class TestIQuantile:
             x = x[0:0]
             kwargs = {'nan_policy': 'propagate'}
         elif nan_policy == 'omit':
-            x[:] = xp.nan
+            x = xpx.at(x)[:].set(xp.nan)
             kwargs = {'nan_policy': 'omit'}
         elif nan_policy == 'marray':
             if not SCIPY_ARRAY_API:
                 pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
+            if is_jax(xp):
+                pytest.skip("JAX currently incompatible with `marray`")
             marray = pytest.importorskip('marray')
             mxp = marray._get_namespace(xp)
             mask = (x >= 0.)
@@ -536,3 +557,18 @@ class TestIQuantile:
         x, y, ref = xp.asarray(x), xp.asarray(y), xp.asarray(ref, dtype=default_dtype)
         res = stats.iquantile(x, y, **kwargs)
         xp_assert_equal(res, ref)
+
+    @pytest.mark.skip_xp_backends('jax.numpy', "arithmetic isn't exact even for 2**k ?")
+    @pytest.mark.parametrize('method', _iquantile_discontinuous_methods.keys())
+    def test_transition(self, method, xp):
+        # test that values of discontinuous estimators are as expected around
+        # transition point
+        x = np.arange(8., dtype=np.float64)
+        xl, xr = np.nextafter(x, -np.inf), np.nextafter(x, np.inf)
+        x, xl, xr = xp.asarray(x), xp.asarray(xl), xp.asarray(xr)
+        offset = 0.5 if method == 'closest_observation' else 0.0
+        ref_r = xp.minimum((x + 1 + offset) / 8, xp.asarray(1.0))
+        ref_l = (x + offset) / 8
+        xp_assert_equal(stats.iquantile(x, x, method=method), ref_r)
+        xp_assert_equal(stats.iquantile(x, xr, method=method), ref_r)
+        xp_assert_equal(stats.iquantile(x, xl, method=method), ref_l)

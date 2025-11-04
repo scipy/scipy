@@ -27,8 +27,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
         var2_name = 'p'
         var2_type_msg = '`p` must have real floating dtype.'
     else:
-        methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
-                   'median_unbiased', 'normal_unbiased', 'weibull'}
+        methods = set(_iquantile_methods)
         allowed_types = ('integral', 'real floating')
         mask_fun = xp.isnan
         var2_name = 'y'
@@ -442,8 +441,8 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     return b if side == 'left' else  x.shape[-1] - b
 
 
-@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet."),
-                                ("jax.numpy", "passes without jit; just very slow")])
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
+                 jax_jit=False)
 def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the empirical distribution function of the data along the specified axis.
@@ -639,7 +638,14 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
 
 
-_iquantile_methods = dict(
+_iquantile_discontinuous_methods = dict(
+    inverted_cdf=0.0,
+    averaged_inverted_cdf=0.0,
+    closest_observation=0.5,
+)
+
+
+_iquantile_continuous_methods = dict(
     interpolated_inverted_cdf=(0, 1),
     hazen=(0.5, 0.5),
     weibull=(0, 0),
@@ -649,16 +655,26 @@ _iquantile_methods = dict(
 )
 
 
+_iquantile_methods = (set(_iquantile_continuous_methods).union(
+                      set(_iquantile_discontinuous_methods)))
+
+
 def _iquantile_hf(x, y, n, method, xp):
-    a, b = _iquantile_methods[method]
     n_int = xp.astype(n, xp.int64)
     j_max = n_int - 1
     j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype))
-    jp1 = xp.clip(_xp_searchsorted(x, y, side='right'), j_min, j_max)
+    jp1 = _xp_searchsorted(x, y, side='right')
+
+    if method in _iquantile_discontinuous_methods:
+        dp = _iquantile_discontinuous_methods[method]
+        p = (xp.astype(jp1, x.dtype)+dp)/n
+        return xp.clip(p, 0., 1.)
+
+    jp1 = xp.clip(jp1, j_min, j_max)
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
-    jp1 = xp.astype(jp1, x.dtype)
     with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
         delta = xp.where(xjp1 > xj, (y - xj) / (xjp1 - xj), 1.)
-    p = (jp1 + delta - a) / (n + 1 - a - b)
+    a, b = _iquantile_continuous_methods[method]
+    p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)
