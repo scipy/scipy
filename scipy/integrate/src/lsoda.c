@@ -916,7 +916,7 @@ stoda(
     lsoda_corrector_status_t corrector_status;
     double rh = 0.0, dsm = 0.0, exup = 0.0, exdn = 0.0, exsm = 0.0, rhup = 0.0, rhdn = 0.0, rhsm = 0.0;
     double told = S->tn, dup = 0.0, ddn = 0.0;
-    double dm1, dm2, exm1, exm2, rh1, rh2, rh1it, pdh;
+    double dm1, dm2, exm1, exm2, rh1, rh2, rh1it, pdh = 0.0;
     int newq = 0, nqm1 = 0, nqm2 = 0, ncf = 0, lm1 = 0, lm2 = 0;
     int should_reset_rmax = 0;  // Flag to track if we should go to label 690 (rmax reset + exit)
 
@@ -1546,8 +1546,8 @@ void lsoda(
     const int mxstp0 = 500;       // Default maximum steps
     const int mxhnl0 = 10;        // Default maximum nil step warnings
 
-    int jtyp, iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
-    double hmx = 0.0, hmxi, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
+    int iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
+    double hmx = 0.0, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
     int len1n, len1s, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwn, lenrws, lenrwc, lf0;
     double rtoli, atoli;
 
@@ -2107,7 +2107,6 @@ void lsoda(
             *istate = -3;  // Illegal input detected (callback error)
             return;
         }
-        int kgo = 1 - S->kflag;
 
         // block f.
         // the following block handles the case of a successful return from the
