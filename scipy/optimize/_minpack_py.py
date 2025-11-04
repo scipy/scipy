@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from . import _minpack
 
@@ -901,7 +902,16 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
-        args = wrapped_inspect_signature(f).parameters
+        #
+        # NOTE: This implementation is made to match previous behavior. However,
+        #       inspect.Parameter.POSITIONAL_ONLY parameters would still match
+        #       documented signature, e.g., f(x, a_1, a_2, / ,...), but are
+        #       ignored here. Can trigger misleading behavior.
+        args = [
+            v for v in wrapped_inspect_signature(f).parameters.values()
+            if v.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                          inspect.Parameter.KEYWORD_ONLY]
+        ]
         if len(args) < 2:
             raise ValueError("Unable to determine number of fit parameters.")
         n = len(args) - 1
