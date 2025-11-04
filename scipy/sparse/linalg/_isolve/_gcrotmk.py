@@ -115,14 +115,14 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         for i, c in enumerate(cs):
             alpha = dot(c, w)
             B[i,j] = alpha
-            w = axpy(c, w, c.shape[0], -alpha)  # w -= alpha*c
+            axpy(c, w, c.shape[0], -alpha)  # w -= alpha*c
 
         # Orthogonalize against V
         hcur = np.zeros(j+2, dtype=Q.dtype)
         for i, v in enumerate(vs):
             alpha = dot(v, w)
             hcur[i] = alpha
-            w = axpy(v, w, v.shape[0], -alpha)  # w -= alpha*v
+            axpy(v, w, v.shape[0], -alpha)  # w -= alpha*v
         hcur[i+1] = nrm2(w)
 
         with np.errstate(over='ignore', divide='ignore'):
@@ -130,7 +130,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
             alpha = 1/hcur[-1]
 
         if np.isfinite(alpha):
-            w = scal(alpha, w)
+            scal(alpha, w)
 
         if not (hcur[-1] > eps * w_norm):
             # w essentially in the span of previous vectors,
@@ -341,11 +341,11 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         for j in range(len(cs)):
             u = us[P[j]]
             for i in range(j):
-                u = axpy(us[P[i]], u, u.shape[0], -R[i,j])
+                axpy(us[P[i]], u, u.shape[0], -R[i,j])
             if abs(R[j,j]) < 1e-12 * abs(R[0,0]):
                 # discard rest of the vectors
                 break
-            u = scal(1.0/R[j,j], u)
+            scal(1.0/R[j,j], u)
             new_us.append(u)
 
         # Form the new CU lists
@@ -364,8 +364,8 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         # The solution is y = C^H (b - A x)
         for c, u in CU:
             yc = dot(c, r)
-            x = axpy(u, x, x.shape[0], yc)
-            r = axpy(c, r, r.shape[0], -yc)
+            axpy(u, x, x.shape[0], yc)
+            axpy(c, r, r.shape[0], -yc)
 
     # GCROT main iteration
     for j_outer in range(maxiter):
@@ -426,18 +426,18 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
         # ux := (Z - U B) y
         ux = zs[0]*y[0]
         for z, yc in zip(zs[1:], y[1:]):
-            ux = axpy(z, ux, ux.shape[0], yc)  # ux += z*yc
+            axpy(z, ux, ux.shape[0], yc)  # ux += z*yc
         by = B.dot(y)
         for cu, byc in zip(CU, by):
             c, u = cu
-            ux = axpy(u, ux, ux.shape[0], -byc)  # ux -= u*byc
+            axpy(u, ux, ux.shape[0], -byc)  # ux -= u*byc
 
         # cx := V H y
         with np.errstate(invalid="ignore"):
             hy = Q.dot(R.dot(y))
         cx = vs[0] * hy[0]
         for v, hyc in zip(vs[1:], hy[1:]):
-            cx = axpy(v, cx, cx.shape[0], hyc)  # cx += v*hyc
+            axpy(v, cx, cx.shape[0], hyc)  # cx += v*hyc
 
         # Normalize cx, maintaining cx = A ux
         # This new cx is orthogonal to the previous C, by construction
@@ -449,13 +449,13 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
             # Cannot update, so skip it
             continue
 
-        cx = scal(alpha, cx)
-        ux = scal(alpha, ux)
+        scal(alpha, cx)
+        scal(alpha, ux)
 
         # Update residual and solution
         gamma = dot(cx, r)
-        r = axpy(cx, r, r.shape[0], -gamma)  # r -= gamma*cx
-        x = axpy(ux, x, x.shape[0], gamma)  # x += gamma*ux
+        axpy(cx, r, r.shape[0], -gamma)  # r -= gamma*cx
+        axpy(ux, x, x.shape[0], gamma)  # x += gamma*ux
 
         # Truncate CU
         if truncate == 'oldest':
@@ -475,19 +475,19 @@ def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback
                     u = u * w[0]
                     for cup, wp in zip(CU[1:], w[1:]):
                         cp, up = cup
-                        c = axpy(cp, c, c.shape[0], wp)
-                        u = axpy(up, u, u.shape[0], wp)
+                        axpy(cp, c, c.shape[0], wp)
+                        axpy(up, u, u.shape[0], wp)
 
                     # Reorthogonalize at the same time; not necessary
                     # in exact arithmetic, but floating point error
                     # tends to accumulate here
                     for cp, up in new_CU:
                         alpha = dot(cp, c)
-                        c = axpy(cp, c, c.shape[0], -alpha)
-                        u = axpy(up, u, u.shape[0], -alpha)
+                        axpy(cp, c, c.shape[0], -alpha)
+                        axpy(up, u, u.shape[0], -alpha)
                     alpha = nrm2(c)
-                    c = scal(1.0/alpha, c)
-                    u = scal(1.0/alpha, u)
+                    scal(1.0/alpha, c)
+                    scal(1.0/alpha, u)
 
                     new_CU.append((c, u))
                 CU[:] = new_CU
