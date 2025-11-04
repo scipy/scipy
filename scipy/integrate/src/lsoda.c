@@ -1,5 +1,6 @@
 #include "lsoda.h"
 #include <float.h>
+#include <stdio.h>
 
 // Forward declarations (these functions are implemented later in this file)
 static void ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, double* ewt);
@@ -181,7 +182,7 @@ cfode(const int meth, double* elco, double* tesco)
         for (int nq = 1; nq < 12; nq++)
         {
             double rq1fac = rqfac;
-            rqfac = rqfac / nq;
+            rqfac = rqfac / (nq + 1);  // Fortran: rqfac/nq where Fortran nq = C nq + 1
             pc[nq] = 0.0;
             for (int ib = 0; ib <= nq - 1; ib++)
             {
@@ -263,11 +264,11 @@ cfode(const int meth, double* elco, double* tesco)
  * @brief Computes and processes the matrix P = I - h*el[0]*J, where J is an approximation to the Jacobian.
  *
  * prja is called by stoda to compute and process the matrix P.
- * - J is computed by the user-supplied routine jac if miter == 0 or 3, or by finite differencing if miter == 1 or 4.
+ * - J is computed by the user-supplied routine jac if miter == 1 or 4, or by finite differencing if miter == 2 or 5.
  * - J, scaled by -h*el[0], is stored in wm.
  * - The norm of J (matrix norm consistent with the weighted max-norm on vectors given by vmnorm) is computed, and J is overwritten by P.
  * - P is then subjected to LU decomposition in preparation for later solution of linear systems with P as coefficient matrix.
- *   This is done by dgetrf if miter == 0 or 1, and by dgbtrf if miter == 3 or 4.
+ *   This is done by dgetrf if miter == 1 or 2, and by dgbtrf if miter == 4 or 5.
  *
  * In addition to variables described previously, communication with prja uses the following:
  * @param y      Array containing predicted values on entry.
@@ -278,7 +279,7 @@ cfode(const int meth, double* elco, double* tesco)
  *               wm also contains the following matrix-related data:
  *               - wm[0] = sqrt(uround), used in numerical Jacobian increments.
  * @param iwm    Integer work space containing pivot information, starting at iwm[20].
- *               iwm also contains the band parameters ml = iwm[0] and mu = iwm[1] if miter == 3 or 4.
+ *               iwm also contains the band parameters ml = iwm[0] and mu = iwm[1] if miter == 4 or 5.
  * @param el0    el[0] (input).
  * @param pdnorm Norm of Jacobian matrix (output).
  * @param ierpj  Output error flag: 0 if no trouble, >0 if P matrix found to be singular.
@@ -299,17 +300,17 @@ prja(
     double hl0 = S->h * S->el0;
 
     // Return on unused miter value.
-    if (S->miter == 2) { return; }
+    if (S->miter == 3) { return; }
 
     // Unknown miter values via F77 Arithmetic GOTO should fall through the
-    // miter == 0 case. Hence the negation in the conditions.
-    // Check if miter is 0, 1 or unexpected value.
-    if ((S->miter != 3) && (S->miter != 4))
+    // miter == 1 case. Hence the negation in the conditions.
+    // Check if miter is 1, 2 or unexpected value.
+    if ((S->miter != 4) && (S->miter != 5))
     {
-        // If miter is 0 or unexpected value
-        if (S->miter != 1)
+        // If miter is 1 or unexpected value
+        if (S->miter == 1)
         {
-            // If miter is 0, call jac and multiply by scalar
+            // If miter is 1, call jac and multiply by scalar
             int lenp = S->n * S->n;
             for (int i = 0; i < lenp; i++)
             {
@@ -324,7 +325,7 @@ prja(
                 wm[i + 2] = wm[i + 2]*con;
             }
         } else {
-            // miter is 1, make n calls to f to approximate j
+            // miter is 2, make n calls to f to approximate j
             double fac = vmnorm(S->n, savf, ewt);
             double r0 = 1000.0 * fabs(S->h) * S->uround * S->n * fac;
             if (r0 == 0.0) { r0 = 1.0; }
@@ -369,13 +370,13 @@ prja(
         return;
     }
 
-    // Handle banded matrix cases (miter 3 and 4)
+    // Handle banded matrix cases (miter 4 and 5)
     ml = iwm[0];
     mu = iwm[1];
     mband = ml + mu + 1;
     meband = mband + ml;
 
-    if (S->miter == 3)
+    if (S->miter == 4)
     {
         // Call jac and multiply by scalar.
         ml2 = ml + 2;
@@ -393,7 +394,7 @@ prja(
             wm[i + 2] = wm[i + 2] * con;
         }
         // 420
-    } else if (S->miter == 4) {
+    } else if (S->miter == 5) {
         // make mband calls to f to approximate j.
         mba = int_min(mband, S->n);
         int meb1 = meband - 1;
@@ -462,25 +463,25 @@ prja(
 /**
  * @brief Manages the solution of the linear system arising from a chord iteration.
  *
- * This routine is called if miter != 0.
- * - If miter is 0 or 1, it calls dgetrs to solve the system.
- * - If miter == 2, it updates the coefficient h*el0 in the diagonal matrix, and then computes the solution.
- * - If miter is 3 or 4, it calls dgbtrs.
+ * This routine is called if miter != 1.
+ * - If miter is 1 or 2, it calls dgetrs to solve the system.
+ * - If miter == 3, it updates the coefficient h*el0 in the diagonal matrix, and then computes the solution.
+ * - If miter is 4 or 5, it calls dgbtrs.
  *
  * Communication with solsy uses the following variables:
- * @param wm   Real work space containing the inverse diagonal matrix if miter == 3,
+ * @param wm   Real work space containing the inverse diagonal matrix if miter == 4,
  *             and the LU decomposition of the matrix otherwise.
  *             Storage of matrix elements starts at wm[2].
  *             wm also contains the following matrix-related data:
  *             - wm[0] = sqrt(uround) (not used here)
- *             - wm[1] = hl0, the previous value of h*el0, used if miter == 2
+ *             - wm[1] = hl0, the previous value of h*el0, used if miter == 3
  * @param iwm  Integer work space containing pivot information, starting at iwm[20],
- *             if miter is 0, 1, 3, or 4. iwm also contains band parameters
- *             ml = iwm[0] and mu = iwm[1] if miter is 3 or 4.
+ *             if miter is 1, 2, 4, or 5. iwm also contains band parameters
+ *             ml = iwm[0] and mu = iwm[1] if miter is 4 or 5.
  * @param x    The right-hand side vector on input, and the solution vector on output, of length n.
  * @param tem  Vector of work space of length n, not used in this version.
  * @param iersl Output flag (in common). iersl = 0 if no trouble occurred,
- *              iersl = 1 if a singular matrix arose with miter == 2.
+ *              iersl = 1 if a singular matrix arose with miter == 3.
  *
  * This routine also uses the common variables el0, h, miter, and n.
  */
@@ -491,11 +492,11 @@ solsy(double* wm, int* iwm, double* x, double* tem, lsoda_common_struct_t* S)
     int int1 = 1, ierr = 0;
     S->iersl = 0;
 
-    if ((S->miter == 0) || (S->miter == 1))
+    if ((S->miter == 1) || (S->miter == 2))
     {
         dgetrs_("N", &S->n, &int1, &wm[2], &S->n, &iwm[20], x, &S->n, &ierr);
         return;
-    } else if (S->miter == 2) {
+    } else if (S->miter == 3) {
         double phl0 = wm[1];
         double hl0 = S->h * S->el0;
         wm[1] = hl0;
@@ -519,7 +520,7 @@ solsy(double* wm, int* iwm, double* x, double* tem, lsoda_common_struct_t* S)
             x[i] = wm[i + 2] * x[i];
         }
         // 340
-    } else if ((S->miter == 3) || (S->miter == 4)) {
+    } else if ((S->miter == 4) || (S->miter == 5)) {
         int ml = iwm[0];
         int mu = iwm[1];
         int meband = 2*ml + mu + 1;
@@ -881,8 +882,15 @@ stoda_get_predicted_values(lsoda_common_struct_t* S, double* yh1)
     // to force pjac to be called, if a jacobian is involved.
     // in any case, pjac is called at least every msbp steps.
 
-    if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
-    if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
+    // NOTE: Only check rc/msbp conditions if Jacobian was NOT just computed.
+    // After prja sets rc=1.0 and jcur=1, we may retry with reduced step size
+    // which modifies rc. We should not request another Jacobian evaluation
+    // until jcur is reset to 0 (after corrector convergence at line 1124).
+    // This matches Fortran behavior and prevents excessive Jacobian evaluations.
+    if (S->jcur == 0) {
+        if (fabs(S->rc - 1.0) > S->ccmax) { S->ipup = S->miter; }
+        if (S->nst >= S->nslp + S->msbp) { S->ipup = S->miter; }
+    }
 
     S->tn = S->tn + S->h;
 
@@ -1088,7 +1096,12 @@ stoda(
                 for (int i = 0; i < S->n; i++) { yh[i + nyh] = S->h * savf[i]; } // 650
                 S->ipup = S->miter;
                 S->ialth = 5;
-                if (S->nq == 1) { continue; }
+                if (S->nq == 1) {
+                    // Already at order 1, go directly to prediction (label 200)
+                    stoda_get_predicted_values(S, yh);
+                    pnorm = vmnorm(S->n, yh, ewt);
+                    continue;
+                }
                 S->nq = 1;
                 S->l = 2;
                 stoda_reset(S);  // 150
@@ -1544,9 +1557,15 @@ void lsoda(
     // if istate .gt. 1 but the flag init shows that initialization has
     // not yet been done, an error return occurs.
     // if istate = 1 and tout = t, jump to block g and return immediately.
-    if (*istate < 1 || *istate > 3) { lsoda_mark_error(istate, &S->illin); return; } // istate illegal
-    if (*itask < 1 || *itask > 5) { lsoda_mark_error(istate, &S->illin); return; }  // itask illegal
-    if (*istate != 1 && S->init == 0) { lsoda_mark_error(istate, &S->illin); return; } // istate > 1 but LSODA not initialized
+    if (*istate < 1 || *istate > 3) {
+        lsoda_mark_error(istate, &S->illin); return;
+    } // istate illegal
+    if (*itask < 1 || *itask > 5) {
+        lsoda_mark_error(istate, &S->illin); return;
+    }  // itask illegal
+    if (*istate != 1 && S->init == 0) {
+        lsoda_mark_error(istate, &S->illin); return;
+    } // istate > 1 but LSODA not initialized
     // Fortran code has some tricky go to logic for istate handling hence despite the
     // code duplication the states are handled in separate blocks for, mostly, sanity.
     if (*istate == 1)
@@ -1566,9 +1585,9 @@ void lsoda(
         S->n = neq;
         if ((itol < 1) || (itol > 4)) { lsoda_mark_error(istate, &S->illin); return; }
         if ((*iopt < 0) || (*iopt > 1)) { lsoda_mark_error(istate, &S->illin); return; }
-        if (jt == 2 || jt < 0 || jt > 4) { lsoda_mark_error(istate, &S->illin); return; }
+        if (jt == 3 || jt < 1 || jt > 5) { lsoda_mark_error(istate, &S->illin); return; }
         S->jtyp = jt;
-        if (jt > 1)
+        if (jt > 2)
         {
             ml = iwork[0];
             mu = iwork[1];
@@ -1627,8 +1646,8 @@ void lsoda(
         len1n = 20 + (S->mxordn + 1) * S->nyh;
         len1s = 20 + (S->mxords + 1) * S->nyh;
         S->lwm = len1s;
-        if (jt <= 1) { lenwm = S->n * S->n + 2; }
-        if (jt >= 3) { lenwm = (2 * ml + mu + 1) * S->n + 2; }
+        if (jt <= 2) { lenwm = S->n * S->n + 2; }  // jt=1,2 use full matrix
+        if (jt >= 4) { lenwm = (2 * ml + mu + 1) * S->n + 2; }  // jt=4,5 use banded matrix
         len1s += lenwm;
         len1c = len1n;
         if (S->meth == 2) { len1c = len1s; }
@@ -1799,9 +1818,9 @@ void lsoda(
         S->n = neq;
         if ((itol < 1) || (itol > 4)) { lsoda_mark_error(istate, &S->illin); return; }
         if ((*iopt < 0) || (*iopt > 1)) { lsoda_mark_error(istate, &S->illin); return; }
-        if (jt == 2 || jt < 0 || jt > 4) { lsoda_mark_error(istate, &S->illin); return; }
+        if (jt == 3 || jt < 1 || jt > 5) { lsoda_mark_error(istate, &S->illin); return; }
         S->jtyp = jt;
-        if (jt > 1)
+        if (jt > 2)
         {
             ml = iwork[0];
             mu = iwork[1];
@@ -1842,8 +1861,8 @@ void lsoda(
         len1n = 20 + (S->mxordn + 1) * S->nyh;
         len1s = 20 + (S->mxords + 1) * S->nyh;
         S->lwm = len1s;
-        if (jt <= 1) { lenwm = S->n * S->n + 2; }  // jt=0,1 use full matrix
-        if (jt >= 3) { lenwm = (2 * ml + mu + 1) * S->n + 2; } // jt=3,4 use banded matrix
+        if (jt <= 2) { lenwm = S->n * S->n + 2; }  // jt=1,2 use full matrix
+        if (jt >= 4) { lenwm = (2 * ml + mu + 1) * S->n + 2; } // jt=4,5 use banded matrix
         len1s += lenwm;
         len1c = len1n;
         if (S->meth == 2) { len1c = len1s; }
@@ -2083,7 +2102,11 @@ void lsoda(
         stoda(&neq, y, &rwork[S->lyh], S->nyh, &rwork[S->lewt],
               &rwork[S->lsavf], &rwork[S->lacor], &rwork[S->lwm], &iwork[S->liwm],
               f, jac, S);
-        if (neq == -1) { return; }
+        if (neq == -1) {
+            // Callback function (f or jac) returned an error
+            *istate = -3;  // Illegal input detected (callback error)
+            return;
+        }
         int kgo = 1 - S->kflag;
 
         // block f.

@@ -5,6 +5,7 @@
 #include "src/lsoda.h"
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 #define PyArray_MAX(a,b) (((a)>(b))?(a):(b))
 
 #ifdef HAVE_BLAS_ILP64
@@ -198,11 +199,9 @@ ode_function_thunk(int *n, double *t, double *y, double *ydot)
         return;
     }
 
-    // Copy result to output array - manual loop instead of memcpy
+    // Copy result to output array - use memcpy for efficiency
     double *result_data = (double*)PyArray_DATA(result_array);
-    for (int i = 0; i < *n; i++) {
-        ydot[i] = result_data[i];
-    }
+    memcpy(ydot, result_data, (*n) * sizeof(double));
 
     Py_DECREF(result_array);
     Py_DECREF(result);
@@ -375,11 +374,9 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
 
     // Copy result to output array with proper layout handling
     if ((current_odepack_callback->jac_type == 0) && !current_odepack_callback->jac_transpose) {
-        // Full Jacobian (jt=0 user supplied), no transpose needed, use manual loop
+        // Full Jacobian (jt=0 user supplied), no transpose needed, use memcpy
         double *src_data = (double*)PyArray_DATA(result_array);
-        for (ssize_t i = 0; i < (*n) * (*nrowpd); i++) {
-            pd[i] = src_data[i];
-        }
+        memcpy(pd, src_data, (*n) * (*nrowpd) * sizeof(double));
     } else {
         // Need to copy with proper Fortran layout
         npy_intp m = (current_odepack_callback->jac_type == 3) ? (*ml + *mu + 1) : *n;
@@ -536,10 +533,10 @@ compute_lrw_liw(int *lrw, int *liw, int neq, int jt, int ml, int mu,
 {
     int lrn, lrs, nyh, lmat;
 
-    if (jt == 0 || jt == 1) {
+    if (jt == 1 || jt == 2) {
         lmat = neq*neq + 2;
     }
-    else if (jt == 3 || jt == 4) {
+    else if (jt == 4 || jt == 5) {
         lmat = (2*ml + mu + 1)*neq + 2;
     }
     else {
@@ -576,7 +573,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     PyArrayObject *ap_tout = NULL;
     PyObject *extra_args = NULL;
     PyObject *Dfun = Py_None;
-    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 3;
+    int neq, itol = 1, itask = 1, istate = 1, iopt = 0, lrw, *iwork, liw, jt = 4;
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     long ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
@@ -612,8 +609,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     if (o_rtol == Py_None) { o_rtol = NULL; }
     if (o_atol == Py_None) { o_atol = NULL; }
 
-    // Set up jt
-    if (Dfun == Py_None) { jt = 4; }
+    // Set up jt (Jacobian type indicator for LSODA)
+    // jt values: 1=user full, 2=finite-diff full, 4=user banded, 5=finite-diff banded
+    if (Dfun == Py_None) { jt = 5; }
 
     // neither ml nor mu given, mark jt for full jacobian
     if ((ml < 0) && (mu < 0)) { jt -= 3; }
@@ -759,7 +757,6 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     while ((k < ntimes) && (istate > 0))
     {
-        printf("Calling LSODA for k=%ld, t=%g, tout=%g, istate=%d\n", k, t, tout[k], istate);
         tout_ptr = tout + k;
         /* Use tcrit if relevant */
         if (itask == 4) {
@@ -774,6 +771,9 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
         if (crit_ind >= numcrit) { itask = 1; }
 
         lsoda(ode_function_thunk, neq, y, &t, tout_ptr, itol, rtol, atol, &itask, &istate, &iopt, rwork, lrw, iwork, liw, ode_jacobian_thunk, jt, &S);
+
+        // Check for Python errors from callbacks FIRST, before any other processing
+        if (PyErr_Occurred()) { goto fail; }
 
         if (full_output)
         {
@@ -796,7 +796,6 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
             leniw = iwork[17];
             *((int *)PyArray_DATA(ap_mused) + (k-1)) = iwork[18];
         }
-        if (PyErr_Occurred()) { goto fail; }
 
         // copy integration result to output
         for (int i = 0; i < neq; i++) { yout_ptr[i] = y[i]; }
@@ -869,8 +868,248 @@ fail:
 }
 
 
+static char doc_lsoda_step[] =
+    "[y,t,istate] = lsoda(fun, y0, t, tout, rtol, atol, itask, istate, "
+    "rwork, iwork, jac, jt, f_params, tfirst, jac_params)\n"
+    "  Low-level interface to lsoda for single integration step";
+
+/**
+ * @brief Low-level lsoda wrapper matching the old f2py interface
+ *
+ * This provides direct access to lsoda for single-step integration,
+ * allowing the caller to manage rwork/iwork arrays.
+ */
+static PyObject *
+odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
+{
+    PyObject *fcn, *y0, *jac_obj = Py_None;
+    PyArrayObject *ap_y = NULL, *ap_rwork = NULL, *ap_iwork = NULL;
+    PyArrayObject *ap_rtol = NULL, *ap_atol = NULL;
+    PyArrayObject *ap_state_doubles = NULL, *ap_state_ints = NULL;
+    PyObject *extra_args = NULL, *jac_extra_args = NULL;
+
+    double *y, t, tout, *rtol, *atol, *rwork;
+    double *state_doubles = NULL;
+    int *iwork, *state_ints = NULL;
+    int neq, itol, itask, istate, iopt, lrw, liw, jt;
+    long tfirst = 0;
+
+    odepack_callback_t callback = {0};
+
+    static char *kwlist[] = {"fun", "y0", "t", "tout", "rtol", "atol",
+                             "itask", "istate", "rwork", "iwork", "jac", "jt",
+                             "f_params", "tfirst", "jac_params",
+                             "state_doubles", "state_ints", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOddOOiiOOOi|OlOOO", kwlist,
+                                     &fcn, &y0, &t, &tout,
+                                     &ap_rtol, &ap_atol,
+                                     &itask, &istate,
+                                     &ap_rwork, &ap_iwork,
+                                     &jac_obj, &jt,
+                                     &extra_args, &tfirst, &jac_extra_args,
+                                     &ap_state_doubles, &ap_state_ints)) {
+        return NULL;
+    }
+
+    // Handle extra_args
+    if (extra_args == NULL) {
+        if ((extra_args = PyTuple_New(0)) == NULL) {
+            return NULL;
+        }
+    } else {
+        Py_INCREF(extra_args);
+    }
+
+    if (jac_extra_args == NULL) {
+        if ((jac_extra_args = PyTuple_New(0)) == NULL) {
+            Py_DECREF(extra_args);
+            return NULL;
+        }
+    } else {
+        Py_INCREF(jac_extra_args);
+    }
+
+    if (!PyTuple_Check(extra_args)) {
+        PyErr_SetString(odepack_error, "Extra arguments must be in a tuple.");
+        goto fail;
+    }
+
+    if (!PyTuple_Check(jac_extra_args)) {
+        PyErr_SetString(odepack_error, "Jacobian extra arguments must be in a tuple.");
+        goto fail;
+    }
+
+    if (!PyCallable_Check(fcn)) {
+        PyErr_SetString(odepack_error, "The function must be callable.");
+        goto fail;
+    }
+
+    PyObject *jac_func = (jac_obj != Py_None && PyCallable_Check(jac_obj)) ? jac_obj : NULL;
+
+    // Setup callback - jt determines whether Jacobian is user-supplied or internal
+    // For jt, the logic is:
+    //   jt = 0: user-supplied full Jacobian (user supplies, we use)
+    //   jt = 1: internally generated full Jacobian (we generate)
+    //   jt = 3: user-supplied banded Jacobian
+    //   jt = 4: internally generated banded Jacobian
+    int col_deriv = 1;  // Assume Fortran/column-major order
+    if (setup_odepack_callback(&callback, fcn, jac_func, extra_args,
+                                col_deriv, jt, tfirst) < 0) {
+        PyErr_SetString(odepack_error, "Failed to setup callback infrastructure.");
+        goto fail;
+    }
+
+    // Get y0 array
+    ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);
+    if (ap_y == NULL) {
+        goto fail;
+    }
+    if (PyArray_NDIM(ap_y) > 1) {
+        PyErr_SetString(PyExc_ValueError, "Initial condition y0 must be one-dimensional.");
+        goto fail;
+    }
+    neq = PyArray_Size((PyObject *) ap_y);
+    y = (double *) PyArray_DATA(ap_y);
+
+    // Get tolerances
+    ap_rtol = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_rtol, NPY_DOUBLE, 0, 1);
+    if (ap_rtol == NULL) {
+        goto fail;
+    }
+    rtol = (double *) PyArray_DATA(ap_rtol);
+
+    ap_atol = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_atol, NPY_DOUBLE, 0, 1);
+    if (ap_atol == NULL) {
+        goto fail;
+    }
+    atol = (double *) PyArray_DATA(ap_atol);
+
+    // Determine itol based on array sizes
+    npy_intp rtol_size = PyArray_Size((PyObject*)ap_rtol);
+    npy_intp atol_size = PyArray_Size((PyObject*)ap_atol);
+    if (rtol_size == 1 && atol_size == 1) {
+        itol = 1;
+    } else if (rtol_size == 1) {
+        itol = 2;
+    } else if (atol_size == 1) {
+        itol = 3;
+    } else {
+        itol = 4;
+    }
+
+    // Get rwork array
+    ap_rwork = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_rwork, NPY_DOUBLE, 1, 1);
+    if (ap_rwork == NULL) {
+        goto fail;
+    }
+    lrw = PyArray_DIM(ap_rwork, 0);
+    rwork = (double *) PyArray_DATA(ap_rwork);
+
+    // Get iwork array
+    ap_iwork = (PyArrayObject *) PyArray_ContiguousFromObject((PyObject*)ap_iwork, F_INT_NPY, 1, 1);
+    if (ap_iwork == NULL) {
+        goto fail;
+    }
+    liw = PyArray_DIM(ap_iwork, 0);
+    iwork = (int *) PyArray_DATA(ap_iwork);
+
+    // Get state arrays if provided (optional for backward compatibility)
+    if (ap_state_doubles != NULL) {
+        ap_state_doubles = (PyArrayObject *) PyArray_ContiguousFromObject(
+            (PyObject*)ap_state_doubles, NPY_DOUBLE, 1, 1);
+        if (ap_state_doubles == NULL) {
+            goto fail;
+        }
+        if (PyArray_DIM(ap_state_doubles, 0) != LSODA_STATE_DOUBLE_SIZE) {
+            PyErr_Format(odepack_error,
+                "state_doubles must have size %d, got %ld",
+                LSODA_STATE_DOUBLE_SIZE, PyArray_DIM(ap_state_doubles, 0));
+            goto fail;
+        }
+        state_doubles = (double *) PyArray_DATA(ap_state_doubles);
+    }
+
+    if (ap_state_ints != NULL) {
+        ap_state_ints = (PyArrayObject *) PyArray_ContiguousFromObject(
+            (PyObject*)ap_state_ints, F_INT_NPY, 1, 1);
+        if (ap_state_ints == NULL) {
+            goto fail;
+        }
+        if (PyArray_DIM(ap_state_ints, 0) != LSODA_STATE_INT_SIZE) {
+            PyErr_Format(odepack_error,
+                "state_ints must have size %d, got %ld",
+                LSODA_STATE_INT_SIZE, PyArray_DIM(ap_state_ints, 0));
+            goto fail;
+        }
+        state_ints = (int *) PyArray_DATA(ap_state_ints);
+    }
+
+    // iopt is always 1 since we're managing rwork/iwork ourselves
+    iopt = 1;
+
+    // Activate callback
+    activate_odepack_callback(&callback);
+
+    // Initialize or restore LSODA state
+    lsoda_common_struct_t S = {0};
+
+    if (state_doubles != NULL && state_ints != NULL) {
+        // Restore state from arrays (for continuation calls)
+        unpack_lsoda_state(state_doubles, state_ints, &S);
+    } else if (istate > 1) {
+        // Legacy fallback: If istate > 1 but no state arrays provided,
+        // at least set init flag (partial fix, not complete)
+        S.init = 1;
+    }
+
+    lsoda(ode_function_thunk, neq, y, &t, &tout, itol, rtol, atol,
+          &itask, &istate, &iopt, rwork, lrw, iwork, liw,
+          ode_jacobian_thunk, jt, &S);
+
+    // Check if Python error occurred during integration (e.g., in callback functions)
+    if (PyErr_Occurred()) {
+        goto fail;
+    }
+
+    // Save state back to arrays for next call
+    if (state_doubles != NULL && state_ints != NULL) {
+        pack_lsoda_state(&S, state_doubles, state_ints);
+    }
+
+    // Deactivate callback
+    deactivate_odepack_callback();
+    cleanup_odepack_callback(&callback);
+
+    Py_DECREF(extra_args);
+    Py_DECREF(jac_extra_args);
+    Py_DECREF(ap_rtol);
+    Py_DECREF(ap_atol);
+    Py_XDECREF(ap_state_doubles);
+    Py_XDECREF(ap_state_ints);
+
+    // Return (y, t, istate) - y is modified in place, return as reference
+    return Py_BuildValue("Ndi", ap_y, t, istate);
+
+fail:
+    deactivate_odepack_callback();
+    cleanup_odepack_callback(&callback);
+    Py_XDECREF(extra_args);
+    Py_XDECREF(jac_extra_args);
+    Py_XDECREF(ap_y);
+    Py_XDECREF(ap_rtol);
+    Py_XDECREF(ap_atol);
+    Py_XDECREF(ap_rwork);
+    Py_XDECREF(ap_iwork);
+    Py_XDECREF(ap_state_doubles);
+    Py_XDECREF(ap_state_ints);
+    return NULL;
+}
+
+
 static struct PyMethodDef odepacklib_module_methods[] = {
     {"odeint", (PyCFunction) odepack_odeint, METH_VARARGS|METH_KEYWORDS, doc_odeint},
+    {"lsoda", (PyCFunction) odepack_lsoda_step, METH_VARARGS|METH_KEYWORDS, doc_lsoda_step},
     {NULL, NULL, 0, NULL}
 };
 
