@@ -639,7 +639,7 @@ class _spbase(SparseABC):
                 if self.ndim < 3:
                     cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
                     return cs_self._scalar_binopt(other, op)
-                csr_self = self.reshape(1, -1).to_csr()
+                csr_self = self.reshape(1, -1).tocsr()
                 result = csr_self._scalar_binopt(other, op)
                 return result.tocoo().reshape(self.shape)
             else:
