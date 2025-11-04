@@ -8,7 +8,7 @@ from scipy.special._ufuncs import _gen_harmonic, _normalized_gen_harmonic
 # In the following tests, reference values were computed with mpmath.
 #
 
-@pytest.mark.parametrize('typ', [np.int64, np.float64])
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'n, a, ref',
     [(8, 9.0, 1.0020083884212339),
@@ -39,7 +39,7 @@ def test_gen_harmonic(typ, n, a, ref):
     assert_allclose(h, ref, rtol=5e-15)
 
 
-@pytest.mark.parametrize('typ', [np.int64, np.float64])
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'n, a, ref',
     [(10, np.inf, 1.0),
@@ -58,7 +58,7 @@ def test_gen_harmonic_n_nan():
     assert_equal(h, np.nan)
 
 
-@pytest.mark.parametrize('typ', [np.int64, np.float64])
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'j, k, n, a, ref',
     [(400, 5000, 5000, 10.0, 4.2821759663214485e-25),
@@ -76,7 +76,7 @@ def test_normalized_gen_harmonic(typ, j, k, n, a, ref):
     assert_allclose(h, ref, 5e-15)
 
 
-@pytest.mark.parametrize('typ', [np.int64, np.float64])
+@pytest.mark.parametrize('typ', [np.int32, np.int64, np.float64])
 @pytest.mark.parametrize(
     'j, k, n, a, ref',
     [(1, 1, 1, 0.5, 1.0),
