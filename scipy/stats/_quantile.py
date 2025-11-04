@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy.special import betainc
 from scipy._lib._array_api import (
@@ -383,3 +384,35 @@ def _quantile_bc(y, p, n, method, xp):
     elif method == '_nearest':
         k = xp.round(ij)
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
+
+
+
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
+def _xp_searchsorted(x, y, *, side='left', xp=None):
+    # Vectorize np.searchsorted. Assumes search is along last axis, which is always
+    # preserved in the output. Does not support zero-length `x`. For side='right',
+    # NaNs in `y` are inserted to the left, in contrast with np.searchsorted.
+    xp = array_namespace(x, y) if xp is None else xp
+    x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
+
+    a = xp.full(y.shape, 0)
+    n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
+    b = xp.broadcast_to(n, y.shape)
+
+    if side=='right':
+        n_nans = x.shape[-1] - n
+        a, b = a + n_nans, b + n_nans
+        b = xp.where(n > 0, b, b - 1)  # handle all nan case?
+        x, y = -xp.flip(x, axis=-1), -y
+
+    # while xp.any(b - a > 1):
+    # refactored to for loop with ~log2(n) iterations for JAX JIT
+    for i in range(int(math.log2(x.shape[-1])) + 1):
+        c = (a + b) // 2
+        x0 = xp.take_along_axis(x, c, axis=-1)
+        j = x0 >= y
+        b = xp.where(j, c, b)
+        a = xp.where(j, a, c)
+
+    b = xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
+    return b if side == 'left' else  x.shape[-1] - b

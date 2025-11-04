@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 
 from scipy import stats
+from scipy.stats._quantile import _xp_searchsorted
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
@@ -210,3 +211,40 @@ class TestQuantile:
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
+
+
+@_apply_over_batch(('a', 1), ('v', 1))
+def np_searchsorted(a, v, side):
+    return np.searchsorted(a, v, side=side)
+
+
+@make_xp_test_case(_xp_searchsorted)
+class Test_XPSearchsorted:
+    @pytest.mark.parametrize('side', ['left', 'right'])
+    @pytest.mark.parametrize('ties', [False, True])
+    @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('nans', [False, True])
+    def test_nd(self, side, ties, shape, nans, xp):
+        rng = np.random.default_rng(945298725498274853)
+        if ties:
+            x = rng.integers(5, size=shape)
+        else:
+            x = rng.random(shape)
+        # float32 is to accommodate JAX - nextafter with `float64` is too small?
+        x = np.asarray(x, dtype=np.float32)
+        xr = np.nextafter(x, np.inf)
+        xl = np.nextafter(x, -np.inf)
+        x_ = np.asarray([-np.inf, np.inf])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (2,))
+        y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
+        if nans:
+            # all elements of a slice are NaN and side='right',
+            # _xp_searchsorted has a different convention
+            mask = rng.random(shape) < 0.1
+            x[mask] = np.nan
+        x = np.sort(x, axis=-1)
+        x, y = np.astype(x, np.float64), np.astype(y, np.float64)
+        ref = xp.asarray(np_searchsorted(x, y, side=side))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = _xp_searchsorted(x, y, side=side)
+        xp_assert_equal(res, ref)
