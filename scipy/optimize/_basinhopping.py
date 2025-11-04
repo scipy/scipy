@@ -5,7 +5,8 @@ import numpy as np
 import math
 import inspect
 import scipy.optimize
-from scipy._lib._util import check_random_state, _transition_to_rng, wrapped_inspect_signature
+from scipy._lib._util import (check_random_state, _transition_to_rng,
+                              wrapped_inspect_signature)
 
 __all__ = ['basinhopping']
 

@@ -10,8 +10,6 @@ Functions
 
 """
 
-from inspect import signature
-
 import numpy as np
 from scipy._lib._util import wrapped_inspect_signature
 from ._optimize import (OptimizeResult, _check_unknown_options,

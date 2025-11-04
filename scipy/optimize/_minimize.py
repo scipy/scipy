@@ -10,7 +10,6 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
-import inspect
 from warnings import warn
 
 import numpy as np
