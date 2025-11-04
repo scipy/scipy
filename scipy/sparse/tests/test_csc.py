@@ -100,11 +100,9 @@ def test_argmax_overflow(ax):
     assert A[ii, jj] == A[-2, -2]
 
 
-# broken in 1.16: comparison, truediv, maximum, minimum.
-#   truediv becomes dense for floats so has always broken with this kind of shape
 @pytest.mark.timeout(2)  # only slow when broken (when spurious conversion occurs)
-@pytest.mark.parametrize("op", (operator.ne, operator.lt, operator.gt, operator.mul,
-                                operator.mul, operator.add, operator.sub,
+@pytest.mark.parametrize("op", (operator.ne, operator.lt, operator.gt,
+                                operator.add, operator.sub, operator.mul,
                                 # truediv, eq, ge, le make dense output so not tested
                                 lambda x, y: x.minimum(y), lambda x, y: x.maximum(y)))
 def test_compressed_rc_conversion_mixup(op):
