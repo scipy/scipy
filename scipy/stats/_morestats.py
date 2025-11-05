@@ -383,6 +383,36 @@ def kstatvar(data, n=2, *, axis=None):
     ----------
     .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstatvar, kstat
+
+    Compute the variance of the first k-statistic for a sample:
+
+    >>> rng = np.random.default_rng(9876543210)
+    >>> data = rng.normal(loc=5, scale=2, size=100)
+    >>> kstatvar(data, n=1)
+    0.04425670450344467
+
+    The variance of the first k-statistic (sample mean) equals k_2/n,
+    where k_2 is the second k-statistic (unbiased sample variance):
+
+    >>> kstat(data, n=2) / len(data)
+    0.04425670450344467
+
+    Compute the variance of the second k-statistic:
+
+    >>> kstatvar(data, n=2)
+    0.00913407623314462
+
+    For a 2D array, compute along a specific axis:
+
+    >>> data_2d = rng.normal(size=(3, 50))
+    >>> kstatvar(data_2d, n=1, axis=1)
+    array([0.01826103, 0.02991741, 0.02254969])
+
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
