@@ -1,8 +1,10 @@
+import math
 import numpy as np
 from scipy.special import betainc
 from scipy._lib._array_api import (
     xp_capabilities,
     xp_ravel,
+    xp_copy,
     array_namespace,
     xp_promote,
     xp_device,
@@ -12,8 +14,8 @@ import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
-    xp = array_namespace(x, p)
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
+    xp = array_namespace(x, p, weights)
 
     if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
         raise ValueError("`x` must have real dtype.")
@@ -21,7 +23,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
         raise ValueError("`p` must have real floating dtype.")
 
-    x, p = xp_promote(x, p, force_floating=True, xp=xp)
+    x, p, weights = xp_promote(x, p, weights, force_floating=True, xp=xp)
     p = xp.asarray(p, device=xp_device(x))
     dtype = x.dtype
 
@@ -61,8 +63,14 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
 
-    y = xp.sort(x, axis=axis, stable=False)
-    y, p = _broadcast_arrays((y, p), axis=axis)
+    if weights is None:
+        y = xp.sort(x, axis=axis, stable=False)
+        y, p = _broadcast_arrays((y, p), axis=axis)
+    else:
+        i_y = xp.argsort(x, axis=axis, stable=False)
+        y = xp.take_along_axis(x, i_y, axis=axis)
+        y, p, weights, i_y = _broadcast_arrays((y, p, weights, i_y), axis=axis)
+        weights = xp.take_along_axis(weights, i_y, axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
         message = "`keepdims` may be False only if the length of `p` along `axis` is 1."
@@ -71,6 +79,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
 
     y = xp.moveaxis(y, axis, -1)
     p = xp.moveaxis(p, axis, -1)
+    weights = weights if weights is None else xp.moveaxis(weights, axis, -1)
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
@@ -101,12 +110,13 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
 
-    return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
+    return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, weights, xp
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
                  jax_jit=False)
-def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
+def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None,
+             weights=None):
     """
     Compute the p-th quantile of the data along the specified axis.
 
@@ -297,13 +307,13 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     """
     # Input validation / standardization
 
-    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims)
-    y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp = temp
+    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights)
+    y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, weights, xp = temp
 
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                   'hazen', 'interpolated_inverted_cdf', 'linear',
                   'median_unbiased', 'normal_unbiased', 'weibull'}:
-        res = _quantile_hf(y, p, n, method, xp)
+        res = _quantile_hf(y, p, n, method, weights, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
     elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
@@ -325,14 +335,28 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     return res[()] if res.ndim == 0 else res
 
 
-def _quantile_hf(y, p, n, method, xp):
+def _quantile_hf(y, p, n, method, weights, xp):
     ms = dict(inverted_cdf=0, averaged_inverted_cdf=0, closest_observation=-0.5,
               interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
               median_unbiased=p/3 + 1/3, normal_unbiased=p/4 + 3/8)
     m = ms[method]
-    jg = p*n + m - 1
-    j = jg // 1
-    g = jg % 1
+    if weights is None:
+        jg = p * n + m - 1
+        j = jg // 1
+        g = jg % 1
+    else:
+        # y_no_nans = xp_copy(y)
+        # y_no_nans = xpx.at(y_no_nans)[xp.isnan(y_no_nans)].set(0.)
+        cumulative_weights = xp.cumulative_sum(weights, axis=-1)
+        n = xp.asarray(n, dtype=xp.int64)
+        n = xp.broadcast_to(n, cumulative_weights.shape[:-1] + (1,))
+        n = xp.take_along_axis(cumulative_weights, n-1, axis=-1)
+        jg = p * n + m
+        j = _xp_searchsorted(cumulative_weights, jg, side='right') - 1
+        j = xp.clip(j, 0)
+        g = jg - xp.take_along_axis(cumulative_weights, j, axis=-1)
+        j = xp.astype(j, y.dtype)
+
     if method == 'inverted_cdf':
         g = xp.astype((g > 0), jg.dtype)
     elif method == 'averaged_inverted_cdf':
@@ -383,3 +407,34 @@ def _quantile_bc(y, p, n, method, xp):
     elif method == '_nearest':
         k = xp.round(ij)
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
+
+
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
+def _xp_searchsorted(x, y, *, side='left', xp=None):
+    # Vectorize np.searchsorted. Assumes search is along last axis, which is always
+    # preserved in the output. Does not support zero-length `x`. For side='right',
+    # NaNs in `y` are inserted to the left, in contrast with np.searchsorted.
+    xp = array_namespace(x, y) if xp is None else xp
+    x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
+
+    a = xp.full(y.shape, 0)
+    n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
+    b = xp.broadcast_to(n, y.shape)
+
+    if side=='right':
+        n_nans = x.shape[-1] - n
+        a, b = a + n_nans, b + n_nans
+        b = xp.where(n > 0, b, b - 1)  # handle all nan case?
+        x, y = -xp.flip(x, axis=-1), -y
+
+    # while xp.any(b - a > 1):
+    # refactored to for loop with ~log2(n) iterations for JAX JIT
+    for i in range(int(math.log2(x.shape[-1])) + 1):
+        c = (a + b) // 2
+        x0 = xp.take_along_axis(x, c, axis=-1)
+        j = x0 >= y
+        b = xp.where(j, c, b)
+        a = xp.where(j, a, c)
+
+    b = xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
+    return b if side == 'left' else  x.shape[-1] - b
