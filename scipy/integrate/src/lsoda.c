@@ -1548,7 +1548,7 @@ void lsoda(
 
     int iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
     double hmx = 0.0, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
-    int len1n, len1s, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwn, lenrws, lenrwc, lf0;
+    int len1n, len1s, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwc, lf0;
     double rtoli, atoli;
 
     // block a.
@@ -1654,8 +1654,6 @@ void lsoda(
         len1 = int_max(len1n, len1s);
         len2 = 3*S->n;
         lenrw = len1 + len2;
-        lenrwn = len1n + len2;
-        lenrws = len1s + len2;
         lenrwc = len1c + len2;
         iwork[16] = lenrw;
         S->liwm = 0;
@@ -1869,8 +1867,6 @@ void lsoda(
         len1 = int_min(len1n, len1s);
         len2 = 3*S->n;
         lenrw = len1 + len2;
-        lenrwn = len1n + len2;
-        lenrws = len1s + len2;
         lenrwc = len1c + len2;
         iwork[16] = lenrw;
         S->liwm = 0;
