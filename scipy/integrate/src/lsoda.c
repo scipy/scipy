@@ -1548,7 +1548,7 @@ void lsoda(
 
     int iflag = 0, ihit = 0, initial_jump = 1, ml = 0, mu = 0;
     double hmx = 0.0, hmin, h0 = 0.0, hmax, tcrit = 0.0, tnext = 0.0, tolsf = 0.0;
-    int len1n, len1s, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwc, lf0;
+    int len1n, len1s = 0, lenwm, len1c, len1, len2, leniw, leniwc, lenrw, lenrwc, lf0;
     double rtoli, atoli;
 
     // block a.
