@@ -1140,10 +1140,10 @@ class RigidTransform:
         returns the rotation corresponding to this rotation matrix
         ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
-        Take a transform ``tf`` and a vector ``v``. When applying the transform
-        to the vector, the result is the same as if the transform was applied
-        to the vector in the following way:
-        ``tf.apply(v) == translation + rotation.apply(v)``
+        When applying a transform `tf` to a vector `v`, the result is the same
+        as if the rotation and translation components were applied to the vector
+        with the following operation:
+        ``tf.apply(v) == translation + rotation.apply(v)``.
 
         Returns
         -------
@@ -1165,19 +1165,17 @@ class RigidTransform:
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
         >>> tf = Tf.from_components(t, r)
-        >>> tf_t, tf_r = tf.as_components()
-        >>> tf_t
+        >>> t, r = tf.as_components()
+        >>> t
         array([2., 3., 4.])
-        >>> tf_r.as_matrix()
+        >>> r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
                [0., 1., 0.]])
 
         The transform applied to a vector is equivalent to the rotation applied
-        to the vector followed by the translation:
+        to the vector, followed by the translation:
 
-        >>> r.apply([1, 0, 0])
-        array([0., 1., 0.])
         >>> t + r.apply([1, 0, 0])
         array([2., 4., 4.])
         >>> tf.apply([1, 0, 0])
