@@ -9,7 +9,6 @@ quadpack_test_src = [
 
 odepacklib = static_library('odepacklib',
   'src/lsoda.c',
-  c_args: ['-Wall', '-Wextra', '-Wpedantic']
 )
 
 vode_lib = static_library('vode_lib',
