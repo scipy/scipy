@@ -265,7 +265,9 @@ def mean(
     if not isinstance(axis, tuple):
         raise ValueError("`axis` must be None, int, or tuple of ints.")
     # Ensure all axes are within bounds
-    if axis != () and ( min(axis) < -(matrix.ndim - 2) or max(axis) > (matrix.ndim - 3)):
+    if (axis != () and
+       (min(axis) < -(matrix.ndim - 2) or max(axis) > (matrix.ndim - 3))
+    ):
         raise ValueError(
             f"axis {axis} is out of bounds for transform with shape "
             f"{matrix.shape[:-2]}."
