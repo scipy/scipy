@@ -1304,14 +1304,14 @@ class lsoda(IntegratorBase):
         self.initialized = False
 
         # State persistence arrays for LSODA internal state
-        # These preserve the solver state between calls
+        # These retain the solver state between calls
         self.state_doubles = zeros(240, dtype=np.float64)  # LSODA_STATE_DOUBLE_SIZE
         self.state_ints = zeros(48, dtype=np.int32)        # LSODA_STATE_INT_SIZE
 
     def reset(self, n, has_jac):
-        # Clear state arrays on reset to avoid contamination from previous integrations
+        # Zero state arrays on reset to avoid contamination from previous steps.
         # State persistence works within a single integration (istate=2), but between
-        # different problems (different n, different equations), we need fresh state
+        # different problems (different n etc.), state needs to be cleared.
         self.state_doubles.fill(0.0)
         self.state_ints.fill(0)
 
@@ -1385,14 +1385,17 @@ class lsoda(IntegratorBase):
             # that pads the Jacobian array with the extra `self.ml` rows
             jac = _banded_jac_wrapper(jac, self.ml, jac_params)
 
-        # Call the low-level lsoda wrapper with state persistence arrays
         # Signature:
+        #
         #    lsoda(fun, y0, t, tout, rtol, atol, itask, istate, rwork, iwork,
         #          jac, jt, f_params, tfirst, jac_params, state_doubles, state_ints)
+        #
+        # "state_doubles" and "state_ints" are arrays for passing internal
+        # state between Python-C code.
         y1, t, istate = self.runner(
             f, y0, t0, t1, rtol, atol, itask, istate, rwork, iwork,
             jac, jt, f_params, 1, jac_params,  # tfirst=1 for (t, y) signature
-            self.state_doubles, self.state_ints  # State persistence
+            self.state_doubles, self.state_ints
         )
 
         self.istate = istate
