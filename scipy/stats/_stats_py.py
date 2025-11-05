@@ -50,7 +50,7 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats_mstats_common import _find_repeats, theilslopes, siegelslopes
+from ._stats_mstats_common import theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
@@ -75,6 +75,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_result_type,
     xp_capabilities,
     xp_ravel,
     _length_nonmasked,
@@ -3057,10 +3058,11 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)'),
+                                ('jax.numpy', 'lazy -> no _axis_nan_policy)')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3172,6 +3174,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
            [ 1.]])
 
     """
+    xp = array_namespace(x)
+
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
@@ -3183,7 +3187,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if len(rng) != 2:
         raise TypeError("`rng` must be a two element sequence.")
 
-    if np.isnan(rng).any():
+    if np.isnan(rng).any():  # OK to use NumPy; this shouldn't be an array
         raise ValueError("`rng` must not contain NaNs.")
 
     rng = (rng[0]/100, rng[1]/100) if rng[0] < rng[1] else (rng[1]/100, rng[0]/100)
@@ -3194,13 +3198,15 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
         interpolation = '_' + interpolation
 
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
     pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 
     if scale != 1.0:
         out /= scale
 
-    return out[()] if keepdims else np.squeeze(out, axis=axis)[()]
+    out = out if keepdims else xp.squeeze(out, axis=-1)
+    return out[()] if out.ndim == 0 else out
 
 
 def _mad_1d(x, center, nan_policy):
@@ -3628,7 +3634,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
@@ -3692,13 +3698,15 @@ def trim_mean(a, proportiontocut, axis=0):
     array([ 2.5, 25. ])
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
 
-    if a.size == 0:
-        return _get_nan(a)
+    a = xp.asarray(a)
+
+    if xp_size(a) == 0:
+        return _get_nan(a, xp=xp)
 
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
@@ -3707,11 +3715,13 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return np.mean(atmp[tuple(sl)], axis=axis)
+    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    return xp.mean(trimmed, axis=axis)
 
 
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
@@ -8433,7 +8443,7 @@ def kruskal(*samples, nan_policy='propagate', axis=0):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -8519,9 +8529,10 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+                 jax_jit=False)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
-def friedmanchisquare(*samples):
+def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
 
     The Friedman test tests the null hypothesis that repeated samples of
@@ -8536,6 +8547,11 @@ def friedmanchisquare(*samples):
     sample1, sample2, sample3... : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8579,33 +8595,34 @@ def friedmanchisquare(*samples):
     """
     k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of samples must be given '
+        raise ValueError('At least 3 samples must be given '
                          f'for Friedman test, got {k}.')
 
-    n = len(samples[0])
-    for i in range(1, k):
-        if len(samples[i]) != n:
-            raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
+
+    n = samples[0].shape[-1]
+    if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
+        raise ValueError("One or more sample arguments is too small.")
 
     # Rank data
-    data = np.vstack(samples).T
-    data = data.astype(float)
-    for i in range(len(data)):
-        data[i] = rankdata(data[i])
+    # axis-slices are aligned with axis -1 by decorator; stack puts samples along axis 0
+    # The transpose flips this so we can work with axis-slices along -1. This is a
+    # reducing statistic, so both axes 0 and -1 are consumed.
+    data = xp_swapaxes(xp.stack(samples), 0, -1)
+    data, t = _rankdata(data, method='average', return_ties=True)
+    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
-    ties = 0
-    for d in data:
-        _, repnum = _find_repeats(np.array(d, dtype=np.float64))
-        for t in repnum:
-            ties += t * (t*t - 1)
+    ties = xp.sum(t * (t*t - 1), axis=(0, -1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
-    ssbn = np.sum(data.sum(axis=0)**2)
+    ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
     statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    chi2 = _SimpleChi2(k - 1)
-    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FriedmanchisquareResult(statistic, pvalue)
 
 

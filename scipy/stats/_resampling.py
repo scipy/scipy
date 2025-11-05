@@ -11,15 +11,15 @@ from scipy._lib._util import (check_random_state, _rename_parameter, rng_integer
 from scipy._lib._array_api import (
     array_namespace,
     is_numpy,
+    is_array_api_strict,
     xp_capabilities,
     xp_result_type,
     xp_size,
     xp_device,
-    is_array_api_strict,
     xp_swapaxes
 )
 from scipy._lib import array_api_extra as xpx
-from scipy.special import ndtr, ndtri
+from scipy.special import ndtr, ndtri, comb, factorial
 from scipy import stats
 
 from ._common import ConfidenceInterval
@@ -1047,7 +1047,6 @@ def _wrap_kwargs(fun):
 def _power_iv(rvs, test, n_observations, significance, vectorized,
               n_resamples, batch, kwargs):
     """Input validation for `monte_carlo_test`."""
-
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
@@ -1063,11 +1062,6 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
                    "must equal `len(n_observations)`.")
         raise ValueError(message)
 
-    significance = np.asarray(significance)[()]
-    if (not np.issubdtype(significance.dtype, np.floating)
-            or np.min(significance) < 0 or np.max(significance) > 1):
-        raise ValueError("`significance` must contain floats between 0 and 1.")
-
     kwargs = dict() if kwargs is None else kwargs
     if not isinstance(kwargs, dict):
         raise TypeError("`kwargs` must be a dictionary that maps keywords to arrays.")
@@ -1075,19 +1069,28 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     vals = kwargs.values()
     keys = kwargs.keys()
 
+    xp = array_namespace(*n_observations, significance, *vals)
+
+    significance = xp.asarray(significance)
+    if (not xp.isdtype(significance.dtype, "real floating")
+            or xp.min(significance) < 0 or xp.max(significance) > 1):
+        raise ValueError("`significance` must contain floats between 0 and 1.")
+
     # Wrap callables to ignore unused keyword arguments
     wrapped_rvs = [_wrap_kwargs(rvs_i) for rvs_i in rvs]
 
     # Broadcast, then ravel nobs/kwarg combinations. In the end,
     # `nobs` and `vals` have shape (# of combinations, number of variables)
-    tmp = np.asarray(np.broadcast_arrays(*n_observations, *vals))
+    # todo: find a better way to do this without combining arrays
+    tmp = xp.stack(xp.broadcast_arrays(*n_observations, *vals))
     shape = tmp.shape
     if tmp.ndim == 1:
-        tmp = tmp[np.newaxis, :]
+        tmp = xp.expand_dims(tmp, axis=0)
     else:
-        tmp = tmp.reshape((shape[0], -1)).T
+        tmp = xp.reshape(tmp, (shape[0], -1)).T
     nobs, vals = tmp[:, :len(rvs)], tmp[:, len(rvs):]
-    nobs = nobs.astype(int)
+    integer_dtype = xp_result_type(*n_observations, xp=xp)
+    nobs = xp.astype(nobs, integer_dtype)
 
     if not callable(test):
         raise TypeError("`test` must be callable.")
@@ -1095,10 +1098,15 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     if vectorized is None:
         vectorized = 'axis' in inspect.signature(test).parameters
 
+    test_vectorized = test
     if not vectorized:
+        if not is_numpy(xp):
+            message = (f"When using array library {xp.__name__}, `test` must be "
+                       "be vectorized and accept argument `axis`.")
+            raise TypeError(message)
+
         test_vectorized = _vectorize_statistic(test)
-    else:
-        test_vectorized = test
+
     # Wrap `test` function to ignore unused kwargs
     test_vectorized = _wrap_kwargs(test_vectorized)
 
@@ -1114,10 +1122,10 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             raise ValueError("`batch` must be a positive integer or None.")
 
     return (wrapped_rvs, test_vectorized, nobs, significance, vectorized,
-            n_resamples_int, batch_iv, vals, keys, shape[1:])
+            n_resamples_int, batch_iv, vals, keys, shape[1:], xp)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(allow_dask_compute=True, jax_jit=False)
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1315,33 +1323,36 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     tmp = _power_iv(rvs, test, n_observations, significance,
                     vectorized, n_resamples, batch, kwargs)
     (rvs, test, nobs, significance,
-     vectorized, n_resamples, batch, args, kwds, shape)= tmp
+     vectorized, n_resamples, batch, args, kwds, shape, xp) = tmp
 
     batch_nominal = batch or n_resamples
     pvalues = []  # results of various nobs/kwargs combinations
-    for nobs_i, args_i in zip(nobs, args):
+    for i in range(nobs.shape[0]):
+        nobs_i, args_i = nobs[i, ...], args[i, ...]
         kwargs_i = dict(zip(kwds, args_i))
         pvalues_i = []  # results of batches; fixed nobs/kwargs combination
         for k in range(0, n_resamples, batch_nominal):
             batch_actual = min(batch_nominal, n_resamples - k)
-            resamples = [rvs_j(size=(batch_actual, nobs_ij), **kwargs_i)
+            resamples = [rvs_j(size=(batch_actual, int(nobs_ij)), **kwargs_i)
                          for rvs_j, nobs_ij in zip(rvs, nobs_i)]
             res = test(*resamples, **kwargs_i, axis=-1)
             p = getattr(res, 'pvalue', res)
             pvalues_i.append(p)
         # Concatenate results from batches
-        pvalues_i = np.concatenate(pvalues_i, axis=-1)
+        pvalues_i = xp.concat(pvalues_i, axis=-1)
         pvalues.append(pvalues_i)
     # `test` can return result with array of p-values
     shape += pvalues_i.shape[:-1]
     # Concatenate results from various nobs/kwargs combinations
-    pvalues = np.concatenate(pvalues, axis=0)
+    pvalues = xp.concat(pvalues, axis=0)
     # nobs/kwargs arrays were raveled to single axis; unravel
-    pvalues = pvalues.reshape(shape + (-1,))
+    pvalues = xp.reshape(pvalues, shape + (-1,))
     if significance.ndim > 0:
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
-        significance = np.expand_dims(significance, newdims)
-    powers = np.mean(pvalues < significance, axis=-1)
+        significance = xpx.expand_dims(significance, axis=newdims)
+
+    float_dtype = xp_result_type(significance, pvalues, xp=xp)
+    powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)
 
     return PowerResult(power=powers, pvalues=pvalues)
 

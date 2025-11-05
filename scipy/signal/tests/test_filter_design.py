@@ -2475,6 +2475,7 @@ class TestBessel:
             xp_assert_close(p, xp.asarray([-0.3+0j]), rtol=1e-14)
             assert math.isclose(k, 0.3, rel_tol=1e-14)
 
+    @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_high_order(self, xp):
         # high even order, 'phase'
         z, p, k = bessel(24, xp.asarray(100), analog=True, output='zpk')
@@ -2683,6 +2684,7 @@ class TestBessel:
         scale2 = besselap(N, 'mag', xp=xp)[1] / besselap(N, 'phase', xp=xp)[1]
         assert_array_almost_equal(scale, scale2, decimal=1)
 
+    @pytest.mark.xfail(reason="Failing in mypy workflow - see gh-23902")
     def test_hardcoded(self, xp):
         # Compare to values from original hardcoded implementation
         originals = {

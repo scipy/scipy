@@ -19,6 +19,7 @@ from scipy._lib._array_api import (
     xp_capabilities,
     is_numpy,
     is_jax,
+    is_dask,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -3030,7 +3031,7 @@ def bartlett(*samples, axis=0):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(LeveneResult, n_samples=None)
 def levene(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Levene test for equal variances.
@@ -3051,7 +3052,7 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -3119,62 +3120,57 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_levene`.
     """
+    xp = array_namespace(*samples)
+
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(samples)
     if k < 2:
-        raise ValueError("Must enter at least two input sample vectors.")
+        raise ValueError("Must provide at least two samples.")
 
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=-1, keepdims=True)
+            return (xp.median(x, axis=-1, keepdims=True)
+                    if (is_numpy(xp) or is_dask(xp))
+                    else stats.quantile(x, 0.5, axis=-1, keepdims=True))
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=-1, keepdims=True)
+            return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
+            # keepdims=True doesn't currently work for lazy arrays
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
     Nis = [sample.shape[-1] for sample in samples]
     Ycis = [func(sample) for sample in samples]
     Ntot = sum(Nis)
 
     # compute Zij's
-    Zijs = [np.abs(sample - Yc) for sample, Yc in zip(samples, Ycis)]
+    Zijs = [xp.abs(sample - Yc) for sample, Yc in zip(samples, Ycis)]
 
     # compute Zbari
-    Zbaris = [np.mean(Zij, axis=-1, keepdims=True) for Zij in Zijs]
-    Zbar = sum(Ni*Zbari for Ni, Zbari in zip(Nis, Zbaris))
-    Zbar /= Ntot
+    Zbaris = [xp.mean(Zij, axis=-1, keepdims=True) for Zij in Zijs]
+    Zbar = sum(Ni*Zbari for Ni, Zbari in zip(Nis, Zbaris)) / Ntot
 
     # compute numerator and denominator
     dfd = (Ntot - k)
     numer = dfd * sum(Ni * (Zbari - Zbar)**2
                       for Ni, Zbari in zip(Nis, Zbaris))
     dfn = (k - 1.0)
-    denom = dfn * sum(np.sum((Zij - Zbari)**2, axis=-1, keepdims=True)
+    denom = dfn * sum(xp.sum((Zij - Zbari)**2, axis=-1, keepdims=True)
                       for Zij, Zbari in zip(Zijs, Zbaris))
 
     W = numer / denom
-    W = np.squeeze(W, axis=-1)
-    pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=np)
+    W = xp.squeeze(W, axis=-1)
+    dfn, dfd = xp.asarray(dfn, dtype=W.dtype), xp.asarray(dfd, dtype=W.dtype)
+    pval = _get_pvalue(W, _SimpleF(dfn, dfd), 'greater', xp=xp)
     return LeveneResult(W[()], pval[()])
-
-
-def _apply_func(x, g, func):
-    # g is list of indices into x
-    #  separating x into different groups
-    #  func should be applied over the groups
-    g = unique(r_[0, g, len(x)])
-    output = [func(x[g[k]:g[k+1]]) for k in range(len(g) - 1)]
-
-    return asarray(output)
 
 
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
@@ -3182,7 +3178,7 @@ FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
-def fligner(*samples, center='median', proportiontocut=0.05):
+def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -3200,6 +3196,11 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         When `center` is 'trimmed', this gives the proportion of data points
         to cut from each end. (See `scipy.stats.trim_mean`.)
         Default is 0.05.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -3283,37 +3284,36 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=0)
+            return np.median(x, axis=-1, keepdims=True)
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=0)
+            return np.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=0)
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
 
-    Ni = asarray([len(samples[j]) for j in range(k)])
-    Yci = asarray([func(samples[j]) for j in range(k)])
-    Ntot = np.sum(Ni, axis=0)
-    # compute Zij's
-    Zij = [abs(asarray(samples[i]) - Yci[i]) for i in range(k)]
-    allZij = []
-    g = [0]
-    for i in range(k):
-        allZij.extend(list(Zij[i]))
-        g.append(len(allZij))
+    ni = [sample.shape[-1] for sample in samples]
+    N = sum(ni)
 
-    ranks = _stats_py.rankdata(allZij)
-    sample = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    # Implementation follows [3] pg 355 F-K.
+    Xibar = [func(sample) for sample in samples]
+    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
+    a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
-    # compute Aibar
-    Aibar = _apply_func(sample, g, np.sum) / Ni
-    anbar = np.mean(sample, axis=0)
-    varsq = np.var(sample, axis=0, ddof=1)
-    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    # [3] Equation 2.1
+    splits = np.cumsum(ni[:-1])
+    Ai = np.split(a_Ni,  splits, axis=-1)
+    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
+    abar = np.mean(a_Ni, axis=-1)
+    V2 = np.var(a_Ni, axis=-1, ddof=1)
+    statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
+
     chi2 = _SimpleChi2(k-1)
     pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
     return FlignerResult(statistic, pval)
