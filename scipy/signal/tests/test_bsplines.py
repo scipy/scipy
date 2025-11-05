@@ -330,6 +330,7 @@ class TestSepfir2d:
 
     @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
+    @pytest.mark.fail_asan
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
