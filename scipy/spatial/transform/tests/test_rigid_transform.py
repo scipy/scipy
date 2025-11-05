@@ -985,6 +985,13 @@ def test_concatenate(xp):
     xp_assert_close(concatenated2[1].as_matrix(), tf1.as_matrix(), atol=atol)
     xp_assert_close(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
+    # Test ND concatenation
+    tf3 = RigidTransform.from_translation(xp.reshape(xp.arange(18), (3, 2, 3)))
+    tf4 = RigidTransform.from_translation(xp.reshape(xp.arange(18) + 18, (3, 2, 3)))
+    concatenated3 = RigidTransform.concatenate([tf3, tf4])
+    xp_assert_close(concatenated3.as_matrix()[:3, ...], tf3.as_matrix(), atol=atol)
+    xp_assert_close(concatenated3.as_matrix()[3:, ...], tf4.as_matrix(), atol=atol)
+
 
 @make_xp_test_case(RigidTransform.from_matrix)
 def test_input_validation(xp):
