@@ -97,15 +97,21 @@ class TestQuantile:
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
           ((10, 2), None, 0), ((10, 2), None, 0),])
-    def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
+    @pytest.mark.parametrize('weights', [False, True])
+    def test_against_numpy(self, method, shape_x, shape_p, axis, weights, xp):
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        ref = np.quantile(x, p, axis=axis,
+        counts = rng.integers(4, size=shape_x)
+
+        x_ref = xp.repeat(x, counts, axis=axis) if weights else x
+        ref = np.quantile(x_ref, p, axis=axis,
                           method=method[1:] if method.startswith('_') else method)
+
         x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
-        res = stats.quantile(x, p, method=method, axis=axis)
+        weights = counts if weights else None
+        res = stats.quantile(x, p, method=method, weights=weights, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
