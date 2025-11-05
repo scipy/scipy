@@ -19,7 +19,7 @@ from scipy._lib._array_api import (
     xp_swapaxes
 )
 from scipy._lib import array_api_extra as xpx
-from scipy.special import ndtr, ndtri, comb, factorial
+from scipy.special import ndtr, ndtri
 from scipy import stats
 
 from ._common import ConfidenceInterval

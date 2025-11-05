@@ -1598,24 +1598,23 @@ class TestPermutationTest:
         xp_assert_close(res.statistic, expected.statistic, rtol=self.rtol)
         xp_assert_close(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    def test_against_cvm(self):
-        # statistic only available for NumPy
-
+    def test_against_cvm(self, xp):
         x = stats.norm.rvs(size=4, scale=1, random_state=self.rng)
         y = stats.norm.rvs(size=5, loc=3, scale=3, random_state=self.rng)
 
         expected = stats.cramervonmises_2samp(x, y, method='exact')
 
-        def statistic1d(x, y):
-            return stats.cramervonmises_2samp(x, y,
+        def statistic1d(x, y, axis):
+            return stats.cramervonmises_2samp(x, y, axis=axis,
                                               method='asymptotic').statistic
 
         # cramervonmises_2samp has only one alternative, greater
+        x, y = xp.asarray(x), xp.asarray(y)
         res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
                                alternative='greater', rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('axis', (-1, 2))
     @pytest.mark.skip_xp_backends('cupy', reason='no kruskal')
