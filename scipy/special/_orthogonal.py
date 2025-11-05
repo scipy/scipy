@@ -1042,7 +1042,7 @@ def _initial_nodes(n):
 
     See Also
     --------
-    roots_hermite_as
+    roots_hermite_asy
     """
     # Turnover point
     # linear polynomial fit to error of 10, 25, 40, ..., 1000 point rules
