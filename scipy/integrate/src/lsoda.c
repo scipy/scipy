@@ -215,7 +215,7 @@ cfode(const int meth, double* elco, double* tesco)
             tesco[1 + 3*nq] = ragq;
             if (nq < 11)
             {
-                tesco[3*(nq + 1)] = ragq * rqfac / (nq + 1);
+                tesco[3*(nq + 1)] = ragq * rqfac / (nq + 2);
             }
             tesco[2 + 3*(nq - 1)] = ragq;
         }
@@ -429,7 +429,7 @@ prja(
                 fac = -hl0 / r;
                 int i1 = int_max(jj - mu, 0);
                 int i2 = int_min(jj + ml, S->n - 1);
-                int ii = (jj + 1) * meb1 - ml + 1;
+                int ii = (jj + 1) * meb1 - ml + 2;
                 for (int i = i1; i <= i2; i++)
                 {
                     wm[ii + i] = (ftem[i] - savf[i]) * fac;
