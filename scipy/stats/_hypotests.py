@@ -1,6 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
-from math import comb
+import math
 import numpy as np
 import warnings
 from itertools import combinations
@@ -9,7 +9,8 @@ from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size, xp_promote
+from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
+                                   xp_promote, xp_result_type)
 from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
@@ -441,7 +442,7 @@ def _psi1_mod(x):
     return tot
 
 
-def _cdf_cvm_inf(x):
+def _cdf_cvm_inf(x, *, xp=None):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
@@ -455,23 +456,26 @@ def _cdf_cvm_inf(x):
     The function is not expected to be accurate for large values of x, say
     x > 4, when the cdf is very close to 1.
     """
-    x = np.asarray(x)
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
 
     def term(x, k):
         # this expression can be found in [2], second line of (1.3)
-        u = np.exp(gammaln(k + 0.5) - gammaln(k+1)) / (np.pi**1.5 * np.sqrt(x))
+        u = math.exp(gammaln(k + 0.5) - gammaln(k+1)) / (xp.pi**1.5 * xp.sqrt(x))
         y = 4*k + 1
         q = y**2 / (16*x)
-        b = kv(0.25, q)
-        return u * np.sqrt(y) * np.exp(-q) * b
+        b = xp.asarray(kv(0.25, np.asarray(q)), dtype=u.dtype)  # not automatic?
+        return u * math.sqrt(y) * xp.exp(-q) * b
 
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    tot = xp.zeros_like(x, dtype=x.dtype)
+    cond = xp.ones_like(x, dtype=xp.bool)
     k = 0
-    while np.any(cond):
+    while xp.any(cond):
         z = term(x[cond], k)
-        tot[cond] = tot[cond] + z
-        cond[cond] = np.abs(z) >= 1e-7
+        # tot[cond] = tot[cond] + z
+        tot = xpx.at(tot)[cond].add(z)
+        # cond[cond] = np.abs(z) >= 1e-7
+        cond = xpx.at(cond)[cond].set(xp.abs(z) >= 1e-7)
         k += 1
 
     return tot
@@ -1550,7 +1554,7 @@ def _pval_cvm_2samp_exact(s, m, n):
 
     # bound maximum value that may appear in `gs` (remember both rows!)
     zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
-    combinations = comb(m + n, m)  # sum of row 2
+    combinations = math.comb(m + n, m)  # sum of row 2
     max_gs = max(zeta_bound, combinations)
     dtype = np.min_scalar_type(max_gs)
 
@@ -1577,26 +1581,28 @@ def _pval_cvm_2samp_exact(s, m, n):
     return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
-def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k):
+def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
     # compute expected value and variance of T (eq. 11 and 14 in [2])
     et = (1 + 1 / N) / 6
     vt = (N + 1) * (4 * k * N - 3 * (nx ** 2 + ny ** 2) - 2 * k)
     vt = vt / (45 * N ** 2 * 4 * k)
 
     # computed the normalized statistic (eq. 15 in [2])
-    tn = 1 / 6 + (t - et) / np.sqrt(45 * vt)
+    tn = 1 / 6 + (t - et) / math.sqrt(45 * vt)
 
     # approximate distribution of tn with limiting distribution
     # of the one-sample test statistic
     # if tn < 0.003, the _cdf_cvm_inf(tn) < 1.28*1e-18, return 1.0 directly
     p = xpx.apply_where(tn >= 0.003,
                         (tn,),
-                        lambda tn: np.maximum(0., 1. - _cdf_cvm_inf(tn)),
+                        lambda tn: xp.clip(1. - _cdf_cvm_inf(tn, xp=xp), 0.),
                         fill_value = 1.)
     return p
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'needs rankdata'),
+                                ('dask.array', 'needs rankdata')],
+                 cpu_only=True, jax_jit=False)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
@@ -1703,6 +1709,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     chosen significance level in this example.
 
     """
+    xp = array_namespace(x, y)
     nx = x.shape[-1]
     ny = y.shape[-1]
 
@@ -1718,30 +1725,34 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
             method = 'exact'
 
     # axis=-1 is guaranteed by _axis_nan_policy decorator
-    xa = np.sort(x, axis=-1)
-    ya = np.sort(y, axis=-1)
+    xa = xp.sort(x, axis=-1)
+    ya = xp.sort(y, axis=-1)
 
     # get ranks of x and y in the pooled sample
-    z = np.concatenate([xa, ya], axis=-1)
+    z = xp.concat([xa, ya], axis=-1)
     # in case of ties, use midrank (see [1])
     r = scipy.stats.rankdata(z, method='average', axis=-1)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+    r = xp.astype(r, dtype, copy=False)
     rx = r[..., :nx]
     ry = r[..., nx:]
 
     # compute U (eq. 10 in [2])
-    u = nx * np.sum((rx - np.arange(1, nx+1))**2, axis=-1)
-    u += ny * np.sum((ry - np.arange(1, ny+1))**2, axis=-1)
+    u = (nx * xp.sum((rx - xp.arange(1, nx+1, dtype=dtype))**2, axis=-1)
+         + ny * xp.sum((ry - xp.arange(1, ny+1, dtype=dtype))**2, axis=-1))
 
     # compute T (eq. 9 in [2])
     k, N = nx*ny, nx + ny
     t = u / (k*N) - (4*k - 1)/(6*N)
 
     if method == 'exact':
-        p = _pval_cvm_2samp_exact(u, nx, ny)
+        p = xp.asarray(_pval_cvm_2samp_exact(np.asarray(u), nx, ny), dtype=dtype)
     else:
-        p = _pval_cvm_2samp_asymptotic(t, N, nx, ny, k)
+        p = _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, xp=xp)
 
-    return CramerVonMisesResult(statistic=t[()], pvalue=p[()])
+    t = t[()] if t.ndim == 0 else t
+    p = p[()] if p.ndim == 0 else p
+    return CramerVonMisesResult(statistic=t, pvalue=p)
 
 
 class TukeyHSDResult:
