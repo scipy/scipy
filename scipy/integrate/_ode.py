@@ -90,7 +90,7 @@ from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import _vode
 from . import _dop
-from ._odepack import odeint, lsoda as lsoda_step
+from ._odepack import lsoda as lsoda_step
 
 
 _vode_int_dtype = _vode.types.intvar.dtype
@@ -369,8 +369,7 @@ class ode:
         n_prev = len(self._y)
         if not n_prev:
             self.set_integrator('')  # find first available integrator
-        # IMPORTANT: Must copy to avoid aliasing with user's array.
-        # The C code modifies y in place, so without copy, it would modify the input array.
+        # NOTE: The C code modifies y in place, hence the copy.
         self._y = asarray(y, self._integrator.scalar).copy()
         self.t = t
         self._integrator.reset(len(self._y), self.jac is not None)
@@ -1387,8 +1386,9 @@ class lsoda(IntegratorBase):
             jac = _banded_jac_wrapper(jac, self.ml, jac_params)
 
         # Call the low-level lsoda wrapper with state persistence arrays
-        # Signature: lsoda(fun, y0, t, tout, rtol, atol, itask, istate, rwork, iwork,
-        #                  jac, jt, f_params, tfirst, jac_params, state_doubles, state_ints)
+        # Signature:
+        #    lsoda(fun, y0, t, tout, rtol, atol, itask, istate, rwork, iwork,
+        #          jac, jt, f_params, tfirst, jac_params, state_doubles, state_ints)
         y1, t, istate = self.runner(
             f, y0, t0, t1, rtol, atol, itask, istate, rwork, iwork,
             jac, jt, f_params, 1, jac_params,  # tfirst=1 for (t, y) signature
