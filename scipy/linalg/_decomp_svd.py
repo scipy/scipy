@@ -329,6 +329,15 @@ def orth(A, rcond=None):
         Orthonormal basis for the range of A.
         K = effective rank of A, as determined by rcond
 
+    Notes
+    -----
+    When `A` is batched (i.e., `A.ndim` > 2) each slice over the batch
+    dimensions is processed independently. For a slice with shape
+    `(M, N)`, `orth` will return an array of shape `(M, K)`, where
+    `K` is the effective rank of that slice. Due to this, all slices
+    must produce the same effective rank, and if not, stacking fails with
+    `ValueError: all input arrays must have the same shape`.
+
     See Also
     --------
     svd : Singular value decomposition of a matrix
@@ -390,6 +399,16 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
     Z : (N, K) ndarray
         Orthonormal basis for the null space of A.
         K = dimension of effective null space, as determined by rcond
+
+    Notes
+    -----
+    When `A` is a batched input array (i.e., `A.ndim > 2`) each slice
+    over the batch dimensions is processed independently. For a slice
+    with shape `(M, N)`, `null_space` will return an array of shape
+    `(N, K)`, where `K = N - r`, and `r` is the slice's effective rank.
+    Due to this, all slices must produce the same effective rank, and if
+    not, stacking will fail with `ValueError: all input arrays must have
+    the same shape`.
 
     See Also
     --------
