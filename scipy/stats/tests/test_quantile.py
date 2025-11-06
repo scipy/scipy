@@ -6,6 +6,7 @@ from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
     is_torch,
+    is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
 )
@@ -14,6 +15,7 @@ from scipy._lib._util import _apply_over_batch
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+lazy_xp_modules = [stats]
 
 @_apply_over_batch(('x', 1), ('p', 1))
 def quantile_reference_last_axis(x, p, nan_policy, method):
@@ -70,9 +72,10 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, p, axis=2)
 
-        message = "The input contains nan values"
-        with pytest.raises(ValueError, match=message):
-            stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
+        if not is_jax(xp):  # no data-dependent input validation for lazy arrays
+            message = "The input contains nan values"
+            with pytest.raises(ValueError, match=message):
+                stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
 
         message = "method` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -106,13 +109,16 @@ class TestQuantile:
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
-    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
+        if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
+            pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)

@@ -8,6 +8,7 @@ from numpy.testing import assert_allclose, assert_equal
 from scipy._lib._util import rng_integers
 from scipy._lib._array_api import is_numpy, make_xp_test_case, xp_default_dtype
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib import array_api_extra as xpx
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
@@ -1124,14 +1125,19 @@ class TestMonteCarloHypothesisTest:
         assert res.pvalue == (c1 + 1)/(n_resamples + 1)
 
 
+@make_xp_test_case(power)
 class TestPower:
-    def test_input_validation(self):
+    def xp_normal(self, rng, *, xp, dtype=None):
+        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
+
+    def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
         rng = np.random.default_rng(8519895914314711673)
 
         test = stats.ttest_ind
-        rvs = (rng.normal, rng.normal)
-        n_observations = (10, 12)
+        rvs = (self.xp_normal(rng, xp=xp), self.xp_normal(rng, xp=xp))
+        n_observations = (xp.asarray(10), xp.asarray(12))
 
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
@@ -1141,11 +1147,11 @@ class TestPower:
         with pytest.raises(TypeError, match=message):
             power(test, None, n_observations)
         with pytest.raises(TypeError, match=message):
-            power(test, (rng.normal, 'ekki'), n_observations)
+            power(test, (self.xp_normal(rng, xp=xp), 'ekki'), n_observations)
 
         message = "If `rvs` is a sequence..."
         with pytest.raises(ValueError, match=message):
-            power(test, (rng.normal,), n_observations)
+            power(test, (self.xp_normal(rng, xp=xp),), n_observations)
         with pytest.raises(ValueError, match=message):
             power(test, rvs, (10,))
 
@@ -1153,17 +1159,18 @@ class TestPower:
         with pytest.raises(ValueError, match=message):
             power(test, rvs, n_observations, significance=2)
         with pytest.raises(ValueError, match=message):
-            power(test, rvs, n_observations, significance=np.linspace(-1, 1))
+            power(test, rvs, n_observations, significance=xp.linspace(-1, 1, 50))
 
         message = "`kwargs` must be a dictionary"
         with pytest.raises(TypeError, match=message):
             power(test, rvs, n_observations, kwargs=(1, 2, 3))
 
-        message = "shape mismatch: objects cannot be broadcast"
-        with pytest.raises(ValueError, match=message):
-            power(test, rvs, ([10, 11], [12, 13, 14]))
-        with pytest.raises(ValueError, match=message):
-            power(test, rvs, ([10, 11], [12, 13]), kwargs={'x': [1, 2, 3]})
+        message = "not be broadcast|Chunks do not add|Incompatible shapes"
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13, 14])))
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13])),
+                  kwargs={'x': xp.asarray([1, 2, 3])})
 
         message = "`test` must be callable"
         with pytest.raises(TypeError, match=message):
@@ -1182,95 +1189,109 @@ class TestPower:
             power(test, rvs, n_observations, batch=10.5)
 
     @pytest.mark.slow
-    def test_batch(self):
+    def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `test`
         rng = np.random.default_rng(23492340193)
 
         def test(x, axis):
-            batch_size = 1 if x.ndim == 1 else len(x)
+            batch_size = 1 if x.ndim == 1 else x.shape[0]
             test.batch_size = max(batch_size, test.batch_size)
             test.counter += 1
-            return stats.ttest_1samp(x, 0, axis=axis).pvalue
+            return stats.ttest_1samp(x, xp.asarray(0.), axis=axis).pvalue
         test.counter = 0
         test.batch_size = 0
 
-        kwds = dict(test=test, n_observations=10, n_resamples=1000)
+        kwds = dict(test=test,
+                    n_observations=xp.asarray(10),
+                    n_resamples=1000)
 
         rng = np.random.default_rng(23492340193)
-        res1 = power(**kwds, rvs=rng.normal, batch=1)
-        assert_equal(test.counter, 1000)
-        assert_equal(test.batch_size, 1)
-
-        rng = np.random.default_rng(23492340193)
-        test.counter = 0
-        res2 = power(**kwds, rvs=rng.normal, batch=50)
-        assert_equal(test.counter, 20)
-        assert_equal(test.batch_size, 50)
+        res1 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=1)
+        assert test.counter == 1000
+        assert test.batch_size == 1
 
         rng = np.random.default_rng(23492340193)
         test.counter = 0
-        res3 = power(**kwds, rvs=rng.normal, batch=1000)
-        assert_equal(test.counter, 1)
-        assert_equal(test.batch_size, 1000)
+        res2 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=50)
+        assert test.counter == 20
+        assert test.batch_size == 50
 
-        assert_equal(res1.power, res3.power)
-        assert_equal(res2.power, res3.power)
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res3 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=1000)
+        assert test.counter == 1
+        assert test.batch_size == 1000
+
+        xp_assert_equal(res1.power, res3.power)
+        xp_assert_equal(res2.power, res3.power)
 
     @pytest.mark.slow
-    def test_vectorization(self):
+    def test_vectorization(self, xp):
         # Test that `power` is vectorized as expected
         rng = np.random.default_rng(25495254834552)
+        alternatives = {-1: 'less', 0:'two-sided', 1: 'greater'}
 
         # Single vectorized call
-        popmeans = np.array([0, 0.2])
+        popmeans = xp.asarray([0, 0.2])
         def test(x, alternative, axis=-1):
             # ensure that popmeans axis is zeroth and orthogonal to the rest
-            popmeans_expanded = np.expand_dims(popmeans, tuple(range(1, x.ndim + 1)))
+            popmeans_expanded = xpx.expand_dims(popmeans,
+                                                axis=tuple(range(1, x.ndim + 1)))
+            alternative = alternatives[int(alternative)]
             return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
                                      axis=axis)
 
         # nx and kwargs broadcast against one another
-        nx = np.asarray([10, 15, 20, 50, 100])[:, np.newaxis]
-        kwargs = {'alternative': ['less', 'greater', 'two-sided']}
+        nx = xp.asarray([10, 15, 20, 50, 100])[:, xp.newaxis]
+        kwargs = {'alternative': xp.asarray([-1, 0, 1])}
 
         # This dimension is added to the beginning
-        significance = np.asarray([0.01, 0.025, 0.05, 0.1])
-        res = stats.power(test, rng.normal, nx, significance=significance,
-                          kwargs=kwargs)
+        significance = xp.asarray([0.01, 0.025, 0.05, 0.1])
+        res = stats.power(test, self.xp_normal(rng, xp=xp), nx,
+                          significance=significance, kwargs=kwargs)
 
         # Looping over all combinations
         ref = []
         for significance_i in significance:
-            for nx_i in nx:
+            for i in range(nx.shape[0]):
+                nx_i = nx[i, ...]
                 for alternative_i in kwargs['alternative']:
-                    for popmean_i in popmeans:
+                    for j in range(popmeans.shape[0]):
+                        popmean_j = popmeans[j]
                         def test2(x, axis=-1):
-                            return stats.ttest_1samp(x, popmean_i, axis=axis,
-                                                     alternative=alternative_i)
+                            return stats.ttest_1samp(x, popmean_j, axis=axis,
+                                alternative=alternatives[int(alternative_i)])
 
-                        tmp = stats.power(test2, rng.normal, nx_i,
+                        tmp = stats.power(test2, self.xp_normal(rng, xp=xp), nx_i,
                                           significance=significance_i)
                         ref.append(tmp.power)
-        ref = np.reshape(ref, res.power.shape)
+        ref = xp.reshape(xp.stack(ref), res.power.shape)
 
         # Show that results are similar
-        assert_allclose(res.power, ref, rtol=2e-2, atol=1e-2)
+        xp_assert_close(res.power, ref, rtol=2e-2, atol=1e-2)
 
-    def test_ttest_ind_null(self):
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
+    def test_ttest_ind_null(self, xp):
         # Check that the p-values of `ttest_ind` are uniformly distributed under
         # the null hypothesis
         rng = np.random.default_rng(254952548345528)
 
         test = stats.ttest_ind
-        n_observations = rng.integers(10, 100, size=(2, 10))
-        rvs = rng.normal, rng.normal
-        significance = np.asarray([0.01, 0.05, 0.1])
+        n_observations = (xp.asarray(rng.integers(10, 100, size=(10))),
+                          xp.asarray(rng.integers(10, 100, size=(10))))
+        rvs = self.xp_normal(rng, xp=xp), self.xp_normal(rng, xp=xp)
+        significance = xp.asarray([0.01, 0.05, 0.1])
         res = stats.power(test, rvs, n_observations, significance=significance)
-        significance = np.broadcast_to(significance[:, np.newaxis], res.power.shape)
-        assert_allclose(res.power, significance, atol=1e-2)
+        significance = xp.broadcast_to(significance[:, xp.newaxis], res.power.shape)
+        xp_assert_close(res.power, significance, atol=1e-2)
 
-    def test_ttest_1samp_power(self):
+    @pytest.mark.skip_xp_backends('array_api_strict',
+                                  reason='currently combines integer and float arrays')
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
+    def test_ttest_1samp_power(self, xp):
         # Check simulated ttest_1samp power against reference
         rng = np.random.default_rng(254952548345528)
 
@@ -1284,12 +1305,12 @@ class TestPower:
                [[0.0592903 , 0.29317561, 0.71718121],
                 [0.07094116, 0.56450441, 0.96815163]]]
 
-        kwargs = {'popmean': [0.1, 0.5, 0.9]}
-        n_observations = [[10], [20]]
-        significance = [0.01, 0.05]
-        res = stats.power(stats.ttest_1samp, rng.normal, n_observations,
+        kwargs = {'popmean': xp.asarray([0.1, 0.5, 0.9])}
+        n_observations = xp.asarray([[10], [20]])
+        significance = xp.asarray([0.01, 0.05])
+        res = stats.power(stats.ttest_1samp, self.xp_normal(rng, xp=xp), n_observations,
                           significance=significance, kwargs=kwargs)
-        assert_allclose(res.power, ref, atol=1e-2)
+        xp_assert_close(res.power, xp.asarray(ref), atol=1e-2)
 
 
 class TestPermutationTest:
