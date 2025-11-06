@@ -125,7 +125,8 @@ class TestQuantile:
     def test_against_numpy(self, method, shape_x, shape_p, axis, weights, xp):
         if weights and method.startswith('_'):
             pytest.skip('`weights=True` not supported by private (legacy) methods.')
-
+        if weights and is_numpy(xp) and xp.__version__ < "2.0":
+            pytest.skip('`weights` not supported by NumPy < 2.0.')
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
@@ -139,8 +140,8 @@ class TestQuantile:
         ref = np.quantile(x_rep, p, axis=axis,
                           method=method[1:] if method.startswith('_') else method)
 
-        x, p = xp.asarray(x), xp.asarray(p)
-        weights = weights if weights is None else xp.asarray(weights)
+        x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
+        weights = weights if weights is None else xp.asarray(weights, dtype=dtype)
         res = stats.quantile(x, p, method=method, weights=weights, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
