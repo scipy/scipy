@@ -89,28 +89,51 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
+    def _get_weights_x_rep(self, x, axis, rng):
+        x = np.swapaxes(x, axis, -1)
+        ndim = x.ndim
+        x = np.atleast_2d(x)
+        counts = rng.integers(10, size=x.shape[-1])
+        x_rep = []
+        weights = []
+        for x_ in x:
+            counts_ = rng.permuted(counts)
+            x_rep.append(np.repeat(x_, counts_))
+            weights.append(counts_)
+        x_rep, weights = np.stack(x_rep), np.stack(weights)
+        if ndim < 2:
+            x_rep, weights = np.squeeze(x_rep, axis=0), np.squeeze(weights, axis=0)
+        x_rep, weights = np.swapaxes(x_rep, -1, axis), np.swapaxes(weights, -1, axis)
+        weights = np.asarray(weights, dtype=x.dtype)
+        return weights, x_rep
+
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
           'median_unbiased', 'normal_unbiased', 'weibull',
           '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
-         [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
-          ((10, 2), None, 0), ((10, 2), None, 0),])
+         [(10, None, -1), (10, 10, -1), (10, (2, 3), -1), ((10, 2), None, 0)])
     @pytest.mark.parametrize('weights', [False, True])
     def test_against_numpy(self, method, shape_x, shape_p, axis, weights, xp):
+        if weights and method.startswith('_'):
+            pytest.skip('`weights=True` not supported by private (legacy) methods.')
+
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        counts = rng.integers(4, size=shape_x)
 
-        x_ref = xp.repeat(x, counts, axis=axis) if weights else x
-        ref = np.quantile(x_ref, p, axis=axis,
+        if weights:
+            weights, x_rep = self._get_weights_x_rep(x, axis, rng)
+        else:
+            weights, x_rep = None, x
+
+        ref = np.quantile(x_rep, p, axis=axis,
                           method=method[1:] if method.startswith('_') else method)
 
-        x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
-        weights = counts if weights else None
+        x, p = xp.asarray(x), xp.asarray(p)
+        weights = weights if weights is None else xp.asarray(weights)
         res = stats.quantile(x, p, method=method, weights=weights, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
@@ -216,3 +239,15 @@ class TestQuantile:
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
+
+    def test_weights_against_numpy(self, xp):
+        dtype = xp_default_dtype(xp)
+        rng = np.random.default_rng(85468924398205602)
+        method = 'inverted_cdf'
+        x = rng.random(size=100)
+        weights = rng.random(size=100)
+        p = np.linspace(0., 1., 300)
+        res = stats.quantile(xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype),
+                             method=method, weights=xp.asarray(weights, dtype=dtype))
+        ref = np.quantile(x, p, method=method, weights=weights)
+        xp_assert_close(res, xp.asarray(ref, dtype=dtype))

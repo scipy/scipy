@@ -340,23 +340,22 @@ def _quantile_hf(y, p, n, method, weights, xp):
               interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
               median_unbiased=p/3 + 1/3, normal_unbiased=p/4 + 3/8)
     m = ms[method]
-    if weights is None:
-        jg = p * n + m - 1
-        j = jg // 1
-        g = jg % 1
-    else:
-        # y_no_nans = xp_copy(y)
-        # y_no_nans = xpx.at(y_no_nans)[xp.isnan(y_no_nans)].set(0.)
-        cumulative_weights = xp.cumulative_sum(weights, axis=-1)
-        n = xp.asarray(n, dtype=xp.int64)
-        n = xp.broadcast_to(n, cumulative_weights.shape[:-1] + (1,))
-        n = xp.take_along_axis(cumulative_weights, n-1, axis=-1)
-        jg = p * n + m
-        j = _xp_searchsorted(cumulative_weights, jg, side='right') - 1
-        j = xp.clip(j, 0)
-        g = jg - xp.take_along_axis(cumulative_weights, j, axis=-1)
-        j = xp.astype(j, y.dtype)
 
+    if weights is None:
+        jg = p * n + m
+        jp1 = jg // 1
+        j = jp1 - 1
+    else:
+        cumulative_weights = xp.cumulative_sum(weights, axis=-1)
+        n_weight = xp.asarray(n, dtype=xp.int64)
+        n_weight = xp.broadcast_to(n_weight, cumulative_weights.shape[:-1] + (1,))
+        n_weight = xp.take_along_axis(cumulative_weights, n_weight-1, axis=-1)
+        jg = p * n_weight + m
+        jp1 = _xp_searchsorted(cumulative_weights, jg, side='right')
+        j = _xp_searchsorted(cumulative_weights, jg-1, side='right')
+        j, jp1 = xp.astype(j, y.dtype), xp.astype(jp1, y.dtype)
+
+    g = jg % 1
     if method == 'inverted_cdf':
         g = xp.astype((g > 0), jg.dtype)
     elif method == 'averaged_inverted_cdf':
@@ -369,7 +368,7 @@ def _quantile_hf(y, p, n, method, weights, xp):
 
     g = xpx.at(g)[j < 0].set(0)
     j = xp.clip(j, 0., n - 1)
-    jp1 = xp.clip(j + 1, 0., n - 1)
+    jp1 = xp.clip(jp1, 0., n - 1)
 
     return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
             + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
