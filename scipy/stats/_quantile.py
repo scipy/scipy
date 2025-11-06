@@ -4,7 +4,6 @@ from scipy.special import betainc
 from scipy._lib._array_api import (
     xp_capabilities,
     xp_ravel,
-    xp_copy,
     array_namespace,
     xp_promote,
     xp_device,
@@ -22,6 +21,10 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
 
     if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
         raise ValueError("`p` must have real floating dtype.")
+
+    if not (weights is None
+            or xp.isdtype(xp.asarray(weights).dtype, ('integral', 'real floating'))):
+        raise ValueError("`weights` must have real dtype.")
 
     x, p, weights = xp_promote(x, p, weights, force_floating=True, xp=xp)
     p = xp.asarray(p, device=xp_device(x))
@@ -49,6 +52,11 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
 
+    no_weights = {'_lower', '_midpoint', '_higher', '_nearest', 'harrell-davis'}
+    if weights is not None and method in no_weights:
+        message = f"`method='{method}'` does not support `weights`."
+        raise ValueError(message)
+
     contains_nans = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
 
     if keepdims not in {None, True, False}:
@@ -71,6 +79,11 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         y = xp.take_along_axis(x, i_y, axis=axis)
         y, p, weights, i_y = _broadcast_arrays((y, p, weights, i_y), axis=axis)
         weights = xp.take_along_axis(weights, i_y, axis=axis)
+        # When NaNs have zero weight, they shouldn't propagate
+        # data-apis/array-api-extra#506 raises an error here, so use `where`
+        # y = xpx.at(y)[xp.isnan(y) & (weights == 0)].set(1.)
+        if nan_policy == 'propagate':
+            y = xp.where(~xp.isfinite(y) & (weights == 0), 1., y)
 
     if (keepdims is False) and (p.shape[axis] != 1):
         message = "`keepdims` may be False only if the length of `p` along `axis` is 1."
@@ -110,7 +123,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
 
-    return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, weights, xp
+    return (y, p, method, axis, nan_policy, keepdims,
+            n, axis_none, ndim, p_mask, weights, xp)
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
@@ -182,10 +196,16 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         axis to contain the number of quantiles given by ``p.size``. Therefore:
 
         - By default, the axis will be reduced away if possible (i.e. if there is
-          exactly one element of `q` per axis-slice of `x`).
+          exactly one element of `p` per axis-slice of `x`).
         - If `keepdims` is set to True, the axis will not be reduced away.
         - If `keepdims` is set to False, the axis will be reduced away
           if possible, and an error will be raised otherwise.
+    weights : array_like of finite, non-negative real numbers
+        Frequency weights; e.g., for counting number weights,
+        ``quantile(x, p, weights=weights)`` is equivalent to
+        ``quantile(np.repeat(x, weights), p)``. Values other than finite counting
+        numbers are accepted, but may not have valid statistical interpretations.
+        Not compatible with ``method='harrell-davis'``.
 
     Returns
     -------
@@ -242,6 +262,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
        ``g = (1 + int(index - j > 0)) / 2``
     3. ``closest_observation``: ``m = -1/2`` and
        ``g = 1 - int((index == j) & (j%2 == 1))``
+
+    Note that for methods ``inverted_cdf`` and ``averaged_inverted_cdf``, only the
+    relative proportions of tied observations (and relative weights) affect the
+    results; for all other methods, the total number of observations (and absolute
+    weights) matter.
 
     A different strategy for computing quantiles from [2]_, ``method='harrell-davis'``,
     uses a weighted combination of all elements. The weights are computed as:
@@ -308,7 +333,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     # Input validation / standardization
 
     temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights)
-    y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, weights, xp = temp
+    (y, p, method, axis, nan_policy, keepdims,
+     n, axis_none, ndim, p_mask, weights, xp) = temp
 
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                   'hazen', 'interpolated_inverted_cdf', 'linear',
@@ -347,10 +373,10 @@ def _quantile_hf(y, p, n, method, weights, xp):
         j = jp1 - 1
     else:
         cumulative_weights = xp.cumulative_sum(weights, axis=-1)
-        n_weight = xp.asarray(n, dtype=xp.int64)
-        n_weight = xp.broadcast_to(n_weight, cumulative_weights.shape[:-1] + (1,))
-        n_weight = xp.take_along_axis(cumulative_weights, n_weight-1, axis=-1)
-        jg = p * n_weight + m
+        n_int = xp.asarray(n, dtype=xp.int64)
+        n_int = xp.broadcast_to(n_int, cumulative_weights.shape[:-1] + (1,))
+        total_weight = xp.take_along_axis(cumulative_weights, n_int-1, axis=-1)
+        jg = p * total_weight + m
         jp1 = _xp_searchsorted(cumulative_weights, jg, side='right')
         j = _xp_searchsorted(cumulative_weights, jg-1, side='right')
         j, jp1 = xp.astype(j, y.dtype), xp.astype(jp1, y.dtype)
