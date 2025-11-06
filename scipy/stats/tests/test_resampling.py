@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
 from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype,
-                                   xp_size, array_namespace)
+                                   xp_size, array_namespace, _xp_copy_to_numpy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib import array_api_extra as xpx
 from scipy import stats, special
@@ -1533,30 +1533,29 @@ class TestPermutationTest:
     # -- Independent (Unpaired) Sample Tests -- #
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_ks_2samp(self, alternative):
-        # statistic only available for NumPy
-
+    def test_against_ks_2samp(self, alternative, xp):
         x = self.rng.normal(size=4, scale=1)
         y = self.rng.normal(size=5, loc=3, scale=3)
 
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
-        def statistic1d(x, y):
-            return stats.ks_2samp(x, y, mode='asymp',
-                                  alternative=alternative).statistic
+        def statistic(x, y, axis):
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # ks_2samp is always a one-tailed 'greater' test
         # it's the statistic that changes (D+ vs D- vs max(D+, D-))
-        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                alternative='greater', rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_ansari(self, alternative):
-        # statistic only available for NumPy
-
+    def test_against_ansari(self, alternative, xp):
         x = self.rng.normal(size=4, scale=1)
         y = self.rng.normal(size=5, scale=3)
 
@@ -1567,36 +1566,40 @@ class TestPermutationTest:
         alternative_scipy = alternative_correspondence[alternative]
         expected = stats.ansari(x, y, alternative=alternative_scipy)
 
-        def statistic1d(x, y):
-            return stats.ansari(x, y).statistic
+        def statistic(x, y, axis):
+            # statistic currrently only available for NumPy
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ansari(x, y, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                alternative=alternative, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    @pytest.mark.skip_xp_backends('cupy', reason='no mwu')
-    @pytest.mark.skip_xp_backends('dask.array', reason='no mwu')
-    @pytest.mark.skip_xp_backends(eager_only=True)
-    @pytest.mark.skip_xp_backends(cpu_only=True)
     def test_against_mannwhitneyu(self, alternative, xp):
         x = stats.uniform.rvs(size=(3, 5, 2), loc=0, random_state=self.rng)
         y = stats.uniform.rvs(size=(3, 5, 2), loc=0.05, random_state=self.rng)
-        x, y = xp.asarray(x), xp.asarray(y)
 
         expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
 
         def statistic(x, y, axis):
-            return stats.mannwhitneyu(x, y, axis=axis).statistic
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.mannwhitneyu(x, y, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
+        x, y = xp.asarray(x), xp.asarray(y)
         res = permutation_test((x, y), statistic, vectorized=True,
                                n_resamples=xp.inf, alternative=alternative,
                                axis=1, rng=self.rng)
 
-        xp_assert_close(res.statistic, expected.statistic, rtol=self.rtol)
-        xp_assert_close(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     def test_against_cvm(self, xp):
         x = stats.norm.rvs(size=4, scale=1, random_state=self.rng)
@@ -1605,8 +1608,10 @@ class TestPermutationTest:
         expected = stats.cramervonmises_2samp(x, y, method='exact')
 
         def statistic1d(x, y, axis):
-            return stats.cramervonmises_2samp(x, y, axis=axis,
-                                              method='asymptotic').statistic
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.cramervonmises_2samp(x, y, axis=axis, method='asymptotic')
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # cramervonmises_2samp has only one alternative, greater
         x, y = xp.asarray(x), xp.asarray(y)
@@ -1617,9 +1622,6 @@ class TestPermutationTest:
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('axis', (-1, 2))
-    @pytest.mark.skip_xp_backends('cupy', reason='no kruskal')
-    @pytest.mark.skip_xp_backends('dask.array', reason='no kruskal')
-    @pytest.mark.skip_xp_backends(eager_only=True)
     def test_vectorized_nsamp_ptype_both(self, axis, xp):
         # statistic only available for NumPy
 
@@ -1632,75 +1634,71 @@ class TestPermutationTest:
 
         # Three samples, different (but compatible) shapes with different ndims
         rng = np.random.default_rng(6709265303529651545)
-        x = xp.asarray(rng.random(size=(3)))
-        y = xp.asarray(rng.random(size=(1, 3, 2)))
-        z = xp.asarray(rng.random(size=(2, 1, 4)))
+        x = rng.random(size=(3))
+        y = rng.random(size=(1, 3, 2))
+        z = rng.random(size=(2, 1, 4))
         data = (x, y, z)
+
+        expected = stats.kruskal(*data, axis=axis)
 
         # Define the statistic (and pvalue for comparison)
         def statistic(*data, axis):
-            return stats.kruskal(*data, axis=axis).statistic
-
-        def pvalue(*data, axis):
-            return stats.kruskal(*data, axis=axis).pvalue
-
-        # Calculate the expected results
-        expected_statistic = statistic(x, y, z, axis=axis)
-        expected_pvalue = pvalue(x, y, z, axis=axis)
+            data = [_xp_copy_to_numpy(data_) for data_ in data]
+            res = stats.kruskal(*data, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # Calculate exact and randomized permutation results
         kwds = {'axis': axis, 'alternative': 'greater',
                 'permutation_type': 'independent', 'rng': rng}
+        data = [xp.asarray(data_) for data_ in data]
         res = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
         res2 = permutation_test(data, statistic, n_resamples=1000, **kwds)
 
         # Check results
-        xp_assert_close(res.statistic, expected_statistic, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
         xp_assert_close(res.statistic, res2.statistic, rtol=self.rtol)
-        xp_assert_close(res.pvalue, expected_pvalue, atol=6e-2)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=6e-2)
         xp_assert_close(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Paired-Sample Tests -- #
 
-    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_wilcoxon(self, alternative):
-        # statistic only available for NumPy
-
+    def test_against_wilcoxon(self, alternative, xp):
         x = stats.uniform.rvs(size=(3, 6, 2), loc=0, random_state=self.rng)
         y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05, random_state=self.rng)
+        expected = stats.wilcoxon(x, y, alternative=alternative, axis=1)
 
         # We'll check both 1- and 2-sample versions of the same test;
         # we expect identical results to wilcoxon in all cases.
-        def statistic_1samp_1d(z):
+        def statistic_1samp_1d(z, axis):
+            # statistic only available for NumPy
             # 'less' ensures we get the same of two statistics every time
-            return stats.wilcoxon(z, alternative='less').statistic
+            z = _xp_copy_to_numpy(z)
+            res = stats.wilcoxon(z, alternative='less', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        def statistic_2samp_1d(x, y):
-            return stats.wilcoxon(x, y, alternative='less').statistic
+        def statistic_2samp_1d(x, y, axis):
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.wilcoxon(x, y, alternative='less', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        def test_1d(x, y):
-            return stats.wilcoxon(x, y, alternative=alternative)
-
-        test = _resampling._vectorize_statistic(test_1d)
-
-        expected = test(x, y, axis=1)
-        expected_stat = expected[0]
-        expected_p = expected[1]
-
-        kwds = {'vectorized': False, 'axis': 1, 'alternative': alternative,
-                'permutation_type': 'samples', 'rng': self.rng,
-                'n_resamples': np.inf}
+        x, y = xp.asarray(x), xp.asarray(y)
+        kwds = {'axis': 1, 'alternative': alternative, 'permutation_type': 'samples',
+                'rng': self.rng, 'n_resamples': np.inf}
         res1 = permutation_test((x-y,), statistic_1samp_1d, **kwds)
         res2 = permutation_test((x, y), statistic_2samp_1d, **kwds)
 
         # `wilcoxon` returns a different statistic with 'two-sided'
-        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
+        xp_assert_close(res1.statistic, res2.statistic, rtol=self.rtol)
         if alternative != 'two-sided':
-            assert_allclose(res2.statistic, expected_stat, rtol=self.rtol)
+            xp_assert_close(res2.statistic, xp.asarray(expected.statistic),
+                            rtol=self.rtol)
 
-        assert_allclose(res2.pvalue, expected_p, rtol=self.rtol)
-        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
+        xp_assert_close(res2.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
+        xp_assert_close(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
     def test_against_binomtest(self, alternative, xp):
@@ -1726,23 +1724,26 @@ class TestPermutationTest:
 
     # -- Exact Association Tests -- #
 
-    def test_against_kendalltau(self):
-        # statistic only available for NumPy
-
+    def test_against_kendalltau(self, xp):
         x = self.rng.normal(size=6)
         y = x + self.rng.normal(size=6)
 
         expected = stats.kendalltau(x, y, method='exact')
 
-        def statistic1d(x):
-            return stats.kendalltau(x, y, method='asymptotic').statistic
+        def statistic(x, axis):
+            # statistic only available for NumPy
+            x = _xp_copy_to_numpy(x)
+            res = stats.kendalltau(x, y, method='asymptotic', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # kendalltau currently has only one alternative, two-sided
-        res = permutation_test((x,), statistic1d, permutation_type='pairings',
+        x = xp.asarray(x)
+        res = permutation_test((x,), statistic, permutation_type='pairings',
                                n_resamples=np.inf, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_against_fisher_exact(self, alternative, xp):
@@ -1766,7 +1767,7 @@ class TestPermutationTest:
     @pytest.mark.xslow()
     @pytest.mark.parametrize('axis', (-2, 1))
     def test_vectorized_nsamp_ptype_samples(self, axis):
-        # statistic only available for NumPy
+        # statistic only available for NumPy, and it's a pain to vectorize
 
         # Test that permutation_test with permutation_type='samples' works
         # properly for a 3-sample statistic with nd array samples of different
@@ -1826,9 +1827,7 @@ class TestPermutationTest:
 
     @pytest.mark.xslow()  # only the second case is slow, really
     @pytest.mark.parametrize('case', (tie_case_1, tie_case_2))
-    def test_with_ties(self, case):
-        # statistic only available for NumPy
-
+    def test_with_ties(self, case, xp):
         """
         Results above from SAS PROC NPAR1WAY, e.g.
 
@@ -1857,37 +1856,43 @@ class TestPermutationTest:
         x = case['x']
         y = case['y']
 
-        expected_statistic = case['expected_statistic']
-        expected_less = case['expected_less']
-        expected_2sided = case['expected_2sided']
-        expected_Pr_gte_S_mean = case['expected_Pr_gte_S_mean']
-        expected_avg = case['expected_avg']
-        expected_std = case['expected_std']
+        expected_statistic = xp.asarray(case['expected_statistic'])
+        expected_less = xp.asarray(case['expected_less'])
+        expected_2sided = xp.asarray(case['expected_2sided'])
+        expected_Pr_gte_S_mean = xp.asarray(case['expected_Pr_gte_S_mean'])
+        expected_avg = xp.asarray(case['expected_avg'])
+        expected_std = xp.asarray(case['expected_std'])
 
-        def statistic1d(x, y):
-            return stats.ansari(x, y).statistic
+        def statistic(x, y, axis):
+            # statistic only available for NumPy
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ansari(x, y, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
+        dtype = xp_default_dtype(xp)
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Ties preclude use of exact statistic", UserWarning)
-            res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+            res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                    alternative='less')
-            res2 = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+            res2 = permutation_test((x, y), statistic, n_resamples=np.inf,
                                     alternative='two-sided')
 
-        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_less, atol=1e-10)
-        assert_allclose(res2.pvalue, expected_2sided, atol=1e-10)
-        assert_allclose(res2.null_distribution.mean(), expected_avg, rtol=1e-6)
-        assert_allclose(res2.null_distribution.std(), expected_std, rtol=1e-6)
+        xp_assert_close(res.statistic, expected_statistic, rtol=self.rtol)
+        xp_assert_close(res.pvalue, expected_less, atol=1e-10)
+        xp_assert_close(res2.pvalue, expected_2sided, atol=1e-10)
+        xp_assert_close(xp.mean(res2.null_distribution), expected_avg, rtol=1e-6)
+        xp_assert_close(xp.std(res2.null_distribution), expected_std, rtol=1e-6)
 
         # SAS provides Pr >= |S-Mean|; might as well check against that, too
         S = res.statistic
-        mean = res.null_distribution.mean()
-        n = len(res.null_distribution)
-        Pr_gte_S_mean = np.sum(np.abs(res.null_distribution-mean)
-                               >= np.abs(S-mean))/n
-        assert_allclose(expected_Pr_gte_S_mean, Pr_gte_S_mean)
+        mean = xp.mean(res.null_distribution)
+        n = res.null_distribution.shape[0]
+        Pr_gte_S_mean = xp.astype(xp.count_nonzero(
+            xp.abs(res.null_distribution-mean) >= xp.abs(S-mean)), S.dtype) / n
+        xp_assert_close(Pr_gte_S_mean, expected_Pr_gte_S_mean)
 
     @pytest.mark.slow
     @pytest.mark.parametrize('alternative, expected_pvalue',
@@ -1917,10 +1922,10 @@ class TestPermutationTest:
                         2.6514917, 2.01160156, 0.47699563])
         expected_statistic = 0.7714285714285715
 
-        y = stats.rankdata(y)
+        y = xp.asarray(stats.rankdata(_xp_copy_to_numpy(y)))
         def statistic(x, axis):
             # spearmanr is not array api compatible, but pearsonr is
-            x = stats.rankdata(x, axis=axis)
+            x = xp.asarray(stats.rankdata(_xp_copy_to_numpy(x), axis=axis))
             return stats.pearsonr(x, y, axis=axis).statistic
 
         res = permutation_test((x,), statistic, permutation_type='pairings',
