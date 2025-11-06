@@ -1404,8 +1404,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     Parameters
     ----------
-    shape : int or tuple of ints
-        shape of the array
+    shape : tuple of int
+        shape of the array.
     density : real, optional (default: 0.01)
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.
