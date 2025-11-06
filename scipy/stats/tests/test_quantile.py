@@ -100,7 +100,7 @@ class TestQuantile:
         x = np.swapaxes(x, axis, -1)
         ndim = x.ndim
         x = np.atleast_2d(x)
-        counts = rng.integers(10, size=x.shape[-1])
+        counts = rng.integers(10, size=x.shape[-1], dtype=np.int32)
         x_rep = []
         weights = []
         for x_ in x:
@@ -125,8 +125,6 @@ class TestQuantile:
     def test_against_numpy(self, method, shape_x, shape_p, axis, weights, xp):
         if weights and method.startswith('_'):
             pytest.skip('`weights=True` not supported by private (legacy) methods.')
-        if weights and is_numpy(xp) and xp.__version__ < "2.0":
-            pytest.skip('`weights` not supported by NumPy < 2.0.')
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
@@ -257,6 +255,8 @@ class TestQuantile:
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
 
     def test_weights_against_numpy(self, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0":
+            pytest.skip('`weights` not supported by NumPy < 2.0.')
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(85468924398205602)
         method = 'inverted_cdf'
