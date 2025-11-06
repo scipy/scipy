@@ -7,7 +7,7 @@ cimport numpy as np
 from warnings import warn
 from scipy.sparse import csr_array, issparse, SparseEfficiencyWarning
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
-from . import maximum_bipartite_matching
+from scipy.sparse.csgraph import maximum_bipartite_matching
 
 np.import_array()
 
