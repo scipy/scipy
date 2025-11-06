@@ -5,7 +5,6 @@ from scipy import stats
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
-    is_torch,
     is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
@@ -62,6 +61,10 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, xp.asarray([0, 1]))
 
+        message = "`weights` must have real dtype."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile(x, p, weights=xp.astype(x, xp.complex64))
+
         message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, p, axis=0.5)
@@ -77,9 +80,13 @@ class TestQuantile:
             with pytest.raises(ValueError, match=message):
                 stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
 
-        message = "method` must be one of..."
+        message = "`method` must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, p, method='a duck')
+
+        message = "`method='harrell-davis'` does not support `weights`."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile(x, p, weights=x, method='harrell-davis')
 
         message = "If specified, `keepdims` must be True or False."
         with pytest.raises(ValueError, match=message):
@@ -145,9 +152,13 @@ class TestQuantile:
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
-    def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
+    @pytest.mark.parametrize('weights', [False, True])
+    def test_against_reference(self, axis, keepdims, nan_policy,
+                               dtype, method, weights, xp):
         if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
             pytest.skip("`marray` currently incompatible with JAX")
+        if weights and method == 'harrell-davis':
+            pytest.skip("harrell-davis does not yet support weights")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)
@@ -168,27 +179,31 @@ class TestQuantile:
 
         dtype = getattr(xp, dtype)
 
+        if weights:
+            weights, x_rep = self._get_weights_x_rep(x, axis, rng)
+            weights = weights if weights is None else xp.asarray(weights)
+        else:
+            weights, x_rep = None, x
+
         if nan_policy == 'marray':
-            if method == 'harrell-davis':
-                pytest.skip("Needs gh-22490")
-            if is_torch(xp):
-                pytest.skip("sum_cpu not implemented for UInt64, see "
-                            "data-apis/array-api-compat#242")
             if not SCIPY_ARRAY_API:
                 pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
+            if weights is not None:
+                pytest.skip("MArray is not yet compatible with weights")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=method)
             mxp = marray._get_namespace(xp)
             x_mp = mxp.asarray(x, mask=mask)
-            res = stats.quantile(x_mp, mxp.asarray(p), **kwargs)
-            ref = quantile_reference(x, p, nan_policy='omit', **kwargs)
+            weights = weights if weights is None else mxp.asarray(weights)
+            res = stats.quantile(x_mp, mxp.asarray(p), weights=weights, **kwargs)
+            ref = quantile_reference(x_rep, p, nan_policy='omit', **kwargs)
             xp_assert_close(res.data, xp.asarray(ref, dtype=dtype))
             return
 
         kwargs = dict(axis=axis, keepdims=keepdims,
                       nan_policy=nan_policy, method=method)
-        res = stats.quantile(xp.asarray(x), xp.asarray(p), **kwargs)
-        ref = quantile_reference(x, p, **kwargs)
+        res = stats.quantile(xp.asarray(x), xp.asarray(p), weights=weights, **kwargs)
+        ref = quantile_reference(x_rep, p, **kwargs)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
     def test_integer_input_output_dtype(self, xp):
