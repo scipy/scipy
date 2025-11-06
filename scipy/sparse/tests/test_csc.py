@@ -100,6 +100,7 @@ def test_argmax_overflow(ax):
     assert A[ii, jj] == A[-2, -2]
 
 
+@pytest.mark.slow
 @pytest.mark.timeout(2)  # only slow when broken (when spurious conversion occurs)
 @pytest.mark.parametrize("op", (operator.ne, operator.lt, operator.gt,
                                 operator.add, operator.sub, operator.mul,
@@ -121,3 +122,4 @@ def test_compressed_rc_conversion_mixup(op):
     Z_2 = Z.copy()
     # causes timeout error upon large memory alloc only if conversion to CSC occurs
     op(Z_2, Z)
+    assert False
