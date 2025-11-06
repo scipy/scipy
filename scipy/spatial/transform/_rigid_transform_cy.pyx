@@ -269,7 +269,7 @@ def mean(double[:, :, :] matrix, weights=None, axis=None):
         )
     # Axis must be 0 for the cython backend. Everything else should have raised an
     # error during validation.
-    axis = (0,)
+    axis = 0
 
     quat = as_quat(from_rot_matrix(matrix[:, :3, :3]))
     t = np.asarray(matrix[:, :3, 3])
