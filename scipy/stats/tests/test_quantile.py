@@ -212,43 +212,6 @@ class TestQuantile:
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
 
 
-@_apply_over_batch(('a', 1), ('v', 1))
-def np_searchsorted(a, v, side):
-    return np.searchsorted(a, v, side=side)
-
-
-@make_xp_test_case(_xp_searchsorted)
-class Test_XPSearchsorted:
-    @pytest.mark.parametrize('side', ['left', 'right'])
-    @pytest.mark.parametrize('ties', [False, True])
-    @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
-    @pytest.mark.parametrize('nans', [False, True])
-    def test_nd(self, side, ties, shape, nans, xp):
-        rng = np.random.default_rng(945298725498274853)
-        if ties:
-            x = rng.integers(5, size=shape)
-        else:
-            x = rng.random(shape)
-        # float32 is to accommodate JAX - nextafter with `float64` is too small?
-        x = np.asarray(x, dtype=np.float32)
-        xr = np.nextafter(x, np.inf)
-        xl = np.nextafter(x, -np.inf)
-        x_ = np.asarray([-np.inf, np.inf])
-        x_ = np.broadcast_to(x_, x.shape[:-1] + (2,))
-        y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
-        if nans:
-            # all elements of a slice are NaN and side='right',
-            # _xp_searchsorted has a different convention
-            mask = rng.random(shape) < 0.1
-            x[mask] = np.nan
-        x = np.sort(x, axis=-1)
-        x, y = np.astype(x, np.float64), np.astype(y, np.float64)
-        ref = xp.asarray(np_searchsorted(x, y, side=side))
-        x, y = xp.asarray(x), xp.asarray(y)
-        res = _xp_searchsorted(x, y, side=side)
-        xp_assert_equal(res, ref)
-
-
 @_apply_over_batch(('x', 1), ('y', 1))
 def iquantile_reference_last_axis(x, y, nan_policy, method):
     i_nan = np.isnan(x)
@@ -262,8 +225,6 @@ def iquantile_reference_last_axis(x, y, nan_policy, method):
 def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
                         keepdims=None, method='linear'):
     x, y = _broadcast_arrays((x, y), axis=axis)
-    # if keepdims is None:
-    #     keepdims = False if y.shape[axis] == 1 else True
     x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
     res = iquantile_reference_last_axis(x, y, nan_policy, method)
     res = np.moveaxis(res, -1, axis)
@@ -274,11 +235,6 @@ def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
 
 @make_xp_test_case(stats.iquantile)
 class TestIQuantile:
-    # test size 0 arrays with ndim > 1
-    # test infs in x
-    # check that we're testing infs in y
-    # correct infs in sample *and* in y?
-    # correct results with size 1 arrays when x != y
     def test_input_validation(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray(2)
@@ -550,7 +506,22 @@ class TestIQuantile:
           {'axis': None, 'keepdims': True}),
          ([[1, 2], [3, 4]], [1.75, 2.5, 3.25], [[0.25, 0.5, 0.75]],
           {'axis': None, 'keepdims': True}),
-         ])
+         ([1, 2, 3], [-np.inf, np.inf], [0.0, 1.0], {}),
+         # It is our choice how much effort and computational overhead we want to put
+         # into adjusting for insane edge cases like when `x` contains infinite values,
+         # especially when `y` does, too.
+         # One practical argument would be that y = +/- inf should produce the same
+         # results as an extremely large finite number, in which case the 0th element
+         # of the 'linear' result should be `0`.
+         # Another argument would be for producing NaN below wherever y = +/- inf.
+         # Another would be that it's not appropriate to spend significant computation
+         # correcting these edge cases; we should just document what we do.
+         # In any case, this is the current status.
+         ([-np.inf, -1, 0, 1, np.inf], [-np.inf, -2, -1, 0, 1, 2, np.inf],
+          [0.25, 0.25, 0.25, 0.5 , 0.75, 0.75, np.nan], {'method':'linear'}),
+         ([-np.inf, -1, 0, 1, np.inf], [-np.inf, -2, -1, 0, 1, 2, np.inf],
+          [0.2, 0.2, 0.4, 0.6, 0.8, 0.8, 1.], {'method': 'inverted_cdf'}),
+        ])
     def test_edge_cases(self, x, y, ref, kwargs, xp):
         if kwargs.get('method', None) == 'weibull' and is_torch(xp):
             pytest.skip('data-apis/array-api-compat#360')

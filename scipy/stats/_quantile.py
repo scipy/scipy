@@ -674,7 +674,7 @@ def _iquantile_hf(x, y, n, method, xp):
     xj = xp.take_along_axis(x, jp1-1, axis=-1)
     xjp1 = xp.take_along_axis(x, jp1, axis=-1)
     with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
-        delta = xp.where(xjp1 > xj, (y - xj) / (xjp1 - xj), 1.)
+        delta = xp.where((xjp1 > xj) & xp.isfinite(xj), (y - xj) / (xjp1 - xj), 1.)
     a, b = _iquantile_continuous_methods[method]
     p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
     return xp.clip(p, 0., 1.)
