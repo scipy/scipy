@@ -76,10 +76,7 @@ if sys.version_info >= (3, 14):
         return inspect.signature(callable,
                                  annotation_format=annotationlib.Format.FORWARDREF)
 else:
-    def wrapped_inspect_signature(callable):
-        """Get a signature object for the passed callable."""
-        return inspect.signature(callable)
-
+    wrapped_inspect_signature = inspect.signature
 
 
 _RNG: TypeAlias = np.random.Generator | np.random.RandomState
@@ -545,7 +542,7 @@ def getfullargspec_no_self(func):
         Python 2.x, and inspect.signature() under Python 3.x.
 
     """
-    sig = inspect.signature(func)
+    sig = wrapped_inspect_signature(func)
     args = [
         p.name for p in sig.parameters.values()
         if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,

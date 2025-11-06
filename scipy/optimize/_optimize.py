@@ -28,7 +28,6 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-import inspect
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
@@ -37,6 +36,7 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng,
                               wrapped_inspect_signature)
@@ -3897,12 +3897,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
 
     if callable(finish):
         # set up kwargs for `finish` function
-        _finish_args = wrapped_inspect_signature(finish)
-        finish_args = [
-            p.name for p in _finish_args.parameters.values()
-            if p.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                          inspect.Parameter.KEYWORD_ONLY]
-        ]
+        finish_args = _getfullargspec(finish).args
         finish_kwargs = dict()
         if 'full_output' in finish_args:
             finish_kwargs['full_output'] = 1
