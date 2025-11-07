@@ -76,19 +76,15 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         y, p = _broadcast_arrays((y, p), axis=axis)
         n_zero_weight = None
     else:
+        x, weights = xp.broadcast_arrays(x, weights)
         i_zero_weight = (weights == 0)
         n_zero_weight = xp.count_nonzero(i_zero_weight, axis=axis, keepdims=True)
         x = xpx.at(x)[i_zero_weight].set(xp.inf)
         i_y = xp.argsort(x, axis=axis, stable=False)
         y = xp.take_along_axis(x, i_y, axis=axis)
+        weights = xp.take_along_axis(weights, i_y, axis=axis)
         y, p, weights, i_y, n_zero_weight = _broadcast_arrays(
             (y, p, weights, i_y, n_zero_weight), axis=axis)
-        weights = xp.take_along_axis(weights, i_y, axis=axis)
-        # When NaNs have zero weight, they shouldn't propagate
-        # data-apis/array-api-extra#506 raises an error here, so use `where`
-        # y = xpx.at(y)[xp.isnan(y) & (weights == 0)].set(1.)
-        if nan_policy == 'propagate':
-            y = xp.where(~xp.isfinite(y) & (weights == 0), 1., y)
 
     if (keepdims is False) and (p.shape[axis] != 1):
         message = "`keepdims` may be False only if the length of `p` along `axis` is 1."

@@ -221,7 +221,11 @@ class TestQuantile:
          (np.arange(1, 28).reshape((3, 3, 3)), 0.5, [[[14.]]],
           {'axis': None, 'keepdims': True}),
          ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]],
-          {'axis': None, 'keepdims': True}),])
+          {'axis': None, 'keepdims': True}),
+         # Known issue:
+         # ([1, 2, 3], 0.5, 2., {'weights': [0, 0, 0]})
+         # See https://github.com/scipy/scipy/pull/23941#issuecomment-3503554361
+         ])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
         default_dtype = xp_default_dtype(xp)
         x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref, dtype=default_dtype)
@@ -270,3 +274,34 @@ class TestQuantile:
                              method=method, weights=xp.asarray(weights, dtype=dtype))
         ref = np.quantile(x, p, method=method, weights=weights)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
+
+    @pytest.mark.parametrize('method',
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation', 'hazen',
+         'interpolated_inverted_cdf', 'linear','median_unbiased', 'normal_unbiased',
+         'weibull'])
+    def test_zero_weights(self, method, xp):
+        rng = np.random.default_rng(85468924398205602)
+
+        # test 1-D versus eliminating zero-weighted values
+        n = 100
+        x = xp.asarray(rng.random(size=n))
+        p = xp.asarray(rng.random(size=n))
+        i_zero = xp.asarray(rng.random(size=n) < 0.1)
+        weights = xp.asarray(rng.random(size=n))
+        weights = xp.where(i_zero, 0., weights)
+        res = stats.quantile(x, p, weights=weights, method=method)
+        ref = stats.quantile(x[~i_zero], p, weights=weights[~i_zero], method=method)
+        xp_assert_close(res, ref)
+
+        # test multi-D versus `nan_policy='omit'`
+        shape = (5, 100)
+        x = xp.asarray(rng.random(size=shape))
+        p = xp.asarray(rng.random(size=shape))
+        i_zero = xp.asarray(rng.random(size=shape) < 0.1)
+        weights = xp.asarray(rng.random(size=shape))
+        x_nanned = xp.where(i_zero, xp.nan, x)
+        weights_zeroed = xp.where(i_zero, 0., weights)
+        res = stats.quantile(x, p, weights=weights_zeroed, method=method, axis=-1)
+        ref = stats.quantile(x_nanned, p, weights=weights,
+                             nan_policy='omit', method=method, axis=-1)
+        xp_assert_close(res, ref)
