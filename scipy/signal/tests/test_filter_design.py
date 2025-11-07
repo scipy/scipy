@@ -2619,7 +2619,7 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            z, p, k = besselap(N, 'delay', xp=xp, dtype=xp.float64)
+            z, p, k = besselap(N, 'delay', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
@@ -2648,7 +2648,7 @@ class TestBessel:
 
         for N in range(1, 11):
             p1 = np.sort(bond_poles[N])
-            z, p, k = besselap(N, 'mag', xp=xp, dtype=xp.float64)
+            z, p, k = besselap(N, 'mag', xp=xp)
             assert array_namespace(z) == array_namespace(p) == xp
             p2 = np.sort(np.concatenate(_cplxreal(_xp_copy_to_numpy(p))))
             assert_array_almost_equal(xp.asarray(p2), xp.asarray(p1), decimal=10)
@@ -2876,7 +2876,7 @@ class TestBessel:
                 np.union1d(originals[N], np.conj(originals[N])),
                 dtype=xp.complex128
             )
-            p2 = besselap(N, xp=xp, dtype=xp.float64)[1]
+            p2 = besselap(N, xp=xp)[1]
             xp_assert_close(_sort_cmplx(p2, xp=xp),
                             _sort_cmplx(p1, xp=xp), rtol=1e-14)
 

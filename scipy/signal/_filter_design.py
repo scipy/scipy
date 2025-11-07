@@ -1281,17 +1281,7 @@ def zpk2tf(z, p, k):
     """
     xp = array_namespace(z, p)
     z, p = map(xp.asarray, (z, p))
-    # Setting dtype explicitly here avoids premature overflow when
-    # k is a Python scalar, z has 64-bit precision, and the default
-    # dtype for xp is float32.
-    if not hasattr(k, "dtype"):
-        if isinstance(k, complex):
-            k_dtype = xp.complex128 if xp.real(z).dtype == xp.float64 else xp.complex64
-        else:
-            k_dtype = xp.real(z).dtype
-        k = xp.asarray(k, dtype=k_dtype)
-    else:
-        k = xp.asarray(k)
+    k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k))
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     k = xpx.atleast_nd(k, ndim=1, xp=xp)
@@ -2852,24 +2842,24 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # Get analog lowpass prototype
     if typefunc == buttap:
-        z, p, k = typefunc(N, xp=xp, dtype=xp.float64)
+        z, p, k = typefunc(N, xp=xp)
     elif typefunc == besselap:
-        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp, dtype=xp.float64)
+        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp)
     elif typefunc == cheb1ap:
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
-        z, p, k = typefunc(N, rp, xp=xp, dtype=xp.float64)
+        z, p, k = typefunc(N, rp, xp=xp)
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
                              "design an Chebyshev II filter.")
-        z, p, k = typefunc(N, rs, xp=xp, dtype=xp.float64)
+        z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
-        z, p, k = typefunc(N, rp, rs, xp=xp, dtype=xp.float64)
+        z, p, k = typefunc(N, rp, rs, xp=xp)
     else:
         raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
@@ -4662,7 +4652,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
-def buttap(N, *, xp=None, device=None, dtype=None):
+def buttap(N, *, xp=None, device=None):
     """Return (z,p,k) for analog prototype of Nth-order Butterworth filter.
 
     The filter will have an angular (e.g., rad/s) cutoff frequency of 1.
@@ -4672,11 +4662,6 @@ def buttap(N, *, xp=None, device=None, dtype=None):
     N : int
         The order of the filter
     %(xp_device_snippet)s
-    dtype : Optional[DType]
-        Base real dtype for returned outputs (complex outputs will have the
-        corresponding complex dtype). ``dtype`` should be for the backend
-        ``xp``. ``None`` is equivalent to the default dtype for``xp``.
-        Default: None.
 
     Returns
     -------
@@ -4694,20 +4679,17 @@ def buttap(N, *, xp=None, device=None, dtype=None):
     """
     if xp is None:
         xp = np_compat
-    if dtype is None:
-        dtype = xp_default_dtype(xp)
-
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
-    z = xp.asarray([], device=device, dtype=dtype)
-    m = xp.arange(-N+1, N, 2, device=device, dtype=dtype)
+    z = xp.asarray([], device=device, dtype=xp.float64)
+    m = xp.arange(-N+1, N, 2, device=device, dtype=xp.float64)
     # Middle value is 0 to ensure an exactly real pole
     p = -xp.exp(1j * xp.pi * m / (2 * N))
     k = 1.0
     return z, p, k
 
 
-def cheb1ap(N, rp, *, xp=None, device=None, dtype=None):
+def cheb1ap(N, rp, *, xp=None, device=None):
     """
     Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
 
@@ -4723,11 +4705,6 @@ def cheb1ap(N, rp, *, xp=None, device=None, dtype=None):
     rp: float
         The ripple intensity
     %(xp_device_snippet)s
-    dtype : Optional[DType]
-        Base real dtype for returned outputs (complex outputs will have the
-        corresponding complex dtype). ``dtype`` should be for the backend
-        ``xp``. ``None`` is equivalent to the default dtype for``xp``.
-        Default: None.
 
     Returns
     -------
@@ -4745,26 +4722,23 @@ def cheb1ap(N, rp, *, xp=None, device=None, dtype=None):
     """
     if xp is None:
         xp = np_compat
-    if dtype is None:
-        dtype = xp_default_dtype(xp)
-    cdtype = xp.complex128 if dtype == xp.float64 else xp.complex64
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device, dtype=dtype),
-            xp.asarray([], device=device, dtype=cdtype), 10**(-rp/20)
+            xp.asarray([], device=device, dtype=xp.float64),
+            xp.asarray([], device=device, dtype=xp.complex128), 10**(-rp/20)
         )
-    z = xp.asarray([], device=device, dtype=dtype)
+    z = xp.asarray([], device=device, dtype=xp.float64)
 
     # Ripple factor (epsilon)
     eps = math.sqrt(10 ** (0.1 * rp) - 1.0)
     mu = 1.0 / N * math.asinh(1 / eps)
 
     # Arrange poles in an ellipse on the left half of the S-plane
-    m = xp.arange(-N+1, N, 2, dtype=dtype, device=device)
+    m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta = xp.pi * m / (2*N)
     p = -xp.sinh(mu + 1j*theta)
 
@@ -4775,7 +4749,7 @@ def cheb1ap(N, rp, *, xp=None, device=None, dtype=None):
     return z, p, k
 
 
-def cheb2ap(N, rs, *, xp=None, device=None, dtype=None):
+def cheb2ap(N, rs, *, xp=None, device=None):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
@@ -4814,16 +4788,13 @@ def cheb2ap(N, rs, *, xp=None, device=None, dtype=None):
     """
     if xp is None:
         xp = np_compat
-    if dtype is None:
-        dtype = xp_default_dtype(xp)
-    cdtype = xp.complex128 if dtype == xp.float64 else xp.complex64
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
         return (
-            xp.asarray([], device=device, dtype=cdtype),
-            xp.asarray([], device=device, dtype=cdtype),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
             1.0
         )
 
@@ -4833,17 +4804,17 @@ def cheb2ap(N, rs, *, xp=None, device=None, dtype=None):
 
     if N % 2:
         m = xp.concat(
-            (xp.arange(-N + 1, 0, 2, dtype=dtype, device=device),
-             xp.arange(2, N, 2, dtype=dtype, device=device)
+            (xp.arange(-N + 1, 0, 2, dtype=xp.float64, device=device),
+             xp.arange(2, N, 2, dtype=xp.float64, device=device)
             )
         )
     else:
-        m = xp.arange(-N+1, N, 2, dtype=dtype, device=device)
+        m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
 
     z = 1j / xp.sin(m * xp.pi / (2 * N))
 
     # Poles around the unit circle like Butterworth
-    m1 = xp.arange(-N+1, N, 2, dtype=dtype, device=device)
+    m1 = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta1 = xp.pi * m1 / (2 * N)
     p = -1 / xp.sinh(mu + 1j*theta1)
 
@@ -4979,7 +4950,7 @@ def _arc_jac_sc1(w, m):
     return zcomplex.imag
 
 
-def ellipap(N, rp, rs, *, xp=None, device=None, dtype=None):
+def ellipap(N, rp, rs, *, xp=None, device=None):
     """Return (z,p,k) of Nth-order elliptic analog lowpass filter.
 
     The filter is a normalized prototype that has `rp` decibels of ripple
@@ -4997,11 +4968,6 @@ def ellipap(N, rp, rs, *, xp=None, device=None, dtype=None):
     rs : float
         The stopband attenuation
     %(xp_device_snippet)s
-    dtype : Optional[DType]
-        Base real dtype for returned outputs (complex outputs will have the
-        corresponding complex dtype). ``dtype`` should be for the backend
-        ``xp``. ``None`` is equivalent to the default dtype for``xp``.
-        Default: None.
 
     Returns
     -------
@@ -5027,18 +4993,15 @@ def ellipap(N, rp, rs, *, xp=None, device=None, dtype=None):
     """
     if xp is None:
         xp = np_compat
-    if dtype is None:
-        dtype = xp_default_dtype(xp)
-    cdtype = xp.complex128 if dtype == xp.float64 else xp.complex64
-    
+
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device, dtype=cdtype),
-            xp.asarray([], device=device, dtype=cdtype),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
             10**(-rp/20)
         )
     elif N == 1:
@@ -5046,8 +5009,8 @@ def ellipap(N, rp, rs, *, xp=None, device=None, dtype=None):
         k = -p
         z = []
         return (
-            xp.asarray(z, device=device, dtype=cdtype),
-            xp.asarray(p, device=device, dtype=cdtype), k
+            xp.asarray(z, device=device, dtype=xp.complex128),
+            xp.asarray(p, device=device, dtype=xp.complex128), k
         )
 
     eps_sq = _pow10m1(0.1 * rp)
@@ -5095,8 +5058,8 @@ def ellipap(N, rp, rs, *, xp=None, device=None, dtype=None):
         k = k / np.sqrt(1 + eps_sq)
 
     return (
-        xp.asarray(z, device=device, dtype=cdtype),
-        xp.asarray(p, device=device, dtype=cdtype), float(k)
+        xp.asarray(z, device=device, dtype=xp.complex128),
+        xp.asarray(p, device=device, dtype=xp.complex128), float(k)
     )
 
 
@@ -5301,7 +5264,7 @@ def _norm_factor(p, k):
     return optimize.newton(cutoff, 1.5)
 
 
-def besselap(N, norm='phase', *, xp=None, device=None, dtype=None):
+def besselap(N, norm='phase', *, xp=None, device=None):
     """
     Return (z,p,k) for analog prototype of an Nth-order Bessel filter.
 
@@ -5336,11 +5299,6 @@ def besselap(N, norm='phase', *, xp=None, device=None, dtype=None):
         .. versionadded:: 0.18.0
 
     %(xp_device_snippet)s
-    dtype : Optional[DType]
-        Base real dtype for returned outputs (complex outputs will have the
-        corresponding complex dtype). ``dtype`` should be for the backend
-        ``xp``. ``None`` is equivalent to the default dtype for``xp``.
-        Default: None.
 
     Returns
     -------
@@ -5385,8 +5343,6 @@ def besselap(N, norm='phase', *, xp=None, device=None, dtype=None):
     """
     if xp is None:
         xp = np_compat
-    if dtype is None:
-        dtype = xp_default_dtype(xp)
 
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
@@ -5418,11 +5374,10 @@ def besselap(N, norm='phase', *, xp=None, device=None, dtype=None):
         else:
             raise ValueError('normalization not understood')
 
-    z = xp.asarray([], device=device, dtype=dtype)
-    cdtype = xp.complex128 if dtype == xp.float64 else xp.complex64
+    z = xp.asarray([], device=device, dtype=xp.float64)
     return (
         z,
-        xp.asarray(p, device=device, dtype=cdtype),
+        xp.asarray(p, device=device, dtype=xp.complex128),
         float(k)
     )
 
