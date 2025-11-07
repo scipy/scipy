@@ -243,7 +243,7 @@ class Test_XPSearchsorted:
             mask = rng.random(shape) < 0.1
             x[mask] = np.nan
         x = np.sort(x, axis=-1)
-        x, y = np.astype(x, np.float64), np.astype(y, np.float64)
+        x, y = np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)
         ref = xp.asarray(np_searchsorted(x, y, side=side))
         x, y = xp.asarray(x), xp.asarray(y)
         res = _xp_searchsorted(x, y, side=side)
