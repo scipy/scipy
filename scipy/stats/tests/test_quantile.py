@@ -254,7 +254,8 @@ class TestQuantile:
         ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
 
-    def test_weights_against_numpy(self, xp):
+    @pytest.mark.parametrize('zero_weights', [False, True])
+    def test_weights_against_numpy(self, zero_weights, xp):
         if is_numpy(xp) and xp.__version__ < "2.0":
             pytest.skip('`weights` not supported by NumPy < 2.0.')
         dtype = xp_default_dtype(xp)
@@ -262,6 +263,8 @@ class TestQuantile:
         method = 'inverted_cdf'
         x = rng.random(size=100)
         weights = rng.random(size=100)
+        if zero_weights:
+            weights[weights < 0.5] = 0
         p = np.linspace(0., 1., 300)
         res = stats.quantile(xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype),
                              method=method, weights=xp.asarray(weights, dtype=dtype))

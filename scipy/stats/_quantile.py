@@ -74,10 +74,15 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     if weights is None:
         y = xp.sort(x, axis=axis, stable=False)
         y, p = _broadcast_arrays((y, p), axis=axis)
+        n_zero_weight = None
     else:
+        i_zero_weight = (weights == 0)
+        n_zero_weight = xp.count_nonzero(i_zero_weight, axis=axis, keepdims=True)
+        x = xpx.at(x)[i_zero_weight].set(xp.inf)
         i_y = xp.argsort(x, axis=axis, stable=False)
         y = xp.take_along_axis(x, i_y, axis=axis)
-        y, p, weights, i_y = _broadcast_arrays((y, p, weights, i_y), axis=axis)
+        y, p, weights, i_y, n_zero_weight = _broadcast_arrays(
+            (y, p, weights, i_y, n_zero_weight), axis=axis)
         weights = xp.take_along_axis(weights, i_y, axis=axis)
         # When NaNs have zero weight, they shouldn't propagate
         # data-apis/array-api-extra#506 raises an error here, so use `where`
@@ -93,9 +98,12 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     y = xp.moveaxis(y, axis, -1)
     p = xp.moveaxis(p, axis, -1)
     weights = weights if weights is None else xp.moveaxis(weights, axis, -1)
+    n_zero_weight = (n_zero_weight if n_zero_weight is None
+                     else xp.moveaxis(n_zero_weight, axis, -1))
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
-    n = xp.asarray(n, dtype=dtype, device=xp_device(y))
+    n = n if n_zero_weight is None else n - n_zero_weight
+
     if contains_nans:
         nans = xp.isnan(y)
 
@@ -104,8 +112,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         if nan_policy == 'propagate':
             nan_out = xp.any(nans, axis=-1)
         else:  # 'omit'
-            non_nan = xp.astype(~nans, xp.uint64)
-            n_int = xp.sum(non_nan, axis=-1, keepdims=True)
+            n_int = n - xp.count_nonzero(nans, axis=-1, keepdims=True)
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
             nan_out = xp.any(n == 0, axis=-1)
@@ -117,6 +124,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         elif xp.any(nans) and method == 'harrell-davis':
             y = xp.asarray(y, copy=True)  # ensure writable
             y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
+
+    n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
     if xp.any(p_mask):
