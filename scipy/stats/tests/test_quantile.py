@@ -10,6 +10,7 @@ from scipy._lib._array_api import (
     is_torch,
     is_jax,
     is_cupy,
+    is_array_api_strict,
     make_xp_test_case,
     SCIPY_ARRAY_API,
 )
@@ -422,7 +423,7 @@ class TestIQuantile:
         discontinuous = method in _iquantile_discontinuous_methods
         x = xp.arange(10.)
         y = xp.asarray([0., -1., 1.])
-        n = np.asarray(1.)
+        n = np.asarray(1.) if is_array_api_strict(xp) else xp.asarray(1.)
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
             if discontinuous:
                 ref = xp.asarray([1., 0., 1.])
@@ -527,7 +528,7 @@ class TestIQuantile:
         res = stats.iquantile(x, y, **kwargs)
         xp_assert_equal(res, ref)
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason="arithmetic not exact for 2**k ?")
+    @pytest.mark.skip_xp_backends('jax.numpy', reason="-1e-45 is not less than 0?")
     @pytest.mark.parametrize('method', _iquantile_discontinuous_methods.keys())
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are as expected around
