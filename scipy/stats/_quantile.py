@@ -668,15 +668,22 @@ def _iquantile_hf(x, y, n, method, xp):
     if method in _iquantile_discontinuous_methods:
         dp = _iquantile_discontinuous_methods[method]
         p = (xp.astype(jp1, x.dtype)+dp)/n
-        return xp.clip(p, 0., 1.)
 
-    jp1 = xp.clip(jp1, j_min, j_max)
-    j = xp.clip(jp1-1, 0)
-    xj = xp.take_along_axis(x, j, axis=-1)
-    xjp1 = xp.take_along_axis(x, jp1, axis=-1)
-    with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
-        # delta = xp.where(((xjp1 == xj) & (y == xj)) | xp.isinf(xj), 1., (y - xj) / (xjp1 - xj))
-        delta = xp.where((xjp1 > xj) & xp.isfinite(xj), (y - xj) / (xjp1 - xj), 1.)
-    a, b = _iquantile_continuous_methods[method]
-    p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
+    else:
+        jp1 = xp.clip(jp1, j_min, j_max)
+        j = xp.clip(jp1-1, 0)
+        xj = xp.take_along_axis(x, j, axis=-1)
+        xjp1 = xp.take_along_axis(x, jp1, axis=-1)
+        with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
+            # delta = xp.where(((xjp1 == xj) & (y == xj)) | xp.isinf(xj), 1., (y - xj) / (xjp1 - xj))
+            delta = xp.where((xjp1 > xj) & xp.isfinite(xj), (y - xj) / (xjp1 - xj), 1.)
+
+        a, b = _iquantile_continuous_methods[method]
+        p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
+
+    xmin = x[..., :1]
+    xmax = (x[..., -1:] if n.shape == () else xp.take_along_axis(x, j_max))
+    p = xpx.at(p)[y < xmin].set(0.)
+    p = xpx.at(p)[y > xmax].set(1.)
+
     return xp.clip(p, 0., 1.)

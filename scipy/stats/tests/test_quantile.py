@@ -316,9 +316,11 @@ class TestIQuantile:
         n = x.shape[-1]
         p_min = (1 - a) / (n + 1 - a - b)
         p_max = (n - a) / (n + 1 - a - b)
-        i_low = ref <= p_min
-        i_high = ref >= p_max
-        i_ok = ~i_low & ~i_high
+        i_very_low = y < xp.min(x, axis=-1, keepdims=True)
+        i_very_high = y > xp.max(x, axis=-1, keepdims=True)
+        i_low = (ref <= p_min) & ~i_very_low
+        i_high = (ref >= p_max) & ~i_very_high
+        i_ok = ~(i_low | i_high | i_very_low | i_very_high)
 
         # check for correct inversion within the domain
         xp_assert_close(res[i_ok], ref[i_ok])
@@ -327,6 +329,8 @@ class TestIQuantile:
         kwargs = dict(check_shape=False, check_dtype=False, check_0d=True)
         xp_assert_close(res[i_low], xp.asarray(p_min), **kwargs)
         xp_assert_close(res[i_high], xp.asarray(p_max), **kwargs)
+        xp_assert_close(res[i_very_low], xp.asarray(0.0), **kwargs)
+        xp_assert_close(res[i_very_high], xp.asarray(1.0), **kwargs)
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
@@ -412,28 +416,18 @@ class TestIQuantile:
         res = stats.iquantile(x, x)
         assert res.dtype == xp_default_dtype(xp)
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
     @pytest.mark.parametrize('method', _iquantile_methods)
     def test_size_one_sample(self, nan_policy, method, xp):
         discontinuous = method in _iquantile_discontinuous_methods
         x = xp.arange(10.)
-        # y = xp.asarray([0.])
         y = xp.asarray([0., -1., 1.])
-        # this should work but doesn't. It would be easy to fix in postprocessing -
-        # if y < min(x), result is always 0.0; if y > max(x), result is always 1.0 -
-        # but is there a more elegant way? Probably not - the current strategy of
-        # clipping the interpolated / extrapolated result doesn't actually work for
-        # methods other than 'linear', so best to replace that.
-        # but we don't get the expected result for y != x
         n = np.asarray(1.)
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
             if discontinuous:
-                # ref = xp.asarray(1.)
                 ref = xp.asarray([1., 0., 1.])
             else:
                 a, b = _iquantile_continuous_methods[method]
-                # ref = xp.asarray((n - a) / (n + 1 - a - b))
                 ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
 
         if nan_policy == 'propagate':
@@ -459,8 +453,8 @@ class TestIQuantile:
         res = res.data if nan_policy == 'marray' else res
         xp_assert_close(res, ref)
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
-    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
+    # skipping marray due to mdhaber/marray#24
+    @pytest.mark.parametrize('nan_policy', ['propagate', 'omit'])
     @pytest.mark.parametrize('method', _iquantile_methods)
     def test_size_zero_sample(self, nan_policy, method, xp):
         x = xp.arange(10.)
@@ -540,10 +534,13 @@ class TestIQuantile:
         # transition point
         x = np.arange(8., dtype=np.float64)
         xl, xr = np.nextafter(x, -np.inf), np.nextafter(x, np.inf)
-        x, xl, xr = xp.asarray(x), xp.asarray(xl), xp.asarray(xr)
         offset = 0.5 if method == 'closest_observation' else 0.0
-        ref_r = xp.minimum((x + 1 + offset) / 8, xp.asarray(1.0))
+        ref_r = (x + 1 + offset) / 8
+        ref_r[-1] = 1.0  # value is greater than or equal to the maximum observation
         ref_l = (x + offset) / 8
+        ref_l[0] = 0.0  # value is less than the minimum observation
+        x, xl, xr = xp.asarray(x), xp.asarray(xl), xp.asarray(xr)
+        ref_l, ref_r = xp.asarray(ref_l), xp.asarray(ref_r)
         xp_assert_equal(stats.iquantile(x, x, method=method), ref_r)
         xp_assert_equal(stats.iquantile(x, xr, method=method), ref_r)
         xp_assert_equal(stats.iquantile(x, xl, method=method), ref_l)
