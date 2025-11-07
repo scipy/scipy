@@ -415,4 +415,4 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
         a = xp.where(j, a, c)
 
     b = xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
-    return b if side == 'left' else  x.shape[-1] - b
+    return b if side == 'left' else x.shape[-1] - b
