@@ -1970,7 +1970,7 @@ PRIVATE void init_scoring
 	deg = Col [c].length ;
 	if (deg == 0)
 	{
-	    /* this is an empty column, kill and order it last */
+	    /* this is a empty column, kill and order it last */
 	    Col [c].shared2.order = --n_col2 ;
 	    KILL_PRINCIPAL_COL (c) ;
 	}
