@@ -2588,6 +2588,7 @@ def sh_legendre(n, monic=False):
 
     >>> import numpy as np
     >>> from scipy.special import sh_legendre, legendre
+    >>> from scipy.integrate import trapezoid
     >>> x = np.arange(0.0, 1.0, 0.01)
     >>> n = 3
     >>> np.allclose(sh_legendre(n)(x), legendre(n)(2*x - 1))
@@ -2600,7 +2601,7 @@ def sh_legendre(n, monic=False):
         (n+1) P_{n+1}^*(x) = (2n+1)(2x-1)\,P_n^*(x) - n\,P_{n-1}^*(x).
 
     This can be easily checked on :math:`[0, 1]` for :math:`n = 3`:
-    >>> x = np.arange(0.0, 1.0, 0.01)
+    >>> x = np.linspace(0.0, 1.0, 101)
     >>> lhs = (3 + 1) * sh_legendre(4)(x)
     >>> rhs = (2*3 + 1) * (2*x - 1) * sh_legendre(3)(x) - 3 * sh_legendre(2)(x)
     >>> np.allclose(lhs, rhs)
@@ -2610,13 +2611,14 @@ def sh_legendre(n, monic=False):
 
     >>> x = np.linspace(0.0, 1.0, 400)
     >>> y = sh_legendre(2)(x) * sh_legendre(3)(x)
-    >>> np.isclose(np.trapz(y, x), 0.0, atol=1e-4)
+    >>> bool(np.isclose(trapezoid(y, x), 0.0, atol=1e-4))
     True
 
     See Also
     --------
     scipy.special._orthogonal.legendre
     scipy.special._orthogonal.roots_sh_legendre
+    scipy.integrate.trapezoid
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
