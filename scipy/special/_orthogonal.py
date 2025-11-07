@@ -2616,8 +2616,8 @@ def sh_legendre(n, monic=False):
 
     See Also
     --------
-    scipy.special._orthogonal.legendre
-    scipy.special._orthogonal.roots_sh_legendre
+    scipy.special.legendre
+    scipy.special.roots_sh_legendre
     scipy.integrate.trapezoid
     """
     if n < 0:
