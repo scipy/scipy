@@ -242,7 +242,7 @@ c  simultaneously, we compute the resulting sum of squared residuals sq.
  220  continue
       mvv = mv+nv8
 c  we first determine the matrices (auu) and (qq). then we reduce the
-c  matrix (auu) to a unit upper triangular form (ru) using givens
+c  matrix (auu) to an unit upper triangular form (ru) using givens
 c  rotations without square roots. we apply the same transformations to
 c  the rows of matrix qq to obtain the mv x nuu matrix g.
 c  we store matrix (ru) into au and g into q.
@@ -353,7 +353,7 @@ c  we update the sum of squared residuals.
         go to 250
  420  continue
       if(nuu.eq.0) go to 800
-c  we determine the matrix (avv) and then we reduce her to a unit
+c  we determine the matrix (avv) and then we reduce her to an unit
 c  upper triangular form (rv) using givens rotations without square
 c  roots. we apply the same transformations to the columns of matrix
 c  g to obtain the (nv-7) x (nu-6-iop0-iop1) matrix h.

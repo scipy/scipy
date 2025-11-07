@@ -431,7 +431,7 @@
 /* +-----------------------------------------------------------------------+ */
 /* | Call the routine to initialise the mapping of x from the n-dimensional| */
 /* | unit cube to the hypercube given by u and l. If an error occurred,    | */
-/* | give out an error message and return to the main program with the error| */
+/* | give out a error message and return to the main program with the error| */
 /* | flag set.                                                             | */
 /* | JG 07/16/01 Changed call to remove unused data.                       | */
 /* +-----------------------------------------------------------------------+ */
