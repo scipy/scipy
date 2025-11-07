@@ -418,22 +418,23 @@ class TestIQuantile:
     def test_size_one_sample(self, nan_policy, method, xp):
         discontinuous = method in _iquantile_discontinuous_methods
         x = xp.arange(10.)
-        y = xp.asarray([0.])
+        # y = xp.asarray([0.])
+        y = xp.asarray([0., -1., 1.])
         # this should work but doesn't. It would be easy to fix in postprocessing -
         # if y < min(x), result is always 0.0; if y > max(x), result is always 1.0 -
         # but is there a more elegant way? Probably not - the current strategy of
         # clipping the interpolated / extrapolated result doesn't actually work for
         # methods other than 'linear', so best to replace that.
-        # y = xp.asarray([0., -1., 1.])
         # but we don't get the expected result for y != x
-        # ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
-        n = xp.asarray(1.)
+        n = np.asarray(1.)
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
             if discontinuous:
-                ref = xp.asarray(1.)
+                # ref = xp.asarray(1.)
+                ref = xp.asarray([1., 0., 1.])
             else:
                 a, b = _iquantile_continuous_methods[method]
-                ref = xp.asarray((n - a) / (n + 1 - a - b))
+                # ref = xp.asarray((n - a) / (n + 1 - a - b))
+                ref = xp.asarray([(n - a) / (n + 1 - a - b), 0., 1.])
 
         if nan_policy == 'propagate':
             x = x[:1]
@@ -455,7 +456,7 @@ class TestIQuantile:
 
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
             res = stats.iquantile(x, y, method=method, **kwargs)
-        res = res.data[()] if nan_policy == 'marray' else res
+        res = res.data if nan_policy == 'marray' else res
         xp_assert_close(res, ref)
 
     @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#360')
