@@ -4665,9 +4665,9 @@ def buttap(N, *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray[floating]
+    z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
-    p : ndarray[complexfloating]
+    p : ndarray[complex128]
         Poles of the transfer function.
     k : float
         Gain of the transfer function.
@@ -4708,9 +4708,9 @@ def cheb1ap(N, rp, *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray[floating]
+    z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
-    p : ndarray[complexfloating]
+    p : ndarray[complex128]
         Poles of the transfer function.
     k : float
         Gain of the transfer function.
@@ -4766,17 +4766,12 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     rs : float
         The attenuation in the stopband
     %(xp_device_snippet)s
-    dtype : Optional[DType]
-        Base real dtype for returned outputs (complex outputs will have the
-        corresponding complex dtype). ``dtype`` should be for the backend
-        ``xp``. ``None`` is equivalent to the default dtype for``xp``.
-        Default: None.
 
     Returns
     -------
-    z : ndarray[complexfloating]
+    z : ndarray[complex128]
         Zeros of the transfer function.
-    p : ndarray[complexfloating]
+    p : ndarray[complex128]
         Poles of the transfer function.
     k : float
         Gain of the transfer function.
@@ -4971,9 +4966,9 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray[complexfloating]
+    z : ndarray[complex128]
         Zeros of the transfer function.
-    p : ndarray[complexfloating]
+    p : ndarray[complex128]
         Poles of the transfer function.
     k : float
         Gain of the transfer function.
@@ -5302,9 +5297,9 @@ def besselap(N, norm='phase', *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray[floating]
+    z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
-    p : ndarray[complexfloating]
+    p : ndarray[complex128]
         Poles of the transfer function.
     k : float
         Gain of the transfer function. For phase-normalized, this is always 1.
