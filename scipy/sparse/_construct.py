@@ -5,7 +5,8 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
-           'diags_array', 'block_array', 'eye_array', 'random_array']
+           'diags_array', 'block_array', 'eye_array', 'random_array',
+           'expand_dims', 'permute_dims', 'swapaxes']
 
 import numbers
 import math
@@ -16,7 +17,7 @@ import numpy as np
 
 from scipy._lib._util import check_random_state, rng_integers, _transition_to_rng
 from scipy._lib.deprecation import _NoValue
-from ._sputils import upcast, get_index_dtype, isscalarlike
+from ._sputils import upcast, get_index_dtype, isscalarlike, isintlike
 
 from ._sparsetools import csr_hstack
 from ._bsr import bsr_matrix, bsr_array
@@ -26,6 +27,181 @@ from ._csr import csr_matrix, csr_array
 from ._dia import dia_matrix, dia_array
 
 from ._base import issparse, sparray
+
+
+def expand_dims(A, /, *, axis=0):
+    """
+    Add trivial axes to an array. Shape gets a ``1`` inserted at position `axis`.
+
+    Parameters
+    ----------
+    A : sparse array
+
+    axis : int
+        Position in the expanded axes where the new axis (or axes) is placed.
+        For a dimension ``N`` array, a valid axis is an integer on the
+        closed-interval ``[-N-1, N]``. Negative values work from the end of
+        the shape. ``0`` prepends an axis, as does ``-N-1``. ``-1`` appends
+        an axis, as does ``N``. The new axis has shape ``1`` and indices are
+        created with the value ``0``.
+
+    Returns
+    -------
+    out : sparse array
+        A expanded copy output in COO format with the same dtype as `A`.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N-1, N]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, expand_dims
+    >>> A = csr_array([[1, 2], [2, 0]])
+    >>> A.shape
+    (2, 2)
+    >>> expand_dims(A, axis=1).shape
+    (2, 1, 2)
+
+    """
+    if not isintlike(axis):
+        raise ValueError(f"Invalid axis {axis}. Must be an integer.")
+    idx = axis if axis >= 0 else axis + A.ndim + 1
+    if idx < 0 or idx > A.ndim:
+        raise ValueError(f"Invalid axis {axis} for N={A.ndim}. Must be in [-N-1, N].")
+
+    newA = A.tocoo(copy=True)
+    new_coord = np.zeros_like(newA.coords[0])
+
+    newA.coords = newA.coords[:idx] + (new_coord,) + newA.coords[idx:]
+    newA._shape = newA.shape[:idx] + (1,) + newA.shape[idx:]
+    if A.format == "coo":
+        newA.has_canonical_format = A.has_canonical_format
+    return newA
+
+
+def swapaxes(A, axis1, axis2):
+    """Interchange two axes of an array.
+
+    Parameters
+    ----------
+    A : sparse array
+    axis1 : int
+        First axis.
+    axis2 : int
+        Second axis.
+
+    Returns
+    -------
+    a_swapped : sparse array in COO format
+        A copy of the input array with the two identified axes swapped.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, swapaxes
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
+    >>> swapaxes(A, 1, 2).shape
+    (1, 3, 2)
+
+    """
+    axes = np.arange(A.ndim)
+    try:
+        axes[[axis1, axis2]] = axes[[axis2, axis1]]
+    except IndexError as err:
+        # original msg looks like: "index -4 is out of bounds for axis 0 with size 2"
+        msg = str(err)
+        msg = msg.removeprefix('index ').split(' axis ', 1)[0]
+        # Final error is: "Invalid axis: -4 is out of bounds for ndim=2"
+        raise ValueError(f"Invalid axis: {msg} ndim={A.ndim}")
+
+    axes = tuple(axes)
+    return permute_dims(A, axes=axes, copy=True)
+
+
+def permute_dims(A, axes=None, copy=False):
+    """Permute the axes of the sparse array `A` to the order `axes`.
+
+    Parameters
+    ----------
+    A : sparse array
+    axes : tuple or list of ints, optional
+        If specified, it must be a tuple or list which contains a permutation
+        of ``[0, 1, ..., N-1]`` where ``N`` is ``A.ndim``. The ith
+        axis of the returned array will correspond to the axis numbered ``axes[i]``
+        of the input. If not specified, defaults to ``range(A.ndim)[::-1]``,
+        which reverses the order of the axes.
+    copy : bool, optional (default: False)
+        Whether to return the permutation as a copy. If False, an in-place
+        permutation is provided if possible depending on format.
+
+    Returns
+    -------
+    out : sparse array in COO format
+        A copy of `A` with permuted axes.
+
+    Raises
+    ------
+    ValueError
+        If provided a non-integer or out of range ``[-N, N-1]`` axis,
+        where ``N`` is ``A.ndim``.
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, permute_dims
+    >>> A = coo_array([[[1, 2, 3], [2, 0, 0]]])
+    >>> A.shape
+    (1, 2, 3)
+    >>> permute_dims(A, axes=(1, 2, 0)).shape
+    (2, 3, 1)
+
+    """
+    ndim = A.ndim
+    if axes is None:
+        axes = tuple(range(ndim)[::-1])
+    elif len(axes) != ndim:
+        raise ValueError(f"Incorrect number of axes: {ndim} instead of {A.ndim}")
+
+    # -------------This is from _sputils.validateaxis which almost does what we want
+    # TODO stop _sputils.validateaxis from returning `None` when len(axes)==ndim
+    if not isinstance(axes, (tuple, list)):
+        # If not a tuple, check that the provided axes is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axes)), np.integer):
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axes)}')
+        axes = (axes,)
+
+    canon_axes = []
+    for ax in axes:
+        if not isintlike(ax):
+            raise TypeError(f"axis must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axis out of range for ndim")
+        canon_axes.append(ax)
+
+    if len(canon_axes) != len(set(canon_axes)):
+        raise ValueError("duplicate value in axis")
+    # -------------End of code from  _sputils.validateaxis
+    axes = canon_axes
+    if axes == list(range(ndim)):
+        return A if not copy else A.copy()
+
+    A = A.tocoo(copy=copy)
+    A._shape = tuple(A.shape[idx] for idx in axes)
+    A.coords = tuple(A.coords[idx] for idx in axes)
+    A.has_canonical_format = False  # data usually no longer sorted
+    return A
 
 
 def spdiags(data, diags, m=None, n=None, format=None):
@@ -550,17 +726,21 @@ def eye(m, n=None, k=0, dtype=float, format=None):
 
 
 def kron(A, B, format=None):
-    """Kronecker product of sparse matrices `A` and `B`
+    """Sparse representation of the Kronecker product of `A` and `B`
+
+    Computes the Kronecker product, a composite sparse array
+    made of blocks consisting of the second input array multiplied
+    by each element of the first input array.
 
     Parameters
     ----------
-    A : sparse or dense matrix
-        first matrix of the product
-    B : sparse or dense matrix
-        second matrix of the product
+    A : sparse or dense array
+        first array of the product
+    B : sparse or dense array
+        second array of the product
     format : str, optional (default: 'bsr' or 'coo')
         format of the result (e.g. "csr")
-        If None, choose 'bsr' for relatively dense array and 'coo' for others
+        If None, choose 'bsr' for relatively dense 2D arrays and 'coo' for others
 
     Returns
     -------
@@ -599,56 +779,65 @@ def kron(A, B, format=None):
         coo_sparse = coo_matrix
 
     B = coo_sparse(B)
-    if B.ndim != 2:
-        raise ValueError(f"kron requires 2D input arrays. `B` is {B.ndim}D.")
 
-    # B is fairly dense, use BSR
-    if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
-        A = csr_sparse(A,copy=True)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+    # B is 2D and fairly dense, and format aligns with bsr, compute using BSR
+    if (
+        (format is None or format == "bsr") and
+        B.ndim == 2 and 2*B.nnz >= math.prod(B.shape)
+    ):
+        if not hasattr(A, 'ndim') or A.ndim != 2:
+            # CSR routes thru COO in constructor so can make COO to check ndim
+            A = coo_sparse(A)
+        if A.ndim == 2:
+            A = csr_sparse(A, copy=True)
+            output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+            if A.nnz == 0 or B.nnz == 0:
+                # kronecker product is the zero matrix
+                return coo_sparse(output_shape).asformat(format)
 
-        B = B.toarray()
-        data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
-        data = data * B
+            B = B.toarray()
+            data = A.data.repeat(B.size).reshape(-1, B.shape[0], B.shape[1])
+            data = data * B
 
-        return bsr_sparse((data,A.indices,A.indptr), shape=output_shape)
+            return bsr_sparse((data, A.indices, A.indptr), shape=output_shape)
     else:
-        # use COO
-        A = coo_sparse(A)
-        if A.ndim != 2:
-            raise ValueError(f"kron requires 2D input arrays. `A` is {A.ndim}D.")
-        output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
+        A = coo_sparse(A)  # no copy needed as we use np.repeat below
 
-        if A.nnz == 0 or B.nnz == 0:
-            # kronecker product is the zero matrix
-            return coo_sparse(output_shape).asformat(format)
+    # compute using COO (convert to desired format just before return)
+    if coo_sparse is coo_matrix:
+        output_shape = (A.shape[0] * B.shape[0], A.shape[1] * B.shape[1])
+        ndim_diff = 0
+    else:
+        ndim_diff = A.ndim - B.ndim
+        A_shape = A.shape if ndim_diff >= 0 else (1,) * (-ndim_diff) + A.shape
+        B_shape = B.shape if ndim_diff <= 0 else (1,) * ndim_diff + B.shape
+        output_shape = tuple(a * b for a, b in zip(A_shape, B_shape))
 
-        # expand entries of a into blocks
-        idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
-        row = np.asarray(A.row, dtype=idx_dtype).repeat(B.nnz)
-        col = np.asarray(A.col, dtype=idx_dtype).repeat(B.nnz)
-        data = A.data.repeat(B.nnz)
+    if A.nnz == 0 or B.nnz == 0:
+        # kronecker product is the zero matrix
+        return coo_sparse(output_shape).asformat(format)
 
-        row *= B.shape[0]
-        col *= B.shape[1]
+    # expand entries of a into blocks
+    data = A.data.repeat(B.nnz)
+    idx_dtype = get_index_dtype(A.coords, maxval=max(output_shape))
+    coords = [np.asarray(co, dtype=idx_dtype).repeat(B.nnz) for co in A.coords]
+    if ndim_diff < 0:
+        new_co = np.zeros_like(coords[0])
+        coords = [new_co] + [new_co.copy() for _ in range(-ndim_diff - 1)] + coords
 
-        # increment block indices
-        row,col = row.reshape(-1,B.nnz),col.reshape(-1,B.nnz)
-        row += B.row
-        col += B.col
-        row,col = row.reshape(-1),col.reshape(-1)
+    # The last B.ndim coords need to be updated. Any previous columns in B are from
+    # prepending (1,)s, so coord from A is what we need (B coord axis is all 0)
+    for co, B_shape_i in zip(coords[-B.ndim:], B.shape):
+        co *= B_shape_i
 
-        # compute block entries
-        data = data.reshape(-1,B.nnz) * B.data
-        data = data.reshape(-1)
+    # increment block indices
+    coords[-B.ndim:] = [(co.reshape(-1, B.nnz) + Bco).ravel()
+                        for co, Bco in zip(coords[-B.ndim:], B.coords)]
+    # compute block entries
+    data = (data.reshape(-1, B.nnz) * B.data).ravel()
 
-        return coo_sparse((data,(row,col)), shape=output_shape).asformat(format)
+    return coo_sparse((data, tuple(coords)), shape=output_shape).asformat(format)
 
 
 def kronsum(A, B, format=None):
@@ -1215,8 +1404,8 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
 
     Parameters
     ----------
-    shape : int or tuple of ints
-        shape of the array
+    shape : tuple of int
+        shape of the array.
     density : real, optional (default: 0.01)
         density of the generated matrix: density equal to one means a full
         matrix, density of 0 means a matrix with no non-zero items.

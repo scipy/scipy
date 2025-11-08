@@ -1,22 +1,25 @@
 import warnings
 import numpy as np
-from itertools import combinations, permutations, product
+from itertools import combinations, permutations, product, accumulate
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 import inspect
+import math
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
 from scipy._lib._array_api import (
     array_namespace,
     is_numpy,
+    is_array_api_strict,
     xp_capabilities,
     xp_result_type,
     xp_size,
     xp_device,
-    is_array_api_strict,
+    xp_swapaxes
 )
-from scipy.special import ndtr, ndtri, comb, factorial
+from scipy._lib import array_api_extra as xpx
+from scipy.special import ndtr, ndtri
 from scipy import stats
 
 from ._common import ConfidenceInterval
@@ -177,7 +180,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if not vectorized:
         if not is_numpy(xp):
             message = (f"When using array library {xp.__name__}, `func` must be "
-                       "be vectorized and accept argument `axis`.")
+                       "vectorized and accept argument `axis`.")
             raise TypeError(message)
 
         statistic = _vectorize_statistic(statistic)
@@ -1044,7 +1047,6 @@ def _wrap_kwargs(fun):
 def _power_iv(rvs, test, n_observations, significance, vectorized,
               n_resamples, batch, kwargs):
     """Input validation for `monte_carlo_test`."""
-
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
@@ -1060,11 +1062,6 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
                    "must equal `len(n_observations)`.")
         raise ValueError(message)
 
-    significance = np.asarray(significance)[()]
-    if (not np.issubdtype(significance.dtype, np.floating)
-            or np.min(significance) < 0 or np.max(significance) > 1):
-        raise ValueError("`significance` must contain floats between 0 and 1.")
-
     kwargs = dict() if kwargs is None else kwargs
     if not isinstance(kwargs, dict):
         raise TypeError("`kwargs` must be a dictionary that maps keywords to arrays.")
@@ -1072,19 +1069,28 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     vals = kwargs.values()
     keys = kwargs.keys()
 
+    xp = array_namespace(*n_observations, significance, *vals)
+
+    significance = xp.asarray(significance)
+    if (not xp.isdtype(significance.dtype, "real floating")
+            or xp.min(significance) < 0 or xp.max(significance) > 1):
+        raise ValueError("`significance` must contain floats between 0 and 1.")
+
     # Wrap callables to ignore unused keyword arguments
     wrapped_rvs = [_wrap_kwargs(rvs_i) for rvs_i in rvs]
 
     # Broadcast, then ravel nobs/kwarg combinations. In the end,
     # `nobs` and `vals` have shape (# of combinations, number of variables)
-    tmp = np.asarray(np.broadcast_arrays(*n_observations, *vals))
+    # todo: find a better way to do this without combining arrays
+    tmp = xp.stack(xp.broadcast_arrays(*n_observations, *vals))
     shape = tmp.shape
     if tmp.ndim == 1:
-        tmp = tmp[np.newaxis, :]
+        tmp = xp.expand_dims(tmp, axis=0)
     else:
-        tmp = tmp.reshape((shape[0], -1)).T
+        tmp = xp.reshape(tmp, (shape[0], -1)).T
     nobs, vals = tmp[:, :len(rvs)], tmp[:, len(rvs):]
-    nobs = nobs.astype(int)
+    integer_dtype = xp_result_type(*n_observations, xp=xp)
+    nobs = xp.astype(nobs, integer_dtype)
 
     if not callable(test):
         raise TypeError("`test` must be callable.")
@@ -1092,10 +1098,15 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
     if vectorized is None:
         vectorized = 'axis' in inspect.signature(test).parameters
 
+    test_vectorized = test
     if not vectorized:
+        if not is_numpy(xp):
+            message = (f"When using array library {xp.__name__}, `test` must be "
+                       "be vectorized and accept argument `axis`.")
+            raise TypeError(message)
+
         test_vectorized = _vectorize_statistic(test)
-    else:
-        test_vectorized = test
+
     # Wrap `test` function to ignore unused kwargs
     test_vectorized = _wrap_kwargs(test_vectorized)
 
@@ -1111,10 +1122,10 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
             raise ValueError("`batch` must be a positive integer or None.")
 
     return (wrapped_rvs, test_vectorized, nobs, significance, vectorized,
-            n_resamples_int, batch_iv, vals, keys, shape[1:])
+            n_resamples_int, batch_iv, vals, keys, shape[1:], xp)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(allow_dask_compute=True, jax_jit=False)
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
           n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
@@ -1312,33 +1323,36 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     tmp = _power_iv(rvs, test, n_observations, significance,
                     vectorized, n_resamples, batch, kwargs)
     (rvs, test, nobs, significance,
-     vectorized, n_resamples, batch, args, kwds, shape)= tmp
+     vectorized, n_resamples, batch, args, kwds, shape, xp) = tmp
 
     batch_nominal = batch or n_resamples
     pvalues = []  # results of various nobs/kwargs combinations
-    for nobs_i, args_i in zip(nobs, args):
+    for i in range(nobs.shape[0]):
+        nobs_i, args_i = nobs[i, ...], args[i, ...]
         kwargs_i = dict(zip(kwds, args_i))
         pvalues_i = []  # results of batches; fixed nobs/kwargs combination
         for k in range(0, n_resamples, batch_nominal):
             batch_actual = min(batch_nominal, n_resamples - k)
-            resamples = [rvs_j(size=(batch_actual, nobs_ij), **kwargs_i)
+            resamples = [rvs_j(size=(batch_actual, int(nobs_ij)), **kwargs_i)
                          for rvs_j, nobs_ij in zip(rvs, nobs_i)]
             res = test(*resamples, **kwargs_i, axis=-1)
             p = getattr(res, 'pvalue', res)
             pvalues_i.append(p)
         # Concatenate results from batches
-        pvalues_i = np.concatenate(pvalues_i, axis=-1)
+        pvalues_i = xp.concat(pvalues_i, axis=-1)
         pvalues.append(pvalues_i)
     # `test` can return result with array of p-values
     shape += pvalues_i.shape[:-1]
     # Concatenate results from various nobs/kwargs combinations
-    pvalues = np.concatenate(pvalues, axis=0)
+    pvalues = xp.concat(pvalues, axis=0)
     # nobs/kwargs arrays were raveled to single axis; unravel
-    pvalues = pvalues.reshape(shape + (-1,))
+    pvalues = xp.reshape(pvalues, shape + (-1,))
     if significance.ndim > 0:
         newdims = tuple(range(significance.ndim, pvalues.ndim + significance.ndim))
-        significance = np.expand_dims(significance, newdims)
-    powers = np.mean(pvalues < significance, axis=-1)
+        significance = xpx.expand_dims(significance, axis=newdims)
+
+    float_dtype = xp_result_type(significance, pvalues, xp=xp)
+    powers = xp.mean(xp.astype(pvalues < significance, float_dtype), axis=-1)
 
     return PowerResult(power=powers, pvalues=pvalues)
 
@@ -1428,19 +1442,16 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
-                         rng=None):
+                         rng=None, *, xp):
     """
     Calculate null distribution for independent sample tests.
     """
-    n_samples = len(data)
-
     # compute number of permutations
     # (distinct partitions of data into samples of these sizes)
     n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
-    n_obs_ic = np.cumsum(n_obs_i)
+    n_obs_ic = list(accumulate(n_obs_i, initial=0))
     n_obs = n_obs_ic[-1]  # total number of observations
-    n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
-                     for i in range(n_samples-1, 0, -1)])
+    n_max = math.prod([math.comb(n, k) for n, k in zip(n_obs_ic[1:], n_obs_ic[:-1])])
 
     # perm_generator is an iterator that produces permutations of indices
     # from 0 to n_obs. We'll concatenate the samples, use these indices to
@@ -1465,30 +1476,34 @@ def _calculate_null_both(data, statistic, n_permutations, batch,
     # indices produced by the `perm_generator`, split them into new samples of
     # the original sizes, compute the statistic for each batch, and add these
     # statistic values to the null distribution.
-    data = np.concatenate(data, axis=-1)
+    data = xp.concat(data, axis=-1)
     for indices in _batch_generator(perm_generator, batch=batch):
-        indices = np.array(indices)
+        # Creating a tensor from a list of numpy.ndarrays is extremely slow...
+        indices = np.asarray(indices)
+        indices = xp.asarray(indices)
 
         # `indices` is 2D: each row is a permutation of the indices.
         # We use it to index `data` along its last axis, which corresponds
         # with observations.
         # After indexing, the second to last axis of `data_batch` corresponds
         # with permutations, and the last axis corresponds with observations.
-        data_batch = data[..., indices]
+        # data_batch = data[..., indices]
+        data_batch = _get_from_last_axis(data, indices, xp=xp)
 
         # Move the permutation axis to the front: we'll concatenate a list
         # of batched statistic values along this zeroth axis to form the
         # null distribution.
-        data_batch = np.moveaxis(data_batch, -2, 0)
-        data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
+        data_batch = xp.moveaxis(data_batch, -2, 0)
+        # data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
+        data_batch = [data_batch[..., i:j] for i, j in zip(n_obs_ic[:-1], n_obs_ic[1:])]
         null_distribution.append(statistic(*data_batch, axis=-1))
-    null_distribution = np.concatenate(null_distribution, axis=0)
+    null_distribution = xp.concat(null_distribution, axis=0)
 
     return null_distribution, n_permutations, exact_test
 
 
 def _calculate_null_pairings(data, statistic, n_permutations, batch,
-                             rng=None):
+                             rng=None, *, xp):
     """
     Calculate null distribution for association tests.
     """
@@ -1496,7 +1511,7 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
 
     # compute number of permutations (factorial(n) permutations of each sample)
     n_obs_sample = data[0].shape[-1]  # observations per sample; same for each
-    n_max = factorial(n_obs_sample)**n_samples
+    n_max = math.factorial(n_obs_sample)**n_samples
 
     # `perm_generator` is an iterator that produces a list of permutations of
     # indices from 0 to n_obs_sample, one for each sample.
@@ -1520,13 +1535,13 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     null_distribution = []
 
     for indices in batched_perm_generator:
-        indices = np.array(indices)
+        indices = xp.asarray(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
         # for samples, and the last is for observations. Swap the first two
         # to make the zeroth axis correspond with samples, as it does for
         # `data`.
-        indices = np.swapaxes(indices, 0, 1)
+        indices = xp_swapaxes(indices, 0, 1, xp=xp)
 
         # When we're done, `data_batch` will be a list of length `n_samples`.
         # Each element will be a batch of random permutations of one sample.
@@ -1535,17 +1550,18 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
         # easy to pass into `statistic`.)
         data_batch = [None]*n_samples
         for i in range(n_samples):
-            data_batch[i] = data[i][..., indices[i]]
-            data_batch[i] = np.moveaxis(data_batch[i], -2, 0)
+            # data_batch[i] = data[i][..., indices[i]]
+            data_batch[i] = _get_from_last_axis(data[i], indices[i, ...], xp=xp)
+            data_batch[i] = xp.moveaxis(data_batch[i], -2, 0)
 
         null_distribution.append(statistic(*data_batch, axis=-1))
-    null_distribution = np.concatenate(null_distribution, axis=0)
+    null_distribution = xp.concat(null_distribution, axis=0)
 
     return null_distribution, n_permutations, exact_test
 
 
 def _calculate_null_samples(data, statistic, n_permutations, batch,
-                            rng=None):
+                            rng=None, *, xp):
     """
     Calculate null distribution for paired-sample tests.
     """
@@ -1561,24 +1577,29 @@ def _calculate_null_samples(data, statistic, n_permutations, batch,
     # strategy except the roles of samples and observations are flipped.
     # So swap these axes, then we'll use the function for the "pairings"
     # strategy to do all the work!
-    data = np.swapaxes(data, 0, -1)
+    data = xp.stack(data, axis=0)
+    data = xp_swapaxes(data, 0, -1, xp=xp)
 
     # (Of course, the user's statistic doesn't know what we've done here,
     # so we need to pass it what it's expecting.)
     def statistic_wrapped(*data, axis):
-        data = np.swapaxes(data, 0, -1)
+        # can we do this without converting back and forth between
+        # array and list?
+        data = xp.stack(data, axis=0)
+        data = xp_swapaxes(data, 0, -1, xp=xp)
         if n_samples == 1:
-            data = data[0:1]
+            data = data[0:1, ...]
+        data = [data[i, ...] for i in range(data.shape[0])]
         return statistic(*data, axis=axis)
 
+    data = [data[i, ...] for i in range(data.shape[0])]
     return _calculate_null_pairings(data, statistic_wrapped, n_permutations,
-                                    batch, rng)
+                                    batch, rng, xp=xp)
 
 
 def _permutation_test_iv(data, statistic, permutation_type, vectorized,
                          n_resamples, batch, alternative, axis, rng):
     """Input validation for `permutation_test`."""
-
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -1594,9 +1615,6 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if vectorized is None:
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
-    if not vectorized:
-        statistic = _vectorize_statistic(statistic)
-
     message = "`data` must be a tuple containing at least two samples"
     try:
         if len(data) < 2 and permutation_type == 'independent':
@@ -1604,18 +1622,28 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     except TypeError:
         raise TypeError(message)
 
-    data = _broadcast_arrays(data, axis)
+    xp = array_namespace(*data)
+
+    if not vectorized:
+        if not is_numpy(xp):
+            message = (f"When using array library {xp.__name__}, `func` must be "
+                       "vectorized and accept argument `axis`.")
+            raise TypeError(message)
+
+        statistic = _vectorize_statistic(statistic)
+
+    data = _broadcast_arrays(data, axis, xp=xp)
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
+        sample = xpx.atleast_nd(sample, ndim=1)
         if sample.shape[axis] <= 1:
             raise ValueError("each sample in `data` must contain two or more "
                              "observations along `axis`.")
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
-    n_resamples_int = (int(n_resamples) if not np.isinf(n_resamples)
-                       else np.inf)
+    n_resamples_int = (int(n_resamples) if not math.isinf(n_resamples)
+                       else xp.inf)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
         raise ValueError("`n_resamples` must be a positive integer.")
 
@@ -1633,11 +1661,13 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
     rng = check_random_state(rng)
 
+    float_dtype = xp_result_type(*data_iv, force_floating=True, xp=xp)
+
     return (data_iv, statistic, permutation_type, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int, rng)
+            batch_iv, alternative, axis_int, rng, float_dtype, xp)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "lacks required indexing capabilities")])
 @_transition_to_rng('random_state')
 def permutation_test(data, statistic, *, permutation_type='independent',
                      vectorized=None, n_resamples=9999, batch=None,
@@ -2064,7 +2094,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                                 n_resamples, batch, alternative, axis,
                                 rng)
     (data, statistic, permutation_type, vectorized, n_resamples, batch,
-     alternative, axis, rng) = args
+     alternative, axis, rng, float_dtype, xp) = args
 
     observed = statistic(*data, axis=-1)
 
@@ -2075,31 +2105,33 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                             batch, rng)
     calculate_null = null_calculators[permutation_type]
     null_distribution, n_resamples, exact_test = (
-        calculate_null(*null_calculator_args))
+        calculate_null(*null_calculator_args, xp=xp))
 
     # See References [2] and [3]
     adjustment = 0 if exact_test else 1
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
-    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
-            else np.finfo(observed.dtype).eps*100)
-    gamma = np.abs(eps * observed)
+    eps =  (0 if not xp.isdtype(observed.dtype, 'real floating')
+            else xp.finfo(observed.dtype).eps*100)
+    gamma = xp.abs(eps * observed)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
-        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
+        count = xp.count_nonzero(cmps, axis=0) + adjustment
+        pvalues = xp.astype(count, float_dtype) / (n_resamples + adjustment)
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
-        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
+        count = xp.count_nonzero(cmps, axis=0) + adjustment
+        pvalues = xp.astype(count, float_dtype) / (n_resamples + adjustment)
         return pvalues
 
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp.minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -2107,7 +2139,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = np.clip(pvalues, 0, 1)
+    pvalues = xp.clip(pvalues, 0., 1.)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
 

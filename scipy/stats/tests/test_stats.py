@@ -26,11 +26,10 @@ from numpy import array, arange, float32, power
 import numpy as np
 
 import scipy.stats as stats
-import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
-from scipy import optimize
+from scipy import optimize, special
 from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
@@ -41,7 +40,8 @@ from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
-                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel)
+                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
+                                   xp_swapaxes)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -3190,67 +3190,79 @@ class TestGZscore:
         assert isinstance(z, np.ma.MaskedArray)
 
 
+@make_xp_test_case(stats.median_abs_deviation)
 class TestMedianAbsDeviation:
     def setup_method(self):
-        self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
-                                 3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
-                                 3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan])
-        self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                             3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7,
-                             3.7, 3.7, 3.7, 3.77, 5.28, 28.95])
+        self.dat_nan = [2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9,
+                        3.03, 3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5,
+                        3.6, 3.7, 3.7, 3.7, 3.7, 3.77, 5.28, np.nan]
+        self.dat = [2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
+                    3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7,
+                    3.7, 3.7, 3.7, 3.77, 5.28, 28.95]
 
-    def test_median_abs_deviation(self):
-        assert_almost_equal(stats.median_abs_deviation(self.dat, axis=None),
-                            0.355)
-        dat = self.dat.reshape(6, 4)
+    def test_median_abs_deviation(self, xp):
+        xp_assert_close(stats.median_abs_deviation(xp.asarray(self.dat), axis=None),
+                        xp.asarray(0.355))
+        dat = xp.reshape(xp.asarray(self.dat), (6, 4))
         mad = stats.median_abs_deviation(dat, axis=0)
-        mad_expected = np.asarray([0.435, 0.5, 0.45, 0.4])
-        assert_array_almost_equal(mad, mad_expected)
+        mad_expected = xp.asarray([0.435, 0.5, 0.45, 0.4])
+        xp_assert_close(mad, mad_expected)
 
-    def test_mad_nan_omit(self):
-        mad = stats.median_abs_deviation(self.dat_nan, nan_policy='omit')
-        assert_almost_equal(mad, 0.34)
+    def test_mad_nan_omit(self, xp):
+        mad = stats.median_abs_deviation(xp.asarray(self.dat_nan), nan_policy='omit')
+        xp_assert_close(mad, xp.asarray(0.34))
 
-    def test_axis_and_nan(self):
-        x = np.array([[1.0, 2.0, 3.0, 4.0, np.nan],
-                      [1.0, 4.0, 5.0, 8.0, 9.0]])
+    def test_axis_and_nan(self, xp):
+        x = xp.asarray([[1.0, 2.0, 3.0, 4.0, np.nan],
+                        [1.0, 4.0, 5.0, 8.0, 9.0]])
         mad = stats.median_abs_deviation(x, axis=1)
-        assert_equal(mad, np.array([np.nan, 3.0]))
+        xp_assert_close(mad, xp.asarray([np.nan, 3.0]))
 
-    def test_nan_policy_omit_with_inf(self):
-        z = np.array([1, 3, 4, 6, 99, np.nan, np.inf])
+    def test_nan_policy_omit_with_inf(self, xp):
+        z = xp.asarray([1, 3, 4, 6, 99, np.nan, np.inf])
         mad = stats.median_abs_deviation(z, nan_policy='omit')
-        assert_equal(mad, 3.0)
+        xp_assert_close(mad, xp.asarray(3.0))
 
     @pytest.mark.parametrize('axis', [0, 1, 2, None])
-    def test_size_zero_with_axis(self, axis):
-        x = np.zeros((3, 0, 4))
-        mad = stats.median_abs_deviation(x, axis=axis)
-        assert_equal(mad, np.full_like(x.sum(axis=axis), fill_value=np.nan))
+    def test_size_zero_with_axis(self, axis, xp):
+        x = xp.zeros((3, 0, 4))
+        context = (eager_warns(SmallSampleWarning, match='too small', xp=np)
+                   if axis in {1, None} else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, axis=axis)
+        xp_assert_close(mad, xp.full_like(xp.sum(x, axis=axis), fill_value=xp.nan))
 
     @pytest.mark.parametrize('nan_policy, expected',
-                             [('omit', np.array([np.nan, 1.5, 1.5])),
-                              ('propagate', np.array([np.nan, np.nan, 1.5]))])
-    def test_nan_policy_with_axis(self, nan_policy, expected):
-        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
-                      [1, 5, 3, 6, np.nan, np.nan],
-                      [5, 6, 7, 9, 9, 10]])
-        mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
-        assert_equal(mad, expected)
+                             [('omit', [np.nan, 1.5, 1.5]),
+                              ('propagate', [np.nan, np.nan, 1.5])])
+    def test_nan_policy_with_axis(self, nan_policy, expected, xp):
+        if nan_policy=='omit' and not is_numpy(xp):
+            pytest.skip("nan_policy='omit' with n-d input only supported by NumPy")
+
+        x = xp.asarray([[np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+                        [1, 5, 3, 6, np.nan, np.nan],
+                        [5, 6, 7, 9, 9, 10]])
+
+        context = (eager_warns(SmallSampleWarning, match="too small", xp=np)
+                   if nan_policy == 'omit' else contextlib.nullcontext())
+        with context:
+            mad = stats.median_abs_deviation(x, nan_policy=nan_policy, axis=1)
+            xp_assert_close(mad, xp.asarray(expected))
 
     @pytest.mark.parametrize('axis, expected',
                              [(1, [2.5, 2.0, 12.0]), (None, 4.5)])
     def test_center_mean_with_nan(self, axis, expected):
+        # nan_policy='omit' with multidimensional input only supported by NumPy
         x = np.array([[1, 2, 4, 9, np.nan],
                       [0, 1, 1, 1, 12],
                       [-10, -10, -10, 20, 20]])
         mad = stats.median_abs_deviation(x, center=np.mean, nan_policy='omit',
                                          axis=axis)
-        assert_allclose(mad, expected, rtol=1e-15, atol=1e-15)
+        xp_assert_close(mad, expected, rtol=1e-15, atol=1e-15)
 
-    def test_center_not_callable(self):
+    def test_center_not_callable(self, xp):
         with pytest.raises(TypeError, match='callable'):
-            stats.median_abs_deviation([1, 2, 3, 5], center=99)
+            stats.median_abs_deviation(xp.asarray([1, 2, 3, 5]), center=99)
 
 
 def _check_warnings(warn_list, expected_type, expected_len):
@@ -3264,15 +3276,19 @@ def _check_warnings(warn_list, expected_type, expected_len):
         assert_(warn_.category is expected_type)
 
 
+@make_xp_test_case(stats.iqr)
 class TestIQR:
 
-    def test_basic(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_basic(self, dtype, xp):
         x = np.arange(8) * 0.5
         np.random.shuffle(x)
-        assert_equal(stats.iqr(x), 1.75)
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        xp_assert_equal(stats.iqr(xp.asarray(x, dtype=dtype)),
+                        xp.asarray(1.75, dtype=dtype))
 
-    def test_api(self):
-        d = np.ones((5, 5))
+    def test_api(self, xp):
+        d = xp.ones((5, 5))
         stats.iqr(d)
         stats.iqr(d, None)
         stats.iqr(d, 1)
@@ -3280,126 +3296,146 @@ class TestIQR:
         stats.iqr(d, None, (10, 90))
         stats.iqr(d, None, (30, 20), 1.0)
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    def test_api_eager(self, xp):
+        d = xp.ones((5, 5))
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
         stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
     @pytest.mark.parametrize('x', [[], np.arange(0)])
-    def test_empty(self, x):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.iqr(x), np.nan)
+    def test_empty(self, x, xp):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            xp_assert_equal(stats.iqr(xp.asarray(x)), xp.asarray(xp.nan))
 
-    def test_constant(self):
+    def test_constant(self, xp):
         # Constant array always gives 0
-        x = np.ones((7, 4))
-        assert_equal(stats.iqr(x), 0.0)
-        assert_array_equal(stats.iqr(x, axis=0), np.zeros(4))
-        assert_array_equal(stats.iqr(x, axis=1), np.zeros(7))
-        assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
+        x = xp.ones((7, 4))
+        zero = xp.asarray(0.0)
+        xp_assert_equal(stats.iqr(x), zero)
+        xp_assert_equal(stats.iqr(x, axis=0), xp.zeros(4))
+        xp_assert_equal(stats.iqr(x, axis=1), xp.zeros(7))
+        xp_assert_equal(stats.iqr(x, interpolation='linear'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='midpoint'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='nearest'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='lower'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='higher'), zero)
 
         # 0 only along constant dimensions
         # This also tests much of `axis`
-        y = np.ones((4, 5, 6)) * np.arange(6)
-        assert_array_equal(stats.iqr(y, axis=0), np.zeros((5, 6)))
-        assert_array_equal(stats.iqr(y, axis=1), np.zeros((4, 6)))
-        assert_array_equal(stats.iqr(y, axis=2), np.full((4, 5), 2.5))
-        assert_array_equal(stats.iqr(y, axis=(0, 1)), np.zeros(6))
-        assert_array_equal(stats.iqr(y, axis=(0, 2)), np.full(5, 3.))
-        assert_array_equal(stats.iqr(y, axis=(1, 2)), np.full(4, 3.))
+        y = xp.ones((4, 5, 6)) * xp.arange(6.)
+        xp_assert_equal(stats.iqr(y, axis=0), xp.zeros((5, 6)))
+        xp_assert_equal(stats.iqr(y, axis=1), xp.zeros((4, 6)))
+        xp_assert_equal(stats.iqr(y, axis=2), xp.full((4, 5), 2.5))
+        xp_assert_equal(stats.iqr(y, axis=(0, 1)), xp.zeros(6))
+        xp_assert_equal(stats.iqr(y, axis=(0, 2)), xp.full(5, 3.))
+        xp_assert_equal(stats.iqr(y, axis=(1, 2)), xp.full(4, 3.))
 
-    def test_scalarlike(self):
-        x = np.arange(1) + 7.0
-        assert_equal(stats.iqr(x[0]), 0.0)
-        assert_equal(stats.iqr(x), 0.0)
-        assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
+    def test_scalarlike(self, xp):
+        x = xp.arange(1.) + 7.0
+        xp_assert_equal(stats.iqr(x[0]), xp.asarray(0.0))
+        xp_assert_equal(stats.iqr(x), xp.asarray(0.0))
+        xp_assert_equal(stats.iqr(x, keepdims=True), xp.asarray([0.0]))
 
-    def test_2D(self):
-        x = np.arange(15).reshape((3, 5))
-        assert_equal(stats.iqr(x), 7.0)
-        assert_array_equal(stats.iqr(x, axis=0), np.full(5, 5.))
-        assert_array_equal(stats.iqr(x, axis=1), np.full(3, 2.))
-        assert_array_equal(stats.iqr(x, axis=(0, 1)), 7.0)
-        assert_array_equal(stats.iqr(x, axis=(1, 0)), 7.0)
+    def test_2D(self, xp):
+        x = xp.reshape(xp.arange(15), (3, 5))
+        xp_assert_equal(stats.iqr(x), xp.asarray(7.0))
+        xp_assert_equal(stats.iqr(x, axis=0), xp.full(5, 5.))
+        xp_assert_equal(stats.iqr(x, axis=1), xp.full(3, 2.))
+        xp_assert_equal(stats.iqr(x, axis=(0, 1)), xp.asarray(7.0))
+        xp_assert_equal(stats.iqr(x, axis=(1, 0)), xp.asarray(7.0))
 
-    def test_axis(self):
+    def test_axis(self, xp):
         # The `axis` keyword is also put through its paces in `test_keepdims`.
         o = np.random.normal(size=(71, 23))
         x = np.dstack([o] * 10)                 # x.shape = (71, 23, 10)
-        q = stats.iqr(o)
+        o, x = xp.asarray(o), xp.asarray(x)
+        q = xp.broadcast_to(stats.iqr(o), (10,))
 
-        assert_equal(stats.iqr(x, axis=(0, 1)), q)
-        x = np.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
-        assert_equal(stats.iqr(x, axis=(2, 1)), q)
-        x = x.swapaxes(0, 1)                    # x.shape = (71, 10, 23)
-        assert_equal(stats.iqr(x, axis=(0, 2)), q)
-        x = x.swapaxes(0, 1)                    # x.shape = (10, 71, 23)
+        xp_assert_equal(stats.iqr(x, axis=(0, 1)), q)
+        x = xp.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
+        xp_assert_equal(stats.iqr(x, axis=(2, 1)), q)
+        x = xp_swapaxes(x,0, 1, xp=xp)                    # x.shape = (71, 10, 23)
+        xp_assert_equal(stats.iqr(x, axis=(0, 2)), q)
+        x = xp_swapaxes(x,0, 1, xp=xp)                    # x.shape = (10, 71, 23)
 
-        assert_equal(stats.iqr(x, axis=(0, 1, 2)),
-                     stats.iqr(x, axis=None))
-        assert_equal(stats.iqr(x, axis=(0,)),
-                     stats.iqr(x, axis=0))
+        xp_assert_equal(stats.iqr(x, axis=(0, 1, 2)),
+                        stats.iqr(x, axis=None))
+        xp_assert_equal(stats.iqr(x, axis=(0,)),
+                        stats.iqr(x, axis=0))
 
         d = np.arange(3 * 5 * 7 * 11)
         # Older versions of numpy only shuffle along axis=0.
         # Not sure about newer, don't care.
         np.random.shuffle(d)
         d = d.reshape((3, 5, 7, 11))
-        assert_equal(stats.iqr(d, axis=(0, 1, 2))[0],
-                     stats.iqr(d[:,:,:, 0].ravel()))
-        assert_equal(stats.iqr(d, axis=(0, 1, 3))[1],
-                     stats.iqr(d[:,:, 1,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 1, -4))[2],
-                     stats.iqr(d[:,:, 2,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 1, 2))[2],
-                     stats.iqr(d[2,:,:,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 2))[2, 1],
-                     stats.iqr(d[2, 1,:,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(1, -2))[2, 1],
-                     stats.iqr(d[2, :, :, 1].ravel()))
-        assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
-                     stats.iqr(d[2, :, 2,:].ravel()))
+        d = xp.asarray(d)
+        xp_assert_equal(stats.iqr(d, axis=(0, 1, 2))[0],
+                        stats.iqr(xp_ravel(d[:,:,:, 0])))
+        xp_assert_equal(stats.iqr(d, axis=(0, 1, 3))[1],
+                        stats.iqr(xp_ravel(d[:,:, 1,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 1, -4))[2],
+                        stats.iqr(xp_ravel(d[:,:, 2,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 1, 2))[2],
+                        stats.iqr(xp_ravel(d[2,:,:,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 2))[2, 1],
+                        stats.iqr(xp_ravel(d[2, 1,:,:])))
+        xp_assert_equal(stats.iqr(d, axis=(1, -2))[2, 1],
+                        stats.iqr(xp_ravel(d[2, :, :, 1])))
+        xp_assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
+                        stats.iqr(xp_ravel(d[2, :, 2,:])))
 
-        assert_raises(AxisError, stats.iqr, d, axis=4)
-        assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
+        with pytest.raises(AxisError, match='`axis` is out of bounds...'):
+            stats.iqr(d, axis=4)
+        with pytest.raises(ValueError, match='`axis` must contain only...'):
+            stats.iqr(d, axis=(0, 0))
 
-    def test_rng(self):
-        x = np.arange(5)
-        assert_equal(stats.iqr(x), 2)
-        assert_equal(stats.iqr(x, rng=(25, 87.5)), 2.5)
-        assert_equal(stats.iqr(x, rng=(12.5, 75)), 2.5)
-        assert_almost_equal(stats.iqr(x, rng=(10, 50)), 1.6)  # 3-1.4
+    def test_rng(self, xp):
+        x = xp.arange(5)
+        xp_assert_equal(stats.iqr(x), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 87.5)), xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(x, rng=(12.5, 75)), xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(x, rng=(10, 50)), xp.asarray(1.6))  # 3-1.4
 
-        assert_raises(ValueError, stats.iqr, x, rng=(0, 101))
-        assert_raises(ValueError, stats.iqr, x, rng=(np.nan, 25))
-        assert_raises(TypeError, stats.iqr, x, rng=(0, 50, 60))
+        message = r"Elements of `rng` must be in the range \[0, 100\]."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, rng=(0, 101))
 
-    def test_interpolation(self):
-        x = np.arange(5)
-        y = np.arange(4)
+        message = "`rng` must not contain NaNs."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, rng=(np.nan, 25))
+
+        message = "`rng` must be a two element sequence."
+        with pytest.raises(TypeError, match=message):
+            stats.iqr(x, rng=(0, 50, 60))
+
+    def test_interpolation(self, xp):
+        x = xp.arange(5)
+        y = xp.arange(4)
         # Default
-        assert_equal(stats.iqr(x), 2)
-        assert_equal(stats.iqr(y), 1.5)
+        xp_assert_equal(stats.iqr(x), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y), xp.asarray(1.5))
         # Linear
-        assert_equal(stats.iqr(x, interpolation='linear'), 2)
-        assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
+        xp_assert_equal(stats.iqr(x, interpolation='linear'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='linear'), xp.asarray(1.5))
         # Higher
-        assert_equal(stats.iqr(x, interpolation='higher'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
-        assert_equal(stats.iqr(y, interpolation='higher'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='higher'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'),
+                        xp.asarray(3.))
+        xp_assert_equal(stats.iqr(y, interpolation='higher'), xp.asarray(2.))
         # Lower (will generally, but not always be the same as higher)
-        assert_equal(stats.iqr(x, interpolation='lower'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
-        assert_equal(stats.iqr(y, interpolation='lower'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='lower'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'),
+                        xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='lower'), xp.asarray(2.))
         # Nearest
-        assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-        assert_equal(stats.iqr(y, interpolation='nearest'), 1)
+        xp_assert_equal(stats.iqr(x, interpolation='nearest'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='nearest'), xp.asarray(1.))
         # Midpoint
-        assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
-        assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='midpoint'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'),
+                        xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(y, interpolation='midpoint'), xp.asarray(2.))
 
         # Check all method= values new in numpy 1.22.0 are accepted
         for method in ('inverted_cdf', 'averaged_inverted_cdf',
@@ -3408,11 +3444,12 @@ class TestIQR:
                        'normal_unbiased'):
             stats.iqr(y, interpolation=method)
 
-        assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
+        with pytest.raises(ValueError, match='`method` must be one of...'):
+            stats.iqr(x, interpolation='foobar')
 
-    def test_keepdims(self):
+    def test_keepdims(self, xp):
         # Also tests most of `axis`
-        x = np.ones((3, 5, 7, 11))
+        x = xp.ones((3, 5, 7, 11))
         assert_equal(stats.iqr(x, axis=None, keepdims=False).shape, ())
         assert_equal(stats.iqr(x, axis=2, keepdims=False).shape, (3, 5, 11))
         assert_equal(stats.iqr(x, axis=(0, 1), keepdims=False).shape, (7, 11))
@@ -3429,72 +3466,95 @@ class TestIQR:
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
-    def test_nanpolicy(self):
-        x = np.arange(15.0).reshape((3, 5))
+    def test_nanpolicy(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
 
         # No NaNs
-        assert_equal(stats.iqr(x, nan_policy='propagate'), 7)
-        assert_equal(stats.iqr(x, nan_policy='omit'), 7)
-        assert_equal(stats.iqr(x, nan_policy='raise'), 7)
+        xp_assert_equal(stats.iqr(x, nan_policy='propagate'), xp.asarray(7.))
+        xp_assert_equal(stats.iqr(x, nan_policy='omit'), xp.asarray(7.))
+        xp_assert_equal(stats.iqr(x, nan_policy='raise'), xp.asarray(7.))
 
         # Yes NaNs
-        x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, nan_policy='propagate'),
-                         np.nan)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'),
-                         [5, 5, np.nan, 5, 5])
-            assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'),
-                         [2, np.nan, 2])
+        x = xpx.at(x)[1, 2].set(xp.nan)
+        xp_assert_equal(stats.iqr(x, nan_policy='propagate'),
+                        xp.asarray(xp.nan))
+        xp_assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'),
+                        xp.asarray([5, 5, xp.nan, 5, 5]))
+        xp_assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'),
+                        xp.asarray([2, xp.nan, 2]))
 
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
-            assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
+        xp_assert_equal(stats.iqr(x, nan_policy='omit'), xp.asarray(7.5))
 
-        assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
-        assert_raises(ValueError, stats.iqr, x, axis=0, nan_policy='raise')
-        assert_raises(ValueError, stats.iqr, x, axis=1, nan_policy='raise')
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, nan_policy='raise')
 
         # Bad policy
-        assert_raises(ValueError, stats.iqr, x, nan_policy='barfood')
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, nan_policy='barfood')
 
-    def test_scale(self):
-        x = np.arange(15.0).reshape((3, 5))
+    @pytest.mark.skip_xp_backends(np_only=True,
+        reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
+    def test_nanpolicy_nd(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
+        x[1, 2] = xp.nan
+        xp_assert_equal(stats.iqr(x, axis=0, nan_policy='omit'),
+                        xp.full(5, 5.))
+        xp_assert_equal(stats.iqr(x, axis=1, nan_policy='omit'),
+                        xp.asarray([2, 2.5, 2]))
+
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, axis=0, nan_policy='raise')
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, axis=1, nan_policy='raise')
+
+    def test_scale(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
 
         # No NaNs
-        assert_equal(stats.iqr(x, scale=1.0), 7)
-        assert_almost_equal(stats.iqr(x, scale='normal'), 7 / 1.3489795)
-        assert_equal(stats.iqr(x, scale=2.0), 3.5)
+        xp_assert_equal(stats.iqr(x, scale=1.0), xp.asarray(7.))
+        xp_assert_close(stats.iqr(x, scale='normal'), xp.asarray(7 / 1.3489795))
+        xp_assert_equal(stats.iqr(x, scale=2.0), xp.asarray(3.5))
 
         # Yes NaNs
-        x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), np.nan)
-            assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
-            assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
-            # axis=1 chosen to show behavior with both nans and without
-            assert_equal(stats.iqr(x, axis=1, scale=1.0,
-                                   nan_policy='propagate'), [2, np.nan, 2])
-            assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                          nan_policy='propagate'),
-                                np.array([2, np.nan, 2]) / 1.3489795)
-            assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
-                         [1, np.nan, 1])
-            # Since NumPy 1.17.0.dev, warnings are no longer emitted by
-            # np.percentile with nans, so we don't check the number of
-            # warnings here. See https://github.com/numpy/numpy/pull/12679.
+        x = xpx.at(x)[1, 2].set(xp.nan)
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), nan)
+        xp_assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), nan)
+        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), nan)
 
-        assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), 7.5)
-        assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                            7.5 / 1.3489795)
-        assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
+        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), xp.asarray(7.5))
+        xp_assert_close(stats.iqr(x, scale='normal', nan_policy='omit'),
+                        xp.asarray(7.5 / 1.3489795))
+        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), xp.asarray(3.75))
 
-        # Bad scale
-        assert_raises(ValueError, stats.iqr, x, scale='foobar')
+        # # Bad scale
+        message = "foobar not a valid scale for `iqr`"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, scale='foobar')
+
+    @pytest.mark.skip_xp_backends(np_only=True,
+        reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
+    def test_scale_nanpolicy_nd(self, xp):
+        # axis=1 chosen to show behavior with both nans and without
+        x = xp.reshape(xp.arange(15.0), (3, 5))
+        x = xpx.at(x)[1, 2].set(xp.nan)
+
+        xp_assert_equal(stats.iqr(x, axis=1, scale=1.0, nan_policy='propagate'),
+                        xp.asarray([2, np.nan, 2]))
+        xp_assert_close(stats.iqr(x, axis=1, scale='normal', nan_policy='propagate'),
+                        xp.asarray([2, np.nan, 2]) / 1.3489795)
+        xp_assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
+                        xp.asarray([1, np.nan, 1]))
+
+    def test_rng_order(self, xp):
+        # test that order of `rng` doesn't matter (as documented)
+        x = xp.arange(8.) * 0.5
+        res = stats.iqr(x, rng=(75, 25))
+        ref = stats.iqr(x)
+        xp_assert_equal(res, ref)
 
 
 @make_xp_test_case(stats.moment)
@@ -4475,59 +4535,53 @@ class TestChisquare:
         xp_assert_equal(res.pvalue, p)
 
 
-def test_friedmanchisquare():
-    # see ticket:113
+@make_xp_test_case(stats.friedmanchisquare)
+class TestFriedmanChiSquare:
     # verified with matlab and R
     # From Demsar "Statistical Comparisons of Classifiers over Multiple Data Sets"
     # 2006, Xf=9.28 (no tie handling, tie corrected Xf >=9.28)
-    x1 = [array([0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661, 0.583,
-                 0.775, 1.0, 0.94, 0.619, 0.972, 0.957]),
-          array([0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668, 0.583,
-                 0.838, 1.0, 0.962, 0.666, 0.981, 0.978]),
-          array([0.771, 0.590, 0.968, 0.654, 0.886, 0.916, 0.609, 0.563,
-                 0.866, 1.0, 0.965, 0.614, 0.9751, 0.946]),
-          array([0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685, 0.625,
-                 0.875, 1.0, 0.962, 0.669, 0.975, 0.970])]
+    x1 = [[0.763, 0.599, 0.954, 0.628, 0.882, 0.936, 0.661,
+           0.583, 0.775, 1.0, 0.94, 0.619, 0.972, 0.957],
+          [0.768, 0.591, 0.971, 0.661, 0.888, 0.931, 0.668,
+           0.583, 0.838, 1.0, 0.962, 0.666, 0.981, 0.978],
+          [0.771, 0.590, 0.968, 0.654, 0.886, 0.916, 0.609,
+           0.563, 0.866, 1.0, 0.965, 0.614, 0.9751, 0.946],
+          [0.798, 0.569, 0.967, 0.657, 0.898, 0.931, 0.685,
+           0.625, 0.875, 1.0, 0.962, 0.669, 0.975, 0.970]]
+    ref1 = (10.2283464566929, 0.0167215803284414)
 
     # From "Bioestadistica para las ciencias de la salud" Xf=18.95 p<0.001:
-    x2 = [array([4,3,5,3,5,3,2,5,4,4,4,3]),
-          array([2,2,1,2,3,1,2,3,2,1,1,3]),
-          array([2,4,3,3,4,3,3,4,4,1,2,1]),
-          array([3,5,4,3,4,4,3,3,3,4,4,4])]
+    x2 = [[4, 3, 5, 3, 5, 3, 2, 5, 4, 4, 4, 3],
+          [2, 2, 1, 2, 3, 1, 2, 3, 2, 1, 1, 3],
+          [2, 4, 3, 3, 4, 3, 3, 4, 4, 1, 2, 1],
+          [3, 5, 4, 3, 4, 4, 3, 3, 3, 4, 4, 4]]
+    ref2 = (18.9428571428571, 0.000280938375189499)
 
     # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6),
     # Xf=10.68, 0.005 < p < 0.01:
     # Probability from this example is inexact
     # using Chisquare approximation of Friedman Chisquare.
-    x3 = [array([7.0,9.9,8.5,5.1,10.3]),
-          array([5.3,5.7,4.7,3.5,7.7]),
-          array([4.9,7.6,5.5,2.8,8.4]),
-          array([8.8,8.9,8.1,3.3,9.1])]
+    x3 = [[7.0, 9.9, 8.5, 5.1, 10.3],
+          [5.3, 5.7, 4.7, 3.5, 7.7],
+          [4.9, 7.6, 5.5, 2.8, 8.4],
+          [8.8, 8.9, 8.1, 3.3, 9.1]]
+    ref3 = (10.68, 0.0135882729582176)
 
-    assert_array_almost_equal(stats.friedmanchisquare(x1[0],x1[1],x1[2],x1[3]),
-                              (10.2283464566929, 0.0167215803284414))
-    assert_array_almost_equal(stats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
-                              (18.9428571428571, 0.000280938375189499))
-    assert_array_almost_equal(stats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),
-                              (10.68, 0.0135882729582176))
-    assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
+    @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
+    @pytest.mark.parametrize("data, ref", [(x1, ref1), (x2, ref2), (x3, ref3)])
+    def test_against_references(self, dtype, data, ref, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
+            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        data = [xp.asarray(array, dtype=dtype) for array in data]
+        res = stats.friedmanchisquare(*data)
+        xp_assert_close(res.statistic, xp.asarray(ref[0], dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref[1], dtype=dtype))
 
-    # test for namedtuple attribute results
-    attributes = ('statistic', 'pvalue')
-    res = stats.friedmanchisquare(*x1)
-    check_named_results(res, attributes)
-
-    # test using mstats
-    assert_array_almost_equal(mstats.friedmanchisquare(x1[0], x1[1],
-                                                       x1[2], x1[3]),
-                              (10.2283464566929, 0.0167215803284414))
-    # the following fails
-    # assert_array_almost_equal(mstats.friedmanchisquare(x2[0],x2[1],x2[2],x2[3]),
-    #                           (18.9428571428571, 0.000280938375189499))
-    assert_array_almost_equal(mstats.friedmanchisquare(x3[0], x3[1],
-                                                       x3[2], x3[3]),
-                              (10.68, 0.0135882729582176))
-    assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
+    def test_too_few_samples(self, xp):
+        message = "At least 3 samples must be given"
+        with pytest.raises(ValueError, match=message):
+            stats.friedmanchisquare(xp.asarray(self.x3[0]), xp.asarray(self.x3[1]))
 
 
 class TestKSTest:
@@ -6469,132 +6523,6 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, resT.pvalue)
 
 
-class TestMannWhitneyU:
-    X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,
-         20.3269502208702, 20.0009273294025, 19.3440043632957, 20.4216806548105,
-         19.0649894736528, 18.7808043120398, 19.3680942943298, 19.4848044069953,
-         20.7514611265663, 19.0894948874598, 19.4975522356628, 18.9971170734274,
-         20.3239606288208, 20.6921298083835, 19.0724259532507, 18.9825187935021,
-         19.5144462609601, 19.8256857844223, 20.5174677102032, 21.1122407995892,
-         17.9490854922535, 18.2847521114727, 20.1072217648826, 18.6439891962179,
-         20.4970638083542, 19.5567594734914]
-
-    Y = [19.2790668029091, 16.993808441865, 18.5416338448258, 17.2634018833575,
-         19.1577183624616, 18.5119655377495, 18.6068455037221, 18.8358343362655,
-         19.0366413269742, 18.1135025515417, 19.2201873866958, 17.8344909022841,
-         18.2894380745856, 18.6661374133922, 19.9688601693252, 16.0672254617636,
-         19.00596360572, 19.201561539032, 19.0487501090183, 19.0847908674356]
-
-    significant = 14
-
-    def test_mannwhitneyu_one_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
-        u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
-        u4, p4 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
-
-        assert_equal(p1, p2)
-        assert_equal(p3, p4)
-        assert_(p1 != p3)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_equal(u3, 498)
-        assert_equal(u4, 102)
-        assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
-        assert_approx_equal(p3, 4.5941632666275e-05, significant=self.significant)
-
-    def test_mannwhitneyu_two_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 9.188326533255e-05,
-                            significant=self.significant)
-
-    def test_mannwhitneyu_no_correct_one_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='less')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='greater')
-        u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='greater')
-        u4, p4 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='less')
-
-        assert_equal(p1, p2)
-        assert_equal(p3, p4)
-        assert_(p1 != p3)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_equal(u3, 498)
-        assert_equal(u4, 102)
-        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
-        assert_approx_equal(p3, 4.40940099958089e-05, significant=self.significant)
-
-    def test_mannwhitneyu_no_correct_two_sided(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
-                                    alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
-                                    alternative='two-sided')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 8.81880199916178e-05,
-                            significant=self.significant)
-
-    def test_mannwhitneyu_ones(self):
-        # test for gh-1428
-        x = np.array([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1., 2.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1.])
-
-        y = np.array([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
-                      2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1.,
-                      1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2.,
-                      2., 1., 1., 2., 1., 1., 2., 1., 2., 1., 1., 1., 1., 2.,
-                      2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
-                      2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
-                      1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
-                      1., 1., 1., 1.])
-
-        # checked against R wilcox.test
-        assert_allclose(stats.mannwhitneyu(x, y, alternative='less'),
-                        (16980.5, 2.8214327656317373e-005))
-        # p-value from R, e.g. wilcox.test(x, y, alternative="g")
-        assert_allclose(stats.mannwhitneyu(x, y, alternative='greater'),
-                        (16980.5, 0.9999719954296))
-        assert_allclose(stats.mannwhitneyu(x, y, alternative='two-sided'),
-                        (16980.5, 5.642865531266e-05))
-
-    def test_mannwhitneyu_result_attributes(self):
-        # test for namedtuple attribute results
-        attributes = ('statistic', 'pvalue')
-        res = stats.mannwhitneyu(self.X, self.Y, alternative="less")
-        check_named_results(res, attributes)
-
-
 def test_pointbiserial():
     # same as mstats test except for the nan
     # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
@@ -7315,90 +7243,107 @@ class TestTrim:
         assert_equal(stats.trimboth([], 3/11.), [])
         assert_equal(stats.trimboth([], 4/6.), [])
 
-    def test_trim_mean(self):
+
+@make_xp_test_case(stats.trim_mean)
+class TestTrimMean:
+    def test_trim_mean(self, xp):
         # don't use pre-sorted arrays
-        a = np.array([4, 8, 2, 0, 9, 5, 10, 1, 7, 3, 6])
         idx = np.array([3, 5, 0, 1, 2, 4])
         a2 = np.arange(24).reshape(6, 4)[idx, :]
         a3 = np.arange(24).reshape(6, 4, order='F')[idx, :]
-        assert_equal(stats.trim_mean(a3, 2/6.),
-                     np.array([2.5, 8.5, 14.5, 20.5]))
-        assert_equal(stats.trim_mean(a2, 2/6.),
-                     np.array([10., 11., 12., 13.]))
+
+        xp_assert_equal(stats.trim_mean(xp.asarray(a3), 2/6.),
+                        xp.asarray([2.5, 8.5, 14.5, 20.5]))
+        xp_assert_equal(stats.trim_mean(xp.asarray(a2), 2/6.),
+                        xp.asarray([10., 11., 12., 13.]))
+
         idx4 = np.array([1, 0, 3, 2])
         a4 = np.arange(24).reshape(4, 6)[idx4, :]
-        assert_equal(stats.trim_mean(a4, 2/6.),
-                     np.array([9., 10., 11., 12., 13., 14.]))
+        xp_assert_equal(stats.trim_mean(xp.asarray(a4), 2/6.),
+                        xp.asarray([9., 10., 11., 12., 13., 14.]))
+
         # shuffled arange(24) as array_like
         a = [7, 11, 12, 21, 16, 6, 22, 1, 5, 0, 18, 10, 17, 9, 19, 15, 23,
              20, 2, 14, 4, 13, 8, 3]
-        assert_equal(stats.trim_mean(a, 2/6.), 11.5)
-        assert_equal(stats.trim_mean([5,4,3,1,2,0], 2/6.), 2.5)
+        xp_assert_equal(stats.trim_mean(xp.asarray(a), 2/6.), xp.asarray(11.5))
+        xp_assert_equal(stats.trim_mean(xp.asarray([5, 4, 3, 1, 2, 0]), 2/6.),
+                        xp.asarray(2.5))
 
         # check axis argument
         rng = np.random.default_rng(3417115752)
         a = rng.integers(20, size=(5, 6, 4, 7))
+        a = xp.asarray(a)
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
-            res2 = stats.trim_mean(np.moveaxis(a, axis, 0), 2/6.)
-            assert_equal(res1, res2)
+            res2 = stats.trim_mean(xp.moveaxis(a, axis, 0), 2/6.)
+            xp_assert_equal(res1, res2)
 
         res1 = stats.trim_mean(a, 2/6., axis=None)
-        res2 = stats.trim_mean(a.ravel(), 2/6.)
-        assert_equal(res1, res2)
+        res2 = stats.trim_mean(xp_ravel(a), 2/6.)
+        xp_assert_equal(res1, res2)
 
-        assert_raises(ValueError, stats.trim_mean, a, 0.6)
+        with pytest.raises(ValueError, match="Proportion too big."):
+            stats.trim_mean(a, 0.6)
 
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason="lazy -> no _axis_nan_policy")
+    @pytest.mark.skip_xp_backends('dask.array', reason="lazy -> no _axis_nan_policy")
+    def test_empty_input(self, xp):
         # empty input
-        assert_equal(stats.trim_mean([], 0.0), np.nan)
-        assert_equal(stats.trim_mean([], 0.6), np.nan)
+        with pytest.warns(SmallSampleWarning, match='too small'):
+            xp_assert_equal(stats.trim_mean(xp.asarray([]), 0.0), xp.asarray(xp.nan))
+        with pytest.warns(SmallSampleWarning, match='too small'):
+            xp_assert_equal(stats.trim_mean(xp.asarray([]), 0.6), xp.asarray(xp.nan))
 
 
+@make_xp_test_case(stats.sigmaclip)
 class TestSigmaClip:
-    def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip1(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, a.size)
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == a.shape
 
-    def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
+    def test_sigmaclip2(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 31),
+                       xp.linspace(0., 20., 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c.size, 4)
-        assert_equal(a.size, 36)  # check original array unchanged
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        assert c.shape == (4,)
+        assert a.shape == (36,)
 
-    def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip3(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
-        assert_(c.min() > low)
-        assert_(c.max() < upp)
-        assert_equal(low, c.mean() - fact*c.std())
-        assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5, 10.5, 11))
+        assert xp.min(c) > low
+        assert xp.max(c) < upp
+        xp_assert_equal(low, xp.mean(c) - fact*xp.std(c))
+        xp_assert_equal(upp, xp.mean(c) + fact*xp.std(c))
+        xp_assert_equal(c, xp.linspace(9.5, 10.5, 11))
 
-    def test_sigmaclip_result_attributes(self):
-        a = np.concatenate((np.linspace(9.5, 10.5, 11),
-                            np.linspace(-100, -50, 3)))
+    def test_sigmaclip_result_attributes(self, xp):
+        a = xp.concat((xp.linspace(9.5, 10.5, 11),
+                       xp.linspace(-100., -50., 3)))
         fact = 1.8
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_std_zero(self):
+    def test_std_zero(self, xp):
         # regression test #8632
-        x = np.ones(10)
-        assert_equal(stats.sigmaclip(x)[0], x)
+        x = xp.ones(10)
+        xp_assert_equal(stats.sigmaclip(x)[0], x)
 
 
 @make_xp_test_case(stats.alexandergovern)
@@ -7887,95 +7832,112 @@ class TestFOneWay:
             stats.f_oneway(a, b, axis=1)
 
 
+@make_xp_test_case(stats.kruskal)
 class TestKruskal:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1808365978)
-
-    def test_simple(self):
-        x = [1]
-        y = [2]
-        h, p = stats.kruskal(x, y)
+    def test_array_like(self):
+        h, p = stats.kruskal([1], [2])
         assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_equal(h, 1.0)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 1))
+        assert_allclose(p, stats.chi2.sf(h, 1))
 
-    def test_basic(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
+    def test_simple(self, xp):
+        x = xp.asarray([1])
+        y = xp.asarray([2])
         h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
-        h, p = stats.kruskal(np.array(x), np.array(y))
-        assert_approx_equal(h, 3./11, significant=10)
-        assert_approx_equal(p, stats.distributions.chi2.sf(3./11, 1))
+        xp_assert_close(h, xp.asarray(1.0))
+        dtype = xp_default_dtype(xp)
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(1, 1), dtype=dtype))
 
-    def test_simple_tie(self):
+    @pytest.mark.parametrize("dtype", ['float32', 'float64', None])
+    def test_basic(self, xp, dtype):
+        if dtype == 'float32' and np.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 3, 5, 7, 9], dtype=dtype)
+        y = xp.asarray([2, 4, 6, 8, 10], dtype=dtype)
+        h, p = stats.kruskal(x, y)
+        xp_assert_close(h, xp.asarray(3/11, dtype=dtype))
+        xp_assert_close(p, xp.asarray(stats.chi2.sf(3/11, 1), dtype=dtype))
+
+    def test_simple_tie(self, xp):
         x = [1]
         y = [1, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = 1.5**2 + 2*2.25**2 - 12
         corr = 0.75
-        expected = h_uncorr / corr   # 0.5
-        h, p = stats.kruskal(x, y)
+        expected = xp.asarray(h_uncorr / corr)   # 0.5
+
         # Since the expression is simple and the exact answer is 0.5, it
         # should be safe to use assert_equal().
-        assert_equal(h, expected)
+        xp_assert_equal(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
 
-    def test_another_tie(self):
+    def test_another_tie(self, xp):
         x = [1, 1, 1, 2]
         y = [2, 2, 2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y))
+
         h_uncorr = (12. / 8. / 9.) * 4 * (3**2 + 6**2) - 3 * 9
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr
-        h, p = stats.kruskal(x, y)
-        assert_approx_equal(h, expected)
+        expected = xp.asarray(h_uncorr / corr)
 
-    def test_three_groups(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(1.), expected))
+
+    def test_three_groups(self, xp):
         # A test of stats.kruskal with three groups, with ties.
         x = [1, 1, 1]
         y = [2, 2, 2]
         z = [2, 2]
+        h, p = stats.kruskal(xp.asarray(x), xp.asarray(y), xp.asarray(z))
+
         h_uncorr = (12. / 8. / 9.) * (3*2**2 + 3*6**2 + 2*6**2) - 3 * 9  # 5.0
         corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
-        expected = h_uncorr / corr  # 7.0
-        h, p = stats.kruskal(x, y, z)
-        assert_approx_equal(h, expected)
-        assert_approx_equal(p, stats.distributions.chi2.sf(h, 2))
+        expected = xp.asarray(h_uncorr / corr)  # 7.0
 
-    def test_empty(self):
+        xp_assert_close(h, expected)
+        xp_assert_close(p, special.chdtrc(xp.asarray(2.), expected))
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_empty(self, xp):
         # A test of stats.kruskal with three groups, with ties.
-        x = [1, 1, 1]
-        y = [2, 2, 2]
-        z = []
+        x = xp.asarray([1, 1, 1])
+        y = xp.asarray([2, 2, 2])
+        z = xp.asarray([], dtype=y.dtype)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+            res = stats.kruskal(x, y, z)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_kruskal_result_attributes(self):
-        x = [1, 3, 5, 7, 9]
-        y = [2, 4, 6, 8, 10]
-        res = stats.kruskal(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        x[9] = xp.nan
 
-    def test_nan_policy(self):
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.kruskal(x, x), (np.nan, np.nan))
-        assert_almost_equal(stats.kruskal(x, x, nan_policy='omit'), (0.0, 1.0))
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='raise')
-        assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
+        res = stats.kruskal(x, x)
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_large_no_samples(self):
+        res = stats.kruskal(x, x, nan_policy='omit')
+        xp_assert_equal(res.statistic, xp.asarray(0.0))
+        xp_assert_equal(res.pvalue, xp.asarray(1.0))
+
+        with pytest.raises(ValueError, match='The input contains nan values'):
+            stats.kruskal(x, x, nan_policy='raise')
+
+        with pytest.raises(ValueError, match='nan_policy must be one of...'):
+            stats.kruskal(x, x, nan_policy='foobar')
+
+    def test_large_samples(self, xp):
         # Test to see if large samples are handled correctly.
         n = 50000
-        x = self.rng.standard_normal(n)
-        y = self.rng.standard_normal(n) + 50
+        rng = np.random.default_rng(1808365978)
+        x = xp.asarray(rng.standard_normal(n))
+        y = xp.asarray(rng.standard_normal(n) + 50)
         h, p = stats.kruskal(x, y)
-        expected = 0
-        assert_approx_equal(p, expected)
+        xp_assert_close(p, xp.asarray(0., dtype=x.dtype))
 
-    def test_no_args_gh20661(self):
+    def test_no_args_gh20661(self, xp):
         message = r"Need at least two groups in stats.kruskal\(\)"
         with pytest.raises(ValueError, match=message):
             stats.kruskal()
