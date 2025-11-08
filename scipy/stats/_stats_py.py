@@ -10406,6 +10406,11 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     --------
     moment
 
+    Notes
+    -----
+    SciPy offers only basic capabilities for working with L-moments. For more advanced
+    features, consider the ``lmo`` package [4]_.
+
     References
     ----------
     .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
@@ -10415,6 +10420,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
            Using Linear Combinations of Order Statistics". Journal of the Royal
            Statistical Society. 1990. :doi:`10.1111/j.2517-6161.1990.tb01775.x`
     .. [3] "L-moment". *Wikipedia*. https://en.wikipedia.org/wiki/L-moment.
+    .. [4] @jorenham, *Lmo*, https://github.com/jorenham/Lmo/
 
     Examples
     --------

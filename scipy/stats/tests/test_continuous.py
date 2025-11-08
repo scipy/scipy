@@ -807,7 +807,8 @@ def check_lmoment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, standardize, 'cache', ref, success=True)  # cached now
         check(i, standardize, 'formula', ref,
-              success=dist._overrides('_lmoment_formula') and i < 5)
+              success=dist._overrides('_lmoment_formula')
+                      and (i < 5 or dist.__class__.__name__ == "Uniform"))
         check(i, standardize, 'general', ref, success=(i == 1))
         if dist._overrides('_icdf_formula'):
             check(i, standardize, 'quadrature_icdf', ref, success=True)
@@ -817,7 +818,8 @@ def check_lmoment_funcs(dist, result_shape):
         ref = dist.lmoment(i, standardize=standardize, method='order_statistics')
         assert ref.shape == result_shape
         check(i, standardize, 'formula', ref,
-              success=dist._overrides('_lmoment_formula') and i < 5)
+              success=dist._overrides('_lmoment_formula')
+                      and (i < 5 or dist.__class__.__name__ == "Uniform"))
         check(i, standardize, 'general', ref, success=False)
         if dist._overrides('_icdf_formula'):
             check(i, standardize, 'quadrature_icdf', ref, success=True)
@@ -955,11 +957,6 @@ def test_input_validation():
                "finite integer greater than or equal to 1.")
     with pytest.raises(ValueError, match=message):
         Test().lmoment(0)
-
-    message = ("Argument `order` of `Test.lmoment` with `standardize=True` must be a "
-               "finite integer greater than or equal to 3.")
-    with pytest.raises(ValueError, match=message):
-        Test().lmoment(1, standardize=True)
 
     message = "Argument `kind` of `Test.moment` must be one of..."
     with pytest.raises(ValueError, match=message):

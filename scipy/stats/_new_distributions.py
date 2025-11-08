@@ -205,10 +205,7 @@ class StandardNormal(Normal):
         return self._moment_raw_formula(order, **kwargs)
 
     def _lmoment_formula(self, order, **kwargs):
-        lscale = 1 / np.sqrt(np.pi)
-        lkurtosis = 30*np.arctan(np.sqrt(2))/np.pi - 9
-        lmoments = {1: 0, 2: lscale, 3: 0, 4: lkurtosis * lscale}
-        return lmoments.get(order, None)
+        return super()._lmoment_formula(order, mu=0., sigma=1., **kwargs)
 
     def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
@@ -434,8 +431,8 @@ class Uniform(ContinuousDistribution):
     _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
 
     def _lmoment_formula(self, order, *, a, b, ab, **kwargs):
-        lmoments = {1: 0.5*(a + b), 2: ab / 6, 3: 0, 4: 0}
-        return lmoments.get(order, None)
+        lmoments = {1: 0.5*(a + b), 2: ab / 6}
+        return lmoments.get(order, np.zeros_like(ab))
 
     def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
         try:

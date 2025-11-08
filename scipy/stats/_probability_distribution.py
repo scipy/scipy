@@ -372,9 +372,11 @@ class _ProbabilityDistribution(ABC):
         order : int
             The positive integer order of the L-moment; i.e. :math:`n` in the formulae
             above.
-        standardize : bool, default: False
-            Indicates whether to return the L-moment (default) or standardized L-moment;
-            i.e., the L-moment ratio.
+        standardize : bool, default: True
+            Indicates whether to return the standardized L-moment — i.e., the L-moment
+            ratio — for for orders 3 and higher. L-moment ratios are analogous to
+            standardized conventional moments: they are the L-moments divided by the
+            L-moment of order 2.
         method : {None, 'formula', 'general', 'order_statistics', 'quadrature_icdf', 'cache'}
             The strategy used to evaluate the L-moment. By default (``None``),
             the infrastructure chooses between the following options,
@@ -413,10 +415,14 @@ class _ProbabilityDistribution(ABC):
         finite result where none exists. This is not a critical bug, but an opportunity
         for an enhancement.
 
+        SciPy offers only basic capabilities for working with L-moments. For more advanced
+        features, consider the ``lmo`` package [2]_.
+
         References
         ----------
         .. [1] L-moment, *Wikipedia*,
                https://en.wikipedia.org/wiki/L-moment
+        .. [2] @jorenham, *Lmo*, https://github.com/jorenham/Lmo/
 
         Examples
         --------

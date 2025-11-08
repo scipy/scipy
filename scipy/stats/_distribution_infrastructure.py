@@ -3395,10 +3395,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     ### L-Moments
 
     @_set_invalid_nan_property
-    def lmoment(self, order=1, *, standardize=False, method=None):
-        min_order = 3 if standardize else 1
-        fname = 'lmoment` with `standardize=True' if standardize else 'lmoment'
-        order = self._validate_order(order, fname=fname, min_order=min_order)
+    def lmoment(self, order=1, *, standardize=True, method=None):
+        order = self._validate_order(order, fname='lmoment', min_order=1)
         return self._lmoment(order, standardize=standardize, method=method)
 
     def _lmoment(self, order, *, standardize, method):
@@ -3408,7 +3406,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if lmoment is None:
             return None
 
-        if standardize and lmoment is not None:
+        if standardize and order >= 3 and lmoment is not None:
             lscale = self._lmoment_dispatch(2, methods=methods, **self._parameters)
             if lscale is None:
                 return None
