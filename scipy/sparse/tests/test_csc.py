@@ -1,10 +1,16 @@
 import operator
+import sys
+import platform
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix, lil_matrix, csr_array, csc_array
 
 import pytest
+
+
+LINUX_INTEL = (sys.platform == 'linux') and (platform.machine() == 'x86_64')
+
 
 
 def test_csc_getrow():
@@ -100,13 +106,14 @@ def test_argmax_overflow(ax):
     assert A[ii, jj] == A[-2, -2]
 
 
-@pytest.mark.slow
+@pytest.mark.skipif(not LINUX_INTEL, reason="avoid variations due to OS, see gh-23826")
 @pytest.mark.timeout(2)  # only slow when broken (when spurious conversion occurs)
 @pytest.mark.parametrize("op", (operator.ne, operator.lt, operator.gt,
                                 operator.add, operator.sub, operator.mul,
                                 # truediv, eq, ge, le make dense output so not tested
                                 lambda x, y: x.minimum(y), lambda x, y: x.maximum(y)))
 def test_compressed_rc_conversion_mixup(op):
+    # see gh-23826 for related discussion
     num_minor_axis = np.iinfo(np.uint32).max + 1
     minor_axis_index = np.array([num_minor_axis - 1])
     major_axis_index = np.array([10])
