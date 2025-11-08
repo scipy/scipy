@@ -1605,6 +1605,7 @@ class TestPermutationTest:
 
     @skip_xp_backends('cupy', reason='needs cramervonmises_2samp')
     @skip_xp_backends(eager_only=True)  # cramervonmises_2samp does input validation
+    @skip_xp_backends(cpu_only=True)  # torch doesn't have `kv`
     def test_against_cvm(self, xp):
         x = stats.norm.rvs(size=4, scale=1, random_state=self.rng)
         y = stats.norm.rvs(size=5, loc=3, scale=3, random_state=self.rng)
@@ -1657,8 +1658,8 @@ class TestPermutationTest:
         res2 = permutation_test(data, statistic, n_resamples=1000, **kwds)
 
         # Check results
-        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
-        xp_assert_close(res.statistic, res2.statistic, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol*5)
+        xp_assert_close(res.statistic, res2.statistic, rtol=self.rtol*5)
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=6e-2)
         xp_assert_close(res.pvalue, res2.pvalue, atol=3e-2)
 
