@@ -373,10 +373,9 @@ class _ProbabilityDistribution(ABC):
             The positive integer order of the L-moment; i.e. :math:`n` in the formulae
             above.
         standardize : bool, default: True
-            Indicates whether to return the standardized L-moment — i.e., the L-moment
-            ratio — for for orders 3 and higher. L-moment ratios are analogous to
-            standardized conventional moments: they are the L-moments divided by the
-            L-moment of order 2.
+            Whether to return L-moment ratios for orders 3 and higher. L-moment ratios
+            are analogous to standardized conventional moments: they are the
+            non-standardized L-moments divided by the L-moment of order 2.
         method : {None, 'formula', 'general', 'order_statistics', 'quadrature_icdf', 'cache'}
             The strategy used to evaluate the L-moment. By default (``None``),
             the infrastructure chooses between the following options,
@@ -448,9 +447,9 @@ class _ProbabilityDistribution(ABC):
 
         Evaluate the fourth L-moment ratio, that is, the L-kurtosis:
 
-        >>> X.lmoment(order=4, standardize=True)
+        >>> X.lmoment(order=4)
         np.float64(0.12260171954089069)
-        >>> X.lmoment(order=4, standardize=True) == X.lmoment(order=4) / X.lmoment(order=2)
+        >>> X.lmoment(order=4) == X.lmoment(order=4, standardize=False) / X.lmoment(order=2)
         True
 
         """  # noqa:E501
