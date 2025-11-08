@@ -10,7 +10,7 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
-                                   xp_promote, xp_result_type)
+                                   xp_promote, xp_result_type, xp_copy)
 from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
@@ -475,7 +475,7 @@ def _cdf_cvm_inf(x, *, xp=None):
         # tot[cond] = tot[cond] + z
         tot = xpx.at(tot)[cond].add(z)
         # cond[cond] = np.abs(z) >= 1e-7
-        cond = xpx.at(cond)[cond].set(xp.abs(z) >= 1e-7)
+        cond = xpx.at(cond)[xp_copy(cond)].set(xp.abs(z) >= 1e-7)  # torch needs copy
         k += 1
 
     return tot
