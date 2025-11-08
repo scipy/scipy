@@ -6,8 +6,10 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy, make_xp_test_case, xp_default_dtype
+from scipy._lib._array_api import (is_numpy, make_xp_test_case, xp_default_dtype,
+                                   xp_size, array_namespace, _xp_copy_to_numpy)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib import array_api_extra as xpx
 from scipy import stats, special
 from scipy.fft.tests.test_fftlog import skip_xp_backends
 from scipy.optimize import root
@@ -568,8 +570,8 @@ class TestBootstrap:
 
     def test_jackknife_resample(self, xp):
         shape = 3, 4, 5, 6
-        np.random.seed(0)
-        x = np.random.rand(*shape)
+        rng = np.random.default_rng(5274950392)
+        x = rng.random(size=shape)
         y = next(_resampling._jackknife_resample(xp.asarray(x), xp=xp))
 
         for i in range(shape[-1]):
@@ -587,15 +589,14 @@ class TestBootstrap:
                                   reason="Test uses ... + fancy indexing")
     @pytest.mark.parametrize("rng_name", ["RandomState", "default_rng"])
     def test_bootstrap_resample(self, rng_name, xp):
-        rng = getattr(np.random, rng_name)
-
-        rng1 = rng(0)
-        rng2 = rng(0)
+        rng_gen = getattr(np.random, rng_name)
+        rng1 = rng_gen(3949441460)
+        rng2 = rng_gen(3949441460)
 
         n_resamples = 10
         shape = 3, 4, 5, 6
 
-        rng = np.random.default_rng(5894822712842015040)
+        rng = np.random.default_rng(5274950392)
         x = xp.asarray(rng.random(shape))
         y = _resampling._bootstrap_resample(x, n_resamples, rng=rng1, xp=xp)
 
@@ -613,8 +614,8 @@ class TestBootstrap:
     @pytest.mark.parametrize("axis", [0, 1, 2])
     def test_percentile_of_score(self, score, axis, xp):
         shape = 10, 20, 30
-        np.random.seed(0)
-        x = np.random.rand(*shape)
+        rng = np.random.default_rng(5903363153)
+        x = rng.random(shape)
         dtype = xp_default_dtype(xp)
         p = _resampling._percentile_of_score(xp.asarray(x, dtype=dtype),
                                              xp.asarray(score, dtype=dtype),
@@ -1125,14 +1126,19 @@ class TestMonteCarloHypothesisTest:
         assert res.pvalue == (c1 + 1)/(n_resamples + 1)
 
 
+@make_xp_test_case(power)
 class TestPower:
-    def test_input_validation(self):
+    def xp_normal(self, rng, *, xp, dtype=None):
+        dtype = xp_default_dtype(xp) if dtype is None else dtype
+        return lambda size: xp.asarray(rng.normal(size=size), dtype=dtype)
+
+    def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
         rng = np.random.default_rng(8519895914314711673)
 
         test = stats.ttest_ind
-        rvs = (rng.normal, rng.normal)
-        n_observations = (10, 12)
+        rvs = (self.xp_normal(rng, xp=xp), self.xp_normal(rng, xp=xp))
+        n_observations = (xp.asarray(10), xp.asarray(12))
 
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
@@ -1142,11 +1148,11 @@ class TestPower:
         with pytest.raises(TypeError, match=message):
             power(test, None, n_observations)
         with pytest.raises(TypeError, match=message):
-            power(test, (rng.normal, 'ekki'), n_observations)
+            power(test, (self.xp_normal(rng, xp=xp), 'ekki'), n_observations)
 
         message = "If `rvs` is a sequence..."
         with pytest.raises(ValueError, match=message):
-            power(test, (rng.normal,), n_observations)
+            power(test, (self.xp_normal(rng, xp=xp),), n_observations)
         with pytest.raises(ValueError, match=message):
             power(test, rvs, (10,))
 
@@ -1154,17 +1160,18 @@ class TestPower:
         with pytest.raises(ValueError, match=message):
             power(test, rvs, n_observations, significance=2)
         with pytest.raises(ValueError, match=message):
-            power(test, rvs, n_observations, significance=np.linspace(-1, 1))
+            power(test, rvs, n_observations, significance=xp.linspace(-1, 1, 50))
 
         message = "`kwargs` must be a dictionary"
         with pytest.raises(TypeError, match=message):
             power(test, rvs, n_observations, kwargs=(1, 2, 3))
 
-        message = "shape mismatch: objects cannot be broadcast"
-        with pytest.raises(ValueError, match=message):
-            power(test, rvs, ([10, 11], [12, 13, 14]))
-        with pytest.raises(ValueError, match=message):
-            power(test, rvs, ([10, 11], [12, 13]), kwargs={'x': [1, 2, 3]})
+        message = "not be broadcast|Chunks do not add|Incompatible shapes"
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13, 14])))
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13])),
+                  kwargs={'x': xp.asarray([1, 2, 3])})
 
         message = "`test` must be callable"
         with pytest.raises(TypeError, match=message):
@@ -1183,95 +1190,109 @@ class TestPower:
             power(test, rvs, n_observations, batch=10.5)
 
     @pytest.mark.slow
-    def test_batch(self):
+    def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `test`
         rng = np.random.default_rng(23492340193)
 
         def test(x, axis):
-            batch_size = 1 if x.ndim == 1 else len(x)
+            batch_size = 1 if x.ndim == 1 else x.shape[0]
             test.batch_size = max(batch_size, test.batch_size)
             test.counter += 1
-            return stats.ttest_1samp(x, 0, axis=axis).pvalue
+            return stats.ttest_1samp(x, xp.asarray(0.), axis=axis).pvalue
         test.counter = 0
         test.batch_size = 0
 
-        kwds = dict(test=test, n_observations=10, n_resamples=1000)
+        kwds = dict(test=test,
+                    n_observations=xp.asarray(10),
+                    n_resamples=1000)
 
         rng = np.random.default_rng(23492340193)
-        res1 = power(**kwds, rvs=rng.normal, batch=1)
-        assert_equal(test.counter, 1000)
-        assert_equal(test.batch_size, 1)
-
-        rng = np.random.default_rng(23492340193)
-        test.counter = 0
-        res2 = power(**kwds, rvs=rng.normal, batch=50)
-        assert_equal(test.counter, 20)
-        assert_equal(test.batch_size, 50)
+        res1 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=1)
+        assert test.counter == 1000
+        assert test.batch_size == 1
 
         rng = np.random.default_rng(23492340193)
         test.counter = 0
-        res3 = power(**kwds, rvs=rng.normal, batch=1000)
-        assert_equal(test.counter, 1)
-        assert_equal(test.batch_size, 1000)
+        res2 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=50)
+        assert test.counter == 20
+        assert test.batch_size == 50
 
-        assert_equal(res1.power, res3.power)
-        assert_equal(res2.power, res3.power)
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res3 = power(**kwds, rvs=self.xp_normal(rng, xp=xp), batch=1000)
+        assert test.counter == 1
+        assert test.batch_size == 1000
+
+        xp_assert_equal(res1.power, res3.power)
+        xp_assert_equal(res2.power, res3.power)
 
     @pytest.mark.slow
-    def test_vectorization(self):
+    def test_vectorization(self, xp):
         # Test that `power` is vectorized as expected
         rng = np.random.default_rng(25495254834552)
+        alternatives = {-1: 'less', 0:'two-sided', 1: 'greater'}
 
         # Single vectorized call
-        popmeans = np.array([0, 0.2])
+        popmeans = xp.asarray([0, 0.2])
         def test(x, alternative, axis=-1):
             # ensure that popmeans axis is zeroth and orthogonal to the rest
-            popmeans_expanded = np.expand_dims(popmeans, tuple(range(1, x.ndim + 1)))
+            popmeans_expanded = xpx.expand_dims(popmeans,
+                                                axis=tuple(range(1, x.ndim + 1)))
+            alternative = alternatives[int(alternative)]
             return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
                                      axis=axis)
 
         # nx and kwargs broadcast against one another
-        nx = np.asarray([10, 15, 20, 50, 100])[:, np.newaxis]
-        kwargs = {'alternative': ['less', 'greater', 'two-sided']}
+        nx = xp.asarray([10, 15, 20, 50, 100])[:, xp.newaxis]
+        kwargs = {'alternative': xp.asarray([-1, 0, 1])}
 
         # This dimension is added to the beginning
-        significance = np.asarray([0.01, 0.025, 0.05, 0.1])
-        res = stats.power(test, rng.normal, nx, significance=significance,
-                          kwargs=kwargs)
+        significance = xp.asarray([0.01, 0.025, 0.05, 0.1])
+        res = stats.power(test, self.xp_normal(rng, xp=xp), nx,
+                          significance=significance, kwargs=kwargs)
 
         # Looping over all combinations
         ref = []
         for significance_i in significance:
-            for nx_i in nx:
+            for i in range(nx.shape[0]):
+                nx_i = nx[i, ...]
                 for alternative_i in kwargs['alternative']:
-                    for popmean_i in popmeans:
+                    for j in range(popmeans.shape[0]):
+                        popmean_j = popmeans[j]
                         def test2(x, axis=-1):
-                            return stats.ttest_1samp(x, popmean_i, axis=axis,
-                                                     alternative=alternative_i)
+                            return stats.ttest_1samp(x, popmean_j, axis=axis,
+                                alternative=alternatives[int(alternative_i)])
 
-                        tmp = stats.power(test2, rng.normal, nx_i,
+                        tmp = stats.power(test2, self.xp_normal(rng, xp=xp), nx_i,
                                           significance=significance_i)
                         ref.append(tmp.power)
-        ref = np.reshape(ref, res.power.shape)
+        ref = xp.reshape(xp.stack(ref), res.power.shape)
 
         # Show that results are similar
-        assert_allclose(res.power, ref, rtol=2e-2, atol=1e-2)
+        xp_assert_close(res.power, ref, rtol=2e-2, atol=1e-2)
 
-    def test_ttest_ind_null(self):
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
+    def test_ttest_ind_null(self, xp):
         # Check that the p-values of `ttest_ind` are uniformly distributed under
         # the null hypothesis
         rng = np.random.default_rng(254952548345528)
 
         test = stats.ttest_ind
-        n_observations = rng.integers(10, 100, size=(2, 10))
-        rvs = rng.normal, rng.normal
-        significance = np.asarray([0.01, 0.05, 0.1])
+        n_observations = (xp.asarray(rng.integers(10, 100, size=(10))),
+                          xp.asarray(rng.integers(10, 100, size=(10))))
+        rvs = self.xp_normal(rng, xp=xp), self.xp_normal(rng, xp=xp)
+        significance = xp.asarray([0.01, 0.05, 0.1])
         res = stats.power(test, rvs, n_observations, significance=significance)
-        significance = np.broadcast_to(significance[:, np.newaxis], res.power.shape)
-        assert_allclose(res.power, significance, atol=1e-2)
+        significance = xp.broadcast_to(significance[:, xp.newaxis], res.power.shape)
+        xp_assert_close(res.power, significance, atol=1e-2)
 
-    def test_ttest_1samp_power(self):
+    @pytest.mark.skip_xp_backends('array_api_strict',
+                                  reason='currently combines integer and float arrays')
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  exceptions=['cupy', 'jax.numpy', 'dask.array'])
+    def test_ttest_1samp_power(self, xp):
         # Check simulated ttest_1samp power against reference
         rng = np.random.default_rng(254952548345528)
 
@@ -1285,14 +1306,15 @@ class TestPower:
                [[0.0592903 , 0.29317561, 0.71718121],
                 [0.07094116, 0.56450441, 0.96815163]]]
 
-        kwargs = {'popmean': [0.1, 0.5, 0.9]}
-        n_observations = [[10], [20]]
-        significance = [0.01, 0.05]
-        res = stats.power(stats.ttest_1samp, rng.normal, n_observations,
+        kwargs = {'popmean': xp.asarray([0.1, 0.5, 0.9])}
+        n_observations = xp.asarray([[10], [20]])
+        significance = xp.asarray([0.01, 0.05])
+        res = stats.power(stats.ttest_1samp, self.xp_normal(rng, xp=xp), n_observations,
                           significance=significance, kwargs=kwargs)
-        assert_allclose(res.power, ref, atol=1e-2)
+        xp_assert_close(res.power, xp.asarray(ref), atol=1e-2)
 
 
+@make_xp_test_case(permutation_test)
 class TestPermutationTest:
 
     rtol = 1e-14
@@ -1301,15 +1323,16 @@ class TestPermutationTest:
         self.rng = np.random.default_rng(7170559330470561044)
 
     # -- Input validation -- #
-
-    def test_permutation_test_iv(self):
+    def test_permutation_test_iv(self, xp):
 
         def stat(x, y, axis):
             return stats.ttest_ind((x, y), axis).statistic
 
+        data = (xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
+
         message = "each sample in `data` must contain two or more ..."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1]), stat)
+            permutation_test((data[0], xp.asarray([0])), stat)
 
         message = "`data` must be a tuple containing at least two samples"
         with pytest.raises(ValueError, match=message):
@@ -1319,40 +1342,40 @@ class TestPermutationTest:
 
         message = "`axis` must be an integer."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, axis=1.5)
+            permutation_test(data, stat, axis=1.5)
 
         message = "`permutation_type` must be in..."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat,
+            permutation_test(data, stat,
                              permutation_type="ekki")
 
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, vectorized=1.5)
+            permutation_test(data, stat, vectorized=1.5)
 
         message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, n_resamples=-1000)
+            permutation_test(data, stat, n_resamples=-1000)
 
         message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, n_resamples=1000.5)
+            permutation_test(data, stat, n_resamples=1000.5)
 
         message = "`batch` must be a positive integer or None."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, batch=-1000)
+            permutation_test(data, stat, batch=-1000)
 
         message = "`batch` must be a positive integer or None."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, batch=1000.5)
+            permutation_test(data, stat, batch=1000.5)
 
         message = "`alternative` must be in..."
         with pytest.raises(ValueError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, alternative='ekki')
+            permutation_test(data, stat, alternative='ekki')
 
         message = "SeedSequence expects int or sequence of ints"
         with pytest.raises(TypeError, match=message):
-            permutation_test(([1, 2, 3], [1, 2, 3]), stat, rng='herring')
+            permutation_test(data, stat, rng='herring')
 
     # -- Test Parameters -- #
     # SPEC-007 leave one call with seed to check it still works
@@ -1360,17 +1383,17 @@ class TestPermutationTest:
                                               np.random.default_rng])
     @pytest.mark.parametrize('permutation_type',
                              ['pairings', 'samples', 'independent'])
-    def test_batch(self, permutation_type, random_state):
+    def test_batch(self, permutation_type, random_state, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
-        x = self.rng.random(10)
-        y = self.rng.random(10)
+        x = xp.asarray(self.rng.random(10))
+        y = xp.asarray(self.rng.random(10))
 
         def statistic(x, y, axis):
-            batch_size = 1 if x.ndim == 1 else len(x)
+            batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
@@ -1378,23 +1401,23 @@ class TestPermutationTest:
                 'vectorized': True}
         res1 = stats.permutation_test((x, y), statistic, batch=1,
                                       random_state=random_state(0), **kwds)
-        assert_equal(statistic.counter, 1001)
-        assert_equal(statistic.batch_size, 1)
+        assert statistic.counter == 1001
+        assert statistic.batch_size == 1
 
         statistic.counter = 0
         res2 = stats.permutation_test((x, y), statistic, batch=50,
                                       random_state=random_state(0), **kwds)
-        assert_equal(statistic.counter, 21)
-        assert_equal(statistic.batch_size, 50)
+        assert statistic.counter == 21
+        assert statistic.batch_size == 50
 
         statistic.counter = 0
         res3 = stats.permutation_test((x, y), statistic, batch=1000,
                                       random_state=random_state(0), **kwds)
-        assert_equal(statistic.counter, 2)
-        assert_equal(statistic.batch_size, 1000)
+        assert statistic.counter == 2
+        assert statistic.batch_size == 1000
 
-        assert_equal(res1.pvalue, res3.pvalue)
-        assert_equal(res2.pvalue, res3.pvalue)
+        xp_assert_equal(res1.pvalue, res3.pvalue)
+        xp_assert_equal(res2.pvalue, res3.pvalue)
 
     # SPEC-007 leave at least one call with seed to check it still works
     @pytest.mark.parametrize('random_state', [np.random.RandomState,
@@ -1403,23 +1426,23 @@ class TestPermutationTest:
                              [('pairings', special.factorial(3)**2),
                               ('samples', 2**3),
                               ('independent', special.binom(6, 3))])
-    def test_permutations(self, permutation_type, exact_size, random_state):
+    def test_permutations(self, permutation_type, exact_size, random_state, xp):
         # make sure that the `permutations` parameter is respected by checking
         # the size of the null distribution
-        x = self.rng.random(3)
-        y = self.rng.random(3)
+        x = xp.asarray(self.rng.random(3))
+        y = xp.asarray(self.rng.random(3))
 
         def statistic(x, y, axis):
-            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
 
         kwds = {'permutation_type': permutation_type,
                 'vectorized': True}
         res = stats.permutation_test((x, y), statistic, n_resamples=3,
                                      random_state=random_state(0), **kwds)
-        assert_equal(res.null_distribution.size, 3)
+        assert xp_size(res.null_distribution) == 3
 
         res = stats.permutation_test((x, y), statistic, **kwds)
-        assert_equal(res.null_distribution.size, exact_size)
+        assert xp_size(res.null_distribution) == exact_size
 
     # -- Randomized Permutation Tests -- #
 
@@ -1429,7 +1452,7 @@ class TestPermutationTest:
     # into three tests, each testing a particular combination of the three
     # parameters.
 
-    def test_randomized_test_against_exact_both(self):
+    def test_randomized_test_against_exact_both(self, xp):
         # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='both
 
@@ -1438,24 +1461,24 @@ class TestPermutationTest:
         nx, ny, permutations = 8, 9, 24000
         assert special.binom(nx + ny, nx) > permutations
 
-        x = stats.norm.rvs(size=nx)
-        y = stats.norm.rvs(size=ny)
+        rng = np.random.default_rng(8235259808)
+        x = xp.asarray(rng.standard_normal(size=nx))
+        y = xp.asarray(rng.standard_normal(size=ny))
         data = x, y
 
         def statistic(x, y, axis):
-            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
 
         kwds = {'vectorized': True, 'permutation_type': 'independent',
                 'batch': 100, 'alternative': alternative, 'rng': rng}
-        res = permutation_test(data, statistic, n_resamples=permutations,
-                               **kwds)
-        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
 
         assert res.statistic == res2.statistic
-        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+        xp_assert_close(res.pvalue, res2.pvalue, atol=1e-2)
 
     @pytest.mark.slow()
-    def test_randomized_test_against_exact_samples(self):
+    def test_randomized_test_against_exact_samples(self, xp):
         # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='samples'
 
@@ -1464,23 +1487,25 @@ class TestPermutationTest:
         nx, ny, permutations = 15, 15, 32000
         assert 2**nx > permutations
 
-        x = stats.norm.rvs(size=nx)
-        y = stats.norm.rvs(size=ny)
+        rng = np.random.default_rng(8235259808)
+        x = xp.asarray(rng.standard_normal(size=nx))
+        y = xp.asarray(rng.standard_normal(size=ny))
         data = x, y
 
         def statistic(x, y, axis):
-            return np.mean(x - y, axis=axis)
+            return xp.mean(x - y, axis=axis)
 
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'rng': rng}
-        res = permutation_test(data, statistic, n_resamples=permutations,
-                               **kwds)
-        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
 
         assert res.statistic == res2.statistic
-        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+        xp_assert_close(res.pvalue, res2.pvalue, atol=1e-2)
 
-    def test_randomized_test_against_exact_pairings(self):
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+    def test_randomized_test_against_exact_pairings(self, xp):
         # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='pairings'
 
@@ -1489,49 +1514,51 @@ class TestPermutationTest:
         nx, ny, permutations = 8, 8, 40000
         assert special.factorial(nx) > permutations
 
-        x = stats.norm.rvs(size=nx)
-        y = stats.norm.rvs(size=ny)
+        rng = np.random.default_rng(8235259808)
+        x = xp.asarray(rng.standard_normal(size=nx))
+        y = xp.asarray(rng.standard_normal(size=ny))
         data = [x]
 
-        def statistic1d(x):
-            return stats.pearsonr(x, y)[0]
-
-        statistic = _resampling._vectorize_statistic(statistic1d)
+        def statistic(x, axis):
+            return stats.pearsonr(x, y, axis=axis).statistic
 
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'rng': rng}
-        res = permutation_test(data, statistic, n_resamples=permutations,
-                               **kwds)
-        res2 = permutation_test(data, statistic, n_resamples=np.inf, **kwds)
+        res = permutation_test(data, statistic, n_resamples=permutations, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
 
         assert res.statistic == res2.statistic
-        assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
+        xp_assert_close(res.pvalue, res2.pvalue, atol=1e-2)
 
     # -- Independent (Unpaired) Sample Tests -- #
 
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_ks_2samp(self, alternative):
-
+    def test_against_ks_2samp(self, alternative, xp):
         x = self.rng.normal(size=4, scale=1)
         y = self.rng.normal(size=5, loc=3, scale=3)
 
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
-        def statistic1d(x, y):
-            return stats.ks_2samp(x, y, mode='asymp',
-                                  alternative=alternative).statistic
+        def statistic(x, y, axis):
+            # todo: use `xp` as backend when `ks_2samp` is translated to array API
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ks_2samp(x, y, axis=axis, mode='asymp', alternative=alternative)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # ks_2samp is always a one-tailed 'greater' test
         # it's the statistic that changes (D+ vs D- vs max(D+, D-))
-        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                alternative='greater', rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_ansari(self, alternative):
-
+    def test_against_ansari(self, alternative, xp):
         x = self.rng.normal(size=4, scale=1)
         y = self.rng.normal(size=5, scale=3)
 
@@ -1542,54 +1569,67 @@ class TestPermutationTest:
         alternative_scipy = alternative_correspondence[alternative]
         expected = stats.ansari(x, y, alternative=alternative_scipy)
 
-        def statistic1d(x, y):
-            return stats.ansari(x, y).statistic
+        def statistic(x, y, axis):
+            # todo: use `xp` as backend when `ansari` is translated to array API
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ansari(x, y, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                alternative=alternative, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
+    @skip_xp_backends('cupy', reason='needs mannwhitneyu')
+    @skip_xp_backends(eager_only=True)  # mannwhitneyu does input validation
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_mannwhitneyu(self, alternative):
-
+    def test_against_mannwhitneyu(self, alternative, xp):
         x = stats.uniform.rvs(size=(3, 5, 2), loc=0, random_state=self.rng)
         y = stats.uniform.rvs(size=(3, 5, 2), loc=0.05, random_state=self.rng)
 
         expected = stats.mannwhitneyu(x, y, axis=1, alternative=alternative)
 
         def statistic(x, y, axis):
-            return stats.mannwhitneyu(x, y, axis=axis).statistic
+            return stats.mannwhitneyu(x, y, axis=axis, method='asymptotic').statistic
 
+        x, y = xp.asarray(x), xp.asarray(y)
         res = permutation_test((x, y), statistic, vectorized=True,
-                               n_resamples=np.inf, alternative=alternative,
+                               n_resamples=xp.inf, alternative=alternative,
                                axis=1, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
-    def test_against_cvm(self):
-
+    @skip_xp_backends('cupy', reason='needs cramervonmises_2samp')
+    @skip_xp_backends(eager_only=True)  # cramervonmises_2samp does input validation
+    @skip_xp_backends(cpu_only=True)  # torch doesn't have `kv`
+    def test_against_cvm(self, xp):
         x = stats.norm.rvs(size=4, scale=1, random_state=self.rng)
         y = stats.norm.rvs(size=5, loc=3, scale=3, random_state=self.rng)
 
         expected = stats.cramervonmises_2samp(x, y, method='exact')
 
-        def statistic1d(x, y):
-            return stats.cramervonmises_2samp(x, y,
-                                              method='asymptotic').statistic
+        def statistic(x, y, axis):
+            res = stats.cramervonmises_2samp(x, y, axis=axis, method='asymptotic')
+            return res.statistic
 
         # cramervonmises_2samp has only one alternative, greater
-        res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                alternative='greater', rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
-    @pytest.mark.xslow()
+    @skip_xp_backends('cupy', reason='needs kruskal')
+    @skip_xp_backends(eager_only=True)  # kruskal does input validation
     @pytest.mark.parametrize('axis', (-1, 2))
-    def test_vectorized_nsamp_ptype_both(self, axis):
+    def test_vectorized_nsamp_ptype_both(self, axis, xp):
+        # statistic only available for NumPy
+
         # Test that permutation_test with permutation_type='independent' works
         # properly for a 3-sample statistic with nd array samples of different
         # (but compatible) shapes and ndims. Show that exact permutation test
@@ -1604,78 +1644,68 @@ class TestPermutationTest:
         z = rng.random(size=(2, 1, 4))
         data = (x, y, z)
 
+        expected = stats.kruskal(*data, axis=axis)
+
         # Define the statistic (and pvalue for comparison)
-        def statistic1d(*data):
-            return stats.kruskal(*data).statistic
-
-        def pvalue1d(*data):
-            return stats.kruskal(*data).pvalue
-
-        statistic = _resampling._vectorize_statistic(statistic1d)
-        pvalue = _resampling._vectorize_statistic(pvalue1d)
-
-        # Calculate the expected results
-        x2 = np.broadcast_to(x, (2, 3, 3))  # broadcast manually because
-        y2 = np.broadcast_to(y, (2, 3, 2))  # _vectorize_statistic doesn't
-        z2 = np.broadcast_to(z, (2, 3, 4))
-        expected_statistic = statistic(x2, y2, z2, axis=axis)
-        expected_pvalue = pvalue(x2, y2, z2, axis=axis)
+        def statistic(*data, axis):
+            return stats.kruskal(*data, axis=axis).statistic
 
         # Calculate exact and randomized permutation results
-        kwds = {'vectorized': False, 'axis': axis, 'alternative': 'greater',
-                'permutation_type': 'independent', 'rng': self.rng}
-        res = permutation_test(data, statistic1d, n_resamples=np.inf, **kwds)
-        res2 = permutation_test(data, statistic1d, n_resamples=1000, **kwds)
+        kwds = {'axis': axis, 'alternative': 'greater',
+                'permutation_type': 'independent', 'rng': rng}
+        data = [xp.asarray(data_) for data_ in data]
+        res = permutation_test(data, statistic, n_resamples=xp.inf, **kwds)
+        res2 = permutation_test(data, statistic, n_resamples=1000, **kwds)
 
         # Check results
-        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.statistic, res2.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_pvalue, atol=6e-2)
-        assert_allclose(res.pvalue, res2.pvalue, atol=3e-2)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol*5)
+        xp_assert_close(res.statistic, res2.statistic, rtol=self.rtol*5)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=6e-2)
+        xp_assert_close(res.pvalue, res2.pvalue, atol=3e-2)
 
     # -- Paired-Sample Tests -- #
 
-    @pytest.mark.slow
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_wilcoxon(self, alternative):
-
+    def test_against_wilcoxon(self, alternative, xp):
         x = stats.uniform.rvs(size=(3, 6, 2), loc=0, random_state=self.rng)
         y = stats.uniform.rvs(size=(3, 6, 2), loc=0.05, random_state=self.rng)
+        expected = stats.wilcoxon(x, y, alternative=alternative, axis=1)
 
         # We'll check both 1- and 2-sample versions of the same test;
         # we expect identical results to wilcoxon in all cases.
-        def statistic_1samp_1d(z):
+        def statistic_1samp_1d(z, axis):
+            # todo: use `xp` as backend when `wilcoxon` is translated to array API
             # 'less' ensures we get the same of two statistics every time
-            return stats.wilcoxon(z, alternative='less').statistic
+            z = _xp_copy_to_numpy(z)
+            res = stats.wilcoxon(z, alternative='less', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        def statistic_2samp_1d(x, y):
-            return stats.wilcoxon(x, y, alternative='less').statistic
+        def statistic_2samp_1d(x, y, axis):
+            # todo: use `xp` as backend when `wilcoxon` is translated to array API
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.wilcoxon(x, y, alternative='less', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
-        def test_1d(x, y):
-            return stats.wilcoxon(x, y, alternative=alternative)
-
-        test = _resampling._vectorize_statistic(test_1d)
-
-        expected = test(x, y, axis=1)
-        expected_stat = expected[0]
-        expected_p = expected[1]
-
-        kwds = {'vectorized': False, 'axis': 1, 'alternative': alternative,
-                'permutation_type': 'samples', 'rng': self.rng,
-                'n_resamples': np.inf}
+        x, y = xp.asarray(x), xp.asarray(y)
+        kwds = {'axis': 1, 'alternative': alternative, 'permutation_type': 'samples',
+                'rng': self.rng, 'n_resamples': np.inf}
         res1 = permutation_test((x-y,), statistic_1samp_1d, **kwds)
         res2 = permutation_test((x, y), statistic_2samp_1d, **kwds)
 
         # `wilcoxon` returns a different statistic with 'two-sided'
-        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
+        xp_assert_close(res1.statistic, res2.statistic, rtol=self.rtol)
         if alternative != 'two-sided':
-            assert_allclose(res2.statistic, expected_stat, rtol=self.rtol)
+            xp_assert_close(res2.statistic, xp.asarray(expected.statistic),
+                            rtol=self.rtol)
 
-        assert_allclose(res2.pvalue, expected_p, rtol=self.rtol)
-        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
+        xp_assert_close(res2.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
+        xp_assert_close(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
-    def test_against_binomtest(self, alternative):
+    def test_against_binomtest(self, alternative, xp):
 
         x = self.rng.integers(0, 2, size=10)
         x[x == 0] = -1
@@ -1684,58 +1714,66 @@ class TestPermutationTest:
         # So we have to work with +1/-1 instead of 1/0.
 
         def statistic(x, axis=0):
-            return np.sum(x > 0, axis=axis)
+            xp_ = array_namespace(x)
+            return xp_.count_nonzero(x > 0, axis=axis)
 
         k, n, p = statistic(x), 10, 0.5
         expected = stats.binomtest(k, n, p, alternative=alternative)
 
-        res = stats.permutation_test((x,), statistic, vectorized=True,
-                                     permutation_type='samples',
-                                     n_resamples=np.inf, rng=self.rng,
-                                     alternative=alternative)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        res = stats.permutation_test((xp.asarray(x, dtype=xp.float64),), statistic,
+                                     vectorized=True,
+                                     permutation_type='samples', n_resamples=xp.inf,
+                                     rng=self.rng, alternative=alternative)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     # -- Exact Association Tests -- #
 
-    def test_against_kendalltau(self):
-
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
+    def test_against_kendalltau(self, xp):
         x = self.rng.normal(size=6)
         y = x + self.rng.normal(size=6)
 
         expected = stats.kendalltau(x, y, method='exact')
 
-        def statistic1d(x):
-            return stats.kendalltau(x, y, method='asymptotic').statistic
+        def statistic(x, axis):
+            # todo: use `xp` as backend when `kendalltau` is translated to array API
+            x = _xp_copy_to_numpy(x)
+            res = stats.kendalltau(x, y, method='asymptotic', axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
         # kendalltau currently has only one alternative, two-sided
-        res = permutation_test((x,), statistic1d, permutation_type='pairings',
+        x = xp.asarray(x)
+        res = permutation_test((x,), statistic, permutation_type='pairings',
                                n_resamples=np.inf, rng=self.rng)
 
-        assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), rtol=self.rtol)
 
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
-    def test_against_fisher_exact(self, alternative):
-
-        def statistic(x,):
-            return np.sum((x == 1) & (y == 1))
-
+    def test_against_fisher_exact(self, alternative, xp):
         # x and y are binary random variables with some dependence
         rng = np.random.default_rng(6235696159000529929)
         x = (rng.random(7) > 0.6).astype(float)
         y = (rng.random(7) + 0.25*x > 0.6).astype(float)
         tab = stats.contingency.crosstab(x, y)[1]
 
+        x, y = xp.asarray(x), xp.asarray(y)
+        def statistic(x, axis):
+            return xp.count_nonzero((x == 1) & (y == 1), axis=axis)
+
         res = permutation_test((x,), statistic, permutation_type='pairings',
-                               n_resamples=np.inf, alternative=alternative,
+                               n_resamples=xp.inf, alternative=alternative,
                                rng=rng)
         res2 = stats.fisher_exact(tab, alternative=alternative)
 
-        assert_allclose(res.pvalue, res2[1])
+        xp_assert_close(res.pvalue, xp.asarray(res2.pvalue, dtype=x.dtype))
 
     @pytest.mark.xslow()
     @pytest.mark.parametrize('axis', (-2, 1))
     def test_vectorized_nsamp_ptype_samples(self, axis):
+        # statistic only available for NumPy, and it's a pain to vectorize
+
         # Test that permutation_test with permutation_type='samples' works
         # properly for a 3-sample statistic with nd array samples of different
         # (but compatible) shapes and ndims. Show that exact permutation test
@@ -1792,9 +1830,10 @@ class TestPermutationTest:
                   'expected_statistic': 32.5,
                   'expected_avg': 38.117647, 'expected_std': 5.172124}
 
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
     @pytest.mark.xslow()  # only the second case is slow, really
     @pytest.mark.parametrize('case', (tie_case_1, tie_case_2))
-    def test_with_ties(self, case):
+    def test_with_ties(self, case, xp):
         """
         Results above from SAS PROC NPAR1WAY, e.g.
 
@@ -1823,44 +1862,53 @@ class TestPermutationTest:
         x = case['x']
         y = case['y']
 
-        expected_statistic = case['expected_statistic']
-        expected_less = case['expected_less']
-        expected_2sided = case['expected_2sided']
-        expected_Pr_gte_S_mean = case['expected_Pr_gte_S_mean']
-        expected_avg = case['expected_avg']
-        expected_std = case['expected_std']
+        expected_statistic = xp.asarray(case['expected_statistic'])
+        expected_less = xp.asarray(case['expected_less'])
+        expected_2sided = xp.asarray(case['expected_2sided'])
+        expected_Pr_gte_S_mean = xp.asarray(case['expected_Pr_gte_S_mean'])
+        expected_avg = xp.asarray(case['expected_avg'])
+        expected_std = xp.asarray(case['expected_std'])
 
-        def statistic1d(x, y):
-            return stats.ansari(x, y).statistic
+        def statistic(x, y, axis):
+            # todo: use `xp` as backend when `ansari` is translated to array API
+            x, y = _xp_copy_to_numpy(x), _xp_copy_to_numpy(y)
+            res = stats.ansari(x, y, axis=axis)
+            res = xp.asarray(res.statistic)
+            return res[()] if res.ndim == 0 else res
 
+        dtype = xp_default_dtype(xp)
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Ties preclude use of exact statistic", UserWarning)
-            res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+            res = permutation_test((x, y), statistic, n_resamples=np.inf,
                                    alternative='less')
-            res2 = permutation_test((x, y), statistic1d, n_resamples=np.inf,
+            res2 = permutation_test((x, y), statistic, n_resamples=np.inf,
                                     alternative='two-sided')
 
-        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_less, atol=1e-10)
-        assert_allclose(res2.pvalue, expected_2sided, atol=1e-10)
-        assert_allclose(res2.null_distribution.mean(), expected_avg, rtol=1e-6)
-        assert_allclose(res2.null_distribution.std(), expected_std, rtol=1e-6)
+        xp_assert_close(res.statistic, expected_statistic, rtol=self.rtol)
+        xp_assert_close(res.pvalue, expected_less, atol=1e-10)
+        xp_assert_close(res2.pvalue, expected_2sided, atol=1e-10)
+        xp_assert_close(xp.mean(res2.null_distribution), expected_avg, rtol=1e-6)
+        xp_assert_close(xp.std(res2.null_distribution), expected_std, rtol=1e-6)
 
         # SAS provides Pr >= |S-Mean|; might as well check against that, too
         S = res.statistic
-        mean = res.null_distribution.mean()
-        n = len(res.null_distribution)
-        Pr_gte_S_mean = np.sum(np.abs(res.null_distribution-mean)
-                               >= np.abs(S-mean))/n
-        assert_allclose(expected_Pr_gte_S_mean, Pr_gte_S_mean)
+        mean = xp.mean(res.null_distribution)
+        n = res.null_distribution.shape[0]
+        Pr_gte_S_mean = xp.astype(xp.count_nonzero(
+            xp.abs(res.null_distribution-mean) >= xp.abs(S-mean)), S.dtype) / n
+        xp_assert_close(Pr_gte_S_mean, expected_Pr_gte_S_mean)
 
     @pytest.mark.slow
     @pytest.mark.parametrize('alternative, expected_pvalue',
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),
                               ('two-sided', 0.1027777777778)))
-    def test_against_spearmanr_in_R(self, alternative, expected_pvalue):
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+    @pytest.mark.skip_xp_backends(eager_only=True)  # TODO: change to jax_jit=False
+    def test_against_spearmanr_in_R(self, alternative, expected_pvalue, xp):
         """
         Results above from R cor.test, e.g.
 
@@ -1875,20 +1923,25 @@ class TestPermutationTest:
         # np.random.seed(0)
         # x = stats.norm.rvs(size=6)
         # y = x + stats.norm.rvs(size=6)
-        x = [1.76405235, 0.40015721, 0.97873798,
-             2.2408932, 1.86755799, -0.97727788]
-        y = [2.71414076, 0.2488, 0.87551913,
-             2.6514917, 2.01160156, 0.47699563]
+        x = xp.asarray([1.76405235, 0.40015721, 0.97873798,
+                        2.2408932, 1.86755799, -0.97727788])
+        y = xp.asarray([2.71414076, 0.2488, 0.87551913,
+                        2.6514917, 2.01160156, 0.47699563])
         expected_statistic = 0.7714285714285715
 
-        def statistic1d(x):
-            return stats.spearmanr(x, y).statistic
+        y = xp.asarray(stats.rankdata(_xp_copy_to_numpy(y)))
+        def statistic(x, axis):
+            # `spearmanr` is not array api compatible, but `pearsonr` is. So for now
+            # use _xp_copy_to_numpy just for ranking so we can run this test w/ CuPy.
+            # TODO: use `xp` as backend when cupy works with `rankdata`
+            x = xp.asarray(stats.rankdata(_xp_copy_to_numpy(x), axis=axis))
+            return stats.pearsonr(x, y, axis=axis).statistic
 
-        res = permutation_test((x,), statistic1d, permutation_type='pairings',
-                               n_resamples=np.inf, alternative=alternative)
+        res = permutation_test((x,), statistic, permutation_type='pairings',
+                               n_resamples=xp.inf, alternative=alternative)
 
-        assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
-        assert_allclose(res.pvalue, expected_pvalue, atol=1e-13)
+        xp_assert_close(res.statistic, xp.asarray(expected_statistic), rtol=self.rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected_pvalue), atol=1e-13)
 
     @pytest.mark.parametrize("batch", (-1, 0))
     def test_batch_generator_iv(self, batch):
@@ -1906,21 +1959,23 @@ class TestPermutationTest:
         assert got == expected
 
     @pytest.mark.fail_slow(2)
-    def test_finite_precision_statistic(self):
+    # I only need to skip torch on GPU because it doesn't have betaincc for pearsonr
+    @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+    def test_finite_precision_statistic(self, xp):
         # Some statistics return numerically distinct values when the values
         # should be equal in theory. Test that `permutation_test` accounts
         # for this in some way.
-        x = [1, 2, 4, 3]
-        y = [2, 4, 6, 8]
+        x = xp.asarray([1., 2., 4., 3.], dtype=xp.float64)
+        y = xp.asarray([2., 4., 6., 8.], dtype=xp.float64)
 
-        def statistic(x, y):
-            return stats.pearsonr(x, y)[0]
+        def statistic(x, y, axis):
+            return stats.pearsonr(x, y, axis=axis)[0]
 
-        res = stats.permutation_test((x, y), statistic, vectorized=False,
+        res = stats.permutation_test((x, y), statistic,
                                      permutation_type='pairings')
         r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
 
-        correct_p = 2 * np.sum(null >= r - 1e-14) / len(null)
+        correct_p = 2 * float(xp.count_nonzero(null >= r - 1e-14)) / null.shape[0]
         assert pvalue == correct_p == 1/3
         # Compare against other exact correlation tests using R corr.test
         # options(digits=16)

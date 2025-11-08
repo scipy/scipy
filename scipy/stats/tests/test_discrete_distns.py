@@ -177,8 +177,8 @@ def test_issue_11134():
 
 
 def test_issue_7406():
-    np.random.seed(0)
-    assert_equal(binom.ppf(np.random.rand(10), 0, 0.5), 0)
+    rng = np.random.default_rng(4763112764)
+    assert_equal(binom.ppf(rng.random(10), 0, 0.5), 0)
 
     # Also check that endpoints (q=0, q=1) are correct
     assert_equal(binom.ppf(0, 0, 0.5), -1)
@@ -186,8 +186,9 @@ def test_issue_7406():
 
 
 def test_issue_5122():
+    rng = np.random.default_rng(8312492117)
     p = 0
-    n = np.random.randint(100, size=10)
+    n = rng.integers(100, size=10)
 
     x = 0
     ppf = binom.ppf(x, n, p)
@@ -395,19 +396,28 @@ class TestZipfian:
         m = zipfian.mean(a, n)
         assert_allclose(m, ref, rtol=8e-15)
 
+    def test_ridiculously_large_n(self):
+        # This should return nan with no errors or warnings.
+        a = 2.5
+        n = 1e100
+        p = zipfian.pmf(10, a, n)
+        assert_equal(p, np.nan)
+
 
 class TestNCH:
-    np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
-    shape = (2, 4, 3)
-    max_m = 100
-    m1 = np.random.randint(1, max_m, size=shape)    # red balls
-    m2 = np.random.randint(1, max_m, size=shape)    # white balls
-    N = m1 + m2                                     # total balls
-    n = randint.rvs(0, N, size=N.shape)             # number of draws
-    xl = np.maximum(0, n-m2)                        # lower bound of support
-    xu = np.minimum(n, m1)                          # upper bound of support
-    x = randint.rvs(xl, xu, size=xl.shape)
-    odds = np.random.rand(*x.shape)*2
+    def setup_method(self):
+        rng = np.random.default_rng(7162434334)
+        shape = (2, 4, 3)
+        max_m = 100
+        m1 = rng.integers(1, max_m, size=shape)  # red balls
+        m2 = rng.integers(1, max_m, size=shape)  # white balls
+        N = m1 + m2  # total balls
+        n = randint.rvs(0, N, size=N.shape, random_state=rng)  # number of draws
+        xl = np.maximum(0, n-m2)  # lower bound of support
+        xu = np.minimum(n, m1)  # upper bound of support
+        x = randint.rvs(xl, xu, size=xl.shape, random_state=rng)
+        odds = rng.random(x.shape)*2
+        self.x, self.N, self.m1, self.n, self.odds = x, N, m1, n, odds
 
     # test output is more readable when function names (strings) are passed
     @pytest.mark.parametrize('dist_name',
