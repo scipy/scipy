@@ -129,4 +129,3 @@ def test_compressed_rc_conversion_mixup(op):
     Z_2 = Z.copy()
     # causes timeout error upon large memory alloc only if conversion to CSC occurs
     op(Z_2, Z)
-    assert False
