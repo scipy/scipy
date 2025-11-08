@@ -17,7 +17,8 @@ from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
-from scipy._lib._array_api import make_xp_test_case, xp_default_dtype, is_numpy
+from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
+                                   eager_warns)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
@@ -1492,92 +1493,102 @@ class TestBoschlooExact:
         assert_allclose(boschloo_stat, fisher_p)
 
 
+@make_xp_test_case(cramervonmises_2samp)
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    def test_too_small_input(self, args):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
+    def test_too_small_input(self, args, xp):
+        args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = cramervonmises_2samp(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_invalid_input(self):
-        y = np.arange(5)
+    def test_invalid_input(self, xp):
+        y = xp.arange(5)
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, y, 'xyz')
 
-    def test_list_input(self):
+    def test_list_input(self):  # list input only relevant for NumPy
         x = [2, 3, 4, 7, 6]
         y = [0.2, 0.7, 12, 18]
         r1 = cramervonmises_2samp(x, y)
         r2 = cramervonmises_2samp(np.array(x), np.array(y))
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
-    def test_example_conover(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        x = [7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2]
-        y = [5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8, 10.8, 11.3, 11.5, 12.3,
-             12.5, 13.4, 14.6]
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
+        y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,
+                        10.8, 11.3, 11.5, 12.3, 12.5, 13.4, 14.6], dtype=dtype)
         r = cramervonmises_2samp(x, y)
-        assert_allclose(r.statistic, 0.262, atol=1e-3)
-        assert_allclose(r.pvalue, 0.18, atol=1e-2)
+        xp_assert_close(r.statistic, xp.asarray(0.262, dtype=dtype), atol=1e-3)
+        xp_assert_close(r.pvalue, xp.asarray(.18, dtype=dtype), atol=1e-2)
 
     @pytest.mark.parametrize('statistic, m, n, pval',
                              [(710, 5, 6, 48./462),
                               (1897, 7, 7, 117./1716),
                               (576, 4, 6, 2./210),
                               (1764, 6, 7, 2./1716)])
-    def test_exact_pvalue(self, statistic, m, n, pval):
+    def test_exact_pvalue(self, statistic, m, n, pval):  # only implemented w/ NumPy
         # the exact values are taken from Anderson: On the distribution of the
         # two-sample Cramer-von-Mises criterion, 1962.
         # The values are taken from Table 2, 3, 4 and 5
         assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
 
     @pytest.mark.xslow
-    def test_large_sample(self):
+    def test_large_sample(self, xp):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan
         rng = np.random.default_rng(4367)
         x = distributions.norm.rvs(size=1000000, random_state=rng)
         y = distributions.norm.rvs(size=900000, random_state=rng)
+        x, y = xp.asarray(x), xp.asarray(y)
         r = cramervonmises_2samp(x, y)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
         r = cramervonmises_2samp(x, y+0.1)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
 
-    def test_exact_vs_asymptotic(self):
+    def test_exact_vs_asymptotic(self, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(7)
-        y = rng.rand(8)
+        x = xp.asarray(rng.random(7))
+        y = xp.asarray(rng.random(8))
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='asymptotic')
-        assert_equal(r1.statistic, r2.statistic)
-        assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
+        xp_assert_equal(r1.statistic, r2.statistic)
+        xp_assert_close(r1.pvalue, r2.pvalue, atol=1e-2)
 
-    def test_method_auto(self):
-        x = np.arange(20)
-        y = [0.5, 4.7, 13.1]
+    def test_method_auto(self, xp):
+        x = xp.arange(20.)
+        y = xp.asarray([0.5, 4.7, 13.1])
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
         # switch to asymptotic if one sample has more than 20 observations
-        x = np.arange(21)
+        x = xp.arange(21.)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
 
-    def test_same_input(self):
+    def test_same_input(self, xp):
         # make sure trivial edge case can be handled
         # note that _cdf_cvm_inf(0) = nan. implementation avoids nan by
         # returning pvalue=1 for very small values of the statistic
-        x = np.arange(15)
+        x = xp.arange(15)
         res = cramervonmises_2samp(x, x)
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
 
 
 class TestTukeyHSD:

@@ -237,11 +237,21 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
     PyObject *_gen_harmonic =
-        xsf::numpy::ufunc({gen_harmonic}, "_gen_harmonic", _gen_harmonic_doc);
+        xsf::numpy::ufunc({static_cast<xsf::numpy::ld_d>(gen_harmonic),
+                           static_cast<xsf::numpy::qd_d>(gen_harmonic),
+                           static_cast<xsf::numpy::dd_d>(gen_harmonic)},
+                           "_gen_harmonic", _gen_harmonic_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_gen_harmonic", _gen_harmonic);
 
+    // Define llld_d and qqqd_d here until they are added to xsf::numpy.
+    using llld_d = double (*)(long int, long int, long int, double);
+    using qqqd_d = double (*)(long long int, long long int, long long int, double);
+
     PyObject *_normalized_gen_harmonic =
-        xsf::numpy::ufunc({normalized_gen_harmonic}, "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
+        xsf::numpy::ufunc({static_cast<llld_d>(normalized_gen_harmonic),
+                           static_cast<qqqd_d>(normalized_gen_harmonic),
+                           static_cast<xsf::numpy::dddd_d>(normalized_gen_harmonic)},
+                          "_normalized_gen_harmonic", _normalized_gen_harmonic_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_normalized_gen_harmonic", _normalized_gen_harmonic);
 
     PyObject *_lambertw = xsf::numpy::ufunc(
