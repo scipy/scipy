@@ -2395,7 +2395,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Calculate space of values for x
 
     >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.cumcount.size,
-    ...                                  res.cumcount.size)
+    ...                                  res.cumcount.size + 1)
 
     Plot histogram and cumulative histogram
 
@@ -2404,7 +2404,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> ax2 = fig.add_subplot(1, 2, 2)
     >>> ax1.hist(samples, bins=25)
     >>> ax1.set_title('Histogram')
-    >>> ax2.bar(x, res.cumcount, width=res.binsize)
+    >>> ax2.bar(x[:-1], res.cumcount, width=res.binsize, align='edge')
     >>> ax2.set_title('Cumulative histogram')
     >>> ax2.set_xlim([x.min(), x.max()])
 

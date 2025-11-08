@@ -447,7 +447,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     xp = array_namespace(x, y) if xp is None else xp
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
 
-    a = xp.full(y.shape, 0)
+    a = xp.full(y.shape, 0, device=xp_device(x))
     n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
     b = xp.broadcast_to(n, y.shape)
 
@@ -467,4 +467,4 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
         a = xp.where(j, a, c)
 
     b = xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
-    return b if side == 'left' else  x.shape[-1] - b
+    return b if side == 'left' else x.shape[-1] - b
