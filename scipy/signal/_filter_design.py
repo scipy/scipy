@@ -1282,6 +1282,8 @@ def zpk2tf(z, p, k):
     xp = array_namespace(z, p)
     z, p = map(xp.asarray, (z, p))
     k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k))
+    if xp.isdtype(k.dtype, "integral"):
+        k = xp.astype(k, xp.float64)
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     k = xpx.atleast_nd(k, ndim=1, xp=xp)
