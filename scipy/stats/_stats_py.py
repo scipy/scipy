@@ -7826,9 +7826,9 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
-          * 'auto' : use 'exact' for small size arrays, 'asymp' for large
-          * 'exact' : use exact distribution of test statistic
-          * 'asymp' : use asymptotic distribution of test statistic
+        * 'auto' : use 'exact' for small size arrays, 'asymp' for large
+        * 'exact' : use exact distribution of test statistic
+        * 'asymp' : use asymptotic distribution of test statistic
 
     Returns
     -------
@@ -7983,12 +7983,30 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto', *, axis=0):
     n = n1 + n2
 
     data_all = np.concatenate([data1, data2], axis=-1)
-    ranks, data_all = _rankdata(data_all, method='min')  # assumes axis=-1
+    batch_shape = data_all.shape[:-1]
 
-    cdf_counts1 = np.diff(ranks[..., :n1], prepend=1, append=n + 1, axis=-1)
-    cdf_counts2 = np.diff(ranks[..., -n2:], prepend=1, append=n + 1, axis=-1)
-    cdf1_vals, cdf1_counts = np.broadcast_arrays(np.linspace(0, 1, n1 + 1), cdf_counts1)
-    cdf2_vals, cdf2_counts = np.broadcast_arrays(np.linspace(0, 1, n2 + 1), cdf_counts2)
+    # Previously, this part of the code was just:
+    # cdf1 = _xp_searchsorted(data1, data_all, side='right') / n1
+    # cdf2 = _xp_searchsorted(data2, data_all, side='right') / n2
+    # cddiffs = cdf1 - cdf2
+    # but the switch from `np.searchsorted` to `_xp_searchsorted` would come with a
+    # pretty steep performance hit. When `np.searchsorted` is vectorized, we can
+    # probably use that. In the meantime, the following algorithm is typically faster.
+
+    # We want the ECDF of each sample evaluated at *all* the points in the pooled
+    # sample. The values each ECDF can assume are given by:
+    cdf1_vals = np.broadcast_to(np.linspace(0, 1, n1 + 1), batch_shape + (n1 + 1,))
+    cdf2_vals = np.broadcast_to(np.linspace(0, 1, n2 + 1), batch_shape + (n2 + 1,))
+    # Now we "just" need to know how many times each of these values *will* be assumed
+    # when we evaluate the ECDFs at all points in the pooled sample.
+    # These counts are given by the differences between consecutive ("min" or "max")
+    # ranks corresponding with the observations in the (sorted) samples.
+    ranks, data_all = _rankdata(data_all, method='min', return_sorted=True)  # axis=-1
+    cdf1_counts = np.diff(ranks[..., :n1], prepend=1, append=n + 1, axis=-1)
+    cdf2_counts = np.diff(ranks[..., -n2:], prepend=1, append=n + 1, axis=-1)
+    # Repeat isn't vectorized - in general, this would produce a ragged array. However,
+    # In our case, the sum of repeats for each slice is the same, so we can do a
+    # vectorized repeat by raveling, repeating, then restoring the shape.
     cdf1 = np.repeat(np.ravel(cdf1_vals), np.ravel(cdf1_counts), axis=-1)
     cdf2 = np.repeat(np.ravel(cdf2_vals), np.ravel(cdf2_counts), axis=-1)
     cddiffs = np.reshape(cdf1 - cdf2, ranks.shape[:-1] + (-1,))
@@ -10112,7 +10130,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     contains_nan = _contains_nan(x, nan_policy)
 
     x = xp_swapaxes(x, axis, -1, xp=xp)
-    ranks, _ = _rankdata(x, method, xp=xp)
+    ranks = _rankdata(x, method, xp=xp)
 
     if contains_nan:
         default_float = xp_default_dtype(xp)
@@ -10139,8 +10157,8 @@ def _order_ranks(ranks, j, *, xp):
     return ordered_ranks
 
 
-def _rankdata(x, method, return_ties=False, xp=None):
-    # Rank data `x` by desired `method`; `return_ties` if desired
+def _rankdata(x, method, return_sorted=False, return_ties=False, xp=None):
+    # Rank data `x` by desired `method`; `return_ties`/`return_sorted` data  if desired
     xp = array_namespace(x) if xp is None else xp
     shape = x.shape
     dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
@@ -10151,7 +10169,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j, xp=xp), None  # never return ties
+        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties or sorted data
 
     # Sort array
     y = xp.take_along_axis(x, j, axis=-1)
@@ -10177,6 +10195,13 @@ def _rankdata(x, method, return_ties=False, xp=None):
 
     ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
+    if not (return_sorted or return_ties):
+        return ranks
+
+    out = [ranks]
+
+    if return_sorted:
+        out.append(y)
 
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
@@ -10197,8 +10222,9 @@ def _rankdata(x, method, return_ties=False, xp=None):
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
         t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
-        return ranks, y, t
-    return ranks, y
+        out.append(t)
+
+    return out
 
 
 @xp_capabilities(np_only=True)
