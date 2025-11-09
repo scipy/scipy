@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.sparse.linalg as ssl
 from scipy._lib._array_api import array_namespace, xp_capabilities
-from scipy._lib.array_api_compat import numpy as np_compat, is_array_api_obj
+from scipy._lib.array_api_compat import is_array_api_obj
 
 from ._interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
@@ -296,7 +296,7 @@ class RegularGridInterpolator:
             xp = array_namespace(*points, values)
         except Exception as e:
             # either "duck-type" values or a user error?
-            xp = array_namespace(*points)
+            xp = array_namespace(*points) # still forbid mixed namespaces in `points`
             try:
                 xp_v = array_namespace(values)
             except Exception:
