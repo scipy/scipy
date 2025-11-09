@@ -36,7 +36,7 @@ ckdtree_src = [
 
 py3.extension_module('_ckdtree',
   ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
-  cpp_args: cython_cpp_args,
+  cpp_args: [cython_cpp_args, _cpp_Wno_unused_function],
   include_directories: [
     '../_lib',
     '../_build_utils/src',
