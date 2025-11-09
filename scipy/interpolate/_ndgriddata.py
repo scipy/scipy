@@ -218,7 +218,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         Multiplier for the default tolerance QHull uses to assign
         a simplex to the xi.  Default is 1.0
 
-        .. versionadded:: 0.17.0
+        .. versionadded:: 1.17.0
 
     Returns
     -------
