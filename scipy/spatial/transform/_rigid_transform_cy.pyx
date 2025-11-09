@@ -5,6 +5,7 @@ from ._rotation_cy import from_matrix as from_rot_matrix
 from ._rotation_cy import inv as rot_inv
 from ._rotation_cy import from_quat, from_rotvec
 from ._rotation_cy import as_matrix, as_quat, as_rotvec, compose_quat
+from ._rotation_cy import mean as rot_mean
 
 cimport numpy as np
 cimport cython
@@ -241,6 +242,36 @@ def pow(double[:, :, :] matrix, float n):
     elif n == 1:
         return matrix
     return from_exp_coords(as_exp_coords(matrix) * n)
+
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def mean(double[:, :, :] matrix, weights=None):
+    if matrix.shape[0] == 0:
+        raise ValueError("Mean of an empty transform set is undefined.")
+    
+    quat = as_quat(from_rot_matrix(matrix[:, :3, :3]))
+    t = np.asarray(matrix[:, :3, 3])
+
+    if weights is None:
+        weights = np.ones(quat.shape[0])
+    else:
+        weights = np.asarray(weights)
+        if np.any(weights < 0):
+            raise ValueError("`weights` must be non-negative.")
+        if weights.ndim != 1:
+            raise ValueError(f"Expected `weights` to be 1 dimensional, got "
+                             f"{weights.shape}.")
+        if weights.shape[0] != matrix.shape[0]:
+            raise ValueError("Expected `weights` to have number of values equal to "
+                             f"number of transforms, got {weights.shape[0]} values and "
+                             f"{matrix.shape[0]} transforms.")
+
+    quat_mean = rot_mean(quat, weights=weights)
+    t_mean = np.average(t, axis=0, weights=weights)
+    r_mean = as_matrix(np.asarray([quat_mean]))
+    return _create_transformation_matrix(t_mean, r_mean, single=True)
 
 
 @cython.embedsignature(True)

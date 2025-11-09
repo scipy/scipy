@@ -1,3 +1,5 @@
+#include <Python.h>
+/* __fitpack.h includes Python.h */
 #include <string>
 #include <cstdint>
 #include <vector>

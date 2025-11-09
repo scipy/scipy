@@ -345,7 +345,7 @@ def f(x): return x**4
 stats.norm.expect(f, lb=-np.inf, ub=np.inf)
 ```
 
-This provides little added convencience over what the source code does: use `scipy.integrate.quad` to perform the integration numerically.
+This provides little added convenience over what the source code does: use `scipy.integrate.quad` to perform the integration numerically.
 
 ```{code-cell} ipython3
 from scipy import integrate

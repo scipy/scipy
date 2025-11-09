@@ -735,7 +735,7 @@ Other special functions
    agm         -- Arithmetic, Geometric Mean.
    bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
    binom       -- Binomial coefficient
-   diric       -- Periodic sinc function, also called the Dirichlet function.
+   diric       -- Periodic sinc function, also called the Dirichlet kernel.
    euler       -- Euler numbers E0..En (inclusive).
    expn        -- Exponential integral E_n.
    exp1        -- Exponential integral E_1 of complex argument z.
