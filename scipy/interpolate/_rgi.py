@@ -294,9 +294,18 @@ class RegularGridInterpolator:
 
         try:
             xp = array_namespace(*points, values)
-        except Exception:
-            # "duck-type" values
-            xp = np_compat
+        except Exception as e:
+            # either "duck-type" values or a user error?
+            xp = array_namespace(*points)
+            try:
+                xp_v = array_namespace(values)
+            except Exception:
+                # "duck-type" values indeed, continue with `xp` as the namespace
+                pass
+            else:
+                # both `points` and `values` are array API objects, check consistency
+                if xp_v != xp:
+                    raise e
 
         self._asarray = xp.asarray
         self.method = method
