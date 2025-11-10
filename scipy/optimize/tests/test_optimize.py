@@ -3537,18 +3537,12 @@ class TestAnnotations:
         if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
                       'trust-krylov', 'trust-constr']:
             kwds['hess'] = rosen_hess_annotated
-        try:
-            optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
-        except NameError:
-            assert False, "NameError from annotations"
+        optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
 
     def test_differential_evolution_annotations(self):
         bounds = [(-5, 5), (-5, 5)]
-        try:
-            res = optimize.differential_evolution(rosen_annotated, bounds,
-                                            callback=callable_annotated)
-        except NameError:
-            assert False, "NameError from annotations"
+        res = optimize.differential_evolution(rosen_annotated, bounds,
+                                              callback=callable_annotated)
         assert res.success, "Unexpected error"
 
     def test_curve_fit_annotations(self):
@@ -3566,11 +3560,8 @@ class TestAnnotations:
         xdata = np.linspace(0, 4, 10)
         ydata = model_func(xdata, 2.5, 1.3, 0.5)
 
-        try:
-            _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
-                                             full_output=True)
-        except NameError:
-            assert False, "NameError from annotations"
+        _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
+                                         full_output=True)
         assert (res in [1, 2, 3, 4]), "Unexpected error"
 
     def test_brute_annotations(self):
@@ -3584,10 +3575,7 @@ class TestAnnotations:
             return optimize.fmin(callable, x0, *args, **kwargs)
 
         rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
-        try:
-            optimize.brute(f1, rranges, args=self.brute_params, finish=annotated_fmin)
-        except NameError:
-            assert False, "NameError from annotations"
+        optimize.brute(f1, rranges, args=self.brute_params, finish=annotated_fmin)
 
     def test_basinhopping_annotations(self):
         # NOTE: basinhopping callback does not match
@@ -3596,9 +3584,8 @@ class TestAnnotations:
         def acceptable_test(f_new: float, x_new: _DUMMY_TYPE,
                                       f_old: float,x_old: _DUMMY_TYPE) -> bool:
             return True
-        try:
-            res = optimize.basinhopping(rosen_annotated, self.x0,
-                                        accept_test=acceptable_test)
-        except NameError:
-            assert False, "NameError from annotations"
+
+        res = optimize.basinhopping(rosen_annotated, self.x0,
+                                    accept_test=acceptable_test)
+
         assert res.success, "Unexpected error"
