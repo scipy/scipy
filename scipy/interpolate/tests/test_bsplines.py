@@ -46,7 +46,7 @@ from scipy.interpolate import _dierckx
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BSpline)
 class TestBSpline:
 
     def test_ctor(self, xp):
@@ -726,7 +726,7 @@ class TestBSpline:
         xp_assert_close(b(xx), expected)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BSpline)
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
