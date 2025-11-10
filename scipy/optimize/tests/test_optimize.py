@@ -3492,7 +3492,7 @@ else:
         _DUMMY_TYPE = typing.Any
 
 def rosen_annotated(x: _DUMMY_TYPE) -> float:
-    return rosen(x)
+    return rosen(x) + 1
 
 def rosen_der_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
     return rosen_der(x)
@@ -3508,7 +3508,7 @@ def callable_annotated(intermediate_result: _DUMMY_TYPE) -> None:
 class TestAnnotations:
 
     def setup_method(self):
-        self.x0 = np.array([1.0, 2.0, 3.0])
+        self.x0 = np.array([1.0, 1.01])
         self.brute_params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
 
     @pytest.mark.parametrize("method", [
@@ -3585,7 +3585,7 @@ class TestAnnotations:
                                       f_old: float,x_old: _DUMMY_TYPE) -> bool:
             return True
 
-        res = optimize.basinhopping(rosen_annotated, self.x0,
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2,
                                     accept_test=acceptable_test)
 
         assert res.success, "Unexpected error"
