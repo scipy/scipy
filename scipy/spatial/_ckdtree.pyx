@@ -443,7 +443,7 @@ cdef class cKDTree:
         the midpoint. This usually gives a more compact tree and
         faster queries at the expense of longer build time. Default: True.
     boxsize : array_like or scalar, optional
-        Apply a m-d toroidal topology to the KDTree.. The topology is generated
+        Apply an m-d toroidal topology to the KDTree. The topology is generated
         by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
@@ -451,7 +451,7 @@ cdef class cKDTree:
 
     Notes
     -----
-    The algorithm used is described in Maneewongvatana and Mount 1999.
+    The algorithm used is described in [1]_.
     The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
@@ -469,6 +469,12 @@ cdef class cKDTree:
     For large dimensions (20 is already large) do not expect this to run
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
+
+    References
+    ----------
+    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
+           nearest neighbor searching with clustered point sets,"
+           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
 
     Attributes
     ----------
