@@ -40,7 +40,8 @@ from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    is_numpy, is_torch, xp_default_dtype, xp_size,
-                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel)
+                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel,
+                                   xp_swapaxes)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
@@ -3275,15 +3276,19 @@ def _check_warnings(warn_list, expected_type, expected_len):
         assert_(warn_.category is expected_type)
 
 
+@make_xp_test_case(stats.iqr)
 class TestIQR:
 
-    def test_basic(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_basic(self, dtype, xp):
         x = np.arange(8) * 0.5
         np.random.shuffle(x)
-        assert_equal(stats.iqr(x), 1.75)
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        xp_assert_equal(stats.iqr(xp.asarray(x, dtype=dtype)),
+                        xp.asarray(1.75, dtype=dtype))
 
-    def test_api(self):
-        d = np.ones((5, 5))
+    def test_api(self, xp):
+        d = xp.ones((5, 5))
         stats.iqr(d)
         stats.iqr(d, None)
         stats.iqr(d, 1)
@@ -3291,97 +3296,106 @@ class TestIQR:
         stats.iqr(d, None, (10, 90))
         stats.iqr(d, None, (30, 20), 1.0)
         stats.iqr(d, None, (25, 75), 1.5, 'propagate')
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    def test_api_eager(self, xp):
+        d = xp.ones((5, 5))
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
         stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
     @pytest.mark.parametrize('x', [[], np.arange(0)])
-    def test_empty(self, x):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.iqr(x), np.nan)
+    def test_empty(self, x, xp):
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
+            xp_assert_equal(stats.iqr(xp.asarray(x)), xp.asarray(xp.nan))
 
-    def test_constant(self):
+    def test_constant(self, xp):
         # Constant array always gives 0
-        x = np.ones((7, 4))
-        assert_equal(stats.iqr(x), 0.0)
-        assert_array_equal(stats.iqr(x, axis=0), np.zeros(4))
-        assert_array_equal(stats.iqr(x, axis=1), np.zeros(7))
-        assert_equal(stats.iqr(x, interpolation='linear'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='midpoint'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='nearest'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
-        assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
+        x = xp.ones((7, 4))
+        zero = xp.asarray(0.0)
+        xp_assert_equal(stats.iqr(x), zero)
+        xp_assert_equal(stats.iqr(x, axis=0), xp.zeros(4))
+        xp_assert_equal(stats.iqr(x, axis=1), xp.zeros(7))
+        xp_assert_equal(stats.iqr(x, interpolation='linear'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='midpoint'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='nearest'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='lower'), zero)
+        xp_assert_equal(stats.iqr(x, interpolation='higher'), zero)
 
         # 0 only along constant dimensions
         # This also tests much of `axis`
-        y = np.ones((4, 5, 6)) * np.arange(6)
-        assert_array_equal(stats.iqr(y, axis=0), np.zeros((5, 6)))
-        assert_array_equal(stats.iqr(y, axis=1), np.zeros((4, 6)))
-        assert_array_equal(stats.iqr(y, axis=2), np.full((4, 5), 2.5))
-        assert_array_equal(stats.iqr(y, axis=(0, 1)), np.zeros(6))
-        assert_array_equal(stats.iqr(y, axis=(0, 2)), np.full(5, 3.))
-        assert_array_equal(stats.iqr(y, axis=(1, 2)), np.full(4, 3.))
+        y = xp.ones((4, 5, 6)) * xp.arange(6.)
+        xp_assert_equal(stats.iqr(y, axis=0), xp.zeros((5, 6)))
+        xp_assert_equal(stats.iqr(y, axis=1), xp.zeros((4, 6)))
+        xp_assert_equal(stats.iqr(y, axis=2), xp.full((4, 5), 2.5))
+        xp_assert_equal(stats.iqr(y, axis=(0, 1)), xp.zeros(6))
+        xp_assert_equal(stats.iqr(y, axis=(0, 2)), xp.full(5, 3.))
+        xp_assert_equal(stats.iqr(y, axis=(1, 2)), xp.full(4, 3.))
 
-    def test_scalarlike(self):
-        x = np.arange(1) + 7.0
-        assert_equal(stats.iqr(x[0]), 0.0)
-        assert_equal(stats.iqr(x), 0.0)
-        assert_array_equal(stats.iqr(x, keepdims=True), [0.0])
+    def test_scalarlike(self, xp):
+        x = xp.arange(1.) + 7.0
+        xp_assert_equal(stats.iqr(x[0]), xp.asarray(0.0))
+        xp_assert_equal(stats.iqr(x), xp.asarray(0.0))
+        xp_assert_equal(stats.iqr(x, keepdims=True), xp.asarray([0.0]))
 
-    def test_2D(self):
-        x = np.arange(15).reshape((3, 5))
-        assert_equal(stats.iqr(x), 7.0)
-        assert_array_equal(stats.iqr(x, axis=0), np.full(5, 5.))
-        assert_array_equal(stats.iqr(x, axis=1), np.full(3, 2.))
-        assert_array_equal(stats.iqr(x, axis=(0, 1)), 7.0)
-        assert_array_equal(stats.iqr(x, axis=(1, 0)), 7.0)
+    def test_2D(self, xp):
+        x = xp.reshape(xp.arange(15), (3, 5))
+        xp_assert_equal(stats.iqr(x), xp.asarray(7.0))
+        xp_assert_equal(stats.iqr(x, axis=0), xp.full(5, 5.))
+        xp_assert_equal(stats.iqr(x, axis=1), xp.full(3, 2.))
+        xp_assert_equal(stats.iqr(x, axis=(0, 1)), xp.asarray(7.0))
+        xp_assert_equal(stats.iqr(x, axis=(1, 0)), xp.asarray(7.0))
 
-    def test_axis(self):
+    def test_axis(self, xp):
         # The `axis` keyword is also put through its paces in `test_keepdims`.
         o = np.random.normal(size=(71, 23))
         x = np.dstack([o] * 10)                 # x.shape = (71, 23, 10)
-        q = stats.iqr(o)
+        o, x = xp.asarray(o), xp.asarray(x)
+        q = xp.broadcast_to(stats.iqr(o), (10,))
 
-        assert_equal(stats.iqr(x, axis=(0, 1)), q)
-        x = np.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
-        assert_equal(stats.iqr(x, axis=(2, 1)), q)
-        x = x.swapaxes(0, 1)                    # x.shape = (71, 10, 23)
-        assert_equal(stats.iqr(x, axis=(0, 2)), q)
-        x = x.swapaxes(0, 1)                    # x.shape = (10, 71, 23)
+        xp_assert_equal(stats.iqr(x, axis=(0, 1)), q)
+        x = xp.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
+        xp_assert_equal(stats.iqr(x, axis=(2, 1)), q)
+        x = xp_swapaxes(x,0, 1, xp=xp)                    # x.shape = (71, 10, 23)
+        xp_assert_equal(stats.iqr(x, axis=(0, 2)), q)
+        x = xp_swapaxes(x,0, 1, xp=xp)                    # x.shape = (10, 71, 23)
 
-        assert_equal(stats.iqr(x, axis=(0, 1, 2)),
-                     stats.iqr(x, axis=None))
-        assert_equal(stats.iqr(x, axis=(0,)),
-                     stats.iqr(x, axis=0))
+        xp_assert_equal(stats.iqr(x, axis=(0, 1, 2)),
+                        stats.iqr(x, axis=None))
+        xp_assert_equal(stats.iqr(x, axis=(0,)),
+                        stats.iqr(x, axis=0))
 
         d = np.arange(3 * 5 * 7 * 11)
         # Older versions of numpy only shuffle along axis=0.
         # Not sure about newer, don't care.
         np.random.shuffle(d)
         d = d.reshape((3, 5, 7, 11))
-        assert_equal(stats.iqr(d, axis=(0, 1, 2))[0],
-                     stats.iqr(d[:,:,:, 0].ravel()))
-        assert_equal(stats.iqr(d, axis=(0, 1, 3))[1],
-                     stats.iqr(d[:,:, 1,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 1, -4))[2],
-                     stats.iqr(d[:,:, 2,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 1, 2))[2],
-                     stats.iqr(d[2,:,:,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(3, 2))[2, 1],
-                     stats.iqr(d[2, 1,:,:].ravel()))
-        assert_equal(stats.iqr(d, axis=(1, -2))[2, 1],
-                     stats.iqr(d[2, :, :, 1].ravel()))
-        assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
-                     stats.iqr(d[2, :, 2,:].ravel()))
+        d = xp.asarray(d)
+        xp_assert_equal(stats.iqr(d, axis=(0, 1, 2))[0],
+                        stats.iqr(xp_ravel(d[:,:,:, 0])))
+        xp_assert_equal(stats.iqr(d, axis=(0, 1, 3))[1],
+                        stats.iqr(xp_ravel(d[:,:, 1,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 1, -4))[2],
+                        stats.iqr(xp_ravel(d[:,:, 2,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 1, 2))[2],
+                        stats.iqr(xp_ravel(d[2,:,:,:])))
+        xp_assert_equal(stats.iqr(d, axis=(3, 2))[2, 1],
+                        stats.iqr(xp_ravel(d[2, 1,:,:])))
+        xp_assert_equal(stats.iqr(d, axis=(1, -2))[2, 1],
+                        stats.iqr(xp_ravel(d[2, :, :, 1])))
+        xp_assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
+                        stats.iqr(xp_ravel(d[2, :, 2,:])))
 
-        assert_raises(AxisError, stats.iqr, d, axis=4)
-        assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
+        with pytest.raises(AxisError, match='`axis` is out of bounds...'):
+            stats.iqr(d, axis=4)
+        with pytest.raises(ValueError, match='`axis` must contain only...'):
+            stats.iqr(d, axis=(0, 0))
 
-    def test_rng(self):
-        x = np.arange(5)
-        assert_equal(stats.iqr(x), 2)
-        assert_equal(stats.iqr(x, rng=(25, 87.5)), 2.5)
-        assert_equal(stats.iqr(x, rng=(12.5, 75)), 2.5)
-        assert_almost_equal(stats.iqr(x, rng=(10, 50)), 1.6)  # 3-1.4
+    def test_rng(self, xp):
+        x = xp.arange(5)
+        xp_assert_equal(stats.iqr(x), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 87.5)), xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(x, rng=(12.5, 75)), xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(x, rng=(10, 50)), xp.asarray(1.6))  # 3-1.4
 
         message = r"Elements of `rng` must be in the range \[0, 100\]."
         with pytest.raises(ValueError, match=message):
@@ -3395,30 +3409,33 @@ class TestIQR:
         with pytest.raises(TypeError, match=message):
             stats.iqr(x, rng=(0, 50, 60))
 
-    def test_interpolation(self):
-        x = np.arange(5)
-        y = np.arange(4)
+    def test_interpolation(self, xp):
+        x = xp.arange(5)
+        y = xp.arange(4)
         # Default
-        assert_equal(stats.iqr(x), 2)
-        assert_equal(stats.iqr(y), 1.5)
+        xp_assert_equal(stats.iqr(x), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y), xp.asarray(1.5))
         # Linear
-        assert_equal(stats.iqr(x, interpolation='linear'), 2)
-        assert_equal(stats.iqr(y, interpolation='linear'), 1.5)
+        xp_assert_equal(stats.iqr(x, interpolation='linear'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='linear'), xp.asarray(1.5))
         # Higher
-        assert_equal(stats.iqr(x, interpolation='higher'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'), 3)
-        assert_equal(stats.iqr(y, interpolation='higher'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='higher'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='higher'),
+                        xp.asarray(3.))
+        xp_assert_equal(stats.iqr(y, interpolation='higher'), xp.asarray(2.))
         # Lower (will generally, but not always be the same as higher)
-        assert_equal(stats.iqr(x, interpolation='lower'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'), 2)
-        assert_equal(stats.iqr(y, interpolation='lower'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='lower'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='lower'),
+                        xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='lower'), xp.asarray(2.))
         # Nearest
-        assert_equal(stats.iqr(x, interpolation='nearest'), 2)
-        assert_equal(stats.iqr(y, interpolation='nearest'), 1)
+        xp_assert_equal(stats.iqr(x, interpolation='nearest'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(y, interpolation='nearest'), xp.asarray(1.))
         # Midpoint
-        assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
-        assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
-        assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
+        xp_assert_equal(stats.iqr(x, interpolation='midpoint'), xp.asarray(2.))
+        xp_assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'),
+                        xp.asarray(2.5))
+        xp_assert_equal(stats.iqr(y, interpolation='midpoint'), xp.asarray(2.))
 
         # Check all method= values new in numpy 1.22.0 are accepted
         for method in ('inverted_cdf', 'averaged_inverted_cdf',
@@ -3427,11 +3444,12 @@ class TestIQR:
                        'normal_unbiased'):
             stats.iqr(y, interpolation=method)
 
-        assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
+        with pytest.raises(ValueError, match='`method` must be one of...'):
+            stats.iqr(x, interpolation='foobar')
 
-    def test_keepdims(self):
+    def test_keepdims(self, xp):
         # Also tests most of `axis`
-        x = np.ones((3, 5, 7, 11))
+        x = xp.ones((3, 5, 7, 11))
         assert_equal(stats.iqr(x, axis=None, keepdims=False).shape, ())
         assert_equal(stats.iqr(x, axis=2, keepdims=False).shape, (3, 5, 11))
         assert_equal(stats.iqr(x, axis=(0, 1), keepdims=False).shape, (7, 11))
@@ -3448,79 +3466,95 @@ class TestIQR:
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
-    def test_nanpolicy(self):
-        x = np.arange(15.0).reshape((3, 5))
+    def test_nanpolicy(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
 
         # No NaNs
-        assert_equal(stats.iqr(x, nan_policy='propagate'), 7)
-        assert_equal(stats.iqr(x, nan_policy='omit'), 7)
-        assert_equal(stats.iqr(x, nan_policy='raise'), 7)
+        xp_assert_equal(stats.iqr(x, nan_policy='propagate'), xp.asarray(7.))
+        xp_assert_equal(stats.iqr(x, nan_policy='omit'), xp.asarray(7.))
+        xp_assert_equal(stats.iqr(x, nan_policy='raise'), xp.asarray(7.))
 
         # Yes NaNs
-        x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, nan_policy='propagate'),
-                         np.nan)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'),
-                         [5, 5, np.nan, 5, 5])
-            assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'),
-                         [2, np.nan, 2])
+        x = xpx.at(x)[1, 2].set(xp.nan)
+        xp_assert_equal(stats.iqr(x, nan_policy='propagate'),
+                        xp.asarray(xp.nan))
+        xp_assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'),
+                        xp.asarray([5, 5, xp.nan, 5, 5]))
+        xp_assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'),
+                        xp.asarray([2, xp.nan, 2]))
 
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), np.full(5, 5))
-            assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
+        xp_assert_equal(stats.iqr(x, nan_policy='omit'), xp.asarray(7.5))
 
-        assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
-        assert_raises(ValueError, stats.iqr, x, axis=0, nan_policy='raise')
-        assert_raises(ValueError, stats.iqr, x, axis=1, nan_policy='raise')
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, nan_policy='raise')
 
         # Bad policy
-        assert_raises(ValueError, stats.iqr, x, nan_policy='barfood')
+        message = "nan_policy must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, nan_policy='barfood')
 
-    def test_scale(self):
-        x = np.arange(15.0).reshape((3, 5))
+    @pytest.mark.skip_xp_backends(np_only=True,
+        reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
+    def test_nanpolicy_nd(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
+        x[1, 2] = xp.nan
+        xp_assert_equal(stats.iqr(x, axis=0, nan_policy='omit'),
+                        xp.full(5, 5.))
+        xp_assert_equal(stats.iqr(x, axis=1, nan_policy='omit'),
+                        xp.asarray([2, 2.5, 2]))
+
+        message = "The input contains nan values"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, axis=0, nan_policy='raise')
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, axis=1, nan_policy='raise')
+
+    def test_scale(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
 
         # No NaNs
-        assert_equal(stats.iqr(x, scale=1.0), 7)
-        assert_almost_equal(stats.iqr(x, scale='normal'), 7 / 1.3489795)
-        assert_equal(stats.iqr(x, scale=2.0), 3.5)
+        xp_assert_equal(stats.iqr(x, scale=1.0), xp.asarray(7.))
+        xp_assert_close(stats.iqr(x, scale='normal'), xp.asarray(7 / 1.3489795))
+        xp_assert_equal(stats.iqr(x, scale=2.0), xp.asarray(3.5))
 
         # Yes NaNs
-        x[1, 2] = np.nan
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), np.nan)
-            assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
-            assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
-            # axis=1 chosen to show behavior with both nans and without
-            assert_equal(stats.iqr(x, axis=1, scale=1.0,
-                                   nan_policy='propagate'), [2, np.nan, 2])
-            assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
-                                          nan_policy='propagate'),
-                                np.array([2, np.nan, 2]) / 1.3489795)
-            assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
-                         [1, np.nan, 1])
-            # Since NumPy 1.17.0.dev, warnings are no longer emitted by
-            # np.percentile with nans, so we don't check the number of
-            # warnings here. See https://github.com/numpy/numpy/pull/12679.
+        x = xpx.at(x)[1, 2].set(xp.nan)
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='propagate'), nan)
+        xp_assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), nan)
+        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), nan)
 
-        assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), 7.5)
-        assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
-                            7.5 / 1.3489795)
-        assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
+        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), xp.asarray(7.5))
+        xp_assert_close(stats.iqr(x, scale='normal', nan_policy='omit'),
+                        xp.asarray(7.5 / 1.3489795))
+        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), xp.asarray(3.75))
 
-        # Bad scale
-        assert_raises(ValueError, stats.iqr, x, scale='foobar')
+        # # Bad scale
+        message = "foobar not a valid scale for `iqr`"
+        with pytest.raises(ValueError, match=message):
+            stats.iqr(x, scale='foobar')
 
-    def test_rng_order(self):
+    @pytest.mark.skip_xp_backends(np_only=True,
+        reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
+    def test_scale_nanpolicy_nd(self, xp):
+        # axis=1 chosen to show behavior with both nans and without
+        x = xp.reshape(xp.arange(15.0), (3, 5))
+        x = xpx.at(x)[1, 2].set(xp.nan)
+
+        xp_assert_equal(stats.iqr(x, axis=1, scale=1.0, nan_policy='propagate'),
+                        xp.asarray([2, np.nan, 2]))
+        xp_assert_close(stats.iqr(x, axis=1, scale='normal', nan_policy='propagate'),
+                        xp.asarray([2, np.nan, 2]) / 1.3489795)
+        xp_assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
+                        xp.asarray([1, np.nan, 1]))
+
+    def test_rng_order(self, xp):
         # test that order of `rng` doesn't matter (as documented)
-        x = np.arange(8) * 0.5
+        x = xp.arange(8.) * 0.5
         res = stats.iqr(x, rng=(75, 25))
         ref = stats.iqr(x)
-        assert_equal(res, ref)
+        xp_assert_equal(res, ref)
 
 
 @make_xp_test_case(stats.moment)
