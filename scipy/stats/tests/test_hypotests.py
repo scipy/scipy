@@ -2051,15 +2051,15 @@ class TestBWSTest:
 
         x, y = rng.random(size=(2, 7))
 
-        message = '`x` and `y` must be exactly one-dimensional.'
+        message = '`axis` must be an integer or None.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([x, x], [y, y])
+            stats.bws_test(x, y, axis=1.5)
 
-        message = '`x` and `y` must not contain NaNs.'
+        message = '`axis` is not compatible with the shapes of the inputs.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([np.nan], y)
+            stats.bws_test(x, y, axis=3)
 
-        message = '`x` and `y` must be of nonzero size.'
+        message = '`x` and `y` must contain...'
         with pytest.raises(ValueError, match=message):
             stats.bws_test(x, [])
 
@@ -2070,7 +2070,6 @@ class TestBWSTest:
         message = 'method` must be an instance of...'
         with pytest.raises(ValueError, match=message):
             stats.bws_test(x, y, method=42)
-
 
     def test_against_published_reference(self):
         # Test against Example 2 in bws_test Reference [1], pg 9
@@ -2161,3 +2160,29 @@ class TestBWSTest:
         res = stats.bws_test(y, x, alternative='greater')
         assert res.statistic < 0
         assert_equal(res.pvalue, 1)
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_nd(self, axis):
+        rng = np.random.default_rng(1520514347193347862)
+        z = rng.random(size=(2, 3, 5))
+        x, y = z
+        res = stats.bws_test(x, y, axis=axis)
+
+        x, y = np.moveaxis(z, axis+1, -1)
+        ref_statistic, ref_pvalue = [], []
+        for x_, y_ in zip(x, y):
+            ref = stats.bws_test(x_, y_)
+            ref_statistic.append(ref.statistic)
+            ref_pvalue.append(ref.pvalue)
+        ref_statistic, ref_pvalue = np.stack(ref_statistic), np.stack(ref_pvalue)
+
+        assert_allclose(res.statistic, ref_statistic)
+        assert_allclose(res.pvalue, ref_pvalue)
+
+    def test_axis_None(self):
+        rng = np.random.default_rng(5205143471933478621)
+        x, y = rng.random(size=(2, 2, 3))
+        res = stats.bws_test(x, y, axis=None)
+        ref = stats.bws_test(np.ravel(x), np.ravel(y))
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue)

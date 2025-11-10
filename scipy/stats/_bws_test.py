@@ -1,21 +1,37 @@
 import numpy as np
 from functools import partial
 from scipy import stats
+from scipy.stats._axis_nan_policy import _broadcast_arrays
 from scipy._lib._array_api import xp_capabilities
 
 
-def _bws_input_validation(x, y, alternative, method):
+def _bws_input_validation(x, y, alternative, axis, method):
     ''' Input validation and standardization for bws test'''
     x, y = np.atleast_1d(x, y)
-    if x.ndim > 1 or y.ndim > 1:
-        raise ValueError('`x` and `y` must be exactly one-dimensional.')
-    if np.isnan(x).any() or np.isnan(y).any():
-        raise ValueError('`x` and `y` must not contain NaNs.')
-    if np.size(x) == 0 or np.size(y) == 0:
-        raise ValueError('`x` and `y` must be of nonzero size.')
 
-    z = stats.rankdata(np.concatenate((x, y)))
-    x, y = z[:len(x)], z[len(x):]
+    axis_none = axis is None
+    ndim = max(x.ndim, y.ndim)
+    if axis_none:
+        x = np.ravel(x)
+        y = np.ravel(y)
+        axis = 0
+    elif np.iterable(axis) or int(axis) != axis:
+        message = "`axis` must be an integer or None."
+        raise ValueError(message)
+    elif (axis >= ndim) or (axis < -ndim):
+        message = "`axis` is not compatible with the shapes of the inputs."
+        raise ValueError(message)
+    axis = int(axis)
+
+    x, y = _broadcast_arrays((x, y), axis=axis)
+    nx, ny = x.shape[-1], y.shape[-1]
+    if nx < 2 or ny < 2:
+        raise ValueError('`x` and `y` must contain at least two observations each.')
+
+    x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
+    z = stats.rankdata(np.concatenate((x, y), axis=-1), axis=-1)
+    x, y = z[..., :x.shape[-1]], z[..., x.shape[-1]:]
+    x, y = np.moveaxis(x, -1, axis), np.moveaxis(y, -1, axis)
 
     alternatives = {'two-sided', 'less', 'greater'}
     alternative = alternative.lower()
@@ -27,7 +43,7 @@ def _bws_input_validation(x, y, alternative, method):
         raise ValueError('`method` must be an instance of '
                          '`scipy.stats.PermutationMethod`')
 
-    return x, y, alternative, method
+    return x, y, alternative, axis, method
 
 
 def _bws_statistic(x, y, alternative, axis):
@@ -61,7 +77,7 @@ def _bws_statistic(x, y, alternative, axis):
 
 
 @xp_capabilities(np_only=True)
-def bws_test(x, y, *, alternative="two-sided", method=None):
+def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
@@ -93,6 +109,9 @@ def bws_test(x, y, *, alternative="two-sided", method=None):
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
         see [2] section 5.1.
+    axis : int or None, default: 0
+        Axis along which the quantiles are computed.
+        ``None`` ravels both `x` and `y` before performing the calculation.
     method : PermutationMethod, optional
         Configures the method used to compute the p-value. The default is
         the default `PermutationMethod` object.
@@ -167,13 +186,13 @@ def bws_test(x, y, *, alternative="two-sided", method=None):
     difference in performance between the two groups.
     '''
 
-    x, y, alternative, method = _bws_input_validation(x, y, alternative,
-                                                      method)
+    x, y, alternative, axis, method = _bws_input_validation(x, y, alternative,
+                                                            axis, method)
     bws_statistic = partial(_bws_statistic, alternative=alternative)
 
     permutation_alternative = 'less' if alternative == 'less' else 'greater'
     res = stats.permutation_test((x, y), bws_statistic,
-                                 alternative=permutation_alternative,
+                                 alternative=permutation_alternative, axis=axis,
                                  **method._asdict())
 
     return res
