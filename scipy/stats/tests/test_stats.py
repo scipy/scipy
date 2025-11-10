@@ -8579,12 +8579,17 @@ class TestBrunnerMunzel:
         xp_assert_close(u2, xp.asarray(-3.1374674823029505))
         xp_assert_close(p1, xp.asarray(0.0057862086661515377))
 
-    def test_brunnermunzel_return_nan(self, xp):
+    @pytest.mark.parametrize("vectorized_call", [False, True])
+    def test_brunnermunzel_return_nan(self, vectorized_call, xp):
         """ tests that a warning is emitted when p is nan
         p-value with t-distributions can be nan (0/0) (see gh-15843)
         """
         x = xp.asarray([1., 2., 3.])
         y = xp.asarray([5., 6., 7., 8., 9.])
+
+        if vectorized_call:
+            x = xp.stack((x, x)).T
+            y = xp.stack((y, y)).T
 
         msg = "p-value cannot be estimated|divide by zero|invalid value encountered"
         with eager_warns(RuntimeWarning, match=msg, xp=xp):

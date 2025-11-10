@@ -8745,7 +8745,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if (df_numer == 0) and (df_denom == 0):
+        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
