@@ -130,22 +130,17 @@ class TestBSpline:
         splev_result = splev(x_np, (t_np, c_np, k))
         xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
-    @skip_xp_backends(np_only=True, reason="TODO convert BPoly")
     def test_bernstein(self, xp):
         # a special knot vector: Bernstein polynomials
         k = 3
         t = xp.asarray([0]*(k+1) + [1]*(k+1))
         c = xp.asarray([1., 2., 3., 4.])
-        bp = BPoly(c.reshape(-1, 1), [0, 1])
+        bp = BPoly(xp.reshape(c, (-1, 1)), xp.asarray([0, 1]))
         bspl = BSpline(t, c, k)
 
-        xx = np.linspace(-1., 2., 10)
+        xx = xp.linspace(-1., 2., 10)
         xp_assert_close(bp(xx, extrapolate=True),
                         bspl(xx, extrapolate=True), atol=1e-14)
-
-        t, c = map(np.asarray, (t, c))
-        xp_assert_close(splev(xx, (t, c, k)),
-                        bspl(xx), atol=1e-14)
 
     @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
     @skip_xp_backends("jax.numpy", reason="too slow; XXX a slow-if marker?")
