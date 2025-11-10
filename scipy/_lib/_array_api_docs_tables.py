@@ -164,14 +164,9 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
     }
 
 
-def issubclass_(obj, Klass):
-    """issubclass which does not raise on non-classes."""
-    return isinstance(obj, type) and issubclass(obj, Klass)
-
-
 def is_named_function_like_object(obj):
     return (
-        not (isinstance(obj, ModuleType) or issubclass_(obj, Exception))
+        not isinstance(obj, ModuleType | type)
         and callable(obj) and hasattr(obj, "__name__")
     )
 
