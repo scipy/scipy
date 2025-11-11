@@ -5454,11 +5454,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         return res
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @_axis_nan_policy_factory(_pack_CorrelationResult, n_samples=2,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
                           too_small=1, n_outputs=3)
-def pointbiserialr(x, y):
+def pointbiserialr(x, y, *, axis=0):
     r"""Calculate a point biserial correlation coefficient and its p-value.
 
     The point biserial correlation is used to measure the relationship
@@ -5476,6 +5476,9 @@ def pointbiserialr(x, y):
         Input array.
     y : array_like
         Input array.
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
 
     Returns
     -------
@@ -5546,7 +5549,7 @@ def pointbiserialr(x, y):
            [ 0.8660254,  1.       ]])
 
     """
-    rpb, prob = pearsonr(x, y)
+    rpb, prob = pearsonr(x, y, axis=axis)
     # create result object with alias for backward compatibility
     res = SignificanceResult(rpb, prob)
     res.correlation = rpb
