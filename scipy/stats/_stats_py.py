@@ -2395,7 +2395,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Calculate space of values for x
 
     >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.cumcount.size,
-    ...                                  res.cumcount.size)
+    ...                                  res.cumcount.size + 1)
 
     Plot histogram and cumulative histogram
 
@@ -2404,7 +2404,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> ax2 = fig.add_subplot(1, 2, 2)
     >>> ax1.hist(samples, bins=25)
     >>> ax1.set_title('Histogram')
-    >>> ax2.bar(x, res.cumcount, width=res.binsize)
+    >>> ax2.bar(x[:-1], res.cumcount, width=res.binsize, align='edge')
     >>> ax2.set_title('Cumulative histogram')
     >>> ax2.set_xlim([x.min(), x.max()])
 
@@ -8630,10 +8630,13 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 skip_backends=[('dask.array', 'needs rankdata'),
+                                ('cupy', 'needs rankdata'),
+                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
-                  nan_policy='propagate'):
+                  nan_policy='propagate', *, axis=0):
     """Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
@@ -8668,6 +8671,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
 
     Returns
     -------
@@ -8708,36 +8716,40 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    nx = len(x)
-    ny = len(y)
+    xp = array_namespace(x, y)
+    nx = x.shape[-1]
+    ny = y.shape[-1]
 
-    rankc = rankdata(np.concatenate((x, y)))
-    rankcx = rankc[0:nx]
-    rankcy = rankc[nx:nx+ny]
-    rankcx_mean = np.mean(rankcx)
-    rankcy_mean = np.mean(rankcy)
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    rankx_mean = np.mean(rankx)
-    ranky_mean = np.mean(ranky)
+    # _axis_nan_policy decorator ensures we can work along the last axis
+    rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
+    rankcx = rankc[..., 0:nx]
+    rankcy = rankc[..., nx:nx+ny]
+    rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
+    rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
+    rankx = rankdata(x, axis=-1)
+    ranky = rankdata(y, axis=-1)
+    rankx_mean = xp.mean(rankx, axis=-1, keepdims=True)
+    ranky_mean = xp.mean(ranky, axis=-1, keepdims=True)
 
     temp_x = rankcx - rankx - rankcx_mean + rankx_mean
-    Sx = np_vecdot(temp_x, temp_x)
+    Sx = xp.vecdot(temp_x, temp_x, axis=-1)
     Sx /= nx - 1
     temp_y = rankcy - ranky - rankcy_mean + ranky_mean
-    Sy = np_vecdot(temp_y, temp_y)
+    Sy = xp.vecdot(temp_y, temp_y, axis=-1)
     Sy /= ny - 1
 
+    rankcx_mean = xp.squeeze(rankcx_mean, axis=-1)
+    rankcy_mean = xp.squeeze(rankcy_mean, axis=-1)
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
-    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+    wbfn /= (nx + ny) * xp.sqrt(nx * Sx + ny * Sy)
 
     if distribution == "t":
-        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
-        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
-        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df_numer = xp.pow(nx * Sx + ny * Sy, 2.0)
+        df_denom = xp.pow(nx * Sx, 2.0) / (nx - 1)
+        df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if (df_numer == 0) and (df_denom == 0):
+        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -8750,7 +8762,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=xp)
 
     return BrunnerMunzelResult(wbfn, p)
 
