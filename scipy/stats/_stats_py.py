@@ -7398,8 +7398,10 @@ KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
-def _compute_dplus(cdfvals, x):
-    """Computes D+ as used in the Kolmogorov-Smirnov test.
+def _compute_d(cdfvals, x, sign):
+    """Computes D+/D- as used in the Kolmogorov-Smirnov test.
+
+    Vectorized along the last axis.
 
     Parameters
     ----------
@@ -7407,42 +7409,23 @@ def _compute_dplus(cdfvals, x):
         Sorted array of CDF values between 0 and 1
     x: array_like
         Sorted array of the stochastic variable itself
+    sign: int
+        Indicates whether to compute D+ (+1) or D- (-1).
 
     Returns
     -------
     res: Pair with the following elements:
-        - The maximum distance of the CDF values below Uniform(0, 1).
+        - The maximum distance of the CDF values below/above (D+/D-) Uniform(0, 1).
         - The location at which the maximum is reached.
 
     """
-    n = len(cdfvals)
-    dplus = (np.arange(1.0, n + 1) / n - cdfvals)
-    amax = dplus.argmax()
-    loc_max = x[amax]
-    return (dplus[amax], loc_max)
-
-
-def _compute_dminus(cdfvals, x):
-    """Computes D- as used in the Kolmogorov-Smirnov test.
-
-    Parameters
-    ----------
-    cdfvals : array_like
-        Sorted array of CDF values between 0 and 1
-    x: array_like
-        Sorted array of the stochastic variable itself
-
-    Returns
-    -------
-    res: Pair with the following elements:
-        - Maximum distance of the CDF values above Uniform(0, 1)
-        - The location at which the maximum is reached.
-    """
-    n = len(cdfvals)
-    dminus = (cdfvals - np.arange(0.0, n)/n)
-    amax = dminus.argmax()
-    loc_max = x[amax]
-    return (dminus[amax], loc_max)
+    n = cdfvals.shape[-1]
+    D = (np.arange(1.0, n + 1) / n - cdfvals if sign == +1
+         else (cdfvals - np.arange(0.0, n)/n))
+    amax = D.argmax(axis=-1, keepdims=True)
+    loc_max = np.squeeze(np.take_along_axis(x, amax, axis=-1), axis=-1)[()]
+    D = np.squeeze(np.take_along_axis(D, amax, axis=-1), axis=-1)[()]
+    return D, loc_max
 
 
 def _tuple_to_KstestResult(statistic, pvalue,
@@ -7460,7 +7443,7 @@ def _KstestResult_to_tuple(res, _):
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7488,6 +7471,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
           * 'approx' : approximates the two-sided probability with twice
             the one-sided probability
           * 'asymp': uses asymptotic distribution of test statistic
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -7588,6 +7576,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # `_axis_nan_policy` decorator ensures `axis=-1`
     mode = method
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7595,34 +7584,30 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
-    N = len(x)
-    x = np.sort(x)
+    N = x.shape[-1]
+    x = np.sort(x, axis=-1)
     cdfvals = cdf(x, *args)
-    np_one = np.int8(1)
+    ones = np.ones(x.shape[:-1], dtype=np.int8)[()]
 
     if alternative == 'greater':
-        Dplus, d_location = _compute_dplus(cdfvals, x)
+        Dplus, d_location = _compute_d(cdfvals, x, +1)
         return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
                             statistic_location=d_location,
-                            statistic_sign=np_one)
+                            statistic_sign=ones)
 
     if alternative == 'less':
-        Dminus, d_location = _compute_dminus(cdfvals, x)
+        Dminus, d_location = _compute_d(cdfvals, x, -1)
         return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
                             statistic_location=d_location,
-                            statistic_sign=-np_one)
+                            statistic_sign=-ones)
 
     # alternative == 'two-sided':
-    Dplus, dplus_location = _compute_dplus(cdfvals, x)
-    Dminus, dminus_location = _compute_dminus(cdfvals, x)
-    if Dplus > Dminus:
-        D = Dplus
-        d_location = dplus_location
-        d_sign = np_one
-    else:
-        D = Dminus
-        d_location = dminus_location
-        d_sign = -np_one
+    Dplus, dplus_location = _compute_d(cdfvals, x, +1)
+    Dminus, dminus_location = _compute_d(cdfvals, x, -1)
+    i_plus = Dplus > Dminus
+    D = np.where(i_plus, Dplus, Dminus)[()]
+    d_location = np.where(i_plus, dplus_location, dminus_location)[()]
+    d_sign = np.where(i_plus, ones, -ones)[()]
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
