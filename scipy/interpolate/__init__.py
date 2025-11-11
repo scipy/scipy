@@ -142,6 +142,7 @@ functional.
    :toctree: generated/
 
    RectBivariateSpline
+   regrid_python
    RectSphereBivariateSpline
 
 **For unstructured data (OOP interface):**
@@ -208,6 +209,8 @@ from ._bsplines import *
 from ._fitpack_repro import generate_knots, make_splrep, make_splprep
 
 from ._pade import *
+
+from ._regrid_python import regrid_python, ndbspline_call_like_bivariate
 
 from ._rgi import *
 
