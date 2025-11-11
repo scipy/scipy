@@ -392,7 +392,7 @@ class CramerVonMisesResult:
                 f"pvalue={self.pvalue})")
 
 
-def _psi1_mod(x):
+def _psi1_mod(x, *, xp=None):
     """
     psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
@@ -404,39 +404,50 @@ def _psi1_mod(x):
     by Adrian Baddeley. Main difference in the implementation: the code
     here keeps adding terms of the series until the terms are small enough.
     """
+    xp = array_namespace(x) if xp is None else xp
 
     def _ed2(y):
         z = y**2 / 4
-        b = kv(1/4, z) + kv(3/4, z)
-        return np.exp(-z) * (y/2)**(3/2) * b / np.sqrt(np.pi)
+        z_ = np.asarray(z)
+        b = xp.asarray(kv(1/4, z_) + kv(3/4, z_))
+        return xp.exp(-z) * (y/2)**(3/2) * b / math.sqrt(np.pi)
 
     def _ed3(y):
         z = y**2 / 4
-        c = np.exp(-z) / np.sqrt(np.pi)
-        return c * (y/2)**(5/2) * (2*kv(1/4, z) + 3*kv(3/4, z) - kv(5/4, z))
+        z_ = np.asarray(z)
+        c = xp.exp(-z) / math.sqrt(np.pi)
+        kv_terms = xp.asarray(2*kv(1/4, z_)
+                              + 3*kv(3/4, z_) - kv(5/4, z_))
+        return c * (y/2)**(5/2) * kv_terms
 
     def _Ak(k, x):
         m = 2*k + 1
-        sx = 2 * np.sqrt(x)
+        sx = 2 * xp.sqrt(x)
         y1 = x**(3/4)
         y2 = x**(5/4)
 
-        e1 = m * gamma(k + 1/2) * _ed2((4 * k + 3)/sx) / (9 * y1)
-        e2 = gamma(k + 1/2) * _ed3((4 * k + 1) / sx) / (72 * y2)
-        e3 = 2 * (m + 2) * gamma(k + 3/2) * _ed3((4 * k + 5) / sx) / (12 * y2)
-        e4 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 1) / sx) / (144 * y1)
-        e5 = 7 * m * gamma(k + 1/2) * _ed2((4 * k + 5) / sx) / (144 * y1)
+        gamma_kp1_2 = float(gamma(k + 1 / 2))
+        gamma_kp3_2 = float(gamma(k + 3 / 2))
+
+        e1 = m * gamma_kp1_2 * _ed2((4 * k + 3)/sx) / (9 * y1)
+        e2 = gamma_kp1_2 * _ed3((4 * k + 1) / sx) / (72 * y2)
+        e3 = 2 * (m + 2) * gamma_kp3_2 * _ed3((4 * k + 5) / sx) / (12 * y2)
+        e4 = 7 * m * gamma_kp1_2 * _ed2((4 * k + 1) / sx) / (144 * y1)
+        e5 = 7 * m * gamma_kp1_2 * _ed2((4 * k + 5) / sx) / (144 * y1)
 
         return e1 + e2 + e3 + e4 + e5
 
-    x = np.asarray(x)
-    tot = np.zeros_like(x, dtype='float')
-    cond = np.ones_like(x, dtype='bool')
+    x = xp.asarray(x)
+    tot = xp.zeros_like(x)
+    cond = xp.ones_like(x, dtype=xp.bool)
     k = 0
-    while np.any(cond):
-        z = -_Ak(k, x[cond]) / (np.pi * gamma(k + 1))
-        tot[cond] = tot[cond] + z
-        cond[cond] = np.abs(z) >= 1e-7
+    while xp.any(cond):
+        gamma_kp1 = float(gamma(k + 1))
+        z = -_Ak(k, x[cond]) / (xp.pi * gamma_kp1)
+        tot = xpx.at(tot)[cond].set(tot[cond] + z)
+        # For float32 arithmetic, the tolerance may need to be adjusted or the
+        # algorithm may prove to be unsuitable.
+        cond = xpx.at(cond)[xp_copy(cond)].set(xp.abs(z) >= 1e-7)
         k += 1
 
     return tot
@@ -481,7 +492,7 @@ def _cdf_cvm_inf(x, *, xp=None):
     return tot
 
 
-def _cdf_cvm(x, n=None):
+def _cdf_cvm(x, n=None, *, xp=None):
     """
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
@@ -497,28 +508,30 @@ def _cdf_cvm(x, n=None):
     and 1, respectively. These are limitations of the approximation by Csörgő
     and Faraway (1996) implemented in this function.
     """
-    x = np.asarray(x)
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x)
+
     if n is None:
-        y = _cdf_cvm_inf(x)
+        y = _cdf_cvm_inf(x, xp=xp)
     else:
         # support of the test statistic is [12/n, n/3], see 1.1 in [2]
-        y = np.zeros_like(x, dtype='float')
+        y = xp.zeros_like(x, dtype=x.dtype)
         sup = (1./(12*n) < x) & (x < n/3.)
         # note: _psi1_mod does not include the term _cdf_cvm_inf(x) / 12
         # therefore, we need to add it here
-        y[sup] = _cdf_cvm_inf(x[sup]) * (1 + 1./(12*n)) + _psi1_mod(x[sup]) / n
-        y[x >= n/3] = 1
+        y = xpx.at(y)[sup].set(_cdf_cvm_inf(x[sup], xp=xp) * (1 + 1./(12*n))
+                               + _psi1_mod(x[sup], xp=xp) / n)
+        y = xpx.at(y)[x >= n/3].set(1.)
 
-    if y.ndim == 0:
-        return y[()]
-    return y
+    return y[()] if y.ndim == 0 else y
 
 
 def _cvm_result_to_tuple(res, _):
     return res.statistic, res.pvalue
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True,  # needs special function `kv`
+                 skip_backends=[('dask.array', 'typical dask issues')], jax_jit=False)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
@@ -623,21 +636,27 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
 
     """
     # `_axis_nan_policy` decorator ensures `axis=-1`
-    if isinstance(cdf, str):
+    xp = array_namespace(rvs)
+
+    if isinstance(cdf, str) and is_numpy(xp):
         cdf = getattr(distributions, cdf).cdf
+    elif isinstance(cdf, str):
+        message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
+        raise ValueError(message)
 
     n = rvs.shape[-1]
     if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    vals = np.sort(rvs, axis=-1)
+    rvs, n = xp_promote(rvs, n, force_floating=True, xp=xp)
+    vals = xp.sort(rvs, axis=-1)
     cdfvals = cdf(vals, *args)
 
-    u = (2*np.arange(1, n+1) - 1)/(2*n)
-    w = 1/(12*n) + np.sum((u - cdfvals)**2, axis=-1)
+    u = (2*xp.arange(1, n+1, dtype=n.dtype) - 1)/(2*n)
+    w = 1/(12*n) + xp.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
-    p = np.clip(1. - _cdf_cvm(w, n), 0., None)
+    p = xp.clip(1. - _cdf_cvm(w, n), 0., None)
 
     return CramerVonMisesResult(statistic=w, pvalue=p)
 
