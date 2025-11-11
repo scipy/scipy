@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+from numpy import (isscalar, log, around, zeros,
                    arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
@@ -2746,7 +2746,7 @@ _abw_state = threading.local()
 
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
-def ansari(x, y, alternative='two-sided'):
+def ansari(x, y, alternative='two-sided', *, axis=0):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -2768,6 +2768,11 @@ def ansari(x, y, alternative='two-sided'):
         * 'greater': the ratio of scales is greater than 1.
 
         .. versionadded:: 1.7.0
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -2857,34 +2862,33 @@ def ansari(x, y, alternative='two-sided'):
     if not hasattr(_abw_state, 'a'):
         _abw_state.a = _ABW()
 
-    x, y = asarray(x), asarray(y)
-    n = len(x)
-    m = len(y)
-    if m < 1:
+    # _axis_nan_policy decorator guarantees that axis=-1
+    n = x.shape[-1]
+    m = y.shape[-1]
+    if m < 1:  # needed by test_axis_nan_policy; not user-facing
         raise ValueError("Not enough other observations.")
     if n < 1:
         raise ValueError("Not enough test observations.")
 
     N = m + n
-    xy = r_[x, y]  # combine
-    rank = _stats_py.rankdata(xy)
-    symrank = amin(array((rank, N - rank + 1)), 0)
-    AB = np.sum(symrank[:n], axis=0)
-    uxy = unique(xy)
-    repeats = (len(uxy) != len(xy))
+    xy = np.concatenate([x, y], axis=-1)  # combine
+    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    symrank = np.minimum(rank, N - rank + 1)
+    AB = np.sum(symrank[..., :n], axis=-1)
+    repeats = np.any(t > 1)  # in theory we could branch for each slice separately
     exact = ((m < 55) and (n < 55) and not repeats)
-    if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
+        cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
+        sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
-                                    _abw_state.a.sf(AB, n, m))
+            pval = 2.0 * np.minimum(cdf(AB, n, m),
+                                    sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.a.cdf(AB, n, m)
+            pval = cdf(AB, n, m)
         else:
-            pval = _abw_state.a.sf(AB, n, m)
+            pval = sf(AB, n, m)
         return AnsariResult(AB, np.minimum(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2896,7 +2900,7 @@ def ansari(x, y, alternative='two-sided'):
         varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
     if repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=0)
+        fac = np.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
             varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
         else:  # N even
