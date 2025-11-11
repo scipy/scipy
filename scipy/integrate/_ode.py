@@ -1380,10 +1380,9 @@ class lsoda(IntegratorBase):
         iwork = self.call_args[5]
         jt = self.call_args[6]
 
-        if jac is not None and self.ml is not None and self.ml > 0:
-            # Banded Jacobian. Wrap the user-provided function with one
-            # that pads the Jacobian array with the extra `self.ml` rows
-            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
+        # Note: For banded Jacobians, the user provides the compressed format
+        # (ml + mu + 1, n), and the C code handles padding to the expanded
+        # format (2*ml + mu + 1, n) internally. No Python wrapper needed.
 
         # Signature:
         #
