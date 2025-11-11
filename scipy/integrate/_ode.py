@@ -81,24 +81,15 @@ an alternative to ode with the zvode solver, sometimes performing better.
 __all__ = ['ode', 'complex_ode']
 
 import re
-import threading
 import types
 import warnings
 
 import numpy as np
-from numpy import asarray, array, zeros, isscalar, real, imag, vstack
+from numpy import asarray, array, zeros, isscalar, real, imag
 
 from . import _vode
 from . import _dop
 from ._odepack import lsoda as lsoda_step
-
-
-_vode_int_dtype = _vode.types.intvar.dtype
-
-
-# vode and zvode are not thread-safe. VODE_LOCK protects both vode and
-# zvode; they share the `def run` implementation
-VODE_LOCK = threading.Lock()
 
 
 # ------------------------------------------------------------------------------
@@ -153,11 +144,6 @@ class ode:
 
         Source: http://www.netlib.org/ode/vode.f
 
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "vode" integrator at the same time.
-
         This integrator accepts the following parameters in `set_integrator`
         method of the `ode` class:
 
@@ -199,11 +185,6 @@ class ode:
         backward differentiation formulas (BDF) (for stiff problems).
 
         Source: http://www.netlib.org/ode/zvode.f
-
-        .. warning::
-
-           This integrator is not re-entrant. You cannot have two `ode`
-           instances using the "zvode" integrator at the same time.
 
         This integrator accepts the same parameters in `set_integrator`
         as the "vode" solver.
@@ -832,20 +813,6 @@ class IntegratorBase:
     # XXX: __str__ method for getting visual state of the integrator
 
 
-def _banded_jac_wrapper(jacfunc, ml, jac_params):
-    """
-    Wrap a banded Jacobian function with a function that pads
-    the Jacobian with `ml` rows of zeros.
-    """
-
-    def jac_wrapper(t, y):
-        jac = asarray(jacfunc(t, y, *jac_params))
-        padded_jac = vstack((jac, zeros((ml, jac.shape[1]))))
-        return padded_jac
-
-    return jac_wrapper
-
-
 class vode(IntegratorBase):
     runner = getattr(_vode, 'dvode', None)
 
@@ -860,7 +827,6 @@ class vode(IntegratorBase):
                 }
     supports_run_relax = 1
     supports_step = 1
-    active_global_handle = 0
 
     def __init__(self,
                  method='adams',
@@ -893,7 +859,10 @@ class vode(IntegratorBase):
         self.first_step = first_step
         self.success = 1
 
-        self.initialized = False
+        # State persistence arrays for VODE internal state
+        # These retain the solver state between calls
+        self.state_doubles = zeros(51, dtype=np.float64)  # VODE_STATE_DOUBLE_SIZE
+        self.state_ints = zeros(41, dtype=np.int32)        # VODE_STATE_INT_SIZE
 
     def _determine_mf_and_set_bands(self, has_jac):
         """
@@ -987,7 +956,7 @@ class vode(IntegratorBase):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), _vode_int_dtype)
+        iwork = zeros((liw,), dtype=np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1002,24 +971,25 @@ class vode(IntegratorBase):
         self.success = 1
         self.initialized = False
 
+        # Zero state arrays on reset to avoid contamination from previous problems.
+        # State persistence works within a single integration (istate=2), but between
+        # different problems (different n etc.), state needs to be cleared.
+        self.state_doubles.fill(0.0)
+        self.state_ints.fill(0)
+
+
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        if self.initialized:
-            self.check_handle()
-        else:
-            self.initialized = True
-            self.acquire_new_handle()
+        # Note: For banded Jacobians, the user provides the compressed format
+        # (ml + mu + 1, n), and the C code handles padding to the expanded
+        # format (ml + 2*mu + 1, n) internally. No Python wrapper needed.
 
-        if self.ml is not None and self.ml > 0:
-            # Banded Jacobian. Wrap the user-provided function with one
-            # that pads the Jacobian array with the extra `self.ml` rows
-            # required by the f2py-generated wrapper.
-            jac = _banded_jac_wrapper(jac, self.ml, jac_params)
-
+        # VODE C wrapper signature:
+        # dvode(f, jac, y0, t0, t1, rtol, atol, itask, istate, rwork, iwork, mf,
+        #       f_params, jac_params, state_doubles, state_ints)
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
-                (f_params, jac_params))
+                (f_params, jac_params, self.state_doubles, self.state_ints))
 
-        with VODE_LOCK:
-            y1, t, istate = self.runner(*args)
+        y1, t, istate = self.runner(*args)
 
         self.istate = istate
         if istate < 0:
@@ -1058,9 +1028,14 @@ class zvode(vode):
     supports_run_relax = 1
     supports_step = 1
     scalar = complex
-    active_global_handle = 0
 
     __class_getitem__ = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Override state array sizes for ZVODE (53 doubles vs 51 for VODE)
+        self.state_doubles = zeros(53, dtype=np.float64)  # ZVODE_STATE_DOUBLE_SIZE
+        self.state_ints = zeros(41, dtype=np.int32)        # ZVODE_STATE_INT_SIZE
 
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
@@ -1106,7 +1081,7 @@ class zvode(vode):
         rwork[6] = self.min_step
         self.rwork = rwork
 
-        iwork = zeros((liw,), _vode_int_dtype)
+        iwork = zeros((liw,), np.int32)
         if self.ml is not None:
             iwork[0] = self.ml
         if self.mu is not None:
@@ -1120,6 +1095,12 @@ class zvode(vode):
                           self.zwork, self.rwork, self.iwork, mf]
         self.success = 1
         self.initialized = False
+
+        # Zero state arrays on reset to avoid contamination from previous problems.
+        # State persistence works within a single integration (istate=2), but between
+        # different problems (different n etc.), state needs to be cleared.
+        self.state_doubles.fill(0.0)
+        self.state_ints.fill(0)
 
 
 if zvode.runner is not None:
@@ -1255,7 +1236,6 @@ if dop853.runner is not None:
 
 class lsoda(IntegratorBase):
     runner = lsoda_step  # Use low-level lsoda wrapper
-    active_global_handle = 0
 
     messages = {
         2: "Integration successful.",
