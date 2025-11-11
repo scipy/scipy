@@ -10,7 +10,7 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
-                                   xp_promote, xp_result_type, xp_copy)
+                                   xp_promote, xp_result_type, xp_copy, is_numpy)
 from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
@@ -521,7 +521,7 @@ def _cvm_result_to_tuple(res, _):
 @xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
-def cramervonmises(rvs, cdf, args=()):
+def cramervonmises(rvs, cdf, args=(), *, axis=0):
     """Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
@@ -543,6 +543,11 @@ def cramervonmises(rvs, cdf, args=()):
         to calculate the cdf: ``cdf(x, *args) -> float``.
     args : tuple, optional
         Distribution parameters. These are assumed to be known; see Notes.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -617,19 +622,19 @@ def cramervonmises(rvs, cdf, args=()):
     significance level.
 
     """
+    # `_axis_nan_policy` decorator ensures `axis=-1`
     if isinstance(cdf, str):
         cdf = getattr(distributions, cdf).cdf
 
-    vals = np.sort(np.asarray(rvs))
-
-    if vals.size <= 1:
+    n = rvs.shape[-1]
+    if n <= 1:  # only needed for `test_axis_nan_policy.py`; not user-facing
         raise ValueError('The sample must contain at least two observations.')
 
-    n = len(vals)
+    vals = np.sort(rvs, axis=-1)
     cdfvals = cdf(vals, *args)
 
     u = (2*np.arange(1, n+1) - 1)/(2*n)
-    w = 1/(12*n) + np.sum((u - cdfvals)**2)
+    w = 1/(12*n) + np.sum((u - cdfvals)**2, axis=-1)
 
     # avoid small negative values that can occur due to the approximation
     p = np.clip(1. - _cdf_cvm(w, n), 0., None)
