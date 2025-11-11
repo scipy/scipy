@@ -1,8 +1,3 @@
-vode_src = [
-  'odepack/vode.f',
-  'odepack/zvode.f'
-]
-
 quadpack_test_src = [
   'tests/_test_multivariate.c'
 ]
@@ -12,10 +7,7 @@ odepacklib = static_library('odepacklib',
 )
 
 vode_lib = static_library('vode_lib',
-  vode_src,
-  fortran_args: fortran_ignore_warnings,
-  override_options: ['b_lto=false'],
-  gnu_symbol_visibility: 'hidden',
+  ['src/vode.c', 'src/zvode.c']
 )
 
 dop_lib = static_library('dop_lib',
@@ -39,13 +31,11 @@ py3.extension_module('_odepack',
 )
 
 py3.extension_module('_vode',
-  f2py_gen.process('vode.pyf'),
+  '_dzvodemodule.c',
   link_with: [vode_lib],
-  c_args: [Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, fortranobject_dep],
+  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
