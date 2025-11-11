@@ -317,11 +317,14 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     // Calculate expected dimensions based on Jacobian type
     npy_intp expected_nrows, expected_ncols;
     expected_ncols = *n;
-    if (current_odepack_callback->jac_type == 3) {
-        // Banded Jacobian (jt=3 user supplied) in 0-based indexing
+    if (current_odepack_callback->jac_type >= 4) {
+        // Banded Jacobian (jt=4 user supplied, jt=5 internally generated)
+        // User always provides compressed format (ml + mu + 1, n)
+        // LSODA will have pre-zeroed a work array with leading dimension 2*ml + mu + 1,
+        // and we copy the compressed format into it (extra ml rows stay zero)
         expected_nrows = *ml + *mu + 1;
     } else {
-        // Full Jacobian (jt=0 user supplied) in 0-based indexing
+        // Full Jacobian (jt=1 user supplied, jt=2 internally generated)
         expected_nrows = *n;
     }
 
@@ -360,7 +363,7 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     }
 
     if (dim_error) {
-        const char *jac_type_str = (current_odepack_callback->jac_type == 3) ? "banded " : "";
+        const char *jac_type_str = (current_odepack_callback->jac_type >= 4) ? "banded " : "";
         PyErr_Format(PyExc_RuntimeError,
             "Expected a %sJacobian array with shape (%ld, %ld), but got (%ld, %ld)",
             jac_type_str, expected_nrows, expected_ncols,
@@ -373,13 +376,24 @@ ode_jacobian_thunk(int *n, double *t, double *y, int *ml, int *mu, double *pd, i
     }
 
     // Copy result to output array with proper layout handling
-    if ((current_odepack_callback->jac_type == 0) && !current_odepack_callback->jac_transpose) {
-        // Full Jacobian (jt=0 user supplied), no transpose needed, use memcpy
+    if ((current_odepack_callback->jac_type == 1) && !current_odepack_callback->jac_transpose) {
+        // Full Jacobian (jt=1 user supplied), no transpose needed, use memcpy
         double *src_data = (double*)PyArray_DATA(result_array);
         memcpy(pd, src_data, (*n) * (*nrowpd) * sizeof(double));
     } else {
         // Need to copy with proper Fortran layout
-        npy_intp m = (current_odepack_callback->jac_type == 3) ? (*ml + *mu + 1) : *n;
+        npy_intp m;
+
+        if (current_odepack_callback->jac_type == 4) {
+            // Banded Jacobian (jt=4: user-supplied): user provides compressed format (ml + mu + 1 rows)
+            // LSODA expects it in expanded format with leading dimension (2*ml + mu + 1)
+            // Note: jt=5 (finite-difference banded) is computed internally by LSODA, not via this callback
+            m = *ml + *mu + 1;
+        } else {
+            // Full Jacobian (jt=1 or jt=2)
+            m = *n;
+        }
+
         copy_array_to_fortran(pd, *nrowpd, m, *n,
                              (double*)PyArray_DATA(result_array),
                              !current_odepack_callback->jac_transpose);
@@ -949,10 +963,11 @@ odepack_lsoda_step(PyObject *dummy, PyObject *args, PyObject *kwdict)
 
     // Setup callback - jt determines whether Jacobian is user-supplied or internal
     // For jt, the logic is:
-    //   jt = 0: user-supplied full Jacobian (user supplies, we use)
-    //   jt = 1: internally generated full Jacobian (we generate)
-    //   jt = 3: user-supplied banded Jacobian
-    //   jt = 4: internally generated banded Jacobian
+    //   jt = 1: user-supplied full Jacobian
+    //   jt = 2: internally generated full Jacobian
+    //   jt = 4: user-supplied banded Jacobian
+    //   jt = 5: internally generated banded Jacobian
+    //   (jt = 3 is invalid and rejected by LSODA)
     int col_deriv = 1;  // Assume Fortran/column-major order
     if (setup_odepack_callback(&callback, fcn, jac_func, extra_args,
                                 col_deriv, jt, tfirst) < 0) {
