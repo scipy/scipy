@@ -430,7 +430,7 @@ class Rotation:
         --------
         >>> from scipy.spatial.transform import Rotation as R
 
-        A rotation can be initialzied from a quaternion with the scalar-last
+        A rotation can be initialized from a quaternion with the scalar-last
         (default) or scalar-first component order as shown below:
 
         >>> r = R.from_quat([0, 0, 0, 1])
@@ -1020,7 +1020,7 @@ class Rotation:
 
         The resulting shape of the quaternion is always the shape of the Rotation
         object with an added last dimension of size 4. E.g. when the `Rotation` object
-        contains an N-dimensional array (N, M, K) of rotations, the result will be a 
+        contains an N-dimensional array (N, M, K) of rotations, the result will be a
         4-dimensional array:
 
         >>> r = R.from_rotvec(np.ones((2, 3, 4, 3)))
@@ -1990,7 +1990,11 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def mean(self, weights: ArrayLike | None = None) -> Rotation:
+    def mean(
+        self,
+        weights: ArrayLike | None = None,
+        axis: None | int | tuple[int, ...] = None,
+    ) -> Rotation:
         """Get the mean of the rotations.
 
         The mean used is the chordal L2 mean (also called the projected or
@@ -2012,6 +2016,9 @@ class Rotation:
             None (default), then all values in `weights` are assumed to be
             equal. If given, the shape of `weights` must be broadcastable to
             the rotation shape. Weights must be non-negative.
+        axis : None, int, or tuple of ints, optional
+            Axis or axes along which the means are computed. The default is to
+            compute the mean of all rotations.
 
         Returns
         -------
@@ -2035,7 +2042,7 @@ class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
-        mean = self._backend.mean(self._quat, weights=weights)
+        mean = self._backend.mean(self._quat, weights=weights, axis=axis)
         return Rotation._from_raw_quat(mean, xp=self._xp, backend=self._backend)
 
     @xp_capabilities(
@@ -2250,7 +2257,9 @@ class Rotation:
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
     @staticmethod
-    def identity(num: int | None = None) -> Rotation:
+    def identity(
+        num: int | None = None, *, shape: int | tuple[int, ...] | None = None
+    ) -> Rotation:
         """Get identity rotation(s).
 
         Composition with the identity rotation has no effect.
@@ -2260,19 +2269,29 @@ class Rotation:
         num : int or None, optional
             Number of identity rotations to generate. If None (default), then a
             single rotation is generated.
+        shape : int or tuple of ints, optional
+            Shape of identity rotations to generate. If specified, `num` must
+            be None.
 
         Returns
         -------
         identity : Rotation object
             The identity rotation.
         """
-        quat = cython_backend.identity(num)
+        # TODO: We should move to one single way of specifying the output shape and
+        # deprecate `num`.
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` or `shape` can be specified.")
+        quat = cython_backend.identity(num, shape=shape)
         return Rotation._from_raw_quat(quat, xp=array_namespace(quat))
 
-    @classmethod
+    @staticmethod
     @_transition_to_rng("random_state", position_num=2)
     def random(
-        cls, num: int | None = None, rng: np.random.Generator | None = None
+        num: int | None = None,
+        rng: np.random.Generator | None = None,
+        *,
+        shape: tuple[int, ...] | None = None,
     ) -> Rotation:
         r"""Generate rotations that are uniformly distributed on a sphere.
 
@@ -2289,6 +2308,8 @@ class Rotation:
             `numpy.random.Generator` is created using entropy from the
             operating system. Types other than `numpy.random.Generator` are
             passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        shape : tuple of ints, optional
+            Shape of random rotations to generate. If specified, `num` must be None.
 
         Returns
         -------
@@ -2325,11 +2346,12 @@ class Rotation:
         scipy.stats.special_ortho_group
 
         """
-        # TODO: The array API does not have a unified random interface. This method only
-        # creates numpy arrays. If we do want to support other frameworks, we need a way
-        # to handle other rng implementations.
-        sample = cython_backend.random(num, rng)
-        return cls(sample, normalize=True, copy=False)
+        # TODO: We should move to one single way of specifying the output shape and
+        # deprecate `num`.
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` or `shape` can be specified.")
+        sample = cython_backend.random(num, rng, shape=shape)
+        return Rotation(sample, normalize=True, copy=False)
 
     @staticmethod
     @xp_capabilities(

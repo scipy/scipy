@@ -114,6 +114,7 @@ class RigidTransform:
     as_exp_coords
     as_dual_quat
     concatenate
+    mean
     apply
     inv
     identity
@@ -863,7 +864,9 @@ class RigidTransform:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def identity(num: int | None = None) -> RigidTransform:
+    def identity(
+        num: int | None = None, *, shape: int | tuple[int, ...] | None = None
+    ) -> RigidTransform:
         """Initialize an identity transform.
 
         Composition with the identity transform has no effect, and
@@ -874,6 +877,9 @@ class RigidTransform:
         num : int, optional
             Number of identity transforms to generate. If None (default),
             then a single transform is generated.
+        shape : int or tuple of ints, optional
+            Shape of the identity transforms. If specified, `num` must
+            be None.
 
         Returns
         -------
@@ -930,10 +936,17 @@ class RigidTransform:
         >>> len(tf)
         2
         """
-        if num is None:
-            matrix = np.eye(4)
-        else:
-            matrix = np.tile(np.eye(4), (num, 1, 1))
+        if num is not None and shape is not None:
+            raise ValueError("Only one of `num` and `shape` can be specified.")
+        if num is None and shape is None:
+            shape = ()
+        elif num is not None:
+            shape = (num,)
+        elif isinstance(shape, int):
+            shape = (shape,)
+        elif not isinstance(shape, tuple):
+            raise ValueError("`shape` must be an int or a tuple of ints or None.")
+        matrix = np.tile(np.eye(4), shape + (1, 1))
         # No need for a backend call here since identity is easy to construct and we are
         # currently not offering a backend-specific identity matrix
         return RigidTransform._from_raw_matrix(matrix, array_namespace(matrix))
@@ -982,6 +995,75 @@ class RigidTransform:
             [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
         )
         return RigidTransform._from_raw_matrix(matrix, xp, None)
+
+    @xp_capabilities(
+        skip_backends=[("dask.array", "missing linalg.cross/det functions")]
+    )
+    def mean(self, weights: ArrayLike | None = None) -> RigidTransform:
+        """Get the mean of the transforms.
+
+        The mean of a set of transforms is the same as the mean of its
+        rotation and translation components.
+
+        The mean used for the rotation component is the chordal L2 mean (also
+        called the projected or induced arithmetic mean) [1]_. If ``A`` is a
+        set of rotation matrices, then the mean ``M`` is the rotation matrix
+        that minimizes the following loss function:
+
+        .. math::
+
+            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -
+            \\mathbf{M} \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each matrix.
+
+        Parameters
+        ----------
+        weights : array_like shape (..., N), optional
+            Weights describing the relative importance of the transforms. If
+            None (default), then all values in `weights` are assumed to be
+            equal. If given, the shape of `weights` must be broadcastable to
+            the transform shape. Weights must be non-negative.
+
+        Returns
+        -------
+        mean : `RigidTransform` instance
+            Single transform containing the mean of the transforms in the
+            current instance.
+
+        References
+        ----------
+        .. [1] Hartley, Richard, et al.,
+                "Rotation Averaging", International Journal of Computer Vision
+                103, 2013, pp. 267-305.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.spatial.transform import RigidTransform as Tf
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> rng = np.random.default_rng(seed=123)
+
+        The mean of a set of transforms is the same as the mean of the
+        translation and rotation components:
+
+        >>> t = rng.random((4, 3))
+        >>> r = R.random(4, rng=rng)
+        >>> tf = Tf.from_components(t, r)
+        >>> tf.mean().as_matrix()
+        array([[ 0.61593485, -0.74508342,  0.25588075,  0.66999034],
+               [-0.59353615, -0.65246765, -0.47116962,  0.25481794],
+               [ 0.51801458,  0.13833531, -0.84411151,  0.52429339],
+               [0., 0., 0., 1.]])
+        >>> Tf.from_components(t.mean(axis=0), r.mean()).as_matrix()
+        array([[ 0.61593485, -0.74508342,  0.25588075,  0.66999034],
+               [-0.59353615, -0.65246765, -0.47116962,  0.25481794],
+               [ 0.51801458,  0.13833531, -0.84411151,  0.52429339],
+               [0., 0., 0., 1.]])
+        """
+        mean = self._backend.mean(self._matrix, weights=weights)
+        return RigidTransform._from_raw_matrix(mean, xp=self._xp,
+                                               backend=self._backend)
 
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
@@ -1058,10 +1140,10 @@ class RigidTransform:
         returns the rotation corresponding to this rotation matrix
         ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
-        Take a transform ``tf`` and a vector ``v``. When applying the transform
-        to the vector, the result is the same as if the transform was applied
-        to the vector in the following way:
-        ``tf.apply(v) == translation + rotation.apply(v)``
+        When applying a transform ``tf`` to a vector ``v``, the result is the same
+        as if the rotation and translation components were applied to the vector
+        with the following operation:
+        ``tf.apply(v) == translation + rotation.apply(v)``.
 
         Returns
         -------
@@ -1083,19 +1165,17 @@ class RigidTransform:
         ...                    [1, 0, 0],
         ...                    [0, 1, 0]])
         >>> tf = Tf.from_components(t, r)
-        >>> tf_t, tf_r = tf.as_components()
-        >>> tf_t
+        >>> t, r = tf.as_components()
+        >>> t
         array([2., 3., 4.])
-        >>> tf_r.as_matrix()
+        >>> r.as_matrix()
         array([[0., 0., 1.],
                [1., 0., 0.],
                [0., 1., 0.]])
 
         The transform applied to a vector is equivalent to the rotation applied
-        to the vector followed by the translation:
+        to the vector, followed by the translation:
 
-        >>> r.apply([1, 0, 0])
-        array([0., 1., 0.])
         >>> t + r.apply([1, 0, 0])
         array([2., 4., 4.])
         >>> tf.apply([1, 0, 0])

@@ -173,6 +173,7 @@ def _do_extrapolate(fill_value):
             fill_value == 'extrapolate')
 
 
+@xp_capabilities(out_of_scope=True)
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function (legacy).
@@ -191,7 +192,7 @@ class interp1d(_Interpolator1D):
     x : (npoints, ) array_like
         A 1-D array of real values.
     y : (..., npoints, ...) array_like
-        A N-D array of real values. The length of `y` along the interpolation
+        An N-D array of real values. The length of `y` along the interpolation
         axis must be equal to the length of `x`. Use the ``axis`` parameter
         to select correct axis. Unlike other interpolators, the default
         interpolation axis is the last axis of `y`.
