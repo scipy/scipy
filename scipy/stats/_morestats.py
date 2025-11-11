@@ -5,7 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+from numpy import (isscalar, log, around, zeros,
                    arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
