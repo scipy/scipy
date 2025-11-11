@@ -1140,7 +1140,7 @@ class RigidTransform:
         returns the rotation corresponding to this rotation matrix
         ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
-        When applying a transform `tf` to a vector `v`, the result is the same
+        When applying a transform ``tf`` to a vector ``v``, the result is the same
         as if the rotation and translation components were applied to the vector
         with the following operation:
         ``tf.apply(v) == translation + rotation.apply(v)``.
