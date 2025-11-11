@@ -58,6 +58,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,)
 from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
+                               _broadcast_arrays,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
                                too_small_nd_not_omit, too_small_nd_omit)
@@ -85,6 +86,7 @@ from scipy._lib._array_api import (
     xp_device,
 )
 import scipy._lib.array_api_extra as xpx
+from scipy.stats._quantile import _xp_searchsorted
 
 
 
@@ -8982,6 +8984,15 @@ class QuantileTestResult:
     _alternative: list[str] = field(repr=False)
     _x : np.ndarray = field(repr=False)
     _p : float = field(repr=False)
+    _statistic : float = field(repr=False)
+    _statistic_type : int = field(repr=False)
+    _pvalue : float = field(repr=False)
+    _axis : int = field(repr=False)
+    _axis_none : bool = field(repr=False)
+    _keepdims : bool = field(repr=False)
+    _ndim : int = field(repr=False)
+    _nan_out : bool = field(repr=False)
+
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -9018,64 +9029,130 @@ class QuantileTestResult:
 
         alternative = self._alternative
         p = self._p
-        x = np.sort(self._x)
-        n = len(x)
+        x = np.sort(self._x, axis=-1)
+        n = x.shape[-1]
         bd = stats.binom(n, p)
+        shape = p.shape
 
         if confidence_level <= 0 or confidence_level >= 1:
             message = "`confidence_level` must be a number between 0 and 1."
             raise ValueError(message)
 
-        low_index = np.nan
-        high_index = np.nan
-
         if alternative == 'less':
             p = 1 - confidence_level
-            low = -np.inf
-            high_index = int(bd.isf(p))
-            high = x[high_index] if high_index < n else np.nan
+            low = np.full(shape, -np.inf)
+            high_index = bd.isf(p).astype(int)
+            valid_index = high_index < n
+            high_index[~valid_index] = 0
+            high = np.where(valid_index, np.take_along_axis(x, high_index), np.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
-            low_index = int(bd.ppf(p)) - 1
-            low = x[low_index] if low_index >= 0 else np.nan
-            high = np.inf
+            low_index = (bd.ppf(p)).astype(int) - 1
+            valid_index = low_index >= 0
+            low_index[~valid_index] = 0
+            low = np.where(valid_index, np.take_along_axis(x, low_index), np.nan)
+            high = np.full(shape, np.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
-            low_index = int(bd.ppf(p)) - 1
-            low = x[low_index] if low_index >= 0 else np.nan
-            high_index = int(bd.isf(p))
-            high = x[high_index] if high_index < n else np.nan
+            low_index = (bd.ppf(p)).astype(int) - 1
+            valid_index = low_index >= 0
+            low_index[~valid_index] = 0
+            low = np.where(valid_index, np.take_along_axis(x, low_index), np.nan)
+            high_index = bd.isf(p).astype(int)
+            valid_index = high_index < n
+            high_index[~valid_index] = 0
+            high = np.where(valid_index, np.take_along_axis(x, high_index), np.nan)
 
+        args = self._axis, self._axis_none, self._keepdims, self._ndim, self._nan_out
+        low = _quantile_test_postprocess(low, *args)
+        high = _quantile_test_postprocess(high, *args)
         return ConfidenceInterval(low, high)
 
 
-def quantile_test_iv(x, q, p, alternative):
+def quantile_test_iv(x, q, p, alternative, axis, keepdims):
 
     x = np.atleast_1d(x)
-    message = '`x` must be a one-dimensional array of numbers.'
-    if x.ndim != 1 or not np.issubdtype(x.dtype, np.number):
+    message = '`x` must be an array of numbers.'
+    if not np.issubdtype(x.dtype, np.number):
         raise ValueError(message)
 
     q = np.array(q)[()]
-    message = "`q` must be a scalar."
-    if q.ndim != 0 or not np.issubdtype(q.dtype, np.number):
+    message = "`q` must be a scalar or array of numbers."
+    if not np.issubdtype(q.dtype, np.number):
         raise ValueError(message)
 
     p = np.array(p)[()]
-    message = "`p` must be a float strictly between 0 and 1."
-    if p.ndim != 0 or p >= 1 or p <= 0:
+    message = "`p` must be a scalar or array of floats."
+    if not np.issubdtype(p.dtype, np.inexact):
         raise ValueError(message)
+
+    axis_none = axis is None
+    ndim = max(x.ndim, p.ndim)
+    if axis_none:
+        x = np.ravel(x)
+        q = np.ravel(q)
+        p = np.ravel(p)
+        axis = 0
+    elif np.iterable(axis) or int(axis) != axis:
+        message = "`axis` must be an integer or None."
+        raise ValueError(message)
+    elif (axis >= ndim) or (axis < -ndim):
+        message = "`axis` is not compatible with the shapes of the inputs."
+        raise ValueError(message)
+    axis = int(axis)
 
     alternatives = {'two-sided', 'less', 'greater'}
     message = f"`alternative` must be one of {alternatives}"
     if alternative not in alternatives:
         raise ValueError(message)
 
-    return x, q, p, alternative
+    if keepdims not in {None, True, False}:
+        message = "If specified, `keepdims` must be True or False."
+        raise ValueError(message)
+
+    x = np.sort(x, axis=axis, stable=False)
+    q, p = np.broadcast_arrays(q, p)  # length along axis matters for q and p
+    x, q, p = _broadcast_arrays((x, q, p), axis=axis)
+
+    if (keepdims is False) and (p.shape[axis] != 1):
+        message = ("`keepdims` may be False only if `p` and `q` are scalars or the "
+                   "length of `p` and `q` along `axis` is 1.")
+        raise ValueError(message)
+    keepdims = (p.shape[axis] != 1) if keepdims is None else keepdims
+
+    x = np.moveaxis(x, axis, -1)
+    q = np.moveaxis(q, axis, -1)
+    p = np.moveaxis(p, axis, -1)
+
+    nan_out = (p >= 1) | (p <= 0) | np.isnan(p)  | np.isnan(q)
+    if np.any(nan_out):
+        q = np.asarray(q, copy=True)
+        q = xpx.at(q, nan_out).set(0)  # these get NaN-ed out at the end
+        p = np.asarray(p, copy=True)
+        p = xpx.at(p, nan_out).set(0.5)  # these get NaN-ed out at the end
+
+    return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out
+
+
+def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out):
+    # Reshape per axis/keepdims
+
+    res[nan_out] = -1
+
+    if axis_none and keepdims:
+        shape = (1,)*(ndim - 1) + res.shape
+        res = np.reshape(res, shape)
+        axis = -1
+
+    res = np.moveaxis(res, -1, axis)
+
+    if not keepdims:
+        res = np.squeeze(res, axis=axis)
+    return res
 
 
 @xp_capabilities(np_only=True)
-def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
+def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=None):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
 
@@ -9353,19 +9430,21 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     # "H0: the p*th quantile of X is x*"
     # To facilitate comparison with [1], we'll use variable names that
     # best match Conover's notation
-    X, x_star, p_star, H1 = quantile_test_iv(x, q, p, alternative)
+    X, x_star, p_star, H1, axis, keepdims, axis_none, ndim, nan_out = quantile_test_iv(
+        x, q, p, alternative, axis, keepdims)
+    # `axis` is the original `axis`; the working axis is -1.
 
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    T1 = np.count_nonzero(X <= x_star)
-    T2 = np.count_nonzero(X < x_star)
+    T1 = _xp_searchsorted(X, x_star, side='right')
+    T2 = _xp_searchsorted(X, x_star, side='left')
 
     # "The null distribution of the test statistics T1 and T2 is "
     # "the binomial distribution, with parameters n = sample size, and "
     # "p = p* as given in the null hypothesis.... Y has the binomial "
     # "distribution with parameters n and p*."
-    n = len(X)
+    n = X.shape[-1]
     Y = stats.binom(n=n, p=p_star)
 
     # "H1: the p* population quantile is less than x*"
@@ -9373,15 +9452,15 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # "The p-value is the probability that a binomial random variable Y "
         # "is greater than *or equal to* the observed value of T2...using p=p*"
         pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
-        statistic = T2
-        statistic_type = 2
+        statistic = np.full(pvalue.shape, T2)
+        statistic_type = np.full(pvalue.shape, 2)
     # "H1: the p* population quantile is greater than x*"
     elif H1 == 'greater':
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
-        statistic = T1
-        statistic_type = 1
+        statistic = np.full(pvalue.shape, T1)
+        statistic_type = np.full(pvalue.shape, 1)
     # "H1: x* is not the p*th population quantile"
     elif H1 == 'two-sided':
         # "The p-value is twice the smaller of the probabilities that a
@@ -9390,21 +9469,33 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # using p=p*."
         # Note: both one-sided p-values can exceed 0.5 for the same data, so
         # `clip`
-        pvalues = [Y.cdf(T1), Y.sf(T2 - 1)]  # [greater, less]
-        sorted_idx = np.argsort(pvalues)
-        pvalue = np.clip(2*pvalues[sorted_idx[0]], 0, 1)
-        if sorted_idx[0]:
-            statistic, statistic_type = T2, 2
-        else:
-            statistic, statistic_type = T1, 1
+        p_min = np.minimum(Y.cdf(T1), Y.sf(T2 - 1))
+        pvalue = np.clip(2*p_min, 0, 1)
+        i2 = Y.cdf(T1) > Y.sf(T2 - 1)
+        statistic = np.where(i2, T2, T1)
+        statistic_type = np.where(i2, 2, 1)
+
+    _statistic, _statistic_type, _pvalue = statistic, statistic_type, pvalue
+    args = axis, axis_none, keepdims, ndim, nan_out
+    statistic = _quantile_test_postprocess(statistic, *args)
+    statistic_type = _quantile_test_postprocess(statistic_type, *args)
+    pvalue = _quantile_test_postprocess(pvalue, *args)
 
     return QuantileTestResult(
-        statistic=statistic,
-        statistic_type=statistic_type,
-        pvalue=pvalue,
+        statistic=statistic[()],
+        statistic_type=statistic_type[()],
+        pvalue=pvalue[()],
         _alternative=H1,
         _x=X,
-        _p=p_star
+        _p=p_star,
+        _statistic=statistic,
+        _statistic_type=_statistic_type,
+        _pvalue=_pvalue,
+        _axis=axis,
+        _axis_none=axis_none,
+        _keepdims=keepdims,
+        _ndim=ndim,
+        _nan_out=nan_out,
     )
 
 

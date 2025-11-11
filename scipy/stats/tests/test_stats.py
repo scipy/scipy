@@ -44,6 +44,8 @@ from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
                                    xp_swapaxes)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import _apply_over_batch
+
 
 lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -8566,29 +8568,47 @@ class TestBrunnerMunzel:
         xp_assert_equal(p, xp.asarray(0.))
 
 
+@_apply_over_batch(('x', 1), ('q', 1), ('p', 1))
+def quantile_test_reference(x, q, p, alternative):
+    res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
+    return res.statistic, res.pvalue, *res.confidence_interval()
+
+
 class TestQuantileTest:
     r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
     """
 
     def test_quantile_test_iv(self):
-        x = [1, 2, 3]
+        x = np.asarray([1, 2, 3])
 
-        message = "`x` must be a one-dimensional array of numbers."
+        message = "`x` must be an array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test([x])
+            stats.quantile_test(x.astype(bool))
 
-        message = "`q` must be a scalar."
+        message = "`q` must be a scalar or array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, q=[1, 2])
+            stats.quantile_test(x, q=False)
 
-        message = "`p` must be a float strictly between 0 and 1."
-        with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, p=[0.5, 0.75])
+        message = "`p` must be a scalar or array of floats."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, p=2)
+
+        message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x, p=-0.5)
+            stats.quantile_test(x, axis=2.5)
+
+        message = "`axis` is not compatible with the shapes of the inputs."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, axis=2)
+
+        message = "If specified, `keepdims` must be True or False."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, keepdims=10)
+
+        message = ("`keepdims` may be False only if...")
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, p=[0.1, 0.2], keepdims=False)
 
         message = "`alternative` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -8703,6 +8723,31 @@ class TestQuantileTest:
         pvalue_expected = stats.binom(p=0.5, n=112).pmf(k=8)
         res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
         assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_multidimensional(self, alternative, axis):
+        rng = np.random.default_rng(85468924398205602)
+        x = rng.random(size=(2, 20))
+        p = rng.random(size=(1, 3,))
+        q = p + rng.random(size=(2, 1))*0.01
+
+        ref = quantile_test_reference(x, q, p, alternative=alternative)
+        ref_statistic, ref_pvalue, ref_low, ref_high = ref
+
+        if axis == 0:
+            x, p, q = x.T, p.T, q.T
+        res = stats.quantile_test(x, q=q, p=p, alternative=alternative, axis=axis)
+        res_statistic, res_pvalue = res.statistic, res.pvalue
+        res_low, res_high = res.confidence_interval()
+        if axis == 0:
+            res_statistic, res_pvalue = res_statistic.T, res_pvalue.T
+            res_low, res_high = res_low.T, res_high.T
+
+        np.testing.assert_allclose(res_statistic, ref_statistic)
+        np.testing.assert_allclose(res_pvalue, ref_pvalue)
+        np.testing.assert_allclose(res_low, res_low)
+        np.testing.assert_allclose(res_low, ref_low)
 
 
 class TestPageTrendTest:
