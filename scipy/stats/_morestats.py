@@ -2734,7 +2734,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
         * 'greater': the ratio of scales is greater than 1.
 
         .. versionadded:: 1.7.0
-    axis : int or tuple of ints, default: None
+    axis : int or tuple of ints, default: 0
         If an int or tuple of ints, the axis or axes of the input along which
         to compute the statistic. The statistic of each axis-slice (e.g. row)
         of the input will appear in a corresponding element of the output.
@@ -2839,7 +2839,7 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     N = m + n
     xy = np.concatenate([x, y], axis=-1)  # combine
     rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    symrank = np.min(np.stack((rank, N - rank + 1), axis=0), axis=0)
+    symrank = np.minimum(rank, N - rank + 1)
     AB = np.sum(symrank[..., :n], axis=-1)
     repeats = np.any(t > 1)  # in theory we could branch for each slice separately
     exact = ((m < 55) and (n < 55) and not repeats)
