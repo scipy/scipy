@@ -225,6 +225,11 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     ndarray
         Array of interpolated values.
 
+    Raises
+    ------
+    ValueError
+        If simplex_tolerance <= 0
+
     See Also
     --------
     LinearNDInterpolator :
@@ -294,6 +299,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.show()
 
     """ # numpy/numpydoc#87  # noqa: E501
+    if simplex_tolerance <= 0:
+        raise ValueError("simplex_tolerance must be positive")
 
     points = _ndim_coords_from_arrays(points)
 

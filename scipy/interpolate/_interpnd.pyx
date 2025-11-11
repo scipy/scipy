@@ -152,7 +152,7 @@ class NDInterpolatorBase:
         return self._scale_x(xi), interpolation_points_shape
 
     def __call__(self, *args, simplex_tolerance=1.0):
-        """\
+        """
         interpolator(xi)
 
         Evaluate interpolator at given points.
@@ -169,7 +169,15 @@ class NDInterpolatorBase:
             Default is 1.0
 
             .. versionadded:: 1.17.0
+
+        Raises
+        ------
+        ValueError
+            If simplex_tolerance <= 0
         """
+        if simplex_tolerance <= 0:
+            raise ValueError("simplex_tolerance must be positive")
+
         xi, interpolation_points_shape = self._preprocess_xi(*args)
 
         if self.is_complex:
