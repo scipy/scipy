@@ -8,7 +8,10 @@ Filling an image from a border
 
 Suppose we have values for a function only on the border of a region,
 either to estimate the background of an image from the parts not
-covered by the sample, or as part of a boundary-value problem.
+covered by the sample, or as part of a boundary-value problem.  As a
+concrete example, consider the estimation of the (possibly uneven)
+background illumination on a microscope slide from the edge of the
+image, away from the specimen.
 
 In particular, consider a square with sides of length :math:`L`, with
 function values on the boundary given by
@@ -399,10 +402,19 @@ Other packages
 
 There are packages that will solve Laplace equation with given boundary conditions.
 
-Scikit-Image has an ``inpaint_biharmonic`` function that will solve
-also fill an image from the boundary conditions, in a manner related
-to the Laplace Equation.
+Scikit-Image has an
+[``inpaint_biharmonic``](https://scikit-image.org/docs/stable/auto_examples/filters/plot_inpaint.html)
+function that will solve also fill an image from the boundary
+conditions, in a manner related to the Laplace Equation.  Scikit-image
+also has a
+[``rolling_ball``](https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_rolling_ball.html)
+function to estimate the background from nearby values, though that
+function works better with several small things rather than one large
+one as assumed here.
 
-
-Statsmodels offers a regression interface that hides the linear
-algebra and offers additional diagnostics.
+Statsmodels offers [regression
+functions](https://www.statsmodels.org/stable/regression.html) that
+hide the linear algebra and offer additional diagnostics.  The
+[``formula.ols``](https://www.statsmodels.org/stable/example_formulas.html)
+interface hides even more of the linear algebra, and can simplify the
+setup of the regression.
