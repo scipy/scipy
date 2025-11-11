@@ -1,3 +1,4 @@
+import itertools
 import math
 import warnings
 import threading
@@ -3176,7 +3177,8 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
+                                ('cupy', 'no rankdata')], jax_jit=False)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3268,54 +3270,63 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_fligner`.
     """
+    xp = array_namespace(*samples)
+
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(samples)
     if k < 2:
-        raise ValueError("Must enter at least two input sample vectors.")
+        raise ValueError("Must provide at least two samples.")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
 
     # Handle empty input
     for sample in samples:
         if sample.size == 0:
-            NaN = _get_nan(*samples)
+            NaN = _get_nan(*samples, xp=xp)
             return FlignerResult(NaN, NaN)
 
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=-1, keepdims=True)
+            return (xp.median(x, axis=-1, keepdims=True)
+                    if (is_numpy(xp) or is_dask(xp))
+                    else stats.quantile(x, 0.5, axis=-1, keepdims=True))
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=-1, keepdims=True)
+            return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
+            # keepdims=True doesn't currently work for lazy arrays
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
     ni = [sample.shape[-1] for sample in samples]
     N = sum(ni)
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
-    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
-    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
+    Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
+    ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = np.cumsum(ni[:-1])
-    Ai = np.split(a_Ni,  splits, axis=-1)
-    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
-    abar = np.mean(a_Ni, axis=-1)
-    V2 = np.var(a_Ni, axis=-1, ddof=1)
+    splits = list(itertools.accumulate(ni, initial=0))
+    Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
+    Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
+    abar = xp.mean(a_Ni, axis=-1)
+    V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(k-1)
-    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
 
