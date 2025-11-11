@@ -134,6 +134,7 @@ class TestCvm:
         assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
         xp_assert_equal(res.pvalue, xp.asarray(0.))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('x', [(), [1.5]])
     def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
@@ -143,6 +144,8 @@ class TestCvm:
 
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_values_R(self, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
         # library(goftest)
