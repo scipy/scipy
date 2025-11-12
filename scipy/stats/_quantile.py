@@ -396,6 +396,10 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
 
     a = xp.full(y.shape, 0, device=xp_device(x))
+
+    if x.shape[-1] == 0:
+        return a
+
     n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
     b = xp.broadcast_to(n, y.shape)
 
