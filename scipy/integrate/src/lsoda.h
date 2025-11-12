@@ -1,5 +1,5 @@
-#ifndef __LSODA_H
-#define __LSODA_H
+#ifndef LSODA_H
+#define LSODA_H
 
 #include <math.h>
 #include <string.h>
