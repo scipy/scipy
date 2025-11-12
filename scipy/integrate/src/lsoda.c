@@ -2,15 +2,8 @@
 #include <float.h>
 #include <stdio.h>
 
-// Forward declarations (these functions are implemented later in this file)
-static void ewset(const int n, const int itol, double* rtol, double* atol, double* ycur, double* ewt);
-static double vmnorm(const int n, double* restrict v, double* restrict w);
-static void intdy(const double t, const int k, double* yh, const int nyh, double* dky, int* iflag, lsoda_common_struct_t* S);
-
-
 static inline int int_min(const int a, const int b) { return a < b ? a : b; }
 static inline int int_max(const int a, const int b) { return a > b ? a : b; }
-
 
 
 /**
@@ -182,7 +175,7 @@ cfode(const int meth, double* elco, double* tesco)
         for (int nq = 1; nq < 12; nq++)
         {
             double rq1fac = rqfac;
-            rqfac = rqfac / (nq + 1);  // Fortran: rqfac/nq where Fortran nq = C nq + 1
+            rqfac = rqfac / (nq + 1);
             pc[nq] = 0.0;
             for (int ib = 0; ib <= nq - 1; ib++)
             {
@@ -1559,10 +1552,10 @@ void lsoda(
     // if istate = 1 and tout = t, jump to block g and return immediately.
     if (*istate < 1 || *istate > 3) {
         lsoda_mark_error(istate, &S->illin); return;
-    } // istate illegal
+    }
     if (*itask < 1 || *itask > 5) {
         lsoda_mark_error(istate, &S->illin); return;
-    }  // itask illegal
+    }
     if (*istate != 1 && S->init == 0) {
         lsoda_mark_error(istate, &S->illin); return;
     } // istate > 1 but LSODA not initialized
