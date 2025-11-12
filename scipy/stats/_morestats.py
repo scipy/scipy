@@ -2090,11 +2090,12 @@ def shapiro(x):
     return ShapiroResult(np.float64(w), np.float64(pw))
 
 
-# Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
-#             Some Comparisons", Journal of the American Statistical
-#             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737
-_Avals_norm = array([0.576, 0.656, 0.787, 0.918, 1.092])
-_Avals_expon = array([0.922, 1.078, 1.341, 1.606, 1.957])
+# Values from D’Agostino, Ralph B. (1986). “Tests for the Normal Distribution”.
+#             In: Goodness-of-Fit Techniques. Ed. by Ralph B. D’Agostino and 
+#             Michael A. Stephens. New York: Marcel Dekker, pp. 122–141. ISBN:
+#             0-8247-7487-6.
+_Avals_norm = array([0.561, 0.631, 0.752, 0.873, 1.035])
+_Avals_expon = array([0.916, 1.062, 1.321, 1.591, 1.959])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
 #             Biometrika, Vol. 64, Issue 3, Dec. 1977, pp 583-588.
 _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
@@ -2285,6 +2286,10 @@ def anderson(x, dist='norm'):
            Fit for the Three-Parameter Weibull Distribution"
            Journal of the Royal Statistical Society.Series B(Methodological)
            Vol. 56, No. 3 (1994), pp. 491-500, Table 0.
+    .. [8] D’Agostino, Ralph B. (1986). “Tests for the Normal Distribution”.
+           In: Goodness-of-Fit Techniques. Ed. by Ralph B. D’Agostino and 
+           Michael A. Stephens. New York: Marcel Dekker, pp. 122-141. ISBN:
+           0-8247-7487-6.
 
     Examples
     --------
@@ -2326,7 +2331,7 @@ def anderson(x, dist='norm'):
         logcdf = distributions.norm.logcdf(w)
         logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
-        critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
+        critical = around(_Avals_norm / (1.0 + 0.75/N + 2.25/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
         fit_params = 0, xbar
