@@ -26,7 +26,7 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy)
+                                   is_numpy, xp_default_dtype)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -782,69 +782,70 @@ class TestBartlett:
         assert xp.all(res.statistic >= 0)
 
 
+@make_xp_test_case(stats.levene)
 class TestLevene:
 
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args)
-        assert_almost_equal(W, 1.7059176930008939, 7)
-        assert_almost_equal(pval, 0.0990829755522, 7)
+        xp_assert_close(W, xp.asarray(1.7059176930008939))
+        xp_assert_close(pval, xp.asarray(0.0990829755522))
 
-    def test_mean(self):
+    def test_mean(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="mean")
-        assert_allclose(W, 2.15945985647285, rtol=5e-14)
-        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.15945985647285))
+        xp_assert_close(pval, xp.asarray(0.032236826559783))
 
-    def test_trimmed1(self):
+    def test_trimmed1(self, xp):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        W1, pval1 = stats.levene(g1, g2, g3, center='mean')
-        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed',
-                                 proportiontocut=0.0)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        args = (xp.asarray(g1), xp.asarray(g2), xp.asarray(g3))
+        W1, pval1 = stats.levene(*args, center='mean')
+        W2, pval2 = stats.levene(*args, center='trimmed', proportiontocut=0.0)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_trimmed2(self):
+    def test_trimmed2(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
-        assert_allclose(W, 2.07712845686874, rtol=5e-14)
-        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.07712845686874))
+        xp_assert_close(pval, xp.asarray(0.0397269688035377))
 
-    def test_equal_mean_median(self):
+    def test_equal_mean_median(self, xp):
         x = np.linspace(-1, 1, 21)
         rng = np.random.default_rng(4058827756)
         x2 = rng.permutation(x)
         y = x**3
+        x, x2, y = xp.asarray(x), xp.asarray(x2), xp.asarray(y)
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_bad_keyword(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
+    def test_bad_center_value(self, xp):
+        x = xp.linspace(-1, 1, 21)
+        message = "center must be 'mean', 'median' or 'trimmed'."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(x, x, center='trim')
 
-    def test_bad_center_value(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(ValueError, stats.levene, x, x, center='trim')
+    def test_too_few_args(self, xp):
+        message = "Must provide at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(xp.asarray([1]))
 
-    def test_too_few_args(self):
-        assert_raises(ValueError, stats.levene, [1])
-
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.levene(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.levene, g1, x)
+        check_named_results(res, attributes, xp=xp)
 
 
 class TestBinomTest:
@@ -1085,76 +1086,85 @@ class TestBinomTest:
             stats.binomtest(5, 6, p=sys.float_info.min)
 
 
+@make_xp_test_case(stats.fligner)
 class TestFligner:
 
-    def test_data(self):
-        # numbers from R: fligner.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.fligner(x1, x1**2),
-                                  (3.2282229927203536, 0.072379187848207877),
-                                  11)
+    def _perturb(self, g, rng=124987234782812):
+        # g arrays have ties to which statistic is very sensitive; break them
+        rng = np.random.default_rng(rng)
+        return (np.asarray(g) + 1e-10 * rng.standard_normal(len(g))).tolist()
 
-    def test_trimmed1(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_data(self, dtype, xp):
+        if is_numpy(xp) and dtype == 'float32' and xp.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        # numbers from R: fligner.test in package stats
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x1 = xp.arange(5, dtype=dtype)
+        res = stats.fligner(x1, x1**2)
+        ref = (xp.asarray(3.2282229927203536, dtype=dtype),
+               xp.asarray(0.072379187848207877, dtype=dtype))
+        xp_assert_close(res[0], ref[0])
+        xp_assert_close(res[1], ref[1])
+
+    def test_trimmed1(self, xp):
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
-        rs = np.random.RandomState(123)
-
-        def _perturb(g):
-            return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
-
-        g1_ = _perturb(g1)
-        g2_ = _perturb(g2)
-        g3_ = _perturb(g3)
+        rng = np.random.default_rng(9952379681)
+        g1_ = xp.asarray(self._perturb(g1, rng=rng))
+        g2_ = xp.asarray(self._perturb(g2, rng=rng))
+        g3_ = xp.asarray(self._perturb(g3, rng=rng))
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
         Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
         Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
+        xp_assert_close(Xsq1, Xsq2)
+        xp_assert_close(pval1, pval2)
 
-    def test_trimmed_nonregression(self):
+    @pytest.mark.skip_xp_backends(np_only=True,
+                                  reason="inconsistent tie-breaking across backends")
+    def test_trimmed_nonregression(self, xp):
         # This is a non-regression test
         # Expected results are *not* from an external gold standard,
         # we're just making sure the results remain consistent
         # in the future in case of changes
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg, dtype=xp.float64) for arg in args]
         W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
-        assert_allclose(W, 15.953569890010614, rtol=5e-14)
-        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(15.953569890010614), rtol=5e-14)
+        xp_assert_close(pval, xp.asarray(0.06785752327432863), rtol=5e-14)
 
-    # The following test looks reasonable at first, but fligner() uses the
-    # function stats.rankdata(), and in one of the cases in this test,
-    # there are ties, while in the other (because of normal rounding
-    # errors) there are not.  This difference leads to differences in the
-    # third significant digit of W.
-    #
-    #def test_equal_mean_median(self):
-    #    x = np.linspace(-1,1,21)
-    #    y = x**3
-    #    W1, pval1 = stats.fligner(x, y, center='mean')
-    #    W2, pval2 = stats.fligner(x, y, center='median')
-    #    assert_almost_equal(W1, W2)
-    #    assert_almost_equal(pval1, pval2)
+    def test_trimmed_consistency(self, xp):
+        # Tests for consistency across multiple backends when ties are broken
+        rng = np.random.default_rng(4839206199)
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [self._perturb(arg, rng=rng) for arg in args]
+        ref = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        args = [xp.asarray(arg, dtype=xp.float64) for arg in args]
+        res = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic), rtol=5e-14)
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), rtol=5e-14)
 
-    def test_bad_keyword(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(TypeError, stats.fligner, x, x, portiontocut=0.1)
+    def test_bad_center_value(self, xp):
+        x = xp.linspace(-1, 1, 21)
+        message = "center must be 'mean', 'median' or 'trimmed'."
+        with pytest.raises(ValueError, match=message):
+            stats.fligner(x, x, center='trim')
 
-    def test_bad_center_value(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(ValueError, stats.fligner, x, x, center='trim')
-
-    def test_bad_num_args(self):
+    def test_bad_num_args(self, xp):
         # Too few args raises ValueError.
-        assert_raises(ValueError, stats.fligner, [1])
+        message = "Must provide at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.fligner(xp.asarray([1, 2]))
 
-    def test_empty_arg(self):
-        x = np.arange(5)
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_empty_arg(self, xp):
+        x = xp.arange(5.)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.fligner(x, x**2, [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = stats.fligner(x, x**2, xp.asarray([]))
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
 
 def mood_cases_with_ties():
