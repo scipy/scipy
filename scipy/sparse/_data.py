@@ -27,18 +27,7 @@ class _data_matrix(_spbase):
 
     @dtype.setter
     def dtype(self, newtype):
-    """
-    Set the dtype by creating a view with the requested dtype rather
-    than assigning to the .dtype attribute directly (deprecated).
-    """
-    # Ensure newtype is accepted by numpy (allows strings, dtype objects, etc.)
-    import numpy as _np
-    newdtype = _np.dtype(newtype)
-
-    # Create a view with the requested dtype instead of setting .dtype
-    # This usually returns a view (no copy). If a copy is unavoidable,
-    # that's expected given numpy deprecation guidance.
-    self.data = self.data.view(newdtype)
+        self.data = self.data.view(newtype)
 
     def _deduped_data(self):
         if hasattr(self, 'sum_duplicates'):
