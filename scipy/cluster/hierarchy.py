@@ -973,37 +973,49 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     Z : ndarray
     The hierarchical clustering encoded as a linkage matrix.
 
-    The linkage matrix ``Z`` has shape ``(n-1, 4)``, where each row
-    ``[idx1, idx2, dist, sample_count]`` represents a merge in the
-    hierarchical clustering:
-    
-    * ``idx1`` and ``idx2`` — indices of the clusters that were merged.
-      Clusters numbered less than ``n`` correspond to original observations.
-    * ``dist`` — the distance between those clusters at the time of merging.
-    * ``sample_count`` — the total number of original observations
-      contained in the newly formed cluster.
+       Notes
+    -----
+    The linkage matrix ``Z`` represents the hierarchical clustering as a
+    dendrogram. It has shape ``(n - 1, 4)``, where each row
+    ``[idx1, idx2, dist, sample_count]`` corresponds to a single merge
+    operation performed during clustering.
+
+    - ``idx1`` and ``idx2`` are the cluster indices merged at this step.
+      Clusters with indices less than ``n`` correspond to original observations.
+    - ``dist`` is the distance between these clusters at the time of merging.
+    - ``sample_count`` is the number of original observations contained in the
+      newly formed cluster.
+
+    Algorithmically:
+    1. Each observation is initially assigned to its own single-element cluster,
+       where the cluster index equals the observation index (0 to n-1).
+    2. At each merge step, two clusters are combined into a new cluster.
+       The newly formed cluster is assigned an index starting from ``n``,
+       increasing by one at each step.  
+       Thus, the cluster created at merge step ``i`` receives index ``n + i``.
+
+    This convention ensures that clusters with indices less than ``n``
+    represent original observations, while clusters with indices greater than
+    or equal to ``n`` correspond to clusters formed during the hierarchy
+    construction.
 
     This matrix can be visualized as a dendrogram; see
-    :func:`scipy.cluster.hierarchy.dendrogram`.
+    :func:`scipy.cluster.hierarchy.dendrogram` for examples.
 
-
-
-    Notes
-    -----
+>>>>>>> Stashed changes
     1. For method 'single', an optimized algorithm based on minimum spanning
        tree is implemented. It has time complexity :math:`O(n^2)`.
-       For methods 'complete', 'average', 'weighted' and 'ward', an algorithm
+       For methods 'complete', 'average', 'weighted', and 'ward', an algorithm
        called nearest-neighbors chain is implemented. It also has time
        complexity :math:`O(n^2)`.
-       For other methods, a naive algorithm is implemented with :math:`O(n^3)`
-       time complexity.
+       For other methods, a naive algorithm is implemented with
+       :math:`O(n^3)` time complexity.
        All algorithms use :math:`O(n^2)` memory.
        Refer to [1]_ for details about the algorithms.
     2. Methods 'centroid', 'median', and 'ward' are correctly defined only if
-       Euclidean pairwise metric is used. If `y` is passed as precomputed
-       pairwise distances, then it is the user's responsibility to assure that
-       these distances are in fact Euclidean, otherwise the produced result
-       will be incorrect.
+       the Euclidean pairwise metric is used. If `y` is passed as precomputed
+       pairwise distances, then it is the user's responsibility to ensure that
+       these distances are Euclidean; otherwise, the result will be incorrect.
 
     See Also
     --------
