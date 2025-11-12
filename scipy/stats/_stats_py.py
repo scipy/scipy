@@ -9038,7 +9038,10 @@ class QuantileTestResult:
             message = "`confidence_level` must be a number between 0 and 1."
             raise ValueError(message)
 
-        if alternative == 'less':
+        if n == 0:
+            zeros = np.zeros(p.shape, dtype=x.dtype)
+            low, high = zeros, zeros
+        elif alternative == 'less':
             p = 1 - confidence_level
             low = np.full(shape, -np.inf)
             high_index = bd.isf(p).astype(int)
@@ -9137,7 +9140,7 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
 def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out):
     # Reshape per axis/keepdims
 
-    res[nan_out] = -1
+    res[nan_out] = -1 if np.issubdtype(res.dtype, np.integer) else np.nan
 
     if axis_none and keepdims:
         shape = (1,)*(ndim - 1) + res.shape
@@ -9437,8 +9440,13 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    T1 = _xp_searchsorted(X, x_star, side='right')
-    T2 = _xp_searchsorted(X, x_star, side='left')
+    if x.shape[-1] > 0:
+        T1 = _xp_searchsorted(X, x_star, side='right')
+        T2 = _xp_searchsorted(X, x_star, side='left')
+    else:
+        nan_out = np.ones_like(nan_out)
+        T = np.zeros(x_star.shape, dtype=np.int64)
+        T1, T2 = T, T
 
     # "The null distribution of the test statistics T1 and T2 is "
     # "the binomial distribution, with parameters n = sample size, and "

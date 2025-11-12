@@ -8749,6 +8749,48 @@ class TestQuantileTest:
         np.testing.assert_allclose(res_low, res_low)
         np.testing.assert_allclose(res_low, ref_low)
 
+    def test_zero_size(self):
+        rng = np.random.default_rng(883771738488451943)
+        x_shape = (2, 50)
+        qp_shape = (2, 10)
+        x = rng.random(x_shape)
+        q = rng.random(qp_shape)
+        p = q + rng.random(qp_shape) * 1e-2
+        x, q, p = np.asarray(x), np.asarray(q), np.asarray(p)
+
+        # case 1: p/q is size zero.
+        qp_zero = np.empty((0, *qp_shape))
+        out = qp_zero
+        res = stats.quantile_test(x, q=qp_zero, p=qp_zero, axis=-1)
+        ci = res.confidence_interval()
+        xp_assert_equal(res.statistic, np.astype(out, np.int64))
+        xp_assert_equal(res.statistic_type, np.astype(out, np.int64))
+        xp_assert_equal(res.pvalue, out)
+        xp_assert_equal(ci.low, out)
+        xp_assert_equal(ci.high, out)
+
+        # case 2: x is size zero with nonzero length along axis.
+        x_zero = np.empty((0, *x_shape))
+        out = np.empty((0, *qp_shape))
+        res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
+        ci = res.confidence_interval()
+        xp_assert_equal(res.statistic, np.astype(out, np.int64))
+        xp_assert_equal(res.statistic_type, np.astype(out, np.int64))
+        xp_assert_equal(res.pvalue, out)
+        xp_assert_equal(ci.low, out)
+        xp_assert_equal(ci.high, out)
+
+        # case 3: x has zero length along axis.
+        x_zero = np.empty((x.shape[0], 0))
+        out = -np.ones(qp_shape, dtype=np.int64)
+        res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
+        ci = res.confidence_interval()
+        xp_assert_equal(res.statistic, out)
+        xp_assert_equal(res.statistic_type, out)
+        xp_assert_equal(res.pvalue, out*np.nan)
+        xp_assert_equal(ci.low, out*np.nan)
+        xp_assert_equal(ci.high, out*np.nan)
+
 
 class TestPageTrendTest:
     def setup_method(self):
