@@ -127,6 +127,10 @@ axis_nan_policy_cases = [
     (stats.shapiro, tuple(), {}, 1, 2, False, None),
     (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.ks_1samp, (norm().cdf,), dict(alternative='greater'), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
+    (stats.ks_1samp, (norm().cdf,), dict(alternative='less'), 1, 4, False,
+     lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.kstest, (norm().cdf,), dict(), 1, 4, False,
@@ -517,7 +521,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     # rtol lifted from 1e-14 solely to appease macosx-x86_64/Accelerate
     assert_allclose(res_nd, res_1d, rtol=1e-11)
 
-# nan should not raise a exception in np.mean()
+# nan should not raise an exception in np.mean()
 # but does on some mips64el systems, triggering failure in some test cases
 # see https://github.com/scipy/scipy/issues/22360
 # and https://github.com/numpy/numpy/issues/23158
