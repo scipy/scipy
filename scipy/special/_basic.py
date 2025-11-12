@@ -2528,6 +2528,18 @@ def comb(N, k, *, exact=False, repetition=False):
 
     """
     if repetition:
+        # Special case: C(n, 0) with repetition = 1 for n >= 0
+        # Without this check, comb(0, 0, repetition=True) would compute
+        # comb(-1, 0) which incorrectly returns 0
+        if exact:
+            if int(k) == k and k == 0 and int(N) == N and N >= 0:
+                return 1
+        else:
+            k_arr = asarray(k)
+            if np.isscalar(k) and k == 0:
+                N_arr = asarray(N)
+                if np.isscalar(N) and N >= 0:
+                    return np.float64(1.0)
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
