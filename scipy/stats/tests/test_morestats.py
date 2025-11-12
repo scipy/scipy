@@ -603,66 +603,53 @@ class TestAndersonKSamp:
         assert_equal(res.significance_level, res.pvalue)
 
 
+@make_xp_test_case(stats.ansari)
 class TestAnsari:
 
-    def test_small(self):
-        x = [1, 2, 3, 3, 4]
-        y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            W, pval = stats.ansari(x, y)
-        assert_almost_equal(W, 23.5, 11)
-        assert_almost_equal(pval, 0.13499256881897437, 11)
+    def test_small(self, xp):
+        x = xp.asarray([1, 2, 3, 3, 4])
+        y = xp.asarray([3, 2, 6, 1, 6, 1, 4, 1])
+        W, pval = stats.ansari(x, y)
+        xp_assert_close(W, xp.asarray(23.5))
+        xp_assert_close(pval, xp.asarray(0.13499256881897437))
 
-    def test_approx(self):
-        ramsay = np.array((111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-                           101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
-        parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
-                           100, 96, 108, 103, 104, 114, 114, 113, 108,
-                           106, 99))
+    def test_approx(self, xp):
+        ramsay = xp.asarray([111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+                             101, 96, 97, 102, 107, 113, 116, 113, 110, 98])
+        parekh = xp.asarray([107, 108, 106, 98, 105, 103, 110, 105, 104,
+                             100, 96, 108, 103, 104, 114, 114, 113, 108,
+                             106, 99])
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            W, pval = stats.ansari(ramsay, parekh)
+        W, pval = stats.ansari(ramsay, parekh)
+        xp_assert_close(W, xp.asarray(185.5))
+        xp_assert_close(pval, xp.asarray(0.18145819972867083))
 
-        assert_almost_equal(W, 185.5, 11)
-        assert_almost_equal(pval, 0.18145819972867083, 11)
+    def test_exact(self, xp):
+        x, y = xp.asarray([1, 2, 3, 4]), xp.asarray([15, 5, 20, 8, 10, 12])
+        W, pval = stats.ansari(x, y)
+        xp_assert_close(W, xp.asarray(10.0))
+        xp_assert_close(pval, xp.asarray(0.533333333333333333))
 
-    def test_exact(self):
-        W, pval = stats.ansari([1, 2, 3, 4], [15, 5, 20, 8, 10, 12])
-        assert_almost_equal(W, 10.0, 11)
-        assert_almost_equal(pval, 0.533333333333333333, 7)
-
-    @pytest.mark.parametrize('args', [([], [1]), ([1], [])])
-    def test_bad_arg(self, args):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='no _axis_nan_policy decorator')
+    @pytest.mark.parametrize('args', [([], [1.]), ([1.], [])])
+    def test_bad_arg(self, args, xp):
+        args = [xp.asarray(arg) for arg in args]
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.ansari(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_result_attributes(self):
-        x = [1, 2, 3, 3, 4]
-        y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            res = stats.ansari(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    def test_bad_alternative(self):
+    def test_bad_alternative(self, xp):
         # invalid value for alternative must raise a ValueError
-        x1 = [1, 2, 3, 4]
-        x2 = [5, 6, 7, 8]
+        x1 = xp.asarray([1, 2, 3, 4])
+        x2 = xp.asarray([5, 6, 7, 8])
         match = "'alternative' must be 'two-sided'"
         with assert_raises(ValueError, match=match):
             stats.ansari(x1, x2, alternative='foo')
 
-    def test_alternative_exact(self):
-        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
-        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
+    def test_alternative_exact(self, xp):
+        x1 = xp.asarray([-5, 1, 5, 10, 15, 20, 25.])  # high scale, loc=10
+        x2 = xp.asarray([7.5, 8.5, 9.5, 10.5, 11.5, 12.5])  # low scale, loc=10
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
@@ -673,13 +660,14 @@ class TestAnsari:
         assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the probability
         # mass under the calculated statistic.
-        prob = _abw_state.a.pmf(statistic, len(x1), len(x2))
-        assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
+        prob = _abw_state.a.pmf(float(statistic), x1.shape[0], x2.shape[0])
+        prob = xp.asarray(float(prob))
+        xp_assert_close(pval_g + pval_l, 1 + prob, atol=1e-12)
         # also check if one of the one-sided p-value equals half the
         # two-sided p-value and the other one-sided p-value is its
         # compliment.
-        assert_allclose(pval_g, pval/2, atol=1e-12)
-        assert_allclose(pval_l, 1+prob-pval/2, atol=1e-12)
+        xp_assert_close(pval_g, pval/2, atol=1e-12)
+        xp_assert_close(pval_l, 1+prob-pval/2, atol=1e-12)
         # sanity check. The result should flip if
         # we exchange x and y.
         pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
@@ -699,7 +687,7 @@ class TestAnsari:
          ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.2857142857143),
          ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8928571428571)]
     )
-    def test_alternative_exact_with_R(self, x, y, alternative, expected):
+    def test_alternative_exact_with_R(self, x, y, alternative, expected, xp):
         # testing with R on arbitrary data
         # Sample R code used for the third test case above:
         # ```R
@@ -715,29 +703,44 @@ class TestAnsari:
         # alternative hypothesis: true ratio of scales is less than 1
         #
         # ```
+        x, y = xp.asarray(x), xp.asarray(y)
         pval = stats.ansari(x, y, alternative=alternative).pvalue
-        assert_allclose(pval, expected, atol=1e-12)
+        xp_assert_close(pval, xp.asarray(expected), atol=1e-12)
 
-    def test_alternative_approx(self):
+    def test_alternative_approx(self, xp):
         # intuitive tests for approximation
-        x1 = stats.norm.rvs(0, 5, size=100, random_state=123)
-        x2 = stats.norm.rvs(0, 2, size=100, random_state=123)
+        x1 = xp.asarray(stats.norm.rvs(0, 5, size=100, random_state=123))
+        x2 = xp.asarray(stats.norm.rvs(0, 2, size=100, random_state=123))
         # for m > 55 or n > 55, the test should automatically
         # switch to approximation.
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
-        assert_allclose(pval_l, 1.0, atol=1e-12)
-        assert_allclose(pval_g, 0.0, atol=1e-12)
+        xp_assert_close(pval_l, xp.asarray(1.0, dtype=xp.float64), atol=1e-12)
+        xp_assert_close(pval_g, xp.asarray(0.0, dtype=xp.float64), atol=1e-12)
         # also check if one of the one-sided p-value equals half the
         # two-sided p-value and the other one-sided p-value is its
         # compliment.
-        x1 = stats.norm.rvs(0, 2, size=60, random_state=123)
-        x2 = stats.norm.rvs(0, 1.5, size=60, random_state=123)
+        x1 = xp.asarray(stats.norm.rvs(0, 2, size=60, random_state=123))
+        x2 = xp.asarray(stats.norm.rvs(0, 1.5, size=60, random_state=123))
         pval = stats.ansari(x1, x2).pvalue
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
-        assert_allclose(pval_g, pval/2, atol=1e-12)
-        assert_allclose(pval_l, 1-pval/2, atol=1e-12)
+        xp_assert_close(pval_g, pval/2, atol=1e-12)
+        xp_assert_close(pval_l, 1-pval/2, atol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    @pytest.mark.parametrize('n', [10, 100])  # affects code path
+    @pytest.mark.parametrize('ties', [False, True])  # affects code path
+    def test_dtypes(self, dtype, n, ties, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(78587342806484)
+        x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
+        ref = stats.ansari(x, y)
+        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype))
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
 
 @make_xp_test_case(stats.bartlett)
