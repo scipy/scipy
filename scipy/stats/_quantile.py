@@ -399,20 +399,15 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     n = xp.count_nonzero(~xp.isnan(x), axis=-1, keepdims=True)
     b = xp.broadcast_to(n, y.shape)
 
-    if side=='right':
-        n_nans = x.shape[-1] - n
-        a, b = a + n_nans, b + n_nans
-        b = xp.where(n > 0, b, b - 1)  # handle all nan case?
-        x, y = -xp.flip(x, axis=-1), -y
+    compare = xp.less_equal if side == 'left' else xp.less
 
     # while xp.any(b - a > 1):
     # refactored to for loop with ~log2(n) iterations for JAX JIT
     for i in range(int(math.log2(x.shape[-1])) + 1):
         c = (a + b) // 2
         x0 = xp.take_along_axis(x, c, axis=-1)
-        j = x0 >= y
+        j = compare(y, x0)
         b = xp.where(j, c, b)
         a = xp.where(j, a, c)
 
-    b = xp.where(y <= xp.min(x, axis=-1, keepdims=True), 0, b)
-    return b if side == 'left' else x.shape[-1] - b
+    return xp.where(compare(y, xp.min(x, axis=-1, keepdims=True)), 0, b)
