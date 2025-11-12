@@ -66,17 +66,6 @@ py3.extension_module('_test_multivariate',
   install_tag: 'tests'
 )
 
-# py3.extension_module('_test_odeint_banded',
-#   ['tests/banded5x5.f', f2py_gen.process('tests/test_odeint_banded.pyf')],
-#   link_with: [lsoda_lib, mach_lib],
-#   fortran_args: _fflag_Wno_unused_dummy_argument,
-#   link_args: version_link_args,
-#   dependencies: [lapack_lp64_dep, fortranobject_dep],
-#   install: true,
-#   link_language: 'fortran',
-#   subdir: 'scipy/integrate',
-#   install_tag: 'tests'
-# )
 
 subdir('_ivp')
 subdir('_rules')
