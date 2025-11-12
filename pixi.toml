@@ -272,6 +272,9 @@ ruff = "*"
 cython-lint = "*"
 packaging = "*"
 
+[feature.lint.pypi-dependencies]
+dtach = "*"
+
 [feature.lint.tasks.lint]
 cmd = "spin lint"
 description = "Run main lint checks"
@@ -280,6 +283,14 @@ description = "Run main lint checks"
 cmd = "python check_python_h_first.py"
 cwd = "tools"
 description = "Check that `Python.h` is included before any stdlib headers"
+
+[feature.lint.tasks.tach-check]
+cmd = "tach check --exact"
+description = "Check inter-module dependencies"
+
+[feature.lint.tasks.tach-check-external]
+cmd = "tach check-external"
+description = "Check external dependencies"
 
 
 ### BLAS/LAPACK features ###

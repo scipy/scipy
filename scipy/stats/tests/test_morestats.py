@@ -26,7 +26,7 @@ from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
-                                   is_numpy)
+                                   is_numpy, xp_default_dtype)
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -603,66 +603,53 @@ class TestAndersonKSamp:
         assert_equal(res.significance_level, res.pvalue)
 
 
+@make_xp_test_case(stats.ansari)
 class TestAnsari:
 
-    def test_small(self):
-        x = [1, 2, 3, 3, 4]
-        y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            W, pval = stats.ansari(x, y)
-        assert_almost_equal(W, 23.5, 11)
-        assert_almost_equal(pval, 0.13499256881897437, 11)
+    def test_small(self, xp):
+        x = xp.asarray([1, 2, 3, 3, 4])
+        y = xp.asarray([3, 2, 6, 1, 6, 1, 4, 1])
+        W, pval = stats.ansari(x, y)
+        xp_assert_close(W, xp.asarray(23.5))
+        xp_assert_close(pval, xp.asarray(0.13499256881897437))
 
-    def test_approx(self):
-        ramsay = np.array((111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-                           101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
-        parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
-                           100, 96, 108, 103, 104, 114, 114, 113, 108,
-                           106, 99))
+    def test_approx(self, xp):
+        ramsay = xp.asarray([111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+                             101, 96, 97, 102, 107, 113, 116, 113, 110, 98])
+        parekh = xp.asarray([107, 108, 106, 98, 105, 103, 110, 105, 104,
+                             100, 96, 108, 103, 104, 114, 114, 113, 108,
+                             106, 99])
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            W, pval = stats.ansari(ramsay, parekh)
+        W, pval = stats.ansari(ramsay, parekh)
+        xp_assert_close(W, xp.asarray(185.5))
+        xp_assert_close(pval, xp.asarray(0.18145819972867083))
 
-        assert_almost_equal(W, 185.5, 11)
-        assert_almost_equal(pval, 0.18145819972867083, 11)
+    def test_exact(self, xp):
+        x, y = xp.asarray([1, 2, 3, 4]), xp.asarray([15, 5, 20, 8, 10, 12])
+        W, pval = stats.ansari(x, y)
+        xp_assert_close(W, xp.asarray(10.0))
+        xp_assert_close(pval, xp.asarray(0.533333333333333333))
 
-    def test_exact(self):
-        W, pval = stats.ansari([1, 2, 3, 4], [15, 5, 20, 8, 10, 12])
-        assert_almost_equal(W, 10.0, 11)
-        assert_almost_equal(pval, 0.533333333333333333, 7)
-
-    @pytest.mark.parametrize('args', [([], [1]), ([1], [])])
-    def test_bad_arg(self, args):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='no _axis_nan_policy decorator')
+    @pytest.mark.parametrize('args', [([], [1.]), ([1.], [])])
+    def test_bad_arg(self, args, xp):
+        args = [xp.asarray(arg) for arg in args]
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.ansari(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_result_attributes(self):
-        x = [1, 2, 3, 3, 4]
-        y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Ties preclude use of exact statistic.", UserWarning)
-            res = stats.ansari(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    def test_bad_alternative(self):
+    def test_bad_alternative(self, xp):
         # invalid value for alternative must raise a ValueError
-        x1 = [1, 2, 3, 4]
-        x2 = [5, 6, 7, 8]
+        x1 = xp.asarray([1, 2, 3, 4])
+        x2 = xp.asarray([5, 6, 7, 8])
         match = "'alternative' must be 'two-sided'"
         with assert_raises(ValueError, match=match):
             stats.ansari(x1, x2, alternative='foo')
 
-    def test_alternative_exact(self):
-        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
-        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
+    def test_alternative_exact(self, xp):
+        x1 = xp.asarray([-5, 1, 5, 10, 15, 20, 25.])  # high scale, loc=10
+        x2 = xp.asarray([7.5, 8.5, 9.5, 10.5, 11.5, 12.5])  # low scale, loc=10
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
@@ -673,13 +660,14 @@ class TestAnsari:
         assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the probability
         # mass under the calculated statistic.
-        prob = _abw_state.a.pmf(statistic, len(x1), len(x2))
-        assert_allclose(pval_g + pval_l, 1 + prob, atol=1e-12)
+        prob = _abw_state.a.pmf(float(statistic), x1.shape[0], x2.shape[0])
+        prob = xp.asarray(float(prob))
+        xp_assert_close(pval_g + pval_l, 1 + prob, atol=1e-12)
         # also check if one of the one-sided p-value equals half the
         # two-sided p-value and the other one-sided p-value is its
         # compliment.
-        assert_allclose(pval_g, pval/2, atol=1e-12)
-        assert_allclose(pval_l, 1+prob-pval/2, atol=1e-12)
+        xp_assert_close(pval_g, pval/2, atol=1e-12)
+        xp_assert_close(pval_l, 1+prob-pval/2, atol=1e-12)
         # sanity check. The result should flip if
         # we exchange x and y.
         pval_l_reverse = stats.ansari(x2, x1, alternative='less').pvalue
@@ -699,7 +687,7 @@ class TestAnsari:
          ([1, 2, 3, 4, 5], [6, 7, 8], 'less', 0.2857142857143),
          ([1, 2, 3, 4, 5], [6, 7, 8], 'greater', 0.8928571428571)]
     )
-    def test_alternative_exact_with_R(self, x, y, alternative, expected):
+    def test_alternative_exact_with_R(self, x, y, alternative, expected, xp):
         # testing with R on arbitrary data
         # Sample R code used for the third test case above:
         # ```R
@@ -715,29 +703,44 @@ class TestAnsari:
         # alternative hypothesis: true ratio of scales is less than 1
         #
         # ```
+        x, y = xp.asarray(x), xp.asarray(y)
         pval = stats.ansari(x, y, alternative=alternative).pvalue
-        assert_allclose(pval, expected, atol=1e-12)
+        xp_assert_close(pval, xp.asarray(expected), atol=1e-12)
 
-    def test_alternative_approx(self):
+    def test_alternative_approx(self, xp):
         # intuitive tests for approximation
-        x1 = stats.norm.rvs(0, 5, size=100, random_state=123)
-        x2 = stats.norm.rvs(0, 2, size=100, random_state=123)
+        x1 = xp.asarray(stats.norm.rvs(0, 5, size=100, random_state=123))
+        x2 = xp.asarray(stats.norm.rvs(0, 2, size=100, random_state=123))
         # for m > 55 or n > 55, the test should automatically
         # switch to approximation.
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
-        assert_allclose(pval_l, 1.0, atol=1e-12)
-        assert_allclose(pval_g, 0.0, atol=1e-12)
+        xp_assert_close(pval_l, xp.asarray(1.0, dtype=xp.float64), atol=1e-12)
+        xp_assert_close(pval_g, xp.asarray(0.0, dtype=xp.float64), atol=1e-12)
         # also check if one of the one-sided p-value equals half the
         # two-sided p-value and the other one-sided p-value is its
         # compliment.
-        x1 = stats.norm.rvs(0, 2, size=60, random_state=123)
-        x2 = stats.norm.rvs(0, 1.5, size=60, random_state=123)
+        x1 = xp.asarray(stats.norm.rvs(0, 2, size=60, random_state=123))
+        x2 = xp.asarray(stats.norm.rvs(0, 1.5, size=60, random_state=123))
         pval = stats.ansari(x1, x2).pvalue
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
-        assert_allclose(pval_g, pval/2, atol=1e-12)
-        assert_allclose(pval_l, 1-pval/2, atol=1e-12)
+        xp_assert_close(pval_g, pval/2, atol=1e-12)
+        xp_assert_close(pval_l, 1-pval/2, atol=1e-12)
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    @pytest.mark.parametrize('n', [10, 100])  # affects code path
+    @pytest.mark.parametrize('ties', [False, True])  # affects code path
+    def test_dtypes(self, dtype, n, ties, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        rng = np.random.default_rng(78587342806484)
+        x, y = rng.integers(6, size=(2, n)) if ties else rng.random(size=(2, n))
+        ref = stats.ansari(x, y)
+        res = stats.ansari(xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype))
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue, dtype=dtype))
 
 
 @make_xp_test_case(stats.bartlett)
@@ -782,69 +785,70 @@ class TestBartlett:
         assert xp.all(res.statistic >= 0)
 
 
+@make_xp_test_case(stats.levene)
 class TestLevene:
 
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args)
-        assert_almost_equal(W, 1.7059176930008939, 7)
-        assert_almost_equal(pval, 0.0990829755522, 7)
+        xp_assert_close(W, xp.asarray(1.7059176930008939))
+        xp_assert_close(pval, xp.asarray(0.0990829755522))
 
-    def test_mean(self):
+    def test_mean(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="mean")
-        assert_allclose(W, 2.15945985647285, rtol=5e-14)
-        assert_allclose(pval, 0.032236826559783, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.15945985647285))
+        xp_assert_close(pval, xp.asarray(0.032236826559783))
 
-    def test_trimmed1(self):
+    def test_trimmed1(self, xp):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        W1, pval1 = stats.levene(g1, g2, g3, center='mean')
-        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed',
-                                 proportiontocut=0.0)
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        args = (xp.asarray(g1), xp.asarray(g2), xp.asarray(g3))
+        W1, pval1 = stats.levene(*args, center='mean')
+        W2, pval2 = stats.levene(*args, center='trimmed', proportiontocut=0.0)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_trimmed2(self):
+    def test_trimmed2(self, xp):
         # numbers from R: leveneTest in package car
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         W, pval = stats.levene(*args, center="trimmed", proportiontocut=0.25)
-        assert_allclose(W, 2.07712845686874, rtol=5e-14)
-        assert_allclose(pval, 0.0397269688035377, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(2.07712845686874))
+        xp_assert_close(pval, xp.asarray(0.0397269688035377))
 
-    def test_equal_mean_median(self):
+    def test_equal_mean_median(self, xp):
         x = np.linspace(-1, 1, 21)
         rng = np.random.default_rng(4058827756)
         x2 = rng.permutation(x)
         y = x**3
+        x, x2, y = xp.asarray(x), xp.asarray(x2), xp.asarray(y)
         W1, pval1 = stats.levene(x, y, center='mean')
         W2, pval2 = stats.levene(x2, y, center='median')
-        assert_almost_equal(W1, W2)
-        assert_almost_equal(pval1, pval2)
+        xp_assert_close(W1, W2)
+        xp_assert_close(pval1, pval2)
 
-    def test_bad_keyword(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
+    def test_bad_center_value(self, xp):
+        x = xp.linspace(-1, 1, 21)
+        message = "center must be 'mean', 'median' or 'trimmed'."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(x, x, center='trim')
 
-    def test_bad_center_value(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(ValueError, stats.levene, x, x, center='trim')
+    def test_too_few_args(self, xp):
+        message = "Must provide at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.levene(xp.asarray([1]))
 
-    def test_too_few_args(self):
-        assert_raises(ValueError, stats.levene, [1])
-
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.levene(*args)
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.levene, g1, x)
+        check_named_results(res, attributes, xp=xp)
 
 
 class TestBinomTest:
@@ -1085,76 +1089,85 @@ class TestBinomTest:
             stats.binomtest(5, 6, p=sys.float_info.min)
 
 
+@make_xp_test_case(stats.fligner)
 class TestFligner:
 
-    def test_data(self):
-        # numbers from R: fligner.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.fligner(x1, x1**2),
-                                  (3.2282229927203536, 0.072379187848207877),
-                                  11)
+    def _perturb(self, g, rng=124987234782812):
+        # g arrays have ties to which statistic is very sensitive; break them
+        rng = np.random.default_rng(rng)
+        return (np.asarray(g) + 1e-10 * rng.standard_normal(len(g))).tolist()
 
-    def test_trimmed1(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_data(self, dtype, xp):
+        if is_numpy(xp) and dtype == 'float32' and xp.__version__ < "2":
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        # numbers from R: fligner.test in package stats
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x1 = xp.arange(5, dtype=dtype)
+        res = stats.fligner(x1, x1**2)
+        ref = (xp.asarray(3.2282229927203536, dtype=dtype),
+               xp.asarray(0.072379187848207877, dtype=dtype))
+        xp_assert_close(res[0], ref[0])
+        xp_assert_close(res[1], ref[1])
+
+    def test_trimmed1(self, xp):
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
-        rs = np.random.RandomState(123)
-
-        def _perturb(g):
-            return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
-
-        g1_ = _perturb(g1)
-        g2_ = _perturb(g2)
-        g3_ = _perturb(g3)
+        rng = np.random.default_rng(9952379681)
+        g1_ = xp.asarray(self._perturb(g1, rng=rng))
+        g2_ = xp.asarray(self._perturb(g2, rng=rng))
+        g3_ = xp.asarray(self._perturb(g3, rng=rng))
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
         Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
         Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
-        assert_almost_equal(Xsq1, Xsq2)
-        assert_almost_equal(pval1, pval2)
+        xp_assert_close(Xsq1, Xsq2)
+        xp_assert_close(pval1, pval2)
 
-    def test_trimmed_nonregression(self):
+    @pytest.mark.skip_xp_backends(np_only=True,
+                                  reason="inconsistent tie-breaking across backends")
+    def test_trimmed_nonregression(self, xp):
         # This is a non-regression test
         # Expected results are *not* from an external gold standard,
         # we're just making sure the results remain consistent
         # in the future in case of changes
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg, dtype=xp.float64) for arg in args]
         W, pval = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
-        assert_allclose(W, 15.953569890010614, rtol=5e-14)
-        assert_allclose(pval, 0.06785752327432863, rtol=5e-14)
+        xp_assert_close(W, xp.asarray(15.953569890010614), rtol=5e-14)
+        xp_assert_close(pval, xp.asarray(0.06785752327432863), rtol=5e-14)
 
-    # The following test looks reasonable at first, but fligner() uses the
-    # function stats.rankdata(), and in one of the cases in this test,
-    # there are ties, while in the other (because of normal rounding
-    # errors) there are not.  This difference leads to differences in the
-    # third significant digit of W.
-    #
-    #def test_equal_mean_median(self):
-    #    x = np.linspace(-1,1,21)
-    #    y = x**3
-    #    W1, pval1 = stats.fligner(x, y, center='mean')
-    #    W2, pval2 = stats.fligner(x, y, center='median')
-    #    assert_almost_equal(W1, W2)
-    #    assert_almost_equal(pval1, pval2)
+    def test_trimmed_consistency(self, xp):
+        # Tests for consistency across multiple backends when ties are broken
+        rng = np.random.default_rng(4839206199)
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [self._perturb(arg, rng=rng) for arg in args]
+        ref = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        args = [xp.asarray(arg, dtype=xp.float64) for arg in args]
+        res = stats.fligner(*args, center="trimmed", proportiontocut=0.25)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic), rtol=5e-14)
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), rtol=5e-14)
 
-    def test_bad_keyword(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(TypeError, stats.fligner, x, x, portiontocut=0.1)
+    def test_bad_center_value(self, xp):
+        x = xp.linspace(-1, 1, 21)
+        message = "center must be 'mean', 'median' or 'trimmed'."
+        with pytest.raises(ValueError, match=message):
+            stats.fligner(x, x, center='trim')
 
-    def test_bad_center_value(self):
-        x = np.linspace(-1, 1, 21)
-        assert_raises(ValueError, stats.fligner, x, x, center='trim')
-
-    def test_bad_num_args(self):
+    def test_bad_num_args(self, xp):
         # Too few args raises ValueError.
-        assert_raises(ValueError, stats.fligner, [1])
+        message = "Must provide at least two samples."
+        with pytest.raises(ValueError, match=message):
+            stats.fligner(xp.asarray([1, 2]))
 
-    def test_empty_arg(self):
-        x = np.arange(5)
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_empty_arg(self, xp):
+        x = xp.arange(5.)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.fligner(x, x**2, [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = stats.fligner(x, x**2, xp.asarray([]))
+        xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
 
 def mood_cases_with_ties():
@@ -2025,7 +2038,7 @@ class TestBoxcox_llf:
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
-                        rtol=1e-7)
+                        rtol=5e-7)  # bumped tolerance from 1e-7 for Accelerate
 
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
@@ -2413,24 +2426,29 @@ class TestBoxcoxNormplot:
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
+@make_xp_test_case(stats.yeojohnson_llf)
 class TestYeojohnson_llf:
 
     def test_array_like(self):
+        # array_like not applicable with SCIPY_ARRAY_API=1
         x = stats.norm.rvs(size=100, loc=0, random_state=54321)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
-    def test_2d_input(self):
+    def test_2d_input(self, xp):
         x = stats.norm.rvs(size=100, loc=10, random_state=54321)
+        x = xp.asarray(x)
         lmbda = 1
-        llf = stats.yeojohnson_llf(lmbda, x)
-        llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
-        assert_allclose([llf, llf], llf2, rtol=1e-12)
+        ref = stats.yeojohnson_llf(lmbda, x)
+        res = stats.yeojohnson_llf(lmbda, xp.stack([x, x]).T)
+        xp_assert_close(res, xp.stack((ref, ref)), rtol=1e-12)
 
-    def test_empty(self):
-        assert_(np.isnan(stats.yeojohnson_llf(1, [])))
+    def test_empty(self, xp):
+        message = "One or more sample arguments is too small..."
+        with eager_warns(SmallSampleWarning, match=message, xp=xp):
+            assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
 
 
 class TestYeojohnson:

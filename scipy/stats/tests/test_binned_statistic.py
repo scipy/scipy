@@ -64,8 +64,7 @@ class TestBinnedStatistic:
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
         x = self.x
-        u = self.u
-        orig = u[0]
+        u = self.u.copy()  # take copy before modification
         u[0] = np.inf
         assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
         # need to test for non-python specific ints, e.g. np.int8, np.int64
@@ -73,8 +72,6 @@ class TestBinnedStatistic:
                       bins=np.int64(10))
         u[0] = np.nan
         assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
-        # replace original value, u belongs the class
-        u[0] = orig
 
     def test_1d_result_attributes(self):
         x = self.x
