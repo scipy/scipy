@@ -2744,7 +2744,8 @@ class _ABW:
 _abw_state = threading.local()
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,    # p-value is Cython
+                 skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
 def ansari(x, y, alternative='two-sided', *, axis=0):
     """Perform the Ansari-Bradley test for equal scale parameters.
@@ -2855,6 +2856,9 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
     AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
 
     """
+    xp = array_namespace(x, y)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
@@ -2871,13 +2875,16 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
         raise ValueError("Not enough test observations.")
 
     N = m + n
-    xy = np.concatenate([x, y], axis=-1)  # combine
+    xy = xp.concat([x, y], axis=-1)  # combine
     rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
-    symrank = np.minimum(rank, N - rank + 1)
-    AB = np.sum(symrank[..., :n], axis=-1)
-    repeats = np.any(t > 1)  # in theory we could branch for each slice separately
+    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
+    symrank = xp.minimum(rank, N - rank + 1)
+    AB = xp.sum(symrank[..., :n], axis=-1)
+    repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
     exact = ((m < 55) and (n < 55) and not repeats)
     if exact:
+        # np.vectorize converts to NumPy here, and we convert back to the result
+        # type before returning
         cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
         sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
         if alternative == 'two-sided':
@@ -2889,29 +2896,36 @@ def ansari(x, y, alternative='two-sided', *, axis=0):
             pval = cdf(AB, n, m)
         else:
             pval = sf(AB, n, m)
-        return AnsariResult(AB, np.minimum(1.0, pval))
+        pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
+        AB = AB[()] if AB.ndim == 0 else AB
+        pval = pval[()] if pval.ndim == 0 else pval
+        return AnsariResult(AB, pval)
 
-    # otherwise compute normal approximation
-    if N % 2:  # N odd
-        mnAB = n * (N+1.0)**2 / 4.0 / N
-        varAB = n * m * (N+1.0) * (3+N**2) / (48.0 * N**2)
-    else:
-        mnAB = n * (N+2.0) / 4.0
-        varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
+    mnAB = (n * (N + 1.0) ** 2 / 4.0 / N) if N % 2 else (n * (N + 2.0) / 4.0)
+
     if repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=-1)
+        fac = xp.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
             varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
+    else:
+        # otherwise compute normal approximation
+        if N % 2:  # N odd
+            varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
+        else:
+            varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
+        varAB = xp.asarray(varAB, dtype=dtype)
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
-    z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
-    return AnsariResult(AB[()], pvalue[()])
+    z = (mnAB - AB) / xp.sqrt(varAB)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
+    AB = AB[()] if AB.ndim == 0 else AB
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return AnsariResult(AB, pvalue)
 
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
