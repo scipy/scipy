@@ -8744,10 +8744,10 @@ class TestQuantileTest:
             res_statistic, res_pvalue = res_statistic.T, res_pvalue.T
             res_low, res_high = res_low.T, res_high.T
 
-        np.testing.assert_allclose(res_statistic, ref_statistic)
-        np.testing.assert_allclose(res_pvalue, ref_pvalue)
-        np.testing.assert_allclose(res_low, res_low)
-        np.testing.assert_allclose(res_low, ref_low)
+        assert_allclose(res_statistic, ref_statistic)
+        assert_allclose(res_pvalue, ref_pvalue)
+        assert_allclose(res_low, res_low)
+        assert_allclose(res_low, ref_low)
 
     def test_zero_size(self):
         rng = np.random.default_rng(883771738488451943)
@@ -8756,7 +8756,6 @@ class TestQuantileTest:
         x = rng.random(x_shape)
         q = rng.random(qp_shape)
         p = q + rng.random(qp_shape) * 1e-2
-        x, q, p = np.asarray(x), np.asarray(q), np.asarray(p)
 
         # case 1: p/q is size zero.
         qp_zero = np.empty((0, *qp_shape))
@@ -8791,6 +8790,93 @@ class TestQuantileTest:
         xp_assert_equal(ci.low, out*np.nan)
         xp_assert_equal(ci.high, out*np.nan)
 
+    def test_nans(self):
+        x = rng.random((10, 50))
+        q = rng.random((10, 10))
+        p = q + rng.random((10, 10)) * 1e-2
+        ref = stats.quantile_test(x, q=q, p=p, axis=-1)
+        ref_low, ref_high = ref.confidence_interval()
+
+        x_ = x.copy()
+        i_nan = rng.random(x.shape) < 0.01
+        x_[i_nan] = np.nan
+        i_nan_out = np.any(i_nan, axis=-1)
+        assert not np.all(i_nan_out)
+        res = stats.quantile_test(x_, q=q, p=p, axis=-1)
+        res_low, res_high = res.confidence_interval()
+        assert_equal(res.statistic[i_nan_out], -1)
+        assert_equal(res.statistic_type[i_nan_out], -1)
+        assert_equal(res.pvalue[i_nan_out], np.nan)
+        assert_equal(res_low[i_nan_out], np.nan)
+        assert_equal(res_high[i_nan_out], np.nan)
+        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
+
+        i_nan_q = rng.random(q.shape) < 0.01
+        i_nan_p = rng.random(p.shape) < 0.01
+        assert np.any(i_nan_q)
+        assert np.any(i_nan_p)
+        q[i_nan_q] = np.nan
+        p[i_nan_p] = np.nan
+
+        i_nan_out = i_nan_q | i_nan_p
+        assert not np.all(i_nan_out)
+
+        res = stats.quantile_test(x, q=q, p=p, axis=-1)
+        res_low, res_high = res.confidence_interval()
+        assert_equal(res.statistic[i_nan_out], -1)
+        assert_equal(res.statistic_type[i_nan_out], -1)
+        assert_equal(res.pvalue[i_nan_out], np.nan)
+        assert_equal(res_low[i_nan_out], np.nan)
+        assert_equal(res_high[i_nan_out], np.nan)
+        assert_equal(res.statistic[~i_nan_out], ref.statistic[~i_nan_out])
+        assert_equal(res.statistic_type[~i_nan_out], ref.statistic_type[~i_nan_out])
+        assert_equal(res.pvalue[~i_nan_out], ref.pvalue[~i_nan_out])
+        assert_equal(res_low[~i_nan_out], ref_low[~i_nan_out])
+        assert_equal(res_high[~i_nan_out], ref_high[~i_nan_out])
+
+    def test_axis_none(self):
+        rng = np.random.default_rng(883771738488451943)
+        x_shape = (2, 50)
+        qp_shape = (2, 10)
+        x = rng.random(x_shape)
+        q = rng.random(qp_shape)
+        p = q + rng.random(qp_shape) * 1e-2
+
+        res = stats.quantile_test(x, q=q, p=p, axis=None)
+        res_low, res_high = res.confidence_interval()
+        ref = stats.quantile_test(np.ravel(x), q=np.ravel(q), p=np.ravel(p), axis=None)
+        ref_low, ref_high = ref.confidence_interval()
+        assert_equal(res.statistic, ref.statistic[np.newaxis, :])
+        assert_equal(res.statistic_type, ref.statistic_type[np.newaxis, :])
+        assert_equal(res.pvalue, ref.pvalue[np.newaxis, :])
+        assert_equal(res_low, ref_low[np.newaxis, :])
+        assert_equal(res_high, ref_high[np.newaxis, :])
+
+        res = stats.quantile_test(x, q=0.5, p=0.5, axis=None)
+        res_low, res_high = res.confidence_interval()
+        ref = stats.quantile_test(np.ravel(x), q=0.5, p=0.5, axis=None)
+        ref_low, ref_high = ref.confidence_interval()
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.statistic_type, ref.statistic_type)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert_equal(res_low, ref_low)
+        assert_equal(res_high, ref_high)
+
+    @pytest.mark.parametrize("x_shape, qp_shape, axis, keepdims, res_shape", [
+        ((1, 3), (1,), None, False, ()),
+        ((1, 3), (1,), None, True, (1, 1)),
+        ((1, 3), (2, 1), -1, False, (2,)),
+        ((1, 3), (2, 1), -1, True, (2, 1)),
+    ])
+    def test_keepdims(self, x_shape, qp_shape, axis, keepdims, res_shape):
+        rng = np.random.default_rng(883771738488451943)
+        x, qp = rng.random(x_shape), rng.random(qp_shape)
+        res = stats.quantile_test(x, q=qp, p=qp, axis=axis, keepdims=keepdims)
+        assert res.statistic.shape == res_shape
 
 class TestPageTrendTest:
     def setup_method(self):

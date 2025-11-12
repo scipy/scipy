@@ -9127,12 +9127,15 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
     q = np.moveaxis(q, axis, -1)
     p = np.moveaxis(p, axis, -1)
 
-    nan_out = (p >= 1) | (p <= 0) | np.isnan(p)  | np.isnan(q)
+    nan_out = ((p >= 1) | (p <= 0) | np.isnan(p) | np.isnan(q)
+               | np.any(np.isnan(x), axis=-1, keepdims=True))
     if np.any(nan_out):
+        # These get NaN-ed out at the end. In the meantime, we want them
+        # to pass through calculations without warnings or errors
         q = np.asarray(q, copy=True)
-        q = xpx.at(q, nan_out).set(0)  # these get NaN-ed out at the end
+        q = xpx.at(q, nan_out).set(0)
         p = np.asarray(p, copy=True)
-        p = xpx.at(p, nan_out).set(0.5)  # these get NaN-ed out at the end
+        p = xpx.at(p, nan_out).set(0.5)
 
     return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out
 
@@ -9151,7 +9154,7 @@ def _quantile_test_postprocess(res, axis, axis_none, keepdims, ndim, nan_out):
 
     if not keepdims:
         res = np.squeeze(res, axis=axis)
-    return res
+    return res[()]
 
 
 @xp_capabilities(np_only=True)
@@ -9440,7 +9443,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided', axis=0, keepdims=No
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    if x.shape[-1] > 0:
+    if X.shape[-1] > 0:
         T1 = _xp_searchsorted(X, x_star, side='right')
         T2 = _xp_searchsorted(X, x_star, side='left')
     else:
