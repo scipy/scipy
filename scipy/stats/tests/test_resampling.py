@@ -1984,6 +1984,32 @@ class TestPermutationTest:
         # cor.test(x, y, alternative = "t", method = "spearman")  # 0.333333333
         # cor.test(x, y, alternative = "t", method = "kendall")  # 0.333333333
 
+    def test_nan_statistic(self, xp):
+        # Where the observed statistic is NaN, the p-value should be NaN
+        # (Whether a single NaN in the permutation distribution should make the p-value
+        #  NaN is debatable. Users can choose for themselves.)
+        rng = np.random.default_rng(8951482112)
+        dtype = xp_default_dtype(xp)
+        x = xp.asarray(rng.random(5), dtype=dtype)
+        x_nan = xp.asarray([0, 0, 0, xp.nan, 0])
+        y = xp.asarray(rng.random(6), dtype=dtype)
+
+        def statistic(x, y, axis):
+            return xp.mean(x, axis=axis) - xp.mean(y, axis=axis)
+
+        kwds = {'permutation_type': 'independent', 'rng': rng, 'axis': -1}
+
+        ref = permutation_test((x, y), statistic, **kwds)
+
+        data = (xp.stack([x, x + x_nan]), y)
+        res = permutation_test(data, statistic, **kwds)
+
+        NaN = xp.asarray(xp.nan, dtype=dtype)
+        xp_assert_equal(res.statistic[0], ref.statistic)
+        xp_assert_equal(res.pvalue[0], ref.pvalue)
+        xp_assert_equal(res.statistic[1], NaN)
+        xp_assert_equal(res.pvalue[1], NaN)
+
 
 def test_all_partitions_concatenated():
     # make sure that _all_paritions_concatenated produces the correct number

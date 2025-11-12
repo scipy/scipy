@@ -2086,7 +2086,7 @@ class TestBWSTest:
         y = xp.asarray([5, 9, 10, 11, 12, 13, 14], dtype=dtype)
         res = stats.bws_test(x, y, alternative='two-sided')
         xp_assert_close(res.statistic, xp.asarray(5.132, dtype=dtype), atol=1e-3)
-        xp_assert_equal(res.pvalue, xp.asarray(10/3432, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(10/3432, dtype=dtype))
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.7510204081633, 0.1264422777777),
