@@ -410,4 +410,6 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
         b = xp.where(j, c, b)
         a = xp.where(j, a, c)
 
-    return xp.where(compare(y, xp.min(x, axis=-1, keepdims=True)), 0, b)
+    out = xp.where(compare(y, xp.min(x, axis=-1, keepdims=True)), 0, b)
+    out = xp.where(xp.isnan(y), x.shape[-1], out) if side == 'right' else out
+    return out
