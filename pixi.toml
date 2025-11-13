@@ -160,6 +160,9 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
+[feature.build-deps.target.win-64.dependencies]
+openblas = "*"
+
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
 cmd = "spin build --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
