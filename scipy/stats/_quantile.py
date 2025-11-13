@@ -387,17 +387,18 @@ def _quantile_bc(y, p, n, method, xp):
     return xp.take_along_axis(y, xp.astype(k, xp.int64), axis=-1)
 
 
-
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def _xp_searchsorted(x, y, *, side='left', xp=None):
-    # Vectorize np.searchsorted. Assumes search is along last axis, which is always
-    # preserved in the output. Does not support zero-length `x`. For side='right',
-    # NaNs in `y` are inserted to the left, in contrast with np.searchsorted.
+    # Vectorize np.searchsorted. Assumes search is along last axis, which is preserved
+    # in the output unless x is 1d and y is 0d.
     xp = array_namespace(x, y) if xp is None else xp
-    if xp.asarray(x).ndim <= 1 or is_torch(xp):
-        return xp.searchsorted(x, y, side=side)
-
+    y_0d = xp.asarray(y).ndim == 0
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
+    x_1d = x.ndim <= 1
+
+    if x_1d or is_torch(xp):
+        y = xp.reshape(y, ()) if (y_0d and x_1d) else y
+        return xp.searchsorted(x, y, side=side)
 
     a = xp.full(y.shape, 0, device=xp_device(x))
 
