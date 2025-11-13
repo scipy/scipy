@@ -2532,11 +2532,17 @@ def comb(N, k, *, exact=False, repetition=False):
         # Without this check, comb(0, 0, repetition=True) would compute
         # comb(-1, 0) which incorrectly returns 0
         if exact:
-            if int(k) == k and k == 0 and int(N) == N and N >= 0:
+            if k == 0 and int(N) == N and N >= 0:
                 return 1
         else:
-            if np.isscalar(k) and k == 0 and np.isscalar(N) and N >= 0:
-                return np.float64(1.0)
+            k, N = asarray(k), asarray(N)
+            cond = (k == 0) & (N >= 0)
+            vals = binom(N + k - 1, k)
+            if isinstance(vals, np.ndarray):
+                vals[cond] = 1.0
+            elif cond:
+                vals = np.float64(1.0)
+            return vals
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:

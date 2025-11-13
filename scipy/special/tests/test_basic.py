@@ -1561,15 +1561,13 @@ class TestCombinatorics:
         with pytest.raises(ValueError, match=msg):
             special.comb(3, 4.4, exact=True)
 
-    def test_comb_repetition_k_zero(self):
+    @pytest.mark.parametrize('N', [0, 5, 10])
+    @pytest.mark.parametrize('exact', [True, False])
+    def test_comb_repetition_k_zero(self, N, exact):
         # Regression test for gh-23867
         # C(n, 0) should always be 1 for n >= 0, regardless of repetition
-        assert_equal(special.comb(0, 0, exact=True, repetition=True), 1)
-        assert_equal(special.comb(0, 0, exact=False, repetition=True), 1.0)
-        assert_equal(special.comb(5, 0, exact=True, repetition=True), 1)
-        assert_equal(special.comb(5, 0, exact=False, repetition=True), 1.0)
-        assert_equal(special.comb(10, 0, exact=True, repetition=True), 1)
-        assert_equal(special.comb(10, 0, exact=False, repetition=True), 1.0)
+        expected = 1 if exact else 1.0
+        assert_equal(special.comb(N, 0, exact=exact, repetition=True), expected)
 
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
