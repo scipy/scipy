@@ -31,18 +31,15 @@ jobs:
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
           pixi-version: v0.55.0
-          manifest-path: .github/workflows/pixi.toml
           cache: false
 
       - name: Spin Lint
-        working-directory: .github/workflows
         run: |
           set -euo pipefail
           pixi run lint --diff-against origin/$GITHUB_BASE_REF
 
       - name: Check that Python.h is first in any file including it.
         shell: bash
-        working-directory: .github/workflows
         run: pixi run check-python-h
 
       - name: Check module interdependencies
