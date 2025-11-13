@@ -450,7 +450,7 @@ def labeled_comprehension(input, labels, index, func, out_dtype, default,
     out_dtype : dtype
         Dtype to use for `result`.
     default : int, float or None
-        Default return value when a element of `index` does not exist
+        Default return value when an element of `index` does not exist
         in `labels`.
     pass_positions : bool, optional
         If True, pass linear indices to `func` as a second argument.

@@ -95,21 +95,16 @@ jobs:
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
           pixi-version: v0.55.0
-          manifest-path: .github/workflows/pixi.toml
           cache: false
 
       - name: Build SciPy
-        working-directory: .github/workflows
         run: pixi run build-cuda
 
       - name: Run PyTorch GPU tests
-        working-directory: .github/workflows
         run: pixi run --skip-deps test-torch-cuda -v
 
       - name: Run JAX GPU tests
-        working-directory: .github/workflows
         run: pixi run --skip-deps test-jax-cuda -v
 
       - name: Run CuPy tests
-        working-directory: .github/workflows
         run: pixi run --skip-deps test-cupy -v
