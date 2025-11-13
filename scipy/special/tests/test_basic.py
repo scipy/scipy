@@ -1569,6 +1569,13 @@ class TestCombinatorics:
         expected = 1 if exact else 1.0
         assert_equal(special.comb(N, 0, exact=exact, repetition=True), expected)
 
+    def test_comb_repetition_k_zero_array(self):
+        # Test array-like input with exact=False for gh-23867
+        N = np.array([0, 5, 10])
+        result = special.comb(N, 0, exact=False, repetition=True)
+        expected = np.array([1.0, 1.0, 1.0])
+        assert_equal(result, expected)
+
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
         assert_allclose(special.perm(10, 3), 720., atol=1.5e-7, rtol=0)
