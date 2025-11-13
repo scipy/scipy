@@ -1,6 +1,6 @@
 [workspace]
-name = "scipy-ci"
-description = "Environment and task management for SciPy CI"
+name = "scipy"
+description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
