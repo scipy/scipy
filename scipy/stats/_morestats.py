@@ -2283,8 +2283,8 @@ def anderson(x, dist='norm'):
            Fit for the Three-Parameter Weibull Distribution"
            Journal of the Royal Statistical Society.Series B(Methodological)
            Vol. 56, No. 3 (1994), pp. 491-500, Table 0.
-    .. [8] D’Agostino, Ralph B. (1986). “Tests for the Normal Distribution”.
-           In: Goodness-of-Fit Techniques. Ed. by Ralph B. D’Agostino and 
+    .. [8] D'Agostino, Ralph B. (1986). "Tests for the Normal Distribution".
+           In: Goodness-of-Fit Techniques. Ed. by Ralph B. D'Agostino and 
            Michael A. Stephens. New York: Marcel Dekker, pp. 122-141. ISBN:
            0-8247-7487-6.
 
