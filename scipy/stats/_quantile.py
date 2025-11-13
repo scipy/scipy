@@ -389,8 +389,9 @@ def _quantile_bc(y, p, n, method, xp):
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")])
 def _xp_searchsorted(x, y, *, side='left', xp=None):
-    # Vectorize np.searchsorted. Assumes search is along last axis, which is preserved
-    # in the output unless x is 1d and y is 0d.
+    # Vectorized xp.searchsorted. Search is performed along last axis. The shape of the
+    # output is that of `y`, broadcasting the batch dimensions with those of `x` if
+    # necessary.
     xp = array_namespace(x, y) if xp is None else xp
     y_0d = xp.asarray(y).ndim == 0
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)

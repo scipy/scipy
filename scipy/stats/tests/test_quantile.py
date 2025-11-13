@@ -252,10 +252,11 @@ class Test_XPSearchsorted:
             x[mask] = np.inf
         x = np.sort(x, axis=-1)
         x, y = np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)
+        xp_default_int = xp.asarray(1).dtype
         if xp_size(x) == 0 and x.ndim > 0 and x.shape[-1] != 0:
-            ref = xp.empty(x.shape[:-1] + (y.shape[-1],), dtype=xp.int64)
+            ref = xp.empty(x.shape[:-1] + (y.shape[-1],), dtype=xp_default_int)
         else:
-            ref = xp.asarray(np_searchsorted(x, y, side=side))
+            ref = xp.asarray(np_searchsorted(x, y, side=side), dtype=xp_default_int)
         x, y = xp.asarray(x), xp.asarray(y)
         res = _xp_searchsorted(x, y, side=side)
         xp_assert_equal(res, ref)
