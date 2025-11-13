@@ -7,7 +7,8 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_promote,
     xp_device,
-    _length_nonmasked
+    _length_nonmasked,
+    is_torch,
 )
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
@@ -393,6 +394,9 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     # preserved in the output. Does not support zero-length `x`. For side='right',
     # NaNs in `y` are inserted to the left, in contrast with np.searchsorted.
     xp = array_namespace(x, y) if xp is None else xp
+    if xp.asarray(x).ndim <= 1 or is_torch(xp):
+        return xp.searchsorted(x, y, side=side)
+
     x, y = _broadcast_arrays((x, y), axis=-1, xp=xp)
 
     a = xp.full(y.shape, 0, device=xp_device(x))

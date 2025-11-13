@@ -228,6 +228,8 @@ class Test_XPSearchsorted:
     @pytest.mark.parametrize('nans_x', [False, True])
     @pytest.mark.parametrize('infs_x', [False, True])
     def test_nd(self, side, ties, shape, nans_x, infs_x, xp):
+        if nans_x and is_torch(xp):
+            pytest.skip('torch sorts NaNs differently')
         rng = np.random.default_rng(945298725498274853)
         if ties:
             x = rng.integers(5, size=shape)
