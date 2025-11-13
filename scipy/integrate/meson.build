@@ -1,26 +1,3 @@
-mach_src = [
-  'mach/d1mach.f',
-  'mach/xerror.f'
-]
-
-lsoda_src = [
-  'odepack/blkdta000.f',
-  'odepack/bnorm.f',
-  'odepack/cfode.f',
-  'odepack/ewset.f',
-  'odepack/fnorm.f',
-  'odepack/intdy.f',
-  'odepack/lsoda.f',
-  'odepack/prja.f',
-  'odepack/solsy.f',
-  'odepack/srcma.f',
-  'odepack/stoda.f',
-  'odepack/vmnorm.f',
-  'odepack/xerrwv.f',
-  'odepack/xsetf.f',
-  'odepack/xsetun.f'
-]
-
 vode_src = [
   'odepack/vode.f',
   'odepack/zvode.f'
@@ -30,17 +7,8 @@ quadpack_test_src = [
   'tests/_test_multivariate.c'
 ]
 
-mach_lib = static_library('mach_lib',
-  mach_src,
-  fortran_args: fortran_ignore_warnings,
-  gnu_symbol_visibility: 'hidden',
-)
-
-lsoda_lib = static_library('lsoda_lib',
-  lsoda_src,
-  fortran_args: fortran_ignore_warnings,
-  override_options: ['b_lto=false'],
-  gnu_symbol_visibility: 'hidden',
+odepacklib = static_library('odepacklib',
+  'src/lsoda.c',
 )
 
 vode_lib = static_library('vode_lib',
@@ -63,12 +31,10 @@ py3.extension_module('_quadpack',
 
 py3.extension_module('_odepack',
   '_odepackmodule.c',
-  fortran_args: fortran_ignore_warnings,
-  link_with: [lsoda_lib, mach_lib],
+  link_with: [odepacklib],
   link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, np_dep],
+  dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
@@ -78,17 +44,6 @@ py3.extension_module('_vode',
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack_lp64_dep, fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/integrate'
-)
-
-py3.extension_module('_lsoda',
-  f2py_gen.process('lsoda.pyf'),
-  link_with: [lsoda_lib, mach_lib],
-  c_args: [Wno_unused_variable],
-  dependencies: [lapack_lp64_dep, fortranobject_dep],
-  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -111,17 +66,6 @@ py3.extension_module('_test_multivariate',
   install_tag: 'tests'
 )
 
-py3.extension_module('_test_odeint_banded',
-  ['tests/banded5x5.f', f2py_gen.process('tests/test_odeint_banded.pyf')],
-  link_with: [lsoda_lib, mach_lib],
-  fortran_args: _fflag_Wno_unused_dummy_argument,
-  link_args: version_link_args,
-  dependencies: [lapack_lp64_dep, fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/integrate',
-  install_tag: 'tests'
-)
 
 subdir('_ivp')
 subdir('_rules')
