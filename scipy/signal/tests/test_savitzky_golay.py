@@ -1,8 +1,9 @@
 import pytest
 import numpy as np
 
-from scipy._lib._array_api import (xp_assert_close, xp_assert_equal,
-    xp_swapaxes, is_torch,
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_equal, xp_swapaxes, is_torch, make_xp_test_case,
+    _xp_copy_to_numpy
 )
 
 from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
@@ -69,6 +70,7 @@ def alt_sg_coeffs(window_length, polyorder, pos, xp):
     return xp.asarray(h)
 
 
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_trivial(xp):
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
     h = savgol_coeffs(1, 0, xp=xp)
@@ -100,6 +102,7 @@ def compare_coeffs_to_alt(window_length, order, xp):
         )
 
 
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_compare(xp):
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
@@ -107,7 +110,7 @@ def test_sg_coeffs_compare(xp):
             compare_coeffs_to_alt(window_length, order, xp=xp)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_exact(xp):
     polyorder = 4
     window_length = 9
@@ -121,22 +124,23 @@ def test_sg_coeffs_exact(xp):
     # (except within half window_length of the edges).
     y = 0.5 * x ** 3 - x
     h = savgol_coeffs(window_length, polyorder, xp=xp)
-    y0 = convolve1d(y, h)
+    y0 = xp.asarray(convolve1d(_xp_copy_to_numpy(y), _xp_copy_to_numpy(h)))
     xp_assert_close(y0[halflen:-halflen], y[halflen:-halflen])
 
     # Check the same input, but use deriv=1.  dy is the exact result.
     dy = 1.5 * x ** 2 - 1
     h = savgol_coeffs(window_length, polyorder, deriv=1, delta=delta, xp=xp)
-    y1 = convolve1d(y, h)
+    y1 = xp.asarray(convolve1d(_xp_copy_to_numpy(y), _xp_copy_to_numpy(h)))
     xp_assert_close(y1[halflen:-halflen], dy[halflen:-halflen])
 
     # Check the same input, but use deriv=2. d2y is the exact result.
     d2y = 3.0 * x
     h = savgol_coeffs(window_length, polyorder, deriv=2, delta=delta, xp=xp)
-    y2 = convolve1d(y, h)
+    y2 = xp.asarray(convolve1d(_xp_copy_to_numpy(y), _xp_copy_to_numpy(h)))
     xp_assert_close(y2[halflen:-halflen], d2y[halflen:-halflen])
 
 
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_deriv(xp):
     # The data in `x` is a sampled parabola, so using savgol_coeffs with an
     # order 2 or higher polynomial should give exact results.
@@ -153,6 +157,7 @@ def test_sg_coeffs_deriv(xp):
         xp_assert_close(coeffs2 @ x , d2x[pos], atol=1e-10)
 
 
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_deriv_gt_polyorder(xp):
     """
     If deriv > polyorder, the coefficients should be all 0.
@@ -169,6 +174,7 @@ def test_sg_coeffs_deriv_gt_polyorder(xp):
 @xfail_xp_backends(
     "torch", reason="torch loses precision (worse with f32 default dtype)"
 )
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_large(xp):
     # Test that for large values of window_length and polyorder the array of
     # coefficients returned is symmetric. The aim is to ensure that
@@ -187,7 +193,7 @@ def test_sg_coeffs_large(xp):
 # savgol_coeffs tests for even window length
 # --------------------------------------------------------------------
 
-
+@make_xp_test_case(savgol_coeffs)
 def test_sg_coeffs_even_window_length(xp):
     # Simple case - deriv=0, polyorder=0, 1
     window_lengths = [4, 6, 8, 10, 12, 14, 16]
@@ -228,7 +234,7 @@ def test_sg_coeffs_even_window_length(xp):
 # savgol_filter tests
 #--------------------------------------------------------------------
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_trivial(xp):
     """ Test some trivial edge cases for savgol_filter()."""
     x = xp.asarray([1.0])
@@ -251,7 +257,7 @@ def test_sg_filter_trivial(xp):
     xp_assert_close(y, xp.asarray([1.0, 1.0, 1.0]), atol=1.5e-15)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_basic(xp):
     # Some basic test cases for savgol_filter().
     x = xp.asarray([1.0, 2.0, 1.0])
@@ -265,7 +271,7 @@ def test_sg_filter_basic(xp):
     xp_assert_close(y, xp.asarray([4.0 / 3, 4.0 / 3, 4.0 / 3]))
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_2d(xp):
     x = xp.asarray([[1.0, 2.0, 1.0],
                     [2.0, 4.0, 2.0]])
@@ -278,7 +284,7 @@ def test_sg_filter_2d(xp):
     xp_assert_close(y, expected.T)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_interp_edges(xp):
     # Another test with low degree polynomial data, for which we can easily
     # give the exact results. In this test, we use mode='interp', so
@@ -328,7 +334,7 @@ def test_sg_filter_interp_edges(xp):
     xp_assert_close(y2, d2x, atol=1e-12)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_interp_edges_3d(xp):
     # Test mode='interp' with a 3-D array.
     t = xp.linspace(-5, 5, 21)
@@ -371,7 +377,7 @@ def test_sg_filter_interp_edges_3d(xp):
     xp_assert_close(dy, dz, atol=1e-10)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="convolve1d is cpu-only")
+@make_xp_test_case(savgol_filter)
 def test_sg_filter_valid_window_length_3d(xp):
     """Tests that the window_length check is using the correct axis."""
 

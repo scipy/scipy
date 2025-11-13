@@ -198,6 +198,8 @@ capabilities_overrides = {
     ),
     "residue": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "residuez": xp_capabilities(np_only=True, exceptions=["cupy"]),
+    "savgol_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                                     reason="convolve1d is cpu-only"),
     "sos2zpk": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True),
     "sos2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
