@@ -2090,10 +2090,7 @@ def shapiro(x):
     return ShapiroResult(np.float64(w), np.float64(pw))
 
 
-# Values from D’Agostino, Ralph B. (1986). “Tests for the Normal Distribution”.
-#             In: Goodness-of-Fit Techniques. Ed. by Ralph B. D’Agostino and 
-#             Michael A. Stephens. New York: Marcel Dekker, pp. 122–141. ISBN:
-#             0-8247-7487-6.
+# Values from [8]
 _Avals_norm = array([0.561, 0.631, 0.752, 0.873, 1.035])
 _Avals_expon = array([0.916, 1.062, 1.321, 1.591, 1.959])
 # From Stephens, M A, "Goodness of Fit for the Extreme Value Distribution",
