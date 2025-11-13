@@ -40,7 +40,8 @@ import pytest
 
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (
-    xp_assert_close, array_namespace, _xp_copy_to_numpy, is_cupy
+    xp_assert_close, array_namespace, _xp_copy_to_numpy, is_cupy,
+    make_xp_test_case
 )
 from scipy._lib.array_api_compat import numpy as np_compat
 from scipy.signal import upfirdn, firwin
@@ -130,7 +131,7 @@ class UpFIRDnCase:
 _UPFIRDN_TYPES = ("int64", "float32", "complex64", "float64", "complex128")
 
 
-@skip_xp_backends(cpu_only=True, reason='Cython implementation', exceptions=["cupy"])
+@make_xp_test_case(upfirdn)
 class TestUpfirdn:
 
     @skip_xp_backends(np_only=True, reason="enough to only test on numpy")
@@ -319,7 +320,7 @@ class TestUpfirdn:
         xp_assert_close(y, y_expected, atol=atol, rtol=rtol)
 
 
-@skip_xp_backends(cpu_only=True, reason='Cython implementation')
+@make_xp_test_case(upfirdn)
 def test_output_len_long_input(xp):
     # Regression test for gh-17375.  On Windows, a large enough input
     # that should have been well within the capabilities of 64 bit integers
