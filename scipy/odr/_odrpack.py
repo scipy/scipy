@@ -41,6 +41,7 @@ from threading import Lock
 import numpy as np
 from warnings import warn
 from scipy.odr import __odrpack
+from types import GenericAlias
 
 __all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
            'Data', 'RealData', 'Model', 'Output', 'ODR',
@@ -258,6 +259,8 @@ class Data:
     detrimental to the fit.
 
     """
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta=None):
         self.x = _conv(x)
@@ -354,6 +357,8 @@ class RealData(Data):
     exception. Same with `sy` and `covy`.
 
     """
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,
                  fix=None, meta=None):
@@ -505,6 +510,8 @@ class Model:
         ``m == 1``, the shape is (q, n). If `m == q == 1`, the shape is ``(n,)``.
 
     """
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, fcn, fjacb=None, fjacd=None,
                  extra_args=None, estimate=None, implicit=0, meta=None):
@@ -594,6 +601,8 @@ class Output:
     only present if `~scipy.odr.odr` was run with ``full_output=1``.
 
     """
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, output):
         self.beta = output[0]
@@ -732,6 +741,8 @@ class ODR:
         data from an invocation of ODR.run() or ODR.restart()
 
     """
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, data, model, beta0=None, delta0=None, ifixb=None,
         ifixx=None, job=None, iprint=None, errfile=None, rptfile=None,
