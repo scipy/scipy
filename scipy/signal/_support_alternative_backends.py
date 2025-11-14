@@ -62,8 +62,58 @@ def delegate_xp(delegator, module_name):
     return inner
 
 
+# Although most of these functions currently exist in CuPy and some in JAX,
+# there are no alternative backend tests for any of them in the current
+# test suite. Each will be documented as np_only until tests are added.
+untested = {
+    "argrelextrema",
+    "argrelmax",
+    "argrelmin",
+    "band_stop_obj",
+    "check_COLA",
+    "check_NOLA",
+    "chirp",
+    "coherence",
+    "csd",
+    "czt_points",
+    "dbode",
+    "dfreqresp",
+    "dlsim",
+    "dstep",
+    "find_peaks",
+    "find_peaks_cwt",
+    "findfreqs",
+    "freqresp",
+    "gausspulse",
+    "istft",
+    "lombscargle",
+    "lsim",
+    "max_len_seq",
+    "peak_prominences",
+    "peak_widths",
+    "periodogram",
+    "place_pols",
+    "sawtooth",
+    "sepfir2d",
+    "spectrogram",
+    "square",
+    "ss2tf",
+    "ss2zpk",
+    "step",
+    "stft",
+    "sweep_poly",
+    "symiirorder1",
+    "symiirorder2",
+    "tf2ss",
+    "unit_impulse",
+    "welch",
+    "zoom_fft",
+    "zpk2ss",
+}
+
+
 def get_default_capabilities(func_name, delegator):
-    if delegator is None:
+    if delegator is None or func_name in untested:
         return xp_capabilities(np_only=True)
     return xp_capabilities()
 
