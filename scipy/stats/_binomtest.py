@@ -1,9 +1,11 @@
 from math import sqrt
 import numpy as np
-from scipy._lib._array_api import xp_capabilities
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._array_api import xp_capabilities, array_namespace
 from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
+from scipy.special import _ufuncs as scu
 from ._discrete_distns import binom
 from ._common import ConfidenceInterval
 
@@ -297,36 +299,36 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError(f"alternative ('{alternative}') not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
+
+    B = _SimpleBinomial(n, p)
     if alternative == 'less':
-        pval = binom.cdf(k, n, p)
+        pval = B.cdf(k)
     elif alternative == 'greater':
-        pval = binom.sf(k-1, n, p)
+        pval = B.sf(k - 1)
     else:
         # alternative is 'two-sided'
-        d = binom.pmf(k, n, p)
+        d = B.pmf(k)
         rerr = 1 + 1e-7
-        if k == p * n:
-            # special case as shortcut, would also be handled by `else` below
-            pval = 1.
-        elif k < p * n:
-            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
+
+        if k < p * n:
+            ix = _binary_search_for_binom_tst(lambda x1: -B.pmf(x1),
                                               -d*rerr, np.ceil(p * n), n)
             # y is the number of terms between mode and n that are <= d*rerr.
             # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
             # if the first equality doesn't hold, y=n-ix. Otherwise, we
             # need to include ix as well as the equality holds. Note that
             # the equality will hold in very very rare situations due to rerr.
-            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
-            pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
+            y = n - ix + np.asarray(d*rerr == B.pmf(ix), dtype=ix.dtype)
+            pval = B.cdf(k) + B.sf(n - y)
         else:
-            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
+            ix = _binary_search_for_binom_tst(B.pmf,
                                               d*rerr, 0, np.floor(p * n))
             # y is the number of terms between 0 and mode that are <= d*rerr.
             # we need to add a 1 to account for the 0 index.
             # For comparing this with old behavior, see
             # tst_binary_srch_for_binom_tst method in test_morestats.
             y = ix + 1
-            pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
+            pval = B.cdf(y-1) + B.sf(k-1)
 
         pval = min(1.0, pval)
 
@@ -362,16 +364,42 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)
     """
-    while lo < hi:
+    while np.any(lo < hi):
         mid = lo + (hi-lo)//2
         midval = a(mid)
-        if midval < d:
-            lo = mid+1
-        elif midval > d:
-            hi = mid-1
-        else:
-            return mid
-    if a(lo) <= d:
-        return lo
-    else:
-        return lo-1
+
+        i_lt = midval < d
+        lo = xpx.at(lo)[i_lt].set(mid[i_lt] + 1)
+
+        i_gt = midval > d
+        hi = xpx.at(hi)[i_gt].set(mid[i_gt] - 1)
+
+        i_eq = (midval == d)
+        mid_i_eq = mid[i_eq]
+        lo = xpx.at(lo)[i_eq].set(mid_i_eq)
+        hi = xpx.at(hi)[i_eq].set(mid_i_eq)
+
+    return np.where(a(lo) <= d, lo, lo-1)
+
+
+class _SimpleBinomial:
+    # A very simple, array-API compatible binomial distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure Binomial
+    # distribution in due time.
+    def __init__(self, n, p):
+        self.n = n
+        self.p = p
+
+    def f(self, x, fun):
+        xp = array_namespace(x)
+        k = np.floor(np.asarray(x))
+        return xp.asarray(fun(k, self.n, self.p))
+
+    def cdf(self, x):
+        return np.where(x >= 0, self.f(x, scu._binom_cdf), 0.0)
+
+    def sf(self, x):
+        return np.where(x >= 0, self.f(x, scu._binom_sf), 1.0)
+
+    def pmf(self, x):
+        return self.f(x, scu._binom_pmf)
