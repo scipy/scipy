@@ -44,7 +44,7 @@ scipy/interpolate/  @ev-br
 scipy/odr/  @rkern
 scipy/optimize/  @andyfaff
 scipy/signal/  @larsoner @ilayn @DietBru
-scipy/sparse/  @perimosocordiae
+scipy/sparse/  @perimosocordiae @dschult
 scipy/sparse/csgraph/
 scipy/sparse/linalg/
 scipy/spatial/  @tylerjereddy @peterbell10
