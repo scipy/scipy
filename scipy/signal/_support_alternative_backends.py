@@ -120,7 +120,6 @@ def get_default_capabilities(func_name, delegator):
 
 capabilities_overrides = {
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
-    "besselap": xp_capabilities(np_only=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True),
     "bilinear_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
