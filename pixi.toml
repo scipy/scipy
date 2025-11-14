@@ -45,7 +45,7 @@ features = ["run-deps", "test-deps", "gdb"]
 solve-group = "debug"
 
 [environments.lint]
-# tasks: lint, check-python-h
+# tasks: lint, check-python-h, tach-check, tach-check-external
 features = ["lint"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
