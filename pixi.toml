@@ -11,12 +11,12 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [environments.build]
 # tasks: build
-features = ["build-deps", "build-task"]
+features = ["build-deps", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
 # tasks: test
-features = ["run-deps", "test-deps", "test-task"]
+features = ["run-deps", "test-deps", "test-task", "win-openblas"]
 solve-group = "default"
 
 [environments.docs]
@@ -160,8 +160,9 @@ pybind11 = "*"
 numpy = "*"
 blas-devel = "*"
 
-[feature.build-deps.target.win-64.dependencies]
+[feature.win-openblas.target.win-64.dependencies]
 openblas = "*"
+blas-devel = { version = "*", build = "*openblas"}
 
 # XXX: when updating this task, remember to update other build tasks if appropriate
 [feature.build-task.tasks.build]
