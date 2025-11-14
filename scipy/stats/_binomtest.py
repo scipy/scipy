@@ -1,7 +1,7 @@
 from math import sqrt
 import numpy as np
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_capabilities, array_namespace
+from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size
 from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
@@ -310,7 +310,8 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         d = B.pmf(k)
         rerr = 1 + 1e-7
 
-        if k < p * n:
+        def k_lt_pn(d, k, p, n):
+            B = _SimpleBinomial(n, p)
             ix = _binary_search_for_binom_tst(lambda x1: -B.pmf(x1),
                                               -d*rerr, np.ceil(p * n), n)
             # y is the number of terms between mode and n that are <= d*rerr.
@@ -320,16 +321,21 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             # the equality will hold in very very rare situations due to rerr.
             y = n - ix + np.asarray(d*rerr == B.pmf(ix), dtype=ix.dtype)
             pval = B.cdf(k) + B.sf(n - y)
-        else:
+            return pval
+
+        def k_gte_pn(d, k, p, n):
+            B = _SimpleBinomial(n, p)
             ix = _binary_search_for_binom_tst(B.pmf,
-                                              d*rerr, 0, np.floor(p * n))
+                                              d*rerr, np.zeros_like(n), np.floor(p * n))
             # y is the number of terms between 0 and mode that are <= d*rerr.
             # we need to add a 1 to account for the 0 index.
             # For comparing this with old behavior, see
             # tst_binary_srch_for_binom_tst method in test_morestats.
             y = ix + 1
             pval = B.cdf(y-1) + B.sf(k-1)
+            return pval
 
+        pval = xpx.apply_where(k < p * n, (d, k, p, n), k_lt_pn,  k_gte_pn)
         pval = min(1.0, pval)
 
     result = BinomTestResult(k=k, n=n, alternative=alternative,
@@ -364,6 +370,9 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)
     """
+    d = np.copy(d)
+    lo = np.copy(lo)
+    hi = np.copy(hi)
     while np.any(lo < hi):
         mid = lo + (hi-lo)//2
         midval = a(mid)
