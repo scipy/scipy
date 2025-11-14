@@ -1,3 +1,4 @@
+import platform
 import queue
 import threading
 import multiprocessing
@@ -448,6 +449,7 @@ class TestFFTThreadSafe:
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
+@pytest.mark.skipif(platform.system() == 'Windows', reason='scipy/scipy#23989')
 def test_multiprocess(func, xp):
     # Test that fft still works after fork (gh-10422)
 
