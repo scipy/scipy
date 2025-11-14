@@ -978,7 +978,8 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y),z)
 
         lut_custom = regrid_python(x, y, z,kx=k,ky=k)
-        assert_array_almost_equal(ndbspline_call_like_bivariate(lut_custom, x, y), z)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x, y), z.astype(np.float64))
 
     @pytest.mark.parametrize("k", [3, 4])
     def test_interpolated_offgrid_points(self, k):
@@ -996,7 +997,8 @@ class TestRectBivariateSpline:
         custom = regrid_python(x, y, z, kx=k, ky=k)
         custom_vals = ndbspline_call_like_bivariate(custom, xi, yi)
         # Compare interpolated values
-        assert_array_almost_equal(custom_vals, ref_vals)
+        xp_assert_close(custom_vals, ref_vals,
+                        rtol=0, atol=1.5*10**(-6))
 
     @pytest.mark.parametrize("k", [3, 4])
     def test_midpoints(self, k):
@@ -1014,7 +1016,8 @@ class TestRectBivariateSpline:
         ref_vals = ref(xi, yi)
         custom_vals = ndbspline_call_like_bivariate(custom, xi, yi)
 
-        assert_array_almost_equal(custom_vals, ref_vals)
+        xp_assert_close(custom_vals, ref_vals,
+                        rtol=0, atol=1.5*10**(-6))
 
     @pytest.mark.parametrize("s_val", [0.1, 1.0, 10.0, 100.0])
     @pytest.mark.parametrize("k", [3, 4])
@@ -1063,7 +1066,8 @@ class TestRectBivariateSpline:
         zi_custom = ndbspline_call_like_bivariate(lut_custom, xi, yi, grid=False)
         zi2_custom = array([ndbspline_call_like_bivariate(lut_custom, xp, yp)[0, 0]
                             for xp, yp in zip(xi, yi)])
-        assert_almost_equal(zi_custom, zi2_custom)
+        xp_assert_close(zi_custom, zi2_custom,
+                        rtol=0, atol=1.5*10**(-6))
 
     def test_derivatives_grid(self):
         x = array([1,2,3,4,5])
@@ -1082,12 +1086,15 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y,dx=1),dx)
         assert_array_almost_equal(lut(x,y,dy=1),dy)
         assert_array_almost_equal(lut(x,y,dx=1,dy=1),dxdy)
-        assert_array_almost_equal(
-            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1),dx)
-        assert_array_almost_equal(
-            ndbspline_call_like_bivariate(lut_custom, x,y,dy=1),dy)
-        assert_array_almost_equal(
-            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1,dy=1),dxdy)
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1),dx,
+            rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dy=1),dy,
+            rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(
+            ndbspline_call_like_bivariate(lut_custom, x,y,dx=1,dy=1),dxdy,
+            rtol=0, atol=1.5*10**(-6))
 
     def test_derivatives(self):
         x = array([1,2,3,4,5])
@@ -1102,17 +1109,17 @@ class TestRectBivariateSpline:
         assert_array_almost_equal(lut(x,y,dx=1,dy=1,grid=False),dxdy)
 
         lut_custom = regrid_python(x,y,z)
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom,x,y,dx=1,grid=False),
-            dx
+            dx,rtol=0, atol=1.5*10**(-6)
         )
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom,x,y,dy=1,grid=False),
-            dy
+            dy,rtol=0, atol=1.5*10**(-6)
         )
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom,x,y,dx=1,dy=1,grid=False),
-            dxdy
+            dxdy,rtol=0, atol=1.5*10**(-6)
         )
 
     def make_pair_grid(self, x, y):
@@ -1171,17 +1178,17 @@ class TestRectBivariateSpline:
             assert_array_almost_equal(actual_ndb, expected)
 
         lut_custom = regrid_python(x, y, z)
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom.derivative([1, 0]), x, y),
-            dx
+            dx,rtol=0, atol=1.5*10**(-6)
         )
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom.derivative([0, 1]), x, y),
-            dy
+            dy,rtol=0, atol=1.5*10**(-6)
         )
-        assert_array_almost_equal(
+        xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom.derivative([1, 1]), x, y),
-            dxdy
+            dxdy,rtol=0, atol=1.5*10**(-6)
         )
 
     def test_partial_derivative_method(self):
@@ -1221,7 +1228,8 @@ class TestRectBivariateSpline:
             # regrid_python result
             actual_rp = ndbspline_call_like_bivariate(lut_custom.derivative([dx, dy]),
                 x, y, grid=False)
-            assert_array_almost_equal(actual_rp, expected_vals)
+            xp_assert_close(actual_rp, expected_vals,
+                            rtol=0, atol=1.5*10**(-6))
 
     @pytest.mark.parametrize("k", [3, 4])
     def test_partial_derivative_order_too_large(self, k):
@@ -1241,7 +1249,9 @@ class TestRectBivariateSpline:
 
         lut_custom = regrid_python(x, y, z, kx=k, ky=k)
         # TODO: Should be exactly equal to 0.0, bug in NdBSpline.derivative
-        assert_array_almost_equal(lut_custom.derivative([4, 1]).c, np.array([0.0]))
+        c_d = lut_custom.derivative([4, 1]).c
+        xp_assert_close(c_d, np.asarray([0.0]*c_d.size).reshape(c_d.shape),
+                        rtol=0, atol=1.5*10**(-6))
 
     @pytest.mark.parametrize("k", [3, 4])
     def test_broadcast(self, k):
@@ -1344,12 +1354,15 @@ class TestRectBivariateSpline:
         spl2_custom = regrid_python(x.tolist(), y.tolist(), z.tolist(),
                                    bbox=bbox.tolist(), kx=k, ky=k)
         assert_array_almost_equal(spl1(1.0, 1.0), spl2(1.0, 1.0))
-        assert_array_almost_equal(spl1(1.0, 1.0),
-                                  ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0))
-        assert_array_almost_equal(spl2(1.0, 1.0),
-                                  ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0))
-        assert_array_almost_equal(ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0),
-                                  ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0))
+        xp_assert_close(spl1(1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(spl2(1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
+        xp_assert_close(ndbspline_call_like_bivariate(spl1_custom, 1.0, 1.0),
+                        ndbspline_call_like_bivariate(spl2_custom, 1.0, 1.0),
+                        rtol=0, atol=1.5*10**(-6))
 
     def test_not_increasing_input(self):
         # gh-8565
@@ -1689,7 +1702,7 @@ class Test_DerivedBivariateSpline:
             a = ndbspline_call_like_bivariate(lut_der, 0.5, 1.5)
             b = ndbspline_call_like_bivariate(
                 self.lut_rect_custom, 0.5, 1.5, dx=nux, dy=nuy)
-            assert_array_almost_equal(a, b)
+            xp_assert_close(a, b, rtol=0, atol=1.5*10**(-6))
 
         for nux, nuy in self.orders:
             lut_der = self.lut_rect.partial_derivative(nux, nuy)
