@@ -796,6 +796,7 @@ class TestLanczos:
             assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
 
 
+@make_xp_test_case(windows.get_window)
 class TestGetWindow:
     """Unit test for `scipy.signal.get_windows`. """
 
@@ -1031,6 +1032,7 @@ def test_windowfunc_basics(window, window_name, params, xp):
         xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
+@make_xp_test_case(get_window)
 def test_needs_params(xp):
     for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
                    'gaussian', 'gauss', 'gss',
@@ -1071,6 +1073,7 @@ _winstr = ['barthann',
         for winstr in _winstr
     ]
 )
+@make_xp_test_case(get_window)
 def test_not_needs_params(xp, window, winstr):
     if is_jax(xp) and winstr in ['taylor']:
         pytest.skip(reason=f'{winstr}: item assignment')
