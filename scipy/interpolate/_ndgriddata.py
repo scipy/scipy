@@ -216,7 +216,11 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         .. versionadded:: 0.14.0
     simplex_tolerance : float, optional
         Multiplier for the default tolerance QHull uses to assign
-        a simplex to the xi.  Default is 1.0
+        a simplex to the xi.  Default is 1.0.  Increase if there are
+        difficulties assigning points to simplexes; this is most
+        reproducible with points exatly on the border of a very
+        oblique triangle.  Only relevant for linear and 2-D cubic
+        interpolation.
 
         .. versionadded:: 1.17.0
 

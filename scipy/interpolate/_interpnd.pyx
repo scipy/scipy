@@ -166,7 +166,10 @@ class NDInterpolatorBase:
         simplex_tolerance: float, optional
             Multiplier for the default tolerance QHull uses to assign
             a simplex to the xi in :meth:`scipy.spatial.Delaunay.find_simplex`.
-            Default is 1.0
+            Default is 1.0.  Increase if there are difficulties assigning points
+            to simplexes; this is most reproducible with points exatly on the
+            border of a very oblique triangle.  Only relevant for linear and 2-D
+            cubic interpolation.
 
             .. versionadded:: 1.17.0
 
