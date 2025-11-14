@@ -1001,8 +1001,8 @@ class TestRectBivariateSpline:
     @pytest.mark.parametrize("k", [3, 4])
     def test_midpoints(self, k):
         # Midpoint interpolation
-        x = np.array([i for i in range(1, k + 2)])
-        y = np.array([i for i in range(1, k + 2)])
+        x = np.arange(1, k + 2)
+        y = np.arange(1, k + 2)
         z = x[:, None] + y[None, :]  # simple known function
 
         xi = (x[:-1] + x[1:]) / 2
@@ -1250,14 +1250,6 @@ class TestRectBivariateSpline:
         z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
         lut = RectBivariateSpline(x,y,z,kx=k,ky=k)
         xp_assert_close(lut(x, y), lut(x[:,None], y[None,:], grid=False))
-
-        # Broadcasting doesn't make sense with the interface of NdBSpline
-        # lut_custom = regrid_python(x,y,z,kx=k,ky=k)
-        # xp_assert_close(
-        #     ndbspline_call_like_bivariate(lut_custom, x, y),
-        #     ndbspline_call_like_bivariate(lut_custom, [
-        #         (xp, yp) for xp, yp in zip(x[:,None], y[None,:])])
-        # )
 
     def test_invalid_input(self):
 
