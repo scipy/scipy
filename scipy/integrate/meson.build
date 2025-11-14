@@ -1,19 +1,3 @@
-quadpack_test_src = [
-  'tests/_test_multivariate.c'
-]
-
-odepacklib = static_library('odepacklib',
-  'src/lsoda.c',
-)
-
-vode_lib = static_library('vode_lib',
-  ['src/vode.c', 'src/zvode.c']
-)
-
-dop_lib = static_library('dop_lib',
-  'src/dop.c',
-)
-
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
   dependencies: [np_dep, ccallback_dep],
@@ -22,8 +6,7 @@ py3.extension_module('_quadpack',
 )
 
 py3.extension_module('_odepack',
-  '_odepackmodule.c',
-  link_with: [odepacklib],
+  ['_odepackmodule.c', 'src/lsoda.c'],
   link_args: version_link_args,
   dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
   install: true,
@@ -31,8 +14,7 @@ py3.extension_module('_odepack',
 )
 
 py3.extension_module('_vode',
-  '_dzvodemodule.c',
-  link_with: [vode_lib],
+  ['_dzvodemodule.c', 'src/vode.c', 'src/zvode.c'],
   link_args: version_link_args,
   dependencies: [lapack_lp64_dep, np_dep, ccallback_dep],
   install: true,
@@ -40,8 +22,7 @@ py3.extension_module('_vode',
 )
 
 py3.extension_module('_dop',
-  ['_dopmodule.c'],
-  link_with: [dop_lib],
+  ['_dopmodule.c', 'src/dop.c'],
   dependencies: [np_dep, ccallback_dep],
   link_args: version_link_args,
   install: true,
@@ -49,7 +30,7 @@ py3.extension_module('_dop',
 )
 
 py3.extension_module('_test_multivariate',
-  [quadpack_test_src],
+  ['tests/_test_multivariate.c'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/integrate',
