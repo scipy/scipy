@@ -849,7 +849,7 @@ class TestInterpN:
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
-        assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
+        xp_assert_close(interpn((x, y), z, xi, method="splinef2d"),
                                   ndbspline_call_like_bivariate(
                                       lut_custom, xi[:, 0], xi[:, 1],
                                       grid=False))
@@ -884,10 +884,10 @@ class TestInterpN:
         expected_custom = ndbspline_call_like_bivariate(
             lut_custom, xi[:, 0], xi[:, 1], grid=False)
         expected_custom[2:4] = 999.99
-        assert_array_almost_equal(actual, expected_custom)
+        xp_assert_close(actual, expected_custom)
 
         expected_custom[2:4] = 999.99
-        assert_array_almost_equal(actual, expected_custom)
+        xp_assert_close(actual, expected_custom)
 
         # no extrapolation for splinef2d
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
