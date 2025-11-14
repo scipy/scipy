@@ -143,6 +143,7 @@ functional.
 
    RectBivariateSpline
    regrid_python
+   ndbspline_call_like_bivariate
    RectSphereBivariateSpline
 
 **For unstructured data (OOP interface):**
