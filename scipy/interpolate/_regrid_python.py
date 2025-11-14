@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Regrid (2-D smoothing B-splines via separable 1-D FITPACK kernels)
 ==================================================================
@@ -154,10 +153,11 @@ from scipy.interpolate._fitpack_repro import (
     root_rati, disc, add_knot, _not_a_knot)
 from . import _dierckx
 from scipy.sparse import csr_array
+from scipy._lib._util import _validate_int
 
 def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
     """
-    Evaluate a 2D ``NdBSpline`` like a classical bivariate API.
+    Evaluate a 2D `NdBSpline` like a classical bivariate API.
 
     Parameters
     ----------
@@ -168,10 +168,10 @@ def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
         increasing vectors. If ``grid=False``, they can be broadcastable
         arrays of the same shape.
     dx, dy : int, optional
-        Derivative orders along x and y respectively, by default 0.
+        Derivative orders along `x` and `y` respectively, by default 0.
     grid : bool, optional
-        If True, evaluate on the cartesian product of ``x`` and ``y``;
-        otherwise treat ``(x, y)`` as paired coordinates, by default True.
+        If True, evaluate on the cartesian product of `x` and `y`;
+        otherwise treat `(x, y)` as paired coordinates, by default True.
 
     Returns
     -------
@@ -183,7 +183,7 @@ def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
     Raises
     ------
     ValueError
-        If ``ndbs`` is not 2D, derivatives are negative, or monotonicity checks fail.
+        If `ndbs` is not 2D, derivatives are negative, or monotonicity checks fail.
 
     Notes
     -----
@@ -192,17 +192,17 @@ def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
     """
     if len(ndbs.t) != 2:
         raise ValueError("ndbs must be a 2D NdBSpline (len(t) == 2).")
-    if not (isinstance(dx, int | np.integer) and isinstance(dy, int | np.integer)):
-        raise ValueError("dx and dy must be integers.")
+
+    dx = _validate_int(dx, 'dx')
+    dy = _validate_int(dy, 'dy')
     if dx < 0 or dy < 0:
         raise ValueError("order of derivative must be positive or zero")
 
     trailing = ndbs.c.shape[2:]
+    x = np.asarray(x)
+    y = np.asarray(y)
 
     if grid:
-        x = np.asarray(x)
-        y = np.asarray(y)
-
         if x.size == 0 or y.size == 0:
             vals = np.zeros((x.size, y.size) + trailing, dtype=ndbs.c.dtype)
             return vals
@@ -219,9 +219,6 @@ def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
 
         return vals
     else:
-        x = np.asarray(x)
-        y = np.asarray(y)
-
         if x.shape != y.shape:
             x, y = np.broadcast_arrays(x, y)
 
@@ -230,6 +227,7 @@ def ndbspline_call_like_bivariate(ndbs, x, y, dx=0, dy=0, grid=True):
         xi = np.stack((x.ravel(), y.ravel()), axis=-1)
         vals = ndbs(xi, nu=(dx, dy), extrapolate=ndbs.extrapolate)
         return vals.reshape(x.shape + trailing)
+
 
 def return_NdBSpline(fp, tck, degrees):
     """
@@ -260,6 +258,7 @@ def return_NdBSpline(fp, tck, degrees):
     c = tck[2].reshape(nx - kx - 1, ny - ky - 1)
     return NdBSpline((tck[0], tck[1]), c, degrees)
 
+
 class PackedMatrix:
     """A simplified CSR format for when non-zeros in each row are consecutive.
 
@@ -273,10 +272,6 @@ class PackedMatrix:
         self.a = a
         self.offset = offset
         self.nc = nc
-
-        assert a.ndim == 2
-        assert offset.ndim == 1
-        assert a.shape[0] == offset.shape[0]
 
     @property
     def shape(self):
@@ -306,6 +301,7 @@ class PackedMatrix:
             (data, indices, indptr),
             shape=(m, len_t - k - 1)
     )
+
 
 def _stack_augmented_fitpack(A, D, nc, k, p):
     """
@@ -344,7 +340,7 @@ def _stack_augmented_fitpack(A, D, nc, k, p):
     AA = np.zeros((nc + D.shape[0], k + 2), dtype=float)
     AA[:nc, :nz] = A.a[:nc, :]
     AA[nc:, :] = D.a / p
-    offset = np.r_[A.offset, D.offset]
+    offset = np.concatenate((A.offset, D.offset))
     return AA, offset, nc
 
 def _solve_2d_fitpack(Ax, Ay, Q, p,
@@ -683,6 +679,7 @@ def _p_search_hit_s(
 
     return p_star, C_star, fp_star
 
+
 def _apply_bbox_grid(x, y, Z, bbox):
     """
     Restrict (x, y, Z) to a rectangular bounding box.
@@ -722,6 +719,7 @@ def _apply_bbox_grid(x, y, Z, bbox):
 
     return x[ix], y[iy], Z[np.ix_(ix, iy)], np.s_[ix], np.s_[iy]
 
+
 def _build_design_matrices(x, y, z, tx, ty, kx, ky):
 
     w_x = np.ones_like(x)
@@ -735,7 +733,6 @@ def _build_design_matrices(x, y, z, tx, ty, kx, ky):
             PackedMatrix(Ay, offset_y, nc_y),
             Q)
 
-TOL = 0.001
 
 def _initialise_knots(m, xb, xe, k, nest=None):
     """
@@ -786,6 +783,9 @@ def _initialise_knots(m, xb, xe, k, nest=None):
     t = np.asarray([xb]*(k+1) + [xe]*(k+1))
 
     return t, nest, nmin, nmax
+
+
+TOL = 0.001
 
 def _add_knots(x, k, s, t, nmin, nmax,
                nest, fp, fpold,
@@ -904,6 +904,7 @@ def _add_knots(x, k, s, t, nmin, nmax,
             return t, nplus
 
     return t, nplus
+
 
 def _regrid_python_fitpack(
     x, y, Z, *, kx=3, ky=3, s=0.0,
@@ -1062,11 +1063,11 @@ def regrid_python(x, y, z, *, bbox=[None]*4, kx=3, ky=3, s=0.0, maxit=50):
     z : array_like, shape (len(x), len(y))
         Data grid.
     bbox : sequence of 4 scalars
-        Optional bounding box `(xb, xe, yb, ye)`; use `None` entries to disable.
+        Optional bounding box ``(xb, xe, yb, ye)``; use ``None`` entries to disable.
     kx, ky : int, optional
-        Spline degrees along x and y, default cubic (3).
+        Spline degrees along `x` and `y`, default cubic (3).
     s : float, optional
-        Target smoothing residual (`fp` target). Must satisfy `s >= 0`.
+        Target smoothing residual (`fp` target). Must satisfy ``s >= 0``.
         The underlying formulation uses a **1/p** penalty, meaning:
         - small `p` -> heavy smoothing,
         - large `p` -> light smoothing (approaching interpolation).
@@ -1078,13 +1079,6 @@ def regrid_python(x, y, z, *, bbox=[None]*4, kx=3, ky=3, s=0.0, maxit=50):
     -------
     NdBSpline
         Fitted bivariate spline surface.
-
-    Notes
-    -----
-    This validates input, enforces monotonicity, and calls
-    `_regrid_python_fitpack`.  The fit obeys the 1/p-penalty convention used
-    throughout this module, and `p == -1` is treated as the interpolatory
-    (infinite-p) case.
     """
 
     x = np.asarray(x, dtype=float)
