@@ -91,15 +91,15 @@ Bessel functions
                         complex argument.
    yve               -- Exponentially scaled Bessel function of the second kind \
                         of real order.
+   iv                -- Modified Bessel function of the first kind of real order.
+   ive               -- Exponentially scaled modified Bessel function of the \
+                        first kind.
    kn                -- Modified Bessel function of the second kind of integer \
                         order `n`
    kv                -- Modified Bessel function of the second kind of real order \
                         `v`
    kve               -- Exponentially scaled modified Bessel function of the \
                         second kind.
-   iv                -- Modified Bessel function of the first kind of real order.
-   ive               -- Exponentially scaled modified Bessel function of the \
-                        first kind.
    hankel1           -- Hankel function of the first kind.
    hankel1e          -- Exponentially scaled Hankel function of the first kind.
    hankel2           -- Hankel function of the second kind.
@@ -173,8 +173,8 @@ Derivatives of Bessel functions
 
    jvp  -- Compute nth derivative of Bessel function Jv(z) with respect to `z`.
    yvp  -- Compute nth derivative of Bessel function Yv(z) with respect to `z`.
-   kvp  -- Compute nth derivative of real-order modified Bessel function Kv(z)
    ivp  -- Compute nth derivative of modified Bessel function Iv(z) with respect to `z`.
+   kvp  -- Compute nth derivative of real-order modified Bessel function Kv(z)
    h1vp -- Compute nth derivative of Hankel function H1v(z) with respect to `z`.
    h2vp -- Compute nth derivative of Hankel function H2v(z) with respect to `z`.
 
@@ -735,7 +735,7 @@ Other special functions
    agm         -- Arithmetic, Geometric Mean.
    bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
    binom       -- Binomial coefficient
-   diric       -- Periodic sinc function, also called the Dirichlet function.
+   diric       -- Periodic sinc function, also called the Dirichlet kernel.
    euler       -- Euler numbers E0..En (inclusive).
    expn        -- Exponential integral E_n.
    exp1        -- Exponential integral E_1 of complex argument z.

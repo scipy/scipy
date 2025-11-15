@@ -290,6 +290,23 @@ the SciPy repository::
       cd scipy
       git submodule update --init
 
+
+.. tip::
+
+    Many of the steps described below can now be accomplished automatically
+    with commands which execute tasks in SciPy's Pixi workspace,
+    like ``pixi run build``.
+    To use this workspace, `install Pixi <https://pixi.sh/latest/installation/>`__
+    and execute ``pixi task list`` in a local clone of SciPy's source to see
+    the various tasks available.
+    
+    This removes the need for developers to keep track of development environments
+    and installed dependencies, as running a task automatically installs and uses
+    a suitable environment.
+    A future update to this guide will provide full details on using the Pixi
+    workspace for SciPy development.
+
+
 Then you want to do the following:
 
 1. Create a dedicated development environment (virtual environment or conda

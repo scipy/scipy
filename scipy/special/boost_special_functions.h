@@ -535,7 +535,7 @@ powm1_double(double x, double y)
 //
 // This wrapper of hypergeometric_pFq is here because there are a couple
 // edge cases where hypergeometric_1F1 in Boost version 1.80 and earlier
-// has a either bug or an inconsistent behavior.  It turns out that
+// has either a bug or an inconsistent behavior.  It turns out that
 // hypergeometric_pFq does the right thing in those cases, so we'll use
 // it until our copy of Boost is updated.
 //
@@ -2293,6 +2293,72 @@ double
 chdtriv_double(double p, double x)
 {
     return chdtriv_wrap(p, x);
+}
+
+template<typename Real>
+Real
+poisson_ppf_wrap(const Real p, const Real n)
+{
+    if (std::isnan(p) || std::isnan(n)) {
+        return NAN;
+    }
+    // validate input
+    if ((n < 0) || (p < 0) || (p > 1)) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    // cdflib returns nan for p == 1, so we do the same
+    // for backwards compatibility
+    if (p == 1) {
+        return NAN;
+    }
+    // keep backwards compatible with cdflib which returns 0
+    // for p==0 or n==0
+    if ((p == 0) || (n == 0)) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
+    } catch (const std::domain_error&) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error&) {
+        sf_error("pdtrik", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error&) {
+        sf_error("pdtrik", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // In the unlikely case that the computation becomes smaller
+    // than -1, we return NAN. This should never happen.
+    if (y < -1) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        return NAN;
+    }
+    // For small p, the direct formula yields values
+    // between -1 and 0. 
+    // For the Poisson distribution though, the bottom limit is 0,
+    // so we return 0 in that case.
+    if (y < 0) {
+        return 0.0;
+    }
+    return y;
+}
+
+float
+pdtrik_float(float p, float x)
+{
+    return poisson_ppf_wrap(p, x);
+}
+
+double
+pdtrik_double(double p, double x)
+{
+    return poisson_ppf_wrap(p, x);
 }
 
 #endif

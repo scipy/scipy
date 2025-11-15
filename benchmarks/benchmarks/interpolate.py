@@ -357,6 +357,46 @@ class RGI_Cubic(Benchmark):
         self.interp(self.xi)
 
 
+class RGI_Quintic(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="quintic".
+    """
+    param_names = ['ndim', 'n_samples', 'method']
+    params = [
+        [2],
+        [10, 40],
+    ]
+
+    def setup(self, ndim, n_samples):
+        rng = np.random.default_rng(314159)
+
+        self.points = [np.sort(rng.random(size=n_samples))
+                       for _ in range(ndim)]
+        self.values = rng.random(size=[n_samples]*ndim)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method='quintic'
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, n_samples):
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method='quintic'
+        )
+
+    def time_rgi(self, ndim, n_samples):
+        self.interp(self.xi)
+
+
 class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
     def __init__(self, points, xi, **kwargs):
         # create fake values for initialization
@@ -391,7 +431,7 @@ class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
         # check dimensionality
         self._check_dimensionality(self.grid, values)
         # flip, if needed
-        self.values = np.flip(values, axis=self._descending_dimensions)
+        self._values = np.flip(values, axis=self._descending_dimensions)
         return super().__call__(self.xi, method=method)
 
 

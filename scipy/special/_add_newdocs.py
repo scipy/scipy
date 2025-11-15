@@ -406,20 +406,22 @@ add_newdoc("bdtrik",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
-    cumulative incomplete beta distribution.
+    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    distribution to the cumulative incomplete beta distribution.
 
     Computation of `k` involves a search for a value that produces the desired
     value of `y`. The search relies on the monotonicity of `y` with `k`.
 
-    Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
+    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
 
     References
     ----------
     .. [1] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] Barry Brown, James Lovato, and Kathy Russell,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.5#E5
+    .. [3] Barry Brown, James Lovato, and Kathy Russell,
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
 
@@ -458,20 +460,22 @@ add_newdoc("bdtrin",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
-    cumulative incomplete beta distribution.
+    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
+    distribution to the cumulative incomplete beta distribution.
 
     Computation of `n` involves a search for a value that produces the desired
     value of `y`. The search relies on the monotonicity of `y` with `n`.
 
-    Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
+    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
 
     References
     ----------
     .. [1] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] Barry Brown, James Lovato, and Kathy Russell,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.5#E5
+    .. [3] Barry Brown, James Lovato, and Kathy Russell,
            CDFLIB: Library of Fortran Routines for Cumulative Distribution
            Functions, Inverses, and Other Parameters.
     """)
@@ -2290,7 +2294,7 @@ add_newdoc("eval_jacobi",
 
     where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.42 in [AS]_ for details.
+    :math:`n`. See 22.5.42 in [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -2323,6 +2327,8 @@ add_newdoc("eval_jacobi",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E7
 
     """)
 
@@ -2339,8 +2345,8 @@ add_newdoc("eval_sh_jacobi",
         G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi
-    polynomial. See 22.5.2 in [AS]_ for details.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+    See 22.5.2 in [AS]_ (or equivalently [DLMF]_)  for details.
 
     Parameters
     ----------
@@ -2371,6 +2377,8 @@ add_newdoc("eval_sh_jacobi",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E2
 
     """)
 
@@ -2389,7 +2397,7 @@ add_newdoc("eval_gegenbauer",
           {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.46 in [AS]_ for details.
+    :math:`n`. See 22.5.46 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2421,6 +2429,8 @@ add_newdoc("eval_gegenbauer",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E9
 
     """)
 
@@ -2438,7 +2448,7 @@ add_newdoc("eval_chebyt",
         T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.47 in [AS]_ for details.
+    :math:`n`. See 22.5.47 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2475,6 +2485,8 @@ add_newdoc("eval_chebyt",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_2
 
     """)
 
@@ -2492,7 +2504,7 @@ add_newdoc("eval_chebyu",
         U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.48 in [AS]_ for details.
+    :math:`n`. See 22.5.48 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2523,6 +2535,8 @@ add_newdoc("eval_chebyu",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E11_4
 
     """)
 
@@ -2539,8 +2553,8 @@ add_newdoc("eval_chebys",
 
         S_n(x) = U_n(x/2)
 
-    where :math:`U_n` is a Chebyshev polynomial of the second
-    kind. See 22.5.13 in [AS]_ for details.
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+    See 22.5.13 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2569,6 +2583,8 @@ add_newdoc("eval_chebys",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
 
     Examples
     --------
@@ -2600,7 +2616,7 @@ add_newdoc("eval_chebyc",
         C_n(x) = 2 T_n(x/2)
 
     where :math:`T_n` is a Chebyshev polynomial of the first kind. See
-    22.5.11 in [AS]_ for details.
+    22.5.11 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2630,6 +2646,8 @@ add_newdoc("eval_chebyc",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1.E3
 
     Examples
     --------
@@ -2661,7 +2679,7 @@ add_newdoc("eval_sh_chebyt",
         T_n^*(x) = T_n(2x - 1)
 
     where :math:`T_n` is a Chebyshev polynomial of the first kind. See
-    22.5.14 in [AS]_ for details.
+    22.5.14 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2691,6 +2709,8 @@ add_newdoc("eval_sh_chebyt",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E7
 
     """)
 
@@ -2708,7 +2728,7 @@ add_newdoc("eval_sh_chebyu",
         U_n^*(x) = U_n(2x - 1)
 
     where :math:`U_n` is a Chebyshev polynomial of the first kind. See
-    22.5.15 in [AS]_ for details.
+    22.5.15 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2737,6 +2757,8 @@ add_newdoc("eval_sh_chebyu",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E8
 
     """)
 
@@ -2754,7 +2776,7 @@ add_newdoc("eval_legendre",
         P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.49 in [AS]_ for details.
+    :math:`n`. See 22.5.49 in [AS]_ (or equivalently [DLMF]_) for details.
 
     Parameters
     ----------
@@ -2785,6 +2807,8 @@ add_newdoc("eval_legendre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/15.9.E7
 
     Examples
     --------
@@ -2838,7 +2862,7 @@ add_newdoc("eval_sh_legendre",
         P_n^*(x) = P_n(2x - 1)
 
     where :math:`P_n` is a Legendre polynomial. See 2.2.11 in [AS]_
-    for details.
+    or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -2868,6 +2892,8 @@ add_newdoc("eval_sh_legendre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.7.E10
 
     """)
 
@@ -2886,7 +2912,7 @@ add_newdoc("eval_genlaguerre",
           {}_1F_1(-n, \alpha + 1, x).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`. See 22.5.54 in [AS]_ for details. The Laguerre
+    :math:`n`. See 22.5.54 in [AS]_ or [DLMF]_ for details. The Laguerre
     polynomials are the special case where :math:`\alpha = 0`.
 
     Parameters
@@ -2921,6 +2947,8 @@ add_newdoc("eval_genlaguerre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E12
 
     """)
 
@@ -2937,8 +2965,9 @@ add_newdoc("eval_laguerre",
 
         L_n(x) = {}_1F_1(-n, 1, x).
 
-    See 22.5.16 and 22.5.54 in [AS]_ for details. When :math:`n` is an
-    integer the result is a polynomial of degree :math:`n`.
+    See 22.5.16 and 22.5.54 in [AS]_ (or equivalently [DLMF1]_ and [DLMF2]_)
+    for details. When :math:`n` is an integer the result is a polynomial
+    of degree :math:`n`.
 
     Parameters
     ----------
@@ -2969,6 +2998,10 @@ add_newdoc("eval_laguerre",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF1] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.1#I1.ix7.p1
+    .. [DLMF2] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.E12
 
      """)
 
@@ -2985,7 +3018,7 @@ add_newdoc("eval_hermite",
         H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
 
     :math:`H_n` is a polynomial of degree :math:`n`. See 22.11.7 in
-    [AS]_ for details.
+    [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -3014,6 +3047,8 @@ add_newdoc("eval_hermite",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
 
     """)
 
@@ -3031,7 +3066,7 @@ add_newdoc("eval_hermitenorm",
         He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
 
     :math:`He_n` is a polynomial of degree :math:`n`. See 22.11.8 in
-    [AS]_ for details.
+    [AS]_ or [DLMF]_ for details.
 
     Parameters
     ----------
@@ -3060,6 +3095,8 @@ add_newdoc("eval_hermitenorm",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [DLMF] NIST Digital Library of Mathematical Functions,
+        https://dlmf.nist.gov/18.5.T1
 
     """)
 
@@ -3070,7 +3107,7 @@ add_newdoc("expn",
     Generalized exponential integral En.
 
     For integer :math:`n \geq 0` and real :math:`x \geq 0` the
-    generalized exponential integral is defined as [dlmf]_
+    generalized exponential integral is defined as [DLMF]_
 
     .. math::
 
@@ -3097,7 +3134,7 @@ add_newdoc("expn",
 
     References
     ----------
-    .. [dlmf] Digital Library of Mathematical Functions, 8.19.2
+    .. [DLMF] Digital Library of Mathematical Functions, 8.19.2
               https://dlmf.nist.gov/8.19#E2
 
     Examples
@@ -4173,7 +4210,7 @@ add_newdoc("hyp1f1",
 
        {}_1F_1(a; b; x) = \sum_{k = 0}^\infty \frac{(a)_k}{(b)_k k!} x^k.
 
-    See [dlmf]_ for more details. Here :math:`(\cdot)_k` is the
+    See [DLMF]_ for more details. Here :math:`(\cdot)_k` is the
     Pochhammer symbol; see `poch`.
 
     Parameters
@@ -4204,7 +4241,7 @@ add_newdoc("hyp1f1",
 
     References
     ----------
-    .. [dlmf] NIST Digital Library of Mathematical Functions
+    .. [DLMF] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/13.2#E2
     .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
     .. [3] Zhang, Jin, "Computation of Special Functions", John Wiley
@@ -4260,7 +4297,7 @@ add_newdoc("hyperu",
 
        U(a, b, x) \sim x^{-a}
 
-    as :math:`x \to \infty`. See [dlmf]_ for more details.
+    as :math:`x \to \infty`. See [DLMF]_ for more details.
 
     Parameters
     ----------
@@ -4278,7 +4315,7 @@ add_newdoc("hyperu",
 
     References
     ----------
-    .. [dlmf] NIST Digital Library of Mathematics Functions
+    .. [DLMF] NIST Digital Library of Mathematics Functions
               https://dlmf.nist.gov/13.2#E6
 
     Examples
@@ -5146,7 +5183,7 @@ add_newdoc("nbdtrik",
     -----
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
 
-    Formula 26.5.26 of [2]_,
+    Formula 26.5.26 of [2]_ or [3]_,
 
     .. math::
         \sum_{j=k + 1}^\infty {{n + j - 1}
@@ -5166,6 +5203,8 @@ add_newdoc("nbdtrik",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.E24
 
     Examples
     --------
@@ -5251,7 +5290,7 @@ add_newdoc("nbdtrin",
     -----
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfnbn`.
 
-    Formula 26.5.26 of [2]_,
+    Formula 26.5.26 of [2]_ or [3]_,
 
     .. math::
         \sum_{j=k + 1}^\infty {{n + j - 1}
@@ -5271,6 +5310,8 @@ add_newdoc("nbdtrin",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17.E24
 
     Examples
     --------
@@ -6182,6 +6223,15 @@ add_newdoc("pdtrik",
     scalar or ndarray
         The number of occurrences `k` such that ``pdtr(k, m) = p``
 
+    Notes
+    -----
+    This function relies on the ``gamma_q_inva`` function from the Boost
+    Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     See Also
     --------
     pdtr : Poisson cumulative distribution function
@@ -6224,7 +6274,7 @@ add_newdoc("poch",
 
         (z)_m = z (z + 1) ... (z + m - 1)
 
-    See [dlmf]_ for more details.
+    See [DLMF]_ for more details.
 
     Parameters
     ----------
@@ -6240,7 +6290,7 @@ add_newdoc("poch",
 
     References
     ----------
-    .. [dlmf] Nist, Digital Library of Mathematical Functions
+    .. [DLMF] Nist, Digital Library of Mathematical Functions
         https://dlmf.nist.gov/5.2#iii
 
     Examples
@@ -6581,7 +6631,7 @@ add_newdoc("shichi",
       \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_.
+    principal branch of the logarithm [1]_ (see also [2]_).
 
     Parameters
     ----------
@@ -6611,8 +6661,8 @@ add_newdoc("shichi",
     + 0j)`` differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [2]_ *shichi* routine. For complex arguments the algorithm is based
-    on Mpmath's [3]_ *shi* and *chi* routines.
+    [3]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [4]_ *shi* and *chi* routines.
 
     References
     ----------
@@ -6620,9 +6670,11 @@ add_newdoc("shichi",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
            (See Section 5.2.)
-    .. [2] Cephes Mathematical Functions Library,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/6.2.E15 and https://dlmf.nist.gov/6.2.E16
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [3] Fredrik Johansson and others.
+    .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
            arithmetic" (Version 0.19) http://mpmath.org/
 
@@ -6691,7 +6743,7 @@ add_newdoc("sici",
       \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principal branch of the logarithm [1]_.
+    principal branch of the logarithm [1]_ (see also [2]_).
 
     Parameters
     ----------
@@ -6721,8 +6773,8 @@ add_newdoc("sici",
     differ by a factor of ``1j*pi``.
 
     For real arguments the function is computed by calling Cephes'
-    [2]_ *sici* routine. For complex arguments the algorithm is based
-    on Mpmath's [3]_ *si* and *ci* routines.
+    [3]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [4]_ *si* and *ci* routines.
 
     References
     ----------
@@ -6730,9 +6782,12 @@ add_newdoc("sici",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
            (See Section 5.2.)
-    .. [2] Cephes Mathematical Functions Library,
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/6.2.E9, https://dlmf.nist.gov/6.2.E12,
+           and https://dlmf.nist.gov/6.2.E13
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
-    .. [3] Fredrik Johansson and others.
+    .. [4] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point
            arithmetic" (Version 0.19) http://mpmath.org/
 
@@ -7512,7 +7567,7 @@ add_newdoc("yn",
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

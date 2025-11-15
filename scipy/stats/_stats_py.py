@@ -27,6 +27,7 @@ References
 
 """
 import math
+import itertools
 import operator
 import warnings
 from collections import namedtuple
@@ -49,7 +50,7 @@ from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 
-from ._stats_mstats_common import _find_repeats, theilslopes, siegelslopes
+from ._stats_mstats_common import theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
@@ -74,6 +75,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_result_type,
     xp_capabilities,
     xp_ravel,
     _length_nonmasked,
@@ -361,7 +363,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     a : array_like
         Input array, masked array or object that can be converted to an array.
     p : int or float
-        Exponent.
+        Exponent. Must be finite.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -437,6 +439,9 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
                          "float.")
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
+    elif math.isinf(p):
+        message = "Power mean only implemented for finite `p`"
+        raise NotImplementedError(message)
 
     xp = array_namespace(a, weights)
     a = xp.asarray(a, dtype=dtype)
@@ -2390,7 +2395,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Calculate space of values for x
 
     >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.cumcount.size,
-    ...                                  res.cumcount.size)
+    ...                                  res.cumcount.size + 1)
 
     Plot histogram and cumulative histogram
 
@@ -2399,7 +2404,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> ax2 = fig.add_subplot(1, 2, 2)
     >>> ax1.hist(samples, bins=25)
     >>> ax1.set_title('Histogram')
-    >>> ax2.bar(x, res.cumcount, width=res.binsize)
+    >>> ax2.bar(x[:-1], res.cumcount, width=res.binsize, align='edge')
     >>> ax2.set_title('Cumulative histogram')
     >>> ax2.set_xlim([x.min(), x.max()])
 
@@ -3053,10 +3058,11 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)'),
+                                ('jax.numpy', 'lazy -> no _axis_nan_policy)')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3168,12 +3174,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
            [ 1.]])
 
     """
-    x = asarray(x)
-
-    # This check prevents percentile from raising an error later. Also, it is
-    # consistent with `np.var` and `np.std`.
-    if not x.size:
-        return _get_nan(x)
+    xp = array_namespace(x)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -3183,29 +3184,29 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             raise ValueError(f"{scale} not a valid scale for `iqr`")
         scale = _scale_conversions[scale_key]
 
-    # Select the percentile function to use based on nans and policy
-    contains_nan = _contains_nan(x, nan_policy)
-
-    if nan_policy == 'omit' and contains_nan:
-        percentile_func = np.nanpercentile
-    else:
-        percentile_func = np.percentile
-
     if len(rng) != 2:
-        raise TypeError("quantile range must be two element sequence")
+        raise TypeError("`rng` must be a two element sequence.")
 
-    if np.isnan(rng).any():
-        raise ValueError("range must not contain NaNs")
+    if np.isnan(rng).any():  # OK to use NumPy; this shouldn't be an array
+        raise ValueError("`rng` must not contain NaNs.")
 
-    rng = sorted(rng)
-    pct = percentile_func(x, rng, axis=axis, method=interpolation,
-                          keepdims=keepdims)
-    out = np.subtract(pct[1], pct[0])
+    rng = (rng[0]/100, rng[1]/100) if rng[0] < rng[1] else (rng[1]/100, rng[0]/100)
+
+    if rng[0] < 0 or rng[1] > 1:
+        raise ValueError("Elements of `rng` must be in the range [0, 100].")
+
+    if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
+        interpolation = '_' + interpolation
+
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
+    pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
+    out = pct[..., 1:2] - pct[..., 0:1]
 
     if scale != 1.0:
         out /= scale
 
-    return out
+    out = out if keepdims else xp.squeeze(out, axis=-1)
+    return out[()] if out.ndim == 0 else out
 
 
 def _mad_1d(x, center, nan_policy):
@@ -3230,8 +3231,12 @@ def _mad_1d(x, center, nan_policy):
     return mad
 
 
-@xp_capabilities(np_only=True)
-def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
+@xp_capabilities(skip_backends=[('jax.numpy', 'not supported by `quantile`'),
+                                ('dask.array', 'not supported by `quantile`')])
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=0
+)
+def median_abs_deviation(x, axis=0, center=None, scale=1.0,
                          nan_policy='propagate'):
     r"""
     Compute the median absolute deviation of the data along the given axis.
@@ -3341,6 +3346,11 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     1.9996446978061115
 
     """
+    xp = array_namespace(x)
+    xp_median = (xp.median if is_numpy(xp)
+                 else lambda x, axis: stats.quantile(x, 0.5, axis=axis))
+    center = (xp_median if center is None else center)
+
     if not callable(center):
         raise TypeError("The argument 'center' must be callable. The given "
                         f"value {repr(center)} is not callable.")
@@ -3353,34 +3363,10 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         else:
             raise ValueError(f"{scale} is not a valid scale value.")
 
-    x = asarray(x)
-
-    # Consistent with `np.var` and `np.std`.
-    if not x.size:
-        if axis is None:
-            return np.nan
-        nan_shape = tuple(item for i, item in enumerate(x.shape) if i != axis)
-        if nan_shape == ():
-            # Return nan, not array(nan)
-            return np.nan
-        return np.full(nan_shape, np.nan)
-
-    contains_nan = _contains_nan(x, nan_policy)
-
-    if contains_nan:
-        if axis is None:
-            mad = _mad_1d(x.ravel(), center, nan_policy)
-        else:
-            mad = np.apply_along_axis(_mad_1d, axis, x, center, nan_policy)
-    else:
-        if axis is None:
-            med = center(x, axis=None)
-            mad = np.median(np.abs(x - med))
-        else:
-            # Wrap the call to center() in expand_dims() so it acts like
-            # keepdims=True was used.
-            med = np.expand_dims(center(x, axis=axis), axis)
-            mad = np.median(np.abs(x - med), axis=axis)
+    # Wrap the call to center() in expand_dims() so it acts like
+    # keepdims=True was used.
+    med = xp.expand_dims(center(x, axis=axis), axis=axis)
+    mad = xp_median(xp.abs(x - med), axis=axis)
 
     return mad / scale
 
@@ -3393,7 +3379,8 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', "doesn't know array size")],
+                 jax_jit=False)
 def sigmaclip(a, low=4., high=4.):
     """Perform iterative sigma-clipping of array elements.
 
@@ -3457,16 +3444,17 @@ def sigmaclip(a, low=4., high=4.):
     True
 
     """
-    c = np.asarray(a).ravel()
+    xp = array_namespace(a)
+    c = xp_ravel(xp.asarray(a))
     delta = 1
     while delta:
-        c_std = c.std()
-        c_mean = c.mean()
-        size = c.size
+        c_std = xp.std(c)
+        c_mean = xp.mean(c)
+        size = xp_size(c)
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
         c = c[(c >= critlower) & (c <= critupper)]
-        delta = size - c.size
+        delta = size - xp_size(c)
 
     return SigmaclipResult(c, critlower, critupper)
 
@@ -3646,7 +3634,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
+@_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
 
@@ -3709,13 +3698,15 @@ def trim_mean(a, proportiontocut, axis=0):
     array([ 2.5, 25. ])
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
 
-    if a.size == 0:
-        return np.nan
+    a = xp.asarray(a)
+
+    if xp_size(a) == 0:
+        return _get_nan(a, xp=xp)
 
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
@@ -3724,11 +3715,13 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return np.mean(atmp[tuple(sl)], axis=axis)
+    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    return xp.mean(trimmed, axis=axis)
 
 
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
@@ -7405,8 +7398,10 @@ KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
-def _compute_dplus(cdfvals, x):
-    """Computes D+ as used in the Kolmogorov-Smirnov test.
+def _compute_d(cdfvals, x, sign, xp=None):
+    """Computes D+/D- as used in the Kolmogorov-Smirnov test.
+
+    Vectorized along the last axis.
 
     Parameters
     ----------
@@ -7414,42 +7409,24 @@ def _compute_dplus(cdfvals, x):
         Sorted array of CDF values between 0 and 1
     x: array_like
         Sorted array of the stochastic variable itself
+    sign: int
+        Indicates whether to compute D+ (+1) or D- (-1).
 
     Returns
     -------
     res: Pair with the following elements:
-        - The maximum distance of the CDF values below Uniform(0, 1).
+        - The maximum distance of the CDF values below/above (D+/D-) Uniform(0, 1).
         - The location at which the maximum is reached.
 
     """
-    n = len(cdfvals)
-    dplus = (np.arange(1.0, n + 1) / n - cdfvals)
-    amax = dplus.argmax()
-    loc_max = x[amax]
-    return (dplus[amax], loc_max)
-
-
-def _compute_dminus(cdfvals, x):
-    """Computes D- as used in the Kolmogorov-Smirnov test.
-
-    Parameters
-    ----------
-    cdfvals : array_like
-        Sorted array of CDF values between 0 and 1
-    x: array_like
-        Sorted array of the stochastic variable itself
-
-    Returns
-    -------
-    res: Pair with the following elements:
-        - Maximum distance of the CDF values above Uniform(0, 1)
-        - The location at which the maximum is reached.
-    """
-    n = len(cdfvals)
-    dminus = (cdfvals - np.arange(0.0, n)/n)
-    amax = dminus.argmax()
-    loc_max = x[amax]
-    return (dminus[amax], loc_max)
+    xp = array_namespace(cdfvals, x) if xp is None else xp
+    n = cdfvals.shape[-1]
+    D = (xp.arange(1.0, n + 1, dtype=x.dtype) / n - cdfvals if sign == +1
+         else (cdfvals - xp.arange(0.0, n, dtype=x.dtype)/n))
+    amax = xp.argmax(D, axis=-1, keepdims=True)
+    loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
+    D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
+    return D[()] if D.ndim == 0 else D, loc_max[()] if loc_max.ndim == 0 else loc_max
 
 
 def _tuple_to_KstestResult(statistic, pvalue,
@@ -7463,11 +7440,12 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,
+                 skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7495,6 +7473,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
           * 'approx' : approximates the two-sided probability with twice
             the one-sided probability
           * 'asymp': uses asymptotic distribution of test statistic
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -7595,6 +7578,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # `_axis_nan_policy` decorator ensures `axis=-1`
+    xp = array_namespace(x)
     mode = method
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7602,45 +7587,49 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
-    N = len(x)
-    x = np.sort(x)
+    N = x.shape[-1]
+    x = xp.sort(x, axis=-1)
+    x = xp_promote(x, force_floating=True, xp=xp)
     cdfvals = cdf(x, *args)
-    np_one = np.int8(1)
+    ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
-        Dplus, d_location = _compute_dplus(cdfvals, x)
-        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
+        Dplus, d_location = _compute_d(cdfvals, x, +1)
+        pvalue = xp.asarray(distributions.ksone.sf(Dplus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dplus, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=np_one)
+                            statistic_sign=ones)
 
     if alternative == 'less':
-        Dminus, d_location = _compute_dminus(cdfvals, x)
-        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
+        Dminus, d_location = _compute_d(cdfvals, x, -1)
+        pvalue = xp.asarray(distributions.ksone.sf(Dminus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dminus, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=-np_one)
+                            statistic_sign=-ones)
 
     # alternative == 'two-sided':
-    Dplus, dplus_location = _compute_dplus(cdfvals, x)
-    Dminus, dminus_location = _compute_dminus(cdfvals, x)
-    if Dplus > Dminus:
-        D = Dplus
-        d_location = dplus_location
-        d_sign = np_one
-    else:
-        D = Dminus
-        d_location = dminus_location
-        d_sign = -np_one
+    Dplus, dplus_location = _compute_d(cdfvals, x, +1)
+    Dminus, dminus_location = _compute_d(cdfvals, x, -1)
+    i_plus = Dplus > Dminus
+    D = xp.where(i_plus, Dplus, Dminus)
+    d_location = xp.where(i_plus, dplus_location, dminus_location)
+    d_sign = xp.where(i_plus, ones, -ones)
+    if D.ndim == 0:
+        D, d_location, d_sign = D[()], d_location[()], d_sign[()]
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
         prob = distributions.kstwo.sf(D, N)
     elif mode == 'asymp':
-        prob = distributions.kstwobign.sf(D * np.sqrt(N))
+        prob = distributions.kstwobign.sf(D * math.sqrt(N))
     else:
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
-    prob = np.clip(prob, 0, 1)
+    prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
@@ -8084,7 +8073,8 @@ def _parse_kstest_args(data1, data2, args, N):
         cdf = data2
         data2 = None
 
-    data1 = np.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
+    xp = array_namespace(data1, data2, *args)
+    data1 = xp.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
     return data1, data2, cdf
 
 
@@ -8425,9 +8415,10 @@ def ranksums(x, y, alternative='two-sided'):
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')],
+                 jax_jit=False)
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
-def kruskal(*samples, nan_policy='propagate'):
+def kruskal(*samples, nan_policy='propagate', axis=0):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -8449,6 +8440,11 @@ def kruskal(*samples, nan_policy='propagate'):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8493,29 +8489,32 @@ def kruskal(*samples, nan_policy='propagate'):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
-    samples = list(map(np.asarray, samples))
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    n = np.asarray(list(map(len, samples)))
+    n = [sample.shape[-1] for sample in samples]
+    totaln = sum(n)
+    if any(n) < 1:  # Only needed for `test_axis_nan_policy`
+        raise ValueError("Inputs must not be empty.")
 
-    alldata = np.concatenate(samples)
-    ranked = rankdata(alldata)
-    ties = tiecorrect(ranked)
-    if ties == 0:
-        raise ValueError('All numbers are identical in kruskal')
+    alldata = xp.concat(samples, axis=-1)
+    ranked, t = _rankdata(alldata, method='average', return_ties=True)
+    # should adjust output dtype of _rankdata
+    ranked = xp.astype(ranked, alldata.dtype, copy=False)
+    t = xp.astype(t, alldata.dtype, copy=False)
+    ties = 1 - xp.sum(t**3 - t, axis=-1) / (totaln**3 - totaln)  # tiecorrect(ranked)
 
     # Compute sum^2/n for each group and sum
-    j = np.insert(np.cumsum(n), 0, 0)
-    ssbn = 0
-    for i in range(num_groups):
-        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
+    j = list(itertools.accumulate(n, initial=0))
+    ssbn = sum(xp.sum(ranked[..., j[i]:j[i + 1]], axis=-1)**2 / n[i]
+               for i in range(num_groups))
 
-    totaln = np.sum(n, dtype=float)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
-    df = num_groups - 1
+    df = xp.asarray(num_groups - 1, dtype=h.dtype)
     h /= ties
 
     chi2 = _SimpleChi2(df)
@@ -8527,9 +8526,10 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+                 jax_jit=False)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
-def friedmanchisquare(*samples):
+def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
 
     The Friedman test tests the null hypothesis that repeated samples of
@@ -8544,6 +8544,11 @@ def friedmanchisquare(*samples):
     sample1, sample2, sample3... : array_like
         Arrays of observations.  All of the arrays must have the same number
         of elements.  At least three samples must be given.
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -8587,33 +8592,34 @@ def friedmanchisquare(*samples):
     """
     k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of samples must be given '
+        raise ValueError('At least 3 samples must be given '
                          f'for Friedman test, got {k}.')
 
-    n = len(samples[0])
-    for i in range(1, k):
-        if len(samples[i]) != n:
-            raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
+
+    n = samples[0].shape[-1]
+    if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
+        raise ValueError("One or more sample arguments is too small.")
 
     # Rank data
-    data = np.vstack(samples).T
-    data = data.astype(float)
-    for i in range(len(data)):
-        data[i] = rankdata(data[i])
+    # axis-slices are aligned with axis -1 by decorator; stack puts samples along axis 0
+    # The transpose flips this so we can work with axis-slices along -1. This is a
+    # reducing statistic, so both axes 0 and -1 are consumed.
+    data = xp_swapaxes(xp.stack(samples), 0, -1)
+    data, t = _rankdata(data, method='average', return_ties=True)
+    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
-    ties = 0
-    for d in data:
-        _, repnum = _find_repeats(np.array(d, dtype=np.float64))
-        for t in repnum:
-            ties += t * (t*t - 1)
+    ties = xp.sum(t * (t*t - 1), axis=(0, -1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
-    ssbn = np.sum(data.sum(axis=0)**2)
+    ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
     statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    chi2 = _SimpleChi2(k - 1)
-    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FriedmanchisquareResult(statistic, pvalue)
 
 
@@ -8621,10 +8627,13 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 skip_backends=[('dask.array', 'needs rankdata'),
+                                ('cupy', 'needs rankdata'),
+                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
-                  nan_policy='propagate'):
+                  nan_policy='propagate', *, axis=0):
     """Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
@@ -8659,6 +8668,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
 
     Returns
     -------
@@ -8699,36 +8713,40 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    nx = len(x)
-    ny = len(y)
+    xp = array_namespace(x, y)
+    nx = x.shape[-1]
+    ny = y.shape[-1]
 
-    rankc = rankdata(np.concatenate((x, y)))
-    rankcx = rankc[0:nx]
-    rankcy = rankc[nx:nx+ny]
-    rankcx_mean = np.mean(rankcx)
-    rankcy_mean = np.mean(rankcy)
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    rankx_mean = np.mean(rankx)
-    ranky_mean = np.mean(ranky)
+    # _axis_nan_policy decorator ensures we can work along the last axis
+    rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
+    rankcx = rankc[..., 0:nx]
+    rankcy = rankc[..., nx:nx+ny]
+    rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
+    rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
+    rankx = rankdata(x, axis=-1)
+    ranky = rankdata(y, axis=-1)
+    rankx_mean = xp.mean(rankx, axis=-1, keepdims=True)
+    ranky_mean = xp.mean(ranky, axis=-1, keepdims=True)
 
     temp_x = rankcx - rankx - rankcx_mean + rankx_mean
-    Sx = np_vecdot(temp_x, temp_x)
+    Sx = xp.vecdot(temp_x, temp_x, axis=-1)
     Sx /= nx - 1
     temp_y = rankcy - ranky - rankcy_mean + ranky_mean
-    Sy = np_vecdot(temp_y, temp_y)
+    Sy = xp.vecdot(temp_y, temp_y, axis=-1)
     Sy /= ny - 1
 
+    rankcx_mean = xp.squeeze(rankcx_mean, axis=-1)
+    rankcy_mean = xp.squeeze(rankcy_mean, axis=-1)
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
-    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+    wbfn /= (nx + ny) * xp.sqrt(nx * Sx + ny * Sy)
 
     if distribution == "t":
-        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
-        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
-        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df_numer = xp.pow(nx * Sx + ny * Sy, 2.0)
+        df_denom = xp.pow(nx * Sx, 2.0) / (nx - 1)
+        df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if (df_numer == 0) and (df_denom == 0):
+        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -8741,7 +8759,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=xp)
 
     return BrunnerMunzelResult(wbfn, p)
 
@@ -10160,7 +10178,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
         t = xp.zeros(shape, dtype=xp.float64)
-        t[i] = counts
+        t = xpx.at(t)[i].set(xp.astype(counts, t.dtype, copy=False))
         return ranks, t
     return ranks
 
@@ -10892,3 +10910,17 @@ class _SimpleStudentT:
 
     def sf(self, t):
         return special.stdtr(self.df, -t)
+
+
+class _SimpleF:
+    # A very simple, array-API compatible F distribution for use in
+    # hypothesis tests.
+    def __init__(self, dfn, dfd):
+        self.dfn = dfn
+        self.dfd = dfd
+
+    def cdf(self, x):
+        return special.fdtr(self.dfn, self.dfd, x)
+
+    def sf(self, x):
+        return special.fdtrc(self.dfn, self.dfd, x)

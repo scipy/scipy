@@ -2498,8 +2498,9 @@ def hilbert(x, N=None, axis=-1):
     >>> ax0.plot(t, signal, label='Signal')
     >>> ax0.plot(t, amplitude_envelope, label='Envelope')
     >>> ax0.legend()
-    >>> ax1.set(xlabel="Time in seconds", ylabel="Phase in rad", ylim=(0, 120))
-    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-', label='Instantaneous Phase')
+    >>> ax1.set(xlabel="Time in seconds", ylabel="Frequency in Hz", ylim=(0, 120))
+    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-',
+    ...          label='Instantaneous Frequency')
     >>> ax1.legend()
     >>> plt.show()
 
@@ -4260,11 +4261,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
-    # XXX simplify when data-apis/array-api-compat#147 is available
-    if isinstance(bp, int):
-       xp = array_namespace(data)
-    else:
-       xp = array_namespace(data, bp)
+    xp = array_namespace(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char
