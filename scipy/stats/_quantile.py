@@ -9,6 +9,7 @@ from scipy._lib._array_api import (
     xp_device,
     _length_nonmasked,
     is_torch,
+    is_jax,
 )
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
@@ -399,7 +400,12 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
 
     if x_1d or is_torch(xp):
         y = xp.reshape(y, ()) if (y_0d and x_1d) else y
-        return xp.searchsorted(x, y, side=side)
+        res = xp.searchsorted(x, y, side=side)
+        if is_jax(xp):
+            # jax.numpy.searchsorted doesn't respect JAX default int dtype
+            jax_default_int = xp.asarray(1).dtype
+            res = xp.astype(res, jax_default_int, copy=False)
+        return res
 
     a = xp.full(y.shape, 0, device=xp_device(x))
 
