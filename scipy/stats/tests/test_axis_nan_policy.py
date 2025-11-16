@@ -13,8 +13,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-from scipy import stats
-from scipy.stats import norm  # type: ignore[attr-defined]
+from scipy import stats, special
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
@@ -125,15 +124,15 @@ axis_nan_policy_cases = [
     (stats.brunnermunzel, tuple(), dict(distribution='normal'), 2, 2, False, None),
     (stats.mood, tuple(), {}, 2, 2, False, None),
     (stats.shapiro, tuple(), {}, 1, 2, False, None),
-    (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
+    (stats.ks_1samp, (special.ndtr,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
-    (stats.ks_1samp, (norm().cdf,), dict(alternative='greater'), 1, 4, False,
+    (stats.ks_1samp, (special.ndtr,), dict(alternative='greater'), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
-    (stats.ks_1samp, (norm().cdf,), dict(alternative='less'), 1, 4, False,
+    (stats.ks_1samp, (special.ndtr,), dict(alternative='less'), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
-    (stats.kstest, (norm().cdf,), dict(), 1, 4, False,
+    (stats.kstest, (special.ndtr,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.kstest, tuple(), dict(), 2, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
