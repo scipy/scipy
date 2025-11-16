@@ -11,6 +11,7 @@ import inspect
 import platform
 import threading
 import warnings
+import multiprocessing
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -2690,7 +2691,6 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
@@ -3479,3 +3479,14 @@ class TestWorkers:
             )
         assert res.success
         assert_allclose(res.x[1], 2.0)
+
+@pytest.mark.fail_slow(10)
+def test_multiprocessing_too_many_open_files_23080():
+    # https://github.com/scipy/scipy/issues/23080
+    rng = np.random.default_rng()
+    # should be enough fits to trigger the issue, which was due to a refcycle in
+    # ScalarFunction
+    for i in range(40):
+        x0 = rng.uniform(-20, 20, size=3)
+        with multiprocessing.Pool() as p:
+            optimize._minimize_bfgs(rosen, x0, workers=p.map)
