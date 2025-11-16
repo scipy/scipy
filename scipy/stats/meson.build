@@ -48,7 +48,7 @@ py3.install_sources([
 
 py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
-  cpp_args: [cython_cpp_args, _cpp_Wno_unused_function],
+  cpp_args: cython_cpp_args,
   dependencies: [np_dep, thread_dep],
   link_args: version_link_args,
   install: true,
