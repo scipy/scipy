@@ -40,6 +40,9 @@ jobs:
         with:
           pixi-version: v0.56.0
           cache: false
+          environments: >-
+            build
+            test
 
       - name: Build
         run: pixi run build
