@@ -1239,19 +1239,16 @@ class TestRectBivariateSpline:
         lut = RectBivariateSpline(x, y, z)
         lut_ndbspline = convert_to_ndbspline(lut)
         with assert_raises(ValueError):
-            lut.partial_derivative(4, 1)
+            lut.partial_derivative(k + 1, 1)
 
-        assert (lut_ndbspline.derivative([4, 1]).c == 0.0).all()
+        assert (lut_ndbspline.derivative([k + 1, 1]).c == 0.0).all()
 
         lut = RectBivariateSpline(x, y, z, kx=k, ky=k)
         with assert_raises(ValueError):
-            lut.partial_derivative(4, 1)
+            lut.partial_derivative(k + 1, 1)
 
         lut_custom = regrid_python(x, y, z, kx=k, ky=k)
-        # TODO: Should be exactly equal to 0.0, bug in NdBSpline.derivative
-        c_d = lut_custom.derivative([4, 1]).c
-        xp_assert_close(c_d, np.asarray([0.0]*c_d.size).reshape(c_d.shape),
-                        rtol=0, atol=1.5*10**(-6))
+        assert (lut_custom.derivative([k + 1, 1]).c == 0.0).all()
 
     @pytest.mark.parametrize("k", [3, 4])
     def test_broadcast(self, k):
