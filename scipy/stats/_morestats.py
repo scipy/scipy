@@ -1,10 +1,11 @@
+import itertools
 import math
 import warnings
 import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
+from numpy import (isscalar, log, around, zeros,
                    arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
@@ -2743,9 +2744,10 @@ class _ABW:
 _abw_state = threading.local()
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,    # p-value is Cython
+                 skip_backends=[('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
-def ansari(x, y, alternative='two-sided'):
+def ansari(x, y, alternative='two-sided', *, axis=0):
     """Perform the Ansari-Bradley test for equal scale parameters.
 
     The Ansari-Bradley test ([1]_, [2]_) is a non-parametric test
@@ -2767,6 +2769,11 @@ def ansari(x, y, alternative='two-sided'):
         * 'greater': the ratio of scales is greater than 1.
 
         .. versionadded:: 1.7.0
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -2849,6 +2856,9 @@ def ansari(x, y, alternative='two-sided'):
     AnsariResult(statistic=425.0, pvalue=0.9998643258449039)
 
     """
+    xp = array_namespace(x, y)
+    dtype = xp_result_type(x, y, force_floating=True, xp=xp)
+
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
@@ -2856,57 +2866,66 @@ def ansari(x, y, alternative='two-sided'):
     if not hasattr(_abw_state, 'a'):
         _abw_state.a = _ABW()
 
-    x, y = asarray(x), asarray(y)
-    n = len(x)
-    m = len(y)
-    if m < 1:
+    # _axis_nan_policy decorator guarantees that axis=-1
+    n = x.shape[-1]
+    m = y.shape[-1]
+    if m < 1:  # needed by test_axis_nan_policy; not user-facing
         raise ValueError("Not enough other observations.")
     if n < 1:
         raise ValueError("Not enough test observations.")
 
     N = m + n
-    xy = r_[x, y]  # combine
-    rank = _stats_py.rankdata(xy)
-    symrank = amin(array((rank, N - rank + 1)), 0)
-    AB = np.sum(symrank[:n], axis=0)
-    uxy = unique(xy)
-    repeats = (len(uxy) != len(xy))
+    xy = xp.concat([x, y], axis=-1)  # combine
+    rank, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    rank, t = xp.astype(rank, dtype), xp.astype(t, dtype)
+    symrank = xp.minimum(rank, N - rank + 1)
+    AB = xp.sum(symrank[..., :n], axis=-1)
+    repeats = xp.any(t > 1)  # in theory we could branch for each slice separately
     exact = ((m < 55) and (n < 55) and not repeats)
-    if repeats and (m < 55 or n < 55):
-        warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
+        # np.vectorize converts to NumPy here, and we convert back to the result
+        # type before returning
+        cdf = np.vectorize(_abw_state.a.cdf, otypes=[np.float64])
+        sf = np.vectorize(_abw_state.a.sf, otypes=[np.float64])
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
-                                    _abw_state.a.sf(AB, n, m))
+            pval = 2.0 * np.minimum(cdf(AB, n, m),
+                                    sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.a.cdf(AB, n, m)
+            pval = cdf(AB, n, m)
         else:
-            pval = _abw_state.a.sf(AB, n, m)
-        return AnsariResult(AB, np.minimum(1.0, pval))
+            pval = sf(AB, n, m)
+        pval = xp.clip(xp.asarray(pval, dtype=dtype), max=1.0)
+        AB = AB[()] if AB.ndim == 0 else AB
+        pval = pval[()] if pval.ndim == 0 else pval
+        return AnsariResult(AB, pval)
 
-    # otherwise compute normal approximation
-    if N % 2:  # N odd
-        mnAB = n * (N+1.0)**2 / 4.0 / N
-        varAB = n * m * (N+1.0) * (3+N**2) / (48.0 * N**2)
-    else:
-        mnAB = n * (N+2.0) / 4.0
-        varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
+    mnAB = (n * (N + 1.0) ** 2 / 4.0 / N) if N % 2 else (n * (N + 2.0) / 4.0)
+
     if repeats:   # adjust variance estimates
         # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=0)
+        fac = xp.sum(symrank**2, axis=-1)
         if N % 2:  # N odd
             varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
+    else:
+        # otherwise compute normal approximation
+        if N % 2:  # N odd
+            varAB = n * m * (N + 1.0) * (3 + N ** 2) / (48.0 * N ** 2)
+        else:
+            varAB = m * n * (N + 2) * (N - 2.0) / 48 / (N - 1.0)
+        varAB = xp.asarray(varAB, dtype=dtype)
 
     # Small values of AB indicate larger dispersion for the x sample.
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
-    z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
-    return AnsariResult(AB[()], pvalue[()])
+    z = (mnAB - AB) / xp.sqrt(varAB)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
+    AB = AB[()] if AB.ndim == 0 else AB
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return AnsariResult(AB, pvalue)
 
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
@@ -3176,7 +3195,8 @@ def levene(*samples, center='median', proportiontocut=0.05, axis=0):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no rankdata'),
+                                ('cupy', 'no rankdata')], jax_jit=False)
 @_axis_nan_policy_factory(FlignerResult, n_samples=None)
 def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     r"""Perform Fligner-Killeen test for equality of variance.
@@ -3268,54 +3288,63 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
 
     For a more detailed example, see :ref:`hypothesis_fligner`.
     """
+    xp = array_namespace(*samples)
+
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     k = len(samples)
     if k < 2:
-        raise ValueError("Must enter at least two input sample vectors.")
+        raise ValueError("Must provide at least two samples.")
+
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
 
     # Handle empty input
     for sample in samples:
         if sample.size == 0:
-            NaN = _get_nan(*samples)
+            NaN = _get_nan(*samples, xp=xp)
             return FlignerResult(NaN, NaN)
 
     if center == 'median':
 
         def func(x):
-            return np.median(x, axis=-1, keepdims=True)
+            return (xp.median(x, axis=-1, keepdims=True)
+                    if (is_numpy(xp) or is_dask(xp))
+                    else stats.quantile(x, 0.5, axis=-1, keepdims=True))
 
     elif center == 'mean':
 
         def func(x):
-            return np.mean(x, axis=-1, keepdims=True)
+            return xp.mean(x, axis=-1, keepdims=True)
 
     else:  # center == 'trimmed'
 
         def func(x):
-            return _stats_py.trim_mean(x, proportiontocut, axis=-1, keepdims=True)
+            # keepdims=True doesn't currently work for lazy arrays
+            return _stats_py.trim_mean(x, proportiontocut, axis=-1)[..., xp.newaxis]
 
     ni = [sample.shape[-1] for sample in samples]
     N = sum(ni)
 
     # Implementation follows [3] pg 355 F-K.
     Xibar = [func(sample) for sample in samples]
-    Xij_Xibar = [np.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
-    Xij_Xibar = np.concatenate(Xij_Xibar, axis=-1)
-    ranks = _stats_py._rankdata(Xij_Xibar, method='average')
+    Xij_Xibar = [xp.abs(sample - Xibar_) for sample, Xibar_ in zip(samples, Xibar)]
+    Xij_Xibar = xp.concat(Xij_Xibar, axis=-1)
+    ranks = _stats_py._rankdata(Xij_Xibar, method='average', xp=xp)
+    ranks = xp.astype(ranks, dtype)
     a_Ni = special.ndtri(ranks / (2*(N + 1.0)) + 0.5)
 
     # [3] Equation 2.1
-    splits = np.cumsum(ni[:-1])
-    Ai = np.split(a_Ni,  splits, axis=-1)
-    Aibar = [np.mean(Ai_, axis=-1) for Ai_ in Ai]
-    abar = np.mean(a_Ni, axis=-1)
-    V2 = np.var(a_Ni, axis=-1, ddof=1)
+    splits = list(itertools.accumulate(ni, initial=0))
+    Ai = [a_Ni[..., i:j] for i, j in zip(splits[:-1], splits[1:])]
+    Aibar = [xp.mean(Ai_, axis=-1) for Ai_ in Ai]
+    abar = xp.mean(a_Ni, axis=-1)
+    V2 = xp.var(a_Ni, axis=-1, correction=1)
     statistic = sum(ni_ * (Aibar_ - abar)**2 for ni_, Aibar_ in zip(ni, Aibar)) / V2
 
-    chi2 = _SimpleChi2(k-1)
-    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FlignerResult(statistic, pval)
 
 

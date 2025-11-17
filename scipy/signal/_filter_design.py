@@ -1280,12 +1280,13 @@ def zpk2tf(z, p, k):
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     xp = array_namespace(z, p)
-    z, p, k = map(xp.asarray, (z, p, k))
+    z, p = map(xp.asarray, (z, p))
+    k = xp.asarray(k, dtype=xp.result_type(xp.real(z), xp.real(p), k))
+    if xp.isdtype(k.dtype, "integral"):
+        k = xp.astype(k, xp.float64)
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     k = xpx.atleast_nd(k, ndim=1, xp=xp)
-    if xp.isdtype(k.dtype, 'integral'):
-        k = xp.astype(k, xp_default_dtype(xp))
 
     if z.ndim > 1:
         temp = _pu.poly(z[0, ...], xp=xp)
@@ -1294,9 +1295,12 @@ def zpk2tf(z, p, k):
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
             k_i = xp.asarray(k[i], dtype=xp.int64)
-            b[i, ...] = k_i * _pu.poly(z[i, ...], xp=xp)
+            b[i, ...] = xp.multiply(k_i, _pu.poly(z[i, ...], xp=xp))
     else:
-        b = k * _pu.poly(z, xp=xp)
+        # Use xp.multiply to work around torch type promotion
+        # non-compliance for operations between 0d and higher
+        # dimensional arrays.
+        b = xp.multiply(k, _pu.poly(z, xp=xp))
 
     a = _pu.poly(p, xp=xp)
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
@@ -2754,6 +2758,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     -----
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
+
     Examples
     --------
     Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
@@ -2797,7 +2805,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     """
     xp = array_namespace(Wn)
-    Wn = xp_promote(Wn, force_floating=True, xp=xp)
+    # For now, outputs will have float64 base dtype regardless of
+    # the dtype of Wn, so cast to float64 here to ensure 64 bit
+    # precision for all calculations.
+    Wn = xp.asarray(Wn, dtype=xp.float64)
 
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
@@ -3417,6 +3428,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     z, p, k : ndarray, ndarray, float
         Zeros, poles, and system gain of the IIR filter transfer
         function.  Only returned if ``output='zpk'``.
+
     sos : ndarray
         Second-order sections representation of the IIR filter.
         Only returned if ``output='sos'``.
@@ -3444,6 +3456,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         numerical precision issues. Consider inspecting output filter
         characteristics `freqz` or designing the filters with second-order
         sections via ``output='sos'``.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3562,6 +3578,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
 
     The ``'sos'`` output parameter was added in 0.16.0.
 
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
+
     Examples
     --------
     Design an analog filter and plot its frequency response, showing the
@@ -3674,6 +3694,10 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     Type II filters do not roll off as fast as Type I (`cheby1`).
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3797,6 +3821,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     unity for odd-order filters, or -rp dB for even-order filters.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     Examples
     --------
@@ -3933,6 +3961,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     See `besselap` for implementation details and references.
 
     The ``'sos'`` output parameter was added in 0.16.0.
+
+    The current behavior is for ``ndarray`` outputs to have 64 bit precision
+    (``float64`` or ``complex128``) regardless of the dtype of `Wn` but
+    outputs may respect the dtype of `Wn` in a future version.
 
     References
     ----------
@@ -4635,8 +4667,12 @@ def buttap(N, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[float64]
+        Zeros of the transfer function. Is always an empty array.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4647,11 +4683,11 @@ def buttap(N, *, xp=None, device=None):
         xp = np_compat
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
-    z = xp.asarray([], device=device)
-    m = xp.arange(-N+1, N, 2, device=device, dtype=xp_default_dtype(xp))
+    z = xp.asarray([], device=device, dtype=xp.float64)
+    m = xp.arange(-N+1, N, 2, device=device, dtype=xp.float64)
     # Middle value is 0 to ensure an exactly real pole
     p = -xp.exp(1j * xp.pi * m / (2 * N))
-    k = 1
+    k = 1.0
     return z, p, k
 
 
@@ -4674,8 +4710,12 @@ def cheb1ap(N, rp, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[float64]
+        Zeros of the transfer function. Is always an empty array.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4690,16 +4730,17 @@ def cheb1ap(N, rp, *, xp=None, device=None):
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device), xp.asarray([], device=device), 10**(-rp/20)
+            xp.asarray([], device=device, dtype=xp.float64),
+            xp.asarray([], device=device, dtype=xp.complex128), 10**(-rp/20)
         )
-    z = xp.asarray([], device=device)
+    z = xp.asarray([], device=device, dtype=xp.float64)
 
     # Ripple factor (epsilon)
     eps = math.sqrt(10 ** (0.1 * rp) - 1.0)
     mu = 1.0 / N * math.asinh(1 / eps)
 
     # Arrange poles in an ellipse on the left half of the S-plane
-    m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta = xp.pi * m / (2*N)
     p = -xp.sinh(mu + 1j*theta)
 
@@ -4730,8 +4771,12 @@ def cheb2ap(N, rs, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
+    z : ndarray[complex128]
+        Zeros of the transfer function.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4740,12 +4785,15 @@ def cheb2ap(N, rs, *, xp=None, device=None):
     """
     if xp is None:
         xp = np_compat
-
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
-        return xp.asarray([], device=device), xp.asarray([], device=device), 1
+        return (
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            1.0
+        )
 
     # Ripple factor (epsilon)
     de = 1.0 / math.sqrt(10 ** (0.1 * rs) - 1)
@@ -4753,17 +4801,17 @@ def cheb2ap(N, rs, *, xp=None, device=None):
 
     if N % 2:
         m = xp.concat(
-            (xp.arange(-N + 1, 0, 2, dtype=xp_default_dtype(xp), device=device),
-             xp.arange(2, N, 2, dtype=xp_default_dtype(xp), device=device)
+            (xp.arange(-N + 1, 0, 2, dtype=xp.float64, device=device),
+             xp.arange(2, N, 2, dtype=xp.float64, device=device)
             )
         )
     else:
-        m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+        m = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
 
     z = 1j / xp.sin(m * xp.pi / (2 * N))
 
     # Poles around the unit circle like Butterworth
-    m1 = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    m1 = xp.arange(-N+1, N, 2, dtype=xp.float64, device=device)
     theta1 = xp.pi * m1 / (2 * N)
     p = -1 / xp.sinh(mu + 1j*theta1)
 
@@ -4920,9 +4968,12 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     Returns
     -------
-    z, p, k
-        Poles, zeros and gain for the filter prototype
-
+    z : ndarray[complex128]
+        Zeros of the transfer function.
+    p : ndarray[complex128]
+        Poles of the transfer function.
+    k : float
+        Gain of the transfer function.
 
     See Also
     --------
@@ -4946,15 +4997,18 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
         return (
-            xp.asarray([], device=device),
-            xp.asarray([], device=device),
+            xp.asarray([], device=device, dtype=xp.complex128),
+            xp.asarray([], device=device, dtype=xp.complex128),
             10**(-rp/20)
         )
     elif N == 1:
         p = -math.sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
         z = []
-        return xp.asarray(z, device=device), xp.asarray(p, device=device), k
+        return (
+            xp.asarray(z, device=device, dtype=xp.complex128),
+            xp.asarray(p, device=device, dtype=xp.complex128), k
+        )
 
     eps_sq = _pow10m1(0.1 * rp)
 
@@ -5000,7 +5054,10 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
     if N % 2 == 0:
         k = k / np.sqrt(1 + eps_sq)
 
-    return xp.asarray(z, device=device), xp.asarray(p, device=device), float(k)
+    return (
+        xp.asarray(z, device=device, dtype=xp.complex128),
+        xp.asarray(p, device=device, dtype=xp.complex128), float(k)
+    )
 
 
 # TODO: Make this a real public function scipy.misc.ff
@@ -5242,11 +5299,11 @@ def besselap(N, norm='phase', *, xp=None, device=None):
 
     Returns
     -------
-    z : ndarray
+    z : ndarray[float64]
         Zeros of the transfer function. Is always an empty array.
-    p : ndarray
+    p : ndarray[complex128]
         Poles of the transfer function.
-    k : scalar
+    k : float
         Gain of the transfer function. For phase-normalized, this is always 1.
 
     See Also
@@ -5314,10 +5371,12 @@ def besselap(N, norm='phase', *, xp=None, device=None):
         else:
             raise ValueError('normalization not understood')
 
-    z = xp.asarray([], device=device)
-    cdtype = xp.complex128 if z.dtype == xp.float64 else xp.complex64
-    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device),
-            float(k))
+    z = xp.asarray([], device=device, dtype=xp.float64)
+    return (
+        z,
+        xp.asarray(p, device=device, dtype=xp.complex128),
+        float(k)
+    )
 
 
 def iirnotch(w0, Q, fs=2.0, *, xp=None, device=None):

@@ -9,6 +9,7 @@ from scipy._lib._array_api import (
     is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
+    xp_size,
     xp_copy,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
@@ -322,9 +323,13 @@ def np_searchsorted(a, v, side):
 class Test_XPSearchsorted:
     @pytest.mark.parametrize('side', ['left', 'right'])
     @pytest.mark.parametrize('ties', [False, True])
-    @pytest.mark.parametrize('shape', [1, 2, 10, 11, 1000, 10001, (2, 10), (2, 3, 11)])
-    @pytest.mark.parametrize('nans', [False, True])
-    def test_nd(self, side, ties, shape, nans, xp):
+    @pytest.mark.parametrize('shape', [0, 1, 2, 10, 11, 1000, 10001,
+                                       (2, 0), (0, 2), (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('nans_x', [False, True])
+    @pytest.mark.parametrize('infs_x', [False, True])
+    def test_nd(self, side, ties, shape, nans_x, infs_x, xp):
+        if nans_x and is_torch(xp):
+            pytest.skip('torch sorts NaNs differently')
         rng = np.random.default_rng(945298725498274853)
         if ties:
             x = rng.integers(5, size=shape)
@@ -334,17 +339,24 @@ class Test_XPSearchsorted:
         x = np.asarray(x, dtype=np.float32)
         xr = np.nextafter(x, np.inf)
         xl = np.nextafter(x, -np.inf)
-        x_ = np.asarray([-np.inf, np.inf])
-        x_ = np.broadcast_to(x_, x.shape[:-1] + (2,))
+        x_ = np.asarray([-np.inf, np.inf, np.nan])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
         y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
-        if nans:
-            # all elements of a slice are NaN and side='right',
-            # _xp_searchsorted has a different convention
+        if nans_x:
             mask = rng.random(shape) < 0.1
             x[mask] = np.nan
+        if infs_x:
+            mask = rng.random(shape) < 0.1
+            x[mask] = -np.inf
+            mask = rng.random(shape) > 0.9
+            x[mask] = np.inf
         x = np.sort(x, axis=-1)
         x, y = np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)
-        ref = xp.asarray(np_searchsorted(x, y, side=side))
+        xp_default_int = xp.asarray(1).dtype
+        if xp_size(x) == 0 and x.ndim > 0 and x.shape[-1] != 0:
+            ref = xp.empty(x.shape[:-1] + (y.shape[-1],), dtype=xp_default_int)
+        else:
+            ref = xp.asarray(np_searchsorted(x, y, side=side), dtype=xp_default_int)
         x, y = xp.asarray(x), xp.asarray(y)
         res = _xp_searchsorted(x, y, side=side)
         xp_assert_equal(res, ref)
