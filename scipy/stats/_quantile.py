@@ -79,7 +79,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         x, weights = xp.broadcast_arrays(x, weights)
         i_zero_weight = (weights == 0)
         n_zero_weight = xp.count_nonzero(i_zero_weight, axis=axis, keepdims=True)
-        x = xpx.at(x)[i_zero_weight].set(xp.inf)
+        x = xpx.at(x)[i_zero_weight].set(xp.inf, copy=True)
         i_y = xp.argsort(x, axis=axis, stable=False)
         y = xp.take_along_axis(x, i_y, axis=axis)
         weights = xp.take_along_axis(weights, i_y, axis=axis)

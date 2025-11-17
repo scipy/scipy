@@ -9,6 +9,7 @@ from scipy._lib._array_api import (
     is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
+    xp_copy,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
@@ -286,6 +287,7 @@ class TestQuantile:
         # test 1-D versus eliminating zero-weighted values
         n = 100
         x = xp.asarray(rng.random(size=n))
+        x0 = xp_copy(x)
         p = xp.asarray(rng.random(size=n))
         i_zero = xp.asarray(rng.random(size=n) < 0.1)
         weights = xp.asarray(rng.random(size=n))
@@ -293,10 +295,12 @@ class TestQuantile:
         res = stats.quantile(x, p, weights=weights, method=method)
         ref = stats.quantile(x[~i_zero], p, weights=weights[~i_zero], method=method)
         xp_assert_close(res, ref)
+        xp_assert_equal(x, x0)  # no input mutation
 
         # test multi-D versus `nan_policy='omit'`
         shape = (5, 100)
         x = xp.asarray(rng.random(size=shape))
+        x0 = xp_copy(x)
         p = xp.asarray(rng.random(size=shape))
         i_zero = xp.asarray(rng.random(size=shape) < 0.1)
         weights = xp.asarray(rng.random(size=shape))
@@ -306,6 +310,7 @@ class TestQuantile:
         ref = stats.quantile(x_nanned, p, weights=weights,
                              nan_policy='omit', method=method, axis=-1)
         xp_assert_close(res, ref)
+        xp_assert_equal(x, x0)  # no input mutation
 
 
 @_apply_over_batch(('a', 1), ('v', 1))
