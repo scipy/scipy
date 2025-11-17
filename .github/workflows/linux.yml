@@ -190,7 +190,7 @@ jobs:
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
-        python -m pip install . --no-build-isolation
+        python -m pip install . -v --no-build-isolation
 
         # Basic tests
         cd ..
