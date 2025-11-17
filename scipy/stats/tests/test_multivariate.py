@@ -1226,6 +1226,46 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
+    def test_marginal_distribution_two_dimensional(self):
+        rng = np.random.default_rng(1234)
+        mean = rng.standard_normal(2)
+        A = rng.standard_normal((2, 2))
+        cov = np.dot(A, A.transpose())
+        rv_norm = multivariate_normal(mean, cov)
+
+        int_values = rng.standard_normal(4)
+
+        for i in int_values:
+            func = lambda x: rv_norm.pdf([x, i])
+            val, _ = quad(func, -np.inf, np.inf)
+            marginal = rv_norm.marginal(1)
+            assert_almost_equal(val, marginal.pdf(i))
+
+        for i in int_values:
+            func = lambda x: rv_norm.pdf([i, x])
+            val, _ = quad(func, -np.inf, np.inf)
+            marginal = rv_norm.marginal(0)
+            assert_almost_equal(val, marginal.pdf(i))
+
+    def test_marginal_distribution_three_dimensional(self):
+        rng = np.random.default_rng(1234)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = np.dot(A, A.transpose())
+        rv_norm = multivariate_normal(mean, cov)
+
+        int_values = rng.standard_normal(size=(4,2))
+
+        for i in range(int_values.shape[0]):
+            int_value = int_values[i, :]
+
+            def func(x):
+                input = np.insert(int_value, 0, x)
+                return rv_norm.pdf(input)
+            
+            val, _ = quad(func, -np.inf, np.inf)
+            marginal = rv_norm.marginal([1,2])
+            assert_almost_equal(val, marginal.pdf(int_value))
 
 class TestMatrixNormal:
 
@@ -1428,6 +1468,36 @@ class TestMatrixNormal:
               [2.59428444080606, 5.79987854490876]]]
         )
         assert_allclose(actual, expected)
+
+    def test_marginal_distribution(self):
+        rng = np.random.default_rng(1234)
+        row_num = 2
+        col_num = 2
+
+        mean = rng.standard_normal((row_num, col_num))
+        A = rng.standard_normal((row_num, row_num))
+        row_cov = np.dot(A, A.transpose())
+
+        B = rng.standard_normal((col_num, col_num))
+        col_cov = np.dot(B, B.transpose())
+
+        rv_norm = matrix_normal(mean, row_cov, col_cov)
+        rows = [0, 1]
+        cols = [1]
+        marginal = rv_norm.marginal(rows, cols)
+
+        int_vals = np.random.standard_normal(size=(5, 2))
+
+
+        for i in range(int_vals.shape[0]):
+            int_val = int_vals[i, :].reshape(2, 1)
+            
+            def func(x, y):
+                input = np.column_stack(([x,y], int_val))
+                return rv_norm.pdf(input)
+            
+            marginal_integrated, _ = dblquad(func, -np.inf, np.inf, -np.inf, np.inf)
+            assert_almost_equal(marginal_integrated, marginal.pdf(int_val))
 
 
 class TestMatrixT:
@@ -3732,6 +3802,26 @@ class TestMultivariateT:
         x = X.rvs(10)
         assert_allclose(Y.logpdf(x), X.logpdf(x))
         assert_allclose(Y.pdf(x), X.pdf(x))
+
+    def test_marginal_distribution(self):
+        rng = np.random.default_rng(1)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = np.dot(A, A.transpose())
+        rv_norm = multivariate_t(mean, cov)
+
+        int_values = rng.standard_normal(size=(4,2))
+
+        for i in range(int_values.shape[0]):
+            int_value = int_values[i, :].tolist()
+
+            def func(x):
+                input = np.insert(int_value, 0, x)
+                return rv_norm.pdf(input)
+            
+            val, _ = quad(func, -np.inf, np.inf)
+            marginal = rv_norm.marginal([1,2])
+            assert_almost_equal(val, marginal.pdf(int_value))
 
 
 class TestMultivariateHypergeom:
