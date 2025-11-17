@@ -61,6 +61,22 @@ fblas_module = custom_target('fblas_module',
     ]
 )
 
+_cython_blas_wrappers_pyx = custom_target('_cython_blas_wrappers',
+  output: '_cython_blas_wrappers.pyx',
+  input: '_cython_blas_wrappers.pyx.in',
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
+)
+
+# _cython_blas_wrappers: Pure Cython BLAS wrappers using C helper functions
+py3.extension_module('_cython_blas_wrappers',
+  linalg_cython_gen.process(_cython_blas_wrappers_pyx),
+  c_args: cython_c_args,
+  dependencies: [np_dep, lapack_dep, blas_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
 # the float/double routines are in BLAS while the complex routines are in
 # LAPACK - we have historically put these in `_fblas`.
