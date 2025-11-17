@@ -1,0 +1,126 @@
+# cython: language_level=3
+# cython: boundscheck=False
+# cython: initializedcheck=False
+
+cimport cython
+cimport numpy as cnp
+cimport scipy.linalg.cython_blas as cblas, scipy.linalg.cython_lapack as clapack
+
+# Import NumPy C API
+cnp.import_array()
+
+import numpy as np
+from scipy.linalg._misc import _datacopied
+
+__all__ = [
+    'srotg', 'drotg', 'crotg', 'zrotg',
+    'srotmg', 'drotmg',
+    'scopy', 'dcopy', 'ccopy', 'zcopy',
+]
+
+{{py:
+
+# Tempita definitions for iterators
+NP = ['float32', 'float64', 'complex64', 'complex128']
+NPR = ['float32', 'float64']
+NPC = ['complex64', 'complex128']
+NPNPR = NP + NPR
+NPNPC = NP + NPC
+
+C = ['float', 'double', 'float complex', 'double complex']
+CR = ['float', 'double']
+CC = ['float complex', 'double complex']
+CCR = C + CR
+CCC = C + CC
+
+
+P = ['s', 'd', 'c', 'z']
+PR = ['s', 'd']
+PC = ['c', 'z']
+PEXT = P + ['cs', 'zd']
+
+CNP = ['NPY_FLOAT32', 'NPY_FLOAT64', 'NPY_COMPLEX64', 'NPY_COMPLEX128']
+}}
+
+
+# -------------------
+# (s,d,c,z)rotg
+# -------------------
+{{for PREFIX,CTYPE,CTYPEREAL in zip(P, C, CR*2)}}
+def {{PREFIX}}rotg({{CTYPE}} a, {{CTYPE}} b):
+    cdef {{CTYPEREAL}} c
+    cdef {{CTYPE}} s
+
+    cblas.{{PREFIX}}rotg(&a, &b, &c, &s)
+
+    return c, s
+{{endfor}}
+
+
+# -------------------
+# (s,d)rotmg
+# -------------------
+{{for PREFIX,CTYPE,NPYTYPE in zip(PR, CR, NPR)}}
+def {{PREFIX}}rotmg({{CTYPE}} d1, {{CTYPE}} d2, {{CTYPE}} b1, {{CTYPE}} b2):
+    cdef cnp.ndarray param = np.empty(5, dtype=np.{{NPYTYPE}})
+    cdef {{CTYPE}} c, s
+    cdef {{CTYPE}}* param_ptr = <{{CTYPE}}*>cnp.PyArray_DATA(param)
+    cblas.{{PREFIX}}rotmg(&d1, &d2, &b1, &b2, param_ptr)
+
+    return d1, d2, b1, param
+{{endfor}}
+
+
+# -------------------
+# (s,d,cs,zd)rot
+# For some reason crot and zrot are not included
+# -------------------
+{{for PREFIX,CTYPE,CARG,SARG,ARRTYPE in zip(P + ['cs', 'zd'], C + CC, CR*3, C + CR, NP + NPC)}}
+def {{PREFIX}}rot(x, y, {{CARG}} c, {{SARG}} s, n = None, bint overwrite_x=False, int offx=0, int incx=1, bint overwrite_y=False, int offy=0, int incy=1):
+    cdef {{CTYPE}}* x_ptr
+    cdef {{CTYPE}}* y_ptr
+    cdef int nn
+
+    xc = np.asfortranarray(x, dtype=np.{{ARRTYPE}})
+    yc = np.asfortranarray(y, dtype=np.{{ARRTYPE}})
+    if (not overwrite_x) and _datacopied(x, xc):
+        xc = xc.copy(order='F')
+
+    if (not overwrite_y) and _datacopied(y, yc):
+        yc = yc.copy(order='F')
+
+    # Validate parameters
+    if (offx < 0) or (offx >= xc.size):
+        raise ValueError(f"offx={offx} out of bounds")
+    if (offy < 0) or (offy >= yc.size):
+        raise ValueError(f"offx={offx} out of bounds")
+
+    # Calculate n if not given
+    if n is None:
+        nn = (xc.size - 1 - offx) // abs(incx) + 1
+    else:
+        nn = n
+
+    if not (nn >= 0):
+        raise ValueError(f"Input n={ n } must be nonpositive")
+
+    # Bounds check
+    if (xc.size - offx < (nn - 1)*abs(incx) + 1):
+        raise ValueError("x array is too short")
+
+    if (yc.size - offy < (nn - 1)*abs(incy) + 1):
+        raise ValueError("y array is too short")
+
+    x_ptr = <{{CTYPE}}*>cnp.PyArray_DATA(xc)
+    y_ptr = <{{CTYPE}}*>cnp.PyArray_DATA(yc)
+
+{{if PREFIX in ['c', 'z']}}
+    clapack.{{PREFIX}}rot(&nn, &x_ptr[offx], &incx, &y_ptr[offy], &incy, &c, &s)
+{{else}}
+    cblas.{{PREFIX}}rot(&nn, &x_ptr[offx], &incx, &y_ptr[offy], &incy, &c, &s)
+{{endif}}
+
+    return xc, yc
+
+{{endfor}}
+
