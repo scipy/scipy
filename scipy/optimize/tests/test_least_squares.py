@@ -405,7 +405,7 @@ class BaseMixin:
                 fun_trivial, 2.0, method=self.method, workers=workers
             )
             reses.append(res)
-        with Pool() as workers:
+        with Pool(2) as workers:
             res = least_squares(
                 fun_trivial, 2.0, method=self.method, workers=workers.map
             )
