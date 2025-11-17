@@ -813,11 +813,7 @@ class DifferentialEvolutionSolver:
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway
             pass
-        elif strategy in self._binomial:
-            pass
-        elif strategy in self._exponential:
-            pass
-        else:
+        elif strategy not in self.__combined:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
