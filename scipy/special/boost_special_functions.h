@@ -1655,12 +1655,19 @@ template<typename Real>
 Real
 binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
+
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        Real y;
+        try {
+            return boost::math::cdf(
+                boost::math::binomial_distribution<Real, SpecialPolicy>(n, p), x);
+        } catch (...) {
+            /* Boost was unable to produce a result. */
+            return NAN;
+        }
     }
     if (std::isnan(x)) {
-	return std::numeric_limits<double>::quiet_NaN();
+	    return NAN;
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
