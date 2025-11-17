@@ -3480,6 +3480,7 @@ class TestWorkers:
         assert res.success
         assert_allclose(res.x[1], 2.0)
 
+
 @pytest.mark.fail_slow(10)
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
