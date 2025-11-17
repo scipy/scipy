@@ -796,6 +796,7 @@ class DifferentialEvolutionSolver:
                     'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
+    __combined = _binomial | _exponential
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
@@ -813,9 +814,9 @@ class DifferentialEvolutionSolver:
             # a callable strategy is going to be stored in self.strategy anyway
             pass
         elif strategy in self._binomial:
-            self.mutation_func = getattr(self, self._binomial[strategy])
+            pass
         elif strategy in self._exponential:
-            self.mutation_func = getattr(self, self._exponential[strategy])
+            pass
         else:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
@@ -1027,6 +1028,10 @@ class DifferentialEvolutionSolver:
         # rather than repeatedly creating it in _select_samples.
         self._random_population_index = np.arange(self.num_population_members)
         self.disp = disp
+
+    @property
+    def mutation_func(self):
+        return getattr(self, self.__combined[self.strategy])
 
     def init_population_lhs(self):
         """
