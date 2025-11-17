@@ -62,3 +62,17 @@ def test_landau():
 
 def test_gh22956():
     _ = scu._ncx2_pdf(30, 1e307, 16)
+
+@pytest.mark.parametrize("k, n, p", [
+    (3*10**18, 10*10**18, 0.3),
+    (10**20, 10**21, 0.5),
+    (5*10**18, 2*10**19, 0.1),
+])
+def test_extreme_inputs(k, n, p):
+    # extreme inputs caused C++ exceptions 
+    # resulting in Python interpreter crashes
+    scu._binom_cdf(k, n, p)
+
+# @pytest.mark.parametrize("k, n, p, ref", [
+
+# def test_gh5503()
