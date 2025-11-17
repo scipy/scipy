@@ -22,6 +22,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy
+from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -3483,13 +3484,12 @@ class TestWorkers:
         assert_allclose(res.x[1], 2.0)
 
 
-@pytest.mark.fail_slow(15)
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
-    rng = np.random.default_rng()
-    # should be enough fits to trigger the issue, which was due to a refcycle in
-    # ScalarFunction
-    for i in range(10):
-        x0 = rng.uniform(-20, 20, size=3)
-        with multiprocessing.Pool() as p:
+    x0 = np.array([0.9, 0.9])
+    # check that ScalarHessWrapper doesn't keep pool object alive
+    with assert_deallocated(multiprocessing.Pool, 2) as pool_obj:
+        with pool_obj as p:
             _minimize_bfgs(rosen, x0, workers=p.map)
+        del p
+        del pool_obj
