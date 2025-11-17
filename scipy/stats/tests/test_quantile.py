@@ -6,6 +6,7 @@ from scipy.stats._quantile import _xp_searchsorted
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
+    is_torch,
     is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
@@ -147,6 +148,7 @@ class TestQuantile:
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    @pytest.mark.filterwarnings("ignore:torch.searchsorted:UserWarning")
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
                       exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('axis', [0, 1])
