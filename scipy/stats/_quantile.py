@@ -9,7 +9,6 @@ from scipy._lib._array_api import (
     xp_device,
     _length_nonmasked,
     is_torch,
-    is_jax,
 )
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
