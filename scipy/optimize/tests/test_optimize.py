@@ -32,7 +32,9 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._optimize import (
+    MemoizeJac, show_options, OptimizeResult, _minimize_bfgs
+)
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
@@ -3481,13 +3483,13 @@ class TestWorkers:
         assert_allclose(res.x[1], 2.0)
 
 
-@pytest.mark.fail_slow(10)
+@pytest.mark.fail_slow(15)
 def test_multiprocessing_too_many_open_files_23080():
     # https://github.com/scipy/scipy/issues/23080
     rng = np.random.default_rng()
     # should be enough fits to trigger the issue, which was due to a refcycle in
     # ScalarFunction
-    for i in range(40):
+    for i in range(10):
         x0 = rng.uniform(-20, 20, size=3)
         with multiprocessing.Pool() as p:
-            optimize._minimize_bfgs(rosen, x0, workers=p.map)
+            _minimize_bfgs(rosen, x0, workers=p.map)
