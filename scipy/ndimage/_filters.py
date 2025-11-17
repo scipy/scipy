@@ -1400,7 +1400,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         positive values shifting the filter to the right, and negative ones
         to the left. This parameter determines the offset of the filter
         center from its default position. For example, with a 3x3 filter,
-        origin=0 places the filter center at position (1,1), while 
+        origin=0 places the filter center at position (1,1), while
         origin=-1 shifts it to position (0,0) of the filter.
         By passing a sequence of origins with length equal to
         the number of dimensions of the input array, different shifts can
@@ -1434,7 +1434,6 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     where N is the length of the weights array and ceil denotes the ceiling function (np.ceil). 
     This means that for even-length weights, the algorithm rounds up to select the central pixel.
     The origin value then shifts this central position, allowing precise control over how the filter is applied to the input.
-    
     The `origin` parameter shifts the effective center of the filter.
     When origin=0, the filter is centered at its geometric center.
     Positive values shift the filter towards higher indices, while
@@ -1510,7 +1509,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     >>> d = np.array([[1, 2, 3],
     ...               [4, 5, 6], 
     ...               [7, 8, 9]])
-    >>> k_simple = np.array([[0, 1], 
+    >>> k_simple = np.array([[0,1],
     ...                      [1, 0]])
     >>> # Default origin=0 centers the filter
     >>> ndimage.convolve(d, k_simple, mode='constant')
