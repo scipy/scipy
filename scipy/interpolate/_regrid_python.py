@@ -909,7 +909,7 @@ def _add_knots(x, k, s, t, nmin, nmax,
 def _regrid_python_fitpack(
     x, y, Z, *, kx=3, ky=3, s=0.0,
     maxit=50, nestx=None, nesty=None,
-    bbox=[None]*4):
+    bbox=None):
     """
     Core adaptive bivariate spline fitter using the 1/p-penalty convention.
 
@@ -1052,7 +1052,7 @@ def _regrid_python_fitpack(
     return return_NdBSpline(fp_sm, (tx, ty, C_sm), (kx, ky))
 
 
-def regrid_python(x, y, z, *, bbox=[None]*4, kx=3, ky=3, s=0.0, maxit=50):
+def regrid_python(x, y, z, *, bbox=None, kx=3, ky=3, s=0.0, maxit=50):
     """
     Public interface for 2-D smoothing B-spline fitting (1/p penalty form).
 
@@ -1080,11 +1080,14 @@ def regrid_python(x, y, z, *, bbox=[None]*4, kx=3, ky=3, s=0.0, maxit=50):
     NdBSpline
         Fitted bivariate spline surface.
     """
+    if bbox is None:
+        bbox = [None]*4
 
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
-    z = np.asarray(z, float)
+    z = np.asarray(z, dtype=float)
     bbox = np.ravel(bbox)
+    s = float(s)
 
     if not np.all(np.diff(x) > 0.0):
         raise ValueError("x must be strictly increasing")
@@ -1094,7 +1097,7 @@ def regrid_python(x, y, z, *, bbox=[None]*4, kx=3, ky=3, s=0.0, maxit=50):
         raise ValueError("x dimension of z must have same number of elements as x")
     if y.size != z.shape[1]:
         raise ValueError("y dimension of z must have same number of elements as y")
-    if s is not None and not (s >= 0.0):
+    if (s < 0.0):
         raise ValueError("s should be s >= 0.0")
     if not bbox.shape == (4,):
         raise ValueError(f"bbox shape should be (4,), found: {bbox.shape}")
