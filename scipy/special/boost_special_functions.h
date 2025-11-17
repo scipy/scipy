@@ -1657,7 +1657,6 @@ binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
 
     if (std::isfinite(x)) {
-        Real y;
         try {
             return boost::math::cdf(
                 boost::math::binomial_distribution<Real, SpecialPolicy>(n, p), x);
