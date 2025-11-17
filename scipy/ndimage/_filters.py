@@ -1428,6 +1428,12 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     j is the N-D spatial index over :math:`W`,
     I is the `input` and k is the coordinate of the center of
     W, specified by `origin` in the input parameters.
+
+    The origin parameter determines the placement of the filter weights relative to each input element. 
+    In the convolution algorithm, the central pixel of the weights array is calculated as k = ceil(N / 2) - 1,
+    where N is the length of the weights array and ceil denotes the ceiling function (np.ceil). 
+    This means that for even-length weights, the algorithm rounds up to select the central pixel.
+    The origin value then shifts this central position, allowing precise control over how the filter is applied to the input.
     
     The `origin` parameter shifts the effective center of the filter.
     When origin=0, the filter is centered at its geometric center.
