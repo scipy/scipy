@@ -1400,8 +1400,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         positive values shifting the filter to the right, and negative ones
         to the left. This parameter determines the offset of the filter
         center from its default position. For example, with a 3x3 filter,
-        origin=0 places the filter center at position (1,1), while
-        origin=-1 shifts it to position (0,0) of the filter.
+        ``origin=0`` places the filter center at position (1,1), while
+        ``origin=-1`` shifts it to position (0,0) of the filter.
         By passing a sequence of origins with length equal to
         the number of dimensions of the input array, different shifts can
         be specified along each axis.
