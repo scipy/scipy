@@ -1210,7 +1210,6 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-
     def test_fit_fix_cov(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
@@ -1238,20 +1237,31 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-    def test_marginal_distribution(self):
+    @pytest.mark.parametrize('X_ndim', [3])
+    @pytest.mark.parametrize('dimensions', [[1], 
+                                            [0, 1]])
+    @pytest.mark.parametrize('frozen', [True, False])
+    @pytest.mark.parametrize('cov_object', [True, False])
+    def test_marginal_distribution(self, X_ndim, dimensions, frozen, cov_object):
         rng = np.random.default_rng(413911473)
-        mean = rng.standard_normal(3)
-        A = rng.standard_normal((3, 3))
+        mean = rng.standard_normal(X_ndim)
+        A = rng.standard_normal((X_ndim, X_ndim))
         cov = np.dot(A, A.transpose())
+        
+        if cov_object:
+            cov = _covariance.CovViaPrecision(cov)
 
+        x = np.random.standard_normal((4, len(dimensions))) # number of points at which to evaluate marginal PDF
         X = multivariate_normal(mean, cov)  # frozen distribution
-        X_ndim = 3  # dimensionality of frozen distribution
-        dimensions = [0, 2]  # (non-negative) indices of dimensions being retained
-        x = np.asarray([[1.5, 2.5], [2.5, 2.5], [3.5, 2.5]])  # points at which to evaluate marginal PDF
+        
+        if frozen:
+            Y = X.marginal(dimensions)
+            res = Y.pdf(x)
+        else: 
+            Y = multivariate_normal.marginal(dimensions, mean, cov)
+            res = Y.pdf(x)
 
-        Y = X.marginal(dimensions)
         ref = marginal_pdf(X, X_ndim, dimensions, x)
-        res = Y.pdf(x)
         assert_allclose(ref, res)
 
     def test_marginal_dimensions(self):
@@ -1262,11 +1272,21 @@ class TestMultivariateNormal:
 
         X = multivariate_normal(mean, cov)
 
-        assert_raises(ValueError, X.marginal, 3) # Out of bounds for size 3
-        assert_raises(ValueError, X.marginal, [2, -1]) # Duplicate indices
-        assert_raises(ValueError, X.marginal, [0, 1, 2, 3]) # Out of bounds
-        assert_raises(ValueError, X.marginal, [[0, 1]]) # Nested arrays not allowed
-        assert_raises(ValueError, X.marginal, [1.1, 2.0]) # Floats not allowed
+        with pytest.raises(ValueError, match=r"Dimensions \[3\] are invalid .*"):
+            X.marginal(3)
+
+        with pytest.raises(ValueError, match=r"All elements of `dimensions` must be unique."):
+            X.marginal([2, -1])
+
+        with pytest.raises(ValueError, match=r"All elements of `dimensions` must be unique."):
+            X.marginal([[0, 1]])
+
+        with pytest.raises(ValueError, match=r"Dimensions \[3\] are invalid .*"):
+            X.marginal([0, 1, 2, 3])
+        
+        with pytest.raises(ValueError, match=r"Elements of `dimensions` must be integers."):
+            X.marginal([1.1, 2.0])
+    
 
 class TestMatrixNormal:
 
