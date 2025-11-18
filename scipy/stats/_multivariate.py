@@ -1467,7 +1467,6 @@ class matrix_normal_frozen(multi_rv_frozen):
     __class_getitem__ = None
 
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
-        self._seed = seed
         self._dist = matrix_normal_gen(seed)
         self.dims, self.mean, self.rowcov, self.colcov = \
             self._dist._process_parameters(mean, rowcov, colcov)
@@ -1491,66 +1490,6 @@ class matrix_normal_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
                                    self.colpsd.log_pdet)
-
-    def marginal(self, row_dimensions, col_dimensions):
-        """Return a marginal matrix normal distribution
-
-        Parameters
-        ----------
-        row_dimensions : int or 1-d array_like
-            The dimensions of the matrix distribution corresponding
-            with the row marginal variables, that is, the indices of the dimensions
-            that are being retained. The other dimensions are marginalized out.
-        
-        col_dimensions : int or 1-d array_like
-            The dimensions of the matrix distribution corresponding
-            with the column marginal variables, that is, the indices of the dimensions
-            that are being retained. The other dimensions are marginalized out.
-
-        Returns
-        -------
-        marginal_matrix_normal : matrix_normal_frozen
-            An object representing the marginal distribution.
-        """
-
-        row_dimensions = np.atleast_1d(row_dimensions)
-        col_dimensions = np.atleast_1d(col_dimensions)
-
-        if not (np.issubdtype(row_dimensions.dtype, np.integer)
-                and np.issubdtype(col_dimensions.dtype, np.integer)):
-            msg = ("Elements of `dimensions` must be integers - the indices "
-                   "of the marginal variables being retained.")
-            raise ValueError(msg)
-
-        num_rows, num_cols  = self.mean.shape # number of dimensions
-        original_row_dimensions = row_dimensions.copy()
-        original_col_dimensions = col_dimensions.copy() 
-        
-        row_dimensions[row_dimensions < 0] = num_rows + row_dimensions[row_dimensions < 0]
-        col_dimensions[col_dimensions < 0] = num_cols + col_dimensions[col_dimensions < 0]
-
-        if (len(np.unique(row_dimensions)) != len(row_dimensions)
-            or len(np.unique(col_dimensions)) != len(col_dimensions)):
-            msg = ("All elements of `dimensions` must be unique.")
-            raise ValueError(msg)
-
-        i_invalid = (row_dimensions < 0) | (row_dimensions >= num_rows)
-        if np.any(i_invalid):
-            msg = (f"Dimensions {original_row_dimensions[i_invalid]} are invalid "
-                   f"for a distribution in {num_rows} dimensions.")
-            raise ValueError(msg)
-        
-        i_invalid = (col_dimensions < 0) | (col_dimensions >= num_cols)
-        if np.any(i_invalid):
-            msg = (f"Dimensions {original_col_dimensions[i_invalid]} are invalid "
-                   f"for a distribution in {num_cols} dimensions.")
-            raise ValueError(msg)
-
-        mean = self.mean[np.ix_(row_dimensions, col_dimensions)]
-        rowcov = self.rowcov[np.ix_(row_dimensions, row_dimensions)]
-        colcov = self.colcov[np.ix_(col_dimensions, col_dimensions)]
-        
-        return matrix_normal(mean, rowcov, colcov, self._seed)   
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
@@ -5555,7 +5494,6 @@ class multivariate_t_frozen(multi_rv_frozen):
         array([0.01237803])
 
         """
-        self._seed = seed
         self._dist = multivariate_t_gen(seed)
         dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
         self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
@@ -5586,47 +5524,6 @@ class multivariate_t_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.shape)
 
-    def marginal(self, dimensions):
-        """Return a marginal multivariate t-distribution
-
-        Parameters
-        ----------
-        dimensions : int or 1-d array_like
-            The dimensions of the multivariate distribution corresponding
-            with the marginal variables, that is, the indices of the dimensions
-            that are being retained. The other dimensions are marginalized out.
-
-        Returns
-        -------
-        marginal_multivariate_t : multivariate_t_frozen
-            An object representing the marginal distribution.
-        """
-        dims = np.atleast_1d(dimensions)
-
-        if not np.issubdtype(dims.dtype, np.integer):
-            msg = ("Elements of `dimensions` must be integers - the indices "
-                   "of the marginal variables being retained.")
-            raise ValueError(msg)
-
-        n = len(self.loc)  # number of dimensions
-        original_dims = dims.copy()
-
-        dims[dims < 0] = n + dims[dims < 0]
-
-        if len(np.unique(dims)) != len(dims):
-            msg = ("All elements of `dimensions` must be unique.")
-            raise ValueError(msg)
-
-        i_invalid = (dims < 0) | (dims >= n)
-        if np.any(i_invalid):
-            msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
-                   f"for a distribution in {n} dimensions.")
-            raise ValueError(msg)
-
-        loc = self.loc[dims]
-        shape = self.shape[np.ix_(dims, dims)]
-        
-        return multivariate_t_frozen(loc, shape, self.df, self._seed)
 
 multivariate_t = multivariate_t_gen()
 
