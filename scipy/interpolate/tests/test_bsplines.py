@@ -3694,6 +3694,53 @@ class _TestMakeSplrepBase:
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1], atol=1e-8)
 
+
+    @pytest.mark.parametrize("bc_type", ["periodic", None])
+    def test_make_splrep_with_non_c_contiguous_input(self, bc_type):
+
+        def check(spl, tck):
+            xp_assert_close(spl.t, tck[0])
+            xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                            tck[1], atol=1e-8)
+
+        # Sample data
+        x = np.linspace(0, 2*np.pi, 10)
+        y = np.sin(x)
+
+        x1, y1 = np.c_[x, y].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert x1.flags.c_contiguous is False
+        assert y1.flags.c_contiguous is False
+
+        w = np.linspace(1, 5, len(x))
+        w1, _ = np.c_[w, w].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert w1.flags.c_contiguous is False
+
+        tck = splrep(x, y, w=w, k=3, s=1e-8, per=(bc_type == 'periodic'))
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x1, y, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x, y1, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only w.flags.c_contiguous is False
+        spl = make_splrep(x, y, w=w1, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # x, y, z all have c_contiguous False
+        spl = make_splrep(x1, y1, w=w1, s=1e-8, k=3,
+                          bc_type=bc_type)
+        check(spl, tck)
+
+
     @pytest.mark.parametrize("bc_type", ["periodic", None])
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
     def test_make_splrep_impl_no_optimization(self, bc_type, k):
