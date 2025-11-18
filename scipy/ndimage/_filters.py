@@ -1433,10 +1433,9 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
       In the convolution algorithm, the central pixel of the weights array is calculated as 
     `c = np.ceil(np.array(weights.shape) / 2) - 1`.  
     This means that for even-length weights, the algorithm rounds up to select the central pixel.
-     The origin value then shifts this central position (`k = c + origin`), allowing precise control over how 
-     the filter is applied to the input.
+     The origin value then shifts this central position (`k = c + origin`), allowing precise control over how the filter is applied to the input.
     The `origin` parameter shifts the effective center of the filter.
-    When origin=0, the filter is centered at its geometric center.
+     When origin=0, the filter is centered at its geometric center (`c` above).
     Positive values shift the filter towards higher indices, while
     negative values shift towards lower indices.
 
