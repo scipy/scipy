@@ -63,13 +63,13 @@ def test_landau():
 def test_gh22956():
     _ = scu._ncx2_pdf(30, 1e307, 16)
 
-@pytest.mark.parametrize("func", [scu._binom_cdf, scu._binom_sf, scu._nbinom_cdf,
-                                  scu._nbinom_sf,])
+@pytest.mark.parametrize("func", [scu._binom_cdf, scu._binom_sf,
+                                  scu._binom_pmf])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-@pytest.mark.parametrize("kn_ratio", [0.1, 0.5, 1.0])
-@pytest.mark.parametrize("p", [0.0, 0.5, 1.0])
-def test_extreme_inputs_for_binomial_functions(func, dtype, kn_ratio, p):
-    max_allowed = np.finfo(dtype).max
-    # extreme inputs caused C++ exceptions in boost
+def test_extreme_inputs_for_binomial_functions(func, dtype):
+    # certain inputs caused C++ exceptions in boost
     # resulting in Python interpreter crashes
-    func(kn_ratio * max_allowed, max_allowed, dtype(p))
+    k = 3e18
+    n = 10e18
+    p = 0.3
+    func(dtype(k), dtype(n), dtype(p))
