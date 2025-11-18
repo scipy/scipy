@@ -877,6 +877,49 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
+    def marginal(self, dimensions, mean=None, cov=1, allow_singular=False):
+        """Return a marginal multivariate normal distribution
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate distribution corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+
+        Returns
+        -------
+        marginal_multivariate_normal : multivariate_normal_frozen
+            An object representing the marginal distribution.
+        """
+        params = self._process_parameters(mean, cov, allow_singular)
+        n, mean, cov_object = params
+
+        dims = np.atleast_1d(dimensions)
+
+        if not np.issubdtype(dims.dtype, np.integer):
+            msg = ("Elements of `dimensions` must be integers - the indices "
+                   "of the marginal variables being retained.")
+            raise ValueError(msg)
+
+        original_dims = dims.copy()
+
+        dims[dims < 0] = n + dims[dims < 0]
+
+        if len(np.unique(dims)) != len(dims):
+            msg = ("All elements of `dimensions` must be unique.")
+            raise ValueError(msg)
+
+        i_invalid = (dims < 0) | (dims >= n)
+        if np.any(i_invalid):
+            msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
+                   f"for a distribution in {n} dimensions.")
+            raise ValueError(msg)
+
+        mean = mean[dims]
+        cov = cov_object.covariance[np.ix_(dims, dims)]
+        
+        return multivariate_normal_frozen(mean, cov, allow_singular)    
 
 multivariate_normal = multivariate_normal_gen()
 
@@ -927,7 +970,6 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """ # numpy/numpydoc#87  # noqa: E501
-        self._seed = seed
         self._dist = multivariate_normal_gen(seed)
         self.dim, self.mean, self.cov_object = (
             self._dist._process_parameters(mean, cov, allow_singular))
@@ -986,47 +1028,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
     def marginal(self, dimensions):
-        """Return a marginal multivariate normal distribution
-
-        Parameters
-        ----------
-        dimensions : int or 1-d array_like
-            The dimensions of the multivariate distribution corresponding
-            with the marginal variables, that is, the indices of the dimensions
-            that are being retained. The other dimensions are marginalized out.
-
-        Returns
-        -------
-        marginal_multivariate_normal : multivariate_normal_frozen
-            An object representing the marginal distribution.
-        """
-        dims = np.atleast_1d(dimensions)
-
-        if not np.issubdtype(dims.dtype, np.integer):
-            msg = ("Elements of `dimensions` must be integers - the indices "
-                   "of the marginal variables being retained.")
-            raise ValueError(msg)
-
-        n = len(self.mean)  # number of dimensions
-        original_dims = dims.copy()
-
-        dims[dims < 0] = n + dims[dims < 0]
-
-        if len(np.unique(dims)) != len(dims):
-            msg = ("All elements of `dimensions` must be unique.")
-            raise ValueError(msg)
-
-        i_invalid = (dims < 0) | (dims >= n)
-        if np.any(i_invalid):
-            msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
-                   f"for a distribution in {n} dimensions.")
-            raise ValueError(msg)
-
-        mean = self.mean[dims]
-        cov = self.cov[np.ix_(dims, dims)]
-        
-        return multivariate_normal_frozen(mean, cov, self.allow_singular, self._seed,
-                                          self.maxpts, self.abseps, self.releps)    
+        return self._dist.marginal(dimensions, self.mean, self.cov_object, self.allow_singular)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
