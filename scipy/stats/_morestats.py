@@ -3356,7 +3356,7 @@ def _mood_statistic_with_ties(x, y, t, m, n, N):
 
     # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
     # The only difference is that our `t` has zeros interspersed with the relevant
-    # numbers to keep the array rectangular, but these terms nothing to the sum.
+    # numbers to keep the array rectangular, but these terms add nothing to the sum.
     np = array_namespace(x, y, t)  # needed to use `cumulative_sum`
     S = np.cumulative_sum(t, include_initial=True, axis=-1)
     S_i, S_i_m1 = S[..., 1:], S[..., :-1]
@@ -3366,12 +3366,12 @@ def _mood_statistic_with_ties(x, y, t, m, n, N):
             * np.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
                      axis=-1))
 
-    # There is a formula for phi in terms of t, S, and Psi(I) = [I - (N+1)/2]^2 is
-    # defined (with a mistake in the location of the ^2) at the beginning of
-    # "Mood's Squared Rank Test", Mielke pg 313. To vectorize this calculation,
-    # let c = (N + 1) / 2, so Psi(I) = I^2 - 2*c*I + c^2. We sum each of these three
-    # parts of Psi separately using formulas for sums from a to b (inclusive) of
-    # terms I^2, I, and 1 where I takes on successive integers.
+    # There is a formula for Phi (`phi` in code) in terms of t, S, and Psi(I) at the
+    # bottom of Mielke pg 312. Psi(I) = [I - (N+1)/2]^2 is defined (with a mistake in
+    # the location of the ^2) at the beginning of "Mood's Squared Rank Test" (pg 313).
+    # To vectorize this calculation, let c = (N + 1) / 2, so Psi(I) = I^2 - 2*c*I + c^2.
+    # We sum each of these three parts of Psi separately using formulas for sums from a
+    # to b (inclusive) of terms I^2, I, and 1 where I takes on successive integers.
     def sum_I2(a, b):
         return (b * (b + 1) * (2*b + 1) - a * (a - 1) * (2*a - 1)) / 6
 
