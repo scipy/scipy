@@ -35,10 +35,7 @@ from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
-try:
-    from scipy.__config__ import CONFIG
-except ImportError:
-    CONFIG = None
+from scipy.__config__ import CONFIG
 
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
@@ -2318,9 +2315,8 @@ class TestHessenberg:
 
 
 blas_provider = blas_version = None
-if CONFIG is not None:
-    blas_provider = CONFIG['Build Dependencies']['blas']['name']
-    blas_version = CONFIG['Build Dependencies']['blas']['version']
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 class TestQZ:
