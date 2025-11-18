@@ -16,7 +16,6 @@ on:
   #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
   #        │  │  │  │ │
   - cron: "9  9 2/2 * *"
-  push:
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
