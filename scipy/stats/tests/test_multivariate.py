@@ -294,6 +294,18 @@ def _sample_orthonormal_matrix(n):
     u, s, v = scipy.linalg.svd(M)
     return u
 
+def marginal_pdf(X, X_ndim, dimensions, x):
+    i_marginalize = np.ones(X_ndim, dtype=bool)
+    i_marginalize[dimensions] = False
+
+    def g(z):
+        y = np.empty((z.shape[0], x.shape[0], X_ndim))
+        y[..., i_marginalize] = z[:, np.newaxis, :]
+        y[..., ~i_marginalize] = x
+        return X.pdf(y)
+
+    inf = np.full(X_ndim - len(dimensions), np.inf)
+    return cubature(g, -inf, inf).estimate
 
 @dataclass
 class MVNProblem:
@@ -1226,46 +1238,35 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-    def test_marginal_distribution_two_dimensional(self):
-        rng = np.random.default_rng(1234)
-        mean = rng.standard_normal(2)
-        A = rng.standard_normal((2, 2))
-        cov = np.dot(A, A.transpose())
-        rv_norm = multivariate_normal(mean, cov)
-
-        int_values = rng.standard_normal(4)
-
-        for i in int_values:
-            func = lambda x: rv_norm.pdf([x, i])
-            val, _ = quad(func, -np.inf, np.inf)
-            marginal = rv_norm.marginal(1)
-            assert_almost_equal(val, marginal.pdf(i))
-
-        for i in int_values:
-            func = lambda x: rv_norm.pdf([i, x])
-            val, _ = quad(func, -np.inf, np.inf)
-            marginal = rv_norm.marginal(0)
-            assert_almost_equal(val, marginal.pdf(i))
-
-    def test_marginal_distribution_three_dimensional(self):
-        rng = np.random.default_rng(1234)
+    def test_marginal_distribution(self):
+        rng = np.random.default_rng(413911473)
         mean = rng.standard_normal(3)
         A = rng.standard_normal((3, 3))
         cov = np.dot(A, A.transpose())
-        rv_norm = multivariate_normal(mean, cov)
 
-        int_values = rng.standard_normal(size=(4,2))
+        X = multivariate_normal(mean, cov)  # frozen distribution
+        X_ndim = 3  # dimensionality of frozen distribution
+        dimensions = [0, 2]  # (non-negative) indices of dimensions being retained
+        x = np.asarray([[1.5, 2.5], [2.5, 2.5], [3.5, 2.5]])  # points at which to evaluate marginal PDF
 
-        for i in range(int_values.shape[0]):
-            int_value = int_values[i, :]
+        Y = X.marginal(dimensions)
+        ref = marginal_pdf(X, X_ndim, dimensions, x)
+        res = Y.pdf(x)
+        assert_allclose(ref, res)
 
-            def func(x):
-                input = np.insert(int_value, 0, x)
-                return rv_norm.pdf(input)
-            
-            val, _ = quad(func, -np.inf, np.inf)
-            marginal = rv_norm.marginal([1,2])
-            assert_almost_equal(val, marginal.pdf(int_value))
+    def test_marginal_dimensions(self):
+        rng = np.random.default_rng(413911473)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = np.dot(A, A.transpose())        
+
+        X = multivariate_normal(mean, cov)
+
+        assert_raises(ValueError, X.marginal, 3) # Out of bounds for size 3
+        assert_raises(ValueError, X.marginal, [2, -1]) # Duplicate indices
+        assert_raises(ValueError, X.marginal, [0, 1, 2, 3]) # Out of bounds
+        assert_raises(ValueError, X.marginal, [[0, 1]]) # Nested arrays not allowed
+        assert_raises(ValueError, X.marginal, [1.1, 2.0]) # Floats not allowed
 
 class TestMatrixNormal:
 
