@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_close, xp_assert_equal
+    assert_almost_equal, xp_assert_close, xp_assert_equal, make_xp_test_case
 )
 import pytest
 from pytest import raises
@@ -13,6 +13,8 @@ from scipy import signal
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
+lazy_xp_modules = [signal]
+
 
 class TestBSplines:
     """Test behaviors of B-splines. Some of the values tested against were
@@ -20,7 +22,7 @@ class TestBSplines:
     purposes. Others (at integer points) are compared to theoretical
     expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
-    @skip_xp_backends(cpu_only=True, exceptions=["cupy"])
+    @make_xp_test_case(signal.spline_filter)
     def test_spline_filter(self, xp):
         rng = np.random.RandomState(12457)
         # Test the type-error branch
@@ -70,7 +72,7 @@ class TestBSplines:
         xp_assert_close(signal.spline_filter(data_array_real, 0),
                         result_array_real)
 
-    @skip_xp_backends(cpu_only=True, exceptions=["cupy"])
+    @make_xp_test_case(signal.spline_filter)
     def test_spline_filter_complex(self, xp):
         rng = np.random.RandomState(12457)
         data_array_complex = rng.rand(7, 7) + rng.rand(7, 7)*1j
@@ -113,6 +115,7 @@ class TestBSplines:
         xp_assert_close(signal.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
 
+    @make_xp_test_case(signal.gauss_spline)
     def test_gauss_spline(self, xp):
         assert math.isclose(signal.gauss_spline(0, 0), 1.381976597885342)
 
@@ -121,6 +124,7 @@ class TestBSplines:
         )
 
     @skip_xp_backends(np_only=True, reason="deliberate: array-likes are accepted")
+    @make_xp_test_case(signal.gauss_spline)
     def test_gauss_spline_list(self, xp):
         # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
@@ -128,7 +132,7 @@ class TestBSplines:
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
-    @skip_xp_backends(cpu_only=True)
+    @make_xp_test_case(signal.cspline1d)
     def test_cspline1d(self, xp):
         xp_assert_equal(signal.cspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
@@ -140,7 +144,7 @@ class TestBSplines:
                            5.21051638], dtype=xp.float64)
         xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5])), c1d0)
 
-    @skip_xp_backends(cpu_only=True)
+    @make_xp_test_case(signal.qspline1d)
     def test_qspline1d(self, xp):
         xp_assert_equal(signal.qspline1d(xp.asarray([0])),
                         xp.asarray([0.], dtype=xp.float64))
@@ -153,7 +157,8 @@ class TestBSplines:
             signal.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)), q1d0
         )
 
-    @skip_xp_backends(cpu_only=True)
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
+    @make_xp_test_case(signal.cspline1d_eval)
     def test_cspline1d_eval(self, xp):
         r = signal.cspline1d_eval(xp.asarray([0., 0], dtype=xp.float64),
                                xp.asarray([0.], dtype=xp.float64))
@@ -193,7 +198,8 @@ class TestBSplines:
             signal.cspline1d_eval(xp.asarray([], dtype=xp.float64), 
                                   xp.asarray([0.0], dtype=xp.float64))
 
-    @skip_xp_backends(cpu_only=True)
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
+    @make_xp_test_case(signal.qspline1d_eval)
     def test_qspline1d_eval(self, xp):
         xp_assert_close(signal.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
                         xp.asarray([0.])

@@ -12,8 +12,8 @@ from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy,
-    is_cupy, scipy_namespace_for, xp_assert_close_nulp,
-    _xp_copy_to_numpy
+    make_xp_test_case, make_xp_pytest_param, is_cupy, is_torch, scipy_namespace_for,
+    _xp_copy_to_numpy, xp_assert_close_nulp
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -175,15 +175,13 @@ class TestCplxReal:
 
     def test_real_integer_input(self):
         zc, zr = _cplxreal([2, 0, 1, 4])
-        xp_assert_equal(zc, [])
+        xp_assert_equal(zc, np.asarray([]))
         xp_assert_equal(zr, [0, 1, 2, 4])
 
 
+@make_xp_test_case(tf2zpk)
 class TestTf2zpk:
 
-    @skip_xp_backends(
-        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-    )
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     @pytest.mark.parametrize('dt', ('float64', 'complex128'))
     def test_simple(self, dt, xp):
@@ -217,9 +215,8 @@ class TestTf2zpk:
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
 
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="zpk2sos is numpy only"
-)
+
+@make_xp_test_case(zpk2tf)
 class TestZpk2Tf:
 
     def test_identity(self, xp):
@@ -240,7 +237,6 @@ class TestZpk2Tf:
             assert isinstance(a, np.ndarray)
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
@@ -248,6 +244,7 @@ class TestZpk2Tf:
         # shouldn't need elements of pairs to be adjacent
         p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
         p_np = _xp_copy_to_numpy(p)
+
         k = 23
 
         # np.poly should do the right thing, but be explicit about
@@ -258,7 +255,8 @@ class TestZpk2Tf:
 
         bp, ap = zpk2tf(z, p, k)
 
-        xp_assert_close(b, bp)
+        atol = 5e-13 if is_cupy(xp) else 0.0
+        xp_assert_close(b, bp, atol=atol)
         xp_assert_close(a, ap)
 
         assert xp.isdtype(bp.dtype, 'real floating')
@@ -279,6 +277,8 @@ class TestZpk2Tf:
     @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
     @skip_xp_backends("jax.numpy",
                       reason="zpk2tf not compatible with jax yet on multi-dim arrays")
+    @skip_xp_backends("cupy",
+                      reason="multi-dim arrays not supported yet on cupy")
     def test_zpk2tf_with_multi_dimensional_array(self, xp):
         z = xp.asarray([[1, 2], [3, 4]])  # Multi-dimensional input
         p = xp.asarray([1, 2])
@@ -290,10 +290,11 @@ class TestZpk2Tf:
         xp_assert_close(a, a_ref, check_dtype=False)
 
 
-@skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
+@make_xp_test_case(sos2zpk)
 class TestSos2Zpk:
 
     @skip_xp_backends("dask.array", reason="it https://github.com/dask/dask/issues/11883")
+    @xfail_xp_backends("jax.numpy", reason="inaccurate with jax")
     def test_basic(self, xp):
         sos = [[1, 0, 1, 1, 0, -0.81],
                [1, 0, 0, 1, 0, +0.49]]
@@ -352,9 +353,7 @@ class TestSos2Zpk:
         assert p.shape[0] == 24
 
 
-@skip_xp_backends(
-    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-)
+@make_xp_test_case(sos2tf)
 class TestSos2Tf:
 
     def test_basic(self, xp):
@@ -366,7 +365,7 @@ class TestSos2Tf:
         assert_array_almost_equal(a, xp.asarray([1.0, 10, 0, -10, -1]))
 
 
-@skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
+@make_xp_test_case(tf2sos)
 class TestTf2Sos:
 
     def test_basic(self, xp):
@@ -395,15 +394,14 @@ class TestTf2Sos:
                               ([1.0], [1., 0., -1.01, 0, 0.01], True,
                                [[0., 0., 1., 1., 0., -1],
                                 [0., 0., 1., 1., 0., -0.01]])])
+    @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9376")
     def test_analog(self, b, a, analog, sos, xp):
         b, a, sos = map(xp.asarray, (b, a, sos))
         sos2 = tf2sos(b, a, analog=analog)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
 
-@skip_xp_backends(
-    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
-)
+@make_xp_test_case(zpk2sos)
 class TestZpk2Sos:
 
 #    @pytest.mark.parametrize('dt', 'fdgFDG')
@@ -626,6 +624,7 @@ class TestZpk2Sos:
             zpk2sos([1], [2], k=1j)
 
 
+@make_xp_test_case(freqs)
 class TestFreqs:
 
     def test_basic(self, xp):
@@ -643,7 +642,6 @@ class TestFreqs:
         assert_array_almost_equal(xp.real(H), xp.real(expected))
         assert_array_almost_equal(xp.imag(H), xp.imag(expected))
 
-    @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
     def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
@@ -687,6 +685,7 @@ class TestFreqs:
             assert_array_almost_equal(h, [1])
 
 
+@make_xp_test_case(freqs_zpk)
 class TestFreqs_zpk:
 
     def test_basic(self, xp):
@@ -753,6 +752,7 @@ class TestFreqs_zpk:
             assert_array_almost_equal(h, [1])
 
 
+@make_xp_test_case(freqz)
 class TestFreqz:
 
     def test_ticket1441(self, xp):
@@ -1093,7 +1093,8 @@ class TestFreqz:
             freqz([1.0], fs=None)
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy", "torch"])
+
+@make_xp_test_case(freqz_sos)
 class TestFreqz_sos:
 
     def test_freqz_sos_basic(self, xp):
@@ -1132,14 +1133,15 @@ class TestFreqz_sos:
         w2, h2 = sosfreqz(sos, worN=N)
         sos, w2, h2 = map(xp.asarray, (sos, w2, h2))
         w1, h1 = freqz_sos(sos, worN=N)
-
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    @skip_xp_backends("dask.array", reason="float cannot be interpreted as in integer")
+    @skip_xp_backends("dask.array", reason="float cannot be interpreted as an integer")
     def test_freqz_sos_design(self, xp):
         # Compare freqz_sos output against expected values for different
         # filter types
+        # TODO: split into multiple tests, or parameterize across filter types
+        # in some way.
 
         # from cheb2ord
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
@@ -1367,6 +1369,7 @@ class TestFreqz_sos:
             freqz_sos(sos, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(freqz_zpk)
 class TestFreqz_zpk:
 
     def test_ticket1441(self, xp):
@@ -1487,6 +1490,7 @@ class TestFreqz_zpk:
             freqz_zpk([1.0], [1.0], [1.0], fs=None)
 
 
+@make_xp_test_case(normalize)
 class TestNormalize:
 
     def test_allclose(self, xp):
@@ -1547,6 +1551,7 @@ class TestNormalize:
         assert_raises(ValueError, normalize, [[[1, 2]]], 1)
 
 
+@make_xp_test_case(lp2lp)
 class TestLp2lp:
 
     def test_basic(self, xp):
@@ -1557,9 +1562,9 @@ class TestLp2lp:
         assert_array_almost_equal(a_lp, xp.asarray([1, 0.5455, 0.1488]), decimal=4)
 
 
+@make_xp_test_case(lp2hp)
 class TestLp2hp:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
@@ -1572,9 +1577,9 @@ class TestLp2hp:
         )
 
 
+@make_xp_test_case(lp2bp)
 class TestLp2bp:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 2, 2, 1])
@@ -1587,9 +1592,9 @@ class TestLp2bp:
         )
 
 
+@make_xp_test_case(lp2bs)
 class TestLp2bs:
 
-    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 1])
@@ -1598,9 +1603,7 @@ class TestLp2bs:
         assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
 
 
-@skip_xp_backends(
-    cpu_only=True, exceptions=["cupy"], reason="uses np.polynomial.Polynomial"
-)
+@make_xp_test_case(bilinear)
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
 
@@ -1639,6 +1642,9 @@ class TestBilinear:
         a_zref = xp.asarray([1.0, -1.2157757001964216, 0.7282572864378091])
 
         b_z, a_z = bilinear(b, a, 0.5)
+
+        xp_assert_close_nulp(b_z, xp.asarray(b_zref))
+        xp_assert_close_nulp(a_z, xp.asarray(a_zref))
 
         xp_assert_close_nulp(b_z, xp.asarray(b_zref))
         xp_assert_close_nulp(a_z, xp.asarray(a_zref))
@@ -1690,6 +1696,7 @@ class TestBilinear:
         a_zref = [(1+0j),
                   (-1.8839476369292854-0.606808151331815j),
                   (0.7954687330018285+0.5717459398142481j)]
+
         b_zref, a_zref = map(xp.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, fs)
@@ -1708,6 +1715,7 @@ class TestBilinear:
             bilinear(b, a, fs=None)
 
 
+@make_xp_test_case(lp2lp_zpk)
 class TestLp2lp_zpk:
 
     @xfail_xp_backends(
@@ -1747,6 +1755,7 @@ class TestLp2lp_zpk:
             bilinear_zpk(z, p, k, fs=None)
 
 
+@make_xp_test_case(lp2hp_zpk)
 class TestLp2hp_zpk:
 
     @xfail_xp_backends(
@@ -1775,6 +1784,7 @@ class TestLp2hp_zpk:
         assert k_hp == 32.0
 
 
+@make_xp_test_case(lp2bp_zpk)
 class TestLp2bp_zpk:
 
     @xfail_xp_backends(
@@ -1801,6 +1811,7 @@ class TestLp2bp_zpk:
         assert math.isclose(k_bp, 24.0)
 
 
+@make_xp_test_case(lp2bs_zpk)
 class TestLp2bs_zpk:
 
     @xfail_xp_backends(
@@ -1834,6 +1845,7 @@ class TestLp2bs_zpk:
         assert math.isclose(k_bs, 32.0)
 
 
+@make_xp_test_case(bilinear_zpk)
 class TestBilinear_zpk:
 
     @xfail_xp_backends(
@@ -1876,14 +1888,16 @@ class TestPrototypeType:
                 assert isinstance(p, np.ndarray)
 
     @pytest.mark.parametrize(
-        'func', [buttap, besselap,
-                 lambda N, xp: cheb1ap(N, 1, xp=xp),
-                 lambda N, xp: cheb2ap(N, 20, xp=xp),
-                 lambda N, xp: ellipap(N, 1, 20, xp=xp)
-                ],
+        'base_func,func', [
+            make_xp_pytest_param(buttap, buttap),
+            make_xp_pytest_param(besselap, besselap),
+            make_xp_pytest_param(cheb1ap, lambda N, xp: cheb1ap(N, 1, xp=xp)),
+            make_xp_pytest_param(cheb2ap, lambda N, xp: cheb2ap(N, 20, xp=xp)),
+            make_xp_pytest_param(ellipap, lambda N, xp: ellipap(N, 1, 20, xp=xp)),
+        ],
         ids=['butter', 'bessel', 'cheb1', 'cheb2', 'ellip']
     )
-    def test_with_xp(self, func, xp):
+    def test_with_xp(self, base_func, func, xp):
         func(7, xp=xp)
 
 
@@ -1895,6 +1909,7 @@ def dB(x):
     return 20 * xp.log10(xp.maximum(xp.abs(x), tiny))
 
 
+@make_xp_test_case(buttord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestButtord:
@@ -1912,8 +1927,9 @@ class TestButtord:
         assert np.all(dB(h[ws <= w]) < -rs)
 
         assert N == 16
+        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn,
-                        xp.asarray(2.0002776782743284e-01), rtol=1e-15, check_0d=False)
+                        xp.asarray(2.0002776782743284e-01), rtol=4*eps, check_0d=False)
 
     def test_highpass(self, xp):
         wp = 0.3
@@ -1928,8 +1944,9 @@ class TestButtord:
         assert np.all(dB(h[w <= ws]) < -rs)
 
         assert N == 18
+        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn,
-                        xp.asarray(2.9996603079132672e-01), rtol=1e-15, check_0d=False)
+                        xp.asarray(2.9996603079132672e-01), rtol=4*eps, check_0d=False)
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -1946,9 +1963,10 @@ class TestButtord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < (-rs + 0.1))
 
         assert N == 18
+        eps = xp.finfo(Wn).eps
         xp_assert_close(
             Wn, xp.asarray([1.9998742411409134e-01, 5.0002139595676276e-01]),
-            rtol=1e-15
+            rtol=4*eps,
         )
 
     @skip_xp_backends(
@@ -1985,17 +2003,18 @@ class TestButtord:
         assert np.all(dB(h[ws <= w]) < -rs)
 
         assert N == 7
+        eps = xp.finfo(Wn).eps
         xp_assert_close(
-            Wn, xp.asarray(2.0006785355671877e+02), rtol=1e-15, check_0d=False
+            Wn, xp.asarray(2.0006785355671877e+02), rtol=4*eps, check_0d=False
         )
 
-        n, Wn = buttord(1, xp.asarray(550/450), 1, 26, analog=True)
+        n, Wn = buttord(1., xp.asarray(550/450), 1, 26, analog=True)
         assert n == 19
         xp_assert_close(
-            Wn, xp.asarray(1.0361980524629517), rtol=1e-15, check_0d=False
+            Wn, xp.asarray(1.0361980524629517), rtol=4*eps, check_0d=False
         )
 
-        assert buttord(1, xp.asarray(1.2), 1, 80, analog=True)[0] == 55
+        assert buttord(1., xp.asarray(1.2), 1, 80, analog=True)[0] == 55
 
     def test_fs_param(self, xp):
         wp = [4410, 11025]
@@ -2011,8 +2030,9 @@ class TestButtord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 18
+        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn, xp.asarray([4409.722701715714, 11025.47178084662]),
-                        rtol=1e-15)
+                        rtol=4*eps)
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2049,6 +2069,7 @@ class TestButtord:
             buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(cheb1ord)
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb1ord:
 
@@ -2066,7 +2087,8 @@ class TestCheb1ord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
-        xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
+        eps = xp.finfo(Wn).eps
+        xp_assert_close(Wn, xp.asarray(0.2), rtol=4*eps, check_0d=False)
 
     @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_highpass(self, xp):
@@ -2082,7 +2104,8 @@ class TestCheb1ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 9
-        xp_assert_close(Wn, xp.asarray(0.3), rtol=1e-15, check_0d=False)
+        eps = xp.finfo(Wn).eps
+        xp_assert_close(Wn, xp.asarray(0.3), rtol=4*eps, check_0d=False)
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -2097,7 +2120,8 @@ class TestCheb1ord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 9
-        xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
+        eps = xp.finfo(Wn).eps
+        xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=4*eps)
 
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
@@ -2129,9 +2153,9 @@ class TestCheb1ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 4
-        assert math.isclose(Wn, 700.0, rel_tol=1e-15)
-
-        assert cheb1ord(1, 1.2, 1, 80, analog=True)[0] == 17
+        math.isclose(Wn, 700.0, rel_tol=1e-15)
+        assert array_namespace(Wn) == xp
+        assert cheb1ord(xp.asarray(1), 1.2, 1, 80, analog=True)[0] == 17
 
     @xfail_xp_backends("torch", reason="accuracy issues")
     def test_fs_param(self, xp):
@@ -2147,7 +2171,8 @@ class TestCheb1ord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
-        assert math.isclose(Wn, 4800.0, rel_tol=1e-15)
+        math.isclose(Wn, 4800.0, rel_tol=1e-15)
+        assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2182,6 +2207,7 @@ class TestCheb1ord:
             cheb1ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(cheb2ord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb2ord:
@@ -2263,8 +2289,9 @@ class TestCheb2ord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 11
+        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn, xp.asarray([1.673740595370124e+01, 5.974641487254268e+01]),
-                        rtol=1e-15)
+                        rtol=4*eps)
 
     def test_fs_param(self, xp):
         wp = 150
@@ -2279,7 +2306,8 @@ class TestCheb2ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 9
-        assert math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
+        math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
+        assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2314,9 +2342,9 @@ class TestCheb2ord:
             cheb2ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(ellipord)
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True,  reason="special.ellipk")
 class TestEllipord:
 
     def test_lowpass(self, xp):
@@ -2332,7 +2360,7 @@ class TestEllipord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 5
-        assert math.isclose(Wn, 0.2, rel_tol=1e-15)
+        xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
 
     def test_lowpass_1000dB(self, xp):
         # failed when ellipkm1 wasn't used in ellipord and ellipap
@@ -2346,6 +2374,7 @@ class TestEllipord:
         w /= np.pi
         assert np.all(-rp - 0.1 < dB(h[w <= wp]))
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
+        assert array_namespace(Wn) == xp
 
     def test_highpass(self, xp):
         wp = 0.3
@@ -2360,7 +2389,8 @@ class TestEllipord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 6
-        assert math.isclose(Wn, 0.3, rel_tol=1e-15)
+        xp_assert_close(Wn, xp.asarray(0.3), rtol=1e-15, check_0d=False)
+        assert array_namespace(Wn) == xp
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -2406,7 +2436,7 @@ class TestEllipord:
         assert N == 8
         xp_assert_close(Wn, xp.asarray([1666.6666, 6000]))
 
-        assert ellipord(1, 1.2, 1, 80, analog=True)[0] == 9
+        assert ellipord(xp.asarray(1), 1.2, 1, 80, analog=True)[0] == 9
 
     def test_fs_param(self, xp):
         wp = [400.0, 2400]
@@ -2440,7 +2470,8 @@ class TestEllipord:
         # The purpose of the test is to compare to some known output from past
         # scipy versions. The values to compare to are generated with scipy
         # 1.9.1 (there is nothing special about this particular version though)
-        n, wn = ellipord(xp.asarray([0.1, 0.6]), xp.asarray([0.2, 0.5]), 3, 60)
+        n, Wn = ellipord(xp.asarray([0.1, 0.6]), xp.asarray([0.2, 0.5]), 3, 60)
+        assert array_namespace(Wn) == xp
         assert n == 5
 
     def test_fs_validation(self):
@@ -2461,8 +2492,9 @@ class TestEllipord:
 # calculations are in 64 bit precision, tolerances are still loosened for the
 # float32 case when results are impacted by reduced precision in the inputs.
 
+
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(bessel)
 class TestBessel:
 
     def test_degenerate(self, xp):
@@ -2474,6 +2506,7 @@ class TestBessel:
 
             # 1-order filter is same for all types
             b, a = bessel(1, xp.asarray(1.), analog=True, norm=norm)
+
             xp_assert_close(b, xp.asarray([1.0], dtype=xp.float64), rtol=1e-15)
             xp_assert_close(a, xp.asarray([1.0, 1], dtype=xp.float64), rtol=1e-15)
 
@@ -2506,6 +2539,7 @@ class TestBessel:
              -4.027853855197555e+01 + 1.074195196518679e+02j,
              -2.433481337524861e+01 + 1.207298683731973e+02j,
              ]
+
         p2 = np.union1d(p2, np.conj(p2))
         p2 = xp.asarray(p2, dtype=xp.complex128)
         k2 = 9.999999999999989e+47
@@ -2883,6 +2917,8 @@ class TestBessel:
     def test_norm_phase(self, xp):
         # Test some orders and frequencies and see that they have the right
         # phase at w0
+        if is_torch(xp) and DEFAULT_F32:
+            pytest.xfail(reason="inaccurate on torch with float32")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='phase')
@@ -2898,6 +2934,8 @@ class TestBessel:
     def test_norm_mag(self, xp):
         # Test some orders and frequencies and see that they have the right
         # mag at w0
+        if DEFAULT_F32 and is_torch(xp):
+            pytest.skip(reason="overflow occurs with float32 on torch")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='mag')
@@ -2912,6 +2950,8 @@ class TestBessel:
     def test_norm_delay(self, xp):
         # Test some orders and frequencies and see that they have the right
         # delay at DC
+        if DEFAULT_F32 and is_torch(xp):
+            pytest.skip(reason="overflow occurs with float32 on torch")
         for N in (1, 2, 3, 4, 5, 51, 72):
             for w0 in (1, 100):
                 b, a = bessel(N, xp.asarray(w0), analog=True, norm='delay')
@@ -2977,7 +3017,7 @@ class TestBessel:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(butter)
 class TestButter:
 
     def test_degenerate(self, xp):
@@ -3152,7 +3192,7 @@ class TestButter:
 
     def test_bandpass(self, xp):
         z, p, k = butter(8, xp.asarray([0.25, 0.33]), 'band', output='zpk')
-        z2 = [1, 1, 1, 1, 1, 1, 1, 1,
+        z2 = [1 + 0j, 1, 1, 1, 1, 1, 1, 1,
               -1, -1, -1, -1, -1, -1, -1, -1]
         p2 = [
             4.979909925436156e-01 + 8.367609424799387e-01j,
@@ -3238,6 +3278,7 @@ class TestButter:
         xp_assert_close(_sort_cmplx(p, xp), _sort_cmplx(p2, xp))
         assert math.isclose(k, k2, rel_tol=1e-14 if not DEFAULT_F32 else 1e-6)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         b, a = butter(4, xp.asarray([100, 300]), 'bandpass', analog=True)
         b2 = [1.6e+09, 0, 0, 0, 0]
@@ -3271,7 +3312,7 @@ class TestButter:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(cheby1)
 class TestCheby1:
 
     def test_degenerate(self, xp):
@@ -3560,6 +3601,7 @@ class TestCheby1:
             k, k2, rel_tol=0, abs_tol=5e-16 if not DEFAULT_F32 else 1e-7
         )
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion,  without digital conversion
         b, a = cheby1(5, 0.9, xp.asarray([210, 310.0]), 'stop', analog=True)
@@ -3601,7 +3643,7 @@ class TestCheby1:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(cheby2)
 class TestCheby2:
 
     def test_degenerate(self, xp):
@@ -3888,6 +3930,7 @@ class TestCheby2:
         )
         assert math.isclose(k, k2, rel_tol=1e-11 if not DEFAULT_F32 else 1e-6)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion, without digital conversion
         b, a = cheby2(5, 20, xp.asarray([2010, 2100]), 'stop', True)
@@ -3928,9 +3971,10 @@ class TestCheby2:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
-@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
+@make_xp_test_case(ellip)
 class TestEllip:
 
+    @xfail_xp_backends("cupy", reason="dtypes do not match")
     def test_degenerate(self, xp):
         # 0-order filter is just a passthrough
         # Even-order filters have DC gain of -rp dB
@@ -4221,6 +4265,7 @@ class TestEllip:
                         _sort_cmplx(p2, xp=xp), rtol=1e-5)
         assert math.isclose(k, k2, rel_tol=1e-5)
 
+    @xfail_xp_backends("cupy", reason="inaccurate on CuPy")
     def test_ba_output(self, xp):
         # with transfer function conversion,  without digital conversion
         b, a = ellip(5, 1, 40, xp.asarray([201, 240]), 'stop', True)
@@ -4295,6 +4340,7 @@ def test_sos_consistency():
         xp_assert_close(sos, zpk2sos(*zpk), err_msg=f"{name}(4,...)")
 
 
+@make_xp_test_case(iirnotch)
 class TestIIRNotch:
 
     def test_ba_output(self, xp):
@@ -4392,6 +4438,7 @@ class TestIIRNotch:
         assert math.isclose(xp.abs(hp[2]), 0.0, abs_tol=1e-10)
 
 
+@make_xp_test_case(iirpeak)
 class TestIIRPeak:
 
     def test_ba_output(self, xp):
@@ -4490,8 +4537,9 @@ class TestIIRPeak:
 
 
 @pytest.mark.xfail(DEFAULT_F32, reason="wrong answers with torch/float32")
-@xfail_xp_backends("jax.numpy", reason="wrong answers")
+# @xfail_xp_backends("jax.numpy", reason="wrong answers")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(iircomb)
 class TestIIRComb:
     # Test erroneous input cases
     @skip_xp_backends(np_only=True)
@@ -4739,32 +4787,43 @@ class TestIIRDesign:
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="zpk2sos converts to numpy")
+# @skip_xp_backends(cpu_only=True, reason="zpk2sos converts to numpy")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(iirfilter)
 class TestIIRFilter:
 
-    def test_symmetry(self, xp):
+    @pytest.mark.parametrize(
+        "func,ftype",
+        [
+            make_xp_pytest_param(butter, "butter"),
+            make_xp_pytest_param(bessel, "bessel"),
+            make_xp_pytest_param(cheby1, "cheby1"),
+            make_xp_pytest_param(cheby2, "cheby2"),
+            make_xp_pytest_param(ellip, "ellip"),
+        ]
+    )
+    def test_symmetry(self, func, ftype, xp):
         # All built-in IIR filters are real, so should have perfectly
         # symmetrical poles and zeros. Then ba representation (using
         # numpy.poly) will be purely real instead of having negligible
         # imaginary parts.
         for N in range(1, 26):
-            for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
-                z, p, k = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
-                                    ftype=ftype, output='zpk')
-                xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
-                xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
-                assert complex(k).imag == 0
+            z, p, k = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
+                                ftype=ftype, output='zpk')
+            xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
+            xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
+            assert complex(k).imag == 0
 
-                b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
-                                 ftype=ftype, output='ba')
-                if is_numpy(xp):
-                    assert issubclass(b.dtype.type, np.floating)
-                    assert issubclass(a.dtype.type, np.floating)
-                else:
-                    assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-                    assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+            b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
+                             ftype=ftype, output='ba')
+            if is_numpy(xp):
+                assert issubclass(b.dtype.type, np.floating)
+                assert issubclass(a.dtype.type, np.floating)
+            else:
+                assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
+                assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
 
+    @make_xp_test_case(bessel)
     def test_int_inputs(self, xp):
         # Using integer frequency arguments and large N should not produce
         # numpy integers that wraparound to negative numbers
@@ -4808,6 +4867,7 @@ class TestIIRFilter:
         with pytest.raises(ValueError, match="must be greater than 0"):
             iirfilter(2, [10, -1], analog=True)
 
+    @make_xp_test_case(butter)
     def test_analog_sos(self, xp):
         # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
         sos = xp.asarray([[0., 0., 1., 0., 1., 1.]])
@@ -4824,8 +4884,8 @@ class TestIIRFilter:
             iirfilter(2, [0.6, 0.5])
 
 
-@skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="np.convolve")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(group_delay)
 class TestGroupDelay:
     def test_identity_filter(self, xp):
         w, gd = group_delay((1, xp.asarray(1)))
@@ -4836,6 +4896,7 @@ class TestGroupDelay:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
+    @xfail_xp_backends("cupy", reason="slightly inaccurate")
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_fir(self, xp):
         # Let's design linear phase FIR and check that the group delay
@@ -4965,6 +5026,7 @@ class TestGroupDelay:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@make_xp_test_case(gammatone)
 class TestGammatone:
     # Test erroneous input cases.
     @skip_xp_backends(np_only=True)
@@ -4990,7 +5052,7 @@ class TestGammatone:
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
-    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9117")
+    @xfail_xp_backends("cupy", reason="inaccurate")
     def test_frequency_response(self, xp):
         fs = 16000
         ftypes = ['fir', 'iir']
@@ -5017,7 +5079,6 @@ class TestGammatone:
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
-    @xfail_xp_backends("jax.numpy", reason="no eig(..) on JAX CUDA")
     def test_iir_symmetry(self, xp):
         b, a = gammatone(440, 'iir', fs=24000, xp=xp)
         z, p, k = tf2zpk(_xp_copy_to_numpy(b), _xp_copy_to_numpy(a))

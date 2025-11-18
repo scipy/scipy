@@ -157,7 +157,7 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     for the specific purpose mentioned above. In production code, attempts
     to copy device arrays to NumPy arrays should fail, or else functions
     may appear to be working on the GPU when they actually aren't.
-    
+
     Parameters
     ----------
     x : array
