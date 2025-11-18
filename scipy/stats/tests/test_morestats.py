@@ -1039,30 +1039,6 @@ class TestBinomTest:
         assert_equal(res.statistic, 0.25)
         assert_equal(res.pvalue, 1.0)
 
-    @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
-    def test_invalid_k_n(self, k, n):
-        with pytest.raises(ValueError,
-                           match="must be an integer not less than"):
-            stats.binomtest(k, n)
-
-    def test_invalid_k_too_big(self):
-        with pytest.raises(ValueError,
-                           match=r"k \(11\) must not be greater than n \(10\)."):
-            stats.binomtest(11, 10, 0.25)
-
-    def test_invalid_k_wrong_type(self):
-        with pytest.raises(TypeError,
-                           match="k must be an integer."):
-            stats.binomtest([10, 11], 21, 0.25)
-
-    def test_invalid_p_range(self):
-        message = r'p \(-0.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=-0.5)
-        message = r'p \(1.5\) must be in range...'
-        with pytest.raises(ValueError, match=message):
-            stats.binomtest(50, 150, p=1.5)
-
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
         message = r"confidence_level \(-1\) must be in the interval"

@@ -176,6 +176,9 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     Details of the test can be found in many texts on statistics, such
     as section 24.5 of [2]_.
 
+    The documentation is written as though the function accepts and returns Python
+    scalars, but the function is vectorized to work elementwise with NumPy arrays.
+
     Parameters
     ----------
     k : int
