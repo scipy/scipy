@@ -274,7 +274,6 @@ class TestZpk2Tf:
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
 
-    @skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
     @skip_xp_backends("jax.numpy",
                       reason="zpk2tf not compatible with jax yet on multi-dim arrays")
     @skip_xp_backends("cupy",

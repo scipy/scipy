@@ -1367,7 +1367,6 @@ class TestResample:
 
     @make_xp_test_case(signal.resample, signal.resample_poly)
     @xfail_xp_backends("cupy", reason="does not raise with non-int upsampling factor")
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
     def test_basic(self, xp):
         # Some basic tests
 
@@ -1404,7 +1403,6 @@ class TestResample:
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
     @pytest.mark.parametrize('num', (100, 101, 10, 11))
-    @skip_xp_backends('jax.numpy', reason='immutable arrays')
     @make_xp_test_case(signal.resample)
     def test_rfft(self, N, num, window, xp):
         # Make sure the speed up using rfft gives the same result as the normal
@@ -1429,7 +1427,6 @@ class TestResample:
             xp.real(resampled),
             atol=atol)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @make_xp_test_case(signal.resample)
     def test_input_domain(self, xp):
         # Test if both input domain modes produce the same results.
@@ -1441,7 +1438,6 @@ class TestResample:
             signal.resample(tsig, num, domain='time'),
             atol=1e-9)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
     @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
     @pytest.mark.parametrize('dtype', ('float64', 'complex128'))
@@ -1452,7 +1448,7 @@ class TestResample:
         y = signal.resample(x, ny)
         xp_assert_close(y, xp.asarray([1] * ny, dtype=y.dtype))
 
-    @skip_xp_backends(cpu_only=True, reason="resample_poly/upfirdn is CPU only")
+    @skip_xp_backends("cupy", reason="padtype not supported by upfirdn")
     @pytest.mark.parametrize('padtype', padtype_options)
     @make_xp_test_case(signal.resample_poly)
     def test_mutable_window(self, padtype, xp):
@@ -1463,9 +1459,7 @@ class TestResample:
         signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
         xp_assert_equal(window, window_orig)
 
-    @skip_xp_backends(
-        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
-    )
+    @skip_xp_backends("cupy", reason="padtype not supported by upfirdn")
     @make_xp_test_case(signal.resample_poly)
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_output_float32(self, padtype, xp):
@@ -1486,7 +1480,6 @@ class TestResample:
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
         assert y.dtype == x.dtype
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @skip_xp_backends("cupy", reason="padtype not supported by upfirdn")
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -1625,7 +1618,6 @@ class TestResample:
         xp_assert_close(y1_r, x1, atol=1e-12)
         xp_assert_close(y1_c.real, x1, atol=1e-12)
 
-    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('down_factor', [2, 11, 79])
     @pytest.mark.parametrize("dtype", [int, np.float32, np.complex64, float, complex])
     @make_xp_test_case(signal.resample_poly)

@@ -121,7 +121,8 @@ def get_default_capabilities(func_name, delegator):
 capabilities_overrides = {
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                                jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True,
+                                reason="Uses np.polynomial.Polynomial"),
     "bilinear_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                     jax_jit=False, allow_dask_compute=True),
     "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
@@ -172,7 +173,8 @@ capabilities_overrides = {
     "firwin": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                               jax_jit=False, allow_dask_compute=True),
     "firwin2": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                               jax_jit=False, allow_dask_compute=True),
+                               jax_jit=False, allow_dask_compute=True,
+                               reason="firwin uses np.interp"),
     "fftconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"]),
     "freqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                              jax_jit=False, allow_dask_compute=True),
@@ -247,7 +249,10 @@ capabilities_overrides = {
     "remez": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False),
     "resample": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
-        jax_jit=False, skip_backends=[("dask.array", "XXX something in dask")]
+        skip_backends=[
+            ("dask.array", "XXX something in dask"),
+            ("jax.numpy", "XXX: immutable arrays"),
+        ]
     ),
     "resample_poly": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
