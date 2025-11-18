@@ -1098,7 +1098,7 @@ class TestBinomTest:
         np.testing.assert_equal(res.pvalue, np.nan)
 
     @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
-    @pytest.mark.parametrize("method", ["wilson", "wilsoncc"])
+    @pytest.mark.parametrize("method", ["exact", "wilson", "wilsoncc"])
     def test_ndarray(self, alternative, method):
         shape = (7, 8, 9)
         rng = np.random.default_rng(2150248640)

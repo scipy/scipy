@@ -1,8 +1,7 @@
-from math import sqrt
 import numpy as np
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import xp_capabilities, array_namespace
-from scipy.optimize import brentq
+from scipy.optimize.elementwise import find_root
 from scipy.special import ndtri
 from scipy.special import _ufuncs as scu
 from ._discrete_distns import binom
@@ -116,48 +115,24 @@ class BinomTestResult:
         return ConfidenceInterval(low=low, high=high)
 
 
-def _findp(func):
-    try:
-        p = brentq(func, 0, 1)
-    except RuntimeError:
-        raise RuntimeError('numerical solver failed to converge when '
-                           'computing the confidence limits') from None
-    except ValueError as exc:
-        raise ValueError('brentq raised a ValueError; report this to the '
-                         'SciPy developers') from exc
-    return p
-
-
 def _binom_exact_conf_int(k, n, confidence_level, alternative):
     """
     Compute the estimate and confidence interval for the binomial test.
 
     Returns proportion, prop_low, prop_high
     """
-    if alternative == 'two-sided':
-        alpha = (1 - confidence_level) / 2
-        if k == 0:
-            plow = 0.0
-        else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
-        if k == n:
-            phigh = 1.0
-        else:
-            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'less':
-        alpha = 1 - confidence_level
-        plow = 0.0
-        if k == n:
-            phigh = 1.0
-        else:
-            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
-    elif alternative == 'greater':
-        alpha = 1 - confidence_level
-        if k == 0:
-            plow = 0.0
-        else:
-            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
-        phigh = 1.0
+    init = (0.0, 1.0)
+    args = (k, n)
+    alpha = ((1 - confidence_level) / 2 if alternative == 'two-sided'
+             else 1 - confidence_level)
+
+    plow = (np.zeros(k.shape, dtype=np.float64) if alternative == 'less' else
+            find_root(lambda p, k, n: binom.sf(k-1, n, p) - alpha, init, args=args).x)
+    phigh = (np.ones(k.shape, dtype=np.float64) if alternative == 'greater' else
+             find_root(lambda p, k, n: binom.cdf(k, n, p) - alpha, init, args=args).x)
+
+    plow = np.where(k == 0, 0.0, plow)
+    phigh = np.where(k == n, 1.0, phigh)
     return plow, phigh
 
 
