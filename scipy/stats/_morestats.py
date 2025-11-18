@@ -3372,11 +3372,13 @@ def _mood_statistic_with_ties(x, y, t, m, n, N):
     # To vectorize this calculation, let c = (N + 1) / 2, so Psi(I) = I^2 - 2*c*I + c^2.
     # We sum each of these three parts of Psi separately using formulas for sums from a
     # to b (inclusive) of terms I^2, I, and 1 where I takes on successive integers.
-    def sum_I2(a, b):
-        return (b * (b + 1) * (2*b + 1) - a * (a - 1) * (2*a - 1)) / 6
+    def sum_I2(a, b=None):
+        return (a * (a + 1) * (2 * a + 1) / 6 if b is None
+                else sum_I2(b) - sum_I2(a) + a**2)
 
-    def sum_I(a, b):
-        return (b * (b + 1) - a * (a - 1)) / 2
+    def sum_I(a, b=None):
+        return (a * (a + 1) / 2 if b is None
+                else sum_I(b) - sum_I(a) + a)
 
     def sum_1(a, b):
         return (b - a) + 1
