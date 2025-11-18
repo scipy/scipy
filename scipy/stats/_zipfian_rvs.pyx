@@ -25,6 +25,59 @@ from numpy.random cimport bitgen_t
 from scipy.special.cython_special cimport boxcox, inv_boxcox
 
 
+# The following C definitions of the `compat_PyArray_MultiIter_*` functions are
+# necessary for compatibility with NumPy 1.26.  Once we drop support for 1.26,
+# these can be removed, and the `compat_` functions can be replaced with
+# `cnp.PyArray_MultiIter_*`.
+#
+# See https://github.com/numpy/numpy/issues/26990 for details.
+
+cdef extern from *:
+    """
+typedef struct {
+    PyObject_HEAD
+    int numiter;
+    npy_intp size;
+    npy_intp index;
+    int nd;
+    npy_intp dimensions[32];
+    void **iters;
+} compat_multi_iter;
+
+static npy_intp
+compat_PyArray_MultiIter_SIZE(PyArrayMultiIterObject *multi)
+{
+#if defined(NPY_2_0_API_VERSION) && (NPY_API_VERSION >= NPY_2_0_API_VERSION)
+    return PyArray_MultiIter_SIZE(multi);
+#else
+    return ((compat_multi_iter *)(multi))->size;
+#endif
+}
+
+static int
+compat_PyArray_MultiIter_NDIM(PyArrayMultiIterObject *multi)
+{
+#if defined(NPY_2_0_API_VERSION) && (NPY_API_VERSION >= NPY_2_0_API_VERSION)
+    return PyArray_MultiIter_NDIM(multi);
+#else
+    return ((compat_multi_iter *)(multi))->nd;
+#endif
+}
+
+static npy_intp*
+compat_PyArray_MultiIter_DIMS(PyArrayMultiIterObject *multi)
+{
+#if defined(NPY_2_0_API_VERSION) && (NPY_API_VERSION >= NPY_2_0_API_VERSION)
+    return PyArray_MultiIter_DIMS(multi);
+#else
+    return (((compat_multi_iter *)(multi))->dimensions);
+#endif
+}
+    """
+    cnp.npy_intp compat_PyArray_MultiIter_SIZE(cnp.broadcast multi)
+    int compat_PyArray_MultiIter_NDIM(cnp.broadcast multi)
+    cnp.npy_intp* compat_PyArray_MultiIter_DIMS(cnp.broadcast multi)
+
 cnp.import_array()
 
 @cython.boundscheck(False)
@@ -35,21 +88,21 @@ cdef verify_equal_shapes(cnp.broadcast it, cnp.ndarray out):
 
     cdef bint valid_shapes = True
     cdef cnp.npy_intp i
-    cdef cnp.npy_intp it_size = cnp.PyArray_MultiIter_NDIM(it)
-    cdef cnp.npy_intp out_size = cnp.PyArray_NDIM(out)
+    cdef cnp.npy_intp it_ndim = compat_PyArray_MultiIter_NDIM(it)
+    cdef cnp.npy_intp out_ndim = cnp.PyArray_NDIM(out)
 
-    if it_size != out_size:
+    if it_ndim != out_ndim:
         valid_shapes = False
     else:
-        for i in range(it_size):
-            if cnp.PyArray_MultiIter_DIMS(it)[i] != cnp.PyArray_DIMS(out)[i]:
+        for i in range(it_ndim):
+            if compat_PyArray_MultiIter_DIMS(it)[i] != cnp.PyArray_DIMS(out)[i]:
                 valid_shapes = False
                 break
 
     if not valid_shapes:
         # Create Python tuples to include the shapes in the error message.
-        it_shape = tuple(cnp.PyArray_MultiIter_DIMS(it)[i] for i in range(it_size))
-        out_shape = tuple(cnp.PyArray_DIMS(out)[i] for i in range(out_size))
+        it_shape = tuple(compat_PyArray_MultiIter_DIMS(it)[i] for i in range(it_ndim))
+        out_shape = tuple(cnp.PyArray_DIMS(out)[i] for i in range(out_ndim))
         bad_shapes_msg = (f"The output size {out_shape} must exactly match the "
                           "result of broadcasting the input shapes with that "
                           f"size, but the broadcast shape is {it_shape}.")
