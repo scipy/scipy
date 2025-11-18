@@ -68,6 +68,20 @@ class TestLegendreP:
 
 
 class TestAssocLegendreP:
+    def test_assoc_legendre_bug(self):
+        """
+        This test detects the bug reported in
+        https://github.com/scipy/scipy/issues/23101
+        """
+        z = np.array([-1, -.5, 0, .5, 1])
+        expected = assoc_legendre_p_1_0(z)
+        result = assoc_legendre_p(1, 0, z)
+        assert_allclose(np.squeeze(result), expected)
+
+        expected = assoc_legendre_p_3_0(z)
+        result = assoc_legendre_p(3, 0, z)
+        assert_allclose(np.squeeze(result), expected)
+
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
     @pytest.mark.parametrize("m_max", [5, 4])
     @pytest.mark.parametrize("n_max", [7, 10])
