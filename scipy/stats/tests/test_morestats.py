@@ -1088,6 +1088,35 @@ class TestBinomTest:
         with pytest.raises(OverflowError, match='Error in function...'):
             stats.binomtest(5, 6, p=sys.float_info.min)
 
+    @pytest.mark.parametrize("k, n, p",
+        [(-1, 10, 0.5), (11, 10, 0.5), (5.5, 10, 0.5), (np.nan, 10, 0.5),
+         (0, 0, 0.5), (5, 10.5, 0.5), (5, np.nan, 0.5),
+         (5, 10, -0.1), (5, 10, 1.1), (5, 10, np.nan)])
+    def test_invalid(self, k, n, p):
+        res = stats.binomtest(k, n, p)
+        np.testing.assert_equal(res.statistic, np.nan)
+        np.testing.assert_equal(res.pvalue, np.nan)
+
+    @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
+    def test_ndarray(self, alternative):
+        shape = (7, 8, 9)
+        rng = np.random.default_rng(2150248640)
+        k = rng.integers(-1, 11, size=shape)
+        n = rng.integers(-1, 11, size=shape)
+        p = rng.uniform(-0.1, 1.1, size=shape)
+        res = stats.binomtest(k, n, p, alternative=alternative)
+
+        @np.vectorize(excluded='alternative')
+        def binomtest_1d(k, n, p, alternative):
+            ref = stats.binomtest(k, n, p, alternative=alternative)
+            return ref.k, ref.n, ref.statistic, ref.pvalue
+
+        ref_k, ref_n, ref_statistic, ref_pvalue = binomtest_1d(k, n, p, alternative)
+        assert_allclose(res.k, ref_k)
+        assert_allclose(res.n, ref_n)
+        assert_allclose(res.statistic, ref_statistic)
+        assert_allclose(res.pvalue, ref_pvalue)
+
 
 @make_xp_test_case(stats.fligner)
 class TestFligner:

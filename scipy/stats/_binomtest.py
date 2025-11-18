@@ -1,8 +1,7 @@
 from math import sqrt
 import numpy as np
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_capabilities, array_namespace, xp_size
-from scipy._lib._util import _validate_int
+from scipy._lib._array_api import xp_capabilities, array_namespace
 from scipy.optimize import brentq
 from scipy.special import ndtri
 from scipy.special import _ufuncs as scu
@@ -288,13 +287,14 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
-    k = _validate_int(k, 'k', minimum=0)
-    n = _validate_int(n, 'n', minimum=1)
-    if k > n:
-        raise ValueError(f'k ({k}) must not be greater than n ({n}).')
-
-    if not (0 <= p <= 1):
-        raise ValueError(f"p ({p}) must be in range [0,1]")
+    k, n, p = np.broadcast_arrays(k, n, p)
+    k_valid = (k >= 0) & (k <= n) & (k == np.floor(k))
+    n_valid = (n >= 1) & (n == np.floor(n))
+    p_valid = (p >= 0) & (p <= 1)
+    valid = k_valid & n_valid & p_valid
+    k = np.where(valid, k, np.nan)
+    n = np.where(valid, n, np.nan)
+    p = np.where(valid, p, np.nan)
 
     if alternative not in ('two-sided', 'less', 'greater'):
         raise ValueError(f"alternative ('{alternative}') not recognized; \n"
@@ -336,10 +336,12 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
             return pval
 
         pval = xpx.apply_where(k < p * n, (d, k, p, n), k_lt_pn,  k_gte_pn)
-        pval = min(1.0, pval)
+        pval = np.minimum(1.0, pval)
 
+    statistic = np.where(valid, k/n, np.nan)
+    pval = np.where(valid, pval, np.nan)
     result = BinomTestResult(k=k, n=n, alternative=alternative,
-                             statistic=k/n, pvalue=pval)
+                             statistic=statistic, pvalue=pval)
     return result
 
 
