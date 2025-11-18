@@ -1517,7 +1517,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
            [6, 7, 3],
            [9, 8, 0]])
     >>> # origin=-1 shifts filter towards upper-left
-    >>> ndimage.convolve(d, k_simple, mode='constant', origin=-1)
+    >>> ndimage.convolve(d, w_simple, mode='constant', origin=-1)
     array([[5, 6, 3],
            [8, 9, 6],
            [7, 8, 9]])
