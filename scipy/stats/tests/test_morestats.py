@@ -1098,24 +1098,31 @@ class TestBinomTest:
         np.testing.assert_equal(res.pvalue, np.nan)
 
     @pytest.mark.parametrize("alternative", ["less", "greater", "two-sided"])
-    def test_ndarray(self, alternative):
+    @pytest.mark.parametrize("method", ["wilson", "wilsoncc"])
+    def test_ndarray(self, alternative, method):
         shape = (7, 8, 9)
         rng = np.random.default_rng(2150248640)
         k = rng.integers(-1, 11, size=shape)
         n = rng.integers(-1, 11, size=shape)
         p = rng.uniform(-0.1, 1.1, size=shape)
         res = stats.binomtest(k, n, p, alternative=alternative)
+        ci = res.proportion_ci(method=method)
 
         @np.vectorize(excluded='alternative')
         def binomtest_1d(k, n, p, alternative):
             ref = stats.binomtest(k, n, p, alternative=alternative)
-            return ref.k, ref.n, ref.statistic, ref.pvalue
+            ci = ref.proportion_ci(method=method)
+            return ref.k, ref.n, ref.statistic, ref.pvalue, ci.low, ci.high
 
-        ref_k, ref_n, ref_statistic, ref_pvalue = binomtest_1d(k, n, p, alternative)
+        ref_k, ref_n, ref_statistic, ref_pvalue, ci_low, ci_high = binomtest_1d(
+            k, n, p, alternative)
         assert_allclose(res.k, ref_k)
         assert_allclose(res.n, ref_n)
         assert_allclose(res.statistic, ref_statistic)
         assert_allclose(res.pvalue, ref_pvalue)
+        assert_allclose(ci.low, ci_low)
+        assert_allclose(ci.high, ci_high)
+
 
 
 @make_xp_test_case(stats.fligner)

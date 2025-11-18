@@ -176,28 +176,17 @@ def _binom_wilson_conf_int(k, n, confidence_level, alternative, correction):
     denom = 2*(n + z**2)
     center = (2*n*p + z**2)/denom
     q = 1 - p
-    if correction:
-        if alternative == 'less' or k == 0:
-            lo = 0.0
-        else:
-            dlo = (1 + z*sqrt(z**2 - 2 - 1/n + 4*p*(n*q + 1))) / denom
-            lo = center - dlo
-        if alternative == 'greater' or k == n:
-            hi = 1.0
-        else:
-            dhi = (1 + z*sqrt(z**2 + 2 - 1/n + 4*p*(n*q - 1))) / denom
-            hi = center + dhi
-    else:
-        delta = z/denom * sqrt(4*n*p*q + z**2)
-        if alternative == 'less' or k == 0:
-            lo = 0.0
-        else:
-            lo = center - delta
-        if alternative == 'greater' or k == n:
-            hi = 1.0
-        else:
-            hi = center + delta
 
+    if correction:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dlo = (1 + z*np.sqrt(z**2 - 2 - 1/n + 4*p*(n * q + 1)))/denom
+            dhi = (1 + z*np.sqrt(z**2 + 2 - 1/n + 4*p*(n * q - 1)))/denom
+    else:
+        delta = z / denom * np.sqrt(4 * n * p * q + z ** 2)
+        dlo, dhi = delta, delta
+
+    lo = np.where((k == 0) | (alternative == 'less'), 0.0, center - dlo)
+    hi = np.where((k == n) | (alternative == 'greater'), 1.0, center + dhi)
     return lo, hi
 
 
