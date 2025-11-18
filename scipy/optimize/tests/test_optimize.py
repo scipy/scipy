@@ -3544,9 +3544,9 @@ class TestAnnotations:
 
     def test_differential_evolution_annotations(self):
         bounds = [(-5, 5), (-5, 5)]
-        res = optimize.differential_evolution(rosen_annotated, bounds,
+        res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
                                               callback=callable_annotated)
-        assert res.success, "Unexpected error"
+        assert res.success, f"Unexpected error: {res.message}"
 
     def test_curve_fit_annotations(self):
 
@@ -3565,7 +3565,7 @@ class TestAnnotations:
 
         _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
                                          full_output=True)
-        assert (res in [1, 2, 3, 4]), "Unexpected error"
+        assert (res in [1, 2, 3, 4]), f"Unexpected error: {res.message}"
 
     def test_brute_annotations(self):
         def f1(z: _DUMMY_TYPE, *params: float) -> float:
@@ -3588,10 +3588,10 @@ class TestAnnotations:
                                       f_old: float,x_old: _DUMMY_TYPE) -> bool:
             return True
 
-        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2,
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, seed=1,
                                     accept_test=acceptable_test)
 
-        assert res.success, "Unexpected error"
+        assert res.success, f"Unexpected error: {res.message}"
 
 
 def test_multiprocessing_too_many_open_files_23080():
