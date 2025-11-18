@@ -1507,7 +1507,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     The `origin` parameter controls filter placement. Here's a simple example:
 
     >>> d = np.array([[1, 2, 3],
-    ...               [4, 5, 6], 
+    ...               [4, 5, 6],
     ...               [7, 8, 9]])
     >>> k_simple = np.array([[0,1],
     ...                      [1, 0]])
