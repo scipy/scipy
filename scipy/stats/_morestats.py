@@ -3350,9 +3350,9 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     return FlignerResult(statistic, pval)
 
 
-def _mood_statistic_with_ties(x, y, t, n, m, N):
+def _mood_statistic_with_ties(x, y, t, m, n, N):
     # First equation of "Mood's Squared Rank Test", Mielke pg 313
-    E_0_T = n * (N * N - 1) / 12
+    E_0_T = m * (N * N - 1) / 12
 
     # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
     # The only difference is that our `t` has zeros interspersed with the relevant
@@ -3397,7 +3397,7 @@ def _mood_statistic_with_ties(x, y, t, n, m, N):
     xy = np.concatenate((x, y), axis=-1)
     i = np.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    zeros = np.zeros(a.shape[:-1] + (m,))
+    zeros = np.zeros(a.shape[:-1] + (n,))
     a = np.concatenate((a, zeros), axis=-1)
     a = np.take_along_axis(a, i, axis=-1)
 
@@ -3408,17 +3408,17 @@ def _mood_statistic_with_ties(x, y, t, n, m, N):
 
 
 def _mood_statistic_no_ties(r, m, n, N):
-    rx = r[..., :n]
+    rx = r[..., :m]
     M = np.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
-    mnM = n * (N * N - 1.0) / 12
+    mnM = m * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
     return (M - mnM) / sqrt(varM)
 
 
 def _mood_too_small(samples, kwargs, axis=-1):
     x, y = samples
-    n = x.shape[axis]
-    m = y.shape[axis]
+    m = x.shape[axis]
+    n = y.shape[axis]
     N = m + n
     return N < 3
 
@@ -3518,8 +3518,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     # _axis_nan_policy decorator ensures axis=-1
     xy = np.concatenate((x, y), axis=-1)
 
-    n = x.shape[-1]
-    m = y.shape[-1]
+    m = x.shape[-1]
+    n = y.shape[-1]
     N = m + n
 
     if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
@@ -3531,7 +3531,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
 
     if np.any(t > 1):
-        z = _mood_statistic_with_ties(x, y, t, n, m, N)
+        z = _mood_statistic_with_ties(x, y, t, m, n, N)
     else:
         z = _mood_statistic_no_ties(r, m, n, N)
 
