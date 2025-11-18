@@ -1512,7 +1512,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     >>> k_simple = np.array([[0,1],
     ...                      [1, 0]])
     >>> # Default origin=0 centers the filter
-    >>> ndimage.convolve(d, k_simple, mode='constant')
+    >>> ndimage.convolve(d, w_simple, mode='constant')
     array([[3, 4, 2],
            [6, 7, 3],
            [9, 8, 0]])
