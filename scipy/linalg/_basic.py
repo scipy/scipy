@@ -63,7 +63,7 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
-def _format_errors(err_lst):
+def _format_emit_errors_warnings(err_lst):
     """Format/emit errors/warnings from a lowlevel batched routine.
 
     See inv, solve.
@@ -282,9 +282,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     # heavy lifting
     x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
 
-    # emit helpful errors/warnings
     if err_lst:
-        _format_errors(err_lst)
+        _format_emit_errors_warnings(err_lst)
 
     if b_is_1D:
         x = x[..., 0]
@@ -1446,9 +1445,8 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
     # a1 is well behaved, invert it.
     inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a, lower)
 
-    # emit helpful errors/warnings
     if err_lst:
-        _format_errors(err_lst)
+        _format_emit_errors_warnings(err_lst)
 
     return inv_a
 
