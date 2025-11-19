@@ -28,8 +28,7 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse  # noqa: F401
-    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
+    from sksparse.cholmod import CholmodWarning
 except ImportError:
     has_cholmod = False
 
@@ -1154,6 +1153,10 @@ class LinprogCommonTests:
             # this is an UmfpackWarning but I had trouble importing it
             if has_umfpack:
                 warnings.simplefilter("ignore", UmfpackWarning)
+            if has_cholmod:
+                warnings.filterwarnings(
+                    "ignore", "Matrix is nearly singular", CholmodWarning
+                )
             warnings.filterwarnings(
                 "ignore", "scipy.linalg.solve\nIll...", RuntimeWarning)
             warnings.filterwarnings(
@@ -1401,6 +1404,10 @@ class LinprogCommonTests:
         with warnings.catch_warnings():
             if has_umfpack:
                 warnings.simplefilter("ignore", UmfpackWarning)
+            if has_cholmod:
+                warnings.filterwarnings(
+                    "ignore", "Matrix is nearly singular", CholmodWarning
+                )
             warnings.filterwarnings(
                 "ignore", "Solving system with option 'cholesky'", OptimizeWarning)
             warnings.filterwarnings(
