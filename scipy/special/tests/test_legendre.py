@@ -68,11 +68,7 @@ class TestLegendreP:
 
 
 class TestAssocLegendreP:
-    def test_assoc_legendre_bug(self):
-        """
-        This test detects the bug reported in
-        https://github.com/scipy/scipy/issues/23101
-        """
+    def test_assoc_legendre_gh23101(self):
         z = np.array([-1, -.5, 0, .5, 1])
         expected = assoc_legendre_p_1_0(z)
         result = assoc_legendre_p(1, 0, z)
