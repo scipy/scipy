@@ -344,9 +344,8 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
-#@pytest.mark.thread_unsafe(reason="unknown thread safety issue")
 class Test_Storage:
-    def setup_method(self):
+    def create_storage(self):
         self.x0 = np.array(1)
         self.f0 = 0
 
@@ -354,27 +353,29 @@ class Test_Storage:
         minres.x = self.x0
         minres.fun = self.f0
 
-        self.storage = Storage(minres)
+        return Storage(minres)
 
     def test_higher_f_rejected(self):
+        storage = self.create_storage()
         new_minres = OptimizeResult(success=True)
         new_minres.x = self.x0 + 1
         new_minres.fun = self.f0 + 1
 
-        ret = self.storage.update(new_minres)
-        minres = self.storage.get_lowest()
+        ret = storage.update(new_minres)
+        minres = storage.get_lowest()
         assert_equal(self.x0, minres.x)
         assert_equal(self.f0, minres.fun)
         assert_(not ret)
 
     @pytest.mark.parametrize('success', [True, False])
     def test_lower_f_accepted(self, success):
+        storage = self.create_storage()
         new_minres = OptimizeResult(success=success)
         new_minres.x = self.x0 + 1
         new_minres.fun = self.f0 - 1
 
-        ret = self.storage.update(new_minres)
-        minres = self.storage.get_lowest()
+        ret = storage.update(new_minres)
+        minres = storage.get_lowest()
         assert (self.x0 != minres.x) == success  # can't use `is`
         assert (self.f0 != minres.fun) == success  # left side is NumPy bool
         assert ret is success
