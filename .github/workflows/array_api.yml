@@ -41,6 +41,10 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: >-
+            build-cpu
+            array-api-cpu
+            torch-cpu
 
       - name: Set up ccache
         uses: ./.github/ccache

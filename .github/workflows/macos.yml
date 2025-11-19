@@ -41,6 +41,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: py311-system-libs-osx
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -79,6 +80,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: scipy-openblas
 
       - name: Test with scipy-openblas32
         run: pixi run test-scipy-openblas
@@ -102,6 +104,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: ${{ matrix.environment }}
 
       - name: Test SciPy
         # mpmath tests are too slow for CI
