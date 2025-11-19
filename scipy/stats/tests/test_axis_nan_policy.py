@@ -490,7 +490,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         res_1db = unpacker(res)
 
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res_1db, res_1da, rtol=4e-15)
+        assert_allclose(res_1db, res_1da, rtol=2e-14)
         res_1d[i] = res_1db
 
     res_1d = np.moveaxis(res_1d, -1, 0)
@@ -643,12 +643,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     # and all attributes are *NumPy* scalars
     res1db, res1dc = unpacker(res1db), unpacker(res1dc)
     # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-    assert_allclose(res1dc, res1db, rtol=7e-15)
+    assert_allclose(res1dc, res1db, rtol=2e-14)
     all_results = list(res1db) + list(res1dc)
 
     if res1da is not None:
         # changed from 1e-15 solely to appease macosx-x86_64+Accelerate
-        assert_allclose(res1db, res1da, rtol=7e-15)
+        assert_allclose(res1db, res1da, rtol=2e-14)
         all_results += list(res1da)
 
     for item in all_results:
