@@ -1351,8 +1351,8 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
      symmetric positive definite    'pos'
     =============================  ================================
 
-    For the 'pos' option, only the specified triangle of the input matrix is used, and
-    the other triangle is not referenced.
+    For the 'pos' option, only the triangle of the input matrix specified in
+    the `lower` argument is used, and the other triangle is not referenced.
 
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
@@ -1373,7 +1373,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
         If omitted or ``None``, checks are performed to identify structure so the
         appropriate solver can be called.
     lower : bool, optional
-        Ignored unless assume_a is one of 'sym', 'her', or 'pos'. If True, the
+        Ignored unless `assume_a` is one of 'sym', 'her', or 'pos'. If True, the
         calculation uses only the data in the lower triangle of `a`; entries above the
         diagonal are ignored. If False (default), the calculation uses only the data in
         the upper triangle of `a`; entries below the diagonal are ignored.
