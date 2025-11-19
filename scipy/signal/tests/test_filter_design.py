@@ -4,6 +4,7 @@ import warnings
 import os
 
 from itertools import product
+from scipy.interpolate import interp1d
 
 from scipy._external.packaging_version import version
 import numpy as np
@@ -4921,6 +4922,16 @@ class TestGroupDelay:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
+    def test_identity_filter_unwrap_method(self, xp):
+        w, gd = group_delay((1, xp.asarray(1)), method='unwrap')
+        assert_array_almost_equal(w, xp.pi * xp.arange(512, dtype=w.dtype) / 512)
+        assert_array_almost_equal(gd, xp.zeros(512))
+
+        w, gd = group_delay((1, xp.asarray(1)), whole=True, method='unwrap')
+        assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
+        assert_array_almost_equal(gd, xp.zeros(512))
+
+
     @xfail_xp_backends("cupy", reason="slightly inaccurate")
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_fir(self, xp):
@@ -4931,6 +4942,19 @@ class TestGroupDelay:
         b = xp.asarray(b)
         w, gd = group_delay((b, 1))
         xp_assert_close(gd, xp.ones_like(gd)*(0.5 * N), rtol=5e-7)
+
+    def test_fir_unwrap_method(self, xp):
+        # Repeat the linear phase FIR and check that the group delay
+        # is constant with the unwrapping method. We limit the check here to the
+        # passband because the unwrapping method will show non-constant group delay at
+        # the discontinuities outside the passband.
+        N = 100
+        b = firwin(N + 1, 0.1)
+        b = xp.asarray(b)
+        w, gd = group_delay((b, 1), method='unwrap')
+        wf, H = freqz(b, 1)
+        passband = np.abs(H) > 0.1
+        xp_assert_close(gd[passband], xp.ones_like(gd[passband])*(0.5 * N), rtol=5e-7)
 
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_iir(self, xp):
@@ -4946,6 +4970,20 @@ class TestGroupDelay:
                                 0.317932917836572, 0.261371844762525,
                                 0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, matlab_gd)
+
+    def test_iir_unwrap_method(self, xp, method='unwrap'):
+        # Test this same filter against points from matlab using the unwrap method
+        b, a = butter(4, 0.1)
+        b, a = map(xp.asarray, (b, a))
+        w = xp.linspace(0, xp.pi, num=10, endpoint=False)
+        wd, gd = group_delay((b, a), w=4096, method='unwrap')
+        gd_at_matlab_points = interp1d(wd, gd)(w)
+        matlab_gd = xp.asarray([8.249313898506037, 11.958947880907104,
+                                2.452325615326005, 1.048918665702008,
+                                0.611382575635897, 0.418293269460578,
+                                0.317932917836572, 0.261371844762525,
+                                0.229038045801298, 0.212185774208521])
+        xp_assert_close(gd_at_matlab_points, matlab_gd, atol=1e-5, rtol=1e-4)
 
     @xfail_xp_backends("cupy", reason="does not warn")
     @xfail_xp_backends("torch", reason="does not warn")
@@ -4988,6 +5026,21 @@ class TestGroupDelay:
                               0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, norm_gd)
 
+    def test_fs_param_unwrap_method(self, xp):
+        # Let's design Butterworth filter and test the group delay at
+        # some points against the normalized frequency answer.
+        b, a = butter(4, 4800, fs=96000)
+        b, a = map(xp.asarray, (b, a))
+        wd, gd = group_delay((b, a), w=4096, fs=96000, method='unwrap')
+        w = xp.linspace(0, 96000 / 2, num=10, endpoint=False)
+        gd_at_check_points = interp1d(wd, gd)(w)
+        norm_gd = xp.asarray([8.249313898506037, 11.958947880907104,
+                              2.452325615326005, 1.048918665702008,
+                              0.611382575635897, 0.418293269460578,
+                              0.317932917836572, 0.261371844762525,
+                              0.229038045801298, 0.212185774208521])
+        xp_assert_close(gd_at_check_points, norm_gd, atol=1e-5, rtol=1e-4)
+
     @skip_xp_backends(np_only=True, reason='numpy scalars')
     def test_w_or_N_types(self, xp):
         # Measure at 8 equally-spaced points
@@ -5002,6 +5055,22 @@ class TestGroupDelay:
             w_out, gd = group_delay((1, 1), w)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
+
+    def test_w_or_N_types_unwrap_method(self, xp):
+        # Measure at 8 equally-spaced points
+        for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, gd = group_delay((1, 1), N, method='unwrap')
+            assert_array_almost_equal(w, pi * np.arange(8) / 8)
+            assert_array_almost_equal(gd, np.zeros(8))
+
+        # Measure at frequency 8-9 rad/sec -- derivative calculation fails with a single
+        # data point so must provide at least 2
+        # also cannot provide complex array_like because not accepted by freqz
+        for w in ([8.0, 9.0],):
+            w_out, gd = group_delay((1, 1), w, method='unwrap')
+            assert_array_almost_equal(w_out, [8, 9])
+            assert_array_almost_equal(gd, [0, 0])
 
     @pytest.mark.xfail(DEFAULT_F32, reason="with torch/float32, the rtol is ~1e-7")
     @xfail_xp_backends("cupy", reason="inaccurate")
@@ -5042,12 +5111,109 @@ class TestGroupDelay:
         # robustness on other platforms.
         xp_assert_close_nulp(gdtest, gdref, nulp=16)
 
-    def test_fs_validation(self):
-        with pytest.raises(ValueError, match="Sampling.*single scalar"):
-            group_delay((1, 1), fs=np.array([10, 20]))
+    def test_complex_coef_unwrap_method(self, xp):
+        # arbitrary non-real alpha
+        alpha = -0.6143077933232609 + 0.3355978770229421j
+        # 8 points from from -pi to pi
+        wref = xp.asarray([-3.141592653589793,
+                           -2.356194490192345,
+                           -1.5707963267948966,
+                           -0.7853981633974483,
+                           0.,
+                           0.7853981633974483,
+                           1.5707963267948966,
+                           2.356194490192345])
+        gdref = xp.asarray([0.18759548150354619,
+                            0.17999770352712252,
+                            0.23598047471879877,
+                            0.46539443069907194,
+                            1.9511492420564165,
+                            3.478129975138865,
+                            0.6228594960517333,
+                            0.27067831839471224])
+        b = xp.asarray([alpha, 1])
+        a = xp.asarray([1, alpha.conjugate()])
 
-        with pytest.raises(ValueError, match="Sampling.*be none"):
-            group_delay((1, 1), fs=None)
+        wd, gd = group_delay((b, a), 2**14, whole=True, method='unwrap')
+
+        high = wd >= pi
+        wd = np.hstack([wd[high] - 2.*pi, wd[~high]])       # redistribute to [-pi, pi)
+        gd = np.hstack([gd[high], gd[~high]])
+        gdtest = interp1d(wd, gd)(wref)
+        delta = gdtest - gdref
+        xp_assert_close(gdtest, gdref, atol=1e-3, rtol=1e-4)
+
+    def test_fs_validation(self):
+        for kw in (dict(), dict(method='unwrap')):
+            with pytest.raises(ValueError, match="Sampling.*single scalar"):
+                group_delay((1, 1), fs=np.array([10, 20]), **kw)
+
+            with pytest.raises(ValueError, match="Sampling.*be none"):
+                group_delay((1, 1), fs=None, **kw)
+
+    def test_method_equivalence(self, xp):
+        # test a few different variations of user provided arguments and verify the available methods produce
+        # similar answers
+        argsets = [dict(w=2048),
+                   dict(w=np.linspace(0., 2.*xp.pi, 4096)),
+                   dict(whole=False),
+                   dict(whole=False, fs=100),
+                   dict(whole=True),
+                   dict(whole=True, fs=100),
+                   dict(w=2048, fs=100),
+                   dict(w=np.linspace(0., 2.*xp.pi, 4096), fs=100)]
+        for kwarg in argsets:
+            fs = kwarg.get('fs', 2. * xp.pi)
+            b, a = butter(4, fs*0.05, fs=fs)
+            b, a = map(xp.asarray, (b, a))
+
+            wu, gu = group_delay((b, a), method='unwrap', **kwarg)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=UserWarning)   # not relevant to this check and causes test to fail
+                wc, gc = group_delay((b, a), **kwarg)
+
+            # check returned frequency array
+            xp_assert_close(wc, wu)
+
+            # check returned group delay array
+            #   Add a check to filter out frequencies at or right next to the nyquist frequency where a discontinuity
+            #   occurs and the two methods are expected to produce different results
+            filt = np.ones(wu.shape, dtype=bool)
+            if kwarg.get('whole', False):
+                i_nyquist = np.where(np.isclose(wu, fs/2.))[0][0]
+                filt[i_nyquist-1:i_nyquist+2] = False
+            xp_assert_close(gc[filt], gu[filt], atol=1e-3, rtol=5e-3)
+
+    @pytest.mark.xfail(reason="https://github.com/scipy/scipy/issues/9310")
+    def test_narrow_band(self):
+        fs = 1280
+        b, a = ellip(7, 0.02, 60.0, 10.0, fs=1280)
+
+        # filter out warning which cause test to fail, but are not relevant to whether well behaved portions (frequency
+        # ranges) of thefilter produce reasonable values
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            w, gd = group_delay((b, a), w=2048, fs=fs)
+
+        # check ~linear phase portion of filter for reasonable values
+        low_freq = w < 5.
+        approx_value = 2. / (5 / fs * (2. * np.pi))
+        xp_assert_close(gd[low_freq], approx_value * np.ones(gd[low_freq].shape), atol=10., rtol=0.1)
+
+    def test_narrow_band_with_unwrap(self):
+        fs = 1280
+        b, a = ellip(7, 0.02, 60.0, 10.0, fs=1280)
+
+        w, gd = group_delay((b, a), w=2048, fs=fs, method='unwrap')
+
+        # check ~linear phase portion of filter for reasonable values
+        low_freq = w < 5.
+        approx_value = 2. / (5 / fs * (2. * np.pi))
+        xp_assert_close(gd[low_freq], approx_value * np.ones(gd[low_freq].shape), atol=10., rtol=0.1)
+
+    def test_invalid_method_throws_value_error(self):
+        with assert_raises(ValueError):
+            w, gd = group_delay((1, 1), method='not a method')
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
