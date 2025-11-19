@@ -246,7 +246,9 @@ capabilities_overrides = {
     "iircomb": xp_capabilities(xfail_backends=[("jax.numpy", "inaccurate")]),
     "iirfilter": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  jax_jit=False, allow_dask_compute=True),
-    "kaiser_atten": xp_capabilities(out_of_scope=True, reason="scalars in, scalars out"),
+    "kaiser_atten": xp_capabilities(
+        out_of_scope=True, reason="scalars in, scalars out"
+    ),
     "kaiser_beta": xp_capabilities(out_of_scope=True, reason="scalars in, scalars out"),
     "kaiserord": xp_capabilities(out_of_scope=True, reason="scalars in, scalars out"),
     "lfilter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
