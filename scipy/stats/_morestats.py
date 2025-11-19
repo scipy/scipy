@@ -5,8 +5,7 @@ import threading
 from collections import namedtuple
 
 import numpy as np
-from numpy import (isscalar, log, around, zeros,
-                   arange, sort, amin, amax, sqrt, array,
+from numpy import (isscalar, log, around, arange, sort, amin, amax, sqrt, array,
                    pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
@@ -30,11 +29,11 @@ from scipy._lib._array_api import (
     _length_nonmasked,
 )
 
-from ._ansari_swilk_statistics import gscale, swilk
+from ._ansari_swilk_statistics import gscale
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2, _SimpleF)
+                        _SimpleNormal, _SimpleChi2, _SimpleF, _demean)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2027,7 +2026,7 @@ def shapiro(x):
 
     Notes
     -----
-    The algorithm used is described in [4]_ but censoring parameters as
+    The algorithm used is described in [4]_, but censoring parameters as
     described are not implemented. For N > 5000 the W test statistic is
     accurate, but the p-value may not be.
 
@@ -2041,9 +2040,9 @@ def shapiro(x):
     .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
            Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
            of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
-    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
-           W-test for Normality", 1995, Applied Statistics, Vol. 44,
-           :doi:`10.2307/2986146`
+    .. [4] Royston, P. "A toolkit for testing for non-normality in complete and
+           censored samples." Journal of the Royal Statistical Society: Series D
+           (The Statistician) 42.1 (1993): 37-43.
 
     Examples
     --------
@@ -2068,16 +2067,10 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    a = zeros(N//2, dtype=np.float64)
-    init = 0
-
     y = sort(x)
     y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
 
-    w, pw, ifault = swilk(y, a, init)
-    if ifault not in [0, 2]:
-        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
-                      " results may not be accurate.", stacklevel=2)
+    w, pw = _swilk(y)
     if N > 5000:
         warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
                       f"may not be accurate. Current N is {N}.",
@@ -2088,6 +2081,69 @@ def shapiro(x):
     # respected, we can explicitly convert each to float64 (faster than
     # `np.array([w, pw])`).
     return ShapiroResult(np.float64(w), np.float64(pw))
+
+
+def _swilk_w(y, a):
+    # calculate Shapiro-Wilk statistic given sorted sample and weights
+    # Follows [4] Section 2.1
+    num = np.vecdot(a, y, axis=-1) ** 2
+    y_ = _demean(y, mean=np.mean(y, axis=-1, keepdims=True), axis=-1, xp=np)
+    den = np.vecdot(y_, y_, axis=-1)
+    return num / den
+
+
+def _swilk(y):
+    # calculate Shapiro-Wilk statistic and p-value from sorted sample
+    n = y.shape[-1]
+
+    if n == 3:
+        # [2] Table 5 gives the first four digits
+        c = np.sqrt(2) / 2
+        a = np.asarray([-c, 0, c])
+        # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
+        W = np.clip(_swilk_w(y, a), 0.75, 1)
+        pvalue = 1. - 6/np.pi * np.acos(np.sqrt(W))
+        return W, pvalue
+
+    # Follows [4] section 2.2
+    # could calculate half the coefficients and get the rest by antisymmetry
+    i = np.arange(1, n + 1)
+    m = special.ndtri((i - 3 / 8) / (n + 1 / 4))
+    u = n**(-0.5)
+    mTm = np.vecdot(m, m)
+    c = mTm**(-0.5) * m
+    mnm1, mn = m[..., -2], m[..., -1]
+    cnm1, cn = c[..., -2], c[..., -1]
+    an = (cn + 0.221157*u - 0.147981*u**2
+          - 2.071190*u**3 + 4.434685*u**4 - 2.706056*u**5)
+    anm1 = (cnm1 + 0.042981*u - 0.293762*u**2
+            - 1.752461*u**3 + 5.682633*u**4 - 3.582633*u**5)
+    phi = ((mTm - 2*mn**2) / (1 - 2*an**2) if n <= 5
+           else (mTm - 2*mn**2 - 2*mnm1**2) / (1 - 2*an**2 - 2*anm1**2))
+    a = phi**(-0.5) * m
+    if n > 5:
+        a[..., -2] = anm1
+        a[..., 1] = -anm1
+    a[..., -1] = an
+    a[..., 0] = -an
+    W = _swilk_w(y, a)
+
+    # Follows [4] Table 1
+    if n <= 11:
+        u = n
+        gamma = -2.273 + 0.459*u
+        mu = 0.5440 - 0.39978*u + 0.025054*u**2 - 0.0006714*u**3
+        sigma = np.exp(1.3822 - 0.77857*u + 0.062767*u**2 - 0.0020322*u**3)
+        gW = -np.log(gamma - np.log(1 - W))
+    else:
+        u = np.log(n)
+        mu = -1.5861 - 0.31082*u - 0.083751*u**2 + 0.0038915*u**3
+        sigma = np.exp(-0.4803 - 0.082676*u + 0.0030302*u**2)
+        gW = np.log(1 - W)
+
+    z = (gW - mu) / sigma
+    pvalue = special.ndtr(-z)
+    return W, pvalue
 
 
 # Values from [8]
