@@ -5,13 +5,13 @@ from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
 try:
-    from sksparse.cholmod import cholesky_AAt, CholmodTypeConversionWarning
+    from sksparse import cholmod
     sksparse_available = True
 except ImportError:
     import warnings
     sksparse_available = False
 import numpy as np
-from warnings import warn, catch_warnings
+from warnings import warn
 
 __all__ = [
     'orthogonality',
@@ -58,15 +58,11 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization
-    # TODO: revert this once the warning bug fix in sksparse is merged/released
-    # Add suppression of spurious warning bug from sksparse with csc_array gh-22089
-    # factor = cholesky_AAt(A)
-    with catch_warnings(action='ignore', category=CholmodTypeConversionWarning):
-        factor = cholesky_AAt(A)
+    factor = cholmod.cho_factor(A, sym_kind="row")
 
     # z = x - A.T inv(A A.T) A x
     def null_space(x):
-        v = factor(A.dot(x))
+        v = factor.solve(A.dot(x))
         z = x - A.T.dot(v)
 
         # Iterative refinement to improve roundoff
@@ -76,7 +72,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
             if k >= max_refin:
                 break
             # z_next = z - A.T inv(A A.T) A z
-            v = factor(A.dot(z))
+            v = factor.solve(A.dot(z))
             z = z - A.T.dot(v)
             k += 1
 
@@ -84,11 +80,11 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
 
     # z = inv(A A.T) A x
     def least_squares(x):
-        return factor(A.dot(x))
+        return factor.solve(A.dot(x))
 
     # z = A.T inv(A A.T) x
     def row_space(x):
-        return A.T.dot(factor(x))
+        return A.T.dot(factor.solve(x))
 
     return null_space, least_squares, row_space
 
