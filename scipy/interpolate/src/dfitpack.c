@@ -12,7 +12,7 @@ fprota(double c, double s, double *a, double *b)
 
 
 void
-fpbspl(double* t, int n, int k, double x, int l, double* h)
+fpbspl(const double* t, const int n, const int k, const double x, const int l, double* h)
 {
     // subroutine fpbspl evaluates the (k+1) non-zero b-splines of degree k
     // at t(l) <= x < t(l+1) using the stable recurrence relation of de boor and cox.
@@ -71,6 +71,87 @@ fpback(double* a, double* z, const int n, const int k, double* c, const int nest
         }
         c[i] = store / a[i + 0 * nest];
         i--;
+    }
+}
+
+
+void
+fpbisp(const double *tx, const int nx, double *ty, const int ny, const double *c,
+    const int kx, const int ky, const double *x, const int mx, const double *y, const int my,
+    double *z, double *wx, double *wy, int *lx, int *ly)
+{
+    int kx1, ky1, l, l1, l2, nkx1, nky1, i1, j1, m;
+    double arg, sp, tb, te, h[6];
+
+    kx1 = kx + 1;
+    nkx1 = nx - kx1;
+    tb = tx[kx1 - 1];
+    te = tx[nkx1];
+    l  = kx1;
+    l1 = l + 1;
+
+    for (int i = 1; i <= mx; i++) {
+        arg = x[i - 1];
+        if (arg < tb) { arg = tb; }
+        if (arg > te) { arg = te; }
+
+        while (!((arg < tx[l1 - 1]) || (l == nkx1))) {
+            l = l1;
+            l1 = l + 1;
+        }
+
+        fpbspl(tx, nx, kx, arg, l, h);
+        lx[i - 1] = l - kx1;
+        for (int j = 1; j <= kx1; j++) {
+            wx[(i - 1) + (j - 1)*kx1] = h[j - 1];
+        }
+    }
+
+    ky1 = ky + 1;
+    nky1 = ny - ky1;
+    tb = ty[ky1 - 1];
+    te = ty[nky1];
+    l  = ky1;
+    l1 = l + 1;
+
+    for (int i = 1; i <= my; i++) {
+        arg = y[i - 1];
+        if (arg < tb) { arg = tb; }
+        if (arg > te) { arg = te; }
+
+        while (!((arg < ty[l1 - 1]) || (l == nky1))) {
+            l = l1;
+            l1 = l + 1;
+        }
+
+        fpbspl(ty, ny, ky, arg, l, h);
+        ly[i - 1] = l - ky1;
+        for (int j = 1; j <= ky1; j++) {
+            wy[(i - 1) + (j - 1)*ky1] = h[j - 1];
+        }
+    }
+
+    m = 0;
+    for (int i = 1; i <= mx; i++) {
+
+        l = lx[i - 1] * nky1;
+        for (int i1 = 1; i1 <= kx1; i1++) {
+            h[i1 - 1] = wx[(i - 1) + (i1 - 1)*kx1];
+        }
+        for (int j = 1; j <= my; j++) {
+            l1 = l + ly[j - 1];
+            sp = 0.0;
+            for (i1 = 1; i1 <= kx1; i1++) {
+                l2 = l1;
+                for (int j1 = 1; j1 <= ky1; j1++) {
+                    l2++;
+                    sp = sp + c[l2 - 1] * h[i1 - 1] * wy[(j - 1) * ky1 + (j1 - 1)];
+                }
+                l1 += nky1;
+            }
+            z[m] = sp;
+            m++;
+        }
     }
 }
 
@@ -1372,4 +1453,111 @@ surfit(int iopt, int m, double* x, double* y, double* z, double* w,
 }
 
 
+void parder(const double *tx, int nx, const double *ty, int ny, double *c,
+            int kx, int ky, int nux, int nuy, const double *x, int mx,
+            const double *y, int my, double *z, double *wrk, int lwrk,
+            int *iwrk, int kwrk, int *ier) {
 
+    int kx1 = kx + 1;
+    int ky1 = ky + 1;
+    int nkx1 = nx - kx1;
+    int nky1 = ny - ky1;
+    int nc = nkx1 * nky1;
+    int nxx, nyy, kkx, kky, lx, ly, l1, l2, m0, m1;
+    double ak, fac;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if ((nux < 0) || (nux >= kx)) { return; }
+    if ((nuy < 0) || (nuy >= ky)) { return; }
+    if (lwrk < (nc + (kx1 - nux) * mx + (ky1 - nuy) * my)) { return; }
+    if (kwrk < (mx + my)) { return; }
+
+    if (mx < 1) { return; }
+    if (mx != 1) {
+        for (int i = 1; i < mx; i++) {
+            if (x[i] < x[i - 1]) { return; }
+        }
+    }
+
+    if (my < 1) { return; }
+    if (my != 1) {
+        for (int i = 1; i < my; i++) {
+            if (y[i] < y[i - 1]) { return; }
+        }
+    }
+
+    *ier = 0;
+    nxx = nkx1;
+    nyy = nky1;
+    kkx = kx;
+    kky = ky;
+
+    // the partial derivative of order (nux,nuy) of a bivariate spline of
+    // degrees kx,ky is a bivariate spline of degrees kx-nux,ky-nuy.
+    // we calculate the b-spline coefficients of this spline
+    for (int i = 0; i < nc; i++) { wrk[i] = c[i]; }
+
+    if (nux != 0) {
+        lx = 1;
+        for (int j = 0; j < nux; j++) {
+            ak = kkx;
+            nxx--;
+            l1 = lx;
+            m0 = 1;
+            for (int i = 0; i < nxx; i++) {
+                l1++;
+                l2 = l1 + kkx;
+                fac = tx[l2 - 1] - tx[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                for (int m = 0; m < nyy; m++) {
+                    m1 = m0 + nyy;
+                    wrk[m0 - 1] = (wrk[m1 - 1] - wrk[m0 - 1]) * ak / fac;
+                    m0++;
+                }
+            }
+            lx++;
+            kkx--;
+        }
+    }
+
+    if (nuy != 0) {
+        ly = 1;
+        for (int j = 0; j < nuy; j++) {
+            ak = kky;
+            nyy--;
+            l1 = ly;
+            for (int i = 1; i <= nyy; i++) {
+                l1++;
+                l2 = l1 + kky;
+                fac = ty[l2 - 1] - ty[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                m0 = i;
+                for (int m = 1; m <= nxx; m++) {
+                    m1 = m0 + 1;
+                    wrk[m0 - 1] = (wrk[m1 - 1] - wrk[m0 - 1]) * ak / fac;
+                    m0 += nky1;
+                }
+            }
+            ly++;
+            kky--;
+        }
+
+        m0 = nyy;
+        m1 = nky1;
+        for (int m = 2; m <= nxx; m++) {
+            for (int i = 1; i <= nyy; i++) {
+                wrk[m0 - 1] = wrk[m1 - 1];
+                m0++;
+                m1++;
+            }
+            m1 += nuy;
+        }
+    }
+
+    // Partition the workspace and evaluate the partial derivative
+    int iwx = nxx * nyy;
+    int iwy = iwx + mx * (kx1 - nux);
+    fpbisp(&tx[nux], nx - 2*nux, &ty[nuy], ny - 2*nuy, wrk, kkx, kky, x, mx, y, my, z, &wrk[iwx], &wrk[iwy], iwrk, &iwrk[mx]);
+}
