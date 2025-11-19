@@ -117,22 +117,63 @@ def get_default_capabilities(func_name, delegator):
         return xp_capabilities(np_only=True)
     return xp_capabilities()
 
+bilinear_extra_note = \
+    """CuPy does not accept complex inputs.
+
+    """
+
+uses_choose_conv_extra_note = \
+    """CuPy does not support inputs with ``ndim>1`` when ``method="auto"``
+    but does support higher dimensional arrays for ``method="direct"``
+    and ``method="fft"``.
+
+    """
+
+resample_poly_extra_note = \
+    """CuPy only supports ``padtype="constant"``.
+
+    """
+
+upfirdn_extra_note = \
+    """CuPy only supports ``mode="constant"`` and ``cval=0.0``.
+
+    """
+
+xord_extra_note = \
+    """The ``torch`` backend on GPU does not support the case where
+    `wp` and `ws` specify a Bandstop filter.
+
+    """
+
+convolve2d_extra_note = \
+    """The JAX backend only supports ``boundary="fill"`` and ``fillvalue=0``.
+
+    """
+
+zpk2tf_extra_note = \
+    """The CuPy and JAX backends both support only 1d input.
+
+    """
 
 capabilities_overrides = {
     "bessel": xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True),
     "bilinear": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
-                                reason="Uses np.polynomial.Polynomial"),
+                                reason="Uses np.polynomial.Polynomial",
+                                extra_note=bilinear_extra_note),
     "bilinear_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                     jax_jit=False, allow_dask_compute=True),
     "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
                               allow_dask_compute=True),
-    "buttord": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                               jax_jit=False, allow_dask_compute=True),
+    "buttord": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
+                               jax_jit=False, allow_dask_compute=True,
+                               extra_note=xord_extra_note),
     "cheb1ord": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                                jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True,
+                                extra_note=xord_extra_note),
     "cheb2ord": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                                jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True,
+                                extra_note=xord_extra_note),
     "cheby1": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
 
@@ -140,13 +181,17 @@ capabilities_overrides = {
                               allow_dask_compute=True),
     "cont2discrete": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "convolve": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                 allow_dask_compute=True),
+                                allow_dask_compute=True,
+                                extra_note=uses_choose_conv_extra_note),
     "convolve2d": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                 allow_dask_compute=True),
+                                  allow_dask_compute=True,
+                                  extra_note=convolve2d_extra_note),
     "correlate": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                 allow_dask_compute=True),
+                                 allow_dask_compute=True,
+                                 extra_note=uses_choose_conv_extra_note),
     "correlate2d": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                   allow_dask_compute=True),
+                                   allow_dask_compute=True,
+                                   extra_note=convolve2d_extra_note),
     "correlation_lags": xp_capabilities(out_of_scope=True),
     "cspline1d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
@@ -165,9 +210,11 @@ capabilities_overrides = {
     "dlti": xp_capabilities(np_only=True,
                             reason="works in CuPy but delegation isn't set up yet"),
     "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
-                             allow_dask_compute=True),
+                             allow_dask_compute=True,
+                             reason="scipy.special.ellipk"),
     "ellipord": xp_capabilities(cpu_only=True, exceptions=["cupy"],
-                                jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True,
+                                reason="scipy.special.ellipk"),
     "firls": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False,
                              reason="lstsq"),
     "firwin": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -227,9 +274,12 @@ capabilities_overrides = {
                              skip_backends=[("jax.numpy", "in-place item assignment")]),
     "lp2hp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
-    "medfilt": xp_capabilities(allow_dask_compute=True, jax_jit=False),
-    "medfilt2d": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                 allow_dask_compute=True, jax_jit=False),
+    "medfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                               allow_dask_compute=True, jax_jit=False,
+                               reason="uses scipy.ndimage.rank_filter"),
+    "medfilt2d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                                 allow_dask_compute=True, jax_jit=False,
+                                 reason="c extension module"),
     "minimum_phase": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                      allow_dask_compute=True, jax_jit=False),
     "normalize": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -239,8 +289,9 @@ capabilities_overrides = {
         skip_backends=[("jax.numpy", "fails all around")],
         xfail_backends=[("dask.array", "wrong answer")],
     ),
-    "order_filter": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                                    allow_dask_compute=True, jax_jit=False),
+    "order_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
+                                    allow_dask_compute=True, jax_jit=False,
+                                    reason="uses scipy.ndimage.rank_filter"),
     "qspline1d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
     "qspline1d_eval": xp_capabilities(cpu_only=True, exceptions=["cupy"],
@@ -256,7 +307,8 @@ capabilities_overrides = {
     ),
     "resample_poly": xp_capabilities(
         cpu_only=True, exceptions=["cupy"],
-        jax_jit=False, skip_backends=[("dask.array", "XXX something in dask")]
+        jax_jit=False, skip_backends=[("dask.array", "XXX something in dask")],
+        extra_note=resample_poly_extra_note,
     ),
     "residue": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "residuez": xp_capabilities(np_only=True, exceptions=["cupy"]),
@@ -293,15 +345,18 @@ capabilities_overrides = {
     "unique_roots": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "upfirdn": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                                allow_dask_compute=True,
-                               reason="Cython implementation"),
+                               reason="Cython implementation",
+                               extra_note=upfirdn_extra_note),
     "vectorstrength": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                       allow_dask_compute=True, jax_jit=False),
     "wiener": xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                              allow_dask_compute=True, jax_jit=False),
+                              allow_dask_compute=True, jax_jit=False,
+                              reason="uses scipy.signal.correlate"),
     "zpk2sos": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
     "zpk2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
-                              allow_dask_compute=True),
+                              allow_dask_compute=True,
+                              extra_note=zpk2tf_extra_note),
 }
 
         
