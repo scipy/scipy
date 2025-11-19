@@ -366,7 +366,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         If an array of values is passed in, the solver will treat each
         value as critical. The array of values must be sorted either
         ascending or descending in the same manner as the direction
-        between ``t0`` and ``t_bound``.
+        defined by ``t_span``.
 
         .. versionadded:: 1.17.0
 
