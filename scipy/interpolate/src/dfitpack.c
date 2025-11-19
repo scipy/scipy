@@ -1561,3 +1561,104 @@ void parder(const double *tx, int nx, const double *ty, int ny, double *c,
     int iwy = iwx + mx * (kx1 - nux);
     fpbisp(&tx[nux], nx - 2*nux, &ty[nuy], ny - 2*nuy, wrk, kkx, kky, x, mx, y, my, z, &wrk[iwx], &wrk[iwy], iwrk, &iwrk[mx]);
 }
+
+
+void pardeu(const double *tx, int nx, const double *ty, int ny, double *c,
+            int kx, int ky, int nux, int nuy, const double *x, const double *y,
+            double *z, int m, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier) {
+    // Initialize variables
+    int kx1 = kx + 1;
+    int ky1 = ky + 1;
+    int nkx1 = nx - kx1;
+    int nky1 = ny - ky1;
+    int nc = nkx1 * nky1;
+    int nxx, nyy, kkx, kky, lx, ly, l1, l2, m0, m1;
+    double ak, fac;
+
+    // Validate input data
+    *ier = 10;
+    if ((nux < 0) || (nux >= kx)) { return; }
+    if ((nuy < 0) || (nuy >= ky)) { return; }
+    if (lwrk < (nc + (kx1 - nux) * m + (ky1 - nuy) * m)) { return; }
+    if (kwrk < (m + m)) { return; }
+    if (m < 1) { return; }
+
+    *ier = 0;
+    nxx = nkx1;
+    nyy = nky1;
+    kkx = kx;
+    kky = ky;
+
+    // Copy coefficients to workspace
+    for (int i = 1; i <= nc; i++) {
+        wrk[i - 1] = c[i - 1];
+    }
+
+    // Compute partial derivative with respect to x
+    if (nux != 0) {
+        lx = 1;
+        for (int j = 1; j <= nux; j++) {
+            ak = kkx;
+            nxx--;
+            l1 = lx;
+            m0 = 1;
+            for (int i = 1; i <= nxx; i++) {
+                l1++;
+                l2 = l1 + kkx;
+                fac = tx[l2 - 1] - tx[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                for (int mm = 1; mm <= nyy; mm++) {
+                    m1 = m0 + nyy;
+                    wrk[m0 - 1] = (wrk[m1 - 1] - wrk[m0 - 1]) * ak / fac;
+                    m0++;
+                }
+            }
+            lx++;
+            kkx--;
+        }
+    }
+
+    // Compute partial derivative with respect to y
+    if (nuy != 0) {
+        ly = 1;
+        for (int j = 1; j <= nuy; j++) {
+            ak = kky;
+            nyy--;
+            l1 = ly;
+            for (int i = 1; i <= nyy; i++) {
+                l1++;
+                l2 = l1 + kky;
+                fac = ty[l2 - 1] - ty[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                m0 = i;
+                for (int mm = 1; mm <= nxx; mm++) {
+                    m1 = m0 + 1;
+                    wrk[m0 - 1] = (wrk[m1 - 1] - wrk[m0 - 1]) * ak / fac;
+                    m0 += nky1;
+                }
+            }
+            ly++;
+            kky--;
+        }
+
+        m0 = nyy;
+        m1 = nky1;
+        for (int mm = 2; mm <= nxx; mm++) {
+            for (int i = 1; i <= nyy; i++) {
+                wrk[m0 - 1] = wrk[m1 - 1];
+                m0++;
+                m1++;
+            }
+            m1 += nuy;
+        }
+    }
+
+    // Partition the workspace and evaluate the partial derivative
+    int iwx = nxx * nyy;
+    int iwy = iwx + m * (kx1 - nux);
+    for (int i = 1; i <= m; i++) {
+        fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky,
+               &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy],
+               iwrk, &iwrk[1]);
+    }
+}
