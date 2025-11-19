@@ -4172,7 +4172,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zstandard-0.25.0-py314h0f05182_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: https://files.pythonhosted.org/packages/01/78/4a113ac866d2cb8190564387050f1402e25d5b9b926111f12d8dd3f9e354/scipy_openblas32-0.3.30.0.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/5b/39/6d719b1366ec483a6a64024aa1cb6c2893003e4a890336d2e184a7457582/scipy_openblas32-0.3.30.0.7-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
       osx-arm64:
       - conda: https://prefix.dev/conda-forge/noarch/attrs-25.4.0-pyh71513ae_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/beniget-0.4.2.post1-pyhd8ed1ab_1.conda
@@ -4296,7 +4296,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/zlib-1.3.1-h8359307_2.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/zstandard-0.25.0-py314h9d33bd4_1.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/zstd-1.5.7-h6491c7d_2.conda
-      - pypi: https://files.pythonhosted.org/packages/0a/c3/25ac2f353dc8bb201fbcd2445163b59a22de0a264452788f9499e547ad4a/scipy_openblas32-0.3.30.0.2-py3-none-macosx_11_0_arm64.whl
+      - pypi: https://files.pythonhosted.org/packages/4c/f9/bcedee723a50cc16f516b10490631ffc439c021ad8870ebb3acbddd7432a/scipy_openblas32-0.3.30.0.7-py3-none-macosx_11_0_arm64.whl
       win-64:
       - conda: https://prefix.dev/conda-forge/win-64/_openmp_mutex-4.5-2_gnu.conda
       - conda: https://prefix.dev/conda-forge/noarch/attrs-25.4.0-pyh71513ae_0.conda
@@ -4417,7 +4417,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/zstandard-0.25.0-py314hc5dbbe4_1.conda
       - conda: https://prefix.dev/conda-forge/win-64/zstd-1.5.7-hbeecb71_2.conda
-      - pypi: https://files.pythonhosted.org/packages/91/6f/c49ccb99f306ffd8528ca53f12e36c8cf4fd28de50e34697a9a59760ff06/scipy_openblas32-0.3.30.0.2-py3-none-win_amd64.whl
+      - pypi: https://files.pythonhosted.org/packages/a4/95/0528a1688ca4e6e0dbbf160b4695aceda29baf98ccfa8ca66e5ec78da9a6/scipy_openblas32-0.3.30.0.7-py3-none-win_amd64.whl
   test:
     channels:
     - url: https://prefix.dev/conda-forge/
@@ -14423,20 +14423,20 @@ packages:
   license_family: BSD
   size: 61053
   timestamp: 1754720729614
-- pypi: https://files.pythonhosted.org/packages/01/78/4a113ac866d2cb8190564387050f1402e25d5b9b926111f12d8dd3f9e354/scipy_openblas32-0.3.30.0.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+- pypi: https://files.pythonhosted.org/packages/4c/f9/bcedee723a50cc16f516b10490631ffc439c021ad8870ebb3acbddd7432a/scipy_openblas32-0.3.30.0.7-py3-none-macosx_11_0_arm64.whl
   name: scipy-openblas32
-  version: 0.3.30.0.2
-  sha256: 60112d5f051f843dba93602446270ec7c6dd176ad1e3f07f51b0bc3060a43946
+  version: 0.3.30.0.7
+  sha256: 4a288339d4ffbbf350b2e77e4e8cdc1663922a22da2586b2aef1be003265f14e
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/0a/c3/25ac2f353dc8bb201fbcd2445163b59a22de0a264452788f9499e547ad4a/scipy_openblas32-0.3.30.0.2-py3-none-macosx_11_0_arm64.whl
+- pypi: https://files.pythonhosted.org/packages/5b/39/6d719b1366ec483a6a64024aa1cb6c2893003e4a890336d2e184a7457582/scipy_openblas32-0.3.30.0.7-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
   name: scipy-openblas32
-  version: 0.3.30.0.2
-  sha256: e85c50851bd12d3c3cf7e6464e729e05c3c94b3cf29e11b604e3ef4fb8b4d58d
+  version: 0.3.30.0.7
+  sha256: 7a65a1683547cc5ca9f072abd0f50903c99fe046868abb7f8c14b40cfdcc8ad5
   requires_python: '>=3.7'
-- pypi: https://files.pythonhosted.org/packages/91/6f/c49ccb99f306ffd8528ca53f12e36c8cf4fd28de50e34697a9a59760ff06/scipy_openblas32-0.3.30.0.2-py3-none-win_amd64.whl
+- pypi: https://files.pythonhosted.org/packages/a4/95/0528a1688ca4e6e0dbbf160b4695aceda29baf98ccfa8ca66e5ec78da9a6/scipy_openblas32-0.3.30.0.7-py3-none-win_amd64.whl
   name: scipy-openblas32
-  version: 0.3.30.0.2
-  sha256: b838b71ec79281448c16cb64a8b3befc73320681278b0ad82fbf63e000e6c894
+  version: 0.3.30.0.7
+  sha256: 36bb23601cc4189345d5bc050ad479469bc320c65d88ee85da4359d643727ab9
   requires_python: '>=3.7'
 - conda: https://prefix.dev/conda-forge/noarch/send2trash-1.8.3-pyh0d859eb_1.conda
   sha256: 00926652bbb8924e265caefdb1db100f86a479e8f1066efe395d5552dde54d02
