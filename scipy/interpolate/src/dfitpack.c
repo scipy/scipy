@@ -1657,8 +1657,63 @@ void pardeu(const double *tx, int nx, const double *ty, int ny, double *c,
     int iwx = nxx * nyy;
     int iwy = iwx + m * (kx1 - nux);
     for (int i = 1; i <= m; i++) {
-        fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky,
-               &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy],
-               iwrk, &iwrk[1]);
+        fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy], iwrk, &iwrk[1]);
     }
+}
+
+
+void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
+            int kx, int ky, const double *x, const double *y, double *z, int m,
+            double *wrk, int lwrk, int *ier)
+{
+
+    int lwest = kx + ky + 2;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if (lwrk < lwest) { return; }
+    if (m < 1) { return; }
+
+    *ier = 0;
+    for (int i = 1; i <= m; i++) {
+        fpbisp(tx, nx, ty, ny, c, kx, ky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], wrk, &wrk[kx + 1], wrk, &wrk[1]);
+    }
+}
+
+
+void bispev(const double *tx, int nx, const double *ty, int ny, const double *c,
+            int kx, int ky, const double *x, int mx, const double *y, int my,
+            double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier)
+{
+    int i, iw, lwest;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    lwest = (kx + 1) * mx + (ky + 1) * my;
+    if (lwrk < lwest || kwrk < (mx + my) || mx < 1 || my < 1) {
+        return;
+    }
+
+    if (mx > 1) {
+        for (i = 2; i <= mx; i++) {
+            if (x[i - 1] < x[i - 2]) {
+                return;
+            }
+        }
+    }
+
+    if (my > 1) {
+        for (i = 2; i <= my; i++) {
+            if (y[i - 1] < y[i - 2]) {
+                return;
+            }
+        }
+    }
+
+    *ier = 0;
+    // Partition the working space and evaluate the bivariate spline
+    iw = mx * (kx + 1) + 1;
+    fpbisp(tx, nx, ty, ny, c, kx, ky, x, mx, y, my, z, wrk, &wrk[iw - 1], iwrk, &iwrk[mx - 1]);
 }
