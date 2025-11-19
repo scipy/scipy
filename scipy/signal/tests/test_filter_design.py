@@ -2406,6 +2406,9 @@ class TestEllipord:
         assert N == 6
         xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
+    )
     def test_bandstop(self, xp):
         wp = [0.1, 0.6]
         ws = [0.2, 0.5]
@@ -4536,7 +4539,6 @@ class TestIIRPeak:
 
 
 @pytest.mark.xfail(DEFAULT_F32, reason="wrong answers with torch/float32")
-# @xfail_xp_backends("jax.numpy", reason="wrong answers")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @make_xp_test_case(iircomb)
 class TestIIRComb:
@@ -4786,7 +4788,6 @@ class TestIIRDesign:
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
-# @skip_xp_backends(cpu_only=True, reason="zpk2sos converts to numpy")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 @make_xp_test_case(iirfilter)
 class TestIIRFilter:

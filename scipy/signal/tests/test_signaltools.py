@@ -1195,7 +1195,6 @@ def test_convolve_longdtype_input(dtype, xp):
     assert res.dtype == dtype
 
 
-@make_xp_test_case(signal.medfilt, signal.medfilt2d)
 class TestMedFilt:
 
     IN = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
@@ -1222,6 +1221,7 @@ class TestMedFilt:
 
     KERNEL_SIZE = [7,3]
 
+    @make_xp_test_case(signal.medfilt, signal.medfilt2d)
     def test_basic(self, xp):
 
         in_ = xp.asarray(self.IN)
@@ -1236,6 +1236,7 @@ class TestMedFilt:
     @pytest.mark.parametrize('dtype', ["uint8", "int8", "uint16", "int16",
                                        "uint32", "int32", "uint64", "int64",
                                        "float32", "float64"])
+    @make_xp_test_case(signal.medfilt, signal.medfilt2d)
     def test_types(self, dtype, xp):
         # volume input and output types match
         if is_torch(xp) and dtype in ["uint16", "uint32", "uint64"]:
@@ -1250,6 +1251,7 @@ class TestMedFilt:
     @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
                                        np.clongdouble, np.float16,
                                        "float96", "float128"])
+    @make_xp_test_case(signal.medfilt, signal.medfilt2d)
     def test_invalid_dtypes(self, dtype, xp):
         # We can only test this on platforms that support a native type of float96 or
         # float128; comparing to np.longdouble allows us to filter out non-native types
@@ -1265,12 +1267,14 @@ class TestMedFilt:
             signal.medfilt2d(in_typed)
 
     @skip_xp_backends(np_only=True, reason="object arrays")
+    @make_xp_test_case(signal.medfilt)
     def test_none(self, xp):
         # gh-1651, trac #1124. Ensure this does not segfault.
         with assert_raises((ValueError, TypeError)):
             signal.medfilt(None)
 
     @skip_xp_backends(np_only=True, reason="strides are only writeable in NumPy")
+    @make_xp_test_case(signal.medfilt)
     def test_odd_strides(self, xp):
         # Avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
@@ -1285,6 +1289,7 @@ class TestMedFilt:
         reason="chunk assignment does not work on jax immutable arrays"
     )
     @pytest.mark.parametrize("dtype", ["uint8", "float32", "float64"])
+    @make_xp_test_case(signal.medfilt2d)
     def test_medfilt2d_parallel(self, dtype, xp):
         dtype = getattr(xp, dtype)
         in_typed = xp.asarray(self.IN, dtype=dtype)
