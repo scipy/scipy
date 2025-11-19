@@ -3697,6 +3697,7 @@ class _TestMakeSplrepBase:
 
     @pytest.mark.parametrize("bc_type", ["periodic", None])
     def test_make_splrep_with_non_c_contiguous_input(self, bc_type):
+          # regression test for https://github.com/scipy/scipy/issues/23371
 
         def check(spl, tck):
             xp_assert_close(spl.t, tck[0])
