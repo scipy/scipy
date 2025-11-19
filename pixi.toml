@@ -337,7 +337,7 @@ description = "Test SciPy with accelerate (ilp64)"
 
 
 [feature.scipy-openblas.pypi-dependencies]
-scipy-openblas32 = "<=0.3.30.0.7"
+scipy-openblas32 = ">=0.3.30.0.7"
 
 [feature.scipy-openblas.tasks.build-scipy-openblas]
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"
