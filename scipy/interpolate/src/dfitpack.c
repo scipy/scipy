@@ -1345,6 +1345,59 @@ interpolating_solution:
 
 
 void
+fprpsp(const int nt, const int np, const double *co, const double *si, double *c, double *f, const int ncoff)
+{
+    double cn, c1, c2, c3;
+    int i, ii, j, k, l, ncof, npp, np4, nt4;
+
+    nt4 = nt - 4;
+    np4 = np - 4;
+    npp = np4 - 3;
+    ncof = 6 + npp * (nt4 - 4);
+    c1 = c[0];
+    cn = c[ncof - 1];
+    j = ncoff;
+
+    for (i = 1; i <= np4; i++) {
+        f[i - 1] = c1;
+        f[j - 1] = cn;
+        j--;
+    }
+
+    i = np4;
+    j = 1;
+
+    for (l = 3; l <= nt4; l++) {
+        ii = i;
+        if ((l == 3) || (l == nt4)) {
+            if (l == nt4) { c1 = cn; }
+            c2 = c[j];
+            c3 = c[j + 1];
+            j += 2;
+            for (k = 1; k <= npp; k++) {
+                i++;
+                f[i - 1] = c1 + c2 * co[k - 1] + c3 * si[k - 1];
+            }
+        } else {
+            i++;
+            j++;
+            f[i - 1] = c[j - 1];
+        }
+
+        for (k = 1; k <= 3; k++) {
+            ii++;
+            i++;
+            f[i - 1] = f[ii - 1];
+        }
+    }
+
+    for (i = 1; i <= ncoff; i++) {
+        c[i - 1] = f[i - 1];
+    }
+}
+
+
+void
 surfit(int iopt, int m, double* x, double* y, double* z, double* w,
        double xb, double xe, double yb, double ye, int kx, int ky, double s,
        int nxest, int nyest, int nmax, double eps, int* nx, double* tx,
