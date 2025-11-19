@@ -897,6 +897,10 @@ class multivariate_normal_gen(multi_rv_generic):
 
         dims = np.atleast_1d(dimensions)
 
+        if len(dims) == 0:
+            msg = ("Cannot marginalize all dimensions.")
+            raise ValueError(msg)
+
         if not np.issubdtype(dims.dtype, np.integer):
             msg = ("Elements of `dimensions` must be integers - the indices "
                    "of the marginal variables being retained.")

@@ -1286,6 +1286,9 @@ class TestMultivariateNormal:
         
         with pytest.raises(ValueError, match=r"Elements of `dimensions` must be integers."):
             X.marginal([1.1, 2.0])
+
+        with pytest.raises(ValueError, match=r"Cannot marginalize all dimensions."):
+            X.marginal([])
     
 
 class TestMatrixNormal:
