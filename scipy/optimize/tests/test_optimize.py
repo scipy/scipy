@@ -1565,9 +1565,7 @@ class TestOptimizeSimple(CheckOptimize):
                                         'cobyqa', 'slsqp',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
-    def test_nan_values(self, method, num_parallel_threads):
-        if num_parallel_threads > 1 and method == 'cobyqa':
-            pytest.skip('COBYQA does not support concurrent execution')
+    def test_nan_values(self, method):
 
         # Check nan values result to failed exit status
 
