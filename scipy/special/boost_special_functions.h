@@ -1659,7 +1659,7 @@ binom_cdf_wrap(const Real x, const Real n, const Real p)
     if (std::isfinite(x)) {
         try {
             return boost::math::cdf(
-                boost::math::binomial_distribution<Real, SpecialPolicy>(n, p), x);
+                boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
         } catch (...) {
             /* Boost was unable to produce a result. */
             return NAN;
@@ -1690,7 +1690,7 @@ binom_ppf_wrap(const Real x, const Real n, const Real p)
 {
     try {
         return boost::math::quantile(
-            boost::math::binomial_distribution<Real, SpecialPolicy>(n, p), x);
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
     } catch (...) {
         /* Boost was unable to produce a result. */
         return NAN;
@@ -1740,7 +1740,7 @@ binom_isf_wrap(const Real x, const Real n, const Real p)
 {
     try {
         return boost::math::quantile(boost::math::complement(
-            boost::math::binomial_distribution<Real, SpecialPolicy>(n, p), x));
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
     } catch (...) {
         /* Boost was unable to produce a result. */
         return NAN;
