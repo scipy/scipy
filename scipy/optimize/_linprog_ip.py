@@ -28,11 +28,7 @@ from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
-    import sksparse  # noqa: F401
-    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
-    from sksparse.cholmod import analyze as cholmod_analyze
-    from sksparse.cholmod import CholmodTypeConversionWarning
-    from warnings import catch_warnings
+    from sksparse import cholmod
 except ImportError:
     has_cholmod = False
 try:
@@ -89,27 +85,13 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 def solve(r, sym_pos=False):
                     return sps.linalg.lsqr(M, r)[0]
             elif cholesky:
-                # TODO: revert this suppress_warning once the warning bug fix in
-                # sksparse is merged/released
-                # Suppress spurious warning bug from sksparse with csc_array gh-22089
-                # try:
-                #     # Will raise an exception in the first call,
-                #     # or when the matrix changes due to a new problem
-                #     _get_solver.cholmod_factor.cholesky_inplace(M)
-                # except Exception:
-                #     _get_solver.cholmod_factor = cholmod_analyze(M)
-                #     _get_solver.cholmod_factor.cholesky_inplace(M)
-                with catch_warnings(
-                    action='ignore', category=CholmodTypeConversionWarning
-                ):
-                    try:
-                        # Will raise an exception in the first call,
-                        # or when the matrix changes due to a new problem
-                        _get_solver.cholmod_factor.cholesky_inplace(M)
-                    except Exception:
-                        _get_solver.cholmod_factor = cholmod_analyze(M)
-                        _get_solver.cholmod_factor.cholesky_inplace(M)
-                solve = _get_solver.cholmod_factor
+                try:
+                    # Will raise an exception in the first call,
+                    # or when the matrix changes due to a new problem
+                    _get_solver.cholmod_factor.factorize(M)
+                except Exception:
+                    _get_solver.cholmod_factor = cholmod.cho_factor(M, order="default")
+                solve = _get_solver.cholmod_factor.solve
             else:
                 if has_umfpack and sym_pos:
                     solve = sps.linalg.factorized(M)
@@ -270,7 +252,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 3. scipy.linalg.solve w/ sym_pos = False, and if all else fails
         # 4. scipy.linalg.lstsq
         # For sparse systems, the order is:
-        # 1. sksparse.cholmod.cholesky (if available)
+        # 1. sksparse.cholmod.CholeskyFactor.solve (if available)
         # 2. scipy.sparse.linalg.factorized (if umfpack available)
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
@@ -1003,7 +985,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
     For sparse problems:
 
-    1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are installed)
+    1. ``sksparse.cholmod.CholeskyFactor.solve`` (if scikit-sparse and
+        SuiteSparse are installed)
 
     2. ``scipy.sparse.linalg.factorized``
         (if scikit-umfpack and SuiteSparse are installed)
