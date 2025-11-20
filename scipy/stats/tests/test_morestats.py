@@ -252,6 +252,7 @@ class TestShapiro:
         assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
 
 
+@pytest.mark.filterwarnings("ignore: As of SciPy 1.17: FutureWarning")
 class TestAnderson:
     def test_normal(self):
         rs = RandomState(1234567890)
