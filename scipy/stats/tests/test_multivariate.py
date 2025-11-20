@@ -1246,7 +1246,7 @@ class TestMultivariateNormal:
         rng = np.random.default_rng(413911473)
         mean = rng.standard_normal(X_ndim)
         A = rng.standard_normal((X_ndim, X_ndim))
-        cov = np.dot(A, A.transpose())
+        cov = A @ A.T
         
         if cov_object:
             cov = _covariance.CovViaPrecision(cov)
@@ -1492,7 +1492,8 @@ class TestMatrixNormal:
               [2.59428444080606, 5.79987854490876]]]
         )
         assert_allclose(actual, expected)
-        
+
+
 class TestMatrixT:
 
     def test_bad_input(self):
@@ -3795,6 +3796,7 @@ class TestMultivariateT:
         x = X.rvs(10)
         assert_allclose(Y.logpdf(x), X.logpdf(x))
         assert_allclose(Y.pdf(x), X.pdf(x))
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
