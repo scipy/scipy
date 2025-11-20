@@ -11,6 +11,7 @@ import inspect
 import platform
 import threading
 import warnings
+import multiprocessing
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -21,6 +22,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy
+from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -31,7 +33,9 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._optimize import (
+    MemoizeJac, show_options, OptimizeResult, _minimize_bfgs
+)
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
@@ -2690,7 +2694,6 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
@@ -3479,3 +3482,14 @@ class TestWorkers:
             )
         assert res.success
         assert_allclose(res.x[1], 2.0)
+
+
+def test_multiprocessing_too_many_open_files_23080():
+    # https://github.com/scipy/scipy/issues/23080
+    x0 = np.array([0.9, 0.9])
+    # check that ScalarHessWrapper doesn't keep pool object alive
+    with assert_deallocated(multiprocessing.Pool, 2) as pool_obj:
+        with pool_obj as p:
+            _minimize_bfgs(rosen, x0, workers=p.map)
+        del p
+        del pool_obj
