@@ -22,7 +22,7 @@ from scipy._lib._testutils import IS_WASM
 
 has_umfpack = True
 try:
-    from scikits.umfpack import UmfpackWarning
+    from sksparse.umfpack import UMFPACKWarning
 except ImportError:
     has_umfpack = False
 
@@ -1150,9 +1150,10 @@ class LinprogCommonTests:
         b_eq = [-4, 0, 0, 4]
 
         with warnings.catch_warnings():
-            # this is an UmfpackWarning but I had trouble importing it
             if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
+                warnings.filterwarnings(
+                    "ignore", "Matrix is nearly singular", UMFPACKWarning
+                )
             if has_cholmod:
                 warnings.filterwarnings(
                     "ignore", "Matrix is nearly singular", CholmodWarning
@@ -1403,7 +1404,9 @@ class LinprogCommonTests:
 
         with warnings.catch_warnings():
             if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
+                warnings.filterwarnings(
+                    "ignore", "Matrix is nearly singular", UMFPACKWarning
+                )
             if has_cholmod:
                 warnings.filterwarnings(
                     "ignore", "Matrix is nearly singular", CholmodWarning
@@ -1530,8 +1533,6 @@ class LinprogCommonTests:
         b_eq = np.array([[100], [0], [0], [0], [0]])
 
         with warnings.catch_warnings():
-            if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
             warnings.filterwarnings(
                 "ignore", "A_eq does not appear...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -1568,8 +1569,6 @@ class LinprogCommonTests:
         desired_fun = 36.0000000000
 
         with warnings.catch_warnings():
-            if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
             warnings.filterwarnings(
                 "ignore", "invalid value encountered", RuntimeWarning)
             warnings.simplefilter("ignore", LinAlgWarning)
@@ -1582,8 +1581,6 @@ class LinprogCommonTests:
         bounds[2] = (None, None)
 
         with warnings.catch_warnings():
-            if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
             warnings.filterwarnings(
                 "ignore", "invalid value encountered", RuntimeWarning)
             warnings.simplefilter("ignore", LinAlgWarning)
@@ -1726,8 +1723,6 @@ class LinprogCommonTests:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Solving system with option...", OptimizeWarning)
-            if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
             warnings.filterwarnings(
                 "ignore", "scipy.linalg.solve\nIll...", RuntimeWarning)
             warnings.filterwarnings(
@@ -2112,8 +2107,6 @@ class TestLinprogIPSparse(LinprogIPTests):
         bounds = (0, 1)
 
         with warnings.catch_warnings():
-            if has_umfpack:
-                warnings.simplefilter("ignore", UmfpackWarning)
             warnings.filterwarnings(
                 "ignore", "Matrix is exactly singular", MatrixRankWarning)
             warnings.filterwarnings(
