@@ -32,7 +32,7 @@ try:
 except ImportError:
     has_cholmod = False
 try:
-    import scikits.umfpack  # test whether to use factorized  # noqa: F401
+    from sksparse import umfpack
 except ImportError:
     has_umfpack = False
 
@@ -92,12 +92,16 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 except Exception:
                     _get_solver.cholmod_factor = cholmod.cho_factor(M, order="default")
                 solve = _get_solver.cholmod_factor.solve
-            else:
-                if has_umfpack and sym_pos:
-                    solve = sps.linalg.factorized(M)
-                else:  # factorized doesn't pass permc_spec
-                    solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
-
+            elif has_umfpack and sym_pos:
+                try:
+                    # Will raise an exception in the first call,
+                    # or when the matrix changes due to a new problem
+                    _get_solver.umfpack_factor.factorize(M)
+                except Exception:
+                    _get_solver.umfpack_factor = umfpack.umf_factor(M)
+                solve = _get_solver.umfpack_factor.solve
+            else:  # factorized doesn't pass permc_spec
+                solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
         else:
             if lstsq:  # sometimes necessary as solution is approached
                 def solve(r):
@@ -253,7 +257,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 4. scipy.linalg.lstsq
         # For sparse systems, the order is:
         # 1. sksparse.cholmod.CholeskyFactor.solve (if available)
-        # 2. scipy.sparse.linalg.factorized (if umfpack available)
+        # 2. sksparse.umfpack.UMFFactor.solve (if available)
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
         solved = False
@@ -988,8 +992,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
     1. ``sksparse.cholmod.CholeskyFactor.solve`` (if scikit-sparse and
         SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized``
-        (if scikit-umfpack and SuiteSparse are installed)
+    2. ``sksparse.umfpack.UMFFactor.solve`` (if scikit-sparse and SuiteSparse
+        are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
 
