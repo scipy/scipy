@@ -2229,7 +2229,7 @@ def anderson(x, dist='norm', *, method=None):
         If `method` is an instance of `MonteCarloMetod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
-        
+
         .. versionadded:: 1.17.0
             If `method` is not specified, `anderson` will emit a ``FutureWarning``
             specifying that the user must opt into a p-value calculation method.
@@ -2256,7 +2256,7 @@ def anderson(x, dist='norm', *, method=None):
         fit_result : `~scipy.stats._result_classes.FitResult`
             An object containing the results of fitting the distribution to
             the data.
-            
+
         If `method` is provided, this is an object with the following attributes:
 
         statistic : float
@@ -2264,7 +2264,7 @@ def anderson(x, dist='norm', *, method=None):
         pvalue: float
             The p-value corresponding with the test statistic, calculated according to
             the specified `method`.
-            
+
         .. deprecated :: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
             ``critical_values``, ``significance_level``, and ``fit_result`` are
@@ -2452,14 +2452,14 @@ def anderson(x, dist='norm', *, method=None):
         elif isinstance(method, stats.MonteCarloMethod):
             method = method._asdict()
             if method.pop('rvs', False):
-                message = ("The `rvs` attribute of a `MonteCarloMethod` object passed "
-                           "as the `method` parameter of `scipy.stats.anderson` is "
-                           "ignored.")
+                message = ("The `rvs` attribute of a `MonteCarloMethod` object "
+                           "passed as the `method` parameter of `scipy.stats.anderson` "
+                           "is ignored.")
                 warnings.warn(message, UserWarning, stacklevel=2)
             if method.pop('batch', False):
-                message = ("The `batch` attribute of a `MonteCarloMethod` object passed "
-                           "as the `method` parameter of `scipy.stats.anderson` is "
-                           "ignored.")
+                message = ("The `batch` attribute of a `MonteCarloMethod` object "
+                           "passed as the `method` parameter of `scipy.stats.anderson` "
+                           "is ignored.")
                 warnings.warn(message, UserWarning, stacklevel=2)
             method['n_mc_samples'] = method.pop('n_resamples')
 
@@ -2469,7 +2469,6 @@ def anderson(x, dist='norm', *, method=None):
 
             dist = getattr(stats, dist)
             res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
-            print(res.statistic, res.pvalue)
             pvalue = res.pvalue
         else:
             message = ("`method` must be either 'interpolate' or an instance of"
