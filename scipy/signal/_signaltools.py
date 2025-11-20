@@ -4257,7 +4257,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
-    """
+    """  # noqa: E501
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
