@@ -7,7 +7,7 @@ Orthogonal distance regression (:mod:`scipy.odr`)
 
 .. deprecated:: 1.17.0
     `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-    `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+    `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
     instead.
 
     The following example shows a brief comparison of the APIs::
@@ -167,7 +167,7 @@ __all__ = [s for s in dir()
 
 import warnings
 msg = ("`scipy.odr` is deprecated as of version 1.17.0 and will be removed in "
-        "SciPy 1.19.0. Please use `https://github.com/HugoMVale/odrpack-python`"
+        "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/`"
         "instead.")
 warnings.warn(msg, DeprecationWarning, stacklevel=2)
 del warnings

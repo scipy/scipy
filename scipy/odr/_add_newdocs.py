@@ -11,7 +11,7 @@ add_newdoc('scipy.odr', 'odr',
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     See Also

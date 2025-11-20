@@ -119,7 +119,7 @@ def polynomial(order):
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     Parameters
@@ -185,7 +185,7 @@ class _ExponentialModel(Model):
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     This model is defined by :math:`y=\beta_0 + e^{\beta_1 x}`
@@ -257,7 +257,7 @@ class _UnilinearModel(Model):
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     This model is defined by :math:`y = \beta_0 x + \beta_1`
@@ -292,6 +292,11 @@ unilinear = _UnilinearModel()
 class _QuadraticModel(Model):
     r"""
     Quadratic model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
 

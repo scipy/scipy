@@ -187,7 +187,7 @@ class Data:
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     Parameters
@@ -306,7 +306,7 @@ class RealData(Data):
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     Parameters
@@ -444,9 +444,9 @@ class Model:
     """
     The Model class stores information about the function you wish to fit.
 
-        .. deprecated:: 1.17.0
+    .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     It stores the function itself, at the least, and optionally stores
@@ -563,7 +563,7 @@ class Output:
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     Attributes
@@ -647,7 +647,7 @@ class ODR:
 
     .. deprecated:: 1.17.0
         `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
-        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
         instead.
 
     Members of instances of the ODR class have the same names as the arguments
