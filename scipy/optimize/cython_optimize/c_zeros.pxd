@@ -15,6 +15,11 @@ cdef extern from "../Zeros/ridder.c" nogil:
                   double rtol, int iter, void *func_data_param,
                   scipy_zeros_info *solver_stats)
 
+cdef extern from "../Zeros/chandrupatla.c" nogil:
+    double chandrupatla(callback_type f, double xa, double xb, double xtol,
+                  double rtol, int iter, void *func_data_param,
+                  scipy_zeros_info *solver_stats)
+
 cdef extern from "../Zeros/brenth.c" nogil:
     double brenth(callback_type f, double xa, double xb, double xtol,
                   double rtol, int iter, void *func_data_param,

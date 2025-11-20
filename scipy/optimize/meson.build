@@ -48,6 +48,7 @@ rootfind_lib = static_library('rootfind',
     'Zeros/brenth.c',
     'Zeros/brentq.c',
     'Zeros/ridder.c',
+    'Zeros/chandrupatla.c',
     'Zeros/zeros.h'
   ],
   gnu_symbol_visibility: 'hidden',

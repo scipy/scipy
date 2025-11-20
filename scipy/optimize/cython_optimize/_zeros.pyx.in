@@ -1,6 +1,6 @@
 """Cython wrappers for root finders in c_zeros"""
 
-{{default root_finders = ['bisect', 'ridder', 'brenth', 'brentq']}}
+{{default root_finders = ['bisect', 'ridder', 'chandrupatla', 'brenth', 'brentq']}}
 
 from . cimport c_zeros
 
@@ -151,7 +151,7 @@ def full_output_example(args, xa, xb, xtol, rtol, mitr):
     -------
     full_output : dict
         the root, number of function calls, number of iterations, and the zero
-        function error number 
+        function error number
 
     This example finds the roots of a 3rd order polynomial with coefficients
     given as `args`.
