@@ -18,7 +18,7 @@ Orthogonal distance regression (:mod:`scipy.odr`)
 
         # Classic "Pearson data" that motivates ODR.
         # Errors are in both variables, and if you don't account for this,
-        # doing a linear fit of X vs. Y or Y vs. X will give you quit
+        # doing a linear fit of X vs. Y or Y vs. X will give you quite
         # different results.
         p_x = np.array([0., .9, 1.8, 2.6, 3.3, 4.4, 5.2, 6.1, 6.5, 7.4])
         p_y = np.array([5.9, 5.4, 4.4, 4.6, 3.5, 3.7, 2.8, 2.8, 2.4, 1.5])
