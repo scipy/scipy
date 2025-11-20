@@ -2242,6 +2242,14 @@ def anderson(x, dist='norm', *, method=None):
     Returns
     -------
     result : AndersonResult
+        If `method` is provided, this is an object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        pvalue: float
+            The p-value corresponding with the test statistic, calculated according to
+            the specified `method`.
+
         If `method` is unspecified, this is an object with the following attributes:
 
         statistic : float
@@ -2256,14 +2264,6 @@ def anderson(x, dist='norm', *, method=None):
         fit_result : `~scipy.stats._result_classes.FitResult`
             An object containing the results of fitting the distribution to
             the data.
-
-        If `method` is provided, this is an object with the following attributes:
-
-        statistic : float
-            The Anderson-Darling test statistic.
-        pvalue: float
-            The p-value corresponding with the test statistic, calculated according to
-            the specified `method`.
 
         .. deprecated :: 1.17.0
             The tuple-unpacking behavior of the return object and attributes
