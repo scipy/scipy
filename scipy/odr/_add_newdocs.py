@@ -9,6 +9,11 @@ add_newdoc('scipy.odr', 'odr',
 
     Low-level function for ODR.
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        instead.
+
     See Also
     --------
     ODR : The ODR class gathers all information and coordinates the running of the

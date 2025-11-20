@@ -117,6 +117,11 @@ def polynomial(order):
     """
     Factory function for a general polynomial model.
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        instead.
+
     Parameters
     ----------
     order : int or sequence
@@ -177,6 +182,11 @@ def polynomial(order):
 class _ExponentialModel(Model):
     r"""
     Exponential model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        instead.
 
     This model is defined by :math:`y=\beta_0 + e^{\beta_1 x}`
 
@@ -244,6 +254,11 @@ def _quad_est(data):
 class _UnilinearModel(Model):
     r"""
     Univariate linear model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `github.com/HugoMVale/odrpack-python <https://github.com/HugoMVale/odrpack-python/>`_
+        instead.
 
     This model is defined by :math:`y = \beta_0 x + \beta_1`
 
