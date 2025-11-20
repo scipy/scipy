@@ -406,7 +406,7 @@ class TestAndersonMethod:
     def test_method_input_validation(self):
         message = "`method` must be either..."
         with pytest.raises(ValueError, match=message):
-            stats.anderson([1, 2, 3], 'norm', method='ekki-ekii')
+            stats.anderson([1, 2, 3], 'norm', method='ekki-ekki')
 
     def test_monte_carlo_method(self):
         rng = np.random.default_rng(94982389149239)

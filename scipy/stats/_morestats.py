@@ -2200,7 +2200,7 @@ p-value via Monte Carlo simulation. When `method` is specified, the result objec
 include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
 or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
 available, and a p-value will always be computed according to one of the available
-`method` options.""".replace('\n', ''))
+`method` options.""".replace('\n', ' '))
 
 
 @xp_capabilities(np_only=True)
@@ -2226,7 +2226,7 @@ def anderson(x, dist='norm', *, method=None):
         Defines the method used to compute the p-value.
         If `method` is ``"interpolated"``, the p-value is interpolated from
         pre-calculated tables.
-        If `method` is an instance of `MonteCarloMetod`, the p-value is computed using
+        If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
         `scipy.stats.monte_carlo_test` with the provided configuration options and other
         appropriate settings.
 
@@ -2338,18 +2338,15 @@ def anderson(x, dist='norm', *, method=None):
 
     >>> import numpy as np
     >>> from scipy.stats import anderson
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(9781234521)
     >>> data = rng.random(size=35)
-    >>> res = anderson(data)
+    >>> res = anderson(data, dist='norm', method='interpolate')
     >>> res.statistic
-    0.8398018749744764
-    >>> res.critical_values
-    array([0.548, 0.617, 0.735, 0.853, 1.011])
-    >>> res.significance_level
-    array([15. , 10. ,  5. ,  2.5,  1. ])
+    np.float64(0.9887620209957291)
+    >>> res.pvalue
+    np.float64(0.012111200538380142)
 
-    The value of the statistic (barely) exceeds the critical value associated
-    with a significance level of 2.5%, so the null hypothesis may be rejected
+    The p-value is approximately 0.012,, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
     """ # numpy/numpydoc#87  # noqa: E501
@@ -2444,39 +2441,35 @@ def anderson(x, dist='norm', *, method=None):
 
     if method is None:
         warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
-        res = AndersonResult(A2, critical, sig, fit_result=fit_result)
+        return AndersonResult(A2, critical, sig, fit_result=fit_result)
+
+    if method == 'interpolate':
+        sig = 1 - sig if dist == 'weibull_min' else sig / 100
+        pvalue = np.interp(A2, critical, sig)
+    elif isinstance(method, stats.MonteCarloMethod):
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
     else:
-        if method == 'interpolate':
-            sig = 1 - sig if dist == 'weibull_min' else sig / 100
-            pvalue = np.interp(A2, critical, sig)
-        elif isinstance(method, stats.MonteCarloMethod):
-            method = method._asdict()
-            if method.pop('rvs', False):
-                message = ("The `rvs` attribute of a `MonteCarloMethod` object "
-                           "passed as the `method` parameter of `scipy.stats.anderson` "
-                           "is ignored.")
-                warnings.warn(message, UserWarning, stacklevel=2)
-            if method.pop('batch', False):
-                message = ("The `batch` attribute of a `MonteCarloMethod` object "
-                           "passed as the `method` parameter of `scipy.stats.anderson` "
-                           "is ignored.")
-                warnings.warn(message, UserWarning, stacklevel=2)
-            method['n_mc_samples'] = method.pop('n_resamples')
+        message = ("`method` must be either 'interpolate' or "
+                   "an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+    return SignificanceResult(statistic=A2, pvalue=pvalue)
 
-            kwargs = {}
-            if dist == 'expon':
-                kwargs['known_params'] = {'loc': 0}
 
-            dist = getattr(stats, dist)
-            res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
-            pvalue = res.pvalue
-        else:
-            message = ("`method` must be either 'interpolate' or an instance of"
-                       "`MonteCarloMethod`.")
-            raise ValueError(message)
-        res = SignificanceResult(statistic=A2, pvalue=pvalue)
+def _anderson_simulate_pvalue(x, dist, method):
+    message = ("The `___` attribute of a `MonteCarloMethod` object passed as the "
+               "`method` parameter of `scipy.stats.anderson` is ignored.")
 
-    return res
+    method = method._asdict()
+    if method.pop('rvs', False):
+        warnings.warn(message.replace('___', 'rvs'), UserWarning, stacklevel=3)
+    if method.pop('batch', False):
+        warnings.warn(message.replace('___', 'batch'), UserWarning, stacklevel=3)
+    method['n_mc_samples'] = method.pop('n_resamples')
+
+    kwargs= {'known_params': {'loc': 0}} if dist == 'expon' else {}
+    dist = getattr(stats, dist)
+    res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
+    return res.pvalue
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
