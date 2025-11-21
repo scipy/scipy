@@ -4634,45 +4634,60 @@ class TestKSTest:
     # missing: no test that uses *args
 
 
+@make_xp_test_case(stats.ks_1samp)
 class TestKSOneSample:
     """
     Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes.
     """
 
-    def _testOne(self, x, alternative, expected_statistic, expected_prob,
-                 mode='auto', decimal=14):
-        result = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative, mode=mode)
-        expected = np.array([expected_statistic, expected_prob])
-        assert_array_almost_equal(np.array(result), expected, decimal=decimal)
+    def _testOne(self, x, alternative, expected_statistic, expected_prob, *,
+                 mode='auto', dtype, xp):
+        rtol = 5e-14 if dtype == xp.float64 else 1e-5
+        res = stats.ks_1samp(x, special.ndtr, alternative=alternative, mode=mode)
+        ref_statistic = xp.asarray(expected_statistic, dtype=dtype)
+        ref_pvalue = xp.asarray(expected_prob, dtype=dtype)
+        xp_assert_close(res.statistic, ref_statistic, rtol=rtol)
+        xp_assert_close(res.pvalue, ref_pvalue, rtol=rtol)
 
-    def test_namedtuple_attributes(self):
-        x = np.linspace(-1, 1, 9)
-        # test for namedtuple attribute results
-        attributes = ('statistic', 'pvalue')
-        res = stats.ks_1samp(x, stats.norm.cdf)
-        check_named_results(res, attributes)
-
-    def test_agree_with_r(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_agree_with_r(self, dtype, xp):
         # comparing with some values from R
-        x = np.linspace(-1, 1, 9)
-        self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386)
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.linspace(-1, 1, 9, dtype=dtype)
+        self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386,
+                      dtype=dtype, xp=xp)
 
-        x = np.linspace(-15, 15, 9)
-        self._testOne(x, 'two-sided', 0.44435602715924361, 0.038850140086788665)
+        x = xp.linspace(-15, 15, 9, dtype=dtype)
+        self._testOne(x, 'two-sided', 0.44435602715924361, 0.038850140086788665,
+                      dtype=dtype, xp=xp)
 
         x = [-1.23, 0.06, -0.60, 0.17, 0.66, -0.17, -0.08, 0.27, -0.98, -0.99]
-        self._testOne(x, 'two-sided', 0.293580126801961, 0.293408463684361)
-        self._testOne(x, 'greater', 0.293580126801961, 0.146988835042376, mode='exact')
-        self._testOne(x, 'less', 0.109348552425692, 0.732768892470675, mode='exact')
+        x = xp.asarray(x, dtype=dtype)
+        self._testOne(x, 'two-sided', 0.293580126801961, 0.293408463684361,
+                      dtype=dtype, xp=xp)
+        self._testOne(x, 'greater', 0.293580126801961, 0.146988835042376, mode='exact',
+                      dtype=dtype, xp=xp)
+        self._testOne(x, 'less', 0.109348552425692, 0.732768892470675, mode='exact',
+                      dtype=dtype, xp=xp)
 
-    def test_known_examples(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_known_examples(self, xp, dtype):
         # the following tests rely on deterministically replicated rvs
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
+        x = xp.asarray(x, dtype=dtype)
         self._testOne(x, 'two-sided', 0.12464329735846891, 0.089444888711820769,
-                      mode='asymp')
-        self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749)
-        self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228)
+                      mode='asymp', xp=xp, dtype=dtype)
+        self._testOne(x, 'less', 0.12464329735846891, 0.040989164077641749,
+                      xp=xp, dtype=dtype)
+        self._testOne(x, 'greater', 0.0072115233216310994, 0.98531158590396228,
+                      xp=xp, dtype=dtype)
 
+    # this is a test of the exact p-value calculation, available only with NumPy.
     def test_ks1samp_allpaths(self):
         # Check NaN input, output.
         assert_(np.isnan(kolmogn(np.nan, 1, True)))
@@ -4710,21 +4725,23 @@ class TestKSOneSample:
 
     @pytest.mark.parametrize("ksfunc", [stats.kstest, stats.ks_1samp])
     @pytest.mark.parametrize("alternative, x6val, ref_location, ref_sign",
-                             [('greater', 6, 6, +1),
-                              ('less', 7, 7, -1),
-                              ('two-sided', 6, 6, +1),
-                              ('two-sided', 7, 7, -1)])
+                             [('greater', 6., 6., +1),
+                              ('less', 7., 7., -1),
+                              ('two-sided', 6., 6., +1),
+                              ('two-sided', 7., 7., -1)])
     def test_location_sign(self, ksfunc, alternative,
-                           x6val, ref_location, ref_sign):
+                           x6val, ref_location, ref_sign, xp):
         # Test that location and sign corresponding with statistic are as
         # expected. (Test is designed to be easy to predict.)
-        x = np.arange(10) + 0.5
-        x[6] = x6val
-        cdf = stats.uniform(scale=10).cdf
-        res = ksfunc(x, cdf, alternative=alternative)
-        assert_allclose(res.statistic, 0.1, rtol=1e-15)
-        assert res.statistic_location == ref_location
-        assert res.statistic_sign == ref_sign
+        x = xp.arange(10.) + 0.5
+        x = xpx.at(x)[6].set(x6val)
+        # cdf = stats.uniform(scale=10).cdf
+        def cdf(x): return x / 10.
+        res = ksfunc(xp.asarray(x), cdf, alternative=alternative)
+        rtol = 1e-15 if x.dtype == xp.float64 else 1e-6
+        xp_assert_close(res.statistic, xp.asarray(0.1), rtol=rtol)
+        xp_assert_equal(res.statistic_location, xp.asarray(ref_location))
+        xp_assert_equal(res.statistic_sign, xp.asarray(ref_sign, dtype=xp.int8))
 
     # missing: no test that uses *args
 
