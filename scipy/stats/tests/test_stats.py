@@ -3537,7 +3537,6 @@ class TestIQR:
     def test_scale_nan_policy_omit(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
         x = xpx.at(x)[1, 2].set(xp.nan)
-        nan = xp.asarray(xp.nan)
         xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), xp.asarray(7.5))
         xp_assert_close(stats.iqr(x, scale='normal', nan_policy='omit'),
                         xp.asarray(7.5 / 1.3489795))
