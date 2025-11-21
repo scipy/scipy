@@ -302,23 +302,23 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
             # Create a sparse output matrix by repeatedly applying
             # the sparse factorization to solve columns of b.
+            itype = get_index_dtype(maxval=max(b.shape))
+            indptr = np.zeros(b.shape[1] + 1, dtype=itype)
             data_segs = []
-            row_segs = []
-            col_segs = []
+            indices_segs = []
             for j in range(b.shape[1]):
                 bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
                 w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.full(segment_length, j, dtype=int))
+                indptr[j+1] = indptr[j] + len(w)
+                indices_segs.append(w)
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            idx_dtype = get_index_dtype(maxval=max(b.shape))
-            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
-            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+            data = np.concatenate(data_segs)
+            indices = np.concatenate(indices_segs, dtype=itype)
+            assert len(indices) == len(data)
+            assert indptr[-1] == len(data)
+            x = csc_array((data, indices, indptr), shape=b.shape, dtype=A.dtype)
+            x = A.__class__(x)
 
             if is_pydata_sparse:
                 x = pydata_sparse_cls.from_scipy_sparse(x)
