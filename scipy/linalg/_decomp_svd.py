@@ -5,6 +5,8 @@ import numpy as np
 import numpy.typing as npt
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
@@ -14,6 +16,7 @@ __all__ = ['svd', 'svdvals', 'diagsvd', 'higher_order_svd', 'orth',
            'subspace_angles', 'null_space']
 
 
+@_apply_over_batch(('a', 2))
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """
@@ -169,14 +172,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal gesdd'
-                         % -info)
+        if lapack_driver == "gesdd" and info == -4:
+            msg = "A has a NaN entry"
+            raise ValueError(msg)
+        raise ValueError(f'illegal value in {-info}th argument of internal gesdd')
     if compute_uv:
         return u, s, v
     else:
         return s
 
 
+@_apply_over_batch(('a', 2))
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
@@ -253,6 +259,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
+@_apply_over_batch(('s', 1))
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -400,6 +407,7 @@ def higher_order_svd(
 
 # Orthonormal decomposition
 
+@_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
@@ -448,6 +456,7 @@ def orth(A, rcond=None):
     return Q
 
 
+@_apply_over_batch(('A', 2))
 def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
                lapack_driver='gesdd'):
     """
@@ -526,6 +535,7 @@ def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
     return Q
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def subspace_angles(A, B):
     r"""
     Compute the subspace angles between two matrices.

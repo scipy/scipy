@@ -25,6 +25,7 @@
 
 import warnings
 import operator
+from types import GenericAlias
 
 import numpy as np
 import scipy
@@ -34,7 +35,11 @@ __all__ = ["AAA", "FloaterHormannInterpolator"]
 
 
 class _BarycentricRational:
-    """Base class for Barycentric representation of a rational function."""
+    """Base class for barycentric representation of a rational function."""
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, x, y, **kwargs):
         # input validation
         z = np.asarray(x)
@@ -399,7 +404,7 @@ class AAA(_BarycentricRational):
     >>> with warnings.catch_warnings():
     ...     warnings.simplefilter('ignore', RuntimeWarning)
     ...     r.clean_up()
-    4
+    4  # may vary
     >>> mask = np.abs(r.residues()) < 1e-13
     >>> axs[1].plot(r.poles().real[~mask], r.poles().imag[~mask], '.')
     >>> axs[1].plot(r.poles().real[mask], r.poles().imag[mask], 'r.')
@@ -451,6 +456,8 @@ class AAA(_BarycentricRational):
         A = np.empty((M, max_terms), dtype=dtype)
         errors = np.empty(max_terms, dtype=A.real.dtype)
         R = np.repeat(np.mean(f), M)
+        ill_conditioned = False
+        ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
 
         # AAA iteration
         for m in range(max_terms):
@@ -476,13 +483,25 @@ class AAA(_BarycentricRational):
             rows = mask.sum()
             if rows >= m + 1:
                 # The usual tall-skinny case
-                _, s, V = scipy.linalg.svd(
-                    A[mask, : m + 1], full_matrices=False, check_finite=False,
-                )
+                if not ill_conditioned:
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1], full_matrices=False, check_finite=False,
+                    )
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        if s[0]/s[-1] > ill_conditioned_tol:
+                            ill_conditioned = True
+                if ill_conditioned:
+                    col_norm = np.linalg.norm(A[mask, : m + 1], axis=0)
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1]/col_norm, full_matrices=False,
+                        check_finite=False,
+                    )
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
                 # Aim for non-sparse weight vector
                 wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
+                if ill_conditioned:
+                    wj /= col_norm
             else:
                 # Fewer rows than columns
                 V = scipy.linalg.null_space(A[mask, : m + 1], check_finite=False)
@@ -597,11 +616,10 @@ class AAA(_BarycentricRational):
 
 
 class FloaterHormannInterpolator(_BarycentricRational):
-    r"""
-    Floater-Hormann barycentric rational interpolation.
+    r"""Floater-Hormann barycentric rational interpolator (C∞ smooth on real axis).
 
     As described in [1]_, the method of Floater and Hormann computes weights for a
-    Barycentric rational interpolant with no poles on the real axis.
+    barycentric rational interpolant with no poles on the real axis.
 
     Parameters
     ----------
@@ -610,11 +628,11 @@ class FloaterHormannInterpolator(_BarycentricRational):
         complex but must be finite.
     y : array_like, shape (n, ...)
         Array containing values of the dependent variable. Infinite and NaN values
-        of `values` and corresponding values of `x` will be discarded.
-    d : int, optional
-        Blends ``n - d`` degree `d` polynomials together. For ``d = n - 1`` it is
-        equivalent to polynomial interpolation. Must satisfy ``0 <= d < n``,
-        defaults to 3.
+        of `y` and corresponding values of `x` will be discarded.
+    d : int, default: 3
+        Integer satisfying ``0 <= d < n``. Floater-Hormann interpolation blends
+        ``n - d`` polynomials of degree `d` together; for ``d = n - 1``, this is
+        equivalent to polynomial interpolation.
 
     Attributes
     ----------
@@ -639,8 +657,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
         r(x) = \frac{\sum_{i=0}^{n-d} \lambda_i(x) p_i(x)}
         {\sum_{i=0}^{n-d} \lambda_i(x)},
 
-    where :math:`p_i(x)` is an interpolating polynomials of at most degree `d` through
-    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d}), and :math:`\lambda_i(z)` are
+    where :math:`p_i(x)` is an interpolating polynomial of at most degree `d` through
+    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d})`, and :math:`\lambda_i(z)` are
     blending functions defined by
 
     .. math::
@@ -649,8 +667,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     When ``d = n - 1`` this reduces to polynomial interpolation.
 
-    Due to its stability following barycentric representation of the above equation
-    is used instead for computation
+    Due to its stability, the following barycentric representation of the above equation
+    is used for computation
 
     .. math::
 
@@ -680,16 +698,17 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> import numpy as np
     >>> from scipy.interpolate import (FloaterHormannInterpolator,
     ...                                BarycentricInterpolator)
-    >>> def f(z):
-    ...     return 1/(1 + z**2)
-    >>> z = np.linspace(-5, 5, num=15)
-    >>> r = FloaterHormannInterpolator(z, f(z))
-    >>> p = BarycentricInterpolator(z, f(z))
-    >>> zz = np.linspace(-5, 5, num=1000)
+    >>> def f(x):
+    ...     return 1/(1 + x**2)
+    >>> x = np.linspace(-5, 5, num=15)
+    >>> r = FloaterHormannInterpolator(x, f(x))
+    >>> p = BarycentricInterpolator(x, f(x))
+    >>> xx = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(zz, r(zz), label="Floater=Hormann")
-    >>> ax.plot(zz, p(zz), label="Polynomial")
+    >>> ax.plot(xx, f(xx), label="f(x)")
+    >>> ax.plot(xx, r(xx), "--", label="Floater-Hormann")
+    >>> ax.plot(xx, p(xx), "--", label="Polynomial")
     >>> ax.legend()
     >>> plt.show()
     """

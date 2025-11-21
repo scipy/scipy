@@ -12,21 +12,21 @@ Usage
 
 Airspeed Velocity manages building and Python environments by itself,
 unless told otherwise. Some of the benchmarking features in
-``dev.py`` also tell ASV to use the SciPy compiled by
-``dev.py``. To run the benchmarks, you do not need to install a
+``spin`` also tell ASV to use the SciPy compiled by
+``spin``. To run the benchmarks, you do not need to install a
 development version of SciPy to your current Python environment.
 
 Run a benchmark against currently checked-out SciPy version (don't record the
 result)::
 
-    python dev.py bench --submodule sparse.Arithmetic
+    spin bench --submodule sparse.Arithmetic
 
 Compare change in benchmark results with another branch::
 
-    python dev.py bench --compare main --submodule sparse.Arithmetic
+    spin bench --compare main --submodule sparse.Arithmetic
 
 Run ASV commands directly (note, this will not set env vars for ``ccache``
-and disabling BLAS/LAPACK multi-threading, as ``dev.py`` does)::
+and disabling BLAS/LAPACK multi-threading, as ``spin`` does)::
 
     cd benchmarks
     asv run --skip-existing-commits --steps 10 ALL

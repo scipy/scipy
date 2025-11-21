@@ -867,12 +867,12 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         when Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default: False)
         Set to ``True`` if the problem is to be treated as sparse after
-        presolve. If either ``A_eq`` or ``A_ub`` is a sparse matrix,
+        presolve. If either ``A_eq`` or ``A_ub`` is sparse,
         this option will automatically be set ``True``, and the problem
         will be treated as sparse even during presolve. If your constraint
         matrices contain mostly zeros and the problem is not very small (less
         than about 100 constraints or variables), consider setting ``True``
-        or providing ``A_eq`` and ``A_ub`` as sparse matrices.
+        or providing ``A_eq`` and ``A_ub`` as sparse arrays.
     lstsq : bool (default: ``False``)
         Set to ``True`` if the problem is expected to be very poorly
         conditioned. This should always be left ``False`` unless severe

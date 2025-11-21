@@ -13,7 +13,7 @@ __all__ = ["_deprecated"]
 _NoValue = object()
 
 def _sub_module_deprecation(*, sub_package, module, private_modules, all,
-                            attribute, correct_module=None):
+                            attribute, correct_module=None, dep_version="1.16.0"):
     """Helper function for deprecating modules that are public but were
     intended to be private.
 
@@ -33,6 +33,8 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
     correct_module : str, optional
         Module in `sub_package` that `attribute` should be imported from.
         Default is that `attribute` should be imported from ``scipy.sub_package``.
+    dep_version : str, optional
+        Version in which deprecated attributes will be removed.
     """
     if correct_module is not None:
         correct_import = f"scipy.{sub_package}.{correct_module}"
@@ -59,7 +61,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
             f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
             f"the `scipy.{sub_package}.{module}` namespace. "
             f"`scipy.{sub_package}.{module}.{attribute}` will be removed "
-            f"in SciPy 1.14.0, and the `scipy.{sub_package}.{module}` namespace "
+            f"in SciPy {dep_version}, and the `scipy.{sub_package}.{module}` namespace "
             f"will be removed in SciPy 2.0.0."
         )
 
@@ -219,7 +221,7 @@ def _deprecate_positional_args(func=None, *, version=None,
             if intersection:
                 message = (f"Arguments {intersection} are deprecated, whether passed "
                            "by position or keyword. They will be removed in SciPy "
-                           "{version}. ")
+                           f"{version}. ")
                 message += custom_message
                 warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 
@@ -261,7 +263,7 @@ def _deprecate_positional_args(func=None, *, version=None,
         admonition += custom_message
         doc['Extended Summary'] += [admonition]
 
-        doc = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
         inner_f.__doc__ = str(doc)
 
         return inner_f

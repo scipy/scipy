@@ -144,7 +144,7 @@ def isotonic_regression(
     # As information: Due to the pava implementation, after the last block
     # index, there might be smaller numbers appended to r, e.g.
     # r = [0, 10, 8, 7] which in the end should be r = [0, 10].
-    r = r[:b + 1]
+    r = r[:b + 1]  # type: ignore[assignment]
     wx = wx[:b]
     if not increasing:
         x = x[::-1]

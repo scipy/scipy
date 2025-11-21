@@ -64,8 +64,7 @@ class TestBinnedStatistic:
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
         x = self.x
-        u = self.u
-        orig = u[0]
+        u = self.u.copy()  # take copy before modification
         u[0] = np.inf
         assert_raises(ValueError, binned_statistic, u, x, 'std', bins=10)
         # need to test for non-python specific ints, e.g. np.int8, np.int64
@@ -73,8 +72,6 @@ class TestBinnedStatistic:
                       bins=np.int64(10))
         u[0] = np.nan
         assert_raises(ValueError, binned_statistic, u, x, 'count', bins=10)
-        # replace original value, u belongs the class
-        u[0] = orig
 
     def test_1d_result_attributes(self):
         x = self.x
@@ -159,9 +156,9 @@ class TestBinnedStatistic:
 
     def test_1d_range_keyword(self):
         # Regression test for gh-3063, range can be (min, max) or [(min, max)]
-        np.random.seed(9865)
+        rng = np.random.default_rng(6823616729)
         x = np.arange(30)
-        data = np.random.random(30)
+        data = rng.random(30)
 
         mean, bins, _ = binned_statistic(x[:15], data[:15])
         mean_range, bins_range, _ = binned_statistic(x, data, range=[(0, 14)])
@@ -479,8 +476,9 @@ class TestBinnedStatistic:
 
     def test_dd_binned_statistic_result(self):
         # NOTE: tests the reuse of bin_edges from previous call
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(8111360615)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = (bins, bins, bins)
 
@@ -494,8 +492,9 @@ class TestBinnedStatistic:
         assert_allclose(stat, stat2)
 
     def test_dd_zero_dedges(self):
-        x = np.random.random((10000, 3))
-        v = np.random.random(10000)
+        rng = np.random.default_rng(1132724173)
+        x = rng.random((10000, 3))
+        v = rng.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)

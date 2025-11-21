@@ -1,17 +1,16 @@
 import os
 import os.path
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 
 from scipy._lib._array_api import (
-    is_jax,
     is_torch,
-    array_namespace,
     xp_assert_equal,
     xp_assert_close,
     assert_array_almost_equal,
     assert_almost_equal,
+    make_xp_test_case,
 )
 
 import pytest
@@ -21,10 +20,7 @@ import scipy.ndimage as ndimage
 
 from . import types
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
 
 IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 
@@ -112,6 +108,7 @@ class Test_measurements_stats:
             xp_assert_equal(centers, np.asarray([0.5, 8.0]))
 
 
+@skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 
@@ -150,21 +147,23 @@ class Test_measurements_select:
             assert result[1].dtype.kind == 'i'
 
 
+@make_xp_test_case(ndimage.label)
 def test_label01(xp):
-    data = xp.ones([])
+    data = xp.ones(())
     out, n = ndimage.label(data)
     assert out == 1
     assert n == 1
 
 
+@make_xp_test_case(ndimage.label)
 def test_label02(xp):
-    data = xp.zeros([])
+    data = xp.zeros(())
     out, n = ndimage.label(data)
     assert out == 0
     assert n == 0
 
 
-@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
+@make_xp_test_case(ndimage.label)
 def test_label03(xp):
     data = xp.ones([1])
     out, n = ndimage.label(data)
@@ -172,6 +171,7 @@ def test_label03(xp):
     assert n == 1
 
 
+@make_xp_test_case(ndimage.label)
 def test_label04(xp):
     data = xp.zeros([1])
     out, n = ndimage.label(data)
@@ -179,6 +179,7 @@ def test_label04(xp):
     assert n == 0
 
 
+@make_xp_test_case(ndimage.label)
 def test_label05(xp):
     data = xp.ones([5])
     out, n = ndimage.label(data)
@@ -186,6 +187,7 @@ def test_label05(xp):
     assert n == 1
 
 
+@make_xp_test_case(ndimage.label)
 def test_label06(xp):
     data = xp.asarray([1, 0, 1, 1, 0, 1])
     out, n = ndimage.label(data)
@@ -193,6 +195,7 @@ def test_label06(xp):
     assert n == 3
 
 
+@make_xp_test_case(ndimage.label)
 def test_label07(xp):
     data = xp.asarray([[0, 0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0, 0],
@@ -211,6 +214,7 @@ def test_label07(xp):
     assert n == 0
 
 
+@make_xp_test_case(ndimage.label)
 def test_label08(xp):
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
                        [0, 0, 1, 1, 0, 0],
@@ -228,6 +232,7 @@ def test_label08(xp):
     assert n == 4
 
 
+@make_xp_test_case(ndimage.label)
 def test_label09(xp):
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
                        [0, 0, 1, 1, 0, 0],
@@ -247,6 +252,7 @@ def test_label09(xp):
     assert n == 3
 
 
+@make_xp_test_case(ndimage.label)
 def test_label10(xp):
     data = xp.asarray([[0, 0, 0, 0, 0, 0],
                        [0, 1, 1, 0, 1, 0],
@@ -262,6 +268,7 @@ def test_label10(xp):
     assert n == 1
 
 
+@make_xp_test_case(ndimage.label)
 def test_label11(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -284,6 +291,7 @@ def test_label11(xp):
 
 
 @skip_xp_backends(np_only=True, reason='inplace output is numpy-specific')
+@make_xp_test_case(ndimage.label)
 def test_label11_inplace(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -305,6 +313,7 @@ def test_label11_inplace(xp):
         assert n == 4
 
 
+@make_xp_test_case(ndimage.label)
 def test_label12(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -324,6 +333,7 @@ def test_label12(xp):
         assert n == 1
 
 
+@make_xp_test_case(ndimage.label)
 def test_label13(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -342,7 +352,9 @@ def test_label13(xp):
         assert n == 1
 
 
-@skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
+                  reason='output=dtype is numpy-specific')
+@make_xp_test_case(ndimage.label)
 def test_label_output_typed(xp):
     data = xp.ones([5])
     for t in types:
@@ -354,7 +366,9 @@ def test_label_output_typed(xp):
         assert n == 1
 
 
-@skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
+                  reason='output=dtype is numpy-specific')
+@make_xp_test_case(ndimage.label)
 def test_label_output_dtype(xp):
     data = xp.ones([5])
     for t in types:
@@ -365,19 +379,17 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
+@skip_xp_backends(np_only=True, reason="in-place output is numpy-specific")
+@make_xp_test_case(ndimage.label)
 def test_label_output_wrong_size(xp):
-    if is_jax(xp):
-        pytest.xfail("JAX does not raise")
-
     data = xp.ones([5])
     for t in types:
         dtype = getattr(xp, t)
         output = xp.zeros([10], dtype=dtype)
-        # TypeError is from non-numpy arrays as output
-        assert_raises((ValueError, TypeError),
-                      ndimage.label, data, output=output)
+        assert_raises(ValueError, ndimage.label, data, output=output)
 
 
+@make_xp_test_case(ndimage.label)
 def test_label_structuring_elements(xp):
     data = np.loadtxt(os.path.join(os.path.dirname(
         __file__), "data", "label_inputs.txt"))
@@ -400,9 +412,8 @@ def test_label_structuring_elements(xp):
             xp_assert_equal(ndimage.label(d, s)[0], results[r, :, :], check_dtype=False)
             r += 1
 
-@skip_xp_backends("cupy",
-                  reason="`cupyx.scipy.ndimage` does not have `find_objects`"
-)
+
+@make_xp_test_case(ndimage.label, ndimage.find_objects)
 def test_ticket_742(xp):
     def SE(img, thresh=.7, size=4):
         mask = img > thresh
@@ -421,6 +432,7 @@ def test_ticket_742(xp):
         SE(a)
 
 
+@make_xp_test_case(ndimage.label)
 def test_gh_issue_3025(xp):
     """Github issue #3025 - improper merging of labels"""
     d = np.zeros((60, 320))
@@ -433,7 +445,7 @@ def test_gh_issue_3025(xp):
     assert ndimage.label(d, xp.ones((3, 3)))[1] == 1
 
 
-@skip_xp_backends("cupy", reason="cupyx.scipy.ndimage does not have find_object")
+@make_xp_test_case(ndimage.label, ndimage.find_objects)
 class TestFindObjects:
     def test_label_default_dtype(self, xp):
         test_array = np.random.rand(10, 10)
@@ -521,6 +533,7 @@ class TestFindObjects:
                            (slice(5, 6, None), slice(3, 5, None))]
 
 
+@make_xp_test_case(ndimage.value_indices)
 def test_value_indices01(xp):
     "Test dictionary keys and entries"
     data = xp.asarray([[1, 0, 0, 0, 0, 0],
@@ -533,11 +546,7 @@ def test_value_indices01(xp):
     true_keys = [1, 2, 4]
     assert list(vi.keys()) == true_keys
 
-    nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
-
-    truevi = {}
-    for k in true_keys:
-        truevi[k] = xp.nonzero(data == k, **nnz_kwd)
+    truevi = {k: xp.nonzero(data == k) for k in true_keys}
 
     vi = ndimage.value_indices(data, ignore_value=0)
     assert vi.keys() == truevi.keys()
@@ -547,6 +556,7 @@ def test_value_indices01(xp):
             xp_assert_equal(v, true_v)
 
 
+@make_xp_test_case(ndimage.value_indices)
 def test_value_indices02(xp):
     "Test input checking"
     data = xp.zeros((5, 4), dtype=xp.float32)
@@ -555,25 +565,25 @@ def test_value_indices02(xp):
         ndimage.value_indices(data)
 
 
+@make_xp_test_case(ndimage.value_indices)
 def test_value_indices03(xp):
     "Test different input array shapes, from 1-D to 4-D"
     for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
-        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32)
-        a = xp.reshape(a, shape)
+        a = np.asarray((12*[1]+12*[2]+12*[3]), dtype=np.int32)
+        a = np.reshape(a, shape)
 
-        nnz_kwd = {'as_tuple': True} if is_torch(xp) else {}
-
-        unique_values = array_namespace(a).unique_values
-        trueKeys = unique_values(a)
+        trueKeys = np.unique(a)
+        a = xp.asarray(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:
-            trueNdx = xp.nonzero(a == k, **nnz_kwd)
+            trueNdx = xp.nonzero(a == k)
             assert len(vi[k]) == len(trueNdx)
             for vik, true_vik in zip(vi[k], trueNdx):
                 xp_assert_equal(vik, true_vik)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum01(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -582,6 +592,7 @@ def test_sum01(xp):
         assert output == 0
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum02(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -590,6 +601,7 @@ def test_sum02(xp):
         assert output == 0
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum03(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -598,6 +610,7 @@ def test_sum03(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum04(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -606,6 +619,7 @@ def test_sum04(xp):
         assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum05(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -614,6 +628,7 @@ def test_sum05(xp):
         assert_almost_equal(output, xp.asarray(10.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum06(xp):
     labels = np.asarray([], dtype=bool)
     labels = xp.asarray(labels)
@@ -624,6 +639,7 @@ def test_sum06(xp):
         assert output == 0
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum07(xp):
     labels = np.ones([0, 4], dtype=bool)
     labels = xp.asarray(labels)
@@ -634,6 +650,7 @@ def test_sum07(xp):
         assert output == 0
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum08(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -644,6 +661,7 @@ def test_sum08(xp):
         assert output == 1
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum09(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -654,6 +672,7 @@ def test_sum09(xp):
         assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum10(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[1, 2], [3, 4]], dtype=bool)
@@ -664,6 +683,7 @@ def test_sum10(xp):
     assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum11(xp):
     labels = xp.asarray([1, 2], dtype=xp.int8)
     for type in types:
@@ -674,6 +694,7 @@ def test_sum11(xp):
         assert_almost_equal(output, xp.asarray(6.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum12(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
@@ -683,6 +704,7 @@ def test_sum12(xp):
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
 
+@make_xp_test_case(ndimage.sum)
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:
@@ -696,6 +718,7 @@ def test_sum_labels(xp):
         assert_array_almost_equal(output_labels, xp.asarray([4.0, 0.0, 5.0]))
 
 
+@make_xp_test_case(ndimage.mean)
 def test_mean01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -706,6 +729,7 @@ def test_mean01(xp):
         assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.mean)
 def test_mean02(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[1, 2], [3, 4]], dtype=bool)
@@ -716,6 +740,7 @@ def test_mean02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.mean)
 def test_mean03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -726,6 +751,7 @@ def test_mean03(xp):
         assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.mean)
 def test_mean04(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     with np.errstate(all='ignore'):
@@ -741,6 +767,7 @@ def test_mean04(xp):
             assert xp.isnan(output[1])
 
 
+@make_xp_test_case(ndimage.minimum)
 def test_minimum01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -751,6 +778,7 @@ def test_minimum01(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.minimum)
 def test_minimum02(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[2, 2], [2, 4]], dtype=bool)
@@ -761,6 +789,7 @@ def test_minimum02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.minimum)
 def test_minimum03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -772,6 +801,7 @@ def test_minimum03(xp):
         assert_almost_equal(output, xp.asarray(2.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.minimum)
 def test_minimum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -782,6 +812,7 @@ def test_minimum04(xp):
         assert_array_almost_equal(output, xp.asarray([2.0, 4.0, 0.0]))
 
 
+@make_xp_test_case(ndimage.maximum)
 def test_maximum01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -792,6 +823,7 @@ def test_maximum01(xp):
         assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.maximum)
 def test_maximum02(xp):
     labels = np.asarray([1, 0], dtype=bool)
     input = np.asarray([[2, 2], [2, 4]], dtype=bool)
@@ -801,6 +833,7 @@ def test_maximum02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.maximum)
 def test_maximum03(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -811,6 +844,7 @@ def test_maximum03(xp):
         assert_almost_equal(output, xp.asarray(4.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.maximum)
 def test_maximum04(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -821,12 +855,14 @@ def test_maximum04(xp):
         assert_array_almost_equal(output, xp.asarray([3.0, 4.0, 0.0]))
 
 
+@make_xp_test_case(ndimage.maximum)
 def test_maximum05(xp):
     # Regression test for ticket #501 (Trac)
     x = xp.asarray([-3, -2, -1])
     assert ndimage.maximum(x) == -1
 
 
+@make_xp_test_case(ndimage.median)
 def test_median01(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -840,6 +876,7 @@ def test_median01(xp):
     assert_array_almost_equal(output, xp.asarray([2.5, 4.0, 6.0]))
 
 
+@make_xp_test_case(ndimage.median)
 def test_median02(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -849,6 +886,7 @@ def test_median02(xp):
     assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.median)
 def test_median03(xp):
     a = xp.asarray([[1, 2, 0, 1],
                     [5, 3, 0, 4],
@@ -862,6 +900,7 @@ def test_median03(xp):
     assert_almost_equal(output, xp.asarray(3.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.median)
 def test_median_gh12836_bool(xp):
     # test boolean addition fix on example from gh-12836
     a = np.asarray([1, 1], dtype=bool)
@@ -870,6 +909,7 @@ def test_median_gh12836_bool(xp):
     assert_array_almost_equal(output, xp.asarray([1.0]))
 
 
+@make_xp_test_case(ndimage.median)
 def test_median_no_int_overflow(xp):
     # test integer overflow fix on example from gh-12836
     a = xp.asarray([65, 70], dtype=xp.int8)
@@ -877,17 +917,19 @@ def test_median_no_int_overflow(xp):
     assert_array_almost_equal(output, xp.asarray([67.5]))
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance01(xp):
     with np.errstate(all='ignore'):
         for type in types:
             dtype = getattr(xp, type)
             input = xp.asarray([], dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
                 output = ndimage.variance(input)
             assert xp.isnan(output)
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance02(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -896,6 +938,7 @@ def test_variance02(xp):
         assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance03(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -904,6 +947,7 @@ def test_variance03(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
@@ -911,6 +955,7 @@ def test_variance04(xp):
     assert_almost_equal(output, xp.asarray(0.25), check_0d=False)
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
@@ -921,6 +966,7 @@ def test_variance05(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.variance)
 def test_variance06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
@@ -931,17 +977,19 @@ def test_variance06(xp):
             assert_array_almost_equal(output, xp.asarray([1.0, 1.0, 0.0]))
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation01(xp):
     with np.errstate(all='ignore'):
         for type in types:
             dtype = getattr(xp, type)
             input = xp.asarray([], dtype=dtype)
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "Mean of empty slice")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", "Mean of empty slice", RuntimeWarning)
                 output = ndimage.standard_deviation(input)
             assert xp.isnan(output)
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation02(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -950,6 +998,7 @@ def test_standard_deviation02(xp):
         assert_almost_equal(output, xp.asarray(0.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation03(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -958,6 +1007,7 @@ def test_standard_deviation03(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation04(xp):
     input = np.asarray([1, 0], dtype=bool)
     input = xp.asarray(input)
@@ -965,6 +1015,7 @@ def test_standard_deviation04(xp):
     assert_almost_equal(output, xp.asarray(0.5), check_0d=False)
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation05(xp):
     labels = xp.asarray([2, 2, 3])
     for type in types:
@@ -974,6 +1025,7 @@ def test_standard_deviation05(xp):
         assert_almost_equal(output, xp.asarray(1.0), check_0d=False)
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation06(xp):
     labels = xp.asarray([2, 2, 3, 3, 4])
     with np.errstate(all='ignore'):
@@ -986,6 +1038,7 @@ def test_standard_deviation06(xp):
             assert_array_almost_equal(output, xp.asarray([1.0, 1.0, 0.0]))
 
 
+@make_xp_test_case(ndimage.standard_deviation)
 def test_standard_deviation07(xp):
     labels = xp.asarray([1])
     with np.errstate(all='ignore'):
@@ -999,6 +1052,7 @@ def test_standard_deviation07(xp):
             assert_array_almost_equal(output, xp.asarray([0]))
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -1009,6 +1063,7 @@ def test_minimum_position01(xp):
         assert output == (0, 0)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position02(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -1019,6 +1074,7 @@ def test_minimum_position02(xp):
         assert output == (1, 2)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position03(xp):
     input = np.asarray([[5, 4, 2, 5],
                         [3, 7, 0, 2],
@@ -1028,6 +1084,7 @@ def test_minimum_position03(xp):
     assert output == (1, 2)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position04(xp):
     input = np.asarray([[5, 4, 2, 5],
                         [3, 7, 1, 2],
@@ -1037,6 +1094,7 @@ def test_minimum_position04(xp):
     assert output == (0, 0)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position05(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1048,6 +1106,7 @@ def test_minimum_position05(xp):
         assert output == (2, 0)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position06(xp):
     labels = xp.asarray([1, 2, 3, 4])
     for type in types:
@@ -1059,6 +1118,7 @@ def test_minimum_position06(xp):
         assert output == (0, 1)
 
 
+@make_xp_test_case(ndimage.minimum_position)
 def test_minimum_position07(xp):
     labels = xp.asarray([1, 2, 3, 4])
     for type in types:
@@ -1072,6 +1132,7 @@ def test_minimum_position07(xp):
         assert output[1] == (1, 2)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -1083,6 +1144,7 @@ def test_maximum_position01(xp):
         assert output == (1, 0)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position02(xp):
     for type in types:
         dtype = getattr(xp, type)
@@ -1093,6 +1155,7 @@ def test_maximum_position02(xp):
         assert output == (1, 2)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position03(xp):
     input = np.asarray([[5, 4, 2, 5],
                         [3, 7, 8, 2],
@@ -1102,6 +1165,7 @@ def test_maximum_position03(xp):
     assert output == (0, 0)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1113,6 +1177,7 @@ def test_maximum_position04(xp):
         assert output == (1, 1)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position05(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1124,6 +1189,7 @@ def test_maximum_position05(xp):
         assert output == (0, 0)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position06(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1137,11 +1203,9 @@ def test_maximum_position06(xp):
         assert output[1] == (1, 1)
 
 
+@make_xp_test_case(ndimage.maximum_position)
 def test_maximum_position07(xp):
     # Test float labels
-    if is_torch(xp):
-        pytest.xfail("output[1] is wrong on pytorch")
-
     labels = xp.asarray([1.0, 2.5, 0.0, 4.5])
     for type in types:
         dtype = getattr(xp, type)
@@ -1154,6 +1218,8 @@ def test_maximum_position07(xp):
         assert output[1] == (0, 3)
 
 
+@make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
+                   ndimage.minimum_position, ndimage.maximum_position)
 def test_extrema01(xp):
     labels = np.asarray([1, 0], dtype=bool)
     labels = xp.asarray(labels)
@@ -1170,6 +1236,8 @@ def test_extrema01(xp):
         assert output1 == (output2, output3, output4, output5)
 
 
+@make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
+                   ndimage.minimum_position, ndimage.maximum_position)
 def test_extrema02(xp):
     labels = xp.asarray([1, 2])
     for type in types:
@@ -1188,6 +1256,8 @@ def test_extrema02(xp):
         assert output1 == (output2, output3, output4, output5)
 
 
+@make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
+                   ndimage.minimum_position, ndimage.maximum_position)
 def test_extrema03(xp):
     labels = xp.asarray([[1, 2], [2, 3]])
     for type in types:
@@ -1216,6 +1286,8 @@ def test_extrema03(xp):
         assert output1[3] == output5
 
 
+@make_xp_test_case(ndimage.extrema, ndimage.minimum, ndimage.maximum,
+                   ndimage.minimum_position, ndimage.maximum_position)
 def test_extrema04(xp):
     labels = xp.asarray([1, 2, 0, 4])
     for type in types:
@@ -1239,6 +1311,7 @@ def test_extrema04(xp):
         assert output1[3] == output5
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass01(xp):
     expected = (0.0, 0.0)
     for type in types:
@@ -1248,6 +1321,7 @@ def test_center_of_mass01(xp):
         assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass02(xp):
     expected = (1, 0)
     for type in types:
@@ -1257,6 +1331,7 @@ def test_center_of_mass02(xp):
         assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass03(xp):
     expected = (0, 1)
     for type in types:
@@ -1266,6 +1341,7 @@ def test_center_of_mass03(xp):
         assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass04(xp):
     expected = (1, 1)
     for type in types:
@@ -1275,6 +1351,7 @@ def test_center_of_mass04(xp):
         assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass05(xp):
     expected = (0.5, 0.5)
     for type in types:
@@ -1284,6 +1361,7 @@ def test_center_of_mass05(xp):
         assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass06(xp):
     expected = (0.5, 0.5)
     input = np.asarray([[1, 2], [3, 1]], dtype=bool)
@@ -1292,6 +1370,7 @@ def test_center_of_mass06(xp):
     assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass07(xp):
     labels = xp.asarray([1, 0])
     expected = (0.5, 0.0)
@@ -1301,6 +1380,7 @@ def test_center_of_mass07(xp):
     assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass08(xp):
     labels = xp.asarray([1, 2])
     expected = (0.5, 1.0)
@@ -1310,6 +1390,7 @@ def test_center_of_mass08(xp):
     assert output == expected
 
 
+@make_xp_test_case(ndimage.center_of_mass)
 def test_center_of_mass09(xp):
     labels = xp.asarray((1, 2))
     expected = xp.asarray([(0.5, 0.0), (0.5, 1.0)], dtype=xp.float64)
@@ -1319,6 +1400,7 @@ def test_center_of_mass09(xp):
     xp_assert_equal(xp.asarray(output), xp.asarray(expected))
 
 
+@make_xp_test_case(ndimage.histogram)
 def test_histogram01(xp):
     expected = xp.ones(10)
     input = xp.arange(10)
@@ -1326,6 +1408,7 @@ def test_histogram01(xp):
     assert_array_almost_equal(output, expected)
 
 
+@make_xp_test_case(ndimage.histogram)
 def test_histogram02(xp):
     labels = xp.asarray([1, 1, 1, 1, 2, 2, 2, 2])
     expected = xp.asarray([0, 2, 0, 1, 1])
@@ -1335,6 +1418,7 @@ def test_histogram02(xp):
 
 
 @skip_xp_backends(np_only=True, reason='object arrays')
+@make_xp_test_case(ndimage.histogram)
 def test_histogram03(xp):
     labels = xp.asarray([1, 0, 1, 1, 2, 2, 2, 2])
     expected1 = xp.asarray([0, 1, 0, 1, 1])
@@ -1346,7 +1430,8 @@ def test_histogram03(xp):
     assert_array_almost_equal(output[0], expected1)
     assert_array_almost_equal(output[1], expected2)
 
-
+@make_xp_test_case(ndimage.mean, ndimage.variance, ndimage.standard_deviation,
+                   ndimage.median, ndimage.minimum, ndimage.maximum)
 def test_stat_funcs_2d(xp):
     a = xp.asarray([[5, 6, 0, 0, 0], [8, 9, 0, 0, 0], [0, 0, 0, 3, 5]])
     lbl = xp.asarray([[1, 1, 0, 0, 0], [1, 1, 0, 0, 0], [0, 0, 0, 2, 2]])
@@ -1371,6 +1456,7 @@ def test_stat_funcs_2d(xp):
 
 
 @skip_xp_backends("cupy", reason="no watershed_ift on CuPy")
+@make_xp_test_case(ndimage.watershed_ift)
 class TestWatershedIft:
 
     def test_watershed_ift01(self, xp):
@@ -1586,7 +1672,7 @@ class TestWatershedIft:
                     [1, 1]]
         assert_array_almost_equal(out, xp.asarray(expected))
 
-    @skip_xp_backends("cupy", reason="no watershed_ift on CuPy"	)
+    @skip_xp_backends("cupy", reason="no watershed_ift on CuPy")
     def test_watershed_ift09(self, xp):
         # Test large cost. See gh-19575
         data = xp.asarray([[xp.iinfo(xp.uint16).max, 0],
@@ -1601,6 +1687,7 @@ class TestWatershedIft:
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("dt", [np.intc, np.uintc])
+@make_xp_test_case(ndimage.value_indices)
 def test_gh_19423(dt, xp):
     rng = np.random.default_rng(123)
     max_val = 8

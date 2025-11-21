@@ -193,6 +193,7 @@ Multivariate distributions
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
    vonmises_fisher        -- Von Mises-Fisher distribution
+   matrix_t               -- Matrix variate t distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -260,7 +261,6 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
-   find_repeats
    rankdata
    tiecorrect
    trim_mean
@@ -280,6 +280,7 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
+   quantile
    percentileofscore
    scoreatpercentile
    relfreq
@@ -468,10 +469,14 @@ Random Variables
 .. autosummary::
    :toctree: generated/
 
-   Normal
-   Mixture
-   truncate
    make_distribution
+   Normal
+   Logistic
+   Uniform
+   Binomial
+   Mixture
+   order_statistic
+   truncate
    abs
    exp
    log
@@ -645,11 +650,12 @@ from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
 from ._distribution_infrastructure import (
-    truncate, Mixture, make_distribution, exp, log, abs
+    make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-from ._new_distributions import Normal
+from ._new_distributions import Normal, Logistic, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
+from ._quantile import quantile
 
 
 # Deprecated namespaces, to be removed in v2.0.0

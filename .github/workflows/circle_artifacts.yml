@@ -1,6 +1,11 @@
 name: Redirect circleci artifacts
 
 on: [status]
+
+permissions:
+  contents: read  # to fetch code (actions/checkout)
+  statuses: write  # to report circleci status (scientific-python/circleci-artifacts-redirector-action)
+
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04

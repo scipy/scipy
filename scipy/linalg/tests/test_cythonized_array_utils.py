@@ -1,9 +1,11 @@
 import numpy as np
 from scipy.linalg import bandwidth, issymmetric, ishermitian
+from scipy.conftest import skip_xp_invalid_arg
 import pytest
 from pytest import raises
 
 
+@skip_xp_invalid_arg
 def test_bandwidth_dtypes():
     n = 5
     for t in np.typecodes['All']:
@@ -19,12 +21,10 @@ def test_bandwidth_dtypes():
 def test_bandwidth_non2d_input():
     A = np.array([1, 2, 3])
     raises(ValueError, bandwidth, A)
-    A = np.array([[[1, 2, 3], [4, 5, 6]]])
-    raises(ValueError, bandwidth, A)
 
 
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
-                               if x not in 'eGUVOMm'])
+                               if x not in 'eGUVOMmS'])
 def test_bandwidth_square_inputs(T):
     n = 20
     k = 4
@@ -48,6 +48,7 @@ def test_bandwidth_square_inputs(T):
     assert bandwidth(A) == (2, 2)
 
 
+@skip_xp_invalid_arg
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
                                if x not in 'eGUVOMm'])
 def test_bandwidth_rect_inputs(T):
@@ -62,6 +63,7 @@ def test_bandwidth_rect_inputs(T):
     assert bandwidth(R) == (k, k)
 
 
+@skip_xp_invalid_arg
 def test_issymetric_ishermitian_dtypes():
     n = 5
     for t in np.typecodes['All']:

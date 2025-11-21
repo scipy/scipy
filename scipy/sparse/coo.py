@@ -7,23 +7,9 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'SparseEfficiencyWarning',
-    'check_reshape_kwargs',
-    'check_shape',
     'coo_matrix',
-    'coo_matvec',
-    'coo_tocsr',
-    'coo_todense',
-    'downcast_intp_index',
-    'getdata',
-    'getdtype',
-    'isshape',
     'isspmatrix_coo',
-    'operator',
     'spmatrix',
-    'to_native',
-    'upcast',
-    'upcast_char',
-    'warn',
 ]
 
 

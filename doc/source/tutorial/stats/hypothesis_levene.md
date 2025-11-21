@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_levene.ipynb
+.. notebooklite:: hypothesis_levene.md
    :new_tab: True
 ```
 
 (hypothesis_levene)=
+
++++
+
 # Levene test for equal variances
 
 The Levene test {func}`scipy.stats.levene` tests the null hypothesis that all

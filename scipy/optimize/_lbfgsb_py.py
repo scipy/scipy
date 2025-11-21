@@ -42,6 +42,8 @@ from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
+from scipy._lib.deprecation import _NoValue
+import warnings
 
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 
@@ -93,7 +95,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
                   approx_grad=0,
                   bounds=None, m=10, factr=1e7, pgtol=1e-5,
                   epsilon=1e-8,
-                  iprint=-1, maxfun=15000, maxiter=15000, disp=None,
+                  iprint=_NoValue, maxfun=15000, maxiter=15000, disp=_NoValue,
                   callback=None, maxls=20):
     """
     Minimize a function func using the L-BFGS-B algorithm.
@@ -144,7 +146,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     disp : int, optional
         Deprecated option that previously controlled the text printed on the
@@ -152,7 +154,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxfun : int, optional
         Maximum number of function evaluations. Note that this function
@@ -265,7 +267,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     # build options
     callback = _wrap_callback(callback)
-    opts = {'maxcor': m,
+    opts = {'disp': disp,
+            'iprint': iprint,
+            'maxcor': m,
             'ftol': factr * np.finfo(float).eps,
             'gtol': pgtol,
             'eps': epsilon,
@@ -288,10 +292,11 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
-                     disp=None, maxcor=10, ftol=2.2204460492503131e-09,
+                     disp=_NoValue, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
-                     iprint=-1, callback=None, maxls=20,
-                     finite_diff_rel_step=None, **unknown_options):
+                     iprint=_NoValue, callback=None, maxls=20,
+                     finite_diff_rel_step=None, workers=None,
+                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -304,7 +309,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxcor : int
         The maximum number of variable metric corrections used to
@@ -322,18 +327,18 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations. Note that this function
-        may violate the limit because of evaluating gradients by numerical
-        differentiation.
+        Maximum number of function evaluations before minimization terminates.
+        Note that this function may violate the limit if the gradients
+        are evaluated by numerical differentiation.
     maxiter : int
-        Maximum number of iterations.
+        Maximum number of algorithm iterations.
     iprint : int, optional
         Deprecated option that previously controlled the text printed on the
         screen during the problem solution. Now the code does not emit any
         output and this keyword has no function.
 
         .. deprecated:: 1.15.0
-            This keyword is deprecated and will be removed from SciPy 1.17.0.
+            This keyword is deprecated and will be removed from SciPy 1.18.0.
 
     maxls : int, optional
         Maximum number of line search steps (per iteration). Default is 20.
@@ -344,6 +349,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -352,6 +363,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     relationship between the two is ``ftol = factr * numpy.finfo(float).eps``.
     I.e., `factr` multiplies the default machine floating-point precision to
     arrive at `ftol`.
+    If the minimization is slow to converge the optimizer may halt if the
+    total number of function evaluations exceeds `maxfun`, or the number of
+    algorithm iterations has reached `maxiter` (whichever comes first). If
+    this is the case then ``result.success=False``, and an appropriate
+    error message is contained in ``result.message``.
 
     """
     _check_unknown_options(unknown_options)
@@ -361,6 +377,17 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     x0 = asarray(x0).ravel()
     n, = x0.shape
+    if disp is not _NoValue:
+        warnings.warn("scipy.optimize: The `disp` and `iprint` options of the "
+                      "L-BFGS-B solver are deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=3)
+
+    if iprint is not _NoValue:
+        warnings.warn("scipy.optimize: The `disp` and `iprint` options of the "
+                      "L-BFGS-B solver are deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=3)
 
     # historically old-style bounds were/are expected by lbfgsb.
     # That's still the case but we'll deal with new-style from here on,
@@ -385,7 +412,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     # _prepare_scalar_function can use bounds=None to represent no bounds
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   bounds=bounds,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     func_and_grad = sf.fun_and_grad
 
@@ -412,8 +440,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         raise ValueError('maxls must be positive.')
 
     x = array(x0, dtype=np.float64)
-    f = array(0.0, dtype=np.int32)
-    g = zeros((n,), dtype=np.int32)
+    f = array(0.0, dtype=np.float64)
+    g = zeros((n,), dtype=np.float64)
     wa = zeros(2*m*n + 5*n + 11*m*m + 8*m, float64)
     iwa = zeros(3*n, dtype=np.int32)
     task = zeros(2, dtype=np.int32)
@@ -555,6 +583,43 @@ class LbfgsInvHessProduct(LinearOperator):
 
         return r
 
+    def _matmat(self, X):
+        """Efficient matrix-matrix multiply with the BFGS matrices.
+
+        This calculation is described in Section (4) of [1].
+
+        Parameters
+        ----------
+        X : ndarray
+            An array with shape (n,m)
+
+        Returns
+        -------
+        Y : ndarray
+            The matrix-matrix product
+
+        Notes
+        -----
+        This implementation is written starting from _matvec and broadcasting
+        all expressions along the second axis of X.
+
+        """
+        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
+        Q = np.array(X, dtype=self.dtype, copy=True)
+
+        alpha = np.empty((n_corrs, Q.shape[1]))
+
+        for i in range(n_corrs-1, -1, -1):
+            alpha[i] = rho[i] * np.dot(s[i], Q)
+            Q -= alpha[i]*y[i][:, np.newaxis]
+
+        R = Q
+        for i in range(n_corrs):
+            beta = rho[i] * np.dot(y[i], R)
+            R += s[i][:, np.newaxis] * (alpha[i] - beta)
+
+        return R
+
     def todense(self):
         """Return a dense array representation of this operator.
 
@@ -565,14 +630,5 @@ class LbfgsInvHessProduct(LinearOperator):
             the same data represented by this `LinearOperator`.
 
         """
-        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
         I_arr = np.eye(*self.shape, dtype=self.dtype)
-        Hk = I_arr
-
-        for i in range(n_corrs):
-            A1 = I_arr - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
-            A2 = I_arr - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
-
-            Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
-                                                        s[i][np.newaxis, :])
-        return Hk
+        return self._matmat(I_arr)

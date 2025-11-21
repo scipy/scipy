@@ -3581,7 +3581,7 @@ dcstep (double* stx, double* fx, double* dx, double* sty, double* fy, double* dy
     //         On entry dp is the derivative of the function at stp.
     //         On exit dp is unchanged.
     //
-    //       brackt is an logical variable.
+    //       brackt is a logical variable.
     //         On entry brackt specifies if a minimizer has been bracketed.
     //            Initially brackt must be set to .false.
     //         On exit brackt specifies if a minimizer has been bracketed.

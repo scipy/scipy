@@ -3,14 +3,11 @@ Test cdflib functions versus mpmath, if available.
 
 The following functions still need tests:
 
-- ncfdtri
 - ncfdtridfn
 - ncfdtridfd
 - ncfdtrinc
 - nbdtrik
 - nbdtrin
-- pdtrik
-- nctdtrit
 - nctdtridf
 - nctdtrinc
 
@@ -18,7 +15,7 @@ The following functions still need tests:
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, assert_array_equal
 import pytest
 
 import scipy.special as sp
@@ -223,9 +220,9 @@ class TestCDFlib:
         _assert_inverts(
             sp.btdtria,
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
-            0, [ProbArg(), Arg(0, 1e2, inclusive_a=False),
+            0, [ProbArg(), Arg(0, 3e2, inclusive_a=False),
                 Arg(0, 1, inclusive_a=False, inclusive_b=False)],
-            rtol=1e-6)
+            rtol=1e-12)
 
     def test_btdtrib(self):
         # Use small values of a or mpmath doesn't converge
@@ -329,6 +326,7 @@ class TestCDFlib:
             sp.chdtriv,
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
+
 
     @pytest.mark.xfail(run=False)
     def test_chndtridf(self):
@@ -492,7 +490,7 @@ def test_bdtrik_nbdtrik_inf():
 
 
 @pytest.mark.parametrize(
-    "dfn,dfd,nc,f,expected",
+    "dfn,dfd,nc,f,expected_cdf",
     [[100.0, 0.1, 0.1, 100.0, 0.29787396410092676],
      [100.0, 100.0, 0.01, 0.1, 4.4344737598690424e-26],
      [100.0, 0.01, 0.1, 0.01, 0.002848616633080384],
@@ -504,9 +502,11 @@ def test_bdtrik_nbdtrik_inf():
      [10.0, 1.0, 0.1, 100.0, 0.9219345555070705],
      [0.1, 0.1, 1.0, 1.0, 0.3136335813423239],
      [100.0, 100.0, 0.1, 10.0, 1.0],
-     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
+     [1.0, 0.1, 100.0, 10.0, 0.02926064279680897],
+     [1e-100, 3, 1.5, 1e100, 0.611815287345399]
+    ]
 )
-def test_ncfdtr(dfn, dfd, nc, f, expected):
+def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
     #
     # import numpy as np
@@ -549,10 +549,26 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     # rng = np.random.default_rng(1234)
     # sample_idx = rng.choice(len(re), replace=False, size=12)
     # cases = np.array(cases)[sample_idx].tolist()
-    assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)
+    assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected_cdf, rtol=1e-13, atol=0)
+    # testing tails where the CDF reaches 0 or 1 does not make sense for inverses
+    # of a CDF as they are not bijective in these regions
+    if 0 < expected_cdf < 1:
+        assert_allclose(sp.ncfdtri(dfn, dfd, nc, expected_cdf), f, rtol=5e-11)
 
+@pytest.mark.parametrize(
+    "args",
+    [(-1.0, 0.1, 0.1, 0.5),
+     (1, -1.0, 0.1, 0.5),
+     (1, 1, -1.0, 0.5),
+     (1, 1, 1, 100),
+     (1, 1, 1, -1)]
+)
+def test_ncfdtri_domain_error(args):
+    with sp.errstate(domain="raise"):
+        with pytest.raises(sp.SpecialFunctionError, match="domain"):
+            sp.ncfdtri(*args)
 
-class TestNctdtr:
+class TestNoncentralTFunctions:
 
     # Reference values computed with mpmath with the following script
     # Formula from:
@@ -592,7 +608,7 @@ class TestNctdtr:
     #         result = mp.one - f(df, -nc, x)
     #     return float(result)
 
-    @pytest.mark.parametrize("df, nc, x, expected", [
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
         (0.98, -3.8, 0.0015, 0.9999279987514815),
         (0.98, -3.8, 0.15, 0.9999528361700505),
         (0.98, -3.8, 1.5, 0.9999908823016942),
@@ -655,18 +671,20 @@ class TestNctdtr:
         (980, 3.8, 15, 1.0),
         (980, 38, 0.0015, 3.0547506e-316),
         (980, 38, 0.15, 8.6191646313e-314),
+        # revisit when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
         pytest.param(980, 38, 1.5, 1.1824454111413493e-291,
                      marks=pytest.mark.xfail(
                         reason="Bug in underlying Boost math implementation")),
         (980, 38, 15, 5.407535300713606e-105)
     ])
-    def test_gh19896(self, df, nc, x, expected):
+    def test_gh19896(self, df, nc, x, expected_cdf):
         # test that gh-19896 is resolved.
         # Originally this was a regression test that used the old Fortran results
         # as a reference. The Fortran results were not accurate, so the reference
         # values were recomputed with mpmath.
-        result = sp.nctdtr(df, nc, x)
-        assert_allclose(result, expected, rtol=1e-13, atol=1e-303)
+        nctdtr_result = sp.nctdtr(df, nc, x)
+        assert_allclose(nctdtr_result, expected_cdf, rtol=1e-13, atol=1e-303)
 
     def test_nctdtr_gh8344(self):
         # test that gh-8344 is resolved.
@@ -676,7 +694,9 @@ class TestNctdtr:
 
     @pytest.mark.parametrize(
         "df, nc, x, expected, rtol",
-        [[3., 5., -2., 1.5645373999149622e-09, 5e-9],
+        # revisit tolerances when boost1.90 is released,
+        # see https://github.com/boostorg/math/issues/1308
+        [[3., 5., -2., 1.5645373999149622e-09, 2e-8],
          [1000., 10., 1., 1.1493552133826623e-19, 1e-13],
          [1e-5, -6., 2., 0.9999999990135003, 1e-13],
          [10., 20., 0.15, 6.426530505957303e-88, 1e-13],
@@ -684,5 +704,175 @@ class TestNctdtr:
          [1., 1., -np.inf, 0.0, 0.0]
         ]
     )
-    def test_accuracy(self, df, nc, x, expected, rtol):
+    def test_nctdtr_accuracy(self, df, nc, x, expected, rtol):
         assert_allclose(sp.nctdtr(df, nc, x), expected, rtol=rtol)
+
+    @pytest.mark.parametrize("df, nc, x, expected_cdf", [
+        (0.98, 38, 1.5, 2.591995360483094e-97),
+        (3000, 3, 0.1, 0.0018657780826323328),
+        (0.98, -3.8, 15, 0.9999990264591945),
+        (9.8, 38, 15, 2.252076291604796e-09),
+
+    ])
+    def test_nctdtrit(self, df, nc, x, expected_cdf):
+        assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
+
+
+class TestNoncentralChiSquaredFunctions:
+
+    def test_chndtr_and_inverses_against_wolfram_alpha(self):
+        # Each row holds (x, nu, lam, expected_value)
+        # These values were computed using Wolfram Alpha with
+        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
+        values = np.array([
+            [25.00, 20.0, 400, 4.1210655112396197139e-57],
+            [25.00, 8.00, 250, 2.3988026526832425878e-29],
+            [0.001, 8.00, 40., 5.3761806201366039084e-24],
+            [0.010, 8.00, 40., 5.45396231055999457039e-20],
+            [20.00, 2.00, 107, 1.39390743555819597802e-9],
+            [22.50, 2.00, 107, 7.11803307138105870671e-9],
+            [25.00, 2.00, 107, 3.11041244829864897313e-8],
+            [3.000, 2.00, 1.0, 0.62064365321954362734],
+            [350.0, 300., 10., 0.93880128006276407710],
+            [100.0, 13.5, 10., 0.99999999650104210949],
+            [700.0, 20.0, 400, 0.99999999925680650105],
+            [150.0, 13.5, 10., 0.99999999999999983046],
+            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
+        ])
+        cdf = sp.chndtr(values[:, 0], values[:, 1], values[:, 2])
+        assert_allclose(cdf, values[:, 3], rtol=1e-13)
+        # the last two values are very close to 1.0, so we do not
+        # test the inverses for them
+        x = sp.chndtrix(values[:, 3], values[:, 1], values[:, 2])
+        assert_allclose(x[:-2], values[:-2, 0], rtol=1e-8)
+        df = sp.chndtridf(values[:, 0], values[:, 3], values[:, 2])
+        assert_allclose(df[:-2], values[:-2, 1], rtol=1e-8)
+        nc = sp.chndtrinc(values[:, 0], values[:, 1], values[:, 3])
+        assert_allclose(nc[:-2], values[:-2, 2], rtol=1e-8)
+
+    # CDF Reference values computed with mpmath with the following script
+    # Formula from:
+    # https://www.boost.org/doc/libs/1_87_0/libs/math/doc/html/math_toolkit/dist_ref/dists/nc_chi_squared_dist.html  # noqa: E501
+    # which cites:
+    # Computing discrete mixtures of continuous distributions: noncentral chisquare,
+    # noncentral t and the distribution of the square of the
+    # sample multiple correlation coefficient",
+    # Denise Benton and K. Krishnamoorthy,
+    # Computational Statistics & Data Analysis, 43, (2003), 249-267
+
+    # Warning: may take a long time to run
+    # from mpmath import mp
+    #
+    # mp.dps = 400
+    # 
+    # def noncentral_chi_squared_cdf(x, df, nc):
+    #    x, df, nc = map(mp.mpf, (x, df, nc))
+    #    def term(i):
+    #        return mp.exp(-nc/2) * (nc/2)**i / mp.factorial(i) * 
+    #               mp.gammainc(df/2 + i, 0, x/2, regularized=True)
+    #    return float(mp.nsum(term, [0, mp.inf]))
+
+    @pytest.mark.parametrize(
+        "x, df, nc, expected_cdf, rtol_cdf, rtol_inv",
+        [(0.1, 200, 50, 1.1311224867205481e-299, 1e-13, 1e-13),
+         (1e-12, 20, 50, 3.737446313006551e-141, 1e-13, 1e-13),
+         (1, 200, 50, 8.09760974833666e-200, 1e-13, 1e-13),
+         (9e4, 1e5, 1e3, 1.6895533704217566e-141, 5e-12, 5e-12),
+         (30, 3, 1.5, 0.9999508759095675, 5e-13, 5e-13),
+         (500, 300, 1.5, 0.9999999999944232, 1e-13, 1e-5),
+         (1400, 30, 1e3, 0.9999999612246238, 1e-13, 1e-9),
+         (400, 50, 200, 0.9999948255072892, 1e-13, 1e-11)]
+    )
+    def test_tails(self, x, df, nc, expected_cdf, rtol_cdf, rtol_inv):
+        chndtr_result = sp.chndtr(x, df, nc)
+        assert_allclose(chndtr_result, expected_cdf, rtol=rtol_cdf)
+        assert_allclose(sp.chndtrix(expected_cdf, df, nc), x, rtol=rtol_inv)
+        assert_allclose(sp.chndtridf(x, expected_cdf, nc), df, rtol=rtol_inv)
+        assert_allclose(sp.chndtrinc(x, df, expected_cdf), nc, rtol=rtol_inv)
+
+        # test round-trip calculation
+        assert_allclose(sp.chndtrix(chndtr_result, df, nc), x, rtol=rtol_inv)
+        assert_allclose(sp.chndtridf(x, chndtr_result, nc), df, rtol=1e-7)
+        assert_allclose(sp.chndtrinc(x, df, chndtr_result), nc, rtol=1e-5)
+
+    @pytest.mark.parametrize("x, df",
+        [(1, 3), (1, 0), (1, np.inf), (np.inf, 1)]
+    )
+    def test_chndtr_with_nc_zero_equals_chdtr(self, x, df):
+        assert_allclose(sp.chndtr(x, df, 0), sp.chdtr(df, x), rtol=1e-15)
+
+    @pytest.mark.parametrize("fun",
+        [sp.chndtr, sp.chndtrix, sp.chndtridf, sp.chndtrinc]
+    )
+    @pytest.mark.parametrize("args",
+        [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
+         (-1, 1, -1), (1, -1, -1), (-1, -1, -1)]
+    )  
+    def test_domain_error(self, args, fun):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                fun(*args)
+
+    @pytest.mark.parametrize("fun",
+        [sp.chndtr, sp.chndtrix, sp.chndtridf, sp.chndtrinc]
+    )
+    @pytest.mark.parametrize("args",
+        [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
+         (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
+         (np.nan, np.nan, np.nan)]
+    )
+    def test_nan_propagation(self, fun, args):
+        assert np.isnan(fun(*args))
+
+    @pytest.mark.parametrize(
+        "x, df, nc, expected",
+        [(1, 0, 1, np.nan),
+         (1, 0, np.inf, np.nan),
+         (1, np.inf, 1, np.nan),
+         (1, np.inf, np.inf, 0),
+         (1, 1, np.inf, 0),
+         (np.inf, 0, 1, np.nan),
+         (np.inf, 1, np.inf, np.nan),
+         (np.inf, 1, 1, 1),
+         (np.inf, np.inf, np.inf, np.nan)]
+    )
+    def test_chndtr_edge_cases(self, x, df, nc, expected):
+        assert_allclose(sp.chndtr(x, df, nc), expected, rtol=1e-15)
+
+
+@pytest.mark.parametrize("x", [0.1, 100])
+def test_chdtriv_p_equals_1_returns_0(x):
+    assert sp.chdtriv(1, x) == 0
+
+
+class TestPdtrik:
+    @pytest.mark.parametrize("p, m, expected",
+                             [(0, 0.5, 0),
+                              (0.5, 0, 0)])
+    def test_edge_cases(self, p, m, expected):
+        assert sp.pdtrik(p, m) == expected
+
+    @pytest.mark.parametrize("m", (0.1, 1, 10))
+    def test_p_equals_1_returns_nan(self, m):
+        assert np.isnan(sp.pdtrik(1, m))
+
+    def test_small_probabilities(self):
+        # Edge case: m = 0 or very small.
+        k = sp.pdtrik([[0], [0.25], [0.95]], [0, 1e-20, 1e-6])
+        assert_array_equal(k, np.zeros((3, 3)))
+
+    def test_roundtrip_against_pdtr(self):
+        m = [10, 50, 500]
+        k = 5
+        p = sp.pdtr(k, m)
+        assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
+
+    @pytest.mark.parametrize("p, m, k",
+                             [(1.8976107553682285e-40, 100, 2),
+                              (0.48670120172085135, 100, 99),
+                              (8.30383406699052e-69, 1000, 500),
+                              (2.252837804125894e-227, 100_000, 90_000)])
+    def test_accuracy(self, p, m, k):
+        # Reference values for p were computed with mpmath using
+        # mp.gammainc(k+1, a=m, regularized=True)
+        assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)

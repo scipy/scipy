@@ -54,13 +54,11 @@ class TestMMIOArray:
         b = mmread(self.fn, spmatrix=False)
         assert_equal(a, b)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
         self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'array', typeval, 'general'))
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_32bit_integer(self, typeval, dtype):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
@@ -759,7 +757,7 @@ class TestMMIOCoordinate:
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
+                assert_allclose(A.data, [float(f'{value:.{precision}g}')])
 
     def test_bad_number_of_coordinate_header_fields(self):
         s = """\
@@ -823,3 +821,9 @@ def test_threadpoolctl():
 
     with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
         assert_equal(fmm.PARALLELISM, 2)
+
+
+def test_gh21999_file_not_exist():
+    tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
+    wrong_fn = os.path.join(tmpdir, 'not_exist_test_file.mtx')
+    assert_raises(FileNotFoundError, mmread, wrong_fn)

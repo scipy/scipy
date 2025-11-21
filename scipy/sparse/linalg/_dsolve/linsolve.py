@@ -26,6 +26,7 @@ __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
 
 
 class MatrixRankWarning(UserWarning):
+    """Warning for exactly singular matrices."""
     pass
 
 
@@ -371,6 +372,10 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()``
+    method is used with complex arguments an error is generated. Instead, cast the
+    initial array to complex and then factorize.
+
     This function uses the SuperLU library.
 
     References
@@ -468,6 +473,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()`` method
+    is used with complex arguments an error is generated. Instead, cast the initial 
+    array to complex and then factorize.
+
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
 
@@ -768,11 +777,12 @@ def is_sptriangular(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csc_array, eye_array
+    >>> from scipy.sparse.linalg import is_sptriangular
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.is_sptriangular(A)
+    >>> is_sptriangular(A)
     (True, False)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.is_sptriangular(D)
+    >>> D = eye_array(3, format='csr')
+    >>> is_sptriangular(D)
     (True, True)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
@@ -820,8 +830,8 @@ def spbandwidth(A):
     Computes the lower and upper limits on the bandwidth of the
     sparse 2D array ``A``. The result is summarized as a 2-tuple
     of positive integers ``(lo, hi)``. A zero denotes no sub/super
-    diagonal entries on that side (tringular). The maximum value
-    for ``lo``(``hi``) is one less than the number of rows(cols).
+    diagonal entries on that side (triangular). The maximum value
+    for ``lo`` (``hi``) is one less than the number of rows(cols).
 
     Only the sparse structure is used here. Values are not checked for zeros.
 
@@ -841,12 +851,13 @@ def spbandwidth(A):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.sparse.linalg import spbandwidth
     >>> from scipy.sparse import csc_array, eye_array
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.spbandwidth(A)
+    >>> spbandwidth(A)
     (2, 0)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.spbandwidth(D)
+    >>> D = eye_array(3, format='csr')
+    >>> spbandwidth(D)
     (0, 0)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):

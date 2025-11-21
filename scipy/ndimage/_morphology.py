@@ -221,6 +221,10 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise TypeError('iterations parameter should be an integer') from e
 
     input = np.asarray(input)
+    # The Cython code can't cope with broadcasted inputs
+    if not input.flags.c_contiguous and not input.flags.f_contiguous:
+        input = np.ascontiguousarray(input)
+
     ndim = input.ndim
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1791,6 +1795,7 @@ def morphological_laplace(input, size=None, footprint=None, structure=None,
         Output
 
     """
+    input = np.asarray(input)
     tmp1 = grey_dilation(input, size, footprint, structure, None, mode,
                          cval, origin, axes=axes)
     if isinstance(output, np.ndarray):
@@ -2196,7 +2201,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         ft = np.ravel(ft)
         for ii in range(tmp2.shape[0]):
             rtmp = np.ravel(tmp2[ii, ...])[ft]
-            rtmp.shape = tmp1.shape
+            rtmp = rtmp.reshape(tmp1.shape)
             tmp2[ii, ...] = rtmp
         ft = tmp2
 
@@ -2385,8 +2390,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        ft = np.arange(dt.size, dtype=np.int32)
-        ft.shape = dt.shape
+        ft = np.arange(dt.size, dtype=np.int32).reshape(dt.shape)
     else:
         ft = None
 
@@ -2409,7 +2413,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
             tmp = np.indices(dt.shape, dtype=np.int32)
         for ii in range(tmp.shape[0]):
             rtmp = np.ravel(tmp[ii, ...])[ft]
-            rtmp.shape = dt.shape
+            rtmp = rtmp.reshape(dt.shape)
             tmp[ii, ...] = rtmp
         ft = tmp
 

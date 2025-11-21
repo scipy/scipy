@@ -18,13 +18,14 @@ python_sources = [
   'test_faddeeva.py',
   'test_gamma.py',
   'test_gammainc.py',
+  'test_gen_harmonic.py',
   'test_hyp2f1.py',
   'test_hypergeometric.py',
   'test_iv_ratio.py',
   'test_kolmogorov.py',
   'test_lambertw.py',
   'test_legendre.py',
-  'test_log_softmax.py',
+  'test_log1mexp.py',
   'test_loggamma.py',
   'test_logit.py',
   'test_logsumexp.py',
@@ -56,7 +57,6 @@ python_sources = [
   'test_wrightomega.py',
   'test_zeta.py',
   'test_boost_ufuncs.py',
-  'test_xsf_cuda.py',
 ]
 
 

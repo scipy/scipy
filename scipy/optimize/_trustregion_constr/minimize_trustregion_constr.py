@@ -18,7 +18,7 @@ TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
     2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination.",
+    3: "`callback` raised `StopIteration`.",
     4: "Constraint violation exceeds 'gtol'"
 }
 
@@ -125,7 +125,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                  initial_barrier_parameter=0.1,
                                  initial_barrier_tolerance=0.1,
                                  factorization_method=None,
-                                 disp=False):
+                                 disp=False,
+                                 workers=None):
     """Minimize a scalar function subject to constraints.
 
     Parameters
@@ -224,6 +225,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     disp : bool, optional
         If True (default), then `verbose` will be set to 1 if it was 0.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Returns
     -------
@@ -265,7 +272,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Optimization method used.
     constr : list of ndarray
         List of constraint values at the solution.
-    jac : list of {ndarray, sparse matrix}
+    jac : list of {ndarray, sparse array}
         List of the Jacobian matrices of the constraints at the solution.
     v : list of ndarray
         List of the Lagrange multipliers for the constraints at the solution.
@@ -299,7 +306,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 0 : The maximum number of function evaluations is exceeded.
         * 1 : `gtol` termination condition is satisfied.
         * 2 : `xtol` termination condition is satisfied.
-        * 3 : `callback` function requested termination.
+        * 3 : `callback` raised `StopIteration`.
         * 4 : Constraint violation exceeds 'gtol'.
 
         .. versionchanged:: 1.15.0
@@ -331,8 +338,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
-        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf)
-        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf)
+        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf,
+                                   out=None)
+        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf,
+                                   out=None)
         modified_lb = np.where(np.isfinite(bounds.lb), modified_lb, bounds.lb)
         modified_ub = np.where(np.isfinite(bounds.ub), modified_ub, bounds.ub)
         bounds = Bounds(modified_lb, modified_ub, keep_feasible=bounds.keep_feasible)
@@ -343,7 +352,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define Objective Function
     objective = ScalarFunction(fun, x0, args, grad, hess,
-                               finite_diff_rel_step, finite_diff_bounds)
+                               finite_diff_rel_step, finite_diff_bounds,
+                               workers=workers)
 
     # Put constraints in list format when needed.
     if isinstance(constraints, (NonlinearConstraint | LinearConstraint)):

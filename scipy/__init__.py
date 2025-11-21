@@ -3,13 +3,10 @@ SciPy: A scientific computing package for Python
 ================================================
 
 Documentation is available in the docstrings and
-online at https://docs.scipy.org.
+online at https://docs.scipy.org/doc/scipy/
 
 Subpackages
 -----------
-Using any of these subpackages requires an explicit import. For example,
-``import scipy.cluster``.
-
 ::
 
  cluster                      --- Vector Quantization / Kmeans
@@ -66,7 +63,7 @@ del _distributor_init
 
 from scipy._lib import _pep440
 # In maintenance branch, change to np_maxversion N+3 if numpy is at N
-np_minversion = '1.23.5'
+np_minversion = '1.26.4'
 np_maxversion = '9.9.99'
 if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
         _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):

@@ -100,26 +100,11 @@ traverse(
             const ckdtree_intp_t end1 = node1->end_idx;
             const ckdtree_intp_t end2 = node2->end_idx;
 
-            CKDTREE_PREFETCH(sdata + sindices[start1] * m, 0, m);
-
-            if (start1 < end1 - 1)
-                CKDTREE_PREFETCH(sdata + sindices[start1+1] * m, 0, m);
 
             /* brute-force */
             for (i = start1; i < end1; ++i) {
 
-                if (i < end1 - 2)
-                    CKDTREE_PREFETCH(sdata + sindices[i+2] * m, 0, m);
-
-                CKDTREE_PREFETCH(odata + oindices[start2] * m, 0, m);
-
-                if (start2 < end2 - 1)
-                    CKDTREE_PREFETCH(odata + oindices[start2+1] * m, 0, m);
-
                 for (j = start2; j < end2; ++j) {
-
-                    if (j < end2 - 2)
-                        CKDTREE_PREFETCH(odata + oindices[j+2] * m, 0, m);
 
                     double d = MinMaxDist::point_point_p(params->self.tree,
                             sdata + sindices[i] * m,
@@ -210,14 +195,14 @@ count_neighbors(struct CNBParams *params,
     Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
     Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
 
-    if (CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
-        HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
+    if (self->raw_boxsize_data == NULL) {
+        HANDLE(p == 2, MinkowskiDistP2)
         HANDLE(p == 1, MinkowskiDistP1)
         HANDLE(std::isinf(p), MinkowskiDistPinf)
         HANDLE(1, MinkowskiDistPp)
         {}
     } else {
-        HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
+        HANDLE(p == 2, BoxMinkowskiDistP2)
         HANDLE(p == 1, BoxMinkowskiDistP1)
         HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
         HANDLE(1, BoxMinkowskiDistPp)

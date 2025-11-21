@@ -32,13 +32,13 @@ def upcast(*args):
     --------
     >>> from scipy.sparse._sputils import upcast
     >>> upcast('int32')
-    <type 'numpy.int32'>
+    <class 'numpy.int32'>
     >>> upcast('bool')
-    <type 'numpy.bool_'>
+    <class 'numpy.bool'>
     >>> upcast('int32','float32')
-    <type 'numpy.float64'>
+    <class 'numpy.float64'>
     >>> upcast('bool',complex,float)
-    <type 'numpy.complex128'>
+    <class 'numpy.complex128'>
 
     """
 
@@ -134,7 +134,7 @@ def getdtype(dtype, a=None, default=None):
 
     if newdtype not in supported_dtypes:
         supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
-        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype}. "
                          f"The only supported types are: {supported_dtypes_fmt}.")
     return newdtype
 
@@ -172,6 +172,7 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
         The array for which index arrays should be downcast.
     idx_dtype : dtype
         Desired dtype. Should be an integer dtype (default: ``np.int32``).
+        Most of scipy.sparse uses either int64 or int32.
     msg : string, optional
         A string to be added to the end of the ValueError message
         if the array shape is too big to fit in `idx_dtype`.
@@ -193,6 +194,24 @@ def safely_cast_index_arrays(A, idx_dtype=np.int32, msg=""):
     ValueError
         If the array has shape that would not fit in the new dtype, or if
         the sparse format does not use index arrays.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import sparse
+    >>> data = [3]
+    >>> coords = (np.array([3]), np.array([1]))  # Note: int64 arrays
+    >>> A = sparse.coo_array((data, coords))
+    >>> A.coords[0].dtype
+    dtype('int64')
+
+    >>> # rescast after construction, raising exception if shape too big
+    >>> coords = sparse.safely_cast_index_arrays(A, np.int32)
+    >>> A.coords[0] is coords[0]  # False if casting is needed
+    False
+    >>> A.coords = coords  # set the index dtype of A
+    >>> A.coords[0].dtype
+    dtype('int32')
     """
     if not msg:
         msg = f"dtype {idx_dtype}"
@@ -262,6 +281,25 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     dtype : dtype
         Suitable index data type (int32 or int64)
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import sparse
+    >>> # select index dtype based on shape
+    >>> shape = (3, 3)
+    >>> idx_dtype = sparse.get_index_dtype(maxval=max(shape))
+    >>> data = [1.1, 3.0, 1.5]
+    >>> indices = np.array([0, 1, 0], dtype=idx_dtype)
+    >>> indptr = np.array([0, 2, 3, 3], dtype=idx_dtype)
+    >>> A = sparse.csr_array((data, indices, indptr), shape=shape)
+    >>> A.indptr.dtype
+    dtype('int32')
+
+    >>> # select based on larger of existing arrays and shape
+    >>> shape = (3, 3)
+    >>> idx_dtype = sparse.get_index_dtype(A.indptr, maxval=max(shape))
+    >>> idx_dtype
+    <class 'numpy.int32'>
     """
     # not using intc directly due to misinteractions with pythran
     if np.intc().itemsize != 4:
@@ -365,27 +403,42 @@ def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis) -> None:
+def validateaxis(axis, *, ndim=2) -> tuple[int, ...] | None:
     if axis is None:
-        return
-    axis_type = type(axis)
+        return None
 
-    # In NumPy, you can pass in tuples for 'axis', but they are
-    # not very useful for sparse matrices given their limited
-    # dimensions, so let's make it explicit that they are not
-    # allowed to be passed in
-    if isinstance(axis, tuple):
-        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
-                        "Please pass in one of the following: "
-                        "{-2, -1, 0, 1, None}.")
+    if axis == ():
+        raise ValueError(
+            "sparse does not accept 0D axis (). Either use toarray (for dense) "
+            "or copy (for sparse)."
+        )
 
-    # If not a tuple, check that the provided axis is actually
-    # an integer and raise a TypeError similar to NumPy's
-    if not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
+    if not isinstance(axis, tuple):
+        # If not a tuple, check that the provided axis is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axis)), np.integer):
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axis)}')
+        axis = (axis,)
 
-    if not (-2 <= axis <= 1):
-        raise ValueError("axis out of range")
+    canon_axis = []
+    for ax in axis:
+        if not isintlike(ax):
+            raise TypeError(f"axis must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axis out of range for ndim")
+        canon_axis.append(ax)
+
+    len_axis = len(canon_axis)
+    if len_axis != len(set(canon_axis)):
+        raise ValueError("duplicate value in axis")
+    elif len_axis > ndim:
+        raise ValueError("axis tuple has too many elements")
+    elif len_axis == ndim:
+        return None
+    else:
+        return tuple(canon_axis)
 
 
 def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
@@ -471,7 +524,7 @@ def broadcast_shapes(*shapes):
     """
     if not shapes:
         return ()
-    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    shapes = [shp if isinstance(shp, tuple | list) else (shp,) for shp in shapes]
     big_shp = max(shapes, key=len)
     out = list(big_shp)
     for shp in shapes:

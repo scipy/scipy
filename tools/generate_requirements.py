@@ -33,6 +33,13 @@ def generate_requirement_file(name, req_list, *, extra_list=None):
         req_list = [x for x in req_list if "numpy" not in x]
         req_list.append("ninja")
 
+    if name == "test":
+        req_list = [
+            f'{x}; sys_platform != "win32" or platform_machine != "ARM64"' 
+            if x == "gmpy2" else x 
+            for x in req_list
+        ]
+
     if extra_list:
         req_list += extra_list
 
