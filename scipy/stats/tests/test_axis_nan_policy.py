@@ -145,7 +145,7 @@ axis_nan_policy_cases = [
     (stats.skewtest, tuple(), dict(), 1, 2, False, None),
     (stats.kurtosistest, tuple(), dict(), 1, 2, False, None),
     (stats.normaltest, tuple(), dict(), 1, 2, False, None),
-    (stats.cramervonmises, ("norm",), dict(), 1, 2, False,
+    (stats.cramervonmises, (special.ndtr,), dict(), 1, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.cramervonmises_2samp, tuple(), dict(method='asymptotic'), 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
