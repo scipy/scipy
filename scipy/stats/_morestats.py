@@ -2102,7 +2102,7 @@ def _swilk(y):
         a = np.asarray([-c, 0, c])
         # [2] Corollary 4; discussed in https://github.com/scipy/scipy/issues/18322
         W = np.clip(_swilk_w(y, a), 0.75, 1)
-        pvalue = 1. - 6/np.pi * np.acos(np.sqrt(W))
+        pvalue = 1. - 6/np.pi * np.arccos(np.sqrt(W))
         return W, pvalue
 
     # Follows [4] section 2.2
