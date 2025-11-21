@@ -6,6 +6,7 @@ Authors:
    Andrew Straw, April 2008
 
 """
+import sys
 import itertools
 import inspect
 import platform
@@ -3482,6 +3483,115 @@ class TestWorkers:
             )
         assert res.success
         assert_allclose(res.x[1], 2.0)
+
+
+# Tests for PEP 649/749 style annotations in callback and objective functions
+if sys.version_info < (3, 14):
+    from typing import Any
+    _DUMMY_TYPE = Any
+else:
+    import typing
+    if typing.TYPE_CHECKING:
+        _DUMMY_TYPE = typing.Any
+
+def rosen_annotated(x: _DUMMY_TYPE) -> float:
+    return rosen(x) + 1
+
+def rosen_der_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_der(x)
+
+def rosen_hess_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_hess(x)
+
+def callable_annotated(intermediate_result: _DUMMY_TYPE) -> None:
+    pass
+
+@pytest.mark.skipif(sys.version_info < (3, 14),
+                    reason="Requires PEP 649/749 from Python 3.14+.")
+class TestAnnotations:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 1.01])
+        self.brute_params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
+
+    @pytest.mark.parametrize("method", [
+        'Nelder-Mead',
+        'Powell',
+        'CG',
+        'bfgs',
+        'Newton-CG',
+        'l-bfgs-b',
+        'tnc',
+        'COBYLA',
+        # 'COBYQA', # External module. Will trigger NameError, skip for now
+        'slsqp',
+        'trust-constr',
+        'dogleg',
+        'trust-ncg',
+        'trust-exact',
+        'trust-krylov'
+    ])
+    def test_callable_annotations(self, method):
+        kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+                      'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der_annotated
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+                      'trust-krylov', 'trust-constr']:
+            kwds['hess'] = rosen_hess_annotated
+        optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
+
+    def test_differential_evolution_annotations(self):
+        bounds = [(-5, 5), (-5, 5)]
+        res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
+                                              callback=callable_annotated)
+        assert res.success, f"Unexpected error: {res.message}"
+
+    def test_curve_fit_annotations(self):
+
+        def model_func(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return a * np.exp(-b * x) + c
+
+        def model_jac(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return np.array([
+                np.exp(-b * x),
+                -a * x * np.exp(-b * x),
+                np.ones_like(x)
+            ]).T
+
+        xdata = np.linspace(0, 4, 10)
+        ydata = model_func(xdata, 2.5, 1.3, 0.5)
+
+        _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
+                                         full_output=True)
+        assert (res in [1, 2, 3, 4]), f"Unexpected error: {res.message}"
+
+    def test_brute_annotations(self):
+        def f1(z: _DUMMY_TYPE, *params: float) -> float:
+            x, y = z
+            a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+            return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+
+        def annotated_fmin(callable: _DUMMY_TYPE, x0: _DUMMY_TYPE,
+                           *args, **kwargs) -> _DUMMY_TYPE:
+            return optimize.fmin(callable, x0, *args, **kwargs)
+
+        rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
+        optimize.brute(f1, rranges, args=self.brute_params, finish=annotated_fmin)
+
+    def test_basinhopping_annotations(self):
+        # NOTE: basinhopping callback does not match
+        #       callback(intermediate_result: OptimizeResult)
+        #       signature. Consider adding when updated.
+        def acceptable_test(f_new: float, x_new: _DUMMY_TYPE,
+                                      f_old: float,x_old: _DUMMY_TYPE) -> bool:
+            return True
+
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, seed=1,
+                                    accept_test=acceptable_test)
+
+        assert res.success, f"Unexpected error: {res.message}"
 
 
 def test_multiprocessing_too_many_open_files_23080():
