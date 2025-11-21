@@ -83,6 +83,12 @@ class _MultilinearModel(Model):
     r"""
     Arbitrary-dimensional linear model
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
+
     This model is defined by :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
 
     Examples

@@ -55,6 +55,12 @@ class OdrWarning(UserWarning):
     Warning indicating that the data passed into
     ODR will cause problems when passed into 'odr'
     that the user should be aware of.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     """
     pass
 
@@ -62,6 +68,12 @@ class OdrWarning(UserWarning):
 class OdrError(Exception):
     """
     Exception indicating an error in fitting.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
 
     This is raised by `~scipy.odr.odr` if an error occurs during fitting.
     """
@@ -71,6 +83,12 @@ class OdrError(Exception):
 class OdrStop(Exception):
     """
     Exception stopping fitting.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
 
     You can raise this exception in your objective function to tell
     `~scipy.odr.odr` to stop fitting.

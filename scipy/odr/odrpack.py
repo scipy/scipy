@@ -15,14 +15,14 @@ def __dir__():
 
 
 def __getattr__(name):
+    msg = ("`scipy.odr` is deprecated as of version 1.17.0 and will be removed in "
+           "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/` instead.")
     if name not in __all__:
         raise AttributeError(
-            "`scipy.odr.odrpack` is deprecated and will be removed in SciPy 1.19.0 and "
-            f"has no attribute {name}.")
+            f"`scipy.odr.odrpack` has no attribute {name}. In addition, {msg}")
 
     import warnings
-    from . import _models
-    warnings.warn("`scipy.odr` is deprecated and will be removed in SciPy 1.19.0",
-                  category=DeprecationWarning, stacklevel=2)
+    from . import _odrpack
+    warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
 
-    return getattr(_models, name)
+    return getattr(_odrpack, name)

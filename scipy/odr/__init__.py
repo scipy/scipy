@@ -167,8 +167,7 @@ __all__ = [s for s in dir()
 
 import warnings
 msg = ("`scipy.odr` is deprecated as of version 1.17.0 and will be removed in "
-        "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/`"
-        "instead.")
+        "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/` instead.")
 warnings.warn(msg, DeprecationWarning, stacklevel=2)
 del warnings
 
