@@ -1050,7 +1050,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> print(res.statistic)
     1.2139573337497467
     >>> print(res.critical_values)
-    [0.549 0.625 0.75  0.875 1.041]
+    [0.555 0.625 0.744 0.864 1.024]
     >>> print(res.significance_level)
     [15.  10.   5.   2.5  1. ]
 
