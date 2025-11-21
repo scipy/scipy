@@ -7,7 +7,7 @@ from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
 from pytest import raises as assert_raises
 
-import scipy.stats as stats
+from scipy import stats, special
 from scipy.stats import distributions
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
@@ -90,97 +90,100 @@ class TestEppsSingleton:
         xp_assert_close(p_res, xp.asarray(p_ref))
 
 
+@make_xp_test_case(stats.cramervonmises)
 class TestCvm:
     # the expected values of the cdfs are taken from Table 1 in
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
     # Cramér-von Mises Statistics, 1996.
-    def test_cdf_4(self):
-        assert_allclose(
-                _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
+    @pytest.mark.parametrize('n, x, ref', [
+        (4, [0.02983, 0.04111, 0.12331, 0.94251], [0.01, 0.05, 0.5, 0.999]),
+        (10, [0.02657, 0.03830, 0.12068, 0.56643], [0.01, 0.05, 0.5, 0.975]),
+        (1000, [0.02481, 0.03658, 0.11889, 1.16120], [0.01, 0.05, 0.5, 0.999]),
+        (None, [0.02480, 0.03656, 0.11888, 1.16204], [0.01, 0.05, 0.5, 0.999]),
+    ])
+    def test_cdf_ref(self, n, x, ref, xp):
+        xp_assert_close(_cdf_cvm(xp.asarray(x), n), xp.asarray(ref), atol=1e-4)
 
-    def test_cdf_10(self):
-        assert_allclose(
-                _cdf_cvm([0.02657, 0.03830, 0.12068, 0.56643], 10),
-                [0.01, 0.05, 0.5, 0.975],
-                atol=1e-4)
-
-    def test_cdf_1000(self):
-        assert_allclose(
-                _cdf_cvm([0.02481, 0.03658, 0.11889, 1.16120], 1000),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_inf(self):
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204]),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_support(self):
+    def test_cdf_support(self, xp):
         # cdf has support on [1/(12*n), n/3]
-        assert_equal(_cdf_cvm([1/(12*533), 533/3], 533), [0, 1])
-        assert_equal(_cdf_cvm([1/(12*(27 + 1)), (27 + 1)/3], 27), [0, 1])
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*533), 533/3]), 533),
+                        xp.asarray([0., 1.]))
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*(27 + 1)), (27 + 1)/3]), 27),
+                        xp.asarray([0., 1.]))
 
-    def test_cdf_large_n(self):
+    def test_cdf_large_n(self, xp):
         # test that asymptotic cdf and cdf for large samples are close
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100], 10000),
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100]),
-                atol=1e-4)
+        x = xp.asarray([0.02480, 0.03656, 0.11888, 1.16204, 100])
+        xp_assert_close(_cdf_cvm(x, 10000), _cdf_cvm(x), atol=1e-4)
 
-    def test_large_x(self):
+    def test_large_x(self, xp):
         # for large values of x and n, the series used to compute the cdf
         # converges slowly.
         # this leads to bug in R package goftest and MAPLE code that is
         # the basis of the implementation in scipy
         # note: cdf = 1 for x >= 1000/3 and n = 1000
-        assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
-        assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
+        x = xp.asarray(333.3, dtype=xp.float64)
+        assert (0.99999 < _cdf_cvm(x, 1000) < 1.0)
+        assert (0.99999 < _cdf_cvm(x) < 1.0)
 
-    def test_low_p(self):
+    def test_low_p(self, xp):
         # _cdf_cvm can return values larger than 1. In that case, we just
         # return a p-value of zero.
         n = 12
-        res = cramervonmises(np.ones(n)*0.8, 'norm')
-        assert_(_cdf_cvm(res.statistic, n) > 1.0)
-        assert_equal(res.pvalue, 0)
+        res = cramervonmises(xp.ones(n)*0.8, special.ndtr)
+        assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
+        xp_assert_equal(res.pvalue, xp.asarray(0.))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('x', [(), [1.5]])
-    def test_invalid_input(self, x):
+    def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises(x, "norm")
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = cramervonmises(xp.asarray(x), special.ndtr)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_values_R(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_values_R(self, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
-        assert_allclose(res.statistic, 0.288156, atol=1e-6)
-        assert_allclose(res.pvalue, 0.1453465, atol=1e-6)
+        # library(goftest)
+        # options(digits=16)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             special.ndtr)
+        xp_assert_close(res.statistic, xp.asarray(0.28815604599198, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray( 0.1453465252039, dtype=dtype))
 
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6),
-        #                   "pnorm", mean = 3, sd = 1.5)
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
-        assert_allclose(res.statistic, 0.9426685, atol=1e-6)
-        assert_allclose(res.pvalue, 0.002026417, atol=1e-6)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm", mean = 3, sd = 1.5)
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             lambda x: special.ndtr((x - 3)/1.5))
+        xp_assert_close(res.statistic, xp.asarray(0.94266847977072, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.002026416728467, dtype=dtype))
 
-        # goftest::cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
-        res = cramervonmises([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
-        assert_allclose(res.statistic, 0.8421854, atol=1e-6)
-        assert_allclose(res.pvalue, 0.004433406, atol=1e-6)
+        # cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
+        res = cramervonmises(
+            xp.asarray([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], dtype=dtype),
+            lambda x: -xp.expm1(-x))
+        xp_assert_close(res.statistic, xp.asarray(0.84218540922393, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.004433406063014, dtype=dtype))
 
-    def test_callable_cdf(self):
+    def test_str_cdf(self, xp):
+        if not is_numpy(xp):
+            message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
+            with pytest.raises(ValueError, match=message):
+                cramervonmises(xp.asarray([1, 2, 3]), "beta")
+            return
+
         x, args = np.arange(5), (1.4, 0.7)
-        r1 = cramervonmises(x, distributions.expon.cdf)
-        r2 = cramervonmises(x, "expon")
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.expon.cdf)
+        res = cramervonmises(x, "expon")
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
-        r1 = cramervonmises(x, distributions.beta.cdf, args)
-        r2 = cramervonmises(x, "beta", args)
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.beta.cdf, args)
+        res = cramervonmises(x, "beta", args)
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
 
 @make_xp_test_case(stats.mannwhitneyu)
@@ -1493,92 +1496,102 @@ class TestBoschlooExact:
         assert_allclose(boschloo_stat, fisher_p)
 
 
+@make_xp_test_case(cramervonmises_2samp)
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    def test_too_small_input(self, args):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
+    def test_too_small_input(self, args, xp):
+        args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = cramervonmises_2samp(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_invalid_input(self):
-        y = np.arange(5)
+    def test_invalid_input(self, xp):
+        y = xp.arange(5)
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, y, 'xyz')
 
-    def test_list_input(self):
+    def test_list_input(self):  # list input only relevant for NumPy
         x = [2, 3, 4, 7, 6]
         y = [0.2, 0.7, 12, 18]
         r1 = cramervonmises_2samp(x, y)
         r2 = cramervonmises_2samp(np.array(x), np.array(y))
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
-    def test_example_conover(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        x = [7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2]
-        y = [5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8, 10.8, 11.3, 11.5, 12.3,
-             12.5, 13.4, 14.6]
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
+        y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,
+                        10.8, 11.3, 11.5, 12.3, 12.5, 13.4, 14.6], dtype=dtype)
         r = cramervonmises_2samp(x, y)
-        assert_allclose(r.statistic, 0.262, atol=1e-3)
-        assert_allclose(r.pvalue, 0.18, atol=1e-2)
+        xp_assert_close(r.statistic, xp.asarray(0.262, dtype=dtype), atol=1e-3)
+        xp_assert_close(r.pvalue, xp.asarray(.18, dtype=dtype), atol=1e-2)
 
     @pytest.mark.parametrize('statistic, m, n, pval',
                              [(710, 5, 6, 48./462),
                               (1897, 7, 7, 117./1716),
                               (576, 4, 6, 2./210),
                               (1764, 6, 7, 2./1716)])
-    def test_exact_pvalue(self, statistic, m, n, pval):
+    def test_exact_pvalue(self, statistic, m, n, pval):  # only implemented w/ NumPy
         # the exact values are taken from Anderson: On the distribution of the
         # two-sample Cramer-von-Mises criterion, 1962.
         # The values are taken from Table 2, 3, 4 and 5
         assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
 
     @pytest.mark.xslow
-    def test_large_sample(self):
+    def test_large_sample(self, xp):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan
         rng = np.random.default_rng(4367)
         x = distributions.norm.rvs(size=1000000, random_state=rng)
         y = distributions.norm.rvs(size=900000, random_state=rng)
+        x, y = xp.asarray(x), xp.asarray(y)
         r = cramervonmises_2samp(x, y)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
         r = cramervonmises_2samp(x, y+0.1)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
 
-    def test_exact_vs_asymptotic(self):
+    def test_exact_vs_asymptotic(self, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(7)
-        y = rng.rand(8)
+        x = xp.asarray(rng.random(7))
+        y = xp.asarray(rng.random(8))
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='asymptotic')
-        assert_equal(r1.statistic, r2.statistic)
-        assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
+        xp_assert_equal(r1.statistic, r2.statistic)
+        xp_assert_close(r1.pvalue, r2.pvalue, atol=1e-2)
 
-    def test_method_auto(self):
-        x = np.arange(20)
-        y = [0.5, 4.7, 13.1]
+    def test_method_auto(self, xp):
+        x = xp.arange(20.)
+        y = xp.asarray([0.5, 4.7, 13.1])
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
         # switch to asymptotic if one sample has more than 20 observations
-        x = np.arange(21)
+        x = xp.arange(21.)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
 
-    def test_same_input(self):
+    def test_same_input(self, xp):
         # make sure trivial edge case can be handled
         # note that _cdf_cvm_inf(0) = nan. implementation avoids nan by
         # returning pvalue=1 for very small values of the statistic
-        x = np.arange(15)
+        x = xp.arange(15)
         res = cramervonmises_2samp(x, x)
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
 
 
 class TestTukeyHSD:

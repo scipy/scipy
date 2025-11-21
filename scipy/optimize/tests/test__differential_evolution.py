@@ -5,6 +5,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 import platform
 import warnings
 
+from scipy._lib._gcutils import assert_deallocated
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
 from scipy.optimize import differential_evolution, OptimizeResult
@@ -1751,3 +1752,7 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+
+    def test_reference_cycles(self):
+        with assert_deallocated(DifferentialEvolutionSolver, rosen, [(0, 10)]*2):
+            pass

@@ -41,7 +41,7 @@ jobs:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.12'
+            python-version: '3.14-dev'
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -52,8 +52,6 @@ jobs:
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-        cache-dependency-path: 'environment.yml'
         allow-prereleases: true
 
     - name: Install Ubuntu dependencies
@@ -103,7 +101,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        spin build --werror
+        spin build --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -169,7 +167,7 @@ jobs:
         source ../venvs/scipy-venv/bin/activate
         # Note that this uses build isolation. That's why we don't need build
         # dependencies to be installed in the venv itself.
-        python -m pip install . -vv
+        python -m pip install . -vv -Csetup-args=--werror
 
     - name: Basic imports and tests
       run: |
@@ -192,7 +190,7 @@ jobs:
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
-        python -m pip install . --no-build-isolation
+        python -m pip install . -v --no-build-isolation
 
         # Basic tests
         cd ..
@@ -217,7 +215,7 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libmpc-dev
           python3-dbg --version # just to check
           python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
       - name: Build SciPy
@@ -313,13 +311,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran lcov
 
-    - name: Caching Python dependencies
-      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-prerelease
-
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
@@ -349,7 +340,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        spin build --gcov --with-scipy-openblas
+        spin build --gcov --with-scipy-openblas --release
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -480,10 +471,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        # Needs nightly numpy build until the 2.3.x release for Python 3.14 support
-        # pip install -r requirements/build.txt
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-        pip install meson-python Cython pybind11 pythran ninja
+        pip install -r requirements/build.txt
         pip install -r requirements/openblas.txt
         pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis "click<8.3.0"
 
