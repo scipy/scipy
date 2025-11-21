@@ -134,7 +134,6 @@ class TestCvm:
         assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
         xp_assert_equal(res.pvalue, xp.asarray(0.))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('x', [(), [1.5]])
     def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
@@ -194,7 +193,6 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     def test_empty(self, xp):
         x = xp.asarray([1, 2])  # generic, valid inputs
         y = xp.asarray([3, 4])
@@ -498,7 +496,6 @@ class TestMannWhitneyU:
 
     # --- Test Enhancements / Bug Reports ---
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
     def test_gh_12837_11113(self, method, xp):
         # Test that behavior for broadcastable nd arrays is appropriate:
@@ -557,7 +554,6 @@ class TestMannWhitneyU:
         xp_assert_equal(res1.statistic, res2.statistic)
         xp_assert_equal(res1.pvalue, res2.pvalue)
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
         x = [1., 2., 3., 4.]
@@ -630,7 +626,6 @@ class TestMannWhitneyU:
         xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
         xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
         nan = xp.asarray(xp.nan)
@@ -1500,7 +1495,6 @@ class TestBoschlooExact:
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
     def test_too_small_input(self, args, xp):
         args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
         with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):

@@ -3208,6 +3208,7 @@ class TestMedianAbsDeviation:
         mad_expected = xp.asarray([0.435, 0.5, 0.45, 0.4])
         xp_assert_close(mad, mad_expected)
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_mad_nan_omit(self, xp):
         mad = stats.median_abs_deviation(xp.asarray(self.dat_nan), nan_policy='omit')
         xp_assert_close(mad, xp.asarray(0.34))
@@ -3218,6 +3219,7 @@ class TestMedianAbsDeviation:
         mad = stats.median_abs_deviation(x, axis=1)
         xp_assert_close(mad, xp.asarray([np.nan, 3.0]))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_nan_policy_omit_with_inf(self, xp):
         z = xp.asarray([1, 3, 4, 6, 99, np.nan, np.inf])
         mad = stats.median_abs_deviation(z, nan_policy='omit')
@@ -3466,6 +3468,7 @@ class TestIQR:
         assert_equal(stats.iqr(x, (0, 1, 2, 3), keepdims=True).shape, (1, 1, 1, 1))
         assert_equal(stats.iqr(x, axis=(0, 1, 3), keepdims=True).shape, (1, 1, 7, 1))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_nanpolicy(self, xp):
         x = xp.reshape(xp.arange(15.0), (3, 5))
 
@@ -3525,15 +3528,20 @@ class TestIQR:
         xp_assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), nan)
         xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), nan)
 
-        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), xp.asarray(7.5))
-        xp_assert_close(stats.iqr(x, scale='normal', nan_policy='omit'),
-                        xp.asarray(7.5 / 1.3489795))
-        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), xp.asarray(3.75))
-
         # # Bad scale
         message = "foobar not a valid scale for `iqr`"
         with pytest.raises(ValueError, match=message):
             stats.iqr(x, scale='foobar')
+
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
+    def test_scale_nan_policy_omit(self, xp):
+        x = xp.reshape(xp.arange(15.0), (3, 5))
+        x = xpx.at(x)[1, 2].set(xp.nan)
+        nan = xp.asarray(xp.nan)
+        xp_assert_equal(stats.iqr(x, scale=1.0, nan_policy='omit'), xp.asarray(7.5))
+        xp_assert_close(stats.iqr(x, scale='normal', nan_policy='omit'),
+                        xp.asarray(7.5 / 1.3489795))
+        xp_assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), xp.asarray(3.75))
 
     @pytest.mark.skip_xp_backends(np_only=True,
         reason="nan_policy w/ multidimensional arrays only available w/ NumPy")
@@ -7302,8 +7310,6 @@ class TestTrimMean:
         with pytest.raises(ValueError, match="Proportion too big."):
             stats.trim_mean(a, 0.6)
 
-
-    @pytest.mark.skip_xp_backends('jax.numpy', reason="lazy -> no _axis_nan_policy")
     @pytest.mark.skip_xp_backends('dask.array', reason="lazy -> no _axis_nan_policy")
     def test_empty_input(self, xp):
         # empty input
@@ -7386,7 +7392,6 @@ class TestAlexanderGovern:
         assert (res_int16.statistic == res_int32.statistic ==
                 res_uint8.statistic == res_float64.statistic)
 
-    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
     @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
     @pytest.mark.parametrize('case',[([1, 2], []), ([1, 2], 2), ([1, 2], [2])])
     def test_too_small_inputs(self, case, xp):
@@ -7583,15 +7588,15 @@ class TestAlexanderGovern:
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
 
-    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
-    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('jax.numpy', reason="lazy -> no nan_policy")
+    @skip_xp_backends('dask.array', reason="lazy -> no nan_policy")
     def test_nan_policy_raise(self, xp):
         args = xp.asarray([1., 2., 3., 4.]), xp.asarray([1., xp.nan])
         with assert_raises(ValueError, match="The input contains nan values"):
             stats.alexandergovern(*args, nan_policy='raise')
 
-    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
-    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('jax.numpy', reason="lazy -> no nan_policy")
+    @skip_xp_backends('dask.array', reason="lazy -> no nan_policy")
     def test_nan_policy_omit(self, xp):
         args_nan = xp.asarray([1, 2, 3, xp.nan, 4]), xp.asarray([1, xp.nan, 19, 25])
         args_no_nan = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 19, 25])
@@ -7600,8 +7605,8 @@ class TestAlexanderGovern:
         xp_assert_equal(res_nan.pvalue, res_no_nan.pvalue)
         xp_assert_equal(res_nan.statistic, res_no_nan.statistic)
 
-    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
-    @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
+    @skip_xp_backends('jax.numpy', reason="lazy -> no data-dependent warnings")
+    @skip_xp_backends('dask.array', reason="lazy -> no data-dependent warnings")
     def test_constant_input(self, xp):
         # Zero variance input, consistent with `stats.pearsonr`
         x1 = xp.asarray([0.667, 0.667, 0.667])
@@ -7611,7 +7616,6 @@ class TestAlexanderGovern:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    @skip_xp_backends('jax.numpy', reason="Requires `_axis_nan_policy` decorator")
     @skip_xp_backends('dask.array', reason="Requires `_axis_nan_policy` decorator")
     @pytest.mark.parametrize('axis', [0, 1, None])
     def test_2d_input(self, xp, axis):
@@ -7915,7 +7919,6 @@ class TestKruskal:
         xp_assert_close(h, expected)
         xp_assert_close(p, special.chdtrc(xp.asarray(2.), expected))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     def test_empty(self, xp):
         # A test of stats.kruskal with three groups, with ties.
         x = xp.asarray([1, 1, 1])
@@ -7926,14 +7929,18 @@ class TestKruskal:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
-    def test_nan_policy(self, xp):
+    def test_nan_policy_propagate(self, xp):
         x = xp.arange(10.)
-        x[9] = xp.nan
+        x = xpx.at(x)[9].set(xp.nan)
 
         res = stats.kruskal(x, x)
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
+
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
+    def test_nan_policy_omit_raise(self, xp):
+        x = xp.arange(10.)
+        x = xpx.at(x)[9].set(xp.nan)
 
         res = stats.kruskal(x, x, nan_policy='omit')
         xp_assert_equal(res.statistic, xp.asarray(0.0))
@@ -8531,6 +8538,7 @@ class TestBrunnerMunzel:
         xp_assert_equal(u2, xp.asarray(xp.nan))
         xp_assert_equal(p2, xp.asarray(xp.nan))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_brunnermunzel_nan_input_raise(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, xp.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])
@@ -8544,6 +8552,7 @@ class TestBrunnerMunzel:
         with pytest.raises(ValueError, match=message):
             stats.brunnermunzel(Y, X, alternative, distribution, nan_policy)
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_brunnermunzel_nan_input_omit(self, xp):
         X = xp.asarray([1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan])
         Y = xp.asarray([3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4.])

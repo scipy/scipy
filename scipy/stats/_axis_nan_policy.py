@@ -12,7 +12,7 @@ from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
-                                   xp_promote, is_lazy_array)
+                                   xp_promote, is_dask)
 import scipy._lib.array_api_extra as xpx
 
 import inspect
@@ -437,7 +437,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             else:
                 temp = args[0]
 
-            if is_lazy_array(temp):
+            if is_dask(array_namespace(temp)):
                 msg = ("Use of `nan_policy` and `keepdims` "
                        "is incompatible with lazy arrays.")
                 if 'nan_policy' in kwds or 'keepdims' in kwds:

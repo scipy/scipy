@@ -80,7 +80,6 @@ class TestChatterjeeXi:
         with pytest.raises(ValueError, match=message):
             stats.chatterjeexi(x, y, method='ekki ekii')
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='no SmallSampleWarning (lazy)')
     def test_special_cases(self, xp):
         message = 'One or more sample arguments is too small...'
         with pytest.warns(SmallSampleWarning, match=message):
