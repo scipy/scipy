@@ -554,7 +554,7 @@ def cramervonmises(rvs, cdf, args=()):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic `T`.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
@@ -1619,7 +1619,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     :math:`Y_1, ..., Y_m`, the null hypothesis is that the samples
     come from the same (unspecified) continuous distribution.
 
-    The statistic :math:`T` is defined as in [2]_:
+    The statistic :math:`T` is defined as in [1]_:
 
     .. math::
         T = \frac{nm}{n+m}\omega^2 =
@@ -1653,7 +1653,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic `T`.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
