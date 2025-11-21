@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from scipy._lib._array_api import (
     assert_array_almost_equal, xp_assert_close,
@@ -198,7 +199,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt_requested, dt)
 
     def test_transferfunction(self, xp):
         numc = xp.asarray([0.25, 0.25, 0.5])
@@ -213,7 +214,7 @@ class TestC2D:
 
         assert_array_almost_equal(numd, num)
         assert_array_almost_equal(dend, den)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt_requested, dt)
 
     def test_zerospolesgain(self, xp):
         zeros_c = xp.array([0.5, -0.5])
@@ -232,8 +233,8 @@ class TestC2D:
 
         assert_array_almost_equal(zeros_d, zeros)
         assert_array_almost_equal(polls_d, poles)
-        np.testing.assert_almost_equal(k_d, k)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(k_d, k)
+        assert math.isclose(dt_requested, dt)
 
     @skip_xp_backends(np_only=True)
     def test_gbt_with_sio_tf_and_zpk(self, xp):

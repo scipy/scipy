@@ -1645,9 +1645,6 @@ class TestBilinear:
         xp_assert_close_nulp(b_z, xp.asarray(b_zref))
         xp_assert_close_nulp(a_z, xp.asarray(a_zref))
 
-        xp_assert_close_nulp(b_z, xp.asarray(b_zref))
-        xp_assert_close_nulp(a_z, xp.asarray(a_zref))
-
     @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/9404")
     def test_ignore_leading_zeros(self, xp):
@@ -1926,9 +1923,8 @@ class TestButtord:
         assert np.all(dB(h[ws <= w]) < -rs)
 
         assert N == 16
-        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn,
-                        xp.asarray(2.0002776782743284e-01), rtol=4*eps, check_0d=False)
+                        xp.asarray(2.0002776782743284e-01), rtol=1e-15, check_0d=False)
 
     def test_highpass(self, xp):
         wp = 0.3
@@ -1943,9 +1939,8 @@ class TestButtord:
         assert np.all(dB(h[w <= ws]) < -rs)
 
         assert N == 18
-        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn,
-                        xp.asarray(2.9996603079132672e-01), rtol=4*eps, check_0d=False)
+                        xp.asarray(2.9996603079132672e-01), rtol=1e-15, check_0d=False)
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -1962,10 +1957,9 @@ class TestButtord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < (-rs + 0.1))
 
         assert N == 18
-        eps = xp.finfo(Wn).eps
         xp_assert_close(
             Wn, xp.asarray([1.9998742411409134e-01, 5.0002139595676276e-01]),
-            rtol=4*eps,
+            rtol=1e-15,
         )
 
     @skip_xp_backends(
@@ -2002,18 +1996,17 @@ class TestButtord:
         assert np.all(dB(h[ws <= w]) < -rs)
 
         assert N == 7
-        eps = xp.finfo(Wn).eps
         xp_assert_close(
-            Wn, xp.asarray(2.0006785355671877e+02), rtol=4*eps, check_0d=False
+            Wn, xp.asarray(2.0006785355671877e+02), rtol=1e-15, check_0d=False
         )
 
         n, Wn = buttord(1., xp.asarray(550/450), 1, 26, analog=True)
         assert n == 19
         xp_assert_close(
-            Wn, xp.asarray(1.0361980524629517), rtol=4*eps, check_0d=False
+            Wn, xp.asarray(1.0361980524629517), rtol=1e-15, check_0d=False
         )
 
-        assert buttord(1., xp.asarray(1.2), 1, 80, analog=True)[0] == 55
+        assert buttord(1, xp.asarray(1.2), 1, 80, analog=True)[0] == 55
 
     def test_fs_param(self, xp):
         wp = [4410, 11025]
@@ -2029,9 +2022,8 @@ class TestButtord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 18
-        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn, xp.asarray([4409.722701715714, 11025.47178084662]),
-                        rtol=4*eps)
+                        rtol=1e-15)
 
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
@@ -2086,8 +2078,7 @@ class TestCheb1ord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
-        eps = xp.finfo(Wn).eps
-        xp_assert_close(Wn, xp.asarray(0.2), rtol=4*eps, check_0d=False)
+        xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
 
     @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_highpass(self, xp):
@@ -2103,8 +2094,7 @@ class TestCheb1ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 9
-        eps = xp.finfo(Wn).eps
-        xp_assert_close(Wn, xp.asarray(0.3), rtol=4*eps, check_0d=False)
+        xp_assert_close(Wn, xp.asarray(0.3), rtol=1e-15, check_0d=False)
 
     def test_bandpass(self, xp):
         wp = [0.2, 0.5]
@@ -2119,8 +2109,7 @@ class TestCheb1ord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 9
-        eps = xp.finfo(Wn).eps
-        xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=4*eps)
+        xp_assert_close(Wn, xp.asarray([0.2, 0.5]), rtol=1e-15)
 
     @skip_xp_backends(
         cpu_only=True, exceptions=["cupy"], reason="optimize.fminbound"
@@ -2152,7 +2141,7 @@ class TestCheb1ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 4
-        math.isclose(Wn, 700.0, rel_tol=1e-15)
+        assert math.isclose(Wn, 700.0, rel_tol=1e-15)
         assert array_namespace(Wn) == xp
         assert cheb1ord(xp.asarray(1), 1.2, 1, 80, analog=True)[0] == 17
 
@@ -2170,7 +2159,7 @@ class TestCheb1ord:
         assert np.all(dB(h[ws <= w]) < -rs + 0.1)
 
         assert N == 8
-        math.isclose(Wn, 4800.0, rel_tol=1e-15)
+        assert math.isclose(Wn, 4800.0, rel_tol=1e-15)
         assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
@@ -2288,9 +2277,8 @@ class TestCheb2ord:
         assert np.all(dB(h[np.logical_or(w <= ws[0], ws[1] <= w)]) < -rs + 0.1)
 
         assert N == 11
-        eps = xp.finfo(Wn).eps
         xp_assert_close(Wn, xp.asarray([1.673740595370124e+01, 5.974641487254268e+01]),
-                        rtol=4*eps)
+                        rtol=1e-15)
 
     def test_fs_param(self, xp):
         wp = 150
@@ -2305,7 +2293,7 @@ class TestCheb2ord:
         assert np.all(dB(h[w <= ws]) < -rs + 0.1)
 
         assert N == 9
-        math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
+        assert math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
         assert array_namespace(Wn) == xp
 
     def test_invalid_input(self):
@@ -4816,12 +4804,10 @@ class TestIIRFilter:
 
             b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
                              ftype=ftype, output='ba')
-            if is_numpy(xp):
-                assert issubclass(b.dtype.type, np.floating)
-                assert issubclass(a.dtype.type, np.floating)
-            else:
-                assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-                assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+
+            isdtype = array_namespace(b).isdtype
+            assert isdtype(b.dtype, ('real floating', 'complex floating'))
+            assert isdtype(a.dtype, ('real floating', 'complex floating'))
 
     @make_xp_test_case(bessel)
     def test_int_inputs(self, xp):

@@ -3209,10 +3209,10 @@ class TestDecimate:
         x = signal.decimate(xp.ones(10_000, dtype=xp.float32), 10)
         assert not any(xp.isnan(x))
 
-    def test_float16_upcast(self, xp):
+    def test_float16_upcast(self):
         # float16 must be upcast to float64
-        x = signal.decimate(xp.ones(100, dtype=xp.float16), 10)
-        assert x.dtype.type == xp.float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
 
     @skip_xp_backends(np_only=True, reason="dlti")
     def test_complex_iir_dlti(self, xp):
