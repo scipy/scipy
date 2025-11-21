@@ -118,7 +118,6 @@ def test_minres_precond_non_default_x0(make_complex):
     x = minres(a, b, M=m, x0=c, rtol=rtol)[0]
     assert norm(a @ x - b) <= rtol * norm(b)
 
-
 def test_minres_precond_exact_x0():
     rng = np.random.RandomState(1234)
     rtol = 1e-6
