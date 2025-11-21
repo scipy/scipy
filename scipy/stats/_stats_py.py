@@ -9133,10 +9133,8 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
     if np.any(nan_out):
         # These get NaN-ed out at the end. In the meantime, we want them
         # to pass through calculations without warnings or errors
-        q = np.asarray(q, copy=True)
-        q = xpx.at(q, nan_out).set(0)
-        p = np.asarray(p, copy=True)
-        p = xpx.at(p, nan_out).set(0.5)
+        q = xpx.at(q, nan_out).set(0, copy=True)
+        p = xpx.at(p, nan_out).set(0.5, copy=True)
 
     return x, q, p, alternative, axis, keepdims, axis_none, ndim, nan_out
 

@@ -8779,8 +8779,8 @@ class TestQuantileTest:
         out = qp_zero
         res = stats.quantile_test(x, q=qp_zero, p=qp_zero, axis=-1)
         ci = res.confidence_interval()
-        xp_assert_equal(res.statistic, np.astype(out, np.int64))
-        xp_assert_equal(res.statistic_type, np.astype(out, np.int64))
+        xp_assert_equal(res.statistic, np.asarray(out, dtype=np.int64))
+        xp_assert_equal(res.statistic_type, np.asarray(out, dtype=np.int64))
         xp_assert_equal(res.pvalue, out)
         xp_assert_equal(ci.low, out)
         xp_assert_equal(ci.high, out)
@@ -8790,8 +8790,8 @@ class TestQuantileTest:
         out = np.empty((0, *qp_shape))
         res = stats.quantile_test(x_zero, q=q, p=p, axis=-1)
         ci = res.confidence_interval()
-        xp_assert_equal(res.statistic, np.astype(out, np.int64))
-        xp_assert_equal(res.statistic_type, np.astype(out, np.int64))
+        xp_assert_equal(res.statistic, np.asarray(out, dtype=np.int64))
+        xp_assert_equal(res.statistic_type, np.asarray(out, dtype=np.int64))
         xp_assert_equal(res.pvalue, out)
         xp_assert_equal(ci.low, out)
         xp_assert_equal(ci.high, out)
@@ -8808,6 +8808,7 @@ class TestQuantileTest:
         xp_assert_equal(ci.high, out*np.nan)
 
     def test_nans(self):
+        rng = np.random.default_rng(2920028761208905)
         x = rng.random((10, 50))
         q = rng.random((10, 10))
         p = q + rng.random((10, 10)) * 1e-2
