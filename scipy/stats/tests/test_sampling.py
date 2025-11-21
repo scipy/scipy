@@ -176,7 +176,7 @@ def test_random_state(method, kwargs):
     rng = np.random.RandomState(123)
     rng1 = Method(**kwargs)
     rvs1 = rng1.rvs(100, random_state=rng)
-    np.random.seed(None)
+    np.random.seed(None)  # valid use of np.random.seed
     rng2 = Method(**kwargs, random_state=123)
     rvs2 = rng2.rvs(100)
     assert_equal(rvs1, rvs2)

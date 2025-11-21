@@ -67,7 +67,7 @@ def from_matrix(matrix: Array) -> Array:
     # frameworks or pay the performance penalty for the SVD.
     eye = xp.eye(3, dtype=matrix.dtype, device=device)
     is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
-    U, _, Vt = xp.linalg.svd(matrix)
+    U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
     orthogonal_matrix = U @ Vt
     matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
 
@@ -470,18 +470,39 @@ def approx_equal(
     return angles < atol
 
 
-def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
+def mean(
+    quat: Array,
+    weights: ArrayLike | None = None,
+    axis: None | int | tuple[int, ...] = None,
+) -> Array:
     xp = array_namespace(quat)
     device = xp_device(quat)
     dtype = xp_result_type(quat, force_floating=True, xp=xp)
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
+    # Axis logic: For None, we reduce over all axes. For int, we only reduce over that
+    # axis. For tuple, we reduce over all specified axes.
+    all_axes = tuple(range(quat.ndim - 1))
+    if axis is None:
+        axis = all_axes
+    elif isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    # Ensure all axes are within bounds
+    if axis != () and ( min(axis) < -(quat.ndim - 1) or max(axis) > (quat.ndim - 2)):
+        raise ValueError(
+            f"axis {axis} is out of bounds for rotation with shape "
+            f"{quat.shape[:-1]}."
+        )
+    # Ensure all axes are positive and unique
+    axis = tuple(sorted(set(x % (quat.ndim - 1) for x in axis)))
 
     lazy = is_lazy_array(quat)
     # Branching code is okay for checks that include meta info such as shapes and types
+    quat_expand = quat[..., None, :]
     if weights is None:
-        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = xp.matrix_transpose(quat) @ quat  # TODO: Replace with .mT
+        K = xp.matrix_transpose(quat_expand) @ quat_expand
     else:
         weights = xp.asarray(weights, dtype=dtype, device=device)
         neg_weights = weights < 0
@@ -492,16 +513,23 @@ def mean(quat: Array, weights: ArrayLike | None = None) -> Array:
             # non-branching. We return NaN instead
             weights = xp.where(neg_weights, xp.nan, weights)
 
-        if weights.shape != quat.shape[:-1]:
+        if not broadcastable(quat.shape[:-1], weights.shape):
             raise ValueError(
-                f"Expected `weights` to match rotation shape, got shape {weights.shape}"
-                f" for {quat.shape[:-1]} rotations."
+                "Expected `weights` to be broadcastable to rotation shape, got shape "
+                f"{weights.shape} for {quat.shape[:-1]} rotations."
             )
 
         # Make sure we can transpose quat
-        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        K = xp.matrix_transpose(weights[..., None] * quat) @ quat
+        weighted_quat = weights[..., None, None] * quat_expand
+        K = xp.matrix_transpose(weighted_quat) @ quat_expand
 
+    # Move reduction axes to the end
+    keep_axes = tuple(i for i in all_axes if i not in axis)
+    axes_order = keep_axes + axis
+    K_reordered = xp.moveaxis(K, axes_order, all_axes)
+    # Reshape to flatten reduction axes
+    new_shape = K_reordered.shape[: len(keep_axes)] + (-1, 4, 4)
+    K = xp.mean(xp.reshape(K_reordered, new_shape), axis=-3)
     _, v = xp.linalg.eigh(K)
     return v[..., -1]
 

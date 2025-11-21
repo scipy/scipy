@@ -10,9 +10,8 @@ Functions
 
 """
 
-from inspect import signature
-
 import numpy as np
+from scipy._lib._util import wrapped_inspect_signature
 from ._optimize import (OptimizeResult, _check_unknown_options,
     _prepare_scalar_function)
 from ._constraints import NonlinearConstraint
@@ -246,7 +245,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
     if callback is not None:
-        sig = signature(callback)
+        sig = wrapped_inspect_signature(callback)
         if set(sig.parameters) == {"intermediate_result"}:
             def wrapped_callback_intermediate(x, f, nf, tr, cstrv, nlconstrlist):
                 intermediate_result = OptimizeResult(x=np.copy(x), fun=f, nfev=nf,
