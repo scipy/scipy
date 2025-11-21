@@ -10,10 +10,11 @@ __all__ = ['minres']
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
-    Solve ``Ax = b`` with the MINimum RESidual method, for a real symmetric or complex hermitian matrix `A`.
+    Solve ``Ax = b`` with the MINimum RESidual method,
+    for a real symmetric or complex hermitian matrix `A`.
 
-    MINRES minimizes norm(Ax - b) for a real symmetric or complex hermitian matrix A.  Unlike
-    the Conjugate Gradient method, A can be indefinite or singular.
+    MINRES minimizes norm(Ax - b) for a real symmetric or complex hermitian matrix A.
+    Unlike the Conjugate Gradient method, A can be indefinite or singular.
 
     If shift != 0 then the method solves (A - shift*I)x = b
 
