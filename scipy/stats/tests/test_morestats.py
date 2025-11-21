@@ -1226,11 +1226,10 @@ class TestMood:
             title "Data for above results";
           run;
         """
-        dtype = xp.float64
-        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
-        xp_assert_close(statistic, xp.asarray(stat_expect, dtype=dtype), atol=1e-16)
-        xp_assert_close(pvalue, xp.asarray(p_expect, dtype=dtype), atol=1e-16)
+        xp_assert_close(statistic, xp.asarray(stat_expect), atol=1e-16)
+        xp_assert_close(pvalue, xp.asarray(p_expect), atol=1e-16)
 
     @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative, expected",
