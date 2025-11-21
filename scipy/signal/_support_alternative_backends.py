@@ -1,4 +1,5 @@
 import functools
+import types
 from scipy._lib._array_api import (
     is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API, xp_capabilities
 )
@@ -276,6 +277,8 @@ capabilities_overrides = {
                              skip_backends=[("jax.numpy", "in-place item assignment")]),
     "lp2hp_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                  allow_dask_compute=True, jax_jit=False),
+    "lti": xp_capabilities(np_only=True,
+                            reason="works in CuPy but delegation isn't set up yet"),
     "medfilt": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                allow_dask_compute=True, jax_jit=False,
                                reason="uses scipy.ndimage.rank_filter"),
@@ -372,7 +375,7 @@ for obj_name in _signal_api.__all__:
     else:
         f = bare_obj
 
-    if callable(f) and hasattr(f, "__name__"):
+    if not isinstance(f, types.ModuleType):
         capabilities = capabilities_overrides.get(
             obj_name, get_default_capabilities(obj_name, delegator)
         )
