@@ -13,6 +13,7 @@ from scipy._lib._array_api import (
     is_array_api_strict,
     make_xp_test_case,
     SCIPY_ARRAY_API,
+    xp_size,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
@@ -213,6 +214,54 @@ class TestQuantile:
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
 
 
+@_apply_over_batch(('a', 1), ('v', 1))
+def np_searchsorted(a, v, side):
+    return np.searchsorted(a, v, side=side)
+
+
+@make_xp_test_case(_xp_searchsorted)
+class Test_XPSearchsorted:
+    @pytest.mark.parametrize('side', ['left', 'right'])
+    @pytest.mark.parametrize('ties', [False, True])
+    @pytest.mark.parametrize('shape', [0, 1, 2, 10, 11, 1000, 10001,
+                                       (2, 0), (0, 2), (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('nans_x', [False, True])
+    @pytest.mark.parametrize('infs_x', [False, True])
+    def test_nd(self, side, ties, shape, nans_x, infs_x, xp):
+        if nans_x and is_torch(xp):
+            pytest.skip('torch sorts NaNs differently')
+        rng = np.random.default_rng(945298725498274853)
+        if ties:
+            x = rng.integers(5, size=shape)
+        else:
+            x = rng.random(shape)
+        # float32 is to accommodate JAX - nextafter with `float64` is too small?
+        x = np.asarray(x, dtype=np.float32)
+        xr = np.nextafter(x, np.inf)
+        xl = np.nextafter(x, -np.inf)
+        x_ = np.asarray([-np.inf, np.inf, np.nan])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
+        y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
+        if nans_x:
+            mask = rng.random(shape) < 0.1
+            x[mask] = np.nan
+        if infs_x:
+            mask = rng.random(shape) < 0.1
+            x[mask] = -np.inf
+            mask = rng.random(shape) > 0.9
+            x[mask] = np.inf
+        x = np.sort(x, axis=-1)
+        x, y = np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)
+        xp_default_int = xp.asarray(1).dtype
+        if xp_size(x) == 0 and x.ndim > 0 and x.shape[-1] != 0:
+            ref = xp.empty(x.shape[:-1] + (y.shape[-1],), dtype=xp_default_int)
+        else:
+            ref = xp.asarray(np_searchsorted(x, y, side=side), dtype=xp_default_int)
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = _xp_searchsorted(x, y, side=side)
+        xp_assert_equal(res, ref)
+
+
 @_apply_over_batch(('x', 1), ('y', 1))
 def iquantile_reference_last_axis(x, y, nan_policy, method):
     i_nan = np.isnan(x)
@@ -333,6 +382,7 @@ class TestIQuantile:
         xp_assert_close(res[i_very_low], xp.asarray(0.0), **kwargs)
         xp_assert_close(res[i_very_high], xp.asarray(1.0), **kwargs)
 
+    @pytest.mark.filterwarnings("ignore:torch.searchsorted:UserWarning")
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
@@ -376,6 +426,7 @@ class TestIQuantile:
         ref = iquantile_reference(x, y, **kwargs)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    @pytest.mark.skip_xp_backends('torch', reason='issues with sorting NaNs')
     @pytest.mark.parametrize('n', [50, 500])
     @pytest.mark.parametrize('method, ab', _iquantile_continuous_methods.items())
     def test_plotting_positions(self, n, method, ab, xp):
