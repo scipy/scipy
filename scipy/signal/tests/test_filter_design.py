@@ -4606,12 +4606,9 @@ class TestIIRComb:
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
         xp_assert_equal(k, xp.real(k))
 
-        if is_numpy(xp):
-            assert issubclass(b.dtype.type, np.floating)
-            assert issubclass(a.dtype.type, np.floating)
-        else:
-            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+        isdtype = array_namespace(b).isdtype
+        assert isdtype(b.dtype, ('real floating', 'complex floating'))
+        assert isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify filter coefficients with MATLAB's iircomb function
     def test_ba_output(self, xp):
@@ -5073,12 +5070,9 @@ class TestGammatone:
         xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
         xp_assert_equal(k, xp.real(k))
 
-        if is_numpy(xp):
-            assert issubclass(b.dtype.type, np.floating)
-            assert issubclass(a.dtype.type, np.floating)
-        else:
-            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
-            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
+        isdtype = array_namespace(b).isdtype
+        assert isdtype(b.dtype, ('real floating', 'complex floating'))
+        assert isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify FIR filter coefficients with the paper's
     # Mathematica implementation
