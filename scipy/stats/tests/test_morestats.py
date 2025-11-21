@@ -23,8 +23,7 @@ from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
-                                          too_small_1d_omit, too_small_1d_not_omit,
-                                          too_small_nd_not_omit)
+                                          too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
                                    is_numpy)

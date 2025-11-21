@@ -5,7 +5,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import make_xp_test_case
-from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._util import _apply_over_batch
 from scipy import stats
 from scipy.special import xlogy
