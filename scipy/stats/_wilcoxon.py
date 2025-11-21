@@ -6,7 +6,7 @@ from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size, xp_copy
+from scipy._lib._array_api import array_namespace, xp_promote, xp_size
 import scipy._lib.array_api_extra as xpx
 
 
