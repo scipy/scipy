@@ -8,6 +8,14 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "9  9 2/2 * *"
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
@@ -48,6 +56,14 @@ jobs:
         with:
           submodules: recursive
 
+      # Reference https://github.com/easimon/maximize-build-space/blob/master/action.yml
+      # see https://github.com/scipy/scipy/issues/23813
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android
+          df -h
+
       - name: cache install
         id: cache-install
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -87,7 +103,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}

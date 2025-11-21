@@ -372,10 +372,11 @@ def directed_hausdorff(u, v, rng=0):
     (as with the brute force algorithm), this is unlikely in practice
     as the input data would have to require the algorithm to explore
     every single point interaction, and after the algorithm shuffles
-    the input points at that. The best case performance is O(m), which
-    is satisfied by selecting an inner loop distance that is less than
-    cmax and leads to an early break as often as possible. The authors
-    have formally shown that the average runtime is closer to O(m).
+    the input points at that. The best case performance is ``O(m)``,
+    which is satisfied by selecting an inner loop distance that is
+    less than cmax and leads to an early break as often as possible.
+    The authors have formally shown that the average runtime is
+    closer to ``O(m)``.
 
     .. versionadded:: 0.19.0
 
@@ -383,8 +384,8 @@ def directed_hausdorff(u, v, rng=0):
     ----------
     .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
            calculating the exact Hausdorff distance." IEEE Transactions On
-           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
-           2015.
+           Pattern Analysis And Machine Intelligence, vol. 37, no. 11,
+           pp. 2153-63, 2015. :doi:`10.1109/TPAMI.2015.2408351`.
 
     Examples
     --------
@@ -916,7 +917,7 @@ def seuclidean(u, v, V):
     v : (N,) array_like
         Input array.
     V : (N,) array_like
-        `V` is an 1-D array of component variances. It is usually computed
+        `V` is a 1-D array of component variances. It is usually computed
         among a larger collection of vectors.
 
     Returns
@@ -2182,7 +2183,7 @@ def squareform(X, force="no", checks=True):
     1. ``v = squareform(X)``
 
        Given a square n-by-n symmetric distance matrix ``X``,
-       ``v = squareform(X)`` returns a ``n * (n-1) / 2``
+       ``v = squareform(X)`` returns an ``n * (n-1) / 2``
        (i.e. binomial coefficient n choose 2) sized vector `v`
        where :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        is the distance between distinct points ``i`` and ``j``.
@@ -2190,9 +2191,9 @@ def squareform(X, force="no", checks=True):
 
     2. ``X = squareform(v)``
 
-       Given a ``n * (n-1) / 2`` sized vector ``v``
+       Given an ``n * (n-1) / 2`` sized vector ``v``
        for some integer ``n >= 1`` encoding distances as described,
-       ``X = squareform(v)`` returns a n-by-n distance matrix ``X``.
+       ``X = squareform(v)`` returns an n-by-n distance matrix ``X``.
        The ``X[i, j]`` and ``X[j, i]`` values are set to
        :math:`v[{n \\choose 2} - {n-i \\choose 2} + (j-i-1)]`
        and all diagonal elements are zero.

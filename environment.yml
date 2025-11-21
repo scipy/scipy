@@ -23,7 +23,7 @@ dependencies:
   # ---
   - pythran
   # For testing and benchmarking
-  - pytest
+  - pytest>=8.0.0
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
@@ -57,6 +57,7 @@ dependencies:
   - threadpoolctl
   # For CLI
   - spin
+  - click<8.3.0  # transitive dependency of `spin`, 8.3.0 is breaking (see gh-23642)
   # For linting
   - ruff>=0.12.0
   - cython-lint

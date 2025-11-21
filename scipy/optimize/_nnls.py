@@ -10,7 +10,7 @@ __all__ = ['nnls']
                             deprecated_args={'atol'})
 def nnls(A, b, *, maxiter=None, atol=_NoValue):
     """
-    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
+    Solve ``argmin_x || Ax - b ||_2^2`` for ``x>=0``.
 
     This problem, often called as NonNegative Least Squares, is a convex
     optimization problem with convex constraints. It typically arises when

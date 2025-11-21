@@ -19,6 +19,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
+from scipy.conftest import skip_xp_invalid_arg
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -991,8 +992,7 @@ class TestSolve:
     @pytest.mark.parametrize(
         "assume_a",
         [
-            None, "general", "upper triangular", "lower triangular",
-            "pos", "pos upper", "pos lower"
+            None, "general", "upper triangular", "lower triangular", "pos"
         ]
     )
     def test_vs_np_solve(self, assume_a):
@@ -1021,19 +1021,9 @@ class TestSolve:
         result_np = np.linalg.solve(aa, b)
         assert_allclose(out, result_np, atol=1e-15)
 
-        out = solve(a, b, assume_a='pos lower')
-        assert_allclose(out, result_np, atol=1e-15)
-
         # repeat with uplo='U'
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
-
-        out = solve(a.T, b, assume_a='pos upper')
-        assert_allclose(out, result_np, atol=1e-15)
-
-        # conflicting assume_a & lower
-        with assert_raises(ValueError):
-            solve(a, b, assume_a='pos upper', lower=True)
 
     def test_readonly(self):
         a = np.eye(3)
@@ -1367,6 +1357,10 @@ class TestInv:
         with pytest.warns(LinAlgWarning):
             inv(a)
 
+        a2 = np.stack([np.diag([1., 1e-20]), np.diag([1, 1]), np.diag([1, 1e-20])])
+        with pytest.warns(LinAlgWarning):
+            inv(a2)
+
     def test_wrong_assume_a(self):
         with assert_raises(KeyError):
             inv(np.eye(2), assume_a="kaboom")
@@ -1381,13 +1375,13 @@ class TestInv:
 
         assert_allclose(y_inv1, y_inv0, atol=1e-15)
 
-        # check that the lower triangle is not referenced for "pos upper"
+        # check that the lower triangle is not referenced for `lower=False`
         mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
-        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos upper")
+        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos", lower=False)
         assert_allclose(y_inv2, y_inv0, atol=1e-15)
 
-        # repeat with the upper triangle and "pos lower"
-        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos lower")
+        # repeat with the upper triangle
+        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos", lower=True)
         assert_allclose(y_inv3, y_inv0, atol=1e-15)
 
     def test_posdef_not_posdef(self):
@@ -1395,13 +1389,18 @@ class TestInv:
         a = np.arange(9).reshape(3, 3)
         b = a + a.T + np.eye(3)
 
-        # cholesky solver fails, and the routine falls back to the general inverse
+        # cholesky solver fails, and the routine falls back to the symmetric inverse
         b_inv0 = inv(b)
         assert_allclose(b_inv0 @ b, np.eye(3), atol=3e-15)
 
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
             inv(b, assume_a='pos')
+
+        # TODO:
+        #   1. posdef fallback for complex symmetric, hermitian inputs
+        #   2. assume_a = "sym" for real and complex
+        #   3. assume_a = "her" for real and complex
 
     def test_triangular_1(self):
         x = np.arange(25, dtype=float).reshape(5, 5)
@@ -2326,7 +2325,7 @@ class TestSolveCirculant:
 
 
 class TestMatrix_Balance:
-
+    @skip_xp_invalid_arg
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')
 

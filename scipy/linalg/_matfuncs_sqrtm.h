@@ -13,6 +13,13 @@ void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, i
 
 static PyObject* sqrtm_error;
 
+// A simple destructor for buffer attached to a NumPy array via a capsule.
+static void
+capsule_destructor(PyObject *capsule) {
+    void *ptr = PyCapsule_GetPointer(capsule, NULL);
+    free(ptr);
+}
+
 /*
  * This function accepts an nD NumPy array of size (..., n, n) and, if possible,
  * computes the matrix square root for each (n, n) slice. The input must be at
@@ -31,8 +38,10 @@ static PyObject* sqrtm_error;
 static PyObject*
 recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     int isComplex = 0, isIllconditioned = 0, isSingular = 0, info = 0;
-    PyArrayObject *ap_Am=NULL;
+    PyArrayObject *ap_Am = NULL;
     void* mem_ret = NULL;
+    PyArrayObject* ap_ret = NULL;
+
     // Get the input array
     if (!PyArg_ParseTuple(args, ("O!"), &PyArray_Type, (PyObject **)&ap_Am))
     {
@@ -113,29 +122,50 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     {
         // Input and output is real, truncate the extra space at the end
         npy_intp new_size = (ret_dims/2)*(input_type == NPY_FLOAT32 ? sizeof(float) : sizeof(double));
-        void* mem_ret_half = realloc(mem_ret, new_size);
+        mem_ret = realloc(mem_ret, new_size);
         // Quite unlikely but still allowed to fail
-        if (!mem_ret_half) {
+        if (!mem_ret) {
             free(mem_ret);
-            PYERR(sqrtm_error, "Memory reallocation failed.");
+            PYERR(sqrtm_error, "Memory reallocation failed in scipy.linalg.sqrtm.");
         }
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret_half);
-        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
-
+        ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret);
+        if (ap_ret == NULL) {
+            free(mem_ret);
+            PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create numpy array from data.");
+        }
     } else if ((input_type == NPY_FLOAT32) || (input_type == NPY_FLOAT64)) {
-
         // Input was real, result is complex, then view the result as complex
         int new_type = (PyArray_TYPE(ap_Am) == NPY_FLOAT32 ? NPY_COMPLEX64 : NPY_COMPLEX128);
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, new_type, mem_ret);
-        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
-
+        ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, new_type, mem_ret);
+        if (ap_ret == NULL) {
+            free(mem_ret);
+            PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create numpy array from data.");
+        }
     } else {
-
         // Input was complex, result is complex, only reshape
-        PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, PyArray_TYPE(ap_Am), mem_ret);
-        // Return the result
-        return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
+        ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, PyArray_TYPE(ap_Am), mem_ret);
+        if (ap_ret == NULL) {
+            free(mem_ret);
+            PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create numpy array from data.");
+        }
     }
+
+    // Attach the buffer to a capsule
+    PyObject* capsule = PyCapsule_New(mem_ret, NULL, capsule_destructor);
+    if (capsule == NULL) {
+        Py_DECREF(ap_ret);
+        free(mem_ret);
+        PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to create capsule.");
+    }
+    // For ref counting of the memory
+    if (PyArray_SetBaseObject(ap_ret, capsule) == -1) {
+        Py_DECREF(ap_ret);
+        free(mem_ret);
+        PYERR(sqrtm_error, "scipy.linalg.sqrtm: Failed to set array's base.");
+    }
+
+    // Return the result
+    return Py_BuildValue("Niii", PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
 }
 
 static char doc_sqrtm[] = ("Compute the matrix square root by recursion.\n\n    "

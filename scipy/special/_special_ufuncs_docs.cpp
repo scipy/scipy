@@ -2,6 +2,41 @@ const char *_cospi_doc = R"(
     Internal function, do not use.
     )";
 
+const char *_gen_harmonic_doc = R"(
+    _gen_harmonic(n, a)
+
+    Internal private function.
+
+    Compute sum_{i=1}^{n} i**-a for 1 <= m <= n.
+
+    This is the generalized harmonic number.
+
+    nan is returned if n < 1.
+
+    When n is type double, if it is nan, nan is returned.
+    Otherwise when n is double it is assumed to be an integer
+    value that is between 0 and 2**53.  This is not checked by
+    the function.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
+const char *_normalized_gen_harmonic_doc = R"(
+    _normalized_gen_harmonic(j, k, n, a)
+
+    Internal private function.
+
+    Compute (sum_{i=j}^{k} i**-a)/(sum_{i=1}^{n} i**-a) for 1 <= j <= k <= n.
+
+    When j, k and n are type double, nan is returned if any are nan.
+    Otherwise when the type is double it is assumed that i, j and k have integer
+    values that are between 0 and 2**53.  This is not checked by the function.
+    Failure to ensure this condition could result in invalid results and
+    possibly an infinite loop in the underlying C++ code.
+
+    This function is used in scipy.stats.zipfian.
+    )";
+
 const char *besselpoly_doc = R"(
     besselpoly(a, lmb, nu, out=None)
 
@@ -2547,8 +2582,7 @@ const char *hankel1_doc = R"(
 
     See Also
     --------
-    hankel1e : ndarray
-        This function with leading exponential behavior stripped off.
+    hankel1e : This function with leading exponential behavior stripped off.
 
     Notes
     -----
@@ -2570,6 +2604,38 @@ const char *hankel1_doc = R"(
     .. [1] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
+
+    Examples
+    --------
+    For the inhomogenous Helmholtz equation in :math:`\mathbb{R}^2` subject to radiation
+    boundary conditions, the Green's function is given by
+
+    .. math::
+
+        G(\mathbf{x}, \mathbf{x}^\prime) =
+        \frac{1}{4i} H^{(1)}_0(k|\mathbf{x} - \mathbf{x^\prime}|)
+
+    where :math:`k` is the wavenumber and :math:`H^{(1)}_0` is the Hankel function
+    of the first kind and of order zero. In the following example, we will solve the
+    Helmholtz equation with two Dirac sources.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import hankel1
+    >>> k = 10  # Wavenumber
+    >>> sources = [0.5, -0.5]  # Location of two point sources
+    >>> x, y = np.linspace(-3, 3, 300), np.linspace(-3, 3, 300)
+    >>> Z = np.add.outer(1j*y, x)
+    >>> U = np.zeros_like(Z)
+    >>> for sz in sources:
+    ...     r = np.abs(Z - sz)
+    ...     U += (1j/4)*hankel1(0, k*r)
+
+    Finally, we will plot the real part of the solution.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.pcolormesh(np.real(Z), np.imag(Z), np.real(U))
+    >>> plt.show()
     )";
 
 const char *hankel1e_doc = R"(
@@ -3694,7 +3760,7 @@ const char *iv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -4114,7 +4180,7 @@ const char *jv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape
@@ -5616,7 +5682,7 @@ const char *modfresnelm_doc = R"(
     fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
     km : scalar or ndarray
-        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+        Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fm``
 
     See Also
     --------
@@ -7142,7 +7208,7 @@ const char *yv_doc = R"(
 
     If `z` is an array, the order parameter `v` must be broadcastable to
     the correct shape if different orders shall be computed in one call.
-    To calculate the orders 0 and 1 for an 1D array:
+    To calculate the orders 0 and 1 for a 1D array:
 
     >>> orders = np.array([[0], [1]])
     >>> orders.shape

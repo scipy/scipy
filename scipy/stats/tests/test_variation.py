@@ -1,12 +1,12 @@
 import math
-import warnings
 
 import numpy as np
 import pytest
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
-from scipy._lib._array_api import is_numpy, make_xp_test_case
+
+from scipy._lib._array_api import make_xp_test_case, eager_warns
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
@@ -138,17 +138,13 @@ class TestVariation:
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        with warnings.catch_warnings():
-            # torch
-            warnings.filterwarnings("ignore", "std*", UserWarning)
-            if axis != 0:
-                if is_numpy(xp):
-                    with pytest.warns(SmallSampleWarning, match="See documentation..."):
-                        y = variation(x, axis=axis)
-                else:
-                    y = variation(x, axis=axis)
-            else:
+        if axis != 0:
+            # specific message depends on `axis`, and `SmallSampleWarning`
+            # is specific enough.
+            with eager_warns(SmallSampleWarning, xp=xp):
                 y = variation(x, axis=axis)
+        else:
+            y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
     @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning:dask')

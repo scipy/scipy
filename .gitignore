@@ -87,6 +87,7 @@ pip-wheel-metadata
 .mesonpy-native-file.ini
 installdir/
 .mesonpy/
+.wraplock
 
 # doit
 ######
@@ -170,9 +171,7 @@ scipy/fftpack/convolvemodule.c
 scipy/fftpack/convolve.c
 scipy/fftpack/src/dct.c
 scipy/fftpack/src/dst.c
-scipy/integrate/_lsodamodule.c
 scipy/integrate/_vodemodule.c
-scipy/integrate/_lsoda-f2pywrappers.f
 scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
