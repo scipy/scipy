@@ -9044,24 +9044,28 @@ class QuantileTestResult:
             high_index = bd.isf(p).astype(int)
             valid_index = high_index < n
             high_index[~valid_index] = 0
-            high = np.where(valid_index, np.take_along_axis(x, high_index), np.nan)
+            x_high = np.take_along_axis(x, high_index, axis=-1)
+            high = np.where(valid_index, x_high, np.nan)
         elif alternative == 'greater':
             p = 1 - confidence_level
             low_index = (bd.ppf(p)).astype(int) - 1
             valid_index = low_index >= 0
             low_index[~valid_index] = 0
-            low = np.where(valid_index, np.take_along_axis(x, low_index), np.nan)
+            x_low = np.take_along_axis(x, low_index, axis=-1)
+            low = np.where(valid_index, x_low, np.nan)
             high = np.full(shape, np.inf)
         elif alternative == 'two-sided':
             p = (1 - confidence_level) / 2
             low_index = (bd.ppf(p)).astype(int) - 1
             valid_index = low_index >= 0
             low_index[~valid_index] = 0
-            low = np.where(valid_index, np.take_along_axis(x, low_index), np.nan)
+            x_low = np.take_along_axis(x, low_index, axis=-1)
+            low = np.where(valid_index, x_low, np.nan)
             high_index = bd.isf(p).astype(int)
             valid_index = high_index < n
             high_index[~valid_index] = 0
-            high = np.where(valid_index, np.take_along_axis(x, high_index), np.nan)
+            x_high = np.take_along_axis(x, high_index, axis=-1)
+            high = np.where(valid_index, x_high, np.nan)
 
         args = self._axis, self._axis_none, self._keepdims, self._ndim, self._nan_out
         low = _quantile_test_postprocess(low, *args)
