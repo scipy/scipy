@@ -128,8 +128,8 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
         # Wilcoxon's method for treating zeros was to remove them from
         # the calculation. We do this by replacing 0s with NaNs, which
         # are ignored anyway.
-        d = xp_copy(d)  # this was required for array-api-strict, but it shouldn't be
-        d = xpx.at(d)[i_zeros].set(xp.nan)
+        # Copy required for array-api-strict. See data-apis/array-api-extra#506.
+        d = xpx.at(d)[i_zeros].set(xp.nan, copy=True)
 
     i_nan = xp.isnan(d)
     n_nan = xp.count_nonzero(i_nan, axis=-1)

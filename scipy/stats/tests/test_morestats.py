@@ -1582,7 +1582,7 @@ class TestWilcoxon:
         d = xp.asarray([0.1] * 10)
         expected_stat = xp.asarray(0.0)
 
-        stat, p = stats.wilcoxon(d, method="asymptotic", correction=False, )
+        stat, p = stats.wilcoxon(d, method="asymptotic", correction=False)
         expected_p = xp.asarray(0.001565402258002551)
         xp_assert_equal(stat, expected_stat)
         xp_assert_close(p, expected_p)
