@@ -131,7 +131,7 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, batch_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -154,6 +154,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
         ``scikits.umfpack`` is installed.
+    batch_size : int, optional
+        If ``b`` is a 2D sparse array, this parameter controls the number of
+        columns to be solved simultaneously. A larger number will increase
+        memory consumption by converting more columns at a time to dense
+        arrays, but may improve runtime. This option only applies when
+        ``use_umfpack=False``, since the low-level scikit-umfpack routines do
+        not support multiple right-hand sides. In that case, ``batch_size=1``.
 
     Returns
     -------
@@ -300,14 +307,23 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                      SparseEfficiencyWarning, stacklevel=2)
                 b = csc_array(b)
 
-            # Create a sparse output matrix by repeatedly applying
-            # the sparse factorization to solve columns of b.
-            x_cols = []
-            for j in range(b.shape[1]):
-                bj = b[:, j].toarray().ravel()
-                xj = Afactsolve(bj)
-                x_cols.append(csc_array(xj.reshape(-1, 1)))
-            x = hstack(x_cols)
+            if use_umfpack and batch_size > 1:
+                batch_size = 1
+
+            # Solve in batches to reduce memory consumption
+            num_cols = b.shape[1]
+            x_blocks = []
+
+            for k in range(0, num_cols, batch_size):
+                batch_end = min(k + batch_size, num_cols)
+                b_batch = b[:, k:batch_end].toarray(order="C")
+                x_dense_batch = Afactsolve(b_batch)
+                x_sparse_batch = csc_array(x_dense_batch)
+                x_blocks.append(x_sparse_batch)
+
+            x = hstack(x_blocks)
+
+            # Convert back to consistent sparse class
             x = A.__class__(x)
 
             if is_pydata_sparse:
