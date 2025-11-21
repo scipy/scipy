@@ -3,8 +3,7 @@ from itertools import product
 import numpy as np
 import functools
 import pytest
-from numpy.testing import (assert_, assert_equal, assert_allclose,
-                           assert_almost_equal)  # avoid new uses
+from numpy.testing import assert_, assert_equal, assert_allclose
 from pytest import raises as assert_raises
 
 from scipy import stats, special
@@ -14,7 +13,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
-from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,

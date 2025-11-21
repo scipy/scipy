@@ -11,7 +11,6 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy)
-from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
