@@ -9113,7 +9113,7 @@ def quantile_test_iv(x, q, p, alternative, axis, keepdims):
         message = "If specified, `keepdims` must be True or False."
         raise ValueError(message)
 
-    x = np.sort(x, axis=axis, stable=False)
+    x = np.sort(x, axis=axis)
     q, p = np.broadcast_arrays(q, p)  # length along axis matters for q and p
     x, q, p = _broadcast_arrays((x, q, p), axis=axis)
 
