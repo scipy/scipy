@@ -327,8 +327,10 @@ class TestLinsolve:
         for b in bs:
             x = np.linalg.solve(A.toarray(), toarray(b))
             for spmattype in [csc_array, csr_array, dok_array, lil_array]:
-                x1 = spsolve(spmattype(A), b, use_umfpack=True)
-                x2 = spsolve(spmattype(A), b, use_umfpack=False)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SparseEfficiencyWarning)
+                    x1 = spsolve(spmattype(A), b, use_umfpack=True)
+                    x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
                 # check solution
                 if x.ndim == 2 and x.shape[1] == 1:
