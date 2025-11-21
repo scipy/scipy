@@ -22,6 +22,7 @@ from scipy._lib._array_api import (
     array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
 )
 from scipy._lib.array_api_compat import numpy as np_compat
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -97,6 +98,7 @@ def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
     return xp.astype(yp, dtype, copy=False)
 
 
+@_dispatchable(['num', 'den'])
 def findfreqs(num, den, N, kind='ba'):
     """
     Find array of frequencies for computing the response of an analog filter.
@@ -171,6 +173,7 @@ def findfreqs(num, den, N, kind='ba'):
     return w
 
 
+@_dispatchable(['b', 'a', 'worN'])
 def freqs(b, a, worN=200, plot=None):
     """
     Compute frequency response of analog filter.
@@ -250,6 +253,7 @@ def freqs(b, a, worN=200, plot=None):
     return w, h
 
 
+@_dispatchable(['z', 'p', 'worN'])
 def freqs_zpk(z, p, k, worN=200):
     """
     Compute frequency response of analog filter.
@@ -335,6 +339,8 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
+# NOTE(seberg): CuPy has freqz, but it is just a copy and that copy has a bug.
+@_dispatchable(['b', 'a', 'worN'], cupy=False)
 def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
           include_nyquist=False):
     """
@@ -573,6 +579,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     return w, h
 
 
+@_dispatchable(['z', 'p', 'worN'])
 def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in ZPK form.
@@ -692,6 +699,11 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     return w, h
 
 
+def group_delay_signature(system, w=512, whole=False, fs=2*pi):
+    return (*system, w)
+
+
+@_dispatchable(group_delay_signature)
 def group_delay(system, w=512, whole=False, fs=2*pi):
     r"""Compute the group delay of a digital filter.
 
@@ -837,6 +849,8 @@ def _validate_sos(sos, xp=None):
     return sos, n_sections
 
 
+# NOTE(seberg): CuPy has freqz, but it is just a copy and that copy has a bug.
+@_dispatchable(['sos', 'worN'], cupy=False)
 def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in SOS format.
@@ -1154,6 +1168,7 @@ def _cplxpair(z, tol=None):
     return z
 
 
+@_dispatchable(['b', 'a'])
 def tf2zpk(b, a):
     r"""Return zero, pole, gain (z, p, k) representation from a numerator,
     denominator representation of a linear filter.
@@ -1241,6 +1256,7 @@ def tf2zpk(b, a):
     return z, p, k
 
 
+@_dispatchable(['z', 'p'])
 def zpk2tf(z, p, k):
     r"""
     Return polynomial transfer function representation from zeros and poles
@@ -1308,6 +1324,7 @@ def zpk2tf(z, p, k):
     return b, a
 
 
+@_dispatchable(['b', 'a'])
 def tf2sos(b, a, pairing=None, *, analog=False):
     r"""
     Return second-order sections from transfer function representation
@@ -1365,6 +1382,7 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
+@_dispatchable(['sos'])
 def sos2tf(sos):
     r"""
     Return a single transfer function from a series of second-order sections
@@ -1416,6 +1434,7 @@ def sos2tf(sos):
     return b, a
 
 
+@_dispatchable(['sos'])
 def sos2zpk(sos):
     """
     Return zeros, poles, and gain of a series of second-order sections
@@ -1480,6 +1499,7 @@ def _single_zpksos(z, p, k):
     return sos
 
 
+@_dispatchable(['z', 'p'])
 def zpk2sos(z, p, k, pairing=None, *, analog=False):
     """Return second-order sections from zeros, poles, and gain of a system
 
@@ -1849,6 +1869,7 @@ def _align_nums(nums, xp):
         return aligned_nums
 
 
+@_dispatchable(['b', 'a'])
 def normalize(b, a):
     """Normalize numerator/denominator of a continuous-time transfer function.
 
@@ -1957,6 +1978,7 @@ def normalize(b, a):
     return num, den
 
 
+@_dispatchable(['b', 'a'])
 def lp2lp(b, a, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a different frequency.
@@ -2056,6 +2078,7 @@ def _resize(a, new_shape, xp):
     return xp.reshape(a, new_shape)
 
 
+@_dispatchable(['b', 'a'])
 def lp2hp(b, a, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a highpass filter.
@@ -2145,6 +2168,7 @@ def lp2hp(b, a, wo=1.0):
     return normalize(outb, outa)
 
 
+@_dispatchable(['b', 'a'])
 def lp2bp(b, a, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandpass filter.
@@ -2238,6 +2262,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     return normalize(bprime, aprime)
 
 
+@_dispatchable(['b', 'a'])
 def lp2bs(b, a, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandstop filter.
@@ -2332,6 +2357,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     return normalize(bprime, aprime)
 
 
+@_dispatchable(['b', 'a'])
 def bilinear(b, a, fs=1.0):
     r"""Calculate a digital IIR filter from an analog transfer function by utilizing
     the bilinear transform.
@@ -2487,6 +2513,7 @@ def _validate_gpass_gstop(gpass, gstop):
         raise ValueError("gpass should be smaller than gstop")
 
 
+@_dispatchable(['wp', 'ws'])
 def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
               fs=None):
     """Complete IIR digital and analog filter design.
@@ -2666,6 +2693,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                      ftype=ftype, output=output, fs=fs)
 
 
+@_dispatchable(['Wn'])
 def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
               ftype='butter', output='ba', fs=None):
     """
@@ -2928,6 +2956,7 @@ def _relative_degree(z, p):
         return degree
 
 
+@_dispatchable(['z', 'p'])
 def bilinear_zpk(z, p, k, fs):
     r"""
     Return a digital IIR filter from an analog one using a bilinear transform.
@@ -3015,6 +3044,7 @@ def bilinear_zpk(z, p, k, fs):
     return z_z, p_z, k_z
 
 
+@_dispatchable(['z', 'p'])
 def lp2lp_zpk(z, p, k, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a different frequency.
@@ -3091,6 +3121,7 @@ def lp2lp_zpk(z, p, k, wo=1.0):
     return z_lp, p_lp, k_lp
 
 
+@_dispatchable(['z', 'p'])
 def lp2hp_zpk(z, p, k, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a highpass filter.
@@ -3176,6 +3207,7 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     return z_hp, p_hp, k_hp
 
 
+@_dispatchable(['z', 'p'])
 def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandpass filter.
@@ -3277,6 +3309,7 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bp, p_bp, k_bp
 
 
+@_dispatchable(['z', 'p'])
 def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandstop filter.
@@ -3378,6 +3411,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
+@_dispatchable(['Wn'])
 def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
@@ -3508,6 +3542,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='butter', fs=fs)
 
 
+@_dispatchable(['Wn'])
 def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
@@ -3630,6 +3665,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby1', fs=fs)
 
 
+@_dispatchable(['Wn'])
 def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
@@ -3746,6 +3782,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='cheby2', fs=fs)
 
 
+@_dispatchable(['Wn'])
 def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
@@ -3875,6 +3912,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
                      output=output, ftype='elliptic', fs=fs)
 
 
+@_dispatchable(['Wn'])
 def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
            fs=None):
     """
@@ -4050,6 +4088,7 @@ def yulewalk():
     pass
 
 
+@_dispatchable(['passb', 'stopb'])
 def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     """
     Band Stop Objective Function for order minimization.
@@ -4200,6 +4239,7 @@ def _postprocess_wn(WN, analog, fs, *, xp):
     return wn
 
 
+@_dispatchable(['wp', 'ws'])
 def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
@@ -4333,6 +4373,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
+@_dispatchable(['wp', 'ws'])
 def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Chebyshev type I filter order selection.
 
@@ -4429,6 +4470,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     return ord, wn
 
 
+@_dispatchable(['wp', 'ws'])
 def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Chebyshev type II filter order selection.
 
@@ -4557,6 +4599,7 @@ def _pow10m1(x):
     return math.expm1(_POW10_LOG10 * x)
 
 
+@_dispatchable(['wp', 'ws'])
 def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Elliptic (Cauer) filter order selection.
 

@@ -9,12 +9,14 @@ from .windows import get_window
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 from typing import cast, Literal
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
+@_dispatchable(['x', 'y', 'freqs', 'weights'])
 def lombscargle(
     x: npt.ArrayLike,
     y: npt.ArrayLike,
@@ -344,6 +346,7 @@ def lombscargle(
     return pgram
 
 
+@_dispatchable(['x', 'window'])
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                 return_onesided=True, scaling='density', axis=-1):
     """
@@ -494,6 +497,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                  scaling=scaling, axis=axis)
 
 
+@_dispatchable(['x', 'window'], jax=True)
 def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1, average='mean'):
@@ -669,6 +673,7 @@ def welch(x, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=N
     return freqs, Pxx.real
 
 
+@_dispatchable(['x', 'y', 'window'], jax=True)
 def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
         axis=-1, average='mean'):
@@ -954,6 +959,7 @@ def csd(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=
     return SFT.f, Pxy
 
 
+@_dispatchable(['x', 'window'])
 def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
@@ -1137,6 +1143,7 @@ def spectrogram(x, fs=1.0, window=('tukey_periodic', .25), nperseg=None, noverla
     return freqs, time, Sxx
 
 
+@_dispatchable(['window'])
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
     r"""Check whether the Constant OverLap Add (COLA) constraint is met
     (legacy function).
@@ -1283,6 +1290,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     return np.max(np.abs(deviation)) < tol
 
 
+@_dispatchable(['window'])
 def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     r"""Check whether the Nonzero Overlap Add (NOLA) constraint is met.
 
@@ -1410,6 +1418,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
     return np.min(binsums) > tol
 
 
+@_dispatchable(['x', 'window'])
 def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1, scaling='spectrum'):
@@ -1601,6 +1610,7 @@ def stft(x, fs=1.0, window='hann_periodic', nperseg=256, noverlap=None, nfft=Non
     return freqs, time, Zxx
 
 
+@_dispatchable(['Zxx', 'window'], jax=True)
 def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
@@ -1903,6 +1913,7 @@ def istft(Zxx, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None, nfft
     return time, x
 
 
+@_dispatchable(['x', 'y', 'window'])
 def coherence(x, y, fs=1.0, window='hann_periodic', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     r"""

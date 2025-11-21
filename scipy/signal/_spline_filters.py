@@ -15,6 +15,7 @@ from ._signaltools import lfilter, sosfilt, lfiltic
 from ._arraytools import axis_slice, axis_reverse
 
 from scipy.interpolate import BSpline
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['spline_filter', 'gauss_spline',
@@ -22,6 +23,7 @@ __all__ = ['spline_filter', 'gauss_spline',
            'cspline1d_eval', 'qspline1d_eval', 'symiirorder1', 'symiirorder2']
 
 
+@_dispatchable(['Iin'])
 def spline_filter(Iin, lmbda=5.0):
     """Smoothing spline (cubic) filtering of a rank-2 array.
 
@@ -85,6 +87,7 @@ def spline_filter(Iin, lmbda=5.0):
 _splinefunc_cache = {}
 
 
+@_dispatchable(['x'])
 def gauss_spline(x, n):
     r"""Gaussian approximation to B-spline basis function of order n.
 
@@ -302,6 +305,7 @@ def compute_root_from_lambda(lamb):
     return r, omega
 
 
+@_dispatchable(['signal'])
 def cspline1d(signal, lamb=0.0):
     """
     Compute cubic spline coefficients for rank-1 array.
@@ -355,6 +359,7 @@ def cspline1d(signal, lamb=0.0):
     return xp.asarray(ret)
 
 
+@_dispatchable(['signal'])
 def qspline1d(signal, lamb=0.0):
     """Compute quadratic spline coefficients for rank-1 array.
 
@@ -434,6 +439,7 @@ def symiirorder_nd(func, input, *args, axis=-1, **kwargs):
     return out
 
 
+@_dispatchable(['signal'])
 def qspline2d(signal, lamb=0.0, precision=-1.0):
     """
     Coefficients for 2-D quadratic (2nd order) B-spline.
@@ -475,6 +481,7 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
     return out
 
 
+@_dispatchable(['signal'])
 def cspline2d(signal, lamb=0.0, precision=-1.0):
     """
     Coefficients for 2-D cubic (3rd order) B-spline.
@@ -523,6 +530,7 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
     return xp.asarray(out)
 
 
+@_dispatchable(['cj', 'newx'])
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a cubic spline at the new set of points.
 
@@ -604,6 +612,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     return xp.asarray(res)
 
 
+@_dispatchable(['cj', 'newx'])
 def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     """Evaluate a quadratic spline at the new set of points.
 
@@ -687,6 +696,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     return xp.asarray(res)
 
 
+@_dispatchable(['signal'])
 def symiirorder1(signal, c0, z1, precision=-1.0):
     """
     Implement a smoothing IIR filter with mirror-symmetric boundary conditions
@@ -765,6 +775,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     return xp.asarray(out)
 
 
+@_dispatchable(['input', 'r', 'omega'])
 def symiirorder2(input, r, omega, precision=-1.0):
     """
     Implement a smoothing IIR filter with mirror-symmetric boundary conditions

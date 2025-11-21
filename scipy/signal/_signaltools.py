@@ -33,6 +33,7 @@ from scipy._lib._array_api import (
 )
 from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
+from ._support_alternative_backends import _dispatchable
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -101,6 +102,7 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
     return not ok1
 
 
+@_dispatchable(['in1', 'in2'], jax=True)
 def correlate(in1, in2, mode='full', method='auto'):
     r"""
     Cross-correlate two N-dimensional arrays.
@@ -588,6 +590,7 @@ def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
                          " 'same', or 'full'")
 
 
+@_dispatchable(['in1', 'in2'], jax=True)
 def fftconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using FFT.
 
@@ -841,6 +844,7 @@ def _split(x, indices_or_sections, axis, xp):
     return sub_arys
 
 
+@_dispatchable(['in1', 'in2'])
 def oaconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using the overlap-add method.
 
@@ -1233,6 +1237,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     return sec
 
 
+@_dispatchable(['in1', 'in2'])
 def choose_conv_method(in1, in2, mode='full', measure=False):
     """
     Find the fastest convolution/correlation method.
@@ -1374,6 +1379,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     return 'direct'
 
 
+@_dispatchable(['in1', 'in2'], jax=True)
 def convolve(in1, in2, mode='full', method='auto'):
     """
     Convolve two N-dimensional arrays.
@@ -1518,6 +1524,7 @@ def convolve(in1, in2, mode='full', method='auto'):
                          " 'direct', or 'fft'.")
 
 
+@_dispatchable(['a', 'domain'])
 def order_filter(a, domain, rank):
     """
     Perform an order filter on an N-D array.
@@ -1589,6 +1596,7 @@ def order_filter(a, domain, rank):
     return result
 
 
+@_dispatchable(['volume'])
 def medfilt(volume, kernel_size=None):
     """
     Perform a median filter on an N-dimensional array.
@@ -1653,6 +1661,7 @@ def medfilt(volume, kernel_size=None):
     return result
 
 
+@_dispatchable(['im'])
 def wiener(im, mysize=None, noise=None):
     """
     Perform a Wiener filter on an N-dimensional array.
@@ -1732,6 +1741,7 @@ def wiener(im, mysize=None, noise=None):
     return out
 
 
+@_dispatchable(['in1', 'in2'], jax=True)
 def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     Convolve two 2-dimensional arrays.
@@ -1826,6 +1836,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     return xp.asarray(out)
 
 
+@_dispatchable(['in1', 'in2'], jax=True)
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     """
     Cross-correlate two 2-dimensional arrays.
@@ -1929,6 +1940,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     return xp.asarray(out)
 
 
+@_dispatchable(['input'])
 def medfilt2d(input, kernel_size=3):
     """
     Median filter a 2-dimensional array.
@@ -2040,6 +2052,7 @@ def medfilt2d(input, kernel_size=3):
     return xp.asarray(result_np)
 
 
+@_dispatchable(['b', 'a', 'x', 'zi'])
 def lfilter(b, a, x, axis=-1, zi=None):
     """
     Filter data along one-dimension with an IIR or FIR filter.
@@ -2248,6 +2261,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
             return xp.asarray(out), xp.asarray(zf)
 
 
+@_dispatchable(['b', 'a', 'y', 'x'])
 def lfiltic(b, a, y, x=None):
     """
     Construct initial conditions for lfilter given input and output vectors.
@@ -2342,6 +2356,7 @@ def lfiltic(b, a, y, x=None):
     return zi
 
 
+@_dispatchable(['signal', 'divisor'])
 def deconvolve(signal, divisor):
     """Deconvolves ``divisor`` out of ``signal`` using inverse filtering.
 
@@ -2407,6 +2422,7 @@ def deconvolve(signal, divisor):
     return quot, rem
 
 
+@_dispatchable(['x'])
 def hilbert(x, N=None, axis=-1):
     r"""FFT-based computation of the analytic signal.
 
@@ -2530,6 +2546,7 @@ def hilbert(x, N=None, axis=-1):
     return x
 
 
+@_dispatchable(['x'])
 def hilbert2(x, N=None, axes=(-2, -1)):
     r"""Compute the '2-D' analytic signal of `x`.
 
@@ -2712,6 +2729,7 @@ def hilbert2(x, N=None, axes=(-2, -1)):
     return x
 
 
+@_dispatchable(['z'], cupy=False)
 def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
@@ -3026,6 +3044,7 @@ def _cmplx_sort(p):
     return np.take(p, indx, 0), indx
 
 
+@_dispatchable(['p'])
 def unique_roots(p, tol=1e-3, rtype='min'):
     """Determine unique roots and their multiplicities from a list of roots.
 
@@ -3113,6 +3132,7 @@ def unique_roots(p, tol=1e-3, rtype='min'):
     return np.asarray(p_unique), np.asarray(p_multiplicity)
 
 
+@_dispatchable(['r', 'p', 'k'])
 def invres(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(s) and a(s) from partial fraction expansion.
 
@@ -3240,6 +3260,7 @@ def _compute_residues(poles, multiplicity, numerator):
     return np.asarray(residues)
 
 
+@_dispatchable(['b', 'a'])
 def residue(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(s) / a(s).
 
@@ -3355,6 +3376,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     return residues / a[0], poles, k
 
 
+@_dispatchable(['b', 'a'])
 def residuez(b, a, tol=1e-3, rtype='avg'):
     """Compute partial-fraction expansion of b(z) / a(z).
 
@@ -3491,6 +3513,7 @@ def _group_poles(poles, tol, rtype):
     return np.asarray(unique), np.asarray(multiplicity)
 
 
+@_dispatchable(['r', 'p', 'k'])
 def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """Compute b(z) and a(z) from partial fraction expansion.
 
@@ -3565,6 +3588,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     return numerator[::-1], denominator
 
 
+@_dispatchable(['x', 't', 'window'])
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
     r"""Resample `x` to `num` samples using the Fourier method along the given `axis`.
 
@@ -3863,6 +3887,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     return x_r
 
 
+@_dispatchable(['x', 'window'])
 def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
                   padtype='constant', cval=None):
     """
@@ -4091,6 +4116,7 @@ def _angle(z, xp):
     return a
 
 
+@_dispatchable(['events', 'period'])
 def vectorstrength(events, period):
     '''
     Determine the vector strength of the events corresponding to the given
@@ -4175,6 +4201,7 @@ def vectorstrength(events, period):
     return strength, phase
 
 
+@_dispatchable(['data', 'bp'], jax=True)
 def detrend(data: np.ndarray, axis: int = -1,
             type: Literal['linear', 'constant'] = 'linear',
             bp: ArrayLike | int = 0, overwrite_data: bool = False) -> np.ndarray:
@@ -4309,6 +4336,7 @@ def detrend(data: np.ndarray, axis: int = -1,
         return xp.asarray(ret)
 
 
+@_dispatchable(['b', 'a'], cupy=False)
 def lfilter_zi(b, a):
     """
     Construct initial conditions for lfilter for step response steady-state.
@@ -4448,6 +4476,7 @@ def lfilter_zi(b, a):
     return zi
 
 
+@_dispatchable(['sos'], cupy=False)
 def sosfilt_zi(sos):
     """
     Construct initial conditions for sosfilt for step response steady-state.
@@ -4705,6 +4734,7 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
     return y_opt, x0, x1
 
 
+@_dispatchable(['b', 'a', 'x'])
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
              irlen=None):
     """
@@ -4954,6 +4984,7 @@ def _validate_x(x):
     return x
 
 
+@_dispatchable(['sos', 'x', 'zi'])
 def sosfilt(sos, x, axis=-1, zi=None):
     """
     Filter data along one dimension using cascaded second-order sections.
@@ -5075,6 +5106,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     return out
 
 
+@_dispatchable(['sos', 'x'])
 def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     """
     A forward-backward digital filter using cascaded second-order sections.
@@ -5190,6 +5222,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     return xp.asarray(y)
 
 
+@_dispatchable(['x'])
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     """
     Downsample the signal after applying an anti-aliasing filter.

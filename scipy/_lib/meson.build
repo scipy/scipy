@@ -14,6 +14,10 @@ endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('spatch/README.md')
+  error('Missing the `spatch` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -248,6 +252,20 @@ py3.install_sources(
   ],
   subdir: 'scipy/_lib/array_api_extra',
 )
+
+
+# Spatch install sources (has to be updated if spatch changes)
+py3.install_sources(
+  [
+    'spatch/src/spatch/__init__.py',
+    'spatch/src/spatch/backend_system.py',
+    'spatch/src/spatch/backend_utils.py',
+    'spatch/src/spatch/utils.py',
+  ],
+  subdir: 'scipy/_lib/spatch',
+)
+
+
 
 py3.install_sources(
   [
