@@ -554,6 +554,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res1.statistic, res2.statistic)
         xp_assert_equal(res1.pvalue, res2.pvalue)
 
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
     def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
         x = [1., 2., 3., 4.]
@@ -626,6 +627,7 @@ class TestMannWhitneyU:
         xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
         xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no nan_policy")
     def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
         nan = xp.asarray(xp.nan)

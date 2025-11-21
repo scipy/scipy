@@ -7929,6 +7929,7 @@ class TestKruskal:
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
         xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no nan_policy')
     def test_nan_policy_propagate(self, xp):
         x = xp.arange(10.)
         x = xpx.at(x)[9].set(xp.nan)
