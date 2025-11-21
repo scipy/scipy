@@ -30,8 +30,8 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy")],
-                 jax_jit=False)
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
+                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
