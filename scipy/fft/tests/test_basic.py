@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
     is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case
 )
 
+lazy_xp_modules = [fft]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
