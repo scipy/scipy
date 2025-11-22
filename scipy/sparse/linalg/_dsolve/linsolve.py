@@ -3,9 +3,9 @@ from warnings import warn, catch_warnings, simplefilter
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
-                          csr_array, csc_array, eye_array, diags_array)
+                          csr_array, csc_array, eye_array, diags_array, hstack)
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
-                                   get_index_dtype, safely_cast_index_arrays)
+                                   safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
 import copy
 import threading
@@ -302,22 +302,12 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
             # Create a sparse output matrix by repeatedly applying
             # the sparse factorization to solve columns of b.
-            itype = get_index_dtype(maxval=max(b.shape))
-            indptr = np.zeros(b.shape[1] + 1, dtype=itype)
-            data_segs = []
-            indices_segs = []
+            x_cols = []
             for j in range(b.shape[1]):
                 bj = b[:, j].toarray().ravel()
                 xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                indptr[j+1] = indptr[j] + len(w)
-                indices_segs.append(w)
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            data = np.concatenate(data_segs)
-            indices = np.concatenate(indices_segs, dtype=itype)
-            assert len(indices) == len(data)
-            assert indptr[-1] == len(data)
-            x = csc_array((data, indices, indptr), shape=b.shape, dtype=A.dtype)
+                x_cols.append(csc_array(xj.reshape(-1, 1)))
+            x = hstack(x_cols)
             x = A.__class__(x)
 
             if is_pydata_sparse:
