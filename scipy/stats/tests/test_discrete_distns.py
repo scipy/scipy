@@ -405,6 +405,22 @@ class TestZipfian:
         p = zipfian.pmf(10, a, n)
         assert_equal(p, np.nan)
 
+    @pytest.mark.slow
+    @pytest.mark.parametrize('a', [0.5, 1.05, 2.25])
+    @pytest.mark.parametrize('n', [12, 500, 10000])
+    def test_rvs_mean_var(self, a, n):
+        # This is a fairly crude test of the zipfian random variate generator.
+        # For a single sample of size `num_samples`, check that the sample
+        # mean and variance are close to the expected mean and variance.
+        rng = np.random.default_rng(121263137472525314065 + 10000*n)
+        num_samples = 1000000
+        x = zipfian.rvs(a, n, size=num_samples, random_state=rng)
+        sample_mean = np.mean(x)
+        sample_var = np.var(x, ddof=1)
+        ref_mean, ref_var = zipfian.stats(a, n, moments='mv')
+        assert_allclose(sample_mean, ref_mean, rtol=0.005)
+        assert_allclose(sample_var, ref_var, rtol=0.05)
+
 
 class TestNCH:
     def setup_method(self):
