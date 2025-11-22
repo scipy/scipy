@@ -301,12 +301,6 @@ description = "Check external dependencies"
 libblas = { version = "*", build = "*mkl" }
 mkl = "*"
 
-[feature.mkl.tasks.build-mkl]
-cmd = "spin build --build-dir=build-mkl --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
-cwd = "scipy"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
-description = "Build with MKL BLAS"
-
 
 [feature.accelerate]
 platforms = ["osx-arm64"]
