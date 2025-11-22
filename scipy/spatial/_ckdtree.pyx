@@ -443,7 +443,7 @@ cdef class cKDTree:
         the midpoint. This usually gives a more compact tree and
         faster queries at the expense of longer build time. Default: True.
     boxsize : array_like or scalar, optional
-        Apply a m-d toroidal topology to the KDTree.. The topology is generated
+        Apply an m-d toroidal topology to the KDTree. The topology is generated
         by :math:`x_i + n_i L_i` where :math:`n_i` are integers and :math:`L_i`
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
@@ -451,7 +451,7 @@ cdef class cKDTree:
 
     Notes
     -----
-    The algorithm used is described in Maneewongvatana and Mount 1999.
+    The algorithm used is described in [1]_.
     The general idea is that the kd-tree is a binary tree, each of whose
     nodes represents an axis-aligned hyperrectangle. Each node specifies
     an axis and splits the set of points based on whether their coordinate
@@ -469,6 +469,12 @@ cdef class cKDTree:
     For large dimensions (20 is already large) do not expect this to run
     significantly faster than brute force. High-dimensional nearest-neighbor
     queries are a substantial open problem in computer science.
+
+    References
+    ----------
+    .. [1] S. Maneewongvatana and D.E. Mount, "Analysis of approximate
+           nearest neighbor searching with clustered point sets,"
+           Arxiv e-print, 1999, https://arxiv.org/pdf/cs.CG/9901013
 
     Attributes
     ----------
@@ -661,11 +667,11 @@ cdef class cKDTree:
     # -----
 
     @cython.boundscheck(False)
-    def query(cKDTree self, object x, object k=1, np.float64_t eps=0,
-              np.float64_t p=2, np.float64_t distance_upper_bound=INFINITY,
+    def query(cKDTree self, object x, object k=1, np.float64_t eps=0.0,
+              np.float64_t p=2.0, np.float64_t distance_upper_bound=INFINITY,
               object workers=None, **kwargs):
         r"""
-        query(self, x, k=1, eps=0, p=2, distance_upper_bound=np.inf, workers=1)
+        query(self, x, k=1, eps=0.0, p=2.0, distance_upper_bound=np.inf, workers=1)
 
         Query the kd-tree for nearest neighbors
 
@@ -844,11 +850,12 @@ cdef class cKDTree:
     # ----------------
 
     def query_ball_point(cKDTree self, object x, object r,
-                         np.float64_t p=2., np.float64_t eps=0, object workers=None,
+                         np.float64_t p=2.0, np.float64_t eps=0.0,
+                         object workers=None,
                          return_sorted=None,
                          return_length=False, **kwargs):
         """
-        query_ball_point(self, x, r, p=2., eps=0, workers=1, return_sorted=None,
+        query_ball_point(self, x, r, p=2.0, eps=0.0, workers=1, return_sorted=None,
                          return_length=False)
 
         Find all points within distance r of point(s) x.
@@ -942,7 +949,7 @@ cdef class cKDTree:
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
-        
+
         if not np.isfinite(x_arr).all():
             raise ValueError("'x' must be finite, check for nan or inf values")
 
@@ -995,9 +1002,9 @@ cdef class cKDTree:
     # ---------------
 
     def query_ball_tree(cKDTree self, cKDTree other,
-                        np.float64_t r, np.float64_t p=2., np.float64_t eps=0):
+                        np.float64_t r, np.float64_t p=2.0, np.float64_t eps=0.0):
         """
-        query_ball_tree(self, other, r, p=2., eps=0)
+        query_ball_tree(self, other, r, p=2.0, eps=0.0)
 
         Find all pairs of points between `self` and `other` whose distance is at most r
 
@@ -1087,10 +1094,10 @@ cdef class cKDTree:
     # query_pairs
     # -----------
 
-    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
-                    np.float64_t eps=0, output_type='set'):
+    def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.0,
+                    np.float64_t eps=0.0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0, output_type='set')
+        query_pairs(self, r, p=2.0, eps=0.0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 
@@ -1200,10 +1207,10 @@ cdef class cKDTree:
     # ---------------
 
     @cython.boundscheck(False)
-    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.,
+    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.0,
                         object weights=None, int cumulative=True):
         """
-        count_neighbors(self, other, r, p=2., weights=None, cumulative=True)
+        count_neighbors(self, other, r, p=2.0, weights=None, cumulative=True)
 
         Count how many nearby pairs can be formed.
 
@@ -1460,10 +1467,10 @@ cdef class cKDTree:
 
     def sparse_distance_matrix(cKDTree self, cKDTree other,
                                np.float64_t max_distance,
-                               np.float64_t p=2.,
+                               np.float64_t p=2.0,
                                output_type='dok_matrix'):
         """
-        sparse_distance_matrix(self, other, max_distance, p=2.)
+        sparse_distance_matrix(self, other, max_distance, p=2.0)
 
         Compute a sparse distance matrix
 

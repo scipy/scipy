@@ -9,6 +9,14 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "9  9 2/2 * *"
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
@@ -85,7 +93,7 @@ jobs:
       - name: Install packages from conda
         shell: cmd /C call {0}
         run: |
-          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pooch spin hypothesis
+          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
 
       # MSVC is unable to compile Pythran code, therefore we need to use
       # -C-Duse-pythran=false while building SciPy.

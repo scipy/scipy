@@ -44,9 +44,9 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
 
     Notes
     -----
-    This is algorithm 2.4 of [1].
+    This is algorithm 2.4 of [1]_.
 
-    In [2] it is described as follows.
+    In [2]_ it is described as follows.
     "This algorithm typically requires the evaluation of
     about 4t matrix-vector products and almost invariably
     produces a norm estimate (which is, in fact, a lower

@@ -466,14 +466,14 @@ class TestTrustRegionConstr:
                         Elec(n_electrons=2, constr_jac='3-point',
                              constr_hess=SR1())]
 
-    @pytest.mark.thread_unsafe(reason="sometimes fails in parallel")
     @pytest.mark.parametrize('prob', list_of_problems)
     @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
-    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
-                                      BFGS(exception_strategy='damp_update'),
-                                      BFGS(exception_strategy='skip_update')))
+    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', lambda: SR1(),
+                                      lambda: BFGS(exception_strategy='damp_update'),
+                                      lambda: BFGS(exception_strategy='skip_update')))
     def test_list_of_problems(self, prob, grad, hess):
         grad = prob.grad if grad == "prob.grad" else grad
+        hess = hess() if callable(hess) else hess
         hess = prob.hess if hess == "prob.hess" else hess
         # Remove exceptions
         if (grad in {'2-point', '3-point', 'cs', False} and

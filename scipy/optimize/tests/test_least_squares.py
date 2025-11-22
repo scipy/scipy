@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
 
-from scipy.optimize import least_squares, Bounds
+from scipy.optimize import least_squares, Bounds, minimize
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
@@ -90,7 +90,7 @@ def fun_bvp(x):
 
 class BroydenTridiagonal:
     def __init__(self, n=100, mode='sparse'):
-        rng = np.random.RandomState(0)
+        rng = np.random.default_rng(123440)
 
         self.n = n
 
@@ -98,10 +98,10 @@ class BroydenTridiagonal:
         self.lb = np.linspace(-2, -1.5, n)
         self.ub = np.linspace(-0.8, 0.0, n)
 
-        self.lb += 0.1 * rng.randn(n)
-        self.ub += 0.1 * rng.randn(n)
+        self.lb += 0.1 * rng.standard_normal(n)
+        self.ub += 0.1 * rng.standard_normal(n)
 
-        self.x0 += 0.1 * rng.randn(n)
+        self.x0 += 0.1 * rng.standard_normal(n)
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
@@ -144,8 +144,8 @@ class ExponentialFittingProblem:
     y = a + exp(b * x) + noise."""
 
     def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
-                 n_points=11, random_seed=None):
-        rng = np.random.RandomState(random_seed)
+                 n_points=11, rng=None):
+        rng = np.random.default_rng(rng)
         self.m = n_points
         self.n = 2
 
@@ -153,10 +153,10 @@ class ExponentialFittingProblem:
         self.x = np.linspace(x_range[0], x_range[1], n_points)
 
         self.y = a + np.exp(b * self.x)
-        self.y += noise * rng.randn(self.m)
+        self.y += noise * rng.standard_normal(self.m)
 
-        outliers = rng.randint(0, self.m, n_outliers)
-        self.y[outliers] += 50 * noise * rng.rand(n_outliers)
+        outliers = rng.integers(0, self.m, n_outliers)
+        self.y[outliers] += 50 * noise * rng.random(n_outliers)
 
         self.p_opt = np.array([a, b])
 
@@ -394,7 +394,9 @@ class BaseMixin:
                                 method=self.method)
             assert_allclose(res.x, x_opt)
 
-    @pytest.mark.parallel_threads(4)  # 0.4 GiB per thread RAM usage
+    # This test is thread safe, but it is too slow and opens
+    # too many file descriptors to run it in parallel.
+    @pytest.mark.parallel_threads(1)
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)
@@ -405,7 +407,7 @@ class BaseMixin:
                 fun_trivial, 2.0, method=self.method, workers=workers
             )
             reses.append(res)
-        with Pool() as workers:
+        with Pool(2) as workers:
             res = least_squares(
                 fun_trivial, 2.0, method=self.method, workers=workers.map
             )
@@ -744,7 +746,7 @@ class LossFunctionMixin:
 
     def test_robustness(self):
         for noise in [0.1, 1.0]:
-            p = ExponentialFittingProblem(1, 0.1, noise, random_seed=0)
+            p = ExponentialFittingProblem(1, 0.1, noise, rng=12220903)
 
             for jac in ['2-point', '3-point', 'cs', p.jac]:
                 res_lsq = least_squares(p.fun, p.p0, jac=jac,
@@ -906,16 +908,23 @@ def test_small_tolerances_for_lm():
 def test_fp32_gh12991():
     # checks that smaller FP sizes can be used in least_squares
     # this is the minimum working example reported for gh12991
-    rng = np.random.RandomState(1)
+    rng = np.random.default_rng(1978)
 
-    x = np.linspace(0, 1, 100).astype("float32")
-    y = rng.random(100).astype("float32")
+    x = np.linspace(0, 1, 100, dtype=np.float32)
+    y = rng.random(size=100, dtype=np.float32)
 
+    # changed in gh21872. These functions should've been working in fp32 to force
+    # approx_derivative to work in fp32. One of the initial steps in least_squares
+    # is to force x0 (p) to be a float, meaning that the output of func and err would
+    # be in float64, unless forced to be in float32
     def func(p, x):
-        return p[0] + p[1] * x
+        return (p[0] + p[1] * x).astype(np.float32)
 
     def err(p, x, y):
-        return func(p, x) - y
+        return (func(p, x) - y).astype(np.float32)
+
+    def mse(p, x, y):
+        return np.sum(err(p, x, y)**2)
 
     res = least_squares(err, [-1.0, -1.0], args=(x, y))
     # previously the initial jacobian calculated for this would be all 0
@@ -925,7 +934,15 @@ def test_fp32_gh12991():
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
     assert res.nfev > 2
-    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
+    # compare output to solver that doesn't use derivatives
+    res2 = minimize(
+        mse,
+        [-1.0, 1.0],
+        method='cobyqa',
+        args=(x, y),
+        options={'final_tr_radius': 1e-6}
+    )
+    assert_allclose(res.x, res2.x, atol=9e-5)
 
 
 def test_gh_18793_and_19351():

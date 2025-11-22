@@ -165,7 +165,10 @@ class IndexMixin:
         row, col = index
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
-            x = np.asarray(x, dtype=self.dtype)
+            if issparse(x):
+                x = x.toarray()
+            else:
+                x = np.asarray(x, dtype=self.dtype)
             if x.size != 1:
                 raise ValueError('Trying to assign a sequence to an item')
             self._set_intXint(row, col, x.flat[0])

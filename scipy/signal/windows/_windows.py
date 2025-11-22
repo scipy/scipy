@@ -1,6 +1,7 @@
 """The suite of window functions."""
 
 import math
+import numbers
 import operator
 import warnings
 from scipy._lib import doccer
@@ -8,6 +9,7 @@ from scipy._lib import doccer
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
 from scipy._lib._array_api import array_namespace, xp_device
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
@@ -63,6 +65,7 @@ def _general_cosine_impl(M, a, xp, device, sym=True):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
@@ -145,6 +148,7 @@ def general_cosine(M, a, sym=True):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def boxcar(M, sym=True, *, xp=None, device=None):
     """Return a boxcar or rectangular window.
 
@@ -202,6 +206,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def triang(M, sym=True, *, xp=None, device=None):
     """Return a triangular window.
 
@@ -270,6 +275,7 @@ def triang(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def parzen(M, sym=True, *, xp=None, device=None):
     """Return a Parzen window.
 
@@ -336,6 +342,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def bohman(M, sym=True, *, xp=None, device=None):
     """Return a Bohman window.
 
@@ -396,6 +403,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def blackman(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Blackman window.
@@ -486,6 +494,7 @@ def blackman(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def nuttall(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
@@ -552,6 +561,7 @@ def nuttall(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def blackmanharris(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window.
 
@@ -606,6 +616,7 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def flattop(M, sym=True, *, xp=None, device=None):
     """Return a flat top window.
 
@@ -675,6 +686,7 @@ def flattop(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def bartlett(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Bartlett window.
@@ -779,6 +791,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def hann(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Hann window.
@@ -863,6 +876,7 @@ def hann(M, sym=True, *, xp=None, device=None):
     return general_hamming(M, 0.5, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
@@ -950,6 +964,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def barthann(M, sym=True, *, xp=None, device=None):
     """Return a modified Bartlett-Hann window.
 
@@ -1009,6 +1024,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     r"""Return a generalized Hamming window.
 
@@ -1102,6 +1118,7 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def hamming(M, sym=True, *, xp=None, device=None):
     r"""Return a Hamming window.
 
@@ -1182,6 +1199,7 @@ def hamming(M, sym=True, *, xp=None, device=None):
     return general_hamming(M, 0.54, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def kaiser(M, beta, sym=True, *, xp=None, device=None):
     r"""Return a Kaiser window.
 
@@ -1304,6 +1322,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     """Return a Kaiser-Bessel derived window.
 
@@ -1393,6 +1412,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     return xp.asarray(w, device=device)
 
 
+@xp_capabilities()
 def gaussian(M, std, sym=True, *, xp=None, device=None):
     r"""Return a Gaussian window.
 
@@ -1460,6 +1480,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     r"""Return a window with a generalized Gaussian shape.
 
@@ -1535,6 +1556,8 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
 
 
 # `chebwin` contributed by Kumar Appaiah.
+@xp_capabilities(skip_backends=(("jax.numpy", "item assignment"),
+                                ("dask.array", "data-dependent output shapes")))
 def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
@@ -1667,6 +1690,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def cosine(M, sym=True, *, xp=None, device=None):
     """Return a window with a simple cosine shape.
 
@@ -1730,6 +1754,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     r"""Return an exponential (or Poisson) window.
 
@@ -1822,6 +1847,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities(skip_backends=[("jax.numpy", "item assignment")])
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
@@ -1941,6 +1967,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities(np_only=True, reason='banded linear algebra is numpy-only')
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
          *, xp=None, device=None):
     """
@@ -2211,6 +2238,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     return (windows, ratios) if return_ratios else windows
 
 
+@xp_capabilities()
 def lanczos(M, *, sym=True, xp=None, device=None):
     r"""Return a Lanczos window also known as a sinc window.
 
@@ -2323,173 +2351,241 @@ def _fftautocorr(x):
     #                   for xx, yy in zip(x, x)])[:, N-1:2*N-1]
     return cxy
 
-
-_win_equiv_raw = {
+_WIN_FUNC_DATA = { # Format: {(name0, name1, ...): (function, needs parameters)
     ('barthann', 'brthan', 'bth'): (barthann, False),
     ('bartlett', 'bart', 'brt'): (bartlett, False),
     ('blackman', 'black', 'blk'): (blackman, False),
     ('blackmanharris', 'blackharr', 'bkh'): (blackmanharris, False),
     ('bohman', 'bman', 'bmn'): (bohman, False),
-    ('boxcar', 'box', 'ones',
-        'rect', 'rectangular'): (boxcar, False),
+    ('boxcar', 'box', 'ones', 'rect', 'rectangular'): (boxcar, False),
     ('chebwin', 'cheb'): (chebwin, True),
     ('cosine', 'halfcosine'): (cosine, False),
     ('dpss',): (dpss, True),
-    ('exponential', 'poisson'): (exponential, False),
+    ('exponential', 'poisson'): (exponential, 'OPTIONAL'),
     ('flattop', 'flat', 'flt'): (flattop, False),
     ('gaussian', 'gauss', 'gss'): (gaussian, True),
     ('general cosine', 'general_cosine'): (general_cosine, True),
-    ('general gaussian', 'general_gaussian',
-        'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
+    ('general gaussian', 'general_gaussian', 'general gauss',
+     'general_gauss', 'ggs'): (general_gaussian, True),
     ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
     ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
-    ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
+    ('kaiser bessel derived', 'kaiser_bessel_derived',
+     'kbd'): (kaiser_bessel_derived, True),
     ('lanczos', 'sinc'): (lanczos, False),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
-    ('taylor', 'taylorwin'): (taylor, False),
+    ('taylor', 'taylorwin'): (taylor, 'OPTIONAL'),
     ('triangle', 'triang', 'tri'): (triang, False),
-    ('tukey', 'tuk'): (tukey, False),
-}
-
-# Fill dict with all valid window name strings
-_win_equiv = {}
-for k, v in _win_equiv_raw.items():
-    for key in k:
-        _win_equiv[key] = v[0]
-
-# Keep track of which windows need additional parameters
-_needs_param = set()
-for k, v in _win_equiv_raw.items():
-    if v[1]:
-        _needs_param.update(k)
+    ('tukey', 'tuk'): (tukey, 'OPTIONAL'), }
+_WIN_FUNCS = dict()
+for nn_, v_ in _WIN_FUNC_DATA.items():
+    _WIN_FUNCS.update({n_: v_ for n_ in nn_})
 
 
+@xp_capabilities()
 def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
-    """
-    Return a window of a given length and type.
+    r"""Convenience function for creating various windows.
+
+    This function is a wrapper for the window functions provided in the
+    `scipy.signal.windows` namespace.
 
     Parameters
     ----------
-    window : string, float, or tuple
-        The type of window to create. See below for more details.
+    window : str | tuple | float
+        Either a string with the window name or a tuple consisting of window name and
+        window parameters. If it is a float, a `~scipy.singal.kaiser` window is
+        created with `window` being the shape parameter. Consult the Notes below for
+        more details.
     Nx : int
         The number of samples in the window.
     fftbins : bool, optional
-        If True (default), create a "periodic" window, ready to use with
-        `ifftshift` and be multiplied by the result of an FFT (see also
-        :func:`~scipy.fft.fftfreq`).
-        If False, create a "symmetric" window, for use in filter design.
+        If ``True`` (default), create a periodic window, ready to use with `ifftshift`
+        and be multiplied by the result of an FFT (see also
+        :func:`~scipy.fft.fftfreq`). If ``False``, create a symmetric window, for use
+        in filter design. This parameter is ignored, if the window name in the
+        `window` parameter has a suffix ``'_periodic'`` or ``'_symmetric'`` appended to
+        it (e.g., ``'hann_symmetric'``).
     %(xp_device_snippet)s
 
     Returns
     -------
     get_window : ndarray
-        Returns a window of length `Nx` and type `window`
+        Returns the created window as a one-dimensional array made of `Nx` samples.
+
+    Raises
+    ------
+    ValueError
+        If the provided parameters do not allow to choose a valid window function
+        with valid parameters.
 
     Notes
     -----
-    Window types:
+    Note that by default this function returns a periodic window, whereas the wrapped
+    window functions return a symmetric window by default. This is caused by the
+    `fftbins` parameter having the inverse meaning of the `sym` parameter of the
+    wrapped function, which are both ``True`` by default.
 
-    - `~scipy.signal.windows.boxcar`
-    - `~scipy.signal.windows.triang`
-    - `~scipy.signal.windows.blackman`
-    - `~scipy.signal.windows.hamming`
-    - `~scipy.signal.windows.hann`
-    - `~scipy.signal.windows.bartlett`
-    - `~scipy.signal.windows.flattop`
-    - `~scipy.signal.windows.parzen`
-    - `~scipy.signal.windows.bohman`
-    - `~scipy.signal.windows.blackmanharris`
-    - `~scipy.signal.windows.nuttall`
-    - `~scipy.signal.windows.barthann`
-    - `~scipy.signal.windows.cosine`
-    - `~scipy.signal.windows.exponential`
-    - `~scipy.signal.windows.tukey`
-    - `~scipy.signal.windows.taylor`
-    - `~scipy.signal.windows.lanczos`
-    - `~scipy.signal.windows.kaiser` (needs beta)
-    - `~scipy.signal.windows.kaiser_bessel_derived` (needs beta)
-    - `~scipy.signal.windows.gaussian` (needs standard deviation)
-    - `~scipy.signal.windows.general_cosine` (needs weighting coefficients)
-    - `~scipy.signal.windows.general_gaussian` (needs power, width)
-    - `~scipy.signal.windows.general_hamming` (needs window coefficient)
-    - `~scipy.signal.windows.dpss` (needs normalized half-bandwidth)
-    - `~scipy.signal.windows.chebwin` (needs attenuation)
+    .. currentmodule:: scipy.signal.windows
 
+    The following list shows the wrapped window functions with the respective settings
+    of the `window` parameter followed by a short description. Aliases for alternative
+    window names are given in parenthesis.
 
-    If the window requires no parameters, then `window` can be a string.
+    `barthann` / ``'barthann'``:
+        Modified Bartlett-Hann window (aliases: ``'brthan', 'bth'``)
+    `bartlett` / ``'bartlett'``:
+        Bartlett window (aliases: ``'bart', 'brt'``)
+    `blackman`/ ``'blackman'``:
+        Blackman window (aliases: ``'black', 'blk'``)
+    `blackmanharris` / ``'blackmanharris'``:
+        4-term Blackman-Harris window (aliases: ``'blackharr', 'bkh'``)
+    `bohman` / ``'bohman'``:
+        Bohman window (aliases: ``'bman', 'bmn'``)
+    `boxcar` / ``'boxcar'``:
+        Rectangular window (aliases: ``'box', 'ones', 'rect', 'rectangular'``)
+    `chebwin` / ``('chebwin', at)``:
+        Dolph-Chebyshev window with `at` dB attenuation (aliases: ``'cheb'``)
+    `cosine` / ``'cosine'``:
+        Cosine window (aliases: ``'halfcosine'``)
+    `dpss` / ``('dpss', NW)``:
+        First window of discrete prolate spheroidal sequence with standardized half
+        bandwidth ``NW`` and "approximate" norm.
+    `exponential` / ``'exponential'`` / ``('exponential', center, tau)``:
+        Exponential / Poisson window centered at ``center`` (default: ``None``) with
+        deacy ``tau`` (default: ``1``) (aliases: ``'poisson'``)
+    `flattop`/ ``'flattop'``:
+        Flat top window (aliases: ``'flat', 'flt'``)
+    `gaussian` / ``('gaussian', std)``:
+        Gaussian with standard deviation `std` (aliases: ``'gauss', 'gss'``)
+    `general_cosine` / ``('general cosine', a)``:
+        Generic weighted sum of cosine terms with weighting coefficients ``a``
+        (aliases: ``'general_cosine'``)
+    `general_gaussian` / ``('general gaussian', p, sig)``:
+        Generalized Gaussian with shape parameter ``p`` and standard deviation ``sig``
+        (aliases: ``'general_gaussian', 'general gauss', 'general_gauss', 'ggs'``)
+    `general_hamming` / ``('general hamming', alpha)``:
+        Generalized Hamming window with coefficent ``alpha``
+        (aliases: ``'general_hamming'``)
+    `hamming` / ``'hamming'``:
+        Hamming window (aliases: ``'hamm', 'ham'``)
+    `hann` / ``'hann'``:
+        Hann window (aliases: ``'han'``)
+    `kaiser` / ``('kaiser', beta)``:
+        Kaiser window with shape parameter ``beta`` (aliases: ``'ksr'``)
+    `kaiser_bessel_derived` / ``('kaiser bessel derived', beta)``:
+        Kaiser-Bessel derived window with shape parameter ``beta``
+        (aliases: ``'kaiser_bessel_derived', 'kbd'``)
+    `lanczos` / ``'lanczos'``:
+        Lanczos / sinc window (aliases: ``'sinc'``)
+    `nuttall`/ ``'nuttall'``:
+        Minimum 4-term Blackman-Harris window according to Nuttall
+        (aliases: ``'nutl', 'nut'``)
+    `parzen` / ``'parzen'``:
+        Parzen window (aliases: ``'parz', 'par'``)
+    `taylor` / ``'taylor'`` / (``'taylor', nbar, sll, norm)``:
+        Taylor window with ``nbar`` adjascent sidelobes (default: ``4``)), ``sll`` dB
+        suppression level (default: ``30``) and boolean value ``norm``
+        (default: ``True``) (aliases: ``taylorwin``)
+    `triang`/ ``'triangle'``:
+        Triangle window (aliases: ``'triang', 'tri'``)
+    `tukey` / ``'tukey'`` / ``('tukey', alpha)``:
+        Tukey window with shape parameter ``alpha`` (default: ``0.5``)
+        (aliases: ``'tuk'``)
 
-    If the window requires parameters, then `window` must be a tuple
-    with the first argument the string name of the window, and the next
-    arguments the needed parameters.
-
-    If `window` is a floating point number, it is interpreted as the beta
-    parameter of the `~scipy.signal.windows.kaiser` window.
-
-    Each of the window types listed above is also the name of
-    a function that can be called directly to create a window of
-    that type.
 
     Examples
     --------
-    >>> from scipy import signal
-    >>> signal.get_window('triang', 7)
+    This example shows different usages of the `window` parameter:
+
+    >>> from scipy.signal import get_window
+    >>> get_window('triang', 7)
     array([ 0.125,  0.375,  0.625,  0.875,  0.875,  0.625,  0.375])
-    >>> signal.get_window(('kaiser', 4.0), 9)
-    array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
-            0.97885093,  0.82160913,  0.56437221,  0.29425961])
-    >>> signal.get_window(('exponential', None, 1.), 9)
+    >>> get_window(('exponential', None, 1.), 9)
     array([ 0.011109  ,  0.03019738,  0.082085  ,  0.22313016,  0.60653066,
             0.60653066,  0.22313016,  0.082085  ,  0.03019738])
-    >>> signal.get_window(4.0, 9)
+    >>> get_window(('kaiser', 4.0), 9)
+    array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
+            0.97885093,  0.82160913,  0.56437221,  0.29425961])
+    >>> get_window(4.0, 9)  # same as previous call
     array([ 0.08848053,  0.29425961,  0.56437221,  0.82160913,  0.97885093,
             0.97885093,  0.82160913,  0.56437221,  0.29425961])
 
+    The following snippet shows different ways to create identical symmetric and
+    periodic Bartlett windows:
+
+    >>> from scipy.signal import get_window, windows
+    >>> # Symmetric window:
+    >>> windows.bartlett(5)  # Parameter `sym` defaults to True
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> get_window('bartlett', 5, fftbins=False)
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> get_window('bartlett_symmetric', 5)
+    array([0. , 0.5, 1. , 0.5, 0. ])
+    >>> # Periodic window:
+    >>> windows.bartlett(4, sym=False)
+    array([0. , 0.5, 1. , 0.5])
+    >>> get_window('bartlett', 4)  # Parameter `fftbins` defaults to True
+    array([0. , 0.5, 1. , 0.5])
+    >>> get_window('bartlett_periodic', 4)
+    array([0. , 0.5, 1. , 0.5])
+    >>> # `_periodic' suffix overrides `fftbins` parameter:
+    >>> get_window('bartlett_periodic', 4, fftbins=False)
+    array([0. , 0.5, 1. , 0.5])
+
+    Note that a periodic window can be created out of a symmetric window by discarding
+    the last sample.
     """
+    if not (Nx > 0 and isinstance(Nx, numbers.Integral)):
+        raise ValueError(f"Parameter {Nx=} is not a positive integer")
+    if not isinstance(fftbins, bool):
+        raise ValueError(f"Parameter {fftbins=} is not of type bool!")
+
+    if not isinstance(window, str | tuple):
+        try: # if parameter window can be converted to a float, return kaiser window:
+            beta = float(window)
+        except Exception as float_exception:
+            err_msg = f"Parameter {window=} must be a tuple, a string or a float!"
+            raise ValueError(err_msg) from float_exception
+        return kaiser(Nx, beta, not fftbins, xp=xp, device=device)
+
+    if isinstance(window, tuple) and not isinstance(window[0], str):
+        raise ValueError(f"First tuple entry of parameter {window=} is not a str!")
+
     sym = not fftbins
-    try:
-        beta = float(window)
-    except (TypeError, ValueError) as e:
-        args = ()
-        if isinstance(window, tuple):
-            winstr = window[0]
-            if len(window) > 1:
-                args = window[1:]
-        elif isinstance(window, str):
-            if window in _needs_param:
-                raise ValueError("The '" + window + "' window needs one or "
-                                 "more parameters -- pass a tuple.") from e
-            else:
-                winstr = window
-        else:
-            raise ValueError(
-                f"{str(type(window))} as window type is not supported.") from e
+    win_name = window if isinstance(window, str) else window[0]
+    if win_name.endswith('_symmetric'):  # overwrite `fftbins` / `sym` if needed
+        sym, win_name = True, win_name[:-10]  # remove '_symmetric' from `win_name`
+    elif win_name.endswith('_periodic'):
+        sym, win_name = False, win_name[:-9]  # remove '_periodic' from `win_name`
 
-        if winstr == 'general_cosine' and (xp is not None or device is not None):
-            raise ValueError(
-                'general_cosine window does not accept xp and device kwargs '
-            )
+    if win_name not in _WIN_FUNCS:
+        raise ValueError(f"Invalid window name '{win_name}' in parameter {window=}!")
 
-        try:
-            winfunc = _win_equiv[winstr]
-        except KeyError as e:
-            raise ValueError("Unknown window type.") from e
+    func, has_args = _WIN_FUNCS[win_name]
+    args = window[1:] if isinstance(window, tuple) else tuple()
+    if len(args) > 0 and has_args is False:
+        raise ValueError(f"'{win_name}' does not allow parameters, but {window=}!")
+    if len(args) == 0 and has_args is True:
+        raise ValueError(f"'{win_name}' must have parameters, but {window=}!")
+    # has_args == 'OPTIONAL' allows len(args) == 0 as well as len(args) > 0
 
-        if winfunc is dpss:
-            params = (Nx,) + args + (None,)
-        else:
-            params = (Nx,) + args
-    else:
-        winfunc = kaiser
-        params = (Nx, beta)
+    if not has_args:
+        return func(Nx, sym=sym, xp=xp, device=device)
 
-    if winfunc == general_cosine:
-        return winfunc(*params, sym=sym)
-    else:
-        return winfunc(*params, sym=sym, xp=xp, device=device)
+    # special cases taken from original implementation:
+    if func is dpss:
+        if len(args) != 1:
+            raise ValueError(f"Window {win_name} must have one parameter but {window=}")
+        return dpss(Nx, args[0], Kmax=None, sym=sym, xp=xp, device=device)
+    if func is general_cosine:
+        if not (xp is None and device is None):
+            raise ValueError("'general_cosine' does not accept the parameters xp " +
+                             "and device not being None!")
+        return general_cosine(Nx, *args, sym=sym)
+
+    return func(Nx, *args, sym=sym, xp=xp, device=device)
 
 
 ########## complete the docstrings, on import
@@ -2510,4 +2606,3 @@ _names = [x for x in __all__ if x != 'general_cosine']
 for name in _names:
     window = vars()[name]
     window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)
-

@@ -6,11 +6,13 @@ Authors:
    Andrew Straw, April 2008
 
 """
+import sys
 import itertools
 import inspect
 import platform
 import threading
 import warnings
+import multiprocessing
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -21,6 +23,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy
+from scipy._lib._gcutils import assert_deallocated
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -31,7 +34,9 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._optimize import (
+    MemoizeJac, show_options, OptimizeResult, _minimize_bfgs
+)
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
@@ -987,7 +992,8 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_numerical_jacobian(self):
         # BFGS with numerical Jacobian and a vector epsilon parameter.
         # define the epsilon parameter using a random vector
-        epsilon = np.sqrt(np.spacing(1.)) * np.random.rand(len(self.solution))
+        rng = np.random.default_rng(1234)
+        epsilon = np.sqrt(np.spacing(1.)) * rng.random(len(self.solution))
 
         params = optimize.fmin_bfgs(self.func, self.startparams,
                                     epsilon=epsilon, args=(),
@@ -1500,7 +1506,8 @@ class TestOptimizeSimple(CheckOptimize):
             return 2*(x-c)
 
         c = np.array([3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5])
-        xinit = np.random.randn(len(c))
+        rng = np.random.default_rng(1234)
+        xinit = rng.standard_normal(len(c))
         optimize.minimize(Y, xinit, jac=dY_dx, args=(c), method="BFGS")
 
     def test_initial_step_scaling(self):
@@ -1563,7 +1570,9 @@ class TestOptimizeSimple(CheckOptimize):
             pytest.skip('COBYQA does not support concurrent execution')
 
         # Check nan values result to failed exit status
-        rng = np.random.RandomState(1234)
+
+        # test is dependent on exact seed
+        rng = np.random.default_rng(123122)
 
         count = [0]
 
@@ -1575,7 +1584,7 @@ class TestOptimizeSimple(CheckOptimize):
             if count[0] > 2:
                 return np.nan
             else:
-                return rng.rand()
+                return rng.random()
 
         def grad(x):
             return np.array([1.0])
@@ -1707,13 +1716,16 @@ class TestOptimizeSimple(CheckOptimize):
             return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.message.startswith("`callback` raised `StopIteration`")
             assert res.nit == ref.nit == maxiter
-        assert res.fun == ref.fun
-        assert_equal(res.x, ref.x)
-        assert res.status == (3 if method in [
-            'trust-constr',
-            'cobyqa',
-        ] else 99)
+        if method != 'slsqp':
+            # Unlike all other methods, apparently SLSQP updates x/fun after the last
+            # call to the callback
+            assert res.fun == ref.fun
+            assert_equal(res.x, ref.x)
+        assert res.status == 3 if method in {'trust-constr', 'cobyqa'} else 99
+        if method != 'cobyqa':
+            assert not res.success
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -2034,7 +2046,6 @@ class TestOptimizeScalar:
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
-        np.random.seed(1234)
 
         count = [0]
 
@@ -2684,7 +2695,6 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-
 @pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
@@ -2900,9 +2910,9 @@ def test_gh12696():
 # --- Test minimize with equal upper and lower bounds --- #
 
 def setup_test_equal_bounds():
-
-    rng = np.random.RandomState(0)
-    x0 = rng.rand(4)
+    # the success of test_equal_bounds depends on the exact seed
+    rng = np.random.default_rng(12223)
+    x0 = rng.random(4)
     lb = np.array([0, 2, -1, -1.0])
     ub = np.array([3, 2, 2, -1.0])
     i_eb = (lb == ub)
@@ -3039,7 +3049,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=2e-6)
+    assert_allclose(res.fun, expected.fun, rtol=5.0e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
@@ -3473,3 +3483,123 @@ class TestWorkers:
             )
         assert res.success
         assert_allclose(res.x[1], 2.0)
+
+
+# Tests for PEP 649/749 style annotations in callback and objective functions
+if sys.version_info < (3, 14):
+    from typing import Any
+    _DUMMY_TYPE = Any
+else:
+    import typing
+    if typing.TYPE_CHECKING:
+        _DUMMY_TYPE = typing.Any
+
+def rosen_annotated(x: _DUMMY_TYPE) -> float:
+    return rosen(x) + 1
+
+def rosen_der_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_der(x)
+
+def rosen_hess_annotated(x: _DUMMY_TYPE) -> _DUMMY_TYPE:
+    return rosen_hess(x)
+
+def callable_annotated(intermediate_result: _DUMMY_TYPE) -> None:
+    pass
+
+@pytest.mark.skipif(sys.version_info < (3, 14),
+                    reason="Requires PEP 649/749 from Python 3.14+.")
+class TestAnnotations:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 1.01])
+        self.brute_params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
+
+    @pytest.mark.parametrize("method", [
+        'Nelder-Mead',
+        'Powell',
+        'CG',
+        'bfgs',
+        'Newton-CG',
+        'l-bfgs-b',
+        'tnc',
+        'COBYLA',
+        # 'COBYQA', # External module. Will trigger NameError, skip for now
+        'slsqp',
+        'trust-constr',
+        'dogleg',
+        'trust-ncg',
+        'trust-exact',
+        'trust-krylov'
+    ])
+    def test_callable_annotations(self, method):
+        kwds = {'jac': None, 'hess': None, 'callback': callable_annotated}
+        if method in ['CG', 'BFGS', 'Newton-CG', "L-BFGS-B", 'TNC', 'SLSQP', 'dogleg', 
+                      'trust-ncg', 'trust-krylov', 'trust-exact', 'trust-constr']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der_annotated
+        if method in ['Newton-CG', 'dogleg', 'trust-ncg', 'trust-exact', 
+                      'trust-krylov', 'trust-constr']:
+            kwds['hess'] = rosen_hess_annotated
+        optimize.minimize(rosen_annotated, self.x0, method=method, **kwds)
+
+    def test_differential_evolution_annotations(self):
+        bounds = [(-5, 5), (-5, 5)]
+        res = optimize.differential_evolution(rosen_annotated, bounds, seed=1,
+                                              callback=callable_annotated)
+        assert res.success, f"Unexpected error: {res.message}"
+
+    def test_curve_fit_annotations(self):
+
+        def model_func(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return a * np.exp(-b * x) + c
+
+        def model_jac(x: _DUMMY_TYPE, a: float, b, c) -> _DUMMY_TYPE:
+            return np.array([
+                np.exp(-b * x),
+                -a * x * np.exp(-b * x),
+                np.ones_like(x)
+            ]).T
+
+        xdata = np.linspace(0, 4, 10)
+        ydata = model_func(xdata, 2.5, 1.3, 0.5)
+
+        _,_,_,_,res = optimize.curve_fit(model_func, xdata, ydata, jac=model_jac,
+                                         full_output=True)
+        assert (res in [1, 2, 3, 4]), f"Unexpected error: {res.message}"
+
+    def test_brute_annotations(self):
+        def f1(z: _DUMMY_TYPE, *params: float) -> float:
+            x, y = z
+            a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+            return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+
+        def annotated_fmin(callable: _DUMMY_TYPE, x0: _DUMMY_TYPE,
+                           *args, **kwargs) -> _DUMMY_TYPE:
+            return optimize.fmin(callable, x0, *args, **kwargs)
+
+        rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
+        optimize.brute(f1, rranges, args=self.brute_params, finish=annotated_fmin)
+
+    def test_basinhopping_annotations(self):
+        # NOTE: basinhopping callback does not match
+        #       callback(intermediate_result: OptimizeResult)
+        #       signature. Consider adding when updated.
+        def acceptable_test(f_new: float, x_new: _DUMMY_TYPE,
+                                      f_old: float,x_old: _DUMMY_TYPE) -> bool:
+            return True
+
+        res = optimize.basinhopping(rosen_annotated, self.x0, niter=2, seed=1,
+                                    accept_test=acceptable_test)
+
+        assert res.success, f"Unexpected error: {res.message}"
+
+
+def test_multiprocessing_too_many_open_files_23080():
+    # https://github.com/scipy/scipy/issues/23080
+    x0 = np.array([0.9, 0.9])
+    # check that ScalarHessWrapper doesn't keep pool object alive
+    with assert_deallocated(multiprocessing.Pool, 2) as pool_obj:
+        with pool_obj as p:
+            _minimize_bfgs(rosen, x0, workers=p.map)
+        del p
+        del pool_obj

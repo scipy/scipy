@@ -2534,41 +2534,39 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_setelement(self):
-        def check(dtype):
-            A = self.spcreator((3,4), dtype=dtype)
+        def check(dtype, scalar_container):
+            A = self.spcreator((3, 4), dtype=dtype)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", WMSG, SparseEfficiencyWarning)
-                A[0, 0] = dtype.type(0)  # bug 870
-                A[1, 2] = dtype.type(4.0)
-                A[0, 1] = dtype.type(3)
-                A[2, 0] = dtype.type(2.0)
-                A[0,-1] = dtype.type(8)
-                A[-1,-2] = dtype.type(7)
-                A[0, 1] = dtype.type(5)
+                A[0, 0] = scalar_container(dtype.type(0))  # bug 870
+                A[1, 2] = scalar_container(dtype.type(4.0))
+                A[0, 1] = scalar_container(dtype.type(3))
+                A[2, 0] = scalar_container(dtype.type(2.0))
+                A[0, -1] = scalar_container(dtype.type(8))
+                A[-1, -2] = scalar_container(dtype.type(7))
+                A[0, 1] = scalar_container(dtype.type(5))
 
             if dtype != np.bool_:
                 assert_array_equal(
-                    A.toarray(),
-                    [
-                        [0, 5, 0, 8],
-                        [0, 0, 4, 0],
-                        [2, 0, 7, 0]
-                    ]
+                    A.toarray(), [[0, 5, 0, 8], [0, 0, 4, 0], [2, 0, 7, 0]]
                 )
 
-            for ij in [(0,4),(-1,4),(3,0),(3,4),(3,-1)]:
+            for ij in [(0, 4), (-1, 4), (3, 0), (3, 4), (3, -1)]:
                 assert_raises(IndexError, A.__setitem__, ij, 123.0)
 
-            for v in [[1,2,3], array([1,2,3])]:
-                assert_raises(ValueError, A.__setitem__, (0,0), v)
+            for v in [[1, 2, 3], array([1, 2, 3])]:
+                assert_raises(ValueError, A.__setitem__, (0, 0), v)
 
-            if (not np.issubdtype(dtype, np.complexfloating) and
-                    dtype != np.bool_):
+            if not np.issubdtype(dtype, np.complexfloating) and dtype != np.bool_:
                 for v in [3j]:
-                    assert_raises(TypeError, A.__setitem__, (0,0), v)
+                    assert_raises(TypeError, A.__setitem__, (0, 0), v)
 
-        for dtype in supported_dtypes:
-            check(np.dtype(dtype))
+        scalar_containers = [
+            lambda x: csr_array(np.array([[x]])), np.array, lambda x: x
+        ]
+        for scalar_container in scalar_containers:
+            for dtype in supported_dtypes:
+                check(np.dtype(dtype), scalar_container)
 
     def test_negative_index_assignment(self):
         # Regression test for GitHub issue 4428.
@@ -4191,7 +4189,51 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
 # Matrix class based tests
 #------------------------------------------------------------------------------
 
-class TestCSR(sparse_test_class()):
+class _CompressedMixin:
+    def _test_setdiag_sorted(self, D):
+        A = self.spcreator(D)
+        # Force sorted indices
+        A.has_sorted_indices = False
+        A.sort_indices()
+        assert A.has_sorted_indices
+        # Set the diagonal (only 1 new entry / 1002, so _insert_many is used)
+        with check_remains_sorted(A):
+            A.setdiag(5)
+        assert np.all(A.diagonal() == 5)
+
+    def test_setdiag_noconvert(self):
+        # Test small ratio of new elements
+        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
+        # see gh-23644
+        # Create off-main-diagonal elements so that we have multiple elements
+        # per column to see if the indices are sorted or not
+        N = 1002
+        vals = np.arange(1, N + 1)
+        diags = np.c_[[-1, 2, 1]] * vals  # rows are diagonal entries
+        # Remove a small number of  diagonal elements so we have a small ratio
+        # of new ones to force _cs_matrix._setdiag to remain in CSC/CSR format
+        N_new = 3
+        diags[1, -N_new:] = 0.0
+        offsets = [-1, 0, 1]
+        D = self.dia_container((diags, offsets), shape=(N, N))
+        return self._test_setdiag_sorted(D)
+
+    def test_setdiag_cooconvert(self):
+        # Test large ratio of new elements
+        # see gh-23644
+        # Create off-main-diagonal elements so that we have multiple elements
+        # per column to see if the indices are sorted or not
+        N = 1002
+        vals = np.arange(1, N + 1)  # only a few non-zeros
+        diags = np.c_[[-1, 2, 1]] * vals
+        # Remove many entries so we have a large ratio of new entries
+        diags[1, 5:] = 0.0
+        offsets = [-1, 0, 1]
+        D = self.dia_container((diags, offsets), shape=(N, N))
+        return self._test_setdiag_sorted(D)
+
+
+class TestCSR(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
@@ -4476,13 +4518,6 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
-    def test_setdiag_csr(self):
-        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
-        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
-        A = self.spcreator(D)
-        A.setdiag(5 * np.ones(A.shape[0]))
-        assert A[-1, -1] == 5
-
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
@@ -4512,7 +4547,7 @@ def test_spmatrix_subscriptable():
 TestCSRMatrix.init_class()
 
 
-class TestCSC(sparse_test_class()):
+class TestCSC(_CompressedMixin, sparse_test_class()):
     @classmethod
     def spcreator(cls, *args, **kwargs):
         with warnings.catch_warnings():
@@ -4657,13 +4692,6 @@ class TestCSC(sparse_test_class()):
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
-
-    def test_setdiag_csc(self):
-        # see gh-21791 setting mixture of existing and not when new_values < 0.001*nnz
-        D = self.dia_container(([np.arange(1002)], [0]), shape=(1002, 1002))
-        A = self.spcreator(D)
-        A.setdiag(5 * np.ones(A.shape[0]))
-        assert A[-1, -1] == 5
 
 
 TestCSC.init_class()

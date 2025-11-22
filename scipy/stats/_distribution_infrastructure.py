@@ -2348,7 +2348,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _median_icdf(self, **params):
-        return self._icdf_dispatch(0.5, **params)
+        return self._icdf_dispatch(np.asarray(0.5, dtype=self._dtype), **params)
 
     @_set_invalid_nan_property
     def mode(self, *, method=None):
@@ -4114,7 +4114,7 @@ def _make_distribution_rv_generic(dist):
     support = getattr(dist, '_support', (dist.a, dist.b))
     for shape_info in dist._shape_info():
         domain = _RealInterval(endpoints=shape_info.endpoints,
-                             inclusive=shape_info.inclusive)
+                               inclusive=shape_info.inclusive)
         param = _RealParameter(shape_info.name, domain=domain)
         parameters.append(param)
         names.append(shape_info.name)
@@ -5737,7 +5737,7 @@ def log(X, /):
     >>> Gamma = stats.make_distribution(stats.gamma)
     >>> X = Gamma(a=1.0)
 
-    We wish to have a exp-gamma distributed random variable :math:`Y`,
+    We wish to have an exp-gamma distributed random variable :math:`Y`,
     a random variable whose natural exponential is :math:`X`.
     If :math:`X` is to be the natural exponential of :math:`Y`, then we
     must take :math:`Y` to be the natural logarithm of :math:`X`.
