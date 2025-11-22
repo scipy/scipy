@@ -840,3 +840,6 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+from .spherical_jn_zeros import spherical_jn_zeros
+
