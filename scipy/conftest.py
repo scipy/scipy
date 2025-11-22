@@ -606,6 +606,7 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
+                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
     dt_config.user_context_mgr = warnings_errors_and_rng

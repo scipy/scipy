@@ -5,6 +5,45 @@ Orthogonal distance regression (:mod:`scipy.odr`)
 
 .. currentmodule:: scipy.odr
 
+.. deprecated:: 1.17.0
+    `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+    `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+    instead.
+
+    The following example shows a brief comparison of the APIs::
+
+        import numpy as np
+        import scipy.odr
+        import odrpack
+
+        # Classic "Pearson data" that motivates ODR.
+        # Errors are in both variables, and if you don't account for this,
+        # doing a linear fit of X vs. Y or Y vs. X will give you quite
+        # different results.
+        p_x = np.array([0., .9, 1.8, 2.6, 3.3, 4.4, 5.2, 6.1, 6.5, 7.4])
+        p_y = np.array([5.9, 5.4, 4.4, 4.6, 3.5, 3.7, 2.8, 2.8, 2.4, 1.5])
+        p_sx = np.array([.03, .03, .04, .035, .07, .11, .13, .22, .74, 1.])
+        p_sy = np.array([1., .74, .5, .35, .22, .22, .12, .12, .1, .04])
+
+        # Old-style
+        # The RealData class takes care of details like turning
+        # standard-deviation error bars into weights.
+        p_dat = scipy.odr.RealData(p_x, p_y, sx=p_sx, sy=p_sy)
+        # Note, parameters come before `x` in scipy.odr
+        p_mod = scipy.odr.Model(lambda beta, x: beta[0] + beta[1]*x)
+        p_odr = scipy.odr.ODR(p_dat, p_mod, beta0=[1., 1.])
+        old_out = p_odr.run()
+
+        # New-style
+        # Parameters come after data, in the new API.
+        # We must convert the error bars into weights ourselves.
+        new_out = odrpack.odr_fit(lambda x, beta: beta[0] + beta[1] * x,
+            p_x, p_y, beta0=np.array([1.0, 1.0]),
+            weight_x=p_sx**-2, weight_y=p_sy**-2)
+
+        assert np.isclose(old_out.beta, new_out.beta).all()
+
+
 Package Content
 ===============
 
@@ -125,6 +164,13 @@ from . import models, odrpack
 
 __all__ = [s for s in dir()
            if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]
+
+import warnings
+msg = ("`scipy.odr` is deprecated as of version 1.17.0 and will be removed in "
+        "SciPy 1.19.0. Please use `https://pypi.org/project/odrpack/` instead.")
+warnings.warn(msg, DeprecationWarning, stacklevel=2)
+del warnings
+
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
