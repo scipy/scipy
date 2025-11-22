@@ -275,9 +275,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
-
-[feature.lint.pypi-dependencies]
-dtach = "*"
+tach = "*"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
