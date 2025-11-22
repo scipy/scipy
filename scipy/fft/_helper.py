@@ -11,7 +11,6 @@ from scipy._lib._array_api import xp_capabilities
 _init_nd_shape_and_axes = _helper._init_nd_shape_and_axes
 
 
-@xp_capabilities(out_of_scope=True)
 def next_fast_len(target, real=False):
     """Find the next fast size of input data to ``fft``, for zero-padding, etc.
 
@@ -75,11 +74,11 @@ def next_fast_len(target, real=False):
 # next_fast_len function above
 _sig = inspect.signature(next_fast_len)
 next_fast_len = update_wrapper(lru_cache(_helper.good_size), next_fast_len)
+next_fast_len = xp_capabilities(out_of_scope=True)(next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 next_fast_len.__signature__ = _sig
 
 
-@xp_capabilities(out_of_scope=True)
 def prev_fast_len(target, real=False):
     """Find the previous fast size of input data to ``fft``.
     Useful for discarding a minimal number of samples before FFT.
@@ -142,6 +141,7 @@ def prev_fast_len(target, real=False):
 # from the prev_fast_len function above
 _sig_prev_fast_len = inspect.signature(prev_fast_len)
 prev_fast_len = update_wrapper(lru_cache()(_helper.prev_good_size), prev_fast_len)
+prev_fast_len = xp_capabilities(out_of_scope=True)(prev_fast_len)
 prev_fast_len.__wrapped__ = _helper.prev_good_size
 prev_fast_len.__signature__ = _sig_prev_fast_len
 
