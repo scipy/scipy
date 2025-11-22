@@ -514,7 +514,8 @@ class TestIRFFTN:
                                   make_xp_pytest_param(fft.hfft),
                                   make_xp_pytest_param(fft.ihfft)])
 def test_non_standard_params(func, xp):
-    if func in [fft.rfft, fft.rfftn, fft.ihfft]:
+    # use __name__ so that `lazy_xp_function` doesn't break things
+    if func.__name__ in ["rfft", "rfftn", "ihfft"]:
         dtype = xp.float64
     else:
         dtype = xp.complex128
