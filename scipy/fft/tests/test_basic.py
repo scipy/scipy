@@ -8,7 +8,7 @@ from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy._lib._array_api import (
-    is_numpy, xp_size, xp_assert_close, xp_assert_equal
+    is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -39,7 +39,7 @@ def fft1(x):
     return np.sum(x*np.exp(phase), axis=1)
 
 class TestFFT:
-
+    @make_xp_test_case(fft.ifft, fft.fft, fft.rfft, fft.irfft)
     def test_identity(self, xp):
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
@@ -58,6 +58,7 @@ class TestFFT:
             xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
             xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
 
+    @make_xp_test_case(fft.fft)
     def test_fft(self, xp):
         x = random(30) + 1j*random(30)
         expect = xp.asarray(fft1(x))
@@ -73,12 +74,14 @@ class TestFFT:
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
 
+    @make_xp_test_case(fft.fft, fft.ifft)
     def test_ifft(self, xp):
         x = xp.asarray(random(30) + 1j*random(30))
         xp_assert_close(fft.ifft(fft.fft(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.ifft(fft.fft(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.fft, fft.fft2)
     def test_fft2(self, xp):
         x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
         expect = fft.fft(fft.fft(x, axis=1), axis=0)
@@ -88,6 +91,7 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.fft2(x, norm="forward"), expect / (30 * 20))
 
+    @make_xp_test_case(fft.ifft, fft.ifft2)
     def test_ifft2(self, xp):
         x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
         expect = fft.ifft(fft.ifft(x, axis=1), axis=0)
@@ -97,6 +101,7 @@ class TestFFT:
                         expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.ifft2(x, norm="forward"), expect * (30 * 20))
 
+    @make_xp_test_case(fft.fft, fft.fftn)
     def test_fftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
@@ -106,6 +111,7 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
         xp_assert_close(fft.fftn(x, norm="forward"), expect / (30 * 20 * 10))
 
+    @make_xp_test_case(fft.ifft, fft.ifftn)
     def test_ifftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
@@ -119,6 +125,7 @@ class TestFFT:
                         expect * (30 * 20 * 10),
                         rtol=1e-7)
 
+    @make_xp_test_case(fft.fft, fft.rfft)
     def test_rfft(self, xp):
         x = xp.asarray(random(29), dtype=xp.float64)
         for n in [xp_size(x), 2*xp_size(x)]:
@@ -131,12 +138,14 @@ class TestFFT:
                 fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n, dtype=xp.float64))
             )
 
+    @make_xp_test_case(fft.irfft, fft.rfft)
     def test_irfft(self, xp):
         x = xp.asarray(random(30))
         xp_assert_close(fft.irfft(fft.rfft(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.irfft(fft.rfft(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.rfft2)
     def test_rfft2(self, xp):
         x = xp.asarray(random((30, 20)), dtype=xp.float64)
         expect = fft.fft2(xp.asarray(x, dtype=xp.complex128))[:, :11]
@@ -146,12 +155,14 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.rfft2(x, norm="forward"), expect / (30 * 20))
 
+    @make_xp_test_case(fft.rfft2, fft.irfft2)
     def test_irfft2(self, xp):
         x = xp.asarray(random((30, 20)))
         xp_assert_close(fft.irfft2(fft.rfft2(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.irfft2(fft.rfft2(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.fftn, fft.rfftn)
     def test_rfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
         expect = fft.fftn(xp.asarray(x, dtype=xp.complex128))[:, :, :6]
@@ -161,12 +172,14 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
         xp_assert_close(fft.rfftn(x, norm="forward"), expect / (30 * 20 * 10))
 
+    @make_xp_test_case(fft.irfftn, fft.rfftn)
     def test_irfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
         xp_assert_close(fft.irfftn(fft.rfftn(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.irfftn(fft.rfftn(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.hfft, fft.fft)
     def test_hfft(self, xp):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
@@ -180,6 +193,7 @@ class TestFFT:
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)))
         xp_assert_close(fft.hfft(x_herm, norm="forward"), expect / 30)
 
+    @make_xp_test_case(fft.hfft, fft.ihfft)
     def test_ihfft(self, xp):
         x = random(14) + 1j*random(14)
         x_herm = np.concatenate((random(1), x, random(1)))
@@ -190,12 +204,14 @@ class TestFFT:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm), x_herm)
 
+    @make_xp_test_case(fft.hfft2, fft.ihfft2)
     def test_hfft2(self, xp):
         x = xp.asarray(random((30, 20)))
         xp_assert_close(fft.hfft2(fft.ihfft2(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.hfft2(fft.ihfft2(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.ifft2)
     def test_ihfft2(self, xp):
         x = xp.asarray(random((30, 20)), dtype=xp.float64)
         expect = fft.ifft2(xp.asarray(x, dtype=xp.complex128))[:, :11]
@@ -207,12 +223,14 @@ class TestFFT:
         )
         xp_assert_close(fft.ihfft2(x, norm="forward"), expect * (30 * 20))
 
+    @make_xp_test_case(fft.hfftn, fft.ihfftn)
     def test_hfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
         xp_assert_close(fft.hfftn(fft.ihfftn(x)), x)
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm), x)
 
+    @make_xp_test_case(fft.ifftn, fft.ihfftn)
     def test_ihfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
         expect = fft.ifftn(xp.asarray(x, dtype=xp.complex128))[:, :, :6]
@@ -234,16 +252,18 @@ class TestFFT:
             tr_op = xp.permute_dims(op(x, axes=a), axes=a)
             xp_assert_close(op_tr, tr_op)
 
+    @make_xp_test_case(fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn)
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
         self._check_axes(op, xp)
 
+    @make_xp_test_case(fft.hfftn, fft.ihfftn)
     @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
     def test_axes_non_standard(self, op, xp):
         self._check_axes(op, xp)
 
-    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn])
+    @make_xp_test_case(fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn)
+    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
@@ -260,10 +280,10 @@ class TestFFT:
                                          axes=a)
             xp_assert_close(op_tr, tr_op)
 
-    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
-                                    fft.rfft2, fft.irfft2,
-                                    fft.hfft2, fft.ihfft2,
-                                    fft.hfftn, fft.ihfftn])
+    @make_xp_test_case(fft.fft2, fft.ifft2, fft.rfft2, fft.irfft2, fft.hfft2,
+                       fft.ihfft2, fft.hfftn, fft.ihfftn)
+    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2, fft.rfft2, fft.irfft2,
+                                    fft.hfft2, fft.ihfft2, fft.hfftn, fft.ihfftn])
     def test_axes_subset_with_shape_non_standard(self, op, xp):
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
@@ -278,6 +298,7 @@ class TestFFT:
             tr_op = xp.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
             xp_assert_close(op_tr, tr_op)
 
+    @make_xp_test_case(fft.rfft, fft.irfft, fft.ihfft, fft.hfft, fft.fft, fft.ifft)
     def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
         x = xp.asarray(random(30), dtype=xp.float64)
@@ -301,9 +322,8 @@ class TestFFT:
                     tmp = back(tmp, n=n, norm=norm)
                     xp_assert_close(xp.linalg.vector_norm(tmp), x_norm)
 
-    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
-    def test_dtypes_nonstandard(self, dtype, xp):
+    def test_dtypes_nonstandard(self, dtype):
         x = random(30).astype(dtype)
         out_dtypes = {np.float16: np.complex64, np.longdouble: np.clongdouble}
         x_complex = x.astype(out_dtypes[dtype])
@@ -319,6 +339,7 @@ class TestFFT:
         assert res_rfft.dtype == np.result_type(np.float32, x.dtype)
         assert res_hfft.dtype == np.result_type(np.float32, x.dtype)
 
+    @make_xp_test_case(fft.irfft, fft.rfft)
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_real(self, dtype, xp):
         x = xp.asarray(random(30), dtype=getattr(xp, dtype))
@@ -329,6 +350,7 @@ class TestFFT:
         xp_assert_close(res_rfft, x)
         xp_assert_close(res_hfft, x)
 
+    @make_xp_test_case(fft.fft, fft.ifft)
     @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
     def test_dtypes_complex(self, dtype, xp):
         rng = np.random.default_rng(1234)
@@ -338,8 +360,6 @@ class TestFFT:
         # Check both numerical results and exact dtype matches
         xp_assert_close(res_fft, x)
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
     @pytest.mark.parametrize("op", [fft.fft, fft.ifft,
                                     fft.fft2, fft.ifft2,
                                     fft.fftn, fft.ifftn,
@@ -349,14 +369,13 @@ class TestFFT:
                                     fft.hfft, fft.ihfft,
                                     fft.hfft2, fft.ihfft2,
                                     fft.hfftn, fft.ihfftn,])
-    def test_array_like(self, xp, op):
+    def test_array_like(self, op):
         x = [[[1.0, 1.0], [1.0, 1.0]],
              [[1.0, 1.0], [1.0, 1.0]],
              [[1.0, 1.0], [1.0, 1.0]]]
-        xp_assert_close(op(x), op(xp.asarray(x)))
+        xp_assert_close(op(x), op(np.asarray(x)))
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize(
         "dtype",
         [np.float32, np.float64, np.longdouble,
@@ -364,9 +383,8 @@ class TestFFT:
 @pytest.mark.parametrize("order", ["F", 'non-contiguous'])
 @pytest.mark.parametrize(
         "fft",
-        [fft.fft, fft.fft2, fft.fftn,
-         fft.ifft, fft.ifft2, fft.ifftn])
-def test_fft_with_order(dtype, order, fft, xp):
+        [fft.fft, fft.fft2, fft.fftn, fft.ifft, fft.ifft2, fft.ifftn])
+def test_fft_with_order(dtype, order, fft):
     # Check that FFT/IFFT produces identical results for C, Fortran and
     # non contiguous arrays
     rng = np.random.RandomState(42)
@@ -421,34 +439,39 @@ class TestFFTThreadSafe:
                 err_msg='Function returned wrong value in multithreaded context'
             )
 
+    @make_xp_test_case(fft.fft)
     def test_fft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex128)
         self._test_mtsame(fft.fft, a, xp=xp)
 
+    @make_xp_test_case(fft.ifft)
     def test_ifft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.ifft, a, xp=xp)
 
+    @make_xp_test_case(fft.rfft)
     def test_rfft(self, xp):
         a = xp.ones(self.input_shape)
         self._test_mtsame(fft.rfft, a, xp=xp)
 
+    @make_xp_test_case(fft.irfft)
     def test_irfft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.irfft, a, xp=xp)
 
+    @make_xp_test_case(fft.hfft)
     def test_hfft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex64)
         self._test_mtsame(fft.hfft, a, xp=xp)
 
+    @make_xp_test_case(fft.ihfft)
     def test_ihfft(self, xp):
         a = xp.ones(self.input_shape)
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
-def test_multiprocess(func, xp):
+def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
 
     with multiprocessing.Pool(2) as p:
@@ -459,6 +482,7 @@ def test_multiprocess(func, xp):
         assert_allclose(x, expect)
 
 
+@make_xp_test_case(fft.irfftn)
 class TestIRFFTN:
 
     def test_not_last_axis_success(self, xp):
@@ -471,7 +495,8 @@ class TestIRFFTN:
         # Should not raise error
         fft.irfftn(a, axes=axes)
 
-
+@make_xp_test_case(fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
+                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
                                   fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
@@ -494,9 +519,10 @@ def test_non_standard_params(func, xp):
     # but should be tested if it comes into use
 
 
+@make_xp_test_case(fft.fft, fft.ifft, fft.irfft, fft.fftn, fft.ifftn, fft.irfftn,
+                   fft.hfft)
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
-@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft,
-                                  fft.fftn, fft.ifftn,
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft, fft.fftn, fft.ifftn,
                                   fft.irfftn, fft.hfft,])
 def test_real_input(func, dtype, xp):
     x = xp.asarray([1, 2, 3], dtype=getattr(xp, dtype))
