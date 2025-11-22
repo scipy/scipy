@@ -488,6 +488,9 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
     args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
             else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
@@ -539,8 +542,11 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
     args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
-            else arg) for arg in args]  # solely to prevent double conversion of iterable to array
+            else arg) for arg in args]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
