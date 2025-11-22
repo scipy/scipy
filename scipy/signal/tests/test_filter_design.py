@@ -1081,6 +1081,7 @@ class TestFreqz:
                               (False, True, 257),
                               (True, False, 257),
                               (True, True, 257)])
+    
     @xfail_xp_backends("cupy", reason="XXX: CuPy's version suspect")
     def test_17289(self, whole, nyquist, worN, xp):
         d = xp.asarray([0.0, 1.0])
