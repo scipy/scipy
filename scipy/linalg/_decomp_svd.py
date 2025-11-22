@@ -351,7 +351,7 @@ def higher_order_svd(
     LinAlgError
         If SVD computation does not converge.
 
-    .. versionadded:: 1.15.0
+    .. versionadded:: 1.17.0
 
     See Also
     --------
@@ -363,7 +363,7 @@ def higher_order_svd(
            "A Multilinear Singular Value Decomposition"
            SIAM Journal on Matrix Analysis and Applications,
            21 (4), pp. 1253-1278. ISSN 1095-7162
-           https://doi.org/10.1137/S0895479896305696
+           :doi:`10.1137/S0895479896305696`
 
     Examples
     --------
