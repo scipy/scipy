@@ -129,7 +129,6 @@ def _validate_marginal_input(dimensions, multivariate_dims):
     ----------
     dimensions : float, ndarray
         Input dimensions to be marginalized
-
     multivariate_dims : int
         Number of dimensions of multivariate distribution.
 
