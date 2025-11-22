@@ -138,7 +138,7 @@ class _BarycentricRational:
         Returns
         -------
         poles : array
-            Poles of the AAA approximation, repeated according to their multiplicity
+            Poles of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
         if self._poles is None:
@@ -182,12 +182,12 @@ class _BarycentricRational:
         return self._residues
 
     def roots(self):
-        """Compute the zeros of the rational approximation.
+        """Compute the roots of the rational approximation.
 
         Returns
         -------
         zeros : array
-            Zeros of the AAA approximation, repeated according to their multiplicity
+            Zeros of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
         if self._support_values.ndim > 1:

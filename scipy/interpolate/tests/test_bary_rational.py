@@ -270,7 +270,7 @@ class TestAAA:
 
 
 class BatchFloaterHormann:
-    # BSpline-line class with reference batch behavior
+    # FloaterHormann class with reference batch behaviour
     def __init__(self, x, y, axis):
         y = np.moveaxis(y, axis, -1)
         self._batch_shape = y.shape[:-1]
@@ -296,7 +296,7 @@ class TestFloaterHormann:
             FloaterHormannInterpolator([[0]], [0], d=0)
         with pytest.raises(ValueError, match="`y`"):
             FloaterHormannInterpolator([0], 0, d=0)
-        with pytest.raises(ValueError, match="size"):
+        with pytest.raises(ValueError, match="`x` be of size 2 but got size 1."):
             FloaterHormannInterpolator([0], [[1, 1], [1, 1]], d=0)
         with pytest.raises(ValueError, match="finite"):
             FloaterHormannInterpolator([np.inf], [1], d=0)
@@ -375,8 +375,6 @@ class TestFloaterHormann:
         assert rr.shape == xx.shape + y_shape
         assert_allclose(rr, yy, rtol=1e-6)
 
-        pytest.raises(NotImplementedError, r.roots)
-        pytest.raises(NotImplementedError, r.residues)
 
     def test_zeros(self):
         x = np.linspace(0, 10, num=100)
@@ -408,3 +406,6 @@ class TestFloaterHormann:
 
         x = rng.uniform(*domain, size=eval_shape)
         assert_allclose(res(x), ref(x))
+
+        pytest.raises(NotImplementedError, res.roots)
+        pytest.raises(NotImplementedError, res.residues)
