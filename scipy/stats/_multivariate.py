@@ -123,12 +123,12 @@ def _pinv_1d(v, eps=1e-5):
 
 
 def _validate_marginal_input(dimensions, multivariate_dims):
-    """Determine if input dimensions can be marginalized. 
+    """Determine if input dimensions can be marginalized.
 
     Parameters
     ----------
     dimensions : float, ndarray
-        Input dimensions to be marginalized 
+        Input dimensions to be marginalized
 
     multivariate_dims : int
         Number of dimensions of multivariate distribution.
@@ -142,26 +142,26 @@ def _validate_marginal_input(dimensions, multivariate_dims):
     dims = np.atleast_1d(dims)
 
     if len(dims) == 0:
-        msg = ("Cannot marginalize all dimensions.")
+        msg = "Cannot marginalize all dimensions."
         raise ValueError(msg)
 
     if not np.issubdtype(dims.dtype, np.integer):
         msg = ("Elements of `dimensions` must be integers - the indices "
-                "of the marginal variables being retained.")
+               "of the marginal variables being retained.")
         raise ValueError(msg)
 
     original_dims = np.copy(dims)
 
-    dims[dims < 0] = multivariate_dims + dims[dims < 0]
+    dims[dims < 0] += multivariate_dims
 
     if len(np.unique(dims)) != len(dims):
-        msg = ("All elements of `dimensions` must be unique.")
+        msg = "All elements of `dimensions` must be unique."
         raise ValueError(msg)
 
     i_invalid = (dims < 0) | (dims >= multivariate_dims)
     if np.any(i_invalid):
         msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
-                f"for a distribution in {multivariate_dims} dimensions.")
+               f"for a distribution in {multivariate_dims} dimensions.")
         raise ValueError(msg)
 
     return dims
@@ -922,7 +922,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
-    def marginal(self, dimensions, mean=None, cov=1, allow_singular=False):
+    def marginal(self, dimensions, *, mean=None, cov=1, allow_singular=False):
         """Return a marginal multivariate normal distribution
 
         Parameters
@@ -944,7 +944,7 @@ class multivariate_normal_gen(multi_rv_generic):
         mean = mean[dims]
         cov = cov_object.covariance[np.ix_(dims, dims)]
         
-        return multivariate_normal_frozen(mean, cov, allow_singular)    
+        return multivariate_normal_frozen(mean, cov, allow_singular)
 
 multivariate_normal = multivariate_normal_gen()
 

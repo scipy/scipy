@@ -297,7 +297,7 @@ def _sample_orthonormal_matrix(n):
 def marginal_pdf(X, X_ndim, dimensions, x):
     # First sort input data based on order of dimensions
     dimensions = np.asarray(dimensions)
-    dimensions[dimensions < 0] = X_ndim + dimensions[dimensions < 0]
+    dimensions[dimensions < 0] += X_ndim
     dim_sort_idx = dimensions.argsort()
     x = x[:, dim_sort_idx]
     
@@ -1244,8 +1244,7 @@ class TestMultivariateNormal:
         assert logp_perturbed < logp_fix
 
     @pytest.mark.parametrize('X_ndim', [3])
-    @pytest.mark.parametrize('dimensions', [[1], 
-                                            [-1, 1]])
+    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
     @pytest.mark.parametrize('frozen', [True, False])
     @pytest.mark.parametrize('cov_object', [True, False])
     def test_marginal_distribution(self, X_ndim, dimensions, frozen, cov_object):
@@ -1275,7 +1274,7 @@ class TestMultivariateNormal:
         rng = np.random.default_rng(413911473)
         mean = rng.standard_normal(3)
         A = rng.standard_normal((3, 3))
-        cov = np.dot(A, A.transpose())        
+        cov = A @ A.T
 
         X = multivariate_normal(mean, cov)
 
@@ -1301,7 +1300,7 @@ class TestMultivariateNormal:
         rng = np.random.default_rng(413911473)
         mean = rng.standard_normal(3)
         A = rng.standard_normal((3, 3))
-        cov = np.dot(A, A.transpose())        
+        cov = A @ A.T
 
         X = multivariate_normal(mean, cov)
         
