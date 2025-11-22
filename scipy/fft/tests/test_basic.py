@@ -20,13 +20,11 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 # but for C2C transforms like `fft.fft`, the array API standard only mandates
 # that complex dtypes should work, float32/float64 aren't guaranteed to.
 def get_expected_input_dtype(func, xp):
-    if func in [fft.fft, fft.fftn, fft.fft2,
-                fft.ifft, fft.ifftn, fft.ifft2,
-                fft.hfft, fft.hfftn, fft.hfft2,
-                fft.irfft, fft.irfftn, fft.irfft2]:
+    # use __name__ so that `lazy_xp_function` doesn't break things
+    if func.__name__ in ["fft", "fftn", "fft2", "ifft", "ifftn", "ifft2", "hfft",
+                         "hfftn", "hfft2", "irfft", "irfftn", "irfft2"]:
         dtype = xp.complex128
-    elif func in [fft.rfft, fft.rfftn, fft.rfft2,
-                  fft.ihfft, fft.ihfftn, fft.ihfft2]:
+    elif func.__name__ in ["rfft", "rfftn", "rfft2", "ihfft", "ihfftn", "ihfft2"]:
         dtype = xp.float64
     else:
         raise ValueError(f'Unknown FFT function: {func}')
