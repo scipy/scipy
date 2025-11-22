@@ -28,7 +28,7 @@ are arrays.
 
 """
 import numpy as np
-from scipy._lib._array_api import array_namespace, np_compat
+from scipy._lib._array_api import array_namespace, np_compat, is_jax
 
 
 def _skip_if_lti(arg):
@@ -137,9 +137,11 @@ iirpeak_signature = iirnotch_signature
 
 
 def savgol_coeffs_signature(
-    window_length, polyorder, deriv=0, delta=1.0, pos=None, use='conv'
+    window_length, polyorder, deriv=0, delta=1.0, pos=None, use='conv',
+    *, xp=None, device=None
 ):
-    return np
+    return np if xp is None else xp
+
 
 
 def unit_impulse_signature(shape, idx=None, dtype=float):
@@ -246,7 +248,7 @@ def csd_signature(x, y, fs=1.0, window='hann_periodic', *args, **kwds):
     return array_namespace(x, y, _skip_if_str_or_tuple(window))
 
 
-def periodogram_signature(x, fs=1.0, window='boxcar'):
+def periodogram_signature(x, fs=1.0, window='boxcar', *args, **kwds):
     return array_namespace(x, _skip_if_str_or_tuple(window))
 
 
@@ -294,7 +296,10 @@ def deconvolve_signature(signal, divisor):
 
 
 def detrend_signature(data, axis=1, type='linear', bp=0, *args, **kwds):
-    return array_namespace(data, bp)
+    xp = array_namespace(data)
+    # JAX doesn't accept JAX arrays for bp, only ints, lists and NumPy
+    # arrays.
+    return xp if is_jax(xp) else array_namespace(data, bp)
 
 
 def filtfilt_signature(b, a, x, *args, **kwds):
@@ -342,7 +347,7 @@ def firwin2_signature(numtaps, freq, gain, *args, **kwds):
     return array_namespace(freq, gain)
 
 
-def freqs_zpk_signature(z, p, k, worN, *args, **kwds):
+def freqs_zpk_signature(z, p, k, worN=200, *args, **kwds):
     return array_namespace(z, p, worN)
 
 freqz_zpk_signature = freqs_zpk_signature
@@ -351,7 +356,10 @@ freqz_zpk_signature = freqs_zpk_signature
 def freqs_signature(b, a, worN=200, *args, **kwds):
     return array_namespace(b, a, worN)
 
-freqz_signature = freqs_signature
+
+def freqz_signature(b, a=1, worN=512, *args, **kwds):
+    # differs from freqs: `a` has a default value
+    return array_namespace(b, a, worN)
 
 
 def freqz_sos_signature(sos, worN=512, *args, **kwds):
@@ -369,7 +377,7 @@ def group_delay_signature(system, w=512, whole=False, fs=6.283185307179586):
     return array_namespace(*system, w)
 
 
-def hilbert_signature(x, N=None, axis=-1):
+def hilbert_signature(x, *args, **kwds):
     return array_namespace(x)
 
 hilbert2_signature = hilbert_signature

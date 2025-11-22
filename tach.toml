@@ -1,0 +1,255 @@
+exclude = [
+  "scipy/_lib/array_api_compat",
+  "scipy/_lib/array_api_extra",
+  "scipy/_lib/cobyqa",
+  "scipy/_lib/pyprima",
+  "subprojects",
+  "tools",
+  "**/tests",
+]
+
+[[modules]]
+path = "scipy"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy._lib"
+depends_on = ["scipy"]
+
+[[modules]]
+path = "scipy.cluster"
+depends_on = ["scipy._lib", "scipy.cluster.hierarchy", "scipy.cluster.vq"]
+
+[[modules]]
+path = "scipy.cluster.hierarchy"
+depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+
+[[modules]]
+path = "scipy.cluster.vq"
+depends_on = ["scipy._lib", "scipy.cluster", "scipy.spatial.distance"]
+
+[[modules]]
+path = "scipy.constants"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.datasets"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.differentiate"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.fft"
+depends_on = ["scipy._lib", "scipy.special"]
+
+[[modules]]
+path = "scipy.fftpack"
+depends_on = ["scipy._lib", "scipy.fft"]
+
+[[modules]]
+path = "scipy.integrate"
+depends_on = ["scipy._lib", "scipy.interpolate", "scipy.linalg", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.special", "scipy.stats"]
+
+[[modules]]
+path = "scipy.interpolate"
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.lapack", "scipy.optimize", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.spatial.distance", "scipy.special"]
+
+[[modules]]
+path = "scipy.io"
+depends_on = ["scipy._lib", "scipy.io.arff", "scipy.io.matlab", "scipy.io.wavfile", "scipy.sparse"]
+
+[[modules]]
+path = "scipy.io.arff"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.io.matlab"
+depends_on = ["scipy._lib", "scipy.sparse"]
+
+[[modules]]
+path = "scipy.io.wavfile"
+depends_on = []
+
+[[modules]]
+path = "scipy.linalg"
+depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg.blas", "scipy.linalg.lapack", "scipy.sparse", "scipy.sparse.linalg", "scipy.special"]
+
+[[modules]]
+path = "scipy.linalg.blas"
+depends_on = ["scipy.linalg"]
+
+[[modules]]
+path = "scipy.linalg.interpolative"
+depends_on = ["scipy.linalg", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.linalg.lapack"
+depends_on = ["scipy.linalg", "scipy.linalg.blas"]
+
+[[modules]]
+path = "scipy.misc"
+depends_on = []
+
+[[modules]]
+path = "scipy.ndimage"
+depends_on = ["scipy._lib", "scipy.special"]
+
+[[modules]]
+path = "scipy.odr"
+depends_on = ["scipy._lib", "scipy.linalg"]
+
+[[modules]]
+path = "scipy.optimize"
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.linalg.blas", "scipy.linalg.interpolative", "scipy.sparse", "scipy.sparse.linalg", "scipy.spatial", "scipy.special", "scipy.stats.qmc"]
+
+[[modules]]
+path = "scipy.optimize.elementwise"
+depends_on = ["scipy.optimize"]
+
+[[modules]]
+path = "scipy.signal"
+depends_on = ["scipy._lib", "scipy.fft", "scipy.interpolate", "scipy.linalg", "scipy.ndimage", "scipy.optimize", "scipy.signal.windows", "scipy.spatial", "scipy.special", "scipy.stats"]
+
+[[modules]]
+path = "scipy.signal.windows"
+depends_on = ["scipy._lib", "scipy.fft", "scipy.linalg", "scipy.special"]
+
+[[modules]]
+path = "scipy.sparse"
+depends_on = ["scipy", "scipy._lib", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.sparse.csgraph"
+depends_on = ["scipy._lib", "scipy.sparse", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.sparse.linalg"
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.sparse"]
+
+[[modules]]
+path = "scipy.spatial"
+depends_on = ["scipy", "scipy._lib", "scipy.linalg", "scipy.spatial.distance", "scipy.spatial.transform"]
+
+[[modules]]
+path = "scipy.spatial.distance"
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.spatial", "scipy.special"]
+
+[[modules]]
+path = "scipy.spatial.transform"
+depends_on = ["scipy._lib", "scipy.constants", "scipy.interpolate", "scipy.linalg"]
+
+[[modules]]
+path = "scipy.special"
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.optimize.elementwise"]
+
+[[modules]]
+path = "scipy.stats"
+depends_on = [
+    "scipy._lib",
+    "scipy.fft",
+    "scipy.integrate",
+    "scipy.interpolate",
+    "scipy.linalg",
+    "scipy.linalg.blas",
+    "scipy.ndimage",
+    "scipy.optimize",
+    "scipy.sparse",
+    "scipy.sparse.csgraph",
+    "scipy.spatial",
+    "scipy.spatial.distance",
+    "scipy.special",
+    "scipy.stats.contingency",
+    "scipy.stats.distributions",
+    "scipy.stats.mstats",
+    "scipy.stats.qmc",
+]
+
+[[modules]]
+path = "scipy.stats.contingency"
+depends_on = ["scipy._lib", "scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.distributions"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.mstats"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.qmc"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.sampling"
+depends_on = ["scipy.stats"]
+
+### Non-runtime modules
+
+[[modules]]
+path = "scipy.conftest"
+depends_on = ["scipy._lib", "scipy.integrate"]
+
+[[modules]]
+path = "scipy.special._precompute"
+depends_on = ["scipy.special", "scipy.optimize", "scipy.integrate"]
+
+###
+
+[external]
+exclude = [
+    "scipy", # https://github.com/DetachHead/dtach/issues/35
+    # implicit relative imports
+    "_registry", # scipy/datasets/_download_all.py
+    "_wrappers_common", # scipy/_build_utils/_generate_blas_wrapper.py
+    "convert", # scipy/special/utils/datafunc.py
+    # conditional imports
+    "annotationlib", # conditional stdlib for backward compatibility of <3.14
+    # optional dependencies
+    "Cython",
+    "array-api-compat",
+    "array-api-extra",
+    "array_api_strict",
+    "asv_runner",
+    "bs4",
+    "cffi",
+    "cupy",
+    "cupyx",
+    "cython",
+    "dask",
+    "docutils",
+    "hypothesis",
+    "intersphinx_registry",
+    "jax",
+    "matplotlib",
+    "mpmath",
+    "ndonnx",
+    "numpydoc",
+    "optiprofiler",
+    "packaging",
+    "pandas",
+    "platformdirs",
+    "pkg_resources",
+    "pooch",
+    "psutil",
+    "pyfftw",
+    "pytest",
+    "pytest_fail_slow",
+    "pytest_run_parallel",
+    "pytest_timeout",
+    "scikits",
+    "scipy_doctest",
+    "sksparse",
+    "sparse",
+    "sphinx",
+    "sympy",
+    "tabulate",
+    "tempita",
+    "threadpoolctl",
+    "tomli",
+    "torch",
+    "uarray",
+    "urllib3",
+]

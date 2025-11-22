@@ -2,18 +2,22 @@ import pytest
 import numpy as np
 
 from scipy import stats
+from scipy.stats._quantile import _xp_searchsorted
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
     is_torch,
+    is_jax,
     make_xp_test_case,
     SCIPY_ARRAY_API,
+    xp_size,
 )
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+lazy_xp_modules = [stats]
 
 @_apply_over_batch(('x', 1), ('p', 1))
 def quantile_reference_last_axis(x, p, nan_policy, method):
@@ -29,7 +33,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
         if nan_policy == 'propagate' and np.any(np.isnan(x)):
             res[:] = np.nan
     else:
-        res = np.quantile(x, p)
+        res = np.quantile(x, p, method=method)
     res[p_mask] = np.nan
     return res
 
@@ -70,9 +74,10 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, p, axis=2)
 
-        message = "The input contains nan values"
-        with pytest.raises(ValueError, match=message):
-            stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
+        if not is_jax(xp):  # no data-dependent input validation for lazy arrays
+            message = "The input contains nan values"
+            with pytest.raises(ValueError, match=message):
+                stats.quantile(xp.asarray([xp.nan, 1, 2]), p, nan_policy='raise')
 
         message = "method` must be one of..."
         with pytest.raises(ValueError, match=message):
@@ -89,7 +94,8 @@ class TestQuantile:
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
-          'median_unbiased', 'normal_unbiased', 'weibull'])
+          'median_unbiased', 'normal_unbiased', 'weibull',
+          '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
           ((10, 2), None, 0), ((10, 2), None, 0),])
@@ -98,20 +104,23 @@ class TestQuantile:
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        ref = np.quantile(x, p, method=method, axis=axis)
-
+        ref = np.quantile(x, p, axis=axis,
+                          method=method[1:] if method.startswith('_') else method)
         x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
         res = stats.quantile(x, p, method=method, axis=axis)
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
-    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy', 'jax.numpy'])
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
+        if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
+            pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)
         shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)
@@ -191,14 +200,63 @@ class TestQuantile:
         assert res.shape == tuple(out_shape)
 
     @pytest.mark.parametrize('method',
-        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'])
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+         '_lower', '_higher', '_midpoint', '_nearest'])
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
         if method == 'closest_observation' and np.__version__ < '2.0.1':
             pytest.skip('Bug in np.quantile (numpy/numpy#26656) fixed in 2.0.1')
         x = np.arange(8., dtype=np.float64)
-        p = np.arange(0, 1.0625, 0.0625)
+        p = np.arange(0, 1.03125, 0.03125)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
-        ref = np.quantile(x, p, method=method)
+        ref = np.quantile(x, p, method=method[1:] if method.startswith('_') else method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
+
+
+@_apply_over_batch(('a', 1), ('v', 1))
+def np_searchsorted(a, v, side):
+    return np.searchsorted(a, v, side=side)
+
+
+@make_xp_test_case(_xp_searchsorted)
+class Test_XPSearchsorted:
+    @pytest.mark.parametrize('side', ['left', 'right'])
+    @pytest.mark.parametrize('ties', [False, True])
+    @pytest.mark.parametrize('shape', [0, 1, 2, 10, 11, 1000, 10001,
+                                       (2, 0), (0, 2), (2, 10), (2, 3, 11)])
+    @pytest.mark.parametrize('nans_x', [False, True])
+    @pytest.mark.parametrize('infs_x', [False, True])
+    def test_nd(self, side, ties, shape, nans_x, infs_x, xp):
+        if nans_x and is_torch(xp):
+            pytest.skip('torch sorts NaNs differently')
+        rng = np.random.default_rng(945298725498274853)
+        if ties:
+            x = rng.integers(5, size=shape)
+        else:
+            x = rng.random(shape)
+        # float32 is to accommodate JAX - nextafter with `float64` is too small?
+        x = np.asarray(x, dtype=np.float32)
+        xr = np.nextafter(x, np.inf)
+        xl = np.nextafter(x, -np.inf)
+        x_ = np.asarray([-np.inf, np.inf, np.nan])
+        x_ = np.broadcast_to(x_, x.shape[:-1] + (3,))
+        y = rng.permuted(np.concatenate((xl, x, xr, x_), axis=-1), axis=-1)
+        if nans_x:
+            mask = rng.random(shape) < 0.1
+            x[mask] = np.nan
+        if infs_x:
+            mask = rng.random(shape) < 0.1
+            x[mask] = -np.inf
+            mask = rng.random(shape) > 0.9
+            x[mask] = np.inf
+        x = np.sort(x, axis=-1)
+        x, y = np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64)
+        xp_default_int = xp.asarray(1).dtype
+        if xp_size(x) == 0 and x.ndim > 0 and x.shape[-1] != 0:
+            ref = xp.empty(x.shape[:-1] + (y.shape[-1],), dtype=xp_default_int)
+        else:
+            ref = xp.asarray(np_searchsorted(x, y, side=side), dtype=xp_default_int)
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = _xp_searchsorted(x, y, side=side)
+        xp_assert_equal(res, ref)
