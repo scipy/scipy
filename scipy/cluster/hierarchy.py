@@ -1052,7 +1052,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     def cy_linkage(y, validate):
         if validate and not np.all(np.isfinite(y)):
             raise ValueError("The condensed distance matrix must contain only "
-                            "finite values.")            
+                            "finite values.")
 
         if method == 'single':
             return _hierarchy.mst_single_linkage(y, n)
@@ -1693,12 +1693,12 @@ def cophenet(Z, Y=None):
         zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
         _hierarchy.cophenetic_distances(Z, zz, n)
         return zz
-    
+
     n = Z.shape[0] + 1
     zz = xpx.lazy_apply(cy_cophenet, Z, validate=is_lazy_array(Z),
                         shape=((n * (n-1)) // 2, ), dtype=xp.float64,
                         as_numpy=True, xp=xp)
-                        
+
     if Y is None:
         return zz
 
@@ -3125,6 +3125,122 @@ def set_link_color_palette(palette):
     global _link_line_colors
     _link_line_colors = palette
 
+def _is_permutation(l, n, xp):
+    # if list l is a permutation of numbers from 0 to n-1
+    return l.shape[0] == n and xpx.setdiff1d(xp.arange(n), l, xp=xp).shape[0] == 0
+
+
+def _reorder_leaves(Z, leaves_order, xp):
+    """"
+    Given a tree T, encoded az Z, builds a tree F
+    and its encoding new_Z s.t. leaves(F) == leaves_order
+
+    Parameters
+    ----------
+    Z : array
+        The linkage matrix encoding the hierarchical clustering to
+        render as a dendrogram. See the ``linkage`` function for more
+        information on the format of ``Z``.
+    leaves_order : 1-D array
+        1-D array of length ``Z.shape[0] + 1``, which specifies the desired
+        order of leaves in a new dendrogram (encoded by Z)
+
+    Returns
+    -------
+    new_Z : the linkage matrix Z, reordered in a way that leaves of the
+            dendrogram, encoded by ``new_Z`` correspond to ``leaves_order``
+
+    Raises
+    ------
+    ValueError
+        If it is not possible to reorder linkage matrix in a desired way
+    """
+    # Do simple parameter corectness check first
+    if not _is_permutation(leaves_order, Z.shape[0] + 1, xp=xp):
+        raise ValueError("provided leaves order should be a permutation "
+                         "of indices of the original leaves of the dendrogram")
+
+    #  Variables:
+    #  ch[i] = children of node (n+i) in T
+    #  p - array of parents in tree T
+    #  height[i] is a value of Z[i][3] e.g. cost of creating node (n+i)
+    #  num_leaves[i] = number of leaves of a subtree rooted in a node i in T
+
+    n = Z.shape[0] + 1
+    ch = xp.zeros((n - 1, 2), dtype=xp.int32)
+    p = xp.zeros(2 * n - 1, dtype=xp.int32)
+    new_Z = xp.zeros((n - 1, 4), dtype=xp.float64)
+    height = xp.zeros(n - 1, dtype=xp.float64)
+    num_leaves = xp.ones(2 * n - 1)
+    for i in range(n - 1):
+        xpx.at(ch)[i, ...].set(
+            xp.asarray([int(Z[i, ...][0]), int(Z[i, ...][1])], dtype=xp.int32)
+        )
+        xpx.at(p)[int(Z[i, 0])].set(i + n)
+        xpx.at(p)[int(Z[i, 1])].set(i + n)
+        xpx.at(height)[i].set(Z[i, ...][2])
+        xpx.at(num_leaves)[n+i].set(
+            num_leaves[int(Z[i, ...][0])] + num_leaves[int(Z[i, ...][1])]
+        )
+
+    stack = []
+    cnt = 0
+    new_node_number = n
+    l_pointer = 0          # goes through leaves_order
+    v = int(leaves_order[0])    # v is a vertex which goes through T
+    color = xp.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
+    # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
+    _left = -1
+    _right = -1
+    while l_pointer <= n:
+        if v < n:  # v is a leaf
+            xpx.at(color)[v].set(1)   # tiny trick
+        if color[v] == 0:  # left subtree of v in F must've been already processed by now  # noqa: E501
+            if not(color[_left] == 2 and color[_right] == 0):
+                raise ValueError("Provided permutation results in a crossing!")
+            color[v] = 1
+            l_pointer += 1
+            v = int(leaves_order[l_pointer])
+            continue
+        # otherwise color[v] == 1
+        if v >= n and not(color[_left] == 2 and color[_right] == 2):
+            raise ValueError("Provided permutation results in a crossing!")
+        color[v] = 2
+        if v == 2*n-2:
+            break
+        #  both subtrees should be OK
+        if color[p[v]] == 0:  # v is the left son in F
+            new_node = v
+            if v >= n:
+                new_node = new_node_number
+                new_node_number += 1
+            stack.append(new_node)
+            _left = v
+            v = int(p[v])
+            _temp = list(ch[v - n, ...])
+            _temp.remove(_left)
+            _right = _temp[0]
+            continue
+        else:  # v is the right son in F
+            left_pair = stack.pop()
+            if v >= n:
+                new_Z[cnt, ...] = xp.asarray(
+                    [left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]]
+                )
+                new_node_number += 1
+            else:
+                new_Z[cnt, ...] = xp.asarray(
+                    [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
+                )
+            cnt += 1
+            _right = v
+            v = int(p[v])
+            _temp = list(ch[v - n, ...])
+            _temp.remove(_right)
+            _left = _temp[0]
+            continue
+    return new_Z
+
 
 @xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
@@ -3133,7 +3249,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, leaf_font_size=None,
                leaf_rotation=None, leaf_label_func=None,
                show_contracted=False, link_color_func=None, ax=None,
-               above_threshold_color='C0'):
+               above_threshold_color='C0', leaves_order=None):
     """
     Plot the hierarchical clustering as a dendrogram.
 
@@ -3325,6 +3441,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     above_threshold_color : str, optional
         This matplotlib color string sets the color of the links above the
         color_threshold. The default is ``'C0'``.
+    leaves_order : iterable, optional
+        Plots the leaves in the order specified by a vector of
+        original observation indices. Indices should start from 0.
+        If the vector contains duplicates or results in a crossing, an exception
+        will be thrown. Passing None orders leaf nodes based on the order they
+        appear in the pre-order traversal.
 
     Returns
     -------
@@ -3392,18 +3514,22 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     >>> hierarchy.set_link_color_palette(None)  # reset to default after use
     >>> plt.show()
 
+    An example with custom leaves ordering:
+
+    >>> from scipy.cluster import hierarchy
+    >>> X = [[0,0], [0,1], [0,4], [2,4], [6,3],[7,3], [8,3]]
+    >>> Z = hierarchy.linkage(X, method = 'single')
+
+    >>> fig, axes = plt.subplots(1, 2, figsize = (8, 3))
+    >>> dn1 = hierarchy.dendrogram(Z, ax = axes[0])
+    >>> dn2 = hierarchy.dendrogram(Z, ax = axes[1], leaves_order = [3,2,1,0,6,4,5])
+    >>> plt.show()
     """
-    # This feature was thought about but never implemented (still useful?):
-    #
-    #         ... = dendrogram(..., leaves_order=None)
-    #
-    #         Plots the leaves in the order specified by a vector of
-    #         original observation indices. If the vector contains duplicates
-    #         or results in a crossing, an exception will be thrown. Passing
-    #         None orders leaf nodes based on the order they appear in the
-    #         pre-order traversal.
-    xp = array_namespace(Z)
+    xp = array_namespace(Z, leaves_order)
     Z = _asarray(Z, order='C', xp=xp)
+    if leaves_order is not None:
+        leaves_order = _asarray(leaves_order, dtype=xp.int64, xp=xp)
+        Z = _reorder_leaves(Z, leaves_order, xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
@@ -4075,7 +4201,7 @@ def maxinconsts(Z, R):
     if Z.shape[0] != R.shape[0]:
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
-    
+
     def cy_maxinconsts(Z, R, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
