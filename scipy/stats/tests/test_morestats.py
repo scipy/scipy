@@ -1194,10 +1194,11 @@ def mood_cases_with_ties():
         yield x, y, 'less', *expected_results[si]
 
 
+@make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
-    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:
         DATA myData;
@@ -1225,10 +1226,12 @@ class TestMood:
             title "Data for above results";
           run;
         """
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
-        assert_allclose(stat_expect, statistic, atol=1e-16)
-        assert_allclose(p_expect, pvalue, atol=1e-16)
+        xp_assert_close(statistic, xp.asarray(stat_expect), atol=1e-16)
+        xp_assert_close(pvalue, xp.asarray(p_expect), atol=1e-16)
 
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative, expected",
                              [('two-sided', (1.019938533549930,
                                              .3077576129778760)),
@@ -1236,26 +1239,34 @@ class TestMood:
                                         1 - .1538788064889380)),
                               ('greater', (1.019938533549930,
                                            .1538788064889380))])
-    def test_against_SAS_2(self, alternative, expected):
+    def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
         y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
              96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         res = stats.mood(x, y, alternative=alternative)
-        assert_allclose(res, expected)
+        xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
 
-    def test_mood_order_of_args(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_order_of_args(self, xp):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
         rng = np.random.default_rng(4058827756)
-        x1 = rng.standard_normal((10, 1))
-        x2 = rng.standard_normal((15, 1))
+        x1 = xp.asarray(rng.standard_normal((10, 1)))
+        x2 = xp.asarray(rng.standard_normal((15, 1)))
         z1, p1 = stats.mood(x1, x2)
         z2, p2 = stats.mood(x2, x1)
-        assert_array_almost_equal([z1, p1], [-z2, p2])
+        xp_assert_close(z2, -z1)
+        xp_assert_close(p2, p1)
 
-    def test_mood_with_axis_none(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_with_axis_none(self, xp):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
               1.59528080213779, 0.329507771815361, -0.820468384118015,
@@ -1276,14 +1287,16 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1).reshape((10,2))
-        x2 = np.array(x2).reshape((15,2))
-        assert_array_almost_equal(stats.mood(x1, x2, axis=None),
-                                  [-1.31716607555, 0.18778296257])
+        x1 = xp.reshape(xp.asarray(x1), (10, 2))
+        x2 = xp.reshape(xp.asarray(x2), (15, 2))
+        res = stats.mood(x1, x2, axis=None)
+        xp_assert_close(res.statistic, xp.asarray(-1.31716607555))
+        xp_assert_close(res.pvalue, xp.asarray(0.18778296257))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
-    def test_mood_2d(self, rng_method, args):
+    def test_mood_2d(self, rng_method, args, xp):
         # Test if the results of mood test in 2-D vectorized call are consistent
         # result when looping over the slices.
         ny = 5
@@ -1291,33 +1304,38 @@ class TestMood:
         rng_method = getattr(rng, rng_method)
         x1 = rng_method(*args, size=(10, ny))
         x2 = rng_method(*args, size=(15, ny))
-        z_vectest, pval_vectest = stats.mood(x1, x2)
+        dtype = xp.float64
+        res = stats.mood(xp.asarray(x1, dtype=dtype), xp.asarray(x2, dtype=dtype))
 
         for j in range(ny):
-            assert_array_almost_equal([z_vectest[j], pval_vectest[j]],
-                                      stats.mood(x1[:, j], x2[:, j]))
+            ref = stats.mood(x1[:, j], x2[:, j])
+            xp_assert_close(res.statistic[j], xp.asarray(ref.statistic))
+            xp_assert_close(res.pvalue[j], xp.asarray(ref.pvalue))
 
         # inverse order of dimensions
         x1 = x1.transpose()
         x2 = x2.transpose()
-        z_vectest, pval_vectest = stats.mood(x1, x2, axis=1)
+        res = stats.mood(xp.asarray(x1, dtype=dtype), xp.asarray(x2, dtype=dtype),
+                         axis=1)
 
         for i in range(ny):
             # check axis handling is self consistent
-            assert_array_almost_equal([z_vectest[i], pval_vectest[i]],
-                                      stats.mood(x1[i, :], x2[i, :]))
+            ref = stats.mood(x1[i, :], x2[i, :])
+            xp_assert_close(res.statistic[i], xp.asarray(ref.statistic))
+            xp_assert_close(res.pvalue[i], xp.asarray(ref.pvalue))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
-    def test_mood_3d(self, rng_method, args):
+    def test_mood_3d(self, rng_method, args, xp):
         shape = (10, 5, 6)
         rng = np.random.default_rng(3602349075)
         rng_method = getattr(rng, rng_method)
-        x1 = rng_method(*args, size=shape)
-        x2 = rng_method(*args, size=shape)
+        x1 = xp.asarray(rng_method(*args, size=shape))
+        x2 = xp.asarray(rng_method(*args, size=shape))
 
         for axis in range(3):
-            z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
+            res = stats.mood(x1, x2, axis=axis)
             # Tests that result for 3-D arrays is equal to that for the
             # same calculation on a set of 1-D arrays taken from the
             # 3-D array
@@ -1334,43 +1352,40 @@ class TestMood:
                         slice1 = x1[i, j, :]
                         slice2 = x2[i, j, :]
 
-                    assert_array_almost_equal([z_vectest[i, j],
-                                               pval_vectest[i, j]],
-                                              stats.mood(slice1, slice2))
+                    ref = stats.mood(slice1, slice2)
+                    xp_assert_close(res.statistic[i, j], ref.statistic)
+                    xp_assert_close(res.pvalue[i, j], ref.pvalue)
 
-    def test_mood_bad_arg(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_bad_arg(self, xp):
         # Warns when the sum of the lengths of the args is less than 3
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.mood([1], [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = stats.mood(xp.asarray([1.]), xp.asarray([]))
+            xp_assert_equal(res.statistic, xp.asarray(np.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_mood_alternative(self):
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_mood_alternative(self, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
         x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
         y = stats.norm.rvs(scale=1.25, size=100, random_state=rng)
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
 
         stat1, p1 = stats.mood(x, y, alternative='two-sided')
         stat2, p2 = stats.mood(x, y, alternative='less')
         stat3, p3 = stats.mood(x, y, alternative='greater')
 
         assert stat1 == stat2 == stat3
-        assert_allclose(p1, 0, atol=1e-7)
-        assert_allclose(p2, p1/2)
-        assert_allclose(p3, 1 - p1/2)
+        xp_assert_close(p1, xp.asarray(0., dtype=dtype), atol=1e-7)
+        xp_assert_close(p2, xp.asarray(p1/2, dtype=dtype))
+        xp_assert_close(p3, xp.asarray(1 - p1/2, dtype=dtype))
 
         with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
-
-    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
-    def test_result(self, alternative):
-        rng = np.random.default_rng(265827767938813079281100964083953437622)
-        x1 = rng.standard_normal((10, 1))
-        x2 = rng.standard_normal((15, 1))
-
-        res = stats.mood(x1, x2, alternative=alternative)
-        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
