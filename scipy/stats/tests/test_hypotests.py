@@ -3,8 +3,7 @@ from itertools import product
 import numpy as np
 import functools
 import pytest
-from numpy.testing import (assert_, assert_equal, assert_allclose,
-                           assert_almost_equal)  # avoid new uses
+from numpy.testing import assert_, assert_equal, assert_allclose
 from pytest import raises as assert_raises
 
 from scipy import stats, special
@@ -14,7 +13,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
-from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
@@ -23,31 +21,36 @@ from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 
+@make_xp_test_case(epps_singleton_2samp)
 class TestEppsSingleton:
-    def test_statistic_1(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35,
-                      2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71,
-                      4.29, 5.00, 7.74, 8.38, 8.60])
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35,
+                        2.69, 0.46, -0.94, -0.37, 12.07], dtype=dtype)
+        y = xp.asarray([-1.15, -0.15, 2.48, 3.25, 3.71,
+                     4.29, 5.00, 7.74, 8.38, 8.60], dtype=dtype)
         w, p = epps_singleton_2samp(x, y)
-        assert_almost_equal(w, 15.14, decimal=1)
-        assert_almost_equal(p, 0.00442, decimal=3)
+        xp_assert_close(w, xp.asarray(15.14, dtype=dtype), atol=0.03)
+        xp_assert_close(p, xp.asarray(0.00442, dtype=dtype), atol=0.0001)
 
-    def test_statistic_2(self):
+    def test_statistic_2(self, xp):
         # second example in Goerg & Kaiser, again not a perfect match
-        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
-                      10, 10, 10))
-        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
-                      5, 8, 10))
+        x = xp.asarray([0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4,
+                        5, 5, 5, 5, 6, 10, 10, 10, 10])
+        y = xp.asarray([10, 4, 0, 5, 10, 10, 0, 5, 6, 7,
+                        10, 3, 1, 7, 0, 8, 1, 5, 8, 10])
         w, p = epps_singleton_2samp(x, y)
-        assert_allclose(w, 8.900, atol=0.001)
-        assert_almost_equal(p, 0.06364, decimal=3)
+        xp_assert_close(w, xp.asarray(8.900), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.06364), atol=5e-5)
 
-    def test_epps_singleton_array_like(self):
+    def test_epps_singleton_array_like(self):  # only relevant for NumPy
         x, y = np.arange(30), np.arange(28)
 
         w1, p1 = epps_singleton_2samp(list(x), list(y))
@@ -57,15 +60,15 @@ class TestEppsSingleton:
         assert_(w1 == w2 == w3)
         assert_(p1 == p2 == p3)
 
-    def test_epps_singleton_size(self):
+    def test_epps_singleton_size(self, xp):
         # warns if sample contains fewer than 5 elements
-        x, y = (1, 2, 3, 4), np.arange(10)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        x, y = xp.asarray([1, 2, 3, 4]), xp.arange(10)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = epps_singleton_2samp(x, y)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_epps_singleton_nonfinite(self):
+    def test_epps_singleton_nonfinite(self, xp):
         rng = np.random.default_rng(83249872384543)
         x = rng.random(size=(10, 11))
         y = rng.random(size=(10, 12))
@@ -78,16 +81,11 @@ class TestEppsSingleton:
         x[i[0], 0] = np.nan
         x[i[1], 1] = np.inf
         y[i[2], 2] = -np.inf
+
+        x, y = xp.asarray(x), xp.asarray(y)
         w_res, p_res = epps_singleton_2samp(x, y, axis=-1)
-
-        assert_allclose(w_res, w_ref)
-        assert_allclose(p_res, p_ref)
-
-    def test_names(self):
-        x, y = np.arange(20), np.arange(30)
-        res = epps_singleton_2samp(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        xp_assert_close(w_res, xp.asarray(w_ref))
+        xp_assert_close(p_res, xp.asarray(p_ref))
 
 
 @make_xp_test_case(stats.cramervonmises)
