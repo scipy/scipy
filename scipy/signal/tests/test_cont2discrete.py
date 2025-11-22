@@ -35,7 +35,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cc, cd)
         assert_array_almost_equal(dc, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
     def test_foh(self, xp):
         ac = xp.eye(2)
@@ -58,7 +58,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
     def test_impulse(self, xp):
         ac = xp.eye(2)
@@ -80,7 +80,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
     def test_gbt(self, xp):
         ac = xp.eye(2)
@@ -130,7 +130,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
     def test_backward_diff(self, xp):
         ac = xp.eye(2)
@@ -181,7 +181,7 @@ class TestC2D:
         assert_array_almost_equal(bd_truth, bd)
         assert_array_almost_equal(cd_truth, cd)
         assert_array_almost_equal(dd_truth, dd)
-        np.testing.assert_almost_equal(dt_requested, dt)
+        assert math.isclose(dt, dt_requested, abs_tol=1e-14)
 
         # Same continuous system again, but change sampling rate
 
