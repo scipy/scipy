@@ -28,7 +28,7 @@ are arrays.
 
 """
 import numpy as np
-from scipy._lib._array_api import array_namespace, np_compat
+from scipy._lib._array_api import array_namespace, np_compat, is_jax
 
 
 def _skip_if_lti(arg):
@@ -294,7 +294,10 @@ def deconvolve_signature(signal, divisor):
 
 
 def detrend_signature(data, axis=1, type='linear', bp=0, *args, **kwds):
-    return array_namespace(data, bp)
+    xp = array_namespace(data)
+    # JAX doesn't accept JAX arrays for bp, only ints, lists and NumPy
+    # arrays.
+    return xp if is_jax(xp) else array_namespace(data, bp)
 
 
 def filtfilt_signature(b, a, x, *args, **kwds):
