@@ -270,7 +270,7 @@ class BatchFloaterHormann:
         self._axis = axis
 
     def __call__(self, x):
-        y = [intep(x) for intep in self._interps]
+        y = [interp(x) for interp in self._interps]
         y = np.reshape(y, self._batch_shape + x.shape)
         return np.moveaxis(y, -1, self._axis) if x.shape else y
 
