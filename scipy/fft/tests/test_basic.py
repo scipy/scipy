@@ -8,7 +8,8 @@ from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy._lib._array_api import (
-    is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case
+    is_numpy, xp_size, xp_assert_close, xp_assert_equal, make_xp_test_case,
+    make_xp_pytest_param
 )
 
 lazy_xp_modules = [fft]
@@ -253,18 +254,22 @@ class TestFFT:
             tr_op = xp.permute_dims(op(x, axes=a), axes=a)
             xp_assert_close(op_tr, tr_op)
 
-    @make_xp_test_case(fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn)
-    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
+    @pytest.mark.parametrize("op", [make_xp_pytest_param(fft.fftn),
+                                    make_xp_pytest_param(fft.ifftn),
+                                    make_xp_pytest_param(fft.rfftn),
+                                    make_xp_pytest_param(fft.irfftn)])
     def test_axes_standard(self, op, xp):
         self._check_axes(op, xp)
 
-    @make_xp_test_case(fft.hfftn, fft.ihfftn)
-    @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
+    @pytest.mark.parametrize("op", [make_xp_pytest_param(fft.hfftn),
+                                    make_xp_pytest_param(fft.ihfftn)])
     def test_axes_non_standard(self, op, xp):
         self._check_axes(op, xp)
 
-    @make_xp_test_case(fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn)
-    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
+    @pytest.mark.parametrize("op", [make_xp_pytest_param(fft.fftn),
+                                    make_xp_pytest_param(fft.ifftn),
+                                    make_xp_pytest_param(fft.rfftn),
+                                    make_xp_pytest_param(fft.irfftn)])
     def test_axes_subset_with_shape_standard(self, op, xp):
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
@@ -281,10 +286,14 @@ class TestFFT:
                                          axes=a)
             xp_assert_close(op_tr, tr_op)
 
-    @make_xp_test_case(fft.fft2, fft.ifft2, fft.rfft2, fft.irfft2, fft.hfft2,
-                       fft.ihfft2, fft.hfftn, fft.ihfftn)
-    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2, fft.rfft2, fft.irfft2,
-                                    fft.hfft2, fft.ihfft2, fft.hfftn, fft.ihfftn])
+    @pytest.mark.parametrize("op", [make_xp_pytest_param(fft.fft2),
+                                    make_xp_pytest_param(fft.ifft2),
+                                    make_xp_pytest_param(fft.rfft2),
+                                    make_xp_pytest_param(fft.irfft2),
+                                    make_xp_pytest_param(fft.hfft2),
+                                    make_xp_pytest_param(fft.ihfft2),
+                                    make_xp_pytest_param(fft.hfftn),
+                                    make_xp_pytest_param(fft.ihfftn)])
     def test_axes_subset_with_shape_non_standard(self, op, xp):
         dtype = get_expected_input_dtype(op, xp)
         x = xp.asarray(random((16, 8, 4)), dtype=dtype)
@@ -496,11 +505,16 @@ class TestIRFFTN:
         # Should not raise error
         fft.irfftn(a, axes=axes)
 
-@make_xp_test_case(fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
-                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft)
-@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
-                                  fft.fftn, fft.ifftn,
-                                  fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(fft.fft),
+                                  make_xp_pytest_param(fft.ifft),
+                                  make_xp_pytest_param(fft.rfft),
+                                  make_xp_pytest_param(fft.irfft),
+                                  make_xp_pytest_param(fft.fftn),
+                                  make_xp_pytest_param(fft.ifftn),
+                                  make_xp_pytest_param(fft.rfftn),
+                                  make_xp_pytest_param(fft.irfftn),
+                                  make_xp_pytest_param(fft.hfft),
+                                  make_xp_pytest_param(fft.ihfft)])
 def test_non_standard_params(func, xp):
     if func in [fft.rfft, fft.rfftn, fft.ihfft]:
         dtype = xp.float64
@@ -520,11 +534,14 @@ def test_non_standard_params(func, xp):
     # but should be tested if it comes into use
 
 
-@make_xp_test_case(fft.fft, fft.ifft, fft.irfft, fft.fftn, fft.ifftn, fft.irfftn,
-                   fft.hfft)
 @pytest.mark.parametrize("dtype", ['float32', 'float64'])
-@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.irfft, fft.fftn, fft.ifftn,
-                                  fft.irfftn, fft.hfft,])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(fft.fft),
+                                  make_xp_pytest_param(fft.ifft),
+                                  make_xp_pytest_param(fft.irfft),
+                                  make_xp_pytest_param(fft.fftn),
+                                  make_xp_pytest_param(fft.ifftn),
+                                  make_xp_pytest_param(fft.irfftn),
+                                  make_xp_pytest_param(fft.hfft)])
 def test_real_input(func, dtype, xp):
     x = xp.asarray([1, 2, 3], dtype=getattr(xp, dtype))
     # func(x) should not raise an exception
