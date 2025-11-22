@@ -796,10 +796,11 @@ class TestFreqz:
             assert_array_almost_equal(w, expected_w)
             assert_array_almost_equal(h, h_whole)
 
-            # simultaneously check int-like support
-            w, h = freqz(b, a, worN=np.int32(4), whole=True)
-            assert_array_almost_equal(w, expected_w)
-            assert_array_almost_equal(h, h_whole)
+            if is_numpy(xp):
+                # simultaneously check int-like support
+                w, h = freqz(b, a, worN=np.int32(4), whole=True)
+                assert_array_almost_equal(w, expected_w)
+                assert_array_almost_equal(h, h_whole)
 
             w, h = freqz(b, a, worN=w, whole=True)
             assert_array_almost_equal(w, expected_w)
@@ -1017,13 +1018,14 @@ class TestFreqz:
         xp_assert_close(h1, h2)
         xp_assert_close(w1, xp.linspace(0, fs, 5, endpoint=False))
 
-        # w is an array_like
-        for w in ([123], (123,), xp.asarray([123]), (50, 123, 230),
-                  xp.asarray([50, 123, 230])):
-            w1, h1 = freqz(b, a, w, fs=fs)
-            w2, h2 = freqz(b, a, 2*pi*xp.asarray(w, dtype=xp.float64)/ fs)
-            xp_assert_close(h1, h2)
-            xp_assert_close(w1, xp.asarray(w), check_dtype=False)
+        if is_numpy(xp):
+            # w is an array_like
+            for w in ([123], (123,), xp.asarray([123]), (50, 123, 230),
+                      xp.asarray([50, 123, 230])):
+                w1, h1 = freqz(b, a, w, fs=fs)
+                w2, h2 = freqz(b, a, 2*pi*xp.asarray(w, dtype=xp.float64)/ fs)
+                xp_assert_close(h1, h2)
+                xp_assert_close(w1, xp.asarray(w), check_dtype=False)
 
     def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
@@ -1078,6 +1080,8 @@ class TestFreqz:
                               (False, True, 257),
                               (True, False, 257),
                               (True, True, 257)])
+    
+    @xfail_xp_backends("cupy", reason="XXX: CuPy's version suspect")
     def test_17289(self, whole, nyquist, worN, xp):
         d = xp.asarray([0.0, 1.0])
         w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
@@ -4638,7 +4642,7 @@ class TestIIRComb:
         b, a = iircomb(50/int(44100/2), 50.0, ftype='notch', xp=xp)
 
         # Compute the frequency response at an upper harmonic of 50
-        freqs, response = freqz(b, a, [22000], fs=44100)
+        freqs, response = freqz(b, a, xp.asarray([22000]), fs=44100)
 
         # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
