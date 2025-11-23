@@ -20,6 +20,7 @@ from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
+from scipy.stats._ansari_swilk_statistics import swilk
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
@@ -250,6 +251,21 @@ class TestShapiro:
         res = stats.shapiro(x)
         assert_allclose(res.statistic, 0.84658770645509)
         assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
+
+    @pytest.mark.parametrize('n', [3, 4, 5, 8, 11, 20, 100, 200, 500, 1000, 2000, 5000])
+    def test_against_as181(self, n):
+        rng = np.random.default_rng(n)
+        x = rng.standard_normal(n)
+
+        res = stats.shapiro(x)
+
+        a = np.zeros(n // 2, dtype=np.float64)
+        y = np.sort(x) - x[n // 2]
+        ref_statistic, ref_pvalue, _ = swilk(y, a, 0)
+
+        rtol = 5e-7 if n >= 2000 else 1e-7
+        assert_allclose(res.statistic, ref_statistic, rtol=rtol)
+        assert_allclose(res.pvalue, ref_pvalue, rtol=rtol)
 
 
 class TestAnderson:
