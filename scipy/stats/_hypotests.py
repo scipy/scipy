@@ -127,8 +127,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # values with a harmless one, and replace results with NaN at the end.
     i_x = ~xp.isfinite(x)
     i_y = ~xp.isfinite(y)
-    # x = xpx.at(x)[i_x].set(1.)  # Can use this when data-apis/array-api-extra#506
-    # y = xpx.at(y)[i_y].set(1.)  # is resolved
+    # Ideally we would avoid copying all data here; see
+    # discussion in data-apis/array-api-extra#506.
     x = xp.where(i_x, 1., x)
     y = xp.where(i_y, 1., y)
     invalid_result = xp.any(i_x, axis=-1) | xp.any(i_y, axis=-1)
