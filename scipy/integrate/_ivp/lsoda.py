@@ -131,7 +131,7 @@ class LSODA(OdeSolver):
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
-        super().__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized, tcrit=tcrit)
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
@@ -155,8 +155,6 @@ class LSODA(OdeSolver):
                               min_step=min_step, first_step=first_step,
                               lband=lband, uband=uband)
         solver.set_initial_value(y0, t0)
-
-        self._initialize_tcrit(t0, tcrit, self.t_bound)
 
         # Inject first critical point into rwork array as needed for itask=5.
         solver._integrator.rwork[0] = self.tcrit[0]
@@ -230,41 +228,6 @@ class LSODA(OdeSolver):
 
         return LsodaDenseOutput(self.t_old, self.t, h, order, yh)
 
-    def _initialize_tcrit(self, t0, tcrit, t_bound):
-        if tcrit is None:
-            self.tcrit = np.asarray([t_bound])
-            return
-        tcrit = np.asarray(tcrit)
-        if self.direction == -1:
-            # integrate towards negative infinity
-            max_t = t0
-            min_t = t_bound
-        elif self.direction == 1:
-            # integrate towards positive infinity
-            max_t = t_bound
-            min_t = t0
-        else:
-            # should be unreachable keep?
-            raise ValueError("Unexpected direction")
-
-        if np.any(tcrit >= max_t) or np.any(tcrit <= min_t):
-            raise ValueError(
-                f"tcrit inputs must be within timespan:"
-                f" got {tcrit} with bounds [{min_t}, {max_t}]"
-            )
-        self.tcrit = np.append(tcrit, t_bound)
-
-    def _find_next_tcrit(self):
-        # if critical point reached, remove from the list
-        # don't remove last point, t_bound
-        if self.tcrit.size == 1:
-            return self.tcrit[0]
-        if (
-            (self.direction == 1 and self._lsoda_solver.t >= self.tcrit[0]) or
-            (self.direction == -1 and self._lsoda_solver.t <= self.tcrit[0])
-        ):
-            self.tcrit = self.tcrit[1:]
-        return self.tcrit[0]
 
 class LsodaDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, yh):

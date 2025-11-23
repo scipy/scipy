@@ -133,7 +133,7 @@ class OdeSolver:
     __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, fun, t0, y0, t_bound, vectorized,
-                 support_complex=False):
+                 support_complex=False, tcrit=None):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0, support_complex)
@@ -168,6 +168,9 @@ class OdeSolver:
         self.nfev = 0
         self.njev = 0
         self.nlu = 0
+
+        self.tcrit = np.array([t_bound])
+        self._initialize_tcrit(t0, tcrit, self.t_bound)
 
     @property
     def step_size(self):
@@ -227,11 +230,50 @@ class OdeSolver:
         else:
             return self._dense_output_impl()
 
+    def _initialize_tcrit(self, t0, tcrit, t_bound):
+        """Check input for tcrit and setup attribute."""
+        if tcrit is None:
+            return
+        tcrit = np.asarray(tcrit)
+        if self.direction == -1:
+            # integrate towards negative infinity
+            max_t = t0
+            min_t = t_bound
+        elif self.direction == 1:
+            # integrate towards positive infinity
+            max_t = t_bound
+            min_t = t0
+        else:
+            # should be unreachable keep?
+            raise ValueError("Unexpected direction")
+
+        if np.any(tcrit >= max_t) or np.any(tcrit <= min_t):
+            raise ValueError(
+                f"tcrit inputs must be within timespan:"
+                f" got {tcrit} with bounds [{min_t}, {max_t}]"
+            )
+        self.tcrit = np.append(tcrit, t_bound)
+
+    def _find_next_tcrit(self):
+        """Return next tcrit and remove old ones."""
+        # if critical point reached, remove from the list
+        # don't remove last point, t_bound
+        if self.tcrit.size == 1:
+            return self.tcrit[0]
+        if (
+            (self.direction == 1 and self._lsoda_solver.t >= self.tcrit[0]) or
+            (self.direction == -1 and self._lsoda_solver.t <= self.tcrit[0])
+        ):
+            self.tcrit = self.tcrit[1:]
+        return self.tcrit[0]
+
     def _step_impl(self):
         raise NotImplementedError
 
     def _dense_output_impl(self):
         raise NotImplementedError
+
+
 
 
 class DenseOutput:
