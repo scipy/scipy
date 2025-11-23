@@ -1228,7 +1228,7 @@ def np_vecdot(x1, x2, /, *, axis=-1):
     else:
         # of course there are other fancy ways of doing this (e.g. `einsum`)
         # but let's keep it simple since it's temporary
-        return np.sum(x1 * x2, axis=axis)
+        return np.sum(x1.conj() * x2, axis=axis)
 
 
 def _dedent_for_py313(s):
