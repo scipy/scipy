@@ -197,10 +197,10 @@ class BDF(OdeSolver):
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, first_step=None, **extraneous):
+                 vectorized=False, first_step=None, tcrit=None, **extraneous):
         warn_extraneous(extraneous)
         super().__init__(fun, t0, y0, t_bound, vectorized,
-                         support_complex=True)
+                         support_complex=True, tcrit=tcrit)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
@@ -310,6 +310,8 @@ class BDF(OdeSolver):
         t = self.t
         D = self.D
 
+        tcrit = self._find_next_tcrit()
+
         max_step = self.max_step
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
@@ -343,8 +345,8 @@ class BDF(OdeSolver):
             h = h_abs * self.direction
             t_new = t + h
 
-            if self.direction * (t_new - self.t_bound) > 0:
-                t_new = self.t_bound
+            if self.direction * (t_new - tcrit) > 0:
+                t_new = tcrit
                 change_D(D, order, np.abs(t_new - t) / h_abs)
                 self.n_equal_steps = 0
                 LU = None

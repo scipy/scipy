@@ -261,8 +261,8 @@ class OdeSolver:
         if self.tcrit.size == 1:
             return self.tcrit[0]
         if (
-            (self.direction == 1 and self._lsoda_solver.t >= self.tcrit[0]) or
-            (self.direction == -1 and self._lsoda_solver.t <= self.tcrit[0])
+            (self.direction == 1 and self.t >= self.tcrit[0]) or
+            (self.direction == -1 and self.t <= self.tcrit[0])
         ):
             self.tcrit = self.tcrit[1:]
         return self.tcrit[0]
