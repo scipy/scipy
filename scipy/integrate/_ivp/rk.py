@@ -341,6 +341,15 @@ class RK45(RungeKutta):
         1e-3 for `rtol` and 1e-6 for `atol`.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.17.0
 
     Attributes
     ----------
@@ -367,6 +376,8 @@ class RK45(RungeKutta):
         Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
         Number of LU decompositions. Is always 0 for this solver.
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------

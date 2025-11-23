@@ -155,6 +155,15 @@ class BDF(OdeSolver):
         Setting ``vectorized=True`` allows for faster finite difference
         approximation of the Jacobian by this method, but may result in slower
         execution overall in some circumstances (e.g. small ``len(y0)``).
+    tcrit : float and array_like, optional
+        Critical points to take care during integration.  Forces
+        solver to integrate to this time point exactly before proceeding.
+        If an array of values is passed in, the solver will treat each
+        value as critical. The array of values must be sorted either
+        ascending or descending in the same manner as the direction
+        between ``t0`` and ``t_bound``.
+
+        .. versionadded:: 1.17.0
 
     Attributes
     ----------
@@ -180,6 +189,8 @@ class BDF(OdeSolver):
         Number of evaluations of the Jacobian.
     nlu : int
         Number of LU decompositions.
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------

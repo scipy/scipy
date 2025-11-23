@@ -115,7 +115,8 @@ class LSODA(OdeSolver):
         Number of evaluations of the Jacobian.
     tcrit : ndarray
         Critical time points to take care of integration.
-       
+    tcrit : ndarray
+        Array of critical points including ``t_bound``.
 
     References
     ----------
