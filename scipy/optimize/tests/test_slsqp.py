@@ -396,6 +396,37 @@ class TestSLSQP:
         assert not res.success
         assert res.message.startswith("`callback` raised `StopIteration`")
 
+    def test_callback_progres_measures(self):
+        # Test to ensure progress measures are available in a callback
+
+        def callback(intermediate_result: OptimizeResult):
+            optimality = intermediate_result.optimality
+            feasibility = intermediate_result.constr_violation
+            _ = max(optimality, feasibility)
+
+        def obj(x):
+            return (x[0] - 1.0) ** 2 + (x[1] - 0.5) ** 2
+
+        def eq_con(x):
+            return x[0] + x[1] - 1.0
+
+        def ineq_con(x):
+            return x[1] - 10
+
+        tol = 1e-10
+        x0 = np.array([0.5, 0.5])
+        cons = [
+            {"type": "eq", "fun": eq_con},
+            {"type": "ineq", "fun": ineq_con},
+        ]
+
+        res = minimize(obj, x0, method="SLSQP", constraints=cons, callback=callback, tol=tol)
+
+        # Check that tolerances acheived
+        assert res.success
+        assert res.optimality <= 10*tol
+        assert res.constr_violation <= 10*tol
+
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the
         # linearized problem at the starting point is infeasible.
