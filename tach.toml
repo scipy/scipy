@@ -164,6 +164,7 @@ depends_on = [
     "scipy.stats.distributions",
     "scipy.stats.mstats",
     "scipy.stats.qmc",
+    "scipy.optimize.elementwise",
 ]
 
 [[modules]]
