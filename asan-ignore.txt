@@ -1,5 +1,5 @@
 [address]
 fun:enorm
-fun:_ZN7fitpack18qr_reduce_periodicEPdS0_S0_llPllS0_lilS0_S0_S0_RdbS2_
+fun:_ZN7fitpack18qr_reduce_periodic*
 fun:_Z12_rank_filterIfEiPT_iiiS1_iS0_i
 fun:*_fir_mirror_symmetric*
