@@ -1304,23 +1304,39 @@ def test_tcrit_lsoda():
     t_span = [0., 2.]
     # result without using critical time fails to find the critical region
     res = solve_ivp(
-        fun, t_span, y0, method = 'LSODA', max_step=1e-1,
-        atol=1e-6, rtol=1e-6, dense_output=True
+        fun, t_span, y0, method = 'LSODA',
+        atol=1e-7, rtol=1e-7, dense_output=True
     )
+    assert 1. not in res.t
+    assert_allclose(res.sol(2.), 0., atol=1e-6)
 
     # result with the critical time finds the critical region
     res_crit = solve_ivp(
-        fun, t_span, y0, method = 'LSODA', max_step=1e-1, tcrit=[1.],
-        atol=1e-6, rtol=1e-6, dense_output=True
+        fun, t_span, y0, method = 'LSODA', tcrit=[1.],
+        atol=1e-7, rtol=1e-7, dense_output=True
     )
-
-    t_check = np.linspace(0, 2, 10)
-    sol = res.sol(t_check)
-    crit_sol = res_crit.sol(t_check)
-
-    assert 1. not in res.t
     assert 1. in res_crit.t
+    assert_allclose(res_crit.sol(2.), 0.02, rtol=1e-4)
 
-    # solution is y=0.02 at times >=1.01, check last time point
-    assert_allclose(sol[0,-1], 0.)
-    assert_allclose(crit_sol[0,-1], 0.02, rtol=1e-4)
+    # test in the other direction
+    t_span = [2., 0.]
+    res_crit_backwards = solve_ivp(
+        fun, t_span, y0, method = 'LSODA', tcrit = [1.],
+        atol=1e-7, rtol=1e-7, dense_output=True
+    )
+    assert 1. in res_crit_backwards.t
+    assert_allclose(res_crit_backwards.sol(0.), -0.02, rtol=1e-4)
+
+    # check attribute
+    # end time is always included as a critical time
+    lsoda = LSODA(fun, 0., y0, 2.)
+    assert_equal(lsoda.tcrit, [2.])
+
+    lsoda = LSODA(fun, 0., y0, 2., tcrit=[1.])
+    assert_equal(lsoda.tcrit, [1., 2.])
+
+    # run solver past critical point
+    # this should remove the critical point from the attribute
+    while lsoda.t < 1:
+        lsoda.step()
+    assert_equal(lsoda.tcrit, [2.])

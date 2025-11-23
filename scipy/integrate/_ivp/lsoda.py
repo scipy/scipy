@@ -174,7 +174,7 @@ class LSODA(OdeSolver):
         integrator.call_args[2] = 5
 
         tcrit = self._find_next_tcrit()
-        
+
         solver._y, solver.t = integrator.run(
             solver.f, solver.jac or (lambda: None), solver._y, solver.t,
             tcrit, solver.f_params, solver.jac_params)
@@ -255,7 +255,12 @@ class LSODA(OdeSolver):
     def _find_next_tcrit(self):
         # if critical point reached, remove from the list
         # don't remove last point, t_bound
-        if self._lsoda_solver.t >= self.tcrit[0] and self.tcrit.size>1:
+        if self.tcrit.size == 1:
+            return self.tcrit[0]
+        if (
+            (self.direction == 1 and self._lsoda_solver.t >= self.tcrit[0]) or
+            (self.direction == -1 and self._lsoda_solver.t <= self.tcrit[0])
+        ):
             self.tcrit = self.tcrit[1:]
         return self.tcrit[0]
 
