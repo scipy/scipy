@@ -98,3 +98,9 @@ if str2num(mlv) > 7  % function pointers added recently
   func = @afunc;
   save_matfile('testfunc', func);
 end
+
+% new-style classes
+if str2double(mlv) >= 7.6
+    obj = classname;
+    save_matfile('testclass', obj);
+end
