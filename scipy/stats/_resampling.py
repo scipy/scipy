@@ -2139,6 +2139,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
+    pvalues = xpx.at(pvalues)[xp.isnan(observed)].set(xp.nan)
     pvalues = xp.clip(pvalues, 0., 1.)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
