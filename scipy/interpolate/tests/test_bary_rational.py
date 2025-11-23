@@ -81,7 +81,7 @@ def test_integer_promotion(method, dtype):
 
 class TestAAA:
     def test_input_validation(self):
-        with pytest.raises(ValueError, match="size"):
+        with pytest.raises(ValueError, match="`x` be of size 2 but got size 1."):
             AAA([0], [1, 1])
         with pytest.raises(ValueError, match="1-D"):
             AAA([[0], [0]], [[1], [1]])
