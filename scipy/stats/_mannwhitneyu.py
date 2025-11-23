@@ -1,22 +1,12 @@
 import threading
 import numpy as np
 from collections import namedtuple
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size, xp_promote
+from scipy._lib import array_api_extra as xpx
 from scipy import special
 from scipy import stats
 from scipy.stats._stats_py import _rankdata
-from ._axis_nan_policy import _axis_nan_policy_factory
-
-
-def _broadcast_concatenate(x, y, axis):
-    '''Broadcast then concatenate arrays, leaving concatenation axis last'''
-    x = np.moveaxis(x, axis, -1)
-    y = np.moveaxis(y, axis, -1)
-    z = np.broadcast(x[..., 0], y[..., 0])
-    x = np.broadcast_to(x, z.shape + (x.shape[-1],))
-    y = np.broadcast_to(y, z.shape + (y.shape[-1],))
-    z = np.concatenate((x, y), axis=-1)
-    return x, y, z
-
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_concatenate
 
 class _MWU:
     '''Distribution of MWU statistic under the null hypothesis'''
@@ -150,7 +140,7 @@ class _MWU:
 _mwu_state = threading.local()
 
 
-def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
+def _get_mwu_z(U, n1, n2, t, continuity=True, *, xp):
     '''Standardized MWU statistic'''
     # Follows mannwhitneyu [2]
     mu = n1 * n2 / 2
@@ -158,8 +148,8 @@ def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
 
     # Tie correction according to [2], "Normal approximation and tie correction"
     # "A more computationally-efficient form..."
-    tie_term = (t**3 - t).sum(axis=-1)
-    s = np.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
+    tie_term = xp.sum(t**3 - t, axis=-1)
+    s = xp.sqrt(n1*n2/12 * ((n + 1) - tie_term/(n*(n-1))))
 
     numerator = U - mu
 
@@ -178,12 +168,14 @@ def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
 
 def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     ''' Input validation and standardization for mannwhitneyu '''
-    # Would use np.asarray_chkfinite, but infs are OK
-    x, y = np.atleast_1d(x), np.atleast_1d(y)
-    if np.isnan(x).any() or np.isnan(y).any():
+    xp = array_namespace(x, y)
+
+    x, y = xpx.atleast_nd(x, ndim=1), xpx.atleast_nd(y, ndim=1)
+    if xp.any(xp.isnan(x)) or xp.any(xp.isnan(y)):
         raise ValueError('`x` and `y` must not contain NaNs.')
-    if np.size(x) == 0 or np.size(y) == 0:
+    if xp_size(x) == 0 or xp_size(y) == 0:
         raise ValueError('`x` and `y` must be of nonzero size.')
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
 
     bools = {True, False}
     if use_continuity not in bools:
@@ -204,7 +196,7 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
         if method not in methods:
             raise ValueError(f'`method` must be one of {methods}.')
 
-    return x, y, use_continuity, alternative, axis_int, method
+    return x, y, use_continuity, alternative, axis_int, method, xp
 
 
 def _mwu_choose_method(n1, n2, ties):
@@ -224,6 +216,10 @@ def _mwu_choose_method(n1, n2, ties):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
+@xp_capabilities(cpu_only=True,  # exact calculation only implemented in NumPy
+                 skip_backends=[('cupy', 'needs rankdata'),
+                                ('dask.array', 'needs rankdata')],
+                 jax_jit=False)
 @_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
@@ -441,16 +437,18 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     '''
 
-    x, y, use_continuity, alternative, axis_int, method = (
+    x, y, use_continuity, alternative, axis_int, method, xp = (
         _mwu_input_validation(x, y, use_continuity, alternative, axis, method))
 
-    x, y, xy = _broadcast_concatenate(x, y, axis)
+    xy = _broadcast_concatenate((x, y), axis)
 
-    n1, n2 = x.shape[-1], y.shape[-1]
+    n1, n2 = x.shape[-1], y.shape[-1]  # _axis_nan_policy decorator ensures axis=-1
 
     # Follows [2]
     ranks, t = _rankdata(xy, 'average', return_ties=True)  # method 2, step 1
-    R1 = ranks[..., :n1].sum(axis=-1)                      # method 2, step 2
+    ranks = xp.astype(ranks, x.dtype, copy=False)
+    t = xp.astype(t, x.dtype, copy=False)
+    R1 = xp.sum(ranks[..., :n1], axis=-1)                  # method 2, step 2
     U1 = R1 - n1*(n1+1)/2                                  # method 2, step 3
     U2 = n1 * n2 - U1                                      # as U1 + U2 = n1 * n2
 
@@ -459,19 +457,19 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     elif alternative == "less":
         U, f = U2, 1  # Due to symmetry, use SF of U2 rather than CDF of U1
     else:
-        U, f = np.maximum(U1, U2), 2  # multiply SF by two for two-sided test
+        U, f = xp.maximum(U1, U2), 2  # multiply SF by two for two-sided test
 
     if method == "auto":
-        method = _mwu_choose_method(n1, n2, np.any(t > 1))
+        method = _mwu_choose_method(n1, n2, xp.any(t > 1))
 
     if method == "exact":
         if not hasattr(_mwu_state, 's'):
             _mwu_state.s = _MWU(0, 0)
         _mwu_state.s.set_shapes(n1, n2)
-        p = _mwu_state.s.sf(U.astype(int))
+        p = xp.asarray(_mwu_state.s.sf(np.asarray(U, np.int64)), dtype=x.dtype)
     elif method == "asymptotic":
-        z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
-        p = stats.norm.sf(z)
+        z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity, xp=xp)
+        p = special.ndtr(-z)
     else:  # `PermutationMethod` instance (already validated)
         def statistic(x, y, axis):
             return mannwhitneyu(x, y, use_continuity=use_continuity,
@@ -487,6 +485,6 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
 
     # Ensure that test statistic is not greater than 1
     # This could happen for exact test when U = m*n/2
-    p = np.clip(p, 0, 1)
+    p = xp.clip(p, 0., 1.)
 
     return MannwhitneyuResult(U1, p)

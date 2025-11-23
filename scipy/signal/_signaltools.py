@@ -27,10 +27,11 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype,
+    xp_swapaxes
 
 )
-import scipy._lib.array_api_compat.numpy as np_compat
+from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_extra as xpx
 
 
@@ -98,22 +99,6 @@ def _inputs_swap_needed(mode, shape1, shape2, axes=None):
                          "as large as the other in every dimension")
 
     return not ok1
-
-
-def _reject_objects(arr, name):
-    """Warn if arr.dtype is object or longdouble.
-    """
-    dt = np.asarray(arr).dtype
-    if not (np.issubdtype(dt, np.integer)
-            or dt in [np.bool_, np.float16, np.float32, np.float64,
-                      np.complex64, np.complex128]
-    ):
-        msg = (
-            f"dtype={dt} is not supported by {name} and will raise an error in "
-            f"SciPy 1.17.0. Supported dtypes are: boolean, integer, `np.float16`,"
-            f"`np.float32`, `np.float64`, `np.complex64`, `np.complex128`."
-        )
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
 
 def correlate(in1, in2, mode='full', method='auto'):
@@ -249,15 +234,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -842,14 +819,7 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
-def _swapaxes(x, ax1, ax2, xp):
-    """np.swapaxes"""
-    shp = list(range(x.ndim))
-    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
-    return xp.permute_dims(x, shp)
-
-
-# may want to look at moving _swapaxes and this to array-api-extra,
+# may want to look at moving xp_swapaxes and this to array-api-extra,
 # cross-ref https://github.com/data-apis/array-api-extra/issues/97
 def _split(x, indices_or_sections, axis, xp):
     """A simplified version of np.split, with `indices` being an list.
@@ -862,11 +832,11 @@ def _split(x, indices_or_sections, axis, xp):
     div_points = [0] + list(indices_or_sections) + [Ntotal]    
 
     sub_arys = []
-    sary = _swapaxes(x, axis, 0, xp=xp)
+    sary = xp_swapaxes(x, axis, 0, xp=xp)
     for i in range(Nsections):
         st = div_points[i]
         end = div_points[i + 1]
-        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+        sub_arys.append(xp_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
 
     return sub_arys
 
@@ -1072,7 +1042,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = xp.reshape(ret, shape_ret)
+    ret = xp.reshape(ret, tuple(shape_ret))
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -1371,15 +1341,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'choose_conv_method')
-        _reject_objects(in2, 'choose_conv_method')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1510,15 +1472,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    try:
-        xp = array_namespace(in1, in2)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(in1, 'correlate')
-        _reject_objects(in2, 'correlate')
+    xp = array_namespace(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1667,14 +1621,6 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
-
-    Notes
-    -----
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
-
-    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
-    the specialised function `scipy.signal.medfilt2d` may be faster.
 
     """
     xp = array_namespace(volume)
@@ -2218,16 +2164,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(b, a, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(x, 'lfilter')
-        _reject_objects(a, 'lfilter')
-        _reject_objects(b, 'lfilter')
+    xp = array_namespace(b, a, x, zi)
 
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
@@ -2235,14 +2172,17 @@ def lfilter(b, a, x, axis=-1, zi=None):
     if zi is not None:
        zi = np.asarray(zi)
 
+    if not (b.ndim == 1 and xp_size(b) > 0):
+        raise ValueError(f"Parameter b is not a non-empty 1d array, since {b.shape=}!")
+    if not (a.ndim == 1 and xp_size(a) > 0):
+        raise ValueError(f"Parameter a is not a non-empty 1d array, since {a.shape=}!")
+
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
         # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
-        if b.ndim != 1 and a.ndim != 1:
-            raise ValueError('object of too small depth for desired array')
         x = _validate_x(x)
         inputs = [b, a, x]
         if zi is not None:
@@ -2250,7 +2190,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
             # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
-                raise ValueError('object of too small depth for desired array')
+                raise ValueError("Dimensions of parameters x and zi must match, but " +
+                                 f"{x.ndim=}, {zi.ndim=}!")
             expected_shape = list(x.shape)
             expected_shape[axis] = b.shape[0] - 1
             expected_shape = tuple(expected_shape)
@@ -2267,7 +2208,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
                     elif k != axis and zi.shape[k] == 1:
                         strides[k] = 0
                     else:
-                        raise ValueError('Unexpected shape for zi: expected '
+                        raise ValueError('Unexpected shape for parameter zi: expected '
                                          f'{expected_shape}, found {zi.shape}.')
                 zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
                                                      strides)
@@ -2275,7 +2216,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         dtype = np.result_type(*inputs)
 
         if dtype.char not in 'fdgFDGO':
-            raise NotImplementedError(f"input type '{dtype}' not supported")
+            raise NotImplementedError("Parameter's dtypes produced result type " +
+                                      f"'{dtype}', which is not supported!")
 
         b = np.array(b, dtype=dtype)
         a = np.asarray(a, dtype=dtype)
@@ -2346,17 +2288,7 @@ def lfiltic(b, a, y, x=None):
     lfilter, lfilter_zi
 
     """
-    try:
-        xp = array_namespace(a, b, y, x)
-    except TypeError:
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(a, 'lfiltic')
-        _reject_objects(b, 'lfiltic')
-        _reject_objects(y, 'lfiltic')
-        if x is not None:
-            _reject_objects(x, 'lfiltic')
+    xp = array_namespace(a, b, y, x)
 
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
     b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
@@ -2449,16 +2381,19 @@ def deconvolve(signal, divisor):
     >>> recovered, remainder = signal.deconvolve(recorded, impulse_response)
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
-
+    >>> remainder
+    array([0., 0., 0., 0., 0., 0., 0., 0., 0.])
     """
     xp = array_namespace(signal, divisor)
 
     num = xpx.atleast_nd(xp.asarray(signal), ndim=1, xp=xp)
     den = xpx.atleast_nd(xp.asarray(divisor), ndim=1, xp=xp)
-    if num.ndim > 1:
-        raise ValueError("signal must be 1-D.")
-    if den.ndim > 1:
-        raise ValueError("divisor must be 1-D.")
+    if not (num.ndim == 1 and xp_size(num) > 0):
+        raise ValueError("Parameter signal must be non-empty 1d array, " +
+                         f"but its shape is {num.shape}!")
+    if not (den.ndim == 1 and xp_size(den) > 0):
+        raise ValueError("Parameter divisor must be non-empty 1d array, " +
+                         f"but its shape is {den.shape}!")
     N = num.shape[0]
     D = den.shape[0]
     if D > N:
@@ -2475,19 +2410,23 @@ def deconvolve(signal, divisor):
 def hilbert(x, N=None, axis=-1):
     r"""FFT-based computation of the analytic signal.
 
-    The analytic signal is calculated by filtering out the negative frequencies and
+    The analytic signal is calculated by zeroing out the negative frequencies and
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
     
     The transformation is done along the last axis by default.
 
+    For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
+
     Parameters
     ----------
     x : array_like
         Signal data.  Must be real.
     N : int, optional
-        Number of Fourier components.  Default: ``x.shape[axis]``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axis`.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
 
@@ -2559,8 +2498,9 @@ def hilbert(x, N=None, axis=-1):
     >>> ax0.plot(t, signal, label='Signal')
     >>> ax0.plot(t, amplitude_envelope, label='Envelope')
     >>> ax0.legend()
-    >>> ax1.set(xlabel="Time in seconds", ylabel="Phase in rad", ylim=(0, 120))
-    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-', label='Instantaneous Phase')
+    >>> ax1.set(xlabel="Time in seconds", ylabel="Frequency in Hz", ylim=(0, 120))
+    >>> ax1.plot(t[1:], instantaneous_frequency, 'C2-',
+    ...          label='Instantaneous Frequency')
     >>> ax1.legend()
     >>> plt.show()
 
@@ -2577,86 +2517,205 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = xp.zeros(N, dtype=Xf.dtype)
+    Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
+        Xf[..., 1: N // 2] *= 2.0
+        Xf[..., N // 2 + 1:N] = 0.0
     else:
-        h[0] = 1
-        h[1:(N + 1) // 2] = 2
+        Xf[..., 1:(N + 1) // 2] *= 2.0
+        Xf[..., (N + 1) // 2:N] = 0.0
 
-    if x.ndim > 1:
-        ind = [xp.newaxis] * x.ndim
-        ind[axis] = slice(None)
-        h = h[tuple(ind)]
-    x = sp_fft.ifft(Xf * h, axis=axis)
+    Xf = xp.moveaxis(Xf, -1, axis)
+    x = sp_fft.ifft(Xf, axis=axis)
     return x
 
 
-def hilbert2(x, N=None):
-    """
-    Compute the '2-D' analytic signal of `x`
+def hilbert2(x, N=None, axes=(-2, -1)):
+    r"""Compute the '2-D' analytic signal of `x`.
+
+    The 2-D analytic signal is calculated as a so-called "single-orthant" transform.
+    This is achieved by applying one-dimensional Hilbert functions (as in
+    `~scipy.signal.hilbert`) to the first and to the second array axis in Fourier space.
+
+    For NumPy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
 
     Parameters
     ----------
     x : array_like
-        2-D signal data.
+        Input signal. Must be at least two-dimensional.
     N : int or tuple of two ints, optional
-        Number of Fourier components. Default is ``x.shape``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axes`.  Default: ``x.shape[i] for i in axes``
+    axes : tuple of two ints, optional
+        Axes along which to do the transformation.  Default: (-2, -1).
+
+        .. versionchanged:: 1.17
+
+            Added `axes` parameter
 
     Returns
     -------
     xa : ndarray
-        Analytic signal of `x` taken along axes (0,1).
+        Analytic signal of `x` taken along given axes.
+
+    Notes
+    -----
+    The "single-orthant" transform, as defined in [2]_, is calculated by performing the
+    following steps:
+
+    1. Calculate the two-dimensional FFT of the input, i.e.,
+
+       .. math::
+
+            X[p,q] = \sum_{k,l=0}^{N_0,N_1} x[k,l]\,
+                                                 e^{-2j\pi k p/N_0}\, e^{-2j\pi l q/N_1}
+
+    2. Zero negative frequency bins and double their positive counterparts, i.e.,
+
+       .. math::
+
+           X_a[p,q] = \big(1 + s_{N_0}(p)\big) \big(1 + s_{N_1}(q)\big) X[p,q]
+
+       with :math:`s_N(.)` being a modified sign function defined as
+
+       .. math::
+
+           s_N(p) := \begin{cases}
+                                 -1 & \text{ for } p < 0\ ,\\
+                       \phantom{-}0 & \text{ for } p = 0\ ,\\
+                                 +1 & \text{ for } 1 \leq p < (N+1) // 2\ ,\\
+                       \phantom{-}0 & \text{ elsewhere.}
+                     \end{cases}
+
+       The limitation of the ":math:`+1`" case to the range of ``[1:(N+1)//2]``
+       accounts for the unpaired Nyquist frequency bin at :math:`N/2` for even
+       :math:`N`. Note that :math:`X_a[p] = \big(1 + s_N(p)\big) X[p]` is the
+       one-dimensional Hilbert function (as in `~scipy.signal.hilbert`) in Fourier
+       space.
+
+    3. Produce the analytic signal by performing the inverse FFT, i.e.,
+
+       .. math::
+
+           x_a[k, l] = \frac{1}{N_0 N_1}
+                 \sum_{p,q=0}^{N_0,N_1} X_a[p,q]\, e^{2j\pi k p/N_0}\, e^{2j\pi l q/N_1}
+
+    The "single-orthant" transform is not the only possible definition of an analytic
+    signal in multiple dimensions (as noted in [1]_). Consult [3]_ for a description of
+    properties that this 2-D transform does and does not share with the 1-D transform.
+    The second example below shows one of the downsides of this approach.
 
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
         https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Hahn, Stefan L. "Multidimensional complex signals with
+        single-orthant spectra." Proceedings of the IEEE 80.8
+        (1992): 1287-1300.
+        `PDF <https://ieeexplore.ieee.org/iel1/5/4083/00158601.pdf>`__
+    .. [3] Bülow, Thomas, and Gerald Sommer. "A novel approach to the 2D analytic
+        signal." In International Conference on Computer Analysis of Images and
+        Patterns, pp. 25-32. Berlin, Heidelberg: Springer Berlin Heidelberg, 1999.
+        `PDF <https://www.informatik.uni-kiel.de/inf/Sommer/doc/Publications/tbl/caip99.pdf>`__
+
+    Examples
+    --------
+    The following example calculates the two-dimensional analytic signal from a single
+    impulse with an added constant offset. The impulse produces an FFT where each bin
+    has a value of one and the constant offset component produces only a non-zero
+    component at the ``(0,0)`` bin.
+
+    >>> import numpy as np
+    >>> from scipy.fft import fft2, fftshift, ifftshift
+    >>> from scipy.signal import hilbert2
+    ...
+    >>> # Input signal is unit impulse with a constant offset:
+    >>> x = np.ones((5, 5)) / 5
+    >>> x[0, 0] += 1
+    ...
+    >>> X = fftshift(fft2(x))  # Zero frequency bin is at center
+    >>> print(X)
+    [[1.-0.j 1.-0.j 1.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 6.-0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.+0.j 1.+0.j 1.+0.j]
+     [1.-0.j 1.-0.j 1.+0.j 1.+0.j 1.+0.j]]
+    >>> x_a = hilbert2(x)
+    >>> X_a = fftshift(fft2(x_a))
+    >>> print(np.round(X_a, 3))
+    [[ 0.+0.j  0.+0.j -0.+0.j  0.+0.j  0.+0.j]
+     [ 0.+0.j  0.+0.j -0.+0.j  0.+0.j  0.+0.j]
+     [ 0.+0.j  0.+0.j  6.+0.j  2.+0.j  2.+0.j]
+     [ 0.+0.j  0.+0.j  2.+0.j  4.+0.j  4.+0.j]
+     [ 0.+0.j  0.+0.j  2.+0.j  4.+0.j  4.+0.j]]
+
+    The FFT of the result illustrates that the values of the lower right quadrant (or
+    orthant) with purely positive frequency bins have been quadrupled. The values at its
+    borders, where only one frequency component is zero, are doubled. The zero frequency
+    bin ``(0, 0)`` has not been altered. All other quadrants have been set to zero.
+
+    This second example illustrates a problem with the "single-orthant" convention. A
+    purely real signal can produce an analytic signal which is completely zero:
+
+    >>> from scipy.fft import fft2, fftshift, ifft2, ifftshift
+    >>> from scipy.signal import hilbert2
+    ...
+    >>> # Create a real signal by ensuring `Z[-p,-q] == np.conj(Z[p,q])` holds:
+    >>> Z = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 0, 0, 1, 0],
+    ...               [0, 0, 0, 0, 0],
+    ...               [0, 1, 0, 0, 0],
+    ...               [0, 0, 0, 0, 0]]) * 25
+    >>> z = ifft2(ifftshift(Z))
+    >>> np.allclose(z.imag, 0)  # z is a real signal
+    True
+    >>> np.sum(z.real**2)  # z.real is non-zero
+    np.float64(50.0)
+    >>> z_a = hilbert2(z.real)
+    >>> np.allclose(z_a, 0)  # analytic signal is zero
+    True
 
     """
     xp = array_namespace(x)
     x = xpx.atleast_nd(xp.asarray(x), ndim=2, xp=xp)
-    if x.ndim > 2:
-        raise ValueError("x must be 2-D.")
     if xp.isdtype(x.dtype, 'complex floating'):
         raise ValueError("x must be real.")
+    if len(axes) != 2:
+        raise ValueError("axes must be a tuple of length 2")
+    if axes[0] == axes[1]:
+        raise ValueError("axes must contain 2 distinct axes")
 
     if N is None:
-        N = x.shape
+        N = (x.shape[axes[0]], x.shape[axes[1]])
     elif isinstance(N, int):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
+    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
-    Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = xp.zeros(N[0], dtype=Xf.dtype)
-    h2 = xp.zeros(N[1], dtype=Xf.dtype)
-    for h in (h1, h2):
-        N1 = h.shape[0]
-        if N1 % 2 == 0:
-            h[0] = h[N1 // 2] = 1
-            h[1:N1 // 2] = 2
-        else:
-            h[0] = 1
-            h[1:(N1 + 1) // 2] = 2
+    Xf = sp_fft.fft2(x, N, axes=axes)
+    Xf = xp.moveaxis(Xf, axes, (-2, -1))
+    k0, k1 = (N[0] + 1) // 2, (N[1] + 1) // 2
 
-    h = h1[:, xp.newaxis] * h2[xp.newaxis, :]
-    k = x.ndim
-    while k > 2:
-        h = h[:, xp.newaxis]
-        k -= 1
-    x = sp_fft.ifft2(Xf * h, axes=(0, 1))
+    if k0 > 1:  # condition k0 > 1 needed for Dask backend
+        Xf[..., 1:k0, :] *= 2.0
+    if k1 > 1:  # condition k1 > 1 needed for Dask backend
+        Xf[..., :, 1:k1] *= 2.0
+    Xf[..., k0:, :] = 0.0
+    Xf[..., :, k1:] = 0.0
+
+    Xf = xp.moveaxis(Xf, (-2, -1), axes)
+    x = sp_fft.ifft2(Xf, axes=axes)
     return x
 
 
-def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
+def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
-             axis: int = -1) -> np.ndarray:
+             axis: int = -1):
     r"""Compute the envelope of a real- or complex-valued signal.
 
     Parameters
@@ -2871,6 +2930,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> fg0.subplots_adjust(left=0.08, right=0.97, wspace=0.15)
     >>> plt.show()
     """
+    xp = array_namespace(z)
     if not (-z.ndim <= axis < z.ndim):
         raise ValueError(f"Invalid parameter {axis=} for {z.shape=}!")
     if not (z.shape[axis] > 0):
@@ -2893,12 +2953,13 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
                          f"for n={z.shape[axis]=} and {bp_in=}!")
 
     # moving active axis to end allows to use `...` for indexing:
-    z = np.moveaxis(z, axis, -1)
+    z = xp.moveaxis(z, axis, -1)
 
-    if np.iscomplexobj(z):
+    if xp.isdtype(z.dtype, 'complex floating'):
         Z = sp_fft.fft(z)
     else:  # avoid calculating negative frequency bins for real signals:
-        Z = np.zeros_like(z, dtype=sp_fft.rfft(z.flat[:1]).dtype)
+        dt = sp_fft.rfft(z[..., :1]).dtype
+        Z = xp.zeros_like(z, dtype=dt)
         Z[..., :n//2 + 1] = sp_fft.rfft(z)
         if bp.start > 0:  # make signal analytic within bp_in band:
             Z[..., bp] *= 2
@@ -2910,8 +2971,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         bp_shift = slice(bp.start + n//2, bp.stop + n//2)
         z_bb = sp_fft.ifft(sp_fft.fftshift(Z, axes=-1)[..., bp_shift], n=n_out) * fak
 
-    z_env = np.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
-    z_env = np.moveaxis(z_env, -1, axis)
+    z_env = xp.abs(z_bb) if not squared else xp.real(z_bb) ** 2 + xp.imag(z_bb) ** 2
+    z_env = xp.moveaxis(z_env, -1, axis)
 
     # Calculate the residual from the input bandpass filter:
     if residual is None:
@@ -2926,9 +2987,14 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         else:
             Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
 
-    z_res = fak * (sp_fft.ifft(Z, n=n_out) if np.iscomplexobj(z) else
-                   sp_fft.irfft(Z, n=n_out))
-    return np.stack((z_env, np.moveaxis(z_res, -1, axis)), axis=0)
+    if xp.isdtype(z.dtype, 'complex floating'):  # resample accounts for unpaired bins:
+        z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
+    else:  # account for unpaired bin at m//2 before doing irfft():
+        if n_out != n and (m := min(n, n_out)) % 2 == 0:
+            Z[..., m//2] *= 2 if n_out < n else 0.5
+        z_res = fak * sp_fft.irfft(Z, n=n_out)
+    return xp.stack((z_env, xp.moveaxis(z_res, -1, axis)), axis=0)
+
 
 def _cmplx_sort(p):
     """Sort roots based on magnitude.
@@ -3500,210 +3566,301 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 
 
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    """
-    Resample `x` to `num` samples using Fourier method along the given axis.
+    r"""Resample `x` to `num` samples using the Fourier method along the given `axis`.
 
-    The resampled signal starts at the same value as `x` but is sampled
-    with a spacing of ``len(x) / num * (spacing of x)``.  Because a
-    Fourier method is used, the signal is assumed to be periodic.
+    The resampling is performed by shortening or zero-padding the FFT of `x`. This has
+    the advantages of providing an ideal antialiasing filter and allowing arbitrary
+    up- or down-sampling ratios. The main drawback is the requirement of assuming `x`
+    to be a periodic signal.
 
     Parameters
     ----------
     x : array_like
-        The data to be resampled.
+        The input signal made up of equidistant samples. If `x` is a multidimensional
+        array, the parameter `axis` specifies the time/frequency axis. It is assumed
+        here that ``n_x = x.shape[axis]`` specifies the number of samples and ``T`` the
+        sampling interval.
     num : int
-        The number of samples in the resampled signal.
+        The number of samples of the resampled output signal. It may be larger or
+        smaller than ``n_x``.
     t : array_like, optional
-        If `t` is given, it is assumed to be the equally spaced sample
-        positions associated with the signal data in `x`.
+        If `t` is not ``None``, then the timestamps of the resampled signal are also
+        returned. `t` must contain at least the first two timestamps of the input
+        signal `x` (all others are ignored). The timestamps of the output signal are
+        determined by ``t[0] + T * n_x / num * np.arange(num)`` with
+        ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
-        The axis of `x` that is resampled.  Default is 0.
+        The time/frequency axis of `x` along which the resampling take place.
+        The Default is 0.
     window : array_like, callable, string, float, or tuple, optional
-        Specifies the window applied to the signal in the Fourier
-        domain.  See below for details.
-    domain : string, optional
-        A string indicating the domain of the input `x`:
-        ``time`` Consider the input `x` as time-domain (Default),
-        ``freq`` Consider the input `x` as frequency-domain.
+        If not ``None``, it specifies a filter in the Fourier domain, which is applied
+        before resampling. I.e., the FFT ``X`` of `x` is calculated by
+        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
+        function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
+
+        If `window` is a 1d array of length ``n_x`` then ``W=window``.
+        If `window` is a callable  then ``W = window(f_X)``.
+        Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
+        ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
+
+    domain : 'time' | 'freq', optional
+        If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
+        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
+        domain.
 
     Returns
     -------
-    resampled_x or (resampled_x, resampled_t)
-        Either the resampled array, or, if `t` was given, a tuple
-        containing the resampled array and the corresponding resampled
-        positions.
+    x_r : ndarray
+        The resampled signal made up of `num` samples and sampling interval
+        ``T * n_x / num``.
+    t_r : ndarray, optional
+        The `num` equidistant timestamps of `x_r`.
+        This is only returned if paramater `t` is not ``None``.
 
     See Also
     --------
-    decimate : Downsample the signal after applying an FIR or IIR filter.
-    resample_poly : Resample using polyphase filtering and an FIR filter.
+    decimate : Downsample a (periodic/non-periodic) signal after applying an FIR
+               or IIR filter.
+    resample_poly : Resample a (periodic/non-periodic) signal using polyphase filtering
+                    and an FIR filter.
 
     Notes
     -----
-    The argument `window` controls a Fourier-domain window that tapers
-    the Fourier spectrum before zero-padding to alleviate ringing in
-    the resampled values for sampled signals you didn't intend to be
-    interpreted as band-limited.
+    This function uses the more efficient one-sided FFT, i.e. `~scipy.fft.rfft` /
+    `~scipy.fft.irfft`, if `x` is real-valued and in the time domain.
+    Else, the two-sided FFT, i.e., `~scipy.fft.fft` / `~scipy.fft.ifft`, is used
+    (all FFT functions are taken from the `scipy.fft` module).
 
-    If `window` is a function, then it is called with a vector of inputs
-    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) ).
+    If a `window` is applied to a real-valued `x`, the one-sided spectral windowing
+    function is determined by taking the average of the negative and the positive
+    frequency component. This ensures that real-valued signals and complex signals with
+    zero imaginary part are treated identically. I.e., passing `x` or passing
+    ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If `window` is an array of the same length as `x.shape[axis]` it is
-    assumed to be the window to be applied directly in the Fourier
-    domain (with dc and low-frequency first).
+    If the number of input  or output samples are prime or have few prime factors, this
+    function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
+    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
+    illustrated in the example below) can result in significant speed increases.
 
-    For any other type of `window`, the function `scipy.signal.get_window`
-    is called to generate the window.
-
-    The first sample of the returned vector is the same as the first
-    sample of the input vector.  The spacing between samples is changed
-    from ``dx`` to ``dx * len(x) / num``.
-
-    If `t` is not None, then it is used solely to calculate the resampled
-    positions `resampled_t`
-
-    As noted, `resample` uses FFT transformations, which can be very 
-    slow if the number of input or output samples is large and prime; 
-    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
-    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
-    ``n//num`` before using `resample`. Note that this approach changes the 
-    characteristics of the antialiasing filter.
+    `resample` is intended to be used for periodic signals with equidistant sampling
+    intervals. For non-periodic signals, `resample_poly` may be a better choice.
+    Consult the `scipy.interpolate` module for methods of resampling signals with
+    non-constant sampling intervals.
 
     Examples
     --------
-    Note that the end of the resampled data rises to meet the first
-    sample of the next cycle:
+    The following example depicts a signal being up-sampled from 20 samples to 100
+    samples. The ringing at the beginning of the up-sampled signal is due to
+    interpreting the signal being periodic. The red square in the plot illustrates that
+    periodictiy by showing the first sample of the next cycle of the signal.
 
     >>> import numpy as np
-    >>> from scipy import signal
-
-    >>> x = np.linspace(0, 10, 20, endpoint=False)
-    >>> y = np.cos(-x**2/6.0)
-    >>> f = signal.resample(y, 100)
-    >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
-    >>> plt.legend(['data', 'resampled'], loc='best')
+    >>> from scipy.signal import resample
+    ...
+    >>> n0, n1 = 20, 100  # number of samples
+    >>> t0 = np.linspace(0, 10, n0, endpoint=False)  # input time stamps
+    >>> x0 = np.cos(-t0**2/6)  # input signal
+    ...
+    >>> x1 = resample(x0, n1)  # resampled signal
+    >>> t1 = np.linspace(0, 10, n1, endpoint=False)  # timestamps of x1
+    ...
+    >>> fig0, ax0 = plt.subplots(1, 1, tight_layout=True)
+    >>> ax0.set_title(f"Resampling $x(t)$ from {n0} samples to {n1} samples")
+    >>> ax0.set(xlabel="Time $t$", ylabel="Amplitude $x(t)$")
+    >>> ax0.plot(t1, x1, '.-', alpha=.5, label=f"Resampled")
+    >>> ax0.plot(t0, x0, 'o-', alpha=.5, label="Original")
+    >>> ax0.plot(10, x0[0], 'rs', alpha=.5, label="Next Cycle")
+    >>> ax0.legend(loc='best')
+    >>> ax0.grid(True)
     >>> plt.show()
 
-    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
+    The following example compares this function with a naive `~scipy.fft.rfft` /
+    `~scipy.fft.irfft` combination: An input signal with a sampling interval of one
+    second is upsampled by a factor of eight. The first figure depicts an odd number of
+    input samples whereas the second figure an even number. The upper subplots show the
+    signals over time: The input samples are marked by large green dots, the upsampled
+    signals by a continuous and a dashed line. The lower subplots show the magnitude
+    spectrum: The FFT values of the input are depicted by large green dots, which lie
+    in the frequency interval [-0.5, 0.5] Hz, whereas the frequency interval of the
+    upsampled signal is [-4, 4] Hz. The continuous green line depicts the upsampled
+    spectrum without antialiasing filter, which is a periodic continuation of the input
+    spectrum. The blue x's and orange dots depict the FFT values of the signal created
+    by the naive approach as well as this function's result.
 
-    >>> N = 55949
-    >>> freq = 100
-    >>> x = np.linspace(0, 1, N)
-    >>> y = np.cos(2 * np.pi * freq * x)
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
+    >>> from scipy.signal import resample, resample_poly
+    ... 
+    >>> fac, T0, T1 = 8, 1, 1/8  # upsampling factor and sampling intervals
+    >>> for n0 in (15, 16):  # number of samples of input signal
+    ...     n1 = fac * n0  # number of samples of upsampled signal
+    ...     t0, t1 = T0 * np.arange(n0), T1 * np.arange(n1)  # time stamps
+    ...     x0 = np.zeros(n0)  # input signal has two non-zero sample values
+    ...     x0[n0//2], x0[n0//2+1] = n0 // 2, -(n0 // 2)
+    ... 
+    ...     x1n = irfft(rfft(x0), n=n1) * n1 / n0  # naive resampling
+    ...     x1r = resample(x0, n1)  # resample signal
+    ... 
+    ...     # Determine magnitude spectrum:
+    ...     x0_up = np.zeros_like(x1r)  # upsampling without antialiasing filter
+    ...     x0_up[::n1 // n0] = x0
+    ...     X0, X0_up = (fftshift(fft(x_)) / n0 for x_ in (x0, x0_up))
+    ...     XX1 = (fftshift(fft(x_)) / n1 for x_ in (x1n, x1r))
+    ...     f0, f1 = fftshift(fftfreq(n0, T0)), fftshift(fftfreq(n1, T1))  # frequencies
+    ...     df = f0[1] - f0[0]  # frequency resolution
+    ... 
+    ...     fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
+    ...     ax0.set_title(rf"Upsampling ${fac}\times$ from {n0} to {n1} samples")
+    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", 
+    ...             xlim=(0, n1*T1))
+    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2, 
+    ...              label="$x_0(t)$ / $X_0(f)$")
+    ...     for x_, l_ in zip((x1n, x1r), ('C0--', 'C1-')):
+    ...         ax0.plot(t1, x_, l_, alpha=.5, label=None)
+    ...     ax0.grid()
+    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)", 
+    ...             ylabel="Magnitude $|X(f)|$", xlim=(-0.7, 0.7))
+    ...     ax1.axvspan(0.5/T0, f1[-1], color='gray', alpha=.2)
+    ...     ax1.axvspan(f1[0], -0.5/T0, color='gray', alpha=.2)
+    ...     ax1.plot(f1, abs(X0_up), 'C2-', f0, abs(X0),  'C2o', alpha=.3, linewidth=2)
+    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')): 
+    ...         ax1.plot(f1, abs(X_), l_, alpha=.5, label=n_)
+    ...     ax1.grid()
+    ...     fig.legend(loc='outside lower center', ncols=4)    
+    >>> plt.show()
 
-    Due to ``N`` being prime,
+    The first figure shows that upsampling an odd number of samples produces identical
+    results. The second figure illustrates that the signal produced with the naive
+    approach (dashed blue line) from an even number of samples does not touch all
+    original samples. This deviation is due to `resample` correctly treating unpaired
+    frequency bins. I.e., the input `x1` has a bin pair ±0.5 Hz, whereas the output has
+    only one unpaired bin at -0.5 Hz, which demands rescaling of that bin pair.
+    Generally, special treatment is required if ``n_x != num`` and ``min(n_x, num)`` is
+    even. If the bin values at `±m` are zero, obviously, no special treatment is
+    needed. Consult the source code of `resample` for details.
 
-    >>> num = 5000
-    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+    The final example shows how to utilize `resample_poly` to speed up the
+    down-sampling: The input signal a non-zero value at :math:`t=0` and is downsampled
+    from 19937 to 128 samples. Since 19937 is prime, the FFT is expected to be slow. To
+    speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
+    // n1 = 155`` and then pass the result to `resample`. Two parameterization of 
+    `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
+    periodic wheras the default parametrization performs zero-padding. The upper
+    subplot shows the resulting signals over time whereas the lower subplot depicts the
+    resulting one-sided magnitude spectra.
 
-    runs significantly faster than
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.fft import rfftfreq, rfft
+    >>> from scipy.signal import resample, resample_poly
+    ... 
+    >>> n0 = 19937 # number of input samples - prime
+    >>> n1 = 128  # number of output samples - fast FFT length
+    >>> T0, T1 = 1/n0, 1/n1  # sampling intervals
+    >>> t0, t1 = np.arange(n0)*T0, np.arange(n1)*T1  # time stamps
+    ... 
+    >>> x0 = np.zeros(n0)  # Input has one non-zero sample
+    >>> x0[0] = n0
+    >>> 
+    >>> x1r = resample(x0, n1)  # slow due to n0 being prime
+    >>> # This is faster:
+    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic 
+    >>> x2p = resample(resample_poly(x0, 1, n0 // n1), n1)  # with zero-padding
+    ... 
+    >>> X0 = rfft(x0) / n0 
+    >>> X1r, X1p, X2p = rfft(x1r) / n1, rfft(x1p) / n1, rfft(x2p) / n1
+    >>> f0, f1 = rfftfreq(n0, T0), rfftfreq(n1, T1)
+    ... 
+    >>> fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
+    >>> ax0.set_title(f"Dowsampled Impulse response (from {n0} to {n1} samples)")
+    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1)) 
+    >>> for x_ in (x1r, x1p, x2p):
+    ...     ax0.plot(t1, x_, alpha=.5)
+    >>> ax0.grid()
+    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)", 
+    ...         ylabel="Magnitude $|X(f)|$", xlim=(0, 0.55/T1))
+    >>> ax1.axvspan(0.5/T1, f0[-1], color='gray', alpha=.2)
+    >>> ax1.plot(f1, abs(X1r), 'C0.-', alpha=.5, label="resample")
+    >>> ax1.plot(f1, abs(X1p), 'C1.-', alpha=.5, label="resample_poly(padtype='wrap')")
+    >>> ax1.plot(f1, abs(X2p), 'C2x-', alpha=.5, label="resample_poly")
+    >>> ax1.grid()
+    >>> fig.legend(loc='outside lower center', ncols=2)
+    >>> plt.show()    
 
-    >>> f = signal.resample(y, num)
+    The plots show that the results of the "pure" `resample` and the usage of the
+    default parameters of `resample_poly` agree well.  The periodic padding of
+    `resample_poly` (``padtype='wrap'``) on the other hand produces significant
+    deviations. This is caused by the disconiuity at the beginning of the signal, for
+    which the default filter of `resample_poly` is not suited well. This example
+    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    be beneficial. `resample` has a big advantage in this regard: It uses the ideal
+    antialiasing filter with the maximum bandwidth by default.
+
+    Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
+    even number of ``n1=128`` output samples, which requires a special treatment as 
+    discussed in the previous example. 
     """
-
     if domain not in ('time', 'freq'):
-        raise ValueError("Acceptable domain flags are 'time' or"
-                         f" 'freq', not domain={domain}")
+        raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
 
-    x = np.asarray(x)
-    Nx = x.shape[axis]
+    xp = array_namespace(x, t)
+    x = xp.asarray(x)
+    if x.ndim > 1:  # moving active axis to end allows to use `...` in indexing:
+        x = xp.moveaxis(x, axis, -1)
+    n_x = x.shape[-1]  # number of samples along the time/frequency axis
+    s_fac = n_x / num  # scaling factor represents sample interval dilatation
+    m = min(num, n_x)  # number of relevant frequency bins
+    m2 = m // 2 + 1  # number of relevant frequency bins of a one-sided FFT
 
-    # Check if we can use faster real FFT
-    real_input = np.isrealobj(x)
-
-    if domain == 'time':
-        # Forward transform
-        if real_input:
-            X = sp_fft.rfft(x, axis=axis)
-        else:  # Full complex FFT
-            X = sp_fft.fft(x, axis=axis)
-    else:  # domain == 'freq'
-        X = x
-
-    # Apply window to spectrum
-    if window is not None:
-        if callable(window):
-            W = window(sp_fft.fftfreq(Nx))
-        elif isinstance(window, np.ndarray):
-            if window.shape != (Nx,):
-                raise ValueError('window must have the same length as data')
-            W = window
-        else:
-            W = sp_fft.ifftshift(get_window(window, Nx))
-
-        newshape_W = [1] * x.ndim
-        newshape_W[axis] = X.shape[axis]
-        if real_input:
-            # Fold the window back on itself to mimic complex behavior
-            W_real = W.copy()
-            W_real[1:] += W_real[-1:0:-1]
-            W_real[1:] *= 0.5
-            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
-        else:
-            X *= W.reshape(newshape_W)
-
-    # Copy each half of the original spectrum to the output spectrum, either
-    # truncating high frequencies (downsampling) or zero-padding them
-    # (upsampling)
-
-    # Placeholder array for output spectrum
-    newshape = list(x.shape)
-    if real_input:
-        newshape[axis] = num // 2 + 1
+    if window is None: # Determine spectral windowing function:
+        W = None
+    elif callable(window):
+        W = window(sp_fft.fftfreq(n_x))
+    elif hasattr(window, 'shape'): # must be an array object
+        if window.shape != (n_x,):
+            raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
+                             "is not equal to number of frequency bins!")
+        W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
-        newshape[axis] = num
-    Y = np.zeros(newshape, X.dtype)
+        W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
+        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
 
-    # Copy positive frequency components (and Nyquist, if present)
-    N = min(num, Nx)
-    nyq = N // 2 + 1  # Slice index that includes Nyquist if present
-    sl = [slice(None)] * x.ndim
-    sl[axis] = slice(0, nyq)
-    Y[tuple(sl)] = X[tuple(sl)]
-    if not real_input:
-        # Copy negative frequency components
-        if N > 2:  # (slice expression doesn't collapse to empty array)
-            sl[axis] = slice(nyq - N, None)
-            Y[tuple(sl)] = X[tuple(sl)]
+    if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
+        X = sp_fft.rfft(x)
+        if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
+            n_X = X.shape[-1]
+            W[1:n_X] += xp.flip(W[-n_X+1:])  #W[:-n_X:-1]
+            W[1:n_X] /= 2
+            X *= W[:n_X]  # apply window
+        X = X[..., :m2]  # extract relevant data
+        if m % 2 == 0 and num != n_x:  # Account for unpaired bin at m//2:
+            X[..., m//2] *= 2 if num < n_x else 0.5
+        x_r = sp_fft.irfft(X / s_fac, n=num, overwrite_x=True)
+    else:  # use standard two-sided FFT:
+        X = sp_fft.fft(x) if domain == 'time' else x
+        if W is not None:
+            X = X * W  # writing X *= W could modify parameter x
+        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
+        Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
+        if m2 < m:  # == m > 2
+            Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
+        if m % 2 == 0:  # Account for unpaired bin at m//2:
+            if num < n_x:  # down-sampling: unite bin pair into one unpaired bin
+                Y[..., -m//2] += X[..., -m//2]
+            elif n_x < num:  # up-sampling: split unpaired bin into bin pair
+                Y[..., m//2] /= 2
+                Y[..., num-m//2] = Y[..., m//2]
+        x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
-    # Split/join Nyquist component(s) if present
-    # So far we have set Y[+N/2]=X[+N/2]
-    if N % 2 == 0:
-        if num < Nx:  # downsampling
-            if real_input:
-                sl[axis] = slice(N//2, N//2 + 1)
-                Y[tuple(sl)] *= 2.
-            else:
-                # select the component of Y at frequency +N/2,
-                # add the component of X at -N/2
-                sl[axis] = slice(-N//2, -N//2 + 1)
-                Y[tuple(sl)] += X[tuple(sl)]
-        elif Nx < num:  # upsampling
-            # select the component at frequency +N/2 and halve it
-            sl[axis] = slice(N//2, N//2 + 1)
-            Y[tuple(sl)] *= 0.5
-            if not real_input:
-                temp = Y[tuple(sl)]
-                # set the component at -N/2 equal to the component at +N/2
-                sl[axis] = slice(num-N//2, num-N//2 + 1)
-                Y[tuple(sl)] = temp
-
-    # Inverse transform
-    if real_input:
-        y = sp_fft.irfft(Y, num, axis=axis)
-    else:
-        y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
-
-    y *= (float(num) / float(Nx))
-
-    if t is None:
-        return y
-    else:
-        new_t = np.arange(0, num) * (t[1] - t[0]) * Nx / float(num) + t[0]
-        return y, new_t
+    if x_r.ndim > 1:  # moving active axis back to original position:
+        x_r = xp.moveaxis(x_r, -1, axis)
+    if t is not None:
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * xp.arange(num)
+    return x_r
 
 
 def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
@@ -3830,7 +3987,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+
+    x = xp.asarray(x)
     if up != int(up):
         raise ValueError("up must be an integer")
     if down != int(down):
@@ -3849,31 +4008,29 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     up //= g_
     down //= g_
     if up == down == 1:
-        return x.copy()
+        return xp.asarray(x, copy=True)
     n_in = x.shape[axis]
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list | np.ndarray)):
-        window = np.array(window)  # use array to force a copy (we modify it)
+    if isinstance(window, list) or is_array_api_obj(window):
+        window = xp.asarray(window, copy=True)  # force a copy (we modify `window`)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
-        half_len = (window.size - 1) // 2
+        half_len = (xp_size(window) - 1) // 2
         h = window
     else:
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        if np.issubdtype(x.dtype, np.complexfloating):
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window).astype(x.dtype)  # match dtype of x
-        elif np.issubdtype(x.dtype, np.floating):
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window).astype(x.dtype)  # match dtype of x
+        if xp.isdtype(x.dtype, ("real floating", "complex floating")):
+            h = firwin(2 * half_len + 1, f_c, window=window)
+            h = xp.asarray(h, dtype=x.dtype)    # match dtype of x
         else:
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window)
+            h = firwin(2 * half_len + 1, f_c, window=window)
+            h = xp.asarray(h)
+
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -3881,16 +4038,20 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_post_pad = 0
     n_pre_remove = (half_len + n_pre_pad) // down
     # We should rarely need to do this given our filter lengths...
-    while _output_len(len(h) + n_pre_pad + n_post_pad, n_in,
+    while _output_len(h.shape[0] + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
-                        np.zeros(n_post_pad, dtype=h.dtype)))
+    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype), h,
+                   xp.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
+    # XXX consider using stats.quantile, which is natively Array API compatible
+    def _median(x, *args, **kwds):
+        return xp.asarray(np.median(np.asarray(x), *args, **kwds))
+
     # Remove background depending on the padtype option
-    funcs = {'mean': np.mean, 'median': np.median,
-             'minimum': np.amin, 'maximum': np.amax}
+    funcs = {'mean': xp.mean, 'median': _median,
+             'minimum': xp.min, 'maximum': xp.max}
     upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
     if padtype in funcs:
         background_values = funcs[padtype](x, axis=axis, keepdims=True)
@@ -4036,8 +4197,11 @@ def detrend(data: np.ndarray, axis: int = -1,
         performed for each part of `data` between two break points.
         Break points are specified as indices into `data`. This parameter
         only has an effect when ``type == 'linear'``.
-    overwrite_data : bool, optional
-        If True, perform in place detrending and avoid a copy. Default is False
+    overwrite_data: bool, optional
+        If True, allow in place detrending and avoid a copy. Default is
+        False. In place modification applies only if ``type == 'linear'``
+        and `data` is of the floating point dtype ``float32``, ``float64``,
+        ``complex64`` or ``complex128``.
 
     Returns
     -------
@@ -4052,7 +4216,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     See Also
     --------
-    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+    :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial.
 
 
     Examples
@@ -4093,15 +4257,11 @@ def detrend(data: np.ndarray, axis: int = -1,
     Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
-    """
+    """  # noqa: E501
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
-    # XXX simplify when data-apis/array-api-compat#147 is available
-    if isinstance(bp, int):
-       xp = array_namespace(data)
-    else:
-       xp = array_namespace(data, bp)
+    xp = array_namespace(data, bp)
 
     data = np.asarray(data)
     dtype = data.dtype.char
@@ -4705,8 +4865,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     """
     xp = array_namespace(b, a, x)
 
-    b = np.atleast_1d(b)
-    a = np.atleast_1d(a)
+    b = np.atleast_1d(np.asarray(b))
+    a = np.atleast_1d(np.asarray(a))
     x = np.asarray(x)
 
     if method not in ["pad", "gust"]:
@@ -4745,6 +4905,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     if edge > 0:
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
+        if is_torch(xp):
+            y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
 
     return xp.asarray(y)
 
@@ -4862,17 +5024,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
-    try:
-        xp = array_namespace(sos, x, zi)
-    except TypeError:
-        # either in1 or in2 are object arrays
-        xp = np_compat
-
-    if is_numpy(xp):
-        _reject_objects(sos, 'sosfilt')
-        _reject_objects(x, 'sosfilt')
-        if zi is not None:
-            _reject_objects(zi, 'sosfilt')
+    xp = array_namespace(sos, x, zi)
 
     x = _validate_x(x)
     sos, n_sections = _validate_sos(sos)
@@ -4912,10 +5064,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
     zi = np.ascontiguousarray(np.reshape(zi, (-1, n_sections, 2)))
     sos = sos.astype(dtype, copy=False)
     _sosfilt(sos, x, zi)
-    x.shape = x_shape
+    x = x.reshape(x_shape)
     x = np.moveaxis(x, -1, axis)
     if return_zi:
-        zi.shape = zi_shape
+        zi = zi.reshape(zi_shape)
         zi = np.moveaxis(zi, (-2, -1), (0, axis + 1))
         out = (xp.asarray(x), xp.asarray(zi))
     else:
@@ -5027,7 +5179,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
     zi_shape = [1] * x.ndim
     zi_shape[axis] = 2
-    zi.shape = [n_sections] + zi_shape
+    zi = zi.reshape([n_sections] + zi_shape)
     x_0 = axis_slice(ext, stop=1, axis=axis)
     (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
     y_0 = axis_slice(y, start=-1, axis=axis)
@@ -5048,11 +5200,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     Parameters
     ----------
     x : array_like
-        The signal to be downsampled, as an N-dimensional array.
+        The input signal made up of equidistant samples. If `x` is a multidimensional
+        array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor. When using IIR downsampling, it is recommended
-        to call `decimate` multiple times for downsampling factors higher than
-        13.
+        The downsampling factor, which is a postive integer. When using IIR
+        downsampling, it is recommended to call `decimate` multiple times for
+        downsampling factors higher than 13.
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
         8 for 'iir' and 20 times the downsampling factor for 'fir'.
@@ -5081,6 +5234,10 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     Notes
     -----
+    For non-integer downsampling factors, `~scipy.signal.resample` can be used. Consult
+    the `scipy.interpolate` module for methods of resampling signals with non-constant
+    sampling intervals.
+
     The ``zero_phase`` keyword was added in 0.18.0.
     The possibility to use instances of ``dlti`` as ``ftype`` was added in
     0.18.0.

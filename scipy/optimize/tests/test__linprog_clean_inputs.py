@@ -1,6 +1,8 @@
 """
 Unit test for Linear Programming via Simplex Algorithm.
 """
+import warnings
+
 from copy import deepcopy
 from datetime import date
 
@@ -83,9 +85,10 @@ def test_missing_inputs():
 
 def test_too_many_dimensions():
     cb = [1, 2, 3, 4]
-    A = np.random.rand(4, 4)
+    rng = np.random.default_rng(1234)
+    A = rng.random((4, 4))
     bad2D = [[1, 2], [3, 4]]
-    bad3D = np.random.rand(4, 4, 4)
+    bad3D = rng.random((4, 4, 4))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=bad2D, A_ub=A, b_ub=cb))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_ub=bad3D, b_ub=cb))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_ub=A, b_ub=bad2D))
@@ -94,8 +97,9 @@ def test_too_many_dimensions():
 
 
 def test_too_few_dimensions():
-    bad = np.random.rand(4, 4).ravel()
-    cb = np.random.rand(4)
+    rng = np.random.default_rng(1234)
+    bad = rng.random((4, 4)).ravel()
+    cb = rng.random(4)
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_ub=bad, b_ub=cb))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_eq=bad, b_eq=cb))
 
@@ -105,18 +109,20 @@ def test_inconsistent_dimensions():
     n = 4
     c = [1, 2, 3, 4]
 
-    Agood = np.random.rand(m, n)
-    Abad = np.random.rand(m, n + 1)
-    bgood = np.random.rand(m)
-    bbad = np.random.rand(m + 1)
+    rng = np.random.default_rng(122390)
+    Agood = rng.random((m, n))
+    Abad = rng.random((m, n + 1))
+    bgood = rng.random(m)
+    bbad = rng.random(m + 1)
     boundsbad = [(0, 1)] * (n + 1)
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_ub=Abad, b_ub=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_ub=Agood, b_ub=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "Creating an ndarray from ragged", VisibleDeprecationWarning)
         assert_raises(ValueError, _clean_inputs,
                       _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
 
@@ -222,11 +228,12 @@ def test__clean_inputs2():
 
 
 def test__clean_inputs3():
+    rng = np.random.default_rng(1890908)
     lp = _LPProblem(
         c=[[1, 2]],
-        A_ub=np.random.rand(2, 2),
+        A_ub=rng.random((2, 2)),
         b_ub=[[1], [2]],
-        A_eq=np.random.rand(2, 2),
+        A_eq=rng.random((2, 2)),
         b_eq=[[1], [2]],
         bounds=[(0, 1)]
     )
@@ -248,8 +255,9 @@ def test_bad_bounds():
 
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "Creating an ndarray from ragged", VisibleDeprecationWarning)
         assert_raises(ValueError, _clean_inputs,
                       lp._replace(bounds=[(1, 2), (1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs,

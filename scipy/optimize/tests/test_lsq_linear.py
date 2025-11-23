@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 import numpy as np
@@ -20,7 +22,7 @@ b = np.array([0.074, 1.014, -0.383])
 
 class BaseMixin:
     def setup_method(self):
-        self.rnd = np.random.RandomState(0)
+        self.rnd = np.random.default_rng(1092892)
 
     def test_dense_no_bounds(self):
         for lsq_solver in self.lsq_solvers:
@@ -92,8 +94,8 @@ class BaseMixin:
 
     def test_np_matrix(self):
         # gh-10711
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(PendingDeprecationWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", PendingDeprecationWarning)
             A = np.matrix([[20, -4, 0, 2, 3], [10, -2, 1, 0, -1]])
         k = np.array([20, 15])
         lsq_linear(A, k)
@@ -157,16 +159,16 @@ class BaseMixin:
 
     @pytest.mark.xslow
     def test_large_rank_deficient(self):
-        np.random.seed(0)
-        n, m = np.sort(np.random.randint(2, 1000, size=2))
+        rng = np.random.default_rng(1290209)
+        n, m = np.sort(rng.integers(2, 1000, size=2))
         m *= 2   # make m >> n
-        A = 1.0 * np.random.randint(-99, 99, size=[m, n])
-        b = 1.0 * np.random.randint(-99, 99, size=[m])
-        bounds = 1.0 * np.sort(np.random.randint(-99, 99, size=(2, n)), axis=0)
+        A = 1.0 * rng.integers(-99, 99, size=[m, n])
+        b = 1.0 * rng.integers(-99, 99, size=[m])
+        bounds = 1.0 * np.sort(rng.integers(-99, 99, size=(2, n)), axis=0)
         bounds[1, :] += 1.0  # ensure up > lb
 
         # Make the A matrix strongly rank deficient by replicating some columns
-        w = np.random.choice(n, n)  # Select random columns with duplicates
+        w = rng.choice(n, n)  # Select random columns with duplicates
         A = A[:, w]
 
         x_bvls = lsq_linear(A, b, bounds=bounds, method='bvls').x
@@ -212,6 +214,7 @@ class SparseMixin:
     def test_sparse_bounds(self):
         m = 5000
         n = 1000
+
         rng = np.random.RandomState(0)
         A = random_array((m, n), random_state=rng)
         b = rng.randn(m)
@@ -239,7 +242,7 @@ class SparseMixin:
 
         # Default lsmr arguments should not fully converge the solution
         default_lsmr_sol = lsq_linear(A, b, lsq_solver='lsmr')
-        with pytest.raises(AssertionError, match=""):
+        with pytest.raises(AssertionError):
             assert_allclose(exact_sol.x, default_lsmr_sol.x)
 
         # By increasing the maximum lsmr iters, it will converge

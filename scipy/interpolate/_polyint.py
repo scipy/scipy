@@ -1,4 +1,5 @@
 import warnings
+from types import GenericAlias
 
 import numpy as np
 from scipy.special import factorial
@@ -49,6 +50,9 @@ class _Interpolator1D:
     """
 
     __slots__ = ('_y_axis', '_y_extra_shape', 'dtype')
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, xi=None, yi=None, axis=None):
         self._y_axis = axis
@@ -678,7 +682,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
 
-    Next, we show how using Chebyshev points of the second kind avoids the avoids the
+    Next, we show how using Chebyshev points of the second kind avoids the
     Runge phenomenon. In this example, we also compute the weights explicitly.
 
     >>> n = 20

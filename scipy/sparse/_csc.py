@@ -8,7 +8,7 @@ import numpy as np
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
-from ._sparsetools import csc_tocsr, expandptr
+from ._sparsetools import csr_tocsc, expandptr
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
@@ -49,7 +49,7 @@ class _csc_base(_cs_matrix):
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(M, N,
+        csr_tocsc(N, M,
                   self.indptr.astype(idx_dtype),
                   self.indices.astype(idx_dtype),
                   self.data,

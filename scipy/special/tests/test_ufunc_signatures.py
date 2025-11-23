@@ -13,9 +13,15 @@ import pytest
 import scipy.special._ufuncs
 import scipy.special._gufuncs
 
+
+# Single precision is not implemented for these ufuncs;
+# floating point inputs must be float64.
+exceptions = ['_gen_harmonic', '_normalized_gen_harmonic']
+
 _ufuncs = []
 for funcname in dir(scipy.special._ufuncs):
-    _ufuncs.append(getattr(scipy.special._ufuncs, funcname))
+    if funcname not in exceptions:
+        _ufuncs.append(getattr(scipy.special._ufuncs, funcname))
 for funcname in dir(scipy.special._gufuncs):
     _ufuncs.append(getattr(scipy.special._gufuncs, funcname))
 
@@ -29,7 +35,6 @@ def test_ufunc_signatures(ufunc):
     # "Don't add float32 versions of ufuncs with integer arguments, as this
     # can lead to incorrect dtype selection if the integer arguments are
     # arrays, but float arguments are scalars.
-    # For instance sph_harm(0,[0],0,0).dtype == complex64
     # This may be a NumPy bug, but we need to work around it.
     # cf. gh-4895, https://github.com/numpy/numpy/issues/5895"
     types = set(sig for sig in ufunc.types

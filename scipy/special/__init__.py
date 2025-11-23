@@ -5,6 +5,11 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
+.. toctree::
+   :hidden:
+
+   special.cython_special
+
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
@@ -86,15 +91,15 @@ Bessel functions
                         complex argument.
    yve               -- Exponentially scaled Bessel function of the second kind \
                         of real order.
+   iv                -- Modified Bessel function of the first kind of real order.
+   ive               -- Exponentially scaled modified Bessel function of the \
+                        first kind.
    kn                -- Modified Bessel function of the second kind of integer \
                         order `n`
    kv                -- Modified Bessel function of the second kind of real order \
                         `v`
    kve               -- Exponentially scaled modified Bessel function of the \
                         second kind.
-   iv                -- Modified Bessel function of the first kind of real order.
-   ive               -- Exponentially scaled modified Bessel function of the \
-                        first kind.
    hankel1           -- Hankel function of the first kind.
    hankel1e          -- Exponentially scaled Hankel function of the first kind.
    hankel2           -- Hankel function of the second kind.
@@ -168,8 +173,8 @@ Derivatives of Bessel functions
 
    jvp  -- Compute nth derivative of Bessel function Jv(z) with respect to `z`.
    yvp  -- Compute nth derivative of Bessel function Yv(z) with respect to `z`.
-   kvp  -- Compute nth derivative of real-order modified Bessel function Kv(z)
    ivp  -- Compute nth derivative of modified Bessel function Iv(z) with respect to `z`.
+   kvp  -- Compute nth derivative of real-order modified Bessel function Kv(z)
    h1vp -- Compute nth derivative of Hankel function H1v(z) with respect to `z`.
    h2vp -- Compute nth derivative of Hankel function H2v(z) with respect to `z`.
 
@@ -193,8 +198,8 @@ universal functions):
 .. autosummary::
    :toctree: generated/
 
-   riccati_jn -- Compute Ricatti-Bessel function of the first kind and its derivative.
-   riccati_yn -- Compute Ricatti-Bessel function of the second kind and its derivative.
+   riccati_jn -- Compute Riccati-Bessel function of the first kind and its derivative.
+   riccati_yn -- Compute Riccati-Bessel function of the second kind and its derivative.
 
 Struve functions
 ----------------
@@ -484,11 +489,7 @@ which provide a more flexible and consistent interface.
    :toctree: generated/
 
    lpmv                       -- Associated Legendre function of integer order and real degree.
-   sph_harm                   -- Compute spherical harmonics.
-   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
-   lpn                        -- Legendre function of the first kind.
    lqn                        -- Legendre function of the second kind.
-   lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics
@@ -734,7 +735,7 @@ Other special functions
    agm         -- Arithmetic, Geometric Mean.
    bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
    binom       -- Binomial coefficient
-   diric       -- Periodic sinc function, also called the Dirichlet function.
+   diric       -- Periodic sinc function, also called the Dirichlet kernel.
    euler       -- Euler numbers E0..En (inclusive).
    expn        -- Exponential integral E_n.
    exp1        -- Exponential integral E_1 of complex argument z.
@@ -784,14 +785,12 @@ from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 from . import _ufuncs
 from ._ufuncs import *
 
-# Replace some function definitions from _ufuncs to add Array API support
-from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
-
 from . import _basic
 from ._basic import *
+
+# Replace some function definitions from _ufuncs and _basic
+# to add Array API support
+from ._support_alternative_backends import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -801,7 +800,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -842,13 +840,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-
-def _get_include():
-    """This function is for development purposes only.
-
-    This function could disappear or its behavior could change at any time.
-    """
-    import os
-    return os.path.dirname(__file__)
-

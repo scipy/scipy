@@ -8,6 +8,14 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "9  9 2/2 * *"
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
@@ -30,7 +38,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   icx_icpx_ifx_mkl:
-    name: py3.12, dev.py
+    name: py3.12, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -47,6 +55,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+
+      # Reference https://github.com/easimon/maximize-build-space/blob/master/action.yml
+      # see https://github.com/scipy/scipy/issues/23813
+      - name: Free up disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android
+          df -h
 
       - name: cache install
         id: cache-install
@@ -87,7 +103,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate scipy-dev
-          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin "click<8.3.0"
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}
@@ -99,11 +115,11 @@ jobs:
           # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
           pip install pythran
           unset FFLAGS
-          CC=icx CXX=icpx FC=ifx python dev.py build -C-Dblas=mkl-dynamic-lp64-iomp -C-Dlapack=mkl-dynamic-lp64-iomp
+          CC=icx CXX=icpx FC=ifx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
 
       - name: Test scipy
         shell: bash -l {0}
         run: |
           . /opt/intel/oneapi/setvars.sh --force
           conda activate scipy-dev
-          python dev.py test
+          spin test

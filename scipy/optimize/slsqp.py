@@ -9,7 +9,6 @@ __all__ = [  # noqa: F822
     'OptimizeResult',
     'fmin_slsqp',
     'slsqp',
-    'zeros',
 ]
 
 

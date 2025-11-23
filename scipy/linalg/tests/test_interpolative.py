@@ -183,9 +183,9 @@ class TestInterpolativeDecomposition:
 
     def test_full_rank(self):
         eps = 1.0e-12
-
+        rng = np.random.default_rng(1234)
         # fixed precision
-        A = np.random.rand(16, 8)
+        A = rng.random((16, 8))
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
         assert_equal(k, A.shape[1])
 
@@ -213,3 +213,20 @@ class TestInterpolativeDecomposition:
         B = A.copy()
         interp_decomp(A.T, eps, rand=rand)
         assert_array_equal(A, B)
+
+    def test_svd_aslinearoperator_shape_check(self):
+        # See gh-issue #22451
+        rng = np.random.default_rng(1744580941832515)
+        x = rng.uniform(size=[7, 5])
+        xl = aslinearoperator(x)
+        u, s, v = pymatrixid.svd(xl, 3)
+        assert_equal(u.shape, (7, 3))
+        assert_equal(s.shape, (3,))
+        assert_equal(v.shape, (5, 3))
+
+        x = rng.uniform(size=[4, 9])
+        xl = aslinearoperator(x)
+        u, s, v = pymatrixid.svd(xl, 2)
+        assert_equal(u.shape, (4, 2))
+        assert_equal(s.shape, (2,))
+        assert_equal(v.shape, (9, 2))

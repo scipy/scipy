@@ -1,5 +1,6 @@
 import pytest
 import itertools
+import warnings
 
 from scipy import stats
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
@@ -9,7 +10,7 @@ from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
 
 import numpy as np
 from numpy.testing import (
-    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+    assert_almost_equal, assert_equal, assert_allclose
 )
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
@@ -176,8 +177,8 @@ def test_issue_11134():
 
 
 def test_issue_7406():
-    np.random.seed(0)
-    assert_equal(binom.ppf(np.random.rand(10), 0, 0.5), 0)
+    rng = np.random.default_rng(4763112764)
+    assert_equal(binom.ppf(rng.random(10), 0, 0.5), 0)
 
     # Also check that endpoints (q=0, q=1) are correct
     assert_equal(binom.ppf(0, 0, 0.5), -1)
@@ -185,8 +186,9 @@ def test_issue_7406():
 
 
 def test_issue_5122():
+    rng = np.random.default_rng(8312492117)
     p = 0
-    n = np.random.randint(100, size=10)
+    n = rng.integers(100, size=10)
 
     x = 0
     ppf = binom.ppf(x, n, p)
@@ -221,6 +223,8 @@ def test_issue_5503():
     (30010000, 100000000, 3/10, 0.98545384016570790717),
     (29990000, 100000000, 3/10, 0.01455017177985268670),
     (29950000, 100000000, 3/10, 5.02250963487432024943e-28),
+    (300_000_000, 1_000_000_000, 3/10, 0.50001560012523938),
+    (3_000_000_000, 10_000_000_000, 3/10, 0.50000493319275)
 ])
 def test_issue_5503pt2(x, n, p, cdf_desired):
     assert_allclose(binom.cdf(x, n, p), cdf_desired)
@@ -360,19 +364,62 @@ class TestZipfian:
         pmf_k_int32 = dist.pmf(k_int32)
         assert_equal(pmf, pmf_k_int32)
 
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'k, a, n, ref',
+        [(3, 1 + 1e-12, 10, 0.11380571738244807),
+         (995, 1 + 1e-9, 1000, 0.0001342634472310051)]
+    )
+    def test_pmf_against_mpmath(self, k, a, n, ref):
+        p = zipfian.pmf(k, a, n)
+        assert_allclose(p, ref, 5e-16)
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'k, a, n, ref',
+        [(4990, 1.25, 5000, 5.780138225335147e-05),
+         (9998, 3.5, 10000, 1.775352757966365e-14),
+         (50000, 3.5, 100000, 5.227803621367486e-13),
+         (10, 6.0, 100, 1.523108153557902e-06),
+         (95, 6.0, 100, 5.572438078308601e-12)]
+    )
+    def test_sf_against_mpmath(self, k, a, n, ref):
+        sf = zipfian.sf(k, a, n)
+        assert_allclose(sf, ref, rtol=8e-15)
+
+    # Reference values were computed with mpmath.
+    @pytest.mark.parametrize(
+        'a, n, ref',
+        [(1 + 1e-9, 100, 19.27756356649707),
+         (1 + 1e-7, 100000, 8271.194454731552),
+         (1.001, 3, 1.6360225521183804)]
+    )
+    def test_mean_against_mpmath(self, a, n, ref):
+        m = zipfian.mean(a, n)
+        assert_allclose(m, ref, rtol=8e-15)
+
+    def test_ridiculously_large_n(self):
+        # This should return nan with no errors or warnings.
+        a = 2.5
+        n = 1e100
+        p = zipfian.pmf(10, a, n)
+        assert_equal(p, np.nan)
+
 
 class TestNCH:
-    np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
-    shape = (2, 4, 3)
-    max_m = 100
-    m1 = np.random.randint(1, max_m, size=shape)    # red balls
-    m2 = np.random.randint(1, max_m, size=shape)    # white balls
-    N = m1 + m2                                     # total balls
-    n = randint.rvs(0, N, size=N.shape)             # number of draws
-    xl = np.maximum(0, n-m2)                        # lower bound of support
-    xu = np.minimum(n, m1)                          # upper bound of support
-    x = randint.rvs(xl, xu, size=xl.shape)
-    odds = np.random.rand(*x.shape)*2
+    def setup_method(self):
+        rng = np.random.default_rng(7162434334)
+        shape = (2, 4, 3)
+        max_m = 100
+        m1 = rng.integers(1, max_m, size=shape)  # red balls
+        m2 = rng.integers(1, max_m, size=shape)  # white balls
+        N = m1 + m2  # total balls
+        n = randint.rvs(0, N, size=N.shape, random_state=rng)  # number of draws
+        xl = np.maximum(0, n-m2)  # lower bound of support
+        xu = np.minimum(n, m1)  # upper bound of support
+        x = randint.rvs(xl, xu, size=xl.shape, random_state=rng)
+        odds = rng.random(x.shape)*2
+        self.x, self.N, self.m1, self.n, self.odds = x, N, m1, n, odds
 
     # test output is more readable when function names (strings) are passed
     @pytest.mark.parametrize('dist_name',
@@ -452,8 +499,8 @@ class TestNCH:
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
                             mean(N, m1, n, w), rtol=2e-2)
@@ -466,8 +513,8 @@ class TestNCH:
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning,
                        message="invalid value encountered in mean")
             assert_allclose(
                 nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),

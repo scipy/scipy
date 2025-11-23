@@ -57,6 +57,8 @@ import math
 from typing import Any
 from collections.abc import Callable
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
 
@@ -2124,6 +2126,7 @@ def _check_obsolete(key: str) -> None:
                       ConstantWarning, stacklevel=3)
 
 
+@xp_capabilities(out_of_scope=True)
 def value(key: str) -> float:
     """
     Value in physical_constants indexed by key
@@ -2149,6 +2152,7 @@ def value(key: str) -> float:
     return physical_constants[key][0]
 
 
+@xp_capabilities(out_of_scope=True)
 def unit(key: str) -> str:
     """
     Unit in physical_constants indexed by key
@@ -2174,6 +2178,7 @@ def unit(key: str) -> str:
     return physical_constants[key][1]
 
 
+@xp_capabilities(out_of_scope=True)
 def precision(key: str) -> float:
     """
     Relative precision in physical_constants indexed by key
@@ -2199,6 +2204,7 @@ def precision(key: str) -> float:
     return physical_constants[key][2] / physical_constants[key][0]
 
 
+@xp_capabilities(out_of_scope=True)
 def find(sub: str | None = None, disp: bool = False) -> Any:
     """
     Return list of physical_constant keys containing a given string.

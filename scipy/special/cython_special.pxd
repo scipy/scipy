@@ -49,17 +49,17 @@ cpdef double betaln(double x0, double x1) noexcept nogil
 cpdef double binom(double x0, double x1) noexcept nogil
 cpdef double boxcox(double x0, double x1) noexcept nogil
 cpdef double boxcox1p(double x0, double x1) noexcept nogil
-cpdef double btdtria(double x0, double x1, double x2) noexcept nogil
-cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t btdtrib(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double cbrt(double x0) noexcept nogil
 cpdef double chdtr(double x0, double x1) noexcept nogil
 cpdef double chdtrc(double x0, double x1) noexcept nogil
 cpdef double chdtri(double x0, double x1) noexcept nogil
-cpdef double chdtriv(double x0, double x1) noexcept nogil
-cpdef double chndtr(double x0, double x1, double x2) noexcept nogil
-cpdef double chndtridf(double x0, double x1, double x2) noexcept nogil
-cpdef double chndtrinc(double x0, double x1, double x2) noexcept nogil
-cpdef double chndtrix(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t chdtriv(df_number_t x0, df_number_t x1) noexcept nogil
+cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double cosdg(double x0) noexcept nogil
 cpdef double cosm1(double x0) noexcept nogil
 cpdef double cotdg(double x0) noexcept nogil
@@ -105,9 +105,9 @@ cpdef dfg_number_t expit(dfg_number_t x0) noexcept nogil
 cpdef Dd_number_t expm1(Dd_number_t x0) noexcept nogil
 cpdef double expn(dlp_number_t x0, double x1) noexcept nogil
 cpdef double exprel(double x0) noexcept nogil
-cpdef double fdtr(double x0, double x1, double x2) noexcept nogil
-cpdef double fdtrc(double x0, double x1, double x2) noexcept nogil
-cpdef double fdtri(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil
 cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) noexcept nogil
 cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil
@@ -215,7 +215,7 @@ cdef void pbwa(double x0, double x1, double *y0, double *y1) noexcept nogil
 cpdef double pdtr(double x0, double x1) noexcept nogil
 cpdef double pdtrc(double x0, double x1) noexcept nogil
 cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil
-cpdef double pdtrik(double x0, double x1) noexcept nogil
+cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double poch(double x0, double x1) noexcept nogil
 cpdef df_number_t powm1(df_number_t x0, df_number_t x1) noexcept nogil
 cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) noexcept nogil
@@ -237,10 +237,9 @@ cpdef double sindg(double x0) noexcept nogil
 cpdef double smirnov(dlp_number_t x0, double x1) noexcept nogil
 cpdef double smirnovi(dlp_number_t x0, double x1) noexcept nogil
 cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil
-cpdef double stdtr(double x0, double x1) noexcept nogil
+cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double stdtridf(double x0, double x1) noexcept nogil
-cpdef double stdtrit(double x0, double x1) noexcept nogil
+cpdef df_number_t stdtrit(df_number_t x0, df_number_t x1) noexcept nogil
 cpdef double struve(double x0, double x1) noexcept nogil
 cpdef double tandg(double x0) noexcept nogil
 cpdef double tklmbda(double x0, double x1) noexcept nogil

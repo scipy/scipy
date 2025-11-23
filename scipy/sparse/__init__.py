@@ -95,6 +95,9 @@ Combining arrays
    triu - Upper triangular portion of a sparse array
    hstack - Stack sparse arrays horizontally (column wise)
    vstack - Stack sparse arrays vertically (row wise)
+   swapaxes - swap two axes of a sparse array
+   expand_dims - add a new (trivial) axis to a sparse array
+   permute_dims - reorder the axes of a sparse array
 
 Sparse tools
 ------------
@@ -299,6 +302,7 @@ sorted indices are required (e.g., when passing data to other libraries).
 # Nathan Bell, and Jake Vanderplas.
 
 import warnings as _warnings
+import importlib as _importlib
 
 from ._base import *
 from ._csr import *
@@ -314,8 +318,6 @@ from ._matrix import spmatrix
 from ._matrix_io import *
 from ._sputils import get_index_dtype, safely_cast_index_arrays
 
-# For backward compatibility with v0.19.
-from . import csgraph
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
@@ -323,11 +325,28 @@ from . import (
     lil, sparsetools, sputils
 )
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+_submodules = ["csgraph", "linalg"]
+
+__all__ = [s for s in dir() if not s.startswith('_')] + _submodules
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
 msg = 'the matrix subclass is not the recommended way'
 _warnings.filterwarnings('ignore', message=msg)
+
+def __dir__():
+   return __all__
+
+
+def __getattr__(name):
+    if name in _submodules:
+        return _importlib.import_module(f'scipy.sparse.{name}')
+    else:
+        try:
+            return globals()[name]
+        except KeyError:
+            raise AttributeError(
+                f"Module 'scipy.sparse' has no attribute '{name}'"
+            )
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

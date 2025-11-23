@@ -78,10 +78,12 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_lambertw', '_scaled_exp1', '_sinpi', '_spherical_jn', '_spherical_jn_d',
-    '_spherical_yn', '_spherical_yn_d', '_spherical_in', '_spherical_in_d',
-    '_spherical_kn', '_spherical_kn_d', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp',
-    'binom', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
+    '_cospi', '_gen_harmonic', '_lambertw', '_normalized_gen_harmonic',
+    '_scaled_exp1', '_sinpi',
+    '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
+    '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
+    'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
     'iv', '_iv_ratio', '_iv_ratio_c', 'ive', 'jv',
@@ -91,7 +93,7 @@ special_ufuncs = [
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm', 'wright_bessel', 'yv', 'yve', 'zetac',
+    'pro_rad2_cv', 'psi', 'rgamma', 'wright_bessel', 'yv', 'yve', 'zetac',
     '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
     'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
     'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
@@ -408,7 +410,6 @@ def iter_variants(inputs, outputs):
         # Don't add float32 versions of ufuncs with integer arguments, as this
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
-        # For instance sph_harm(0,[0],0,0).dtype == complex64
         # This may be a NumPy bug, but we need to work around it.
         # cf. gh-4895, https://github.com/numpy/numpy/issues/5895
         maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]

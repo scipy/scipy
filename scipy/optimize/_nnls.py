@@ -1,5 +1,5 @@
 import numpy as np
-from ._cython_nnls import _nnls
+from ._slsqplib import nnls as _nnls
 from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 
 
@@ -10,7 +10,7 @@ __all__ = ['nnls']
                             deprecated_args={'atol'})
 def nnls(A, b, *, maxiter=None, atol=_NoValue):
     """
-    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
+    Solve ``argmin_x || Ax - b ||_2^2`` for ``x>=0``.
 
     This problem, often called as NonNegative Least Squares, is a convex
     optimization problem with convex constraints. It typically arises when
@@ -72,11 +72,13 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     b = np.asarray_chkfinite(b, dtype=np.float64)
 
     if len(A.shape) != 2:
-        raise ValueError("Expected a two-dimensional array (matrix)" +
-                         f", but the shape of A is {A.shape}")
-    if len(b.shape) != 1:
-        raise ValueError("Expected a one-dimensional array (vector)" +
-                         f", but the shape of b is {b.shape}")
+        raise ValueError(f"Expected a 2D array, but the shape of A is {A.shape}")
+
+    if (b.ndim > 2) or ((b.ndim == 2) and (b.shape[1] != 1)):
+        raise ValueError("Expected a 1D array,(or 2D with one column), but the,"
+                         f" shape of b is {b.shape}")
+    elif (b.ndim == 2) and (b.shape[1] == 1):
+        b = b.ravel()
 
     m, n = A.shape
 
@@ -88,7 +90,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     if not maxiter:
         maxiter = 3*n
     x, rnorm, info = _nnls(A, b, maxiter)
-    if info == -1:
+    if info == 3:
         raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm

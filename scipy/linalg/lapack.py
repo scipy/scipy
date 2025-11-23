@@ -875,12 +875,12 @@ try:
 except ImportError:
     _clapack = None
 
-try:
+from scipy.__config__ import CONFIG
+HAS_ILP64 = CONFIG['Build Dependencies']['lapack']['has ilp64']
+del CONFIG
+_flapack_64 = None
+if HAS_ILP64:
     from scipy.linalg import _flapack_64
-    HAS_ILP64 = True
-except ImportError:
-    HAS_ILP64 = False
-    _flapack_64 = None
 
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
@@ -1079,3 +1079,28 @@ def _check_work_float(value, dtype, int_dtype):
                              " cannot be performed with standard 64-bit"
                              " LAPACK.")
     return value
+
+
+# The numpy facilities for type-casting checks are too slow for small sized
+# arrays and eat away the time budget for the checkups. Here we set a
+# precomputed dict container of the numpy.can_cast() table.
+
+# It can be used to determine quickly what a dtype can be cast to LAPACK
+# compatible types, i.e., 'float32, float64, complex64, complex128'.
+# Then it can be checked via "casting_dict[arr.dtype.char]"
+
+_lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
+                    for x in np.typecodes['All']}
+
+def _normalize_lapack_dtype(a, overwrite_a):
+    """Make sure an input array has a LAPACK-compatible dtype, cast and copy otherwise.
+    """
+    if a.dtype.char not in 'fdFD':
+        dtype_char = _lapack_cast_dict[a.dtype.char]
+        if not dtype_char:  # No casting possible
+            raise TypeError(f'The dtype {a.dtype} cannot be cast '
+                            'to float(32, 64) or complex(64, 128).')
+
+        a = a.astype(dtype_char[0])  # makes a copy, free to scratch
+        overwrite_a = True
+    return a, overwrite_a

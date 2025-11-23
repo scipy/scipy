@@ -28,6 +28,11 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     gtol : float
         Gradient norm must be less than ``gtol`` before successful
         termination.
+    subproblem_maxiter : int, optional
+        Maximum number of iterations to perform per subproblem. Only affects
+        trust-exact. Default is 25.
+
+        .. versionadded:: 1.17.0
     """
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
@@ -207,10 +212,18 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     # As recommended there it value is fixed in 0.01.
     UPDATE_COEFF = 0.01
 
+    # The subproblem may iterate infinitely for problematic
+    # cases (see https://github.com/scipy/scipy/issues/12513).
+    # When the `maxiter` setting is None, we need to apply a
+    # default. An ad-hoc number (though tested quite extensively)
+    # is 25, which is set below. To restore the old behavior (which
+    # potentially hangs), this parameter may be changed to zero:
+    MAXITER_DEFAULT = 25  # use np.inf for infinite number of iterations
+
     EPS = np.finfo(float).eps
 
     def __init__(self, x, fun, jac, hess, hessp=None,
-                 k_easy=0.1, k_hard=0.2):
+                 k_easy=0.1, k_hard=0.2, maxiter=None):
 
         super().__init__(x, fun, jac, hess)
 
@@ -231,6 +244,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy
         self.k_hard = k_hard
+
+        # ``maxiter`` optionally limits the number of iterations
+        # the solve method may perform. Useful for poorly conditioned
+        # problems which may otherwise hang.
+        self.maxiter = self.MAXITER_DEFAULT if maxiter is None else maxiter
+        if self.maxiter < 0:
+            raise ValueError("maxiter must not be set to a negative number"
+                             ", use np.inf to mean infinite.")
 
         # Get Lapack function for cholesky decomposition.
         # The implemented SciPy wrapper does not return
@@ -290,7 +311,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         already_factorized = False
         self.niter = 0
 
-        while True:
+        while self.niter < self.maxiter:
 
             # Compute Cholesky factorization
             if already_factorized:
@@ -371,7 +392,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
                         # Update damping factor
                         lambda_current = max(
-                            np.sqrt(lambda_lb * lambda_ub),
+                            np.sqrt(np.abs(lambda_lb * lambda_ub)),
                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                         )
 
@@ -399,10 +420,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 s_min, z_min = estimate_smallest_singular_value(U)
                 step_len = tr_radius
 
+                p = step_len * z_min
                 # Check stop criteria
                 if (step_len**2 * s_min**2
                     <= self.k_hard * lambda_current * tr_radius**2):
-                    p = step_len * z_min
                     break
 
                 # Update uncertainty bounds
@@ -426,7 +447,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
                 # Update damping factor
                 lambda_current = max(
-                    np.sqrt(lambda_lb * lambda_ub),
+                    np.sqrt(np.abs(lambda_lb * lambda_ub)),
                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
                 )
 

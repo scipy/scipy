@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include "sf_error.h"
 
-
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
@@ -264,6 +263,91 @@ ibeta_inv_double(double a, double b, double p)
     return ibeta_inv_wrap(a, b, p, SpecialPolicy());
 }
 
+template<typename Real>
+static inline
+Real ibeta_inva_wrap(Real p, Real b, Real x)
+{
+    Real y;
+
+    if (std::isnan(p) || std::isnan(b) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((b <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_inva(b, x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("btdtria", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("btdtria", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("btdtria", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_inva_float(float p, float b, float x)
+{
+    return ibeta_inva_wrap(p, b, x);
+}
+
+double
+ibeta_inva_double(double p, double b, double x)
+{
+    return ibeta_inva_wrap(p, b, x);
+}
+
+template<typename Real>
+static inline
+Real ibeta_invb_wrap(Real a, Real p, Real x)
+{
+    Real y;
+
+    if (std::isnan(p) || std::isnan(a) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((a <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_invb(a, x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("btdtrib", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("btdtrib", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_invb_float(float a, float p, float x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
+
+double
+ibeta_invb_double(double a, double p, double x)
+{
+    return ibeta_invb_wrap(a, p, x);
+}
 
 template<typename Real>
 static inline
@@ -451,7 +535,7 @@ powm1_double(double x, double y)
 //
 // This wrapper of hypergeometric_pFq is here because there are a couple
 // edge cases where hypergeometric_1F1 in Boost version 1.80 and earlier
-// has a either bug or an inconsistent behavior.  It turns out that
+// has either a bug or an inconsistent behavior.  It turns out that
 // hypergeometric_pFq does the right thing in those cases, so we'll use
 // it until our copy of Boost is updated.
 //
@@ -699,8 +783,22 @@ Real
 ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {
+        try {
         return boost::math::pdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    }
+    catch (const std::overflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
+    }
+    catch (const std::underflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
+        return 0;
+    }
+    catch (...) {
+        sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
+        return NAN;
+    }
     }
     return NAN; // inf or -inf returns NAN
 }
@@ -721,12 +819,47 @@ template<typename Real>
 Real
 ncx2_cdf_wrap(const Real x, const Real k, const Real l)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1 - std::signbit(x);
+    if (k < 0 || x < 0 || l < 0) {
+	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    /* Special case handling for zero noncentrality
+    to get the same edge case behaviour as chdtr */
+    if (l == 0 && (k == 0 || std::isinf(x))) {
+    return 1;
+    }
+    if (l == 0 && std::isinf(k)) {
+    return 0;
+    }
+    /* Edge case handling including noncentrality*/
+    if (k == 0 || (!std::isinf(l) && std::isinf(k))) {
+    return NAN;
+    }
+    if (std::isinf(l)) {
+    return (std::isinf(x)) ? NAN : 0;
+    }
+    if (std::isinf(x) && !std::isinf(k)) {
+    return 1;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0 || y > 1) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
@@ -745,8 +878,35 @@ template<typename Real>
 Real
 ncx2_ppf_wrap(const Real x, const Real k, const Real l)
 {
-    return boost::math::quantile(
-        boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || l < 0 || x > 1) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrix", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrix", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
@@ -759,6 +919,98 @@ double
 ncx2_ppf_double(double x, double k, double l)
 {
     return ncx2_ppf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_find_noncentrality_wrap(const Real x, const Real k, const Real p)
+{
+    if (std::isnan(x) || std::isnan(k) || std::isnan(p)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || p < 0 || p > 1) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_non_centrality(k, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrinc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncx2_find_noncentrality_float(float x, float k, float p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+double
+ncx2_find_noncentrality_double(double x, double k, double p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+template<typename Real>
+Real
+ncx2_find_degrees_of_freedom_wrap(const Real x, const Real p, const Real l)
+{
+    if (std::isnan(x) || std::isnan(l) || std::isnan(p)) {
+        return NAN;
+    }
+    if (l < 0 || x < 0 || p < 0 || p > 1) {
+        sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(l, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtridf", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtridf", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtridf", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtridf", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncx2_find_degrees_of_freedom_float(float x, float p, float l)
+{
+    return ncx2_find_degrees_of_freedom_wrap(x, p, l);
+}
+
+double
+ncx2_find_degrees_of_freedom_double(double x, double p, double l)
+{
+    return ncx2_find_degrees_of_freedom_wrap(x, p, l);
 }
 
 template<typename Real>
@@ -1095,8 +1347,8 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
     }
     Real y;
     try {
-	y = boost::math::quantile(
-        boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+        y = boost::math::quantile(
+            boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
     }
     catch (const std::domain_error& e) {
         sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
@@ -1225,6 +1477,95 @@ nct_kurtosis_excess_double(double v, double l)
 
 template<typename Real>
 Real
+t_cdf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+        return NAN;
+    }
+    if (v <= 0) {
+        sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (std::isinf(x)) {
+        return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::cdf(
+                boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+        /* Result must be between 0 and 1 to be a valid CDF value.
+           Return NAN if the result is out of bounds because the answer cannot be trusted. */
+        sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_cdf_float(float v, float x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+double
+t_cdf_double(double v, double x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+template<typename Real>
+Real
+t_ppf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+        return NAN;
+    }
+    if (v <= 0 || x < 0 || x > 1) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(
+            boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        sf_error("stdtrit", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_ppf_float(float v, float x)
+{
+    return t_ppf_wrap(v, x);
+}
+
+double
+t_ppf_double(double v, double x)
+{
+    return t_ppf_wrap(v, x);
+}
+
+template<typename Real>
+Real
 skewnorm_cdf_wrap(const Real x, const Real l, const Real sc, const Real sh)
 {
     if (std::isfinite(x)) {
@@ -1314,9 +1655,18 @@ template<typename Real>
 Real
 binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
+
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        try {
+            return boost::math::cdf(
+                boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        } catch (...) {
+            /* Boost was unable to produce a result. */
+            return NAN;
+        }
+    }
+    if (std::isnan(x)) {
+	    return NAN;
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -1338,8 +1688,13 @@ template<typename Real>
 Real
 binom_ppf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    try {
+        return boost::math::quantile(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1358,8 +1713,13 @@ template<typename Real>
 Real
 binom_sf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1378,8 +1738,13 @@ template<typename Real>
 Real
 binom_isf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1765,6 +2130,256 @@ double
 landau_isf_double(double p, double loc, double scale)
 {
     return landau_isf_wrap(p, loc, scale);
+}
+
+
+template<typename Real>
+Real
+f_cdf_wrap(const Real dfn, const Real dfd, const Real x)
+{
+    if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
+	return NAN;
+    }
+    if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
+	sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	// inf => 1. We've already returned if x < 0, so this can only be +inf.
+	return 1.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+f_cdf_float(float dfn, float dfd, float x)
+{
+    return f_cdf_wrap(dfn, dfd, x);
+}
+
+double
+f_cdf_double(double dfn, double dfd, double x)
+{
+    return f_cdf_wrap(dfn, dfd, x);
+}
+
+template<typename Real>
+Real
+f_ppf_wrap(const Real dfn, const Real dfd, const Real x)
+{
+    if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
+	return NAN;
+    }
+    if ((dfn <= 0) || (dfd <= 0) || (x < 0) || (x > 1)) {
+	sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    Real y;
+    try {
+	y = boost::math::quantile<Real, SpecialPolicy>(
+                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
+    } catch (const std::domain_error& e) {
+        sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("fdtri", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("fdtri", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("fdtri", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("fdtri", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+f_ppf_float(float dfn, float dfd, float x)
+{
+    return f_ppf_wrap(dfn, dfd, x);
+}
+
+double
+f_ppf_double(double dfn, double dfd, double x)
+{
+    return f_ppf_wrap(dfn, dfd, x);
+}
+
+template<typename Real>
+Real
+f_sf_wrap(const Real dfn, const Real dfd, const Real x)
+{
+    if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
+	return NAN;
+    }
+    if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
+	sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	// inf => 0. We've already returned if x < 0, so this can only be +inf.
+	return 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(boost::math::complement(
+                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
+    } catch (...) {
+        sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+f_sf_float(float dfn, float dfd, float x)
+{
+    return f_sf_wrap(dfn, dfd, x);
+}
+
+double
+f_sf_double(double dfn, double dfd, double x)
+{
+    return f_sf_wrap(dfn, dfd, x);
+}
+
+template<typename Real>
+Real
+chdtriv_wrap(const Real p, const Real x)
+{
+    if (std::isnan(p) || std::isnan(x)) {
+        return NAN;
+    }
+    if ((x <= 0) || (p < 0) || (p > 1)) {
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    if (p == 1) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
+    } catch (const std::domain_error& e) {
+        sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chdtriv", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // In theory, y should never be negative, but with an overabundance of caution
+    // we check and return NAN if it happens.
+    if (y < 0) {
+        sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+chdtriv_float(float p, float x)
+{
+    return chdtriv_wrap(p, x);
+}
+
+double
+chdtriv_double(double p, double x)
+{
+    return chdtriv_wrap(p, x);
+}
+
+template<typename Real>
+Real
+poisson_ppf_wrap(const Real p, const Real n)
+{
+    if (std::isnan(p) || std::isnan(n)) {
+        return NAN;
+    }
+    // validate input
+    if ((n < 0) || (p < 0) || (p > 1)) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    // cdflib returns nan for p == 1, so we do the same
+    // for backwards compatibility
+    if (p == 1) {
+        return NAN;
+    }
+    // keep backwards compatible with cdflib which returns 0
+    // for p==0 or n==0
+    if ((p == 0) || (n == 0)) {
+        return 0.0;
+    }
+    Real y;
+    try {
+        y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
+    } catch (const std::domain_error&) {
+        sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error&) {
+        sf_error("pdtrik", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error&) {
+        sf_error("pdtrik", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    // In the unlikely case that the computation becomes smaller
+    // than -1, we return NAN. This should never happen.
+    if (y < -1) {
+        sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
+        return NAN;
+    }
+    // For small p, the direct formula yields values
+    // between -1 and 0. 
+    // For the Poisson distribution though, the bottom limit is 0,
+    // so we return 0 in that case.
+    if (y < 0) {
+        return 0.0;
+    }
+    return y;
+}
+
+float
+pdtrik_float(float p, float x)
+{
+    return poisson_ppf_wrap(p, x);
+}
+
+double
+pdtrik_double(double p, double x)
+{
+    return poisson_ppf_wrap(p, x);
 }
 
 #endif

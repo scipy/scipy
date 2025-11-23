@@ -403,27 +403,42 @@ def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis) -> None:
+def validateaxis(axis, *, ndim=2) -> tuple[int, ...] | None:
     if axis is None:
-        return
-    axis_type = type(axis)
+        return None
 
-    # In NumPy, you can pass in tuples for 'axis', but they are
-    # not very useful for sparse matrices given their limited
-    # dimensions, so let's make it explicit that they are not
-    # allowed to be passed in
-    if isinstance(axis, tuple):
-        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
-                        "Please pass in one of the following: "
-                        "{-2, -1, 0, 1, None}.")
+    if axis == ():
+        raise ValueError(
+            "sparse does not accept 0D axis (). Either use toarray (for dense) "
+            "or copy (for sparse)."
+        )
 
-    # If not a tuple, check that the provided axis is actually
-    # an integer and raise a TypeError similar to NumPy's
-    if not np.issubdtype(np.dtype(axis_type), np.integer):
-        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
+    if not isinstance(axis, tuple):
+        # If not a tuple, check that the provided axis is actually
+        # an integer and raise a TypeError similar to NumPy's
+        if not np.issubdtype(np.dtype(type(axis)), np.integer):
+            raise TypeError(f'axis must be an integer/tuple of ints, not {type(axis)}')
+        axis = (axis,)
 
-    if not (-2 <= axis <= 1):
-        raise ValueError("axis out of range")
+    canon_axis = []
+    for ax in axis:
+        if not isintlike(ax):
+            raise TypeError(f"axis must be an integer. (given {ax})")
+        if ax < 0:
+            ax += ndim
+        if ax < 0 or ax >= ndim:
+            raise ValueError("axis out of range for ndim")
+        canon_axis.append(ax)
+
+    len_axis = len(canon_axis)
+    if len_axis != len(set(canon_axis)):
+        raise ValueError("duplicate value in axis")
+    elif len_axis > ndim:
+        raise ValueError("axis tuple has too many elements")
+    elif len_axis == ndim:
+        return None
+    else:
+        return tuple(canon_axis)
 
 
 def check_shape(args, current_shape=None, *, allow_nd=(2,)) -> tuple[int, ...]:
