@@ -236,20 +236,22 @@ class LSODA(OdeSolver):
             return
         tcrit = np.asarray(tcrit)
         if self.direction == -1:
-            # integrate towards negative infinity, i.e. t0>t_bound
-            # remove critical times outside t0
-            tcrit = tcrit[tcrit<t0]
-            # remove critical times outside end
-            tcrit = tcrit[tcrit>t_bound]
+            # integrate towards negative infinity
+            max_t = t0
+            min_t = t_bound
         elif self.direction == 1:
-            # integrate towards positive infinity, i.e. t0<t_bound
-            # remove critical times before start time
-            tcrit = tcrit[tcrit>t0]
-            # remove critical times after end time
-            tcrit = tcrit[tcrit<t_bound]
+            # integrate towards positive infinity
+            max_t = t_bound
+            min_t = t0
         else:
             # should be unreachable keep?
             raise ValueError("Unexpected direction")
+
+        if np.any(tcrit >= max_t) or np.any(tcrit <= min_t):
+            raise ValueError(
+                f"tcrit inputs must be within timespan:"
+                f" got {tcrit} with bounds [{min_t}, {max_t}]"
+            )
         self.tcrit = np.append(tcrit, t_bound)
 
     def _find_next_tcrit(self):

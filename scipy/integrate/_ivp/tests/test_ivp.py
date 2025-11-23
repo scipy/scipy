@@ -1319,9 +1319,9 @@ def test_tcrit_lsoda():
     assert_allclose(res_crit.sol(2.), 0.02, rtol=1e-4)
 
     # test in the other direction
-    t_span = [2., 0.]
+    t_span_backwards = [2., 0.]
     res_crit_backwards = solve_ivp(
-        fun, t_span, y0, method = 'LSODA', tcrit = [1.],
+        fun, t_span_backwards, y0, method = 'LSODA', tcrit = [1.],
         atol=1e-7, rtol=1e-7, dense_output=True
     )
     assert 1. in res_crit_backwards.t
@@ -1340,3 +1340,22 @@ def test_tcrit_lsoda():
     while lsoda.t < 1:
         lsoda.step()
     assert_equal(lsoda.tcrit, [2.])
+
+    # check out of bounds
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[0.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[-1.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[2.0])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span, y0, method='LSODA', tcrit=[3.])
+
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[0.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[-1.])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[2.0])
+    with pytest.raises(ValueError):
+        solve_ivp(fun, t_span_backwards, y0, method='LSODA', tcrit=[3.])
