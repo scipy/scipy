@@ -122,6 +122,13 @@ if host_machine.system() == 'darwin'
   endif
 endif
 
+if get_option('b_sanitize') != 'none'
+  if cc.get_id() == 'clang'
+    ignore_file = meson.current_source_dir() / 'asan-ignore.txt'
+    add_global_arguments('-fsanitize-ignorelist=' + ignore_file, language: ['c', 'cpp'])
+  endif
+endif
+
 # Intel compilers default to fast-math, so disable it if we detect Intel
 # compilers. A word of warning: this may not work with the conda-forge
 # compilers, because those have the annoying habit of including lots of flags
