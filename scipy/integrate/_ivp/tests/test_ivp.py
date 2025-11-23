@@ -1335,7 +1335,6 @@ def test_tcrit_attribute():
         return np.array([1]) if t >0.99 and t<1.01 else np.array([0])
 
     y0 = [0.]
-    t_span = [0., 2.]
     
     # end time is always included as a critical time
     lsoda = LSODA(fun, 0., y0, 2.)
