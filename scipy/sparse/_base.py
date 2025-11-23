@@ -275,7 +275,7 @@ class _spbase(SparseABC):
         else:
             for fp_type in fp_types:
                 if self.dtype <= np.dtype(fp_type):
-                    return self.astype(fp_type)
+                    return self.astype(fp_type, copy=False)
 
             raise TypeError(
                 f'cannot upcast [{self.dtype.name}] to a floating point format'
@@ -952,14 +952,14 @@ class _spbase(SparseABC):
                 return np.divide(other, self.todense())
 
             if np.can_cast(self.dtype, np.float64):
-                return self.astype(np.float64)._mul_scalar(1 / other)
+                return self.astype(np.float64, copy=False)._mul_scalar(1 / other)
             else:
                 r = self._mul_scalar(1 / other)
 
                 scalar_dtype = np.asarray(other).dtype
                 if (np.issubdtype(self.dtype, np.integer) and
                         np.issubdtype(scalar_dtype, np.integer)):
-                    return r.astype(self.dtype)
+                    return r.astype(self.dtype, copy=False)
                 else:
                     return r
 
@@ -976,9 +976,8 @@ class _spbase(SparseABC):
             csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
             csr_other = (other if self.ndim < 3 else other.reshape(1, -1)).tocsr()
             if np.can_cast(self.dtype, np.float64):
-                result = csr_self.astype(np.float64)._divide_sparse(csr_other)
-            else:
-                result = csr_self._divide_sparse(csr_other)
+                csr_self = csr_self.astype(np.float64, copy=False)
+            result = csr_self._divide_sparse(csr_other)
             return result if self.ndim < 3 else result.reshape(self.shape)
         else:
             # not scalar, dense or sparse. Return NotImplemented so
@@ -1405,7 +1404,7 @@ class _spbase(SparseABC):
 
         # intermediate dtype for summation
         inter_dtype = np.float64 if integral else self.dtype
-        inter_self = self.astype(inter_dtype)
+        inter_self = self.astype(inter_dtype, copy=False)
 
         if axis is None:
             denom = math.prod(self.shape)
