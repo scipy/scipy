@@ -24,7 +24,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
     if nan_policy == 'omit':
         x = x[~np.isnan(x)]
     p_mask = np.isnan(p)
-    p = np.asarray(p, copy=True)
+    p = p.copy()
     p[p_mask] = 0.5
     if method == 'harrell-davis':
         # hdquantiles returns masked element if length along axis is 1 (bug)
@@ -43,9 +43,10 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
     return res
 
 
-@np.vectorize(excluded={0, 2})
+@np.vectorize(excluded={0, 2})  # type: ignore[call-arg]
 def winsor_reference_1d(y, p, method):
     # Adapted directly from the documentation
+    # Note: `y` is the sorted data array
     n = len(y)
     if method == 'winsor_round':
         j = int(np.round(p * n) if p < 0.5 else np.round(n * p - 1))
@@ -109,6 +110,8 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy'])
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
