@@ -29,7 +29,7 @@ An outlier is an observation that differs substantially from other observations 
 - trimming: removing outliers from the dataset, and
 - winsorization: replacing outliers with a more central value,
 
-using tools available in SciPy, with an emphasis on transitiong from use of legacy functions to the preferred approach.
+using tools available in SciPy, with an emphasis on transitioning from use of legacy functions to the preferred approach.
 
 ## Motivation
 In the past, SciPy has offered several "convenience functions" that combine trimming with computation of a statistic. Consider, for instance, `scipy.stats.trim_mean`.
@@ -71,7 +71,7 @@ np.mean(x[2:-2])
 np.mean(x[3:-3])
 ```
 
-What if instead of removing a proportion, we want to remove data below and above certain threshholds. It turns out that we would need to use `scipy.stats.tmean` or (the similarly-named, but curiously relegated to a separate namespace) `scipy.stats.mstats.trimmed_mean`, instead.
+What if instead of removing a proportion, we want to remove data below and above certain thresholds. It turns out that we would need to use `scipy.stats.tmean` or (the similarly-named, but curiously relegated to a separate namespace) `scipy.stats.mstats.trimmed_mean`, instead.
 
 ```{code-cell} ipython3
 stats.tmean(x, limits=(2, 19), inclusive=(True, True))
@@ -97,7 +97,7 @@ One could take the mean after using one of the seven functions for trimming data
 
 So at the time of writing, SciPy offers at least half a dozen ways of taking a trimmed mean, but none are able to perform *all* variations of the trimmed mean that we might reasonably expect them to.
 
-What about other statistics - should we use `stats.tvar`, `stats.mstats.tvar`, or `stats.mstats.trimmed_var` to compute the trimmed variance? If there are three functions for that and three for the mean, surely there at least one function for computing the trimmed skewness? (Naw!)
+What about other statistics - should we use `stats.tvar`, `stats.mstats.tvar`, or `stats.mstats.trimmed_var` to compute the trimmed variance? If there are three functions for that and three for the mean, surely there is at least one function for computing the trimmed skewness? (Naw!)
 
 In the spirit of the Zen of Python, we suggest the new "one-- and preferably only one --obvious way" to calculate the trimmed version of many statistics: manually, in two or three lines of code, using more familiar, general-purpose features of NumPy and SciPy. Whether calculating a trimmed or winsorized statistic, there will be three steps:
 
