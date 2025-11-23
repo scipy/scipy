@@ -135,7 +135,7 @@ class OdeSolver:
         Number of the Jacobian evaluations.
     nlu : int
         Number of LU decompositions.
-   tcrit : ndarray
+    tcrit : ndarray
         Array of critical points including ``t_bound``.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
