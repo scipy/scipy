@@ -1307,7 +1307,7 @@ def test_tcrit_lsoda(solver):
     # result without using critical time fails to find the critical region
     res = solve_ivp(
         fun, t_span, y0, method = solver,
-        atol=1e-7, rtol=1e-7, dense_output=True
+        atol=1e-9, rtol=1e-9, dense_output=True
     )
     assert 1. not in res.t
     assert_allclose(res.sol(2.), 0., atol=1e-6)
@@ -1315,7 +1315,7 @@ def test_tcrit_lsoda(solver):
     # result with the critical time finds the critical region
     res_crit = solve_ivp(
         fun, t_span, y0, method = solver, tcrit=[1.],
-        atol=1e-7, rtol=1e-7, dense_output=True
+        atol=1e-9, rtol=1e-9, dense_output=True
     )
     assert 1. in res_crit.t
     assert_allclose(res_crit.sol(2.), 0.02, rtol=1e-4)
@@ -1324,7 +1324,7 @@ def test_tcrit_lsoda(solver):
     t_span_backwards = [2., 0.]
     res_crit_backwards = solve_ivp(
         fun, t_span_backwards, y0, method = solver, tcrit = [1.],
-        atol=1e-7, rtol=1e-7, dense_output=True
+        atol=1e-9, rtol=1e-9, dense_output=True
     )
     assert 1. in res_crit_backwards.t
     assert_allclose(res_crit_backwards.sol(0.), -0.02, rtol=1e-4)
