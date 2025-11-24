@@ -10,31 +10,38 @@ with safe_import():
 
 
 class SolveSparseRHS(Benchmark):
-    param_names = ["Nsq", "K", "density", "use_umfpack"]
+    param_names = ["Nsq", "K", "density", "batch_size", "use_umfpack"]
     params = [
         [5000],  # (Nsq, Nsq) matrix for (N, N) grid
         [2000],  # (Nsq, K) RHS
         [0.01, 0.1, 0.5],  # density of the sparse RHS
-        # [1, 100, 1000],  # batch size
-        # [True, False],  # use umfpack or not
-        [False],  # use umfpack or not
+        [1, 10, 100, 5000],  # batch size
+        [True, False],  # use umfpack or not
     ]
 
-    def setup(self, Nsq, K, density, use_umfpack):
+    def setup(self, Nsq, K, density, batch_size, use_umfpack):
         Ng = np.sqrt(Nsq).astype(int)
         self.A = -LaplacianNd((Ng, Ng), dtype=float).tosparse().tocsc()
         N = self.A.shape[0]
         self.A[-1, -1] += 1  # make A non-singular
         self.b = sparse.random_array((N, K), density=density, format="csc", dtype=float)
-        # self.batch_size = batch_size
+        self.batch_size = batch_size
         self.use_umfpack = use_umfpack
 
-    def time_solve(self, Nsq, K, density, use_umfpack):
-        spsolve(
-            self.A, self.b, use_umfpack=self.use_umfpack
-        )
+    def _run_solver(self, Nsq, K, density, batch_size, use_umfpack):
+        try:
+            spsolve(
+                self.A, self.b, batch_size=self.batch_size, use_umfpack=self.use_umfpack
+            )
+        except TypeError:
+            # older versions do not have batch_size
+            if self.batch_size == 1:
+                spsolve(self.A, self.b, use_umfpack=self.use_umfpack)
+            else:
+                pass  # skip benchmark
 
-    def peakmem_solve(self, Nsq, K, density, use_umfpack):
-        spsolve(
-            self.A, self.b, use_umfpack=self.use_umfpack
-        )
+    def time_solve(self, Nsq, K, density, batch_size, use_umfpack):
+        self._run_solver(Nsq, K, density, batch_size, use_umfpack)
+
+    def peakmem_solve(self, Nsq, K, density, batch_size, use_umfpack):
+        self._run_solver(Nsq, K, density, batch_size, use_umfpack)
