@@ -71,6 +71,14 @@ def from_matrix(matrix: Array) -> Array:
     orthogonal_matrix = U @ Vt
     matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
 
+    return _from_matrix_orthogonal(matrix)
+
+
+def _from_matrix_orthogonal(matrix: Array) -> Array:
+    """Convert known orthogonal rotation matrix to quaternion"""
+    xp = array_namespace(matrix)
+    device = xp_device(matrix)
+
     matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
     decision = xp.stack(
         [matrix[..., 0, 0], matrix[..., 1, 1], matrix[..., 2, 2], matrix_trace],
@@ -759,7 +767,7 @@ def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Ar
     kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
     eye = xp.eye(3, dtype=a.dtype, device=device)
     sensitivity = xp.mean(weights) / zeta * (kappa * eye + B @ B.mT)
-    q_opt = from_matrix(C)
+    q_opt = _from_matrix_orthogonal(C)
     return q_opt, rssd, sensitivity
 
 
