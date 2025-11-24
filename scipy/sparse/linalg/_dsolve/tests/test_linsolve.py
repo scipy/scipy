@@ -4,7 +4,6 @@ import warnings
 
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot
-from numpy.exceptions import ComplexWarning
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose)
@@ -27,7 +26,7 @@ from scipy._lib._testutils import check_free_memory
 # scikits.umfpack is not a SciPy dependency but it is optionally used in
 # dsolve, so check whether it's available
 try:
-    import scikits.umfpack as umfpack
+    from sksparse.umfpack import UMFPACKError, UMFPACKSingularMatrixWarning
     has_umfpack = True
 except ImportError:
     has_umfpack = False
@@ -81,10 +80,19 @@ class TestFactorized:
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_singular_with_umfpack(self):
         use_solver(useUmfpack=True)
-        with warnings.catch_warnings():
-            msg = "divide by zero encountered in double_scalars"
-            warnings.filterwarnings("ignore", msg, RuntimeWarning)
-            assert_warns(umfpack.UmfpackWarning, self._check_singular)
+        # FIXME? umf_factor will warn with UMFPACKSingularMatrixWarning, but
+        # then the solve will raise UMFPACKError for exactly singular matrix.
+        #   * SuperLU raises a RuntimeError on factorization.
+        #   * scipy.linalg.lu(A) does not raise or warn
+        #   * scipy.linalg.solve(A, b) raises a LinAlgError on solve.
+        # Returning the factors is helpful for debugging, so keep the current
+        # behavior for now... but might want to filter within dsolve so only
+        # one of these is raised?
+        with assert_warns(UMFPACKSingularMatrixWarning, match="Matrix is singular"):
+            with assert_raises(
+                UMFPACKError, match="indefinite or singular to working precision"
+            ):
+                self._check_singular()
 
     def test_non_singular_without_umfpack(self):
         use_solver(useUmfpack=False)
@@ -134,19 +142,19 @@ class TestFactorized:
         B = rng.random((4, 3))
         BB = rng.random((self.n, 3, 9))
 
-        # does not raise
-        solve(b)
-        msg = "object too deep for desired array"
+        msg = "Right-hand side b must have the same number of rows as A"
+        with assert_raises(ValueError, match=msg):
+            solve(b)
         with assert_raises(ValueError, match=msg):
             solve(B)
-        with assert_raises(ValueError, match=msg):
+        with assert_raises(ValueError, match="b must be a 1D or 2D array"):
             solve(BB)
 
     def test_call_with_cast_to_complex_without_umfpack(self):
         use_solver(useUmfpack=False)
         solve = factorized(self.A)
         rng = np.random.default_rng(23454)
-        b = rng.random(4)
+        b = rng.random(5)
         for t in [np.complex64, np.complex128]:
             with assert_raises(TypeError, match="Cannot cast array data"):
                 solve(b.astype(t))
@@ -156,10 +164,12 @@ class TestFactorized:
         use_solver(useUmfpack=True)
         solve = factorized(self.A)
         rng = np.random.default_rng(23454)
-        b = rng.random(4)
+        b = rng.random(5)
         for t in [np.complex64, np.complex128]:
-            assert_warns(ComplexWarning, solve, b.astype(t))
+            with assert_raises(TypeError, match="Cannot safely cast"):
+                solve(b.astype(t))
 
+    @pytest.mark.skip(reason="option not implemented in sksparse.umfpack")
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_assume_sorted_indices_flag(self):
         # a sparse matrix with unsorted indices
@@ -311,6 +321,7 @@ class TestLinsolve:
             bs = [
                 [1, 6],
                 array([1, 6]),
+                dok_array([1, 6]),
                 [[1], [6]],
                 array([[1], [6]]),
                 csc_array([[1], [6]]),
@@ -327,21 +338,18 @@ class TestLinsolve:
         for b in bs:
             x = np.linalg.solve(A.toarray(), toarray(b))
             for spmattype in [csc_array, csr_array, dok_array, lil_array]:
-                x1 = spsolve(spmattype(A), b, use_umfpack=True)
-                x2 = spsolve(spmattype(A), b, use_umfpack=False)
-
-                # check solution
-                if x.ndim == 2 and x.shape[1] == 1:
-                    # interprets also these as "vectors"
-                    x = x.ravel()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', SparseEfficiencyWarning)
+                    x1 = spsolve(spmattype(A), b, use_umfpack=True)
+                    x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
                 assert_array_almost_equal(toarray(x1), x,
                                           err_msg=repr((b, spmattype, 1)))
                 assert_array_almost_equal(toarray(x2), x,
                                           err_msg=repr((b, spmattype, 2)))
 
-                # dense vs. sparse output  ("vectors" are always dense)
-                if issparse(b) and x.ndim > 1:
+                # dense vs. sparse output
+                if issparse(b):
                     assert_(issparse(x1), repr((b, spmattype, 1)))
                     assert_(issparse(x2), repr((b, spmattype, 2)))
                 else:
@@ -349,14 +357,8 @@ class TestLinsolve:
                     assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))
 
                 # check output shape
-                if x.ndim == 1:
-                    # "vector"
-                    assert_equal(x1.shape, (A.shape[1],))
-                    assert_equal(x2.shape, (A.shape[1],))
-                else:
-                    # "matrix"
-                    assert_equal(x1.shape, x.shape)
-                    assert_equal(x2.shape, x.shape)
+                assert_equal(x1.shape, x.shape)
+                assert_equal(x2.shape, x.shape)
 
         A = csc_array((3, 3))
         b = csc_array((1, 3))
