@@ -534,7 +534,7 @@ def _cvm_result_to_tuple(res, _):
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
-    """Perform the one-sample Cramér-von Mises test for goodness of fit.
+    r"""Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -542,6 +542,13 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     assumed to be independent and identically distributed ([1]_).
     The null hypothesis is that the :math:`X_i` have cumulative distribution
     :math:`F`.
+
+    The test statistic :math:`T` is defined as in [1]_, where :math:`\omega^2`
+    is the Cramér-von Mises criterion and :math:`x_i` are the observed values.
+
+    .. math::
+        T = n\omega^2 =
+        \frac{1}{12n} + \sum_{i=1}^n \left[ \frac{2i-1}{2n} - F(x_i) \right]^2
 
     Parameters
     ----------
@@ -565,7 +572,7 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
@@ -1629,12 +1636,26 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
-    """Perform the two-sample Cramér-von Mises test for goodness of fit.
+    r"""Perform the two-sample Cramér-von Mises test for goodness of fit.
 
     This is the two-sample version of the Cramér-von Mises test ([1]_):
     for two independent samples :math:`X_1, ..., X_n` and
     :math:`Y_1, ..., Y_m`, the null hypothesis is that the samples
     come from the same (unspecified) continuous distribution.
+
+    The test statistic :math:`T` is defined as in [1]_:
+
+    .. math::
+        T = \frac{nm}{n+m}\omega^2 =
+        \frac{U}{n m (n+m)} - \frac{4 m n - 1}{6(m+n)}
+
+    where :math:`U` is defined as below, and :math:`\omega^2` is the Cramér-von
+    Mises criterion. The function :math:`r(\cdot)` here denotes the rank of the
+    observed values :math:`x_i` and :math:`y_j` within the pooled sample of size
+    :math:`n + m`, with ties assigned mid-rank values:
+
+    .. math::
+        U = n \sum_{i=1}^n (r(x_i)-i)^2 + m \sum_{j=1}^m (r(y_j)-j)^2
 
     Parameters
     ----------
@@ -1657,7 +1678,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
