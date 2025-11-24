@@ -5,9 +5,10 @@ from pytest import raises as assert_raises, warns as assert_warns
 import pytest
 
 import scipy._lib.array_api_extra as xpx
+import scipy.signal as signal
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype, _xp_copy_to_numpy
+    array_namespace, xp_default_dtype, make_xp_test_case, _xp_copy_to_numpy
 )
 from scipy.fft import fft, fft2
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -16,6 +17,8 @@ from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
+
+lazy_xp_modules = [signal]
 
 
 def test_kaiser_beta():
@@ -42,13 +45,14 @@ def test_kaiserord():
     assert (numtaps, beta) == (2, 0.0)
 
 
+@make_xp_test_case(firwin)
 class TestFirwin:
 
     def check_response(self, h, expected_response, tol=.05):
         xp = array_namespace(h)
         N = h.shape[0]
         alpha = 0.5 * (N-1)
-        m = xp.arange(0, N) - alpha   # time indices of taps
+        m = xp.arange(0, N, dtype=xp_default_dtype(xp)) - alpha   # time indices of taps
         for freq, expected in expected_response:
             actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2
@@ -56,7 +60,7 @@ class TestFirwin:
 
     def test_response(self, xp):
         N = 51
-        f = .5
+        f = xp.asarray(.5)
 
         # increase length just to try even/odd
         h = firwin(N, f)  # low-pass from 0 to f
@@ -94,16 +98,29 @@ class TestFirwin:
           bands -- list of (left, right) tuples relative to 1==Nyquist of
             passbands
         """
-        w, H = freqz(h, worN=1024)
-        f = w/np.pi
-        passIndicator = np.zeros(len(w), bool)
+        xp = array_namespace(h)
+        h_np = _xp_copy_to_numpy(h)
+        w, H = freqz(h_np, worN=1024)
+        w, H = map(xp.asarray, (w, H))
+        f = w/xp.pi
+        passIndicator = xp.zeros(w.shape[0], dtype=xp.bool)
         for left, right in bands:
             passIndicator |= (f >= left) & (f < right)
-        Hideal = np.where(passIndicator, 1, 0)
-        mse = np.mean(abs(abs(H)-Hideal)**2)
+        Hideal = xp.where(passIndicator, xp.ones_like(passIndicator),
+                          xp.zeros_like(passIndicator))
+        Hideal = xp.astype(Hideal, H.dtype)
+        mse = xp.mean(abs(abs(H)-Hideal)**2)
         return mse
 
-    def test_scaling(self, xp):
+    @pytest.mark.parametrize(
+        "cutoff,pass_zero,expected_response",
+        [
+            ([0.5], True, (0, 1)),
+            ([0.2, .6], False, (.4, 1)),
+            ([.5], False, (1, 1)),
+        ]
+    )
+    def test_scaling(self, cutoff, pass_zero, expected_response, xp):
         """
         For one lowpass, bandpass, and highpass example filter, this test
         checks two things:
@@ -114,28 +131,24 @@ class TestFirwin:
             of the first passband
         """
         N = 11
-        cases = [
-            ([.5], True, (0, 1)),
-            ([0.2, .6], False, (.4, 1)),
-            ([.5], False, (1, 1)),
-        ]
-        for cutoff, pass_zero, expected_response in cases:
-            h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
-            hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window='ones')
-            if len(cutoff) == 1:
-                if pass_zero:
-                    cutoff = [0] + cutoff
-                else:
-                    cutoff = cutoff + [1]
-            msg = 'least squares violation'
-            assert self.mse(h, [cutoff]) < self.mse(hs, [cutoff]), msg
-            self.check_response(hs, [expected_response], 1e-12)
+        cutoff = xp.asarray(cutoff)
+        h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
+        hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window='ones')
+        if cutoff.shape[0] == 1:
+            if pass_zero:
+                cutoff = xp.concat([xp.asarray([0], dtype=cutoff.dtype), cutoff])
+            else:
+                cutoff = xp.concat([cutoff, xp.asarray([1], dtype=cutoff.dtype)])
+        msg = 'least squares violation'
+        assert self.mse(h, [cutoff]) < self.mse(hs, [cutoff]), msg
+        self.check_response(hs, [expected_response], 1e-12)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firwin(51, .5, fs=np.array([10, 20]))
 
 
+@make_xp_test_case(firwin)
 class TestFirWinMore:
     """Different author, different style, different tests..."""
 
@@ -314,7 +327,7 @@ class TestFirWinMore:
             firwin2(51, .5, 1, fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp", exceptions=["cupy"])
+@make_xp_test_case(firwin2)
 class TestFirwin2:
 
     def test_invalid_args(self):
@@ -488,7 +501,7 @@ class TestFirwin2:
         xp_assert_equal(freq1, freq2)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(remez)
 class TestRemez:
 
     def test_bad_args(self):
@@ -557,7 +570,7 @@ class TestRemez:
         remez(21, bands, desired, weight=weight)
 
 
-@skip_xp_backends(cpu_only=True, reason="lstsq", exceptions=["cupy"])
+@make_xp_test_case(firls)
 class TestFirls:
 
     def test_bad_args(self):
@@ -685,6 +698,7 @@ class TestFirls:
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firls(11, .1, 1, fs=np.array([10, 20]))
 
+@make_xp_test_case(minimum_phase)
 class TestMinimumPhase:
 
     def test_bad_args(self):
@@ -720,7 +734,7 @@ class TestMinimumPhase:
             xp_assert_close(np.abs(fft(h_new)), np.abs(fft(h_linear)), rtol=1e-4)
 
     @skip_xp_backends("dask.array", reason="too slow")
-    @skip_xp_backends("jax.numpy", reason="immutable arrays")
+    @make_xp_test_case(signal.hilbert)
     def test_hilbert(self, xp):
         # compare to MATLAB output of reference implementation
 

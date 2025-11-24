@@ -985,6 +985,13 @@ def test_concatenate(xp):
     xp_assert_close(concatenated2[1].as_matrix(), tf1.as_matrix(), atol=atol)
     xp_assert_close(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
+    # Test ND concatenation
+    tf3 = RigidTransform.from_translation(xp.reshape(xp.arange(18), (3, 2, 3)))
+    tf4 = RigidTransform.from_translation(xp.reshape(xp.arange(18) + 18, (3, 2, 3)))
+    concatenated3 = RigidTransform.concatenate([tf3, tf4])
+    xp_assert_close(concatenated3.as_matrix()[:3, ...], tf3.as_matrix(), atol=atol)
+    xp_assert_close(concatenated3.as_matrix()[3:, ...], tf4.as_matrix(), atol=atol)
+
 
 @make_xp_test_case(RigidTransform.from_matrix)
 def test_input_validation(xp):
@@ -1211,6 +1218,12 @@ def test_concatenate_validation(xp):
     with pytest.raises(TypeError,
                        match="input must contain RigidTransform objects"):
         RigidTransform.concatenate([tf, xp.eye(4)])
+
+    # Test incompatible shapes
+    tf2 = RigidTransform.from_translation(xp.ones((1, 1, 1, 3)))
+    # Frameworks have a highly heterogeneous way of reporting errors for this case
+    with pytest.raises((ValueError, TypeError, RuntimeError)):
+        RigidTransform.concatenate([tf, tf2])
 
 
 @make_xp_test_case(RigidTransform.__setitem__)
