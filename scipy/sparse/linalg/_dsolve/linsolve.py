@@ -3,20 +3,19 @@ from warnings import warn, catch_warnings, simplefilter
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
-                          csr_array, csc_array, eye_array, diags_array)
+                          csr_array, csc_array, eye_array, diags_array, hstack)
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
-                                   get_index_dtype, safely_cast_index_arrays)
+                                   safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
-import copy
 import threading
 
 from . import _superlu
 
-noScikit = False
 try:
-    import scikits.umfpack as umfpack
+    from sksparse import umfpack
+    has_umfpack = True
 except ImportError:
-    noScikit = True
+    has_umfpack = False
 
 useUmfpack = threading.local()
 
@@ -38,16 +37,16 @@ def use_solver(**kwargs):
     ----------
     useUmfpack : bool, optional
         Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``scikits.umfpack`` is installed. Default: True
+        if ``sksparse.umfpack`` is installed. Default: True
     assumeSortedIndices : bool, optional
         Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+        Has effect only if useUmfpack is True and ``sksparse.umfpack`` is
         installed. Default: False
 
     Notes
     -----
     The default sparse solver is UMFPACK when available
-    (``scikits.umfpack`` is installed). This can be changed by passing
+    (``sksparse.umfpack`` is installed). This can be changed by passing
     useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
 
@@ -94,44 +93,9 @@ def use_solver(**kwargs):
     global useUmfpack
     if 'useUmfpack' in kwargs:
         useUmfpack.u = kwargs['useUmfpack']
-    if useUmfpack.u and 'assumeSortedIndices' in kwargs:
-        umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
-def _get_umf_family(A):
-    """Get umfpack family string given the sparse matrix dtype."""
-    _families = {
-        (np.float64, np.int32): 'di',
-        (np.complex128, np.int32): 'zi',
-        (np.float64, np.int64): 'dl',
-        (np.complex128, np.int64): 'zl'
-    }
 
-    # A.dtype.name can only be "float64" or
-    # "complex128" in control flow
-    f_type = getattr(np, A.dtype.name)
-    # control flow may allow for more index
-    # types to get through here
-    i_type = getattr(np, A.indices.dtype.name)
-
-    try:
-        family = _families[(f_type, i_type)]
-
-    except KeyError as e:
-        msg = ('only float64 or complex128 matrices with int32 or int64 '
-               f'indices are supported! (got: matrix: {f_type}, indices: {i_type})')
-        raise ValueError(msg) from e
-
-    # See gh-8278. Considered converting only if
-    # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
-    # but that didn't always fix the issue.
-    family = family[0] + "l"
-    A_new = copy.copy(A)
-    A_new.indptr = np.asarray(A.indptr, dtype=np.int64)
-    A_new.indices = np.asarray(A.indices, dtype=np.int64)
-
-    return family, A_new
-
-def spsolve(A, b, permc_spec=None, use_umfpack=True):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -153,7 +117,14 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     use_umfpack : bool, optional
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
-        ``scikits.umfpack`` is installed.
+        ``sksparse.umfpack`` is installed.
+    rhs_batch_size : int, optional
+        If ``b`` is a 2D sparse array, this parameter controls the number of
+        columns to be solved simultaneously. A larger number will increase
+        memory consumption by converting more columns at a time to dense
+        arrays, but may improve runtime. This option only applies when
+        ``use_umfpack=False``, since the low-level scikit-umfpack routines do
+        not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
 
     Returns
     -------
@@ -223,11 +194,11 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         warn('spsolve requires A be CSC or CSR matrix format',
              SparseEfficiencyWarning, stacklevel=2)
 
-    # b is a vector only if b have shape (n,) or (n, 1)
+    # b is a vector only if b have shape (n,)
     b_is_sparse = issparse(b)
     if not b_is_sparse:
         b = asarray(b)
-    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
+    b_is_vector = b.ndim == 1
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -247,85 +218,86 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
     if not hasattr(useUmfpack, 'u'):
-        useUmfpack.u = not noScikit
+        useUmfpack.u = has_umfpack
 
     use_umfpack = use_umfpack and useUmfpack.u
 
-    if b_is_vector and use_umfpack:
-        if b_is_sparse:
-            b_vec = b.toarray()
+    if use_umfpack:
+        # sksparse.umfpack handles 1D and 2D, sparse or dense b
+        x = umfpack.umf_solve(A, b, rhs_batch_size=rhs_batch_size)
+
+        # Convert back to consistent sparse class
+        if b_is_sparse and not b_is_vector:
+            x = A.__class__(x)
+
+        # Return the same type as b
+        if is_pydata_sparse:
+            x = pydata_sparse_cls.from_scipy_sparse(x)
+    elif not b_is_sparse:
+        # Dense SuperLU solver
+        if A.format == "csc":
+            flag = 1  # CSC format
         else:
-            b_vec = b
-        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
+            flag = 0  # CSR format
 
-        if noScikit:
-            raise RuntimeError('Scikits.umfpack not installed.')
-
-        if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack.u = False")
-
-        umf_family, A = _get_umf_family(A)
-        umf = umfpack.UmfpackContext(umf_family)
-        x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
-                         autoTranspose=True)
+        indices = A.indices.astype(np.intc, copy=False)
+        indptr = A.indptr.astype(np.intc, copy=False)
+        options = dict(ColPerm=permc_spec)
+        x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
+                                b, flag, options=options)
+        if info != 0:
+            # TODO raise? splu raises, and la.solve raises LinAlgError.
+            warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
+            x.fill(np.nan)
     else:
-        if b_is_vector and b_is_sparse:
-            b = b.toarray()
-            b_is_sparse = False
+        # Sparse SuperLU solver
+        Afactsolve = splu(A, permc_spec=permc_spec).solve
 
-        if not b_is_sparse:
-            if A.format == "csc":
-                flag = 1  # CSC format
-            else:
-                flag = 0  # CSR format
+        if b_is_vector:
+            # convert to 2D sparse matrix with one column
+            b = b[:, np.newaxis]
 
-            indices = A.indices.astype(np.intc, copy=False)
-            indptr = A.indptr.astype(np.intc, copy=False)
-            options = dict(ColPerm=permc_spec)
-            x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
-                                    b, flag, options=options)
-            if info != 0:
-                warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
-                x.fill(np.nan)
-            if b_is_vector:
-                x = x.ravel()
-        else:
-            # b is sparse
-            Afactsolve = factorized(A)
+        if not (b.format == "csc" or is_pydata_spmatrix(b)):
+            warn('spsolve is more efficient when sparse b '
+                    'is in the CSC matrix format',
+                    SparseEfficiencyWarning, stacklevel=2)
+            b = csc_array(b)
 
-            if not (b.format == "csc" or is_pydata_spmatrix(b)):
-                warn('spsolve is more efficient when sparse b '
-                     'is in the CSC matrix format',
-                     SparseEfficiencyWarning, stacklevel=2)
-                b = csc_array(b)
+        if use_umfpack and rhs_batch_size > 1:
+            rhs_batch_size = 1
 
-            # Create a sparse output matrix by repeatedly applying
-            # the sparse factorization to solve columns of b.
-            data_segs = []
-            row_segs = []
-            col_segs = []
-            for j in range(b.shape[1]):
-                bj = b[:, j].toarray().ravel()
-                xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.full(segment_length, j, dtype=int))
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            idx_dtype = get_index_dtype(maxval=max(b.shape))
-            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
-            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+        # Solve in batches to reduce memory consumption
+        K = b.shape[1]
+        x_blocks = []
 
-            if is_pydata_sparse:
-                x = pydata_sparse_cls.from_scipy_sparse(x)
+        # Pre-allocate arrays to avoid repeated allocations
+        b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
+
+        for k in range(0, K, rhs_batch_size):
+            batch_end = min(k + rhs_batch_size, K)
+            width = batch_end - k
+            # Convert sparse to dense in the buffer
+            b_view = b_batch[:, :width]
+            b[:, k:batch_end].toarray(out=b_view)
+            # Solve the linear systems
+            x_dense = Afactsolve(b_view)
+            x_blocks.append(csc_array(x_dense, dtype=b.dtype))
+
+        x = hstack(x_blocks)
+
+        # Convert back to consistent sparse class
+        x = A.__class__(x)
+
+        if b_is_vector:
+            x = x[:, 0]  # convert back to 1D sparse array
+
+        if is_pydata_sparse:
+            x = pydata_sparse_cls.from_scipy_sparse(x)
 
     return x
 
 
+# TODO use_umfpack?
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
          relax=None, panel_size=None, options=None):
     """
@@ -571,37 +543,13 @@ def factorized(A):
         A = A.to_scipy_sparse().tocsc()
 
     if not hasattr(useUmfpack, 'u'):
-        useUmfpack.u = not noScikit
+        useUmfpack.u = has_umfpack
 
     if useUmfpack.u:
-        if noScikit:
-            raise RuntimeError('Scikits.umfpack not installed.')
+        if not has_umfpack:
+            raise RuntimeError('sksparse.umfpack not installed.')
 
-        if not (issparse(A) and A.format == "csc"):
-            A = csc_array(A)
-            warn('splu converted its input to CSC format',
-                 SparseEfficiencyWarning, stacklevel=2)
-
-        A = A._asfptype()  # upcast to a floating point format
-
-        if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack.u = False")
-
-        umf_family, A = _get_umf_family(A)
-        umf = umfpack.UmfpackContext(umf_family)
-
-        # Make LU decomposition.
-        umf.numeric(A)
-
-        def solve(b):
-            with np.errstate(divide="ignore", invalid="ignore"):
-                # Ignoring warnings with numpy >= 1.23.0, see gh-16523
-                result = umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
-
-            return result
-
-        return solve
+        return umfpack.umf_factor(A).solve
     else:
         return splu(A).solve
 
