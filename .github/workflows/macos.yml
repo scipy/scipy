@@ -204,8 +204,8 @@ jobs:
     - name: Build SciPy with ASan
       run: |
         # Can't use Meson's `-Db_sanitize=address` because gfortran-13 will choke on it
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/asan-ignore.txt"
-        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/asan-ignore.txt"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/asan-ignore.txt -Wno-deprecated-declarations"
+        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/asan-ignore.txt -Wno-deprecated-declarations"
         spin build -S-Dblas=accelerate
 
     - name: Test
