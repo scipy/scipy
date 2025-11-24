@@ -77,19 +77,29 @@ class _ScalarHessWrapper:
             self.nhev += 1
 
             if sps.issparse(self.H):
-                self._hess_func = self._sparse_callable
+                self._hess_func = "sparse_callable"
                 self.H = sps.csr_array(self.H)
             elif isinstance(self.H, LinearOperator):
-                self._hess_func = self._linearoperator_callable
+                self._hess_func = "linearoperator_callable"
             else:
                 # dense
-                self._hess_func = self._dense_callable
+                self._hess_func = "dense_callable"
                 self.H = np.atleast_2d(np.asarray(self.H))
         elif hess in FD_METHODS:
-                self._hess_func = self._fd_hess
+                self._hess_func = "fd_hess"
 
     def __call__(self, x, f0=None, **kwds):
-        return self._hess_func(np.copy(x), f0=f0)
+        match self._hess_func:
+            case "sparse_callable":
+                _h = self._sparse_callable
+            case "linearoperator_callable":
+                _h = self._linearoperator_callable
+            case "dense_callable":
+                _h = self._dense_callable
+            case "fd_hess":
+                _h = self._fd_hess
+
+        return _h(np.copy(x), f0=f0)
 
     def _fd_hess(self, x, f0=None, **kwds):
         self.H, dct = approx_derivative(
@@ -114,7 +124,6 @@ class _ScalarHessWrapper:
         self.nhev += 1
         self.H = self.hess(x, *self.args)
         return self.H
-
 
 class ScalarFunction:
     """Scalar function and its derivatives.

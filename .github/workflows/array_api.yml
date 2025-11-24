@@ -40,8 +40,11 @@ jobs:
       - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
         with:
           pixi-version: v0.55.0
-          manifest-path: .github/workflows/pixi.toml
           cache: false
+          environments: >-
+            build-cpu
+            array-api-cpu
+            torch-cpu
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -49,15 +52,12 @@ jobs:
           workflow_name: ${{ github.workflow }}
 
       - name: Build SciPy
-        working-directory: .github/workflows
         run: pixi run build-cpu
 
       - name: Test SciPy
-        working-directory: .github/workflows
         run: |
           export OMP_NUM_THREADS=2
           pixi run --skip-deps test-cpu -- --durations 3 --timeout=60
 
       - name: Test SciPy with torch/float32
-        working-directory: .github/workflows
         run: pixi run --skip-deps test-torch-float32 -- --durations 3 --timeout=60

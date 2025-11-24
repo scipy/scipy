@@ -732,6 +732,13 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> print(interpn(points, values, point))
     [12.63]
 
+    Compare with value at point by function
+
+    >>> value_func_3d(*point)
+    12.63 # up to rounding
+
+    Since the function is linear, the interpolation is exact using linear method.
+
     """
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",

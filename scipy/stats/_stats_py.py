@@ -7398,7 +7398,7 @@ KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
-def _compute_d(cdfvals, x, sign):
+def _compute_d(cdfvals, x, sign, xp=None):
     """Computes D+/D- as used in the Kolmogorov-Smirnov test.
 
     Vectorized along the last axis.
@@ -7419,13 +7419,14 @@ def _compute_d(cdfvals, x, sign):
         - The location at which the maximum is reached.
 
     """
+    xp = array_namespace(cdfvals, x) if xp is None else xp
     n = cdfvals.shape[-1]
-    D = (np.arange(1.0, n + 1) / n - cdfvals if sign == +1
-         else (cdfvals - np.arange(0.0, n)/n))
-    amax = D.argmax(axis=-1, keepdims=True)
-    loc_max = np.squeeze(np.take_along_axis(x, amax, axis=-1), axis=-1)[()]
-    D = np.squeeze(np.take_along_axis(D, amax, axis=-1), axis=-1)[()]
-    return D, loc_max
+    D = (xp.arange(1.0, n + 1, dtype=x.dtype) / n - cdfvals if sign == +1
+         else (cdfvals - xp.arange(0.0, n, dtype=x.dtype)/n))
+    amax = xp.argmax(D, axis=-1, keepdims=True)
+    loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
+    D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
+    return D[()] if D.ndim == 0 else D, loc_max[()] if loc_max.ndim == 0 else loc_max
 
 
 def _tuple_to_KstestResult(statistic, pvalue,
@@ -7439,7 +7440,8 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,
+                 skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -7577,6 +7579,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
 
     """
     # `_axis_nan_policy` decorator ensures `axis=-1`
+    xp = array_namespace(x)
     mode = method
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7585,19 +7588,25 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
         raise ValueError(f"Unexpected value {alternative=}")
 
     N = x.shape[-1]
-    x = np.sort(x, axis=-1)
+    x = xp.sort(x, axis=-1)
+    x = xp_promote(x, force_floating=True, xp=xp)
     cdfvals = cdf(x, *args)
-    ones = np.ones(x.shape[:-1], dtype=np.int8)[()]
+    ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
         Dplus, d_location = _compute_d(cdfvals, x, +1)
-        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
+        pvalue = xp.asarray(distributions.ksone.sf(Dplus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dplus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=ones)
 
     if alternative == 'less':
         Dminus, d_location = _compute_d(cdfvals, x, -1)
-        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
+        pvalue = xp.asarray(distributions.ksone.sf(Dminus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dminus, pvalue,
                             statistic_location=d_location,
                             statistic_sign=-ones)
 
@@ -7605,20 +7614,22 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0)
     Dplus, dplus_location = _compute_d(cdfvals, x, +1)
     Dminus, dminus_location = _compute_d(cdfvals, x, -1)
     i_plus = Dplus > Dminus
-    D = np.where(i_plus, Dplus, Dminus)[()]
-    d_location = np.where(i_plus, dplus_location, dminus_location)[()]
-    d_sign = np.where(i_plus, ones, -ones)[()]
+    D = xp.where(i_plus, Dplus, Dminus)
+    d_location = xp.where(i_plus, dplus_location, dminus_location)
+    d_sign = xp.where(i_plus, ones, -ones)
+    if D.ndim == 0:
+        D, d_location, d_sign = D[()], d_location[()], d_sign[()]
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
         prob = distributions.kstwo.sf(D, N)
     elif mode == 'asymp':
-        prob = distributions.kstwobign.sf(D * np.sqrt(N))
+        prob = distributions.kstwobign.sf(D * math.sqrt(N))
     else:
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
-    prob = np.clip(prob, 0, 1)
+    prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
@@ -8062,7 +8073,8 @@ def _parse_kstest_args(data1, data2, args, N):
         cdf = data2
         data2 = None
 
-    data1 = np.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
+    xp = array_namespace(data1, data2, *args)
+    data1 = xp.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
     return data1, data2, cdf
 
 

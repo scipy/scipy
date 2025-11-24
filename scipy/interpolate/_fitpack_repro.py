@@ -101,10 +101,17 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric, periodic=False):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
+    if not x.flags.c_contiguous:
+        x = x.copy()
+    if not y.flags.c_contiguous:
+        y = y.copy()
+
     if w is None:
         w = np.ones_like(x, dtype=float)
     else:
         w = np.asarray(w, dtype=float)
+        if not w.flags.c_contiguous:
+            w = w.copy()
         if w.ndim != 1:
             raise ValueError(f"{w.ndim = } not implemented yet.")
         if (w < 0).any():
