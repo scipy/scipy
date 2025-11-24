@@ -465,6 +465,49 @@ typedef std::vector<SliceStatus> SliceStatusVec;
 
 
 /*
+ * lwork defensive handler :
+ *  cf https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/lapack.py#L1004
+ *
+ *  Round floating-point lwork returned by lapack to integer.
+ *
+ *  Several LAPACK routines compute optimal values for LWORK, which
+ *  they return in a floating-point variable. However, for large
+ *  values of LWORK, single-precision floating point is not sufficient
+ *  to hold the exact value --- some LAPACK versions (<= 3.5.0 at
+ *  least) truncate the returned integer to single precision and in
+ *  some cases this can be smaller than the required value.
+ *
+ *  The fudge_factor comes from
+ *  https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
+ *
+ *  A fudge factor of 1% was added in commit https://github.com/scipy/scipy/commit/dfb543c147c
+ *  to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
+ */
+template<typename T>
+CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
+    using real_type = typename type_traits<T>::real_type;
+
+    real_type value = real_part(_lwrk) * fudge_factor;
+    if(type_traits<T>::is_single_precision) {
+        // Single-precision routine -- take next fp value to work
+        // around possible truncation in LAPACK code
+        value = std::nextafter(value, std::numeric_limits<real_type>::infinity());
+    }
+
+    CBLAS_INT lwork;
+    if ((value < 0) || !(value <= (real_type)std::numeric_limits<CBLAS_INT>::max())) {
+        // Too large lwork required - Computation cannot be performed with standard LAPACK
+        lwork = -1;
+    }
+    else {
+        lwork = (CBLAS_INT)value;
+    }
+    return lwork;
+}
+
+
+
+/*
  * Copy n-by-m slice from slice_ptr to dst.
  */
 template<typename T>

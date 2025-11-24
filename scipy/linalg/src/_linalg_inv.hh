@@ -197,23 +197,32 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
+    CBLAS_INT lwork_1 = _calc_lwork(tmp, 1.01);
+    if (lwork_1 < 0) {
+        // too large lwork requested; the computation cannot be done
+        return -99;
+    }
+
     // also query sytrf
     sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
     if (info != 0) { info = -100; return (int)info; }
 
-    /*
-     * The factor of 1.01 here mirrors
-     * https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
-     *
-     * It was added in commit
-     * https://github.com/scipy/scipy/commit/dfb543c147c
-     * to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
-     */
-    lwork = (CBLAS_INT)(1.01 * real_part(tmp));
+    CBLAS_INT lwork_2 = _calc_lwork(tmp);
+    if (lwork_2 < 0) {
+        // too large lwork requested; the computation cannot be done
+        return -99;
+    }
 
-    lwork = std::max(lwork, (CBLAS_INT)real_part(tmp1)); // in case sytrf needs more
-    lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
+    lwork = std::max(lwork_1, lwork_2);
 
+    // gecon needs lwork of at least 4*n
+    if (n > std::numeric_limits<CBLAS_INT>::max() / 4) {
+        return -99;
+    }
+
+    lwork = (4*n > lwork ? 4*n : lwork);
+
+    // Finally, can start allocating memory
     T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 

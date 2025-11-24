@@ -56,6 +56,7 @@ template<> struct type_traits<float> {
     using value_type = float;
     static constexpr int typenum = NPY_FLOAT;
     static constexpr bool is_complex = false;
+    static constexpr bool is_single_precision = true;
 
 };
 template<> struct type_traits<double> {
@@ -63,18 +64,21 @@ template<> struct type_traits<double> {
     using value_type = double;
     static constexpr int typenum = NPY_DOUBLE;
     static constexpr bool is_complex = false;
+    static constexpr bool is_single_precision = false;
 };
 template<> struct type_traits<npy_complex64> {
     using real_type = float;
     using value_type = std::complex<float>;
     static constexpr int typenum = NPY_COMPLEX64;
     static constexpr bool is_complex = true;
+    static constexpr bool is_single_precision = true;
 };
 template<> struct type_traits<npy_complex128> {
     using real_type = double;
     using value_type = std::complex<double>;
     static constexpr int typenum = NPY_COMPLEX128;
     static constexpr bool is_complex = true;
+    static constexpr bool is_single_precision = false;
 };
 
 

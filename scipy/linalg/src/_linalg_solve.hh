@@ -202,8 +202,17 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
-    lwork = (CBLAS_INT)real_part(tmp);
-    lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
+    lwork = _calc_lwork(tmp);
+    if ((lwork < 0) ||
+        (n > std::numeric_limits<CBLAS_INT>::max() / 4)
+    ) {
+        // Too large lwork required - Computation cannot be performed.
+        // if CBLAS_INT is 32-bit, need ILP64; if already using ILP64, we're out of luck.
+        return -99;
+    }
+
+    // gecon needs lwork of at least 4*n
+    lwork = (4*n > lwork ? 4*n : lwork);
 
     T* buffer = (T *)malloc((2*n*n + n*nrhs + lwork)*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
