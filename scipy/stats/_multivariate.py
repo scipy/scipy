@@ -930,11 +930,16 @@ class multivariate_normal_gen(multi_rv_generic):
             The dimensions of the multivariate distribution corresponding
             with the marginal variables, that is, the indices of the dimensions
             that are being retained. The other dimensions are marginalized out.
+        %(_mvn_doc_default_callparams)s
 
         Returns
         -------
         marginal_multivariate_normal : multivariate_normal_frozen
             An object representing the marginal distribution.
+        
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
         """
         params = self._process_parameters(mean, cov, allow_singular)
         n, mean, cov_object = params

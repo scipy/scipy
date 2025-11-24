@@ -295,7 +295,11 @@ def _sample_orthonormal_matrix(n):
     return u
 
 def marginal_pdf(X, X_ndim, dimensions, x):
-    # First sort input data based on order of dimensions
+    """Integrate marginalized dimensions of multivariate
+    probability distribution to calculate the marginalized
+    distribution.
+    """
+    # Sort input data based on order of dimensions
     dimensions = np.asarray(dimensions)
     dimensions[dimensions < 0] += X_ndim
     dim_sort_idx = dimensions.argsort()
@@ -1296,7 +1300,7 @@ class TestMultivariateNormal:
         with pytest.raises(ValueError, match=msg):
             X.marginal([1.1, 2.0])
     
-    def test_special_cases(self):
+    def test_marginal_special_cases(self):
         rng = np.random.default_rng(413911473)
         mean = rng.standard_normal(3)
         A = rng.standard_normal((3, 3))
