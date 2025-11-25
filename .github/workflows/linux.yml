@@ -478,7 +478,7 @@ jobs:
     - name: Install pytest-run-parallel
       if: ${{ matrix.parallel == '1'}}
       run: |
-        pip install pytest-run-parallel
+        pip install pytest-run-parallel==0.7.1
         pip uninstall --yes pytest-xdist
 
     - name: Build SciPy
