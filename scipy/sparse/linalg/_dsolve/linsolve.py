@@ -311,15 +311,21 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, batch_size=10):
                 batch_size = 1
 
             # Solve in batches to reduce memory consumption
-            num_cols = b.shape[1]
+            K = b.shape[1]
             x_blocks = []
 
-            for k in range(0, num_cols, batch_size):
-                batch_end = min(k + batch_size, num_cols)
-                b_batch = b[:, k:batch_end].toarray(order="C")
-                x_dense_batch = Afactsolve(b_batch)
-                x_sparse_batch = csc_array(x_dense_batch)
-                x_blocks.append(x_sparse_batch)
+            # Pre-allocate arrays to avoid repeated allocations
+            b_batch = np.empty((N, min(batch_size, K)), dtype=b.dtype, order="F")
+
+            for k in range(0, K, batch_size):
+                batch_end = min(k + batch_size, K)
+                width = batch_end - k
+                # Convert sparse to dense in the buffer
+                b_view = b_batch[:, :width]
+                b[:, k:batch_end].toarray(out=b_view)
+                # Solve the linear systems
+                x_dense = Afactsolve(b_view)
+                x_blocks.append(csc_array(x_dense, dtype=b.dtype))
 
             x = hstack(x_blocks)
 
