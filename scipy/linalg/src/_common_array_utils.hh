@@ -488,7 +488,9 @@ CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
     using real_type = typename type_traits<T>::real_type;
 
     real_type value = real_part(_lwrk) * fudge_factor;
-    if(type_traits<T>::is_single_precision) {
+    if((std::is_same<real_type, float>::value) ||
+       (std::is_same<real_type, npy_complex64>::value)
+    ) {
         // Single-precision routine -- take next fp value to work
         // around possible truncation in LAPACK code
         value = std::nextafter(value, std::numeric_limits<real_type>::infinity());
