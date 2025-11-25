@@ -131,7 +131,7 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True, batch_size=10):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
@@ -154,13 +154,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, batch_size=10):
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
         ``scikits.umfpack`` is installed.
-    batch_size : int, optional
+    rhs_batch_size : int, optional
         If ``b`` is a 2D sparse array, this parameter controls the number of
         columns to be solved simultaneously. A larger number will increase
         memory consumption by converting more columns at a time to dense
         arrays, but may improve runtime. This option only applies when
         ``use_umfpack=False``, since the low-level scikit-umfpack routines do
-        not support multiple right-hand sides. In that case, ``batch_size=1``.
+        not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
 
     Returns
     -------
@@ -307,18 +307,18 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, batch_size=10):
                      SparseEfficiencyWarning, stacklevel=2)
                 b = csc_array(b)
 
-            if use_umfpack and batch_size > 1:
-                batch_size = 1
+            if use_umfpack and rhs_batch_size > 1:
+                rhs_batch_size = 1
 
             # Solve in batches to reduce memory consumption
             K = b.shape[1]
             x_blocks = []
 
             # Pre-allocate arrays to avoid repeated allocations
-            b_batch = np.empty((N, min(batch_size, K)), dtype=b.dtype, order="F")
+            b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
 
-            for k in range(0, K, batch_size):
-                batch_end = min(k + batch_size, K)
+            for k in range(0, K, rhs_batch_size):
+                batch_end = min(k + rhs_batch_size, K)
                 width = batch_end - k
                 # Convert sparse to dense in the buffer
                 b_view = b_batch[:, :width]
