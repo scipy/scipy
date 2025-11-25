@@ -1408,49 +1408,33 @@ class TestInv:
             assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
 
     @pytest.mark.parametrize('complex_', [False, True])
-    def test_sym(self, complex_):
-        # test the "sym" mode
-        a = np.arange(9).reshape(3, 3)
-        b = a + a.T + np.eye(3)
-        if complex_:
-            b = b + 1j*b
-
-        b_inv0 = inv(b)
-        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
-
-        b_inv1 = inv(b, assume_a="sym")
-        assert_allclose(b_inv0, b_inv1, atol=1e-15)
-
-        # check that the "other" triangle is not referenced
-        mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
-        b_inv2 = inv(b*mask, check_finite=False, assume_a="sym", lower=False)
-        assert_allclose(b_inv2, b_inv0, atol=1e-15)
-
-        # repeat with the upper triangle
-        b_inv3 = inv(b*mask.T, check_finite=False, assume_a="sym", lower=True)
-        assert_allclose(b_inv3, b_inv0, atol=1e-15)
-
-    @pytest.mark.parametrize('complex_', [False, True])
-    def test_her(self, complex_):
-        # test the "her" mode
+    @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
+    def test_sym_her(self, complex_, sym_herm):
+        # test "sym" and "her" modes
         a = np.arange(9).reshape(3, 3)
         if complex_:
             a = a + 1j*a
-        b = a + a.T.conj() + np.eye(3)
 
-        b_inv0 = inv(b)
+        if sym_herm == "sym":
+            b = a + a.T
+        else:   # sym_herm == "herm":
+            b = a + a.T.conj()
+
+        b = b + np.eye(3)
+
+        b_inv0 = np.linalg.inv(b)
         assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
 
-        b_inv1 = inv(b, assume_a="her")
+        b_inv1 = inv(b, assume_a=sym_herm)
         assert_allclose(b_inv0, b_inv1, atol=1e-15)
 
         # check that the "other" triangle is not referenced
         mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
-        b_inv2 = inv(b*mask, check_finite=False, assume_a="her", lower=False)
+        b_inv2 = inv(b*mask, check_finite=False, assume_a=sym_herm, lower=False)
         assert_allclose(b_inv2, b_inv0, atol=1e-15)
 
         # repeat with the upper triangle
-        b_inv3 = inv(b*mask.T, check_finite=False, assume_a="her", lower=True)
+        b_inv3 = inv(b*mask.T, check_finite=False, assume_a=sym_herm, lower=True)
         assert_allclose(b_inv3, b_inv0, atol=1e-15)
 
     def test_triangular_1(self):
