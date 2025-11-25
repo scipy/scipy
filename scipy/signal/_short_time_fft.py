@@ -1,11 +1,7 @@
 """Implementation of an FFT-based Short-time Fourier Transform. """
 
-# Implementation Notes for this file (as of 2023-07)
+# Implementation Notes for this file (as of 2025-08)
 # --------------------------------------------------
-# * MyPy version 1.1.1 does not seem to support decorated property methods
-#   properly. Hence, applying ``@property`` to methods decorated with `@cache``
-#   (as tried with the ``lower_border_end`` method) causes a mypy error when
-#   accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
 # * Since the method `stft` and `istft` have identical names as the legacy
 #   functions in the signal module, referencing them as HTML link in the
 #   docstrings has to be done by an explicit `~ShortTimeFFT.stft` instead of an
@@ -17,10 +13,10 @@
 #   (currently 0.9). Consult Issue 18512 and PR 16660 for further details.
 
 
-# Provides typing union operator ``|`` in Python 3.9:
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator, Callable
-from functools import cache, lru_cache, partial
+from functools import partial, cached_property
+from types import GenericAlias
 from typing import get_args, Literal
 
 import numpy as np
@@ -419,6 +415,18 @@ class ShortTimeFFT:
     _fac_mag: float | None = None
     _fac_psd: float | None = None
     _lower_border_end: tuple[int, int] | None = None
+    # The following tuples store parameter(s) and return value(s) of methods for caching
+    # (initialized with invalid parameters; should only be accessed by atomic
+    # read/writes to alleviate potential multithreading issues):
+    _cache_post_padding: tuple[int, tuple[int, int]] = -1, (0, 0)
+    _cache_upper_border_begin: tuple[int, tuple[int, int]] = -1, (0, 0)
+    _cache_t: tuple[tuple[int, int | None, int | None, int, float], np.ndarray] = \
+        (-1, None, None, 0, 0.), np.ndarray([])
+    _cache_f: tuple[tuple[FFT_MODE_TYPE, int, float], np.ndarray] = \
+        ('onesided', -1, 1.), np.ndarray([])
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, win: np.ndarray, hop: int, fs: float, *,
                  fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -563,10 +571,12 @@ class ShortTimeFFT:
             Window overlap in samples. It relates to the `hop` increment by
             ``hop = npsereg - noverlap``.
         symmetric_win: bool
-            If ``True`` then a symmetric window is generated, else a periodic
-            window is generated (default). Though symmetric windows seem for
-            most applications to be more sensible, the default of a periodic
-            windows was chosen to correspond to the default of `get_window`.
+            If ``True`` then a symmetric window is generated, else a periodic window is
+            generated (default). Though symmetric windows seem for most applications to
+            be more sensible, the default of a periodic windows was chosen to
+            correspond to the default of `get_window`. This parameter is ignored, if
+            the window name in the `window` parameter has a suffix ``'_periodic'`` or
+            ``'_symmetric'`` appended to it (e.g., ``'hann_symmetric'``).
         fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
             Mode of FFT to be used (default 'onesided').
             See property `fft_mode` for details.
@@ -590,7 +600,7 @@ class ShortTimeFFT:
 
         >>> from scipy.signal import ShortTimeFFT, get_window
         >>> nperseg = 9  # window length
-        >>> w = get_window(('gaussian', 2.), nperseg)
+        >>> w = get_window(('gaussian_periodic', 2.), nperseg)
         >>> fs = 128  # sampling frequency
         >>> hop = 3  # increment of STFT time slice
         >>> SFT0 = ShortTimeFFT(w, hop, fs=fs)
@@ -1607,7 +1617,7 @@ class ShortTimeFFT:
         """
         return self.m_num // 2
 
-    @cache
+    @cached_property
     def _pre_padding(self) -> tuple[int, int]:
         """Smallest signal index and slice index due to padding.
 
@@ -1617,13 +1627,12 @@ class ShortTimeFFT:
         w2 = self.win.real**2 + self.win.imag**2
         # move window to the left until the overlap with t >= 0 vanishes:
         n0 = -self.m_num_mid
-        for q_, n_ in enumerate(range(n0, n0-self.m_num-1, -self.hop)):
+        for p_, n_ in enumerate(range(n0, n0-self.m_num-1, -self.hop)):
             n_next = n_ - self.hop
             if n_next + self.m_num <= 0 or all(w2[n_next:] == 0):
-                return n_, -q_
-        raise RuntimeError("This is code line should not have been reached!")
-        # If this case is reached, it probably means the first slice should be
-        # returned, i.e.: return n0, 0
+                return n_, -p_
+        # Make the linter happy:
+        raise RuntimeError("This code line should never run! Please file a bug.")
 
     @property
     def k_min(self) -> int:
@@ -1646,7 +1655,7 @@ class ShortTimeFFT:
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
         """
-        return self._pre_padding()[0]
+        return self._pre_padding[0]
 
     @property
     def p_min(self) -> int:
@@ -1671,9 +1680,8 @@ class ShortTimeFFT:
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this property belongs to.
         """
-        return self._pre_padding()[1]
+        return self._pre_padding[1]
 
-    @lru_cache(maxsize=256)
     def _post_padding(self, n: int) -> tuple[int, int]:
         """Largest signal index and slice index due to padding.
 
@@ -1681,9 +1689,17 @@ class ShortTimeFFT:
         ----------
         n : int
             Number of samples of input signal (must be ≥ half of the window length).
+
+        Notes
+        -----
+        Note that the return values are cached together with the parameter `n` to avoid
+        unnecessary recalculations.
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
+        last_arg, last_return_value = self._cache_post_padding
+        if n == last_arg:  # use cached value:
+            return last_return_value
         w2 = self.win.real**2 + self.win.imag**2
         # move window to the right until the overlap for t < t[n] vanishes:
         q1 = n // self.hop   # last slice index with t[p1] <= t[n]
@@ -1691,15 +1707,17 @@ class ShortTimeFFT:
         for q_, k_ in enumerate(range(k1, n+self.m_num, self.hop), start=q1):
             n_next = k_ + self.hop
             if n_next >= n or all(w2[:n-n_next] == 0):
-                return k_ + self.m_num, q_ + 1
-        raise RuntimeError("This is code line should not have been reached!")
+                return_value = k_ + self.m_num, q_ + 1
+                self._cache_post_padding = n, return_value
+                return return_value
+        raise RuntimeError("This code line should never run! Please file a bug.")
         # If this case is reached, it probably means the last slice should be
         # returned, i.e.: return k1 + self.m_num - self.m_num_mid, q1 + 1
 
     def k_max(self, n: int) -> int:
         """First sample index after signal end not touched by a time slice.
 
-        `k_max` - 1 is the largest sample index of the slice `p_max` for a
+        `k_max` - 1 is the largest sample index of the slice `p_max` - 1 for a
         given input signal of `n` samples.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
@@ -1785,7 +1803,6 @@ class ShortTimeFFT:
         upper_border_begin: Where post-padding effects start.
         ShortTimeFFT: Class this property belongs to.
         """
-        # not using @cache decorator due to MyPy limitations
         if self._lower_border_end is not None:
             return self._lower_border_end
 
@@ -1801,7 +1818,6 @@ class ShortTimeFFT:
         self._lower_border_end = (0, max(self.p_min, 0))  # ends at first slice
         return self._lower_border_end
 
-    @lru_cache(maxsize=256)
     def upper_border_begin(self, n: int) -> tuple[int, int]:
         """First signal index and first slice index affected by post-padding.
 
@@ -1823,6 +1839,11 @@ class ShortTimeFFT:
         p_ub : int
             Lowest index of time slice of which the end sticks out past the signal end.
 
+        Notes
+        -----
+        Note that the return values are cached together with the parameter `n` to avoid
+        unnecessary recalculations.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1836,6 +1857,9 @@ class ShortTimeFFT:
         """
         if not (n >= (m2p := self.m_num - self.m_num_mid)):
             raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
+        last_arg, last_return_value = self._cache_upper_border_begin
+        if n == last_arg:  # use cached value:
+            return last_return_value
         w2 = self.win.real**2 + self.win.imag**2
         q2 = n // self.hop + 1  # first t[q] >= t[n]
         q1 = max((n-self.m_num) // self.hop - 1, -1)
@@ -1843,8 +1867,11 @@ class ShortTimeFFT:
         for q_ in range(q2, q1, -1):
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
             if k_ <= n or all(w2[n-k_:] == 0):
-                return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
-        return 0, 0  # border starts at first slice
+                return_value = (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
+                self. _cache_upper_border_begin = n, return_value
+                return return_value
+        # make linter happy:
+        raise RuntimeError("This code line should never run! Please file a bug.")
 
     @property
     def delta_t(self) -> float:
@@ -1912,7 +1939,6 @@ class ShortTimeFFT:
                              f"does not hold for signal length {n=}!")
         return p0_, p1_
 
-    @lru_cache(maxsize=1)
     def t(self, n: int, p0: int | None = None, p1: int | None = None,
           k_offset: int = 0) -> np.ndarray:
         """Times of STFT for an input signal with `n` samples.
@@ -1934,6 +1960,10 @@ class ShortTimeFFT:
         k_offset
             Index of first sample (t = 0) in `x`.
 
+        Notes
+        -----
+        Note that the returned array is cached together with the method's call
+        parameters to avoid unnecessary recalculations.
 
         See Also
         --------
@@ -1944,8 +1974,18 @@ class ShortTimeFFT:
         fs: Sampling frequency (being ``1/T``)
         ShortTimeFFT: Class this method belongs to.
         """
+        if not (n > 0 and isinstance(n, int | np.integer)):
+            raise ValueError(f"Parameter {n=} is not a positive integer!")
+        args = n, p0, p1, k_offset, self.T  # since `self.T` is mutable, it's needed too
+        last_args, last_return_value = self._cache_t
+        if args == last_args:  # use cached value:
+            return last_return_value
+
         p0, p1 = self.p_range(n, p0, p1)
-        return np.arange(p0, p1) * self.delta_t + k_offset * self.T
+        return_value = np.arange(p0, p1) * self.delta_t + k_offset * self.T
+
+        self._cache_t = args, return_value
+        return return_value
 
     def nearest_k_p(self, k: int, left: bool = True) -> int:
         """Return nearest sample index k_p for which t[k_p] == t[p] holds.
@@ -2022,6 +2062,7 @@ class ShortTimeFFT:
         """Frequencies values of the STFT.
 
         A 1d array of length `f_pts` with `delta_f` spaced entries is returned.
+        This array is calculated lazily.
 
         See Also
         --------
@@ -2030,15 +2071,22 @@ class ShortTimeFFT:
         mfft: Length of the input for FFT used.
         ShortTimeFFT: Class this property belongs to.
         """
+        last_state, last_return_value = self._cache_f
+        current_state = self.fft_mode, self.mfft, self.T
+        if current_state == last_state:  # use cached value:
+            return last_return_value
+
         if self.fft_mode in {'onesided', 'onesided2X'}:
-            return fft_lib.rfftfreq(self.mfft, self.T)
+            return_value = fft_lib.rfftfreq(self.mfft, self.T)
         elif self.fft_mode == 'twosided':
-            return fft_lib.fftfreq(self.mfft, self.T)
+            return_value = fft_lib.fftfreq(self.mfft, self.T)
         elif self.fft_mode == 'centered':
-            return fft_lib.fftshift(fft_lib.fftfreq(self.mfft, self.T))
-        # This should never happen but makes the Linters happy:
-        fft_modes = get_args(FFT_MODE_TYPE)
-        raise RuntimeError(f"{self.fft_mode=} not in {fft_modes}!")
+            return_value = fft_lib.fftshift(fft_lib.fftfreq(self.mfft, self.T))
+        else:  # This should never happen but makes the Linters happy:
+            fft_modes = get_args(FFT_MODE_TYPE)
+            raise RuntimeError(f"{self.fft_mode=} not in {fft_modes}!")
+        self._cache_f = current_state, return_value
+        return return_value
 
     def _fft_func(self, x: np.ndarray) -> np.ndarray:
         """FFT based on the `fft_mode`, `mfft`, `scaling` and `phase_shift`
@@ -2095,8 +2143,7 @@ class ShortTimeFFT:
             Xc[..., 1:q1] /= fac
             x = fft_lib.irfft(Xc, n=self.mfft, axis=-1)
         else:  # This should never happen but makes the Linter happy:
-            error_str = f"{self.fft_mode=} not in {get_args(FFT_MODE_TYPE)}!"
-            raise RuntimeError(error_str)
+            raise RuntimeError(f"{self.fft_mode=} not in {get_args(FFT_MODE_TYPE)}!")
 
         if self.phase_shift is None:
             return x[..., :self.m_num]

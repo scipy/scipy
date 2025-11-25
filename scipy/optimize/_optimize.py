@@ -28,7 +28,6 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-import inspect
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
@@ -39,7 +38,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt, _transition_to_rng)
+                              _call_callback_maybe_halt, _transition_to_rng,
+                              wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote, xp_result_type
 from scipy._lib import array_api_extra as xpx
@@ -87,10 +87,10 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
+    if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
-    sig = inspect.signature(callback)
+    sig = wrapped_inspect_signature(callback)
 
     if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
@@ -215,7 +215,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
@@ -388,7 +388,7 @@ def rosen(x):
     return r
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities()
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -472,7 +472,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -928,15 +928,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
         except _MaxFuncCallError:
             pass
-        finally:
-            ind = np.argsort(fsim)
-            sim = np.take(sim, ind, 0)
-            fsim = np.take(fsim, ind, 0)
-            if retall:
-                allvecs.append(sim[0])
-            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
-            if _call_callback_maybe_halt(callback, intermediate_result):
-                break
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
+        if retall:
+            allvecs.append(sim[0])
+        intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     x = sim[0]
     fval = np.min(fsim)
@@ -1410,7 +1409,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     x0 = asarray(x0).flatten()
     if x0.ndim == 0:
-        x0.shape = (1,)
+        x0 = x0.reshape((1,))
     if maxiter is None:
         maxiter = len(x0) * 200
 

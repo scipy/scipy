@@ -8,11 +8,13 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
 from numpy.linalg import cond
+from scipy._lib._array_api import (make_xp_test_case, xp_assert_equal, xp_size,
+                                   xp_default_dtype)
 
 
 class TestToeplitz:
@@ -142,99 +144,75 @@ class TestCompanion:
         assert_array_equal(c, expected)
 
 
+@make_xp_test_case(block_diag)
 class TestBlockDiag:
-    def test_basic(self):
-        x = block_diag(eye(2), [[1, 2], [3, 4], [5, 6]], [[1, 2, 3]])
-        assert_array_equal(x, [[1, 0, 0, 0, 0, 0, 0],
-                               [0, 1, 0, 0, 0, 0, 0],
-                               [0, 0, 1, 2, 0, 0, 0],
-                               [0, 0, 3, 4, 0, 0, 0],
-                               [0, 0, 5, 6, 0, 0, 0],
-                               [0, 0, 0, 0, 1, 2, 3]])
+    def test_basic(self, xp):
+        dtype = xp.asarray(1).dtype
+        x = block_diag(xp.eye(2, dtype=dtype), xp.asarray([[1, 2], [3, 4], [5, 6]]),
+                       xp.asarray([[1, 2, 3]]))
+        xp_assert_equal(x, xp.asarray([[1, 0, 0, 0, 0, 0, 0],
+                                       [0, 1, 0, 0, 0, 0, 0],
+                                       [0, 0, 1, 2, 0, 0, 0],
+                                       [0, 0, 3, 4, 0, 0, 0],
+                                       [0, 0, 5, 6, 0, 0, 0],
+                                       [0, 0, 0, 0, 1, 2, 3]]))
 
-    def test_dtype(self):
-        x = block_diag([[1.5]])
-        assert_equal(x.dtype, float)
+    def test_dtype(self, xp):
+        x = block_diag(xp.asarray([[1.5]]))
+        assert x.dtype == xp_default_dtype(xp)
 
-        x = block_diag([[True]])
-        assert_equal(x.dtype, bool)
+        x = block_diag(xp.asarray([[True]]))
+        assert x.dtype == xp.bool
 
-    def test_mixed_dtypes(self):
-        actual = block_diag([[1]], [[1j]])
-        desired = np.array([[1, 0], [0, 1j]])
-        assert_array_equal(actual, desired)
+    def test_mixed_dtypes(self, xp):
+        actual = block_diag(xp.asarray([[1.]]), xp.asarray([[1j]]))
+        desired = xp.asarray([[1, 0], [0, 1j]])
+        xp_assert_equal(actual, desired)
 
-    def test_scalar_and_1d_args(self):
-        a = block_diag(1)
-        assert_equal(a.shape, (1, 1))
-        assert_array_equal(a, [[1]])
+    def test_scalar_and_1d_args(self, xp):
+        a = block_diag(xp.asarray(1))
+        assert a.shape == (1, 1)
+        xp_assert_equal(a, xp.asarray([[1]]))
 
-        a = block_diag([2, 3], 4)
-        assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
+        a = block_diag(xp.asarray([2, 3]), xp.asarray(4))
+        xp_assert_equal(a, xp.asarray([[2, 3, 0], [0, 0, 4]]))
 
     def test_no_args(self):
         a = block_diag()
-        assert_equal(a.ndim, 2)
-        assert_equal(a.nbytes, 0)
+        assert a.ndim == 2
+        assert a.nbytes == 0
 
-    def test_empty_matrix_arg(self):
+    def test_empty_matrix_arg(self, xp):
         # regression test for gh-4596: check the shape of the result
         # for empty matrix inputs. Empty matrices are no longer ignored
         # (gh-4908) it is viewed as a shape (1, 0) matrix.
-        a = block_diag([[1, 0], [0, 1]],
-                       [],
-                       [[2, 3], [4, 5], [6, 7]])
-        assert_array_equal(a, [[1, 0, 0, 0],
-                               [0, 1, 0, 0],
-                               [0, 0, 0, 0],
-                               [0, 0, 2, 3],
-                               [0, 0, 4, 5],
-                               [0, 0, 6, 7]])
+        dtype = xp.asarray(1).dtype
+        a = block_diag(xp.asarray([[1, 0], [0, 1]]),
+                       xp.asarray([], dtype=dtype),
+                       xp.asarray([[2, 3], [4, 5], [6, 7]]))
+        xp_assert_equal(a, xp.asarray([[1, 0, 0, 0],
+                                       [0, 1, 0, 0],
+                                       [0, 0, 0, 0],
+                                       [0, 0, 2, 3],
+                                       [0, 0, 4, 5],
+                                       [0, 0, 6, 7]]))
 
-    def test_zerosized_matrix_arg(self):
+    @pytest.mark.skip_xp_backends("dask.array", reason="dask/dask#11800")
+    def test_zerosized_matrix_arg(self, xp):
         # test for gh-4908: check the shape of the result for
         # zero-sized matrix inputs, i.e. matrices with shape (0,n) or (n,0).
         # note that [[]] takes shape (1,0)
-        a = block_diag([[1, 0], [0, 1]],
-                       [[]],
-                       [[2, 3], [4, 5], [6, 7]],
-                       np.zeros([0, 2], dtype='int32'))
-        assert_array_equal(a, [[1, 0, 0, 0, 0, 0],
-                               [0, 1, 0, 0, 0, 0],
-                               [0, 0, 0, 0, 0, 0],
-                               [0, 0, 2, 3, 0, 0],
-                               [0, 0, 4, 5, 0, 0],
-                               [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-    @pytest.mark.thread_unsafe
-    def test_dep(self):
-        with pytest.deprecated_call(match="`kron`"):
-            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
+        dtype = xp.asarray(1).dtype
+        a = block_diag(xp.asarray([[1, 0], [0, 1]]),
+                       xp.asarray([[]], dtype=dtype),
+                       xp.asarray([[2, 3], [4, 5], [6, 7]]),
+                       xp.zeros([0, 2], dtype=dtype))
+        xp_assert_equal(a, xp.asarray([[1, 0, 0, 0, 0, 0],
+                                       [0, 1, 0, 0, 0, 0],
+                                       [0, 0, 0, 0, 0, 0],
+                                       [0, 0, 2, 3, 0, 0],
+                                       [0, 0, 4, 5, 0, 0],
+                                       [0, 0, 6, 7, 0, 0]]))
 
 
 class TestHelmert:
@@ -533,19 +511,22 @@ def test_dft():
     assert_array_almost_equal(mx, fx)
 
 
-def test_fiedler():
-    f = fiedler([])
-    assert_equal(f.size, 0)
-    f = fiedler([123.])
-    assert_array_equal(f, np.array([[0.]]))
-    f = fiedler(np.arange(1, 7))
-    des = np.array([[0, 1, 2, 3, 4, 5],
-                    [1, 0, 1, 2, 3, 4],
-                    [2, 1, 0, 1, 2, 3],
-                    [3, 2, 1, 0, 1, 2],
-                    [4, 3, 2, 1, 0, 1],
-                    [5, 4, 3, 2, 1, 0]])
-    assert_array_equal(f, des)
+@make_xp_test_case(fiedler)
+def test_fiedler(xp):
+    f = fiedler(xp.asarray([]))
+    assert xp_size(f) == 0
+
+    f = fiedler(xp.asarray([123.]))
+    xp_assert_equal(f, xp.asarray([[0.]]))
+
+    f = fiedler(xp.arange(1, 7))
+    des = xp.asarray([[0, 1, 2, 3, 4, 5],
+                      [1, 0, 1, 2, 3, 4],
+                      [2, 1, 0, 1, 2, 3],
+                      [3, 2, 1, 0, 1, 2],
+                      [4, 3, 2, 1, 0, 1],
+                      [5, 4, 3, 2, 1, 0]])
+    xp_assert_equal(f, des)
 
 
 def test_fiedler_companion():
@@ -608,13 +589,13 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),
                                      (convolution_matrix, (5, 'same')),
                                      (fiedler, ()),
                                      (fiedler_companion, ()),
+                                     (hankel, (np.arange(9),)),
                                      (leslie, (np.arange(9),)),
                                      (toeplitz, (np.arange(9),)),
                                      ])
@@ -624,8 +605,8 @@ def test_batch(f, args):
     m = 10
     A = rng.random(batch_shape + (m,))
 
-    if f in {toeplitz}:
-        message = "Beginning in SciPy 1.17, multidimensional input will be..."
+    if f in {hankel}:
+        message = "Beginning in SciPy 1.19, multidimensional input will be..."
         with pytest.warns(FutureWarning, match=message):
             f(A, *args)
         return

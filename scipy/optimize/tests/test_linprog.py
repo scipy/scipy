@@ -3,11 +3,12 @@ Unit test for Linear Programming
 """
 import sys
 import platform
+import warnings
 
 import numpy as np
 from numpy.exceptions import VisibleDeprecationWarning
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           assert_array_less, assert_warns, suppress_warnings)
+                           assert_array_less)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.optimize._numdiff import approx_derivative
@@ -78,14 +79,14 @@ def _assert_success(res, desired_fun=None, desired_x=None,
                         rtol=rtol, atol=atol)
 
 
-def magic_square(n):
+def magic_square(n, rng=None):
     """
     Generates a linear program for which integer solutions represent an
     n x n magic square; binary decision variables represent the presence
     (or absence) of an integer 1 to n^2 in each position of the square.
     """
 
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(92350948245690509234) if rng is None else rng
     M = n * (n**2 + 1) / 2
 
     numbers = np.arange(n**4) // n**2 + 1
@@ -139,7 +140,7 @@ def magic_square(n):
 
     A = np.array(np.vstack(A_list), dtype=float)
     b = np.array(b_list, dtype=float)
-    c = rng.rand(A.shape[1])
+    c = rng.random(A.shape[1])
 
     return A, b, c, numbers, M
 
@@ -149,7 +150,7 @@ def lpgen_2d(m, n):
         row sums == n/m, col sums == 1
         https://gist.github.com/denis-bz/8647461
     """
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(35892345982340246935)
     c = - rng.exponential(size=(m, n))
     Arow = np.zeros((m, m * n))
     brow = np.zeros(m)
@@ -172,17 +173,17 @@ def lpgen_2d(m, n):
 
 
 def very_random_gen(seed=0):
-    rng = np.random.RandomState(seed)
+    rng = np.random.default_rng(389234982354865)
     m_eq, m_ub, n = 10, 20, 50
-    c = rng.rand(n)-0.5
-    A_ub = rng.rand(m_ub, n)-0.5
-    b_ub = rng.rand(m_ub)-0.5
-    A_eq = rng.rand(m_eq, n)-0.5
-    b_eq = rng.rand(m_eq)-0.5
-    lb = -rng.rand(n)
-    ub = rng.rand(n)
-    lb[lb < -rng.rand()] = -np.inf
-    ub[ub > rng.rand()] = np.inf
+    c = rng.random(n)-0.5
+    A_ub = rng.random((m_ub, n))-0.5
+    b_ub = rng.random(m_ub)-0.5
+    A_eq = rng.random((m_eq, n))-0.5
+    b_eq = rng.random(m_eq)-0.5
+    lb = -rng.random(n)
+    ub = rng.random(n)
+    lb[lb < -rng.random()] = -np.inf
+    ub[ub > rng.random()] = np.inf
     bounds = np.vstack((lb, ub)).T
     return c, A_ub, b_ub, A_eq, b_eq, bounds
 
@@ -211,9 +212,9 @@ def l1_regression_prob(seed=0, m=8, d=9, n=100):
     phi: feature map R^d -> R^m
     m: dimension of feature space
     '''
-    rng = np.random.RandomState(seed)
+    rng = np.random.default_rng(72847583923592458453)
     phi = rng.normal(0, 1, size=(m, d))  # random feature mapping
-    w_true = rng.randn(m)
+    w_true = rng.standard_normal(m)
     x = rng.normal(0, 1, size=(d, n))  # features
     y = w_true @ (phi @ x) + rng.normal(0, 1e-5, size=n)  # measurements
 
@@ -267,7 +268,6 @@ def generic_callback_test(self):
     assert_allclose(last_cb['slack'], res['slack'])
 
 
-@pytest.mark.thread_unsafe
 def test_unknown_solvers_and_options():
     c = np.array([-3, -2])
     A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -293,7 +293,6 @@ def test_choose_solver():
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
 
-@pytest.mark.thread_unsafe
 def test_deprecation():
     with pytest.warns(DeprecationWarning):
         linprog(1, method='interior-point')
@@ -384,7 +383,7 @@ class LinprogCommonTests:
         A, b, c = lpgen_2d(20, 20)
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"disp": True})
-        _assert_success(res, desired_fun=-64.049494229)
+        _assert_success(res, desired_fun=-63.47967608020187)  # method='highs' solution
 
     def test_docstring_example(self):
         # Example from linprog docstring.
@@ -446,7 +445,6 @@ class LinprogCommonTests:
                       method=self.method, options=self.options)
         _assert_success(res, desired_fun=2, desired_x=[2])
 
-    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
@@ -460,10 +458,9 @@ class LinprogCommonTests:
         o = {key: self.options[key] for key in self.options}
         o['spam'] = 42
 
-        assert_warns(OptimizeWarning, f,
-                     c, A_ub=A_ub, b_ub=b_ub, options=o)
+        with pytest.warns(OptimizeWarning):
+            f(c, A_ub=A_ub, b_ub=b_ub, options=o)
 
-    @pytest.mark.thread_unsafe
     def test_integrality_without_highs(self):
         # ensure that using `integrality` parameter without `method='highs'`
         # raises warning and produces correct solution to relaxed problem
@@ -475,7 +472,7 @@ class LinprogCommonTests:
         bounds = [(0, np.inf)] * len(c)
         integrality = [1] * len(c)
 
-        with np.testing.assert_warns(OptimizeWarning):
+        with pytest.warns(OptimizeWarning):
             res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                           method=self.method, integrality=integrality)
 
@@ -490,8 +487,9 @@ class LinprogCommonTests:
 
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Creating an ndarray from ragged", VisibleDeprecationWarning)
             assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
@@ -516,14 +514,14 @@ class LinprogCommonTests:
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                     method=self.method, options=self.options)
 
-        rng = np.random.RandomState(0)
+        rng = np.random.default_rng(9938284754882992)
         m = 100
         n = 150
-        A_eq = scipy.sparse.random_array((m, n), density=0.5)
-        x_valid = rng.randn(n)
-        c = rng.randn(n)
-        ub = x_valid + rng.rand(n)
-        lb = x_valid - rng.rand(n)
+        A_eq = scipy.sparse.random_array((m, n), density=0.5, rng=rng)
+        x_valid = rng.standard_normal(n)
+        c = rng.standard_normal(n)
+        ub = x_valid + rng.random(n)
+        lb = x_valid - rng.random(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq @ x_valid
 
@@ -551,7 +549,6 @@ class LinprogCommonTests:
             [3, 2.5, 8, 0, -1, 0],
             [8, 10, 4, 0, 0, -1]]
         b = [185, 155, 600]
-        np.random.seed(0)
         maxiter = 3
         res = linprog(c, A_eq=A, b_eq=b, method=self.method,
                       options={"maxiter": maxiter})
@@ -613,7 +610,6 @@ class LinprogCommonTests:
         if do_presolve:
             assert_equal(res.nit, 0)
 
-    @pytest.mark.thread_unsafe
     def test_bounds_infeasible_2(self):
 
         # Test ill-valued bounds (lower inf, upper -inf)
@@ -810,35 +806,35 @@ class LinprogCommonTests:
 
     def test_zero_column_1(self):
         m, n = 3, 4
-        rng = np.random.RandomState(0)
-        c = rng.rand(n)
+        rng = np.random.default_rng(558329500002933)
+        c = rng.random(n)
         c[1] = 1
-        A_eq = rng.rand(m, n)
+        A_eq = rng.random((m, n))
         A_eq[:, 1] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
         A_ub = [[1, 0, 1, 1]]
         b_ub = 3
         bounds = [(-10, 10), (-10, 10), (-10, None), (None, None)]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-9.7087836730413404)
+        _assert_success(res, desired_fun=-9.485758655190649)  # method='highs' solution
 
     def test_zero_column_2(self):
         if self.method in {'highs-ds', 'highs-ipm'}:
             # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
             pytest.xfail()
 
-        rng = np.random.RandomState(0)
+        rng = np.random.default_rng(4492835845925983465)
         m, n = 2, 4
-        c = rng.rand(n)
+        c = rng.random(n)
         c[1] = -1
-        A_eq = rng.rand(m, n)
+        A_eq = rng.random((m, n))
         A_eq[:, 1] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
 
-        A_ub = rng.rand(m, n)
+        A_ub = rng.random((m, n))
         A_ub[:, 1] = 0
-        b_ub = rng.rand(m)
+        b_ub = rng.random(m)
         bounds = (None, None)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -868,11 +864,11 @@ class LinprogCommonTests:
 
     def test_zero_row_3(self):
         m, n = 2, 4
-        rng = np.random.RandomState(1234)
-        c = rng.rand(n)
-        A_eq = rng.rand(m, n)
+        rng = np.random.default_rng(49949482723982545)
+        c = rng.random(n)
+        A_eq = rng.random((m, n))
         A_eq[0, :] = 0
-        b_eq = rng.rand(m)
+        b_eq = rng.random(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -883,11 +879,11 @@ class LinprogCommonTests:
 
     def test_zero_row_4(self):
         m, n = 2, 4
-        rng = np.random.RandomState(1234)
-        c = rng.rand(n)
-        A_ub = rng.rand(m, n)
+        rng = np.random.default_rng(1032934859282349)
+        c = rng.random(n)
+        A_ub = rng.random((m, n))
         A_ub[0, :] = 0
-        b_ub = -rng.rand(m)
+        b_ub = -rng.random(m)
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -1069,14 +1065,15 @@ class LinprogCommonTests:
         # mostly a test of redundancy removal, which is carefully tested in
         # test__remove_redundancy.py
         m, n = 10, 10
-        rng = np.random.RandomState(0)
-        c = rng.rand(n)
-        A_eq = rng.rand(m, n)
-        b_eq = rng.rand(m)
+        rng = np.random.default_rng(253985716283940)
+        c = rng.random(n)
+        A_eq = rng.random((m, n))
+        b_eq = rng.random(m)
         A_eq[-1, :] = 2 * A_eq[-2, :]
         b_eq[-1] *= -1
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -1098,13 +1095,16 @@ class LinprogCommonTests:
         # 40 constraints) generated by https://gist.github.com/denis-bz/8647461
         A_ub, b_ub, c = lpgen_2d(20, 20)
 
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Solving system with option 'sym_pos'", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-64.049494229)
+
+        _assert_success(res, desired_fun=-63.47967608020187)  # method='highs' solution
 
     def test_network_flow(self):
         # A network flow problem with supply and demand at nodes
@@ -1121,8 +1121,8 @@ class LinprogCommonTests:
             [0, 0, 0, 0, 0, 0, 0, n, n, 0, 0, p],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, n, n, n]]
         b_eq = [0, 19, -16, 33, 0, 0, -36]
-        with suppress_warnings() as sup:
-            sup.filter(LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_fun=755, atol=1e-6, rtol=1e-7)
@@ -1146,14 +1146,17 @@ class LinprogCommonTests:
             [0, 0, 0, p, p]]
         b_eq = [-4, 0, 0, 4]
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             # this is an UmfpackWarning but I had trouble importing it
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
-            sup.filter(OptimizeWarning, "Solving system with option...")
-            sup.filter(LinAlgWarning)
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "scipy.linalg.solve\nIll...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_fun=14)
@@ -1199,8 +1202,9 @@ class LinprogCommonTests:
                 [0, 0, 1, 0, 0, 1]]
         b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
 
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_fun=-1.77,
@@ -1335,11 +1339,12 @@ class LinprogCommonTests:
 
         c = np.array([-1.0, 1, 1, 1, 1, 1, 1, 1, 1,
                       1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning,
-                       "Solving system with option 'sym_pos'")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Solving system with option 'sym_pos'", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_fun=-106.63507541835018)
@@ -1389,14 +1394,16 @@ class LinprogCommonTests:
             -1.64, 0.7, 1.8, -1.06, -1.16, 0.26, 2.13, 1.53, 0.66, 0.28
             ])
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(OptimizeWarning,
-                       "Solving system with option 'cholesky'")
-            sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option 'cholesky'", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option 'sym_pos'", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
 
@@ -1416,14 +1423,16 @@ class LinprogCommonTests:
         # https://github.com/scipy/scipy/issues/7044
 
         A_eq, b_eq, c, _, _ = magic_square(3)
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
 
-        desired_fun = 1.730550597
+        desired_fun = 1.7002011030086288  # `method='highs' solution
         _assert_success(res, desired_fun=desired_fun)
         assert_allclose(A_eq.dot(res.x), b_eq)
         assert_array_less(np.zeros(res.x.size) - 1e-5, res.x)
@@ -1481,9 +1490,10 @@ class LinprogCommonTests:
         b_ub = np.zeros(A_ub.shape[0])
         c = -np.ones(A_ub.shape[1])
         bounds = [(0, 1)] * A_ub.shape[1]
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
 
@@ -1508,10 +1518,11 @@ class LinprogCommonTests:
         ])
         b_eq = np.array([[100], [0], [0], [0], [0]])
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_fun=43.3333333331385)
@@ -1545,11 +1556,12 @@ class LinprogCommonTests:
         bounds = [(0, None), (0, None), (0, None), (0, None)]
         desired_fun = 36.0000000000
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res1 = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                            method=self.method, options=self.options)
 
@@ -1558,11 +1570,12 @@ class LinprogCommonTests:
         b_ub.append(0)
         bounds[2] = (None, None)
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res2 = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                            method=self.method, options=self.options)
         rtol = 1e-5
@@ -1589,9 +1602,10 @@ class LinprogCommonTests:
         b_ub = [4, 4]
         A_eq = [[0], [-8], [9]]
         b_eq = [3, 2, 10]
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
-            sup.filter(OptimizeWarning, "Solving system with option...")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_infeasible(res)
@@ -1661,8 +1675,9 @@ class LinprogCommonTests:
                          [0, 1, 0, 0, 0, 1]])
         b_eq = np.array([221, 210, 10, 141, 198, 102])
         c = np.concatenate((0, 1, np.zeros(4)), axis=None)
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=self.options)
         _assert_success(res, desired_x=[129, 92, 12, 198, 0, 10], desired_fun=92)
@@ -1697,15 +1712,24 @@ class LinprogCommonTests:
             o = {"autoscale": True}
         o.update(self.options)
 
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "Solving system with option...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
-            sup.filter(RuntimeWarning, "divide by zero encountered...")
-            sup.filter(RuntimeWarning, "overflow encountered...")
-            sup.filter(RuntimeWarning, "invalid value encountered...")
-            sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "scipy.linalg.solve\nIll...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "divide by zero encountered...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "overflow encountered...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
@@ -1772,7 +1796,6 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, method=self.method)
         _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("options",
                              [{"maxiter": -1},
                               {"disp": -1},
@@ -1787,10 +1810,11 @@ class LinprogHiGHSTests(LinprogCommonTests):
         def f(options):
             linprog(1, method=self.method, options=options)
         options.update(self.options)
-        assert_warns(OptimizeWarning, f, options=options)
+        with pytest.warns(OptimizeWarning):
+            f(options=options)
 
     def test_crossover(self):
-        A_eq, b_eq, c, _, _ = magic_square(4)
+        A_eq, b_eq, c, _, _ = magic_square(4, rng=np.random.default_rng(2212392))
         bounds = (0, 1)
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
@@ -1959,7 +1983,6 @@ class TestLinprogSimplexDefault(LinprogSimplexTests):
         # even if the solution is wrong, the appropriate error is raised.
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
@@ -1976,7 +1999,6 @@ class TestLinprogSimplexBland(LinprogSimplexTests):
     def test_bug_5400(self):
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate error is raised.
@@ -2012,7 +2034,6 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
     def test_bug_7237_low_tol(self):
         pytest.skip("Simplex fails on this problem.")
 
-    @pytest.mark.thread_unsafe
     def test_bug_8174_low_tol(self):
         # Fails if the tolerance is too strict. Here, we test that
         # even if the solution is wrong, the appropriate warning is issued.
@@ -2079,25 +2100,30 @@ class TestLinprogIPSparse(LinprogIPTests):
         A_eq, b_eq, c, _, _ = magic_square(3)
         bounds = (0, 1)
 
-        with suppress_warnings() as sup:
+        with warnings.catch_warnings():
             if has_umfpack:
-                sup.filter(UmfpackWarning)
-            sup.filter(MatrixRankWarning, "Matrix is exactly singular")
-            sup.filter(OptimizeWarning, "Solving system with option...")
+                warnings.simplefilter("ignore", UmfpackWarning)
+            warnings.filterwarnings(
+                "ignore", "Matrix is exactly singular", MatrixRankWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
 
             o = {key: self.options[key] for key in self.options}
             o["presolve"] = False
 
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
-        _assert_success(res, desired_fun=1.730550597)
+        desired_fun = 1.7002011030086288  # method='highs' solution
+        _assert_success(res, desired_fun=desired_fun)
 
     def test_sparse_solve_options(self):
         # checking that problem is solved with all column permutation options
         A_eq, b_eq, c, _, _ = magic_square(3)
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
-            sup.filter(OptimizeWarning, "Invalid permc_spec option")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "Invalid permc_spec option", OptimizeWarning)
             o = {key: self.options[key] for key in self.options}
             permc_specs = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A',
                            'COLAMD', 'ekki-ekki-ekki')
@@ -2107,7 +2133,8 @@ class TestLinprogIPSparse(LinprogIPTests):
                 o["permc_spec"] = permc_spec
                 res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                               method=self.method, options=o)
-                _assert_success(res, desired_fun=1.730550597)
+                desired_fun = 1.7002011030086288  # `method='highs' solution
+                _assert_success(res, desired_fun=desired_fun)
 
 
 class TestLinprogIPSparsePresolve(LinprogIPTests):
@@ -2167,19 +2194,25 @@ class TestLinprogIPSpecific:
         A, b, c = lpgen_2d(20, 20)
         res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                       options={"cholesky": True})  # only for dense
-        _assert_success(res, desired_fun=-64.049494229)
+        _assert_success(res, desired_fun=-63.47967608020187)  # method='highs' solution
 
     def test_alternate_initial_point(self):
         # use "improved" initial point
         A, b, c = lpgen_2d(20, 20)
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
-            sup.filter(OptimizeWarning, "Solving system with option...")
-            sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "scipy.linalg.solve\nIll...", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "Ill-conditioned matrix...", LinAlgWarning)
+            warnings.filterwarnings(
+                "ignore", "An ill-conditioned...", LinAlgWarning)
+
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
-        _assert_success(res, desired_fun=-64.049494229)
+        _assert_success(res, desired_fun=-63.47967608020187)  # method='highs' solution
 
     def test_bug_8664(self):
         # interior-point has trouble with this when presolve is off
@@ -2188,9 +2221,10 @@ class TestLinprogIPSpecific:
         b_ub = [4, 4]
         A_eq = [[0], [-8], [9]]
         b_eq = [3, 2, 10]
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning)
-            sup.filter(OptimizeWarning, "Solving system with option...")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.filterwarnings(
+                "ignore", "Solving system with option...", OptimizeWarning)
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options={"presolve": False})
         assert_(not res.success, "Incorrectly reported success")
@@ -2249,16 +2283,19 @@ class TestLinprogRSCommon(LinprogRSTests):
         assert_equal(res.status, 6)
 
     def test_redundant_constraints_with_guess(self):
-        A, b, c, _, _ = magic_square(3)
-        p = np.random.rand(*c.shape)
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            sup.filter(LinAlgWarning)
+        rng = np.random.default_rng(984298498729345)
+        A, b, c, _, _ = magic_square(3, rng=rng)
+        p = rng.random(c.shape)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "A_eq does not appear...", OptimizeWarning)
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered", RuntimeWarning)
+            warnings.simplefilter("ignore", LinAlgWarning)
             res = linprog(c, A_eq=A, b_eq=b, method=self.method)
             res2 = linprog(c, A_eq=A, b_eq=b, method=self.method, x0=res.x)
             res3 = linprog(c + p, A_eq=A, b_eq=b, method=self.method, x0=res.x)
-        _assert_success(res2, desired_fun=1.730550597)
+        _assert_success(res2, desired_fun=res.fun)
         assert_equal(res2.nit, 0)
         _assert_success(res3)
         assert_(res3.nit < res.nit)  # hot start reduces iterations

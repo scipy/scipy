@@ -96,7 +96,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
         return NULL;
     }
     if (iter < 0) {
-        PyErr_SetString(PyExc_ValueError, "maxiter should be > 0");
+        PyErr_SetString(PyExc_ValueError, "maxiter must be >= 0");
         return NULL;
     }
 

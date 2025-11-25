@@ -1,16 +1,17 @@
 """Module for RBF interpolation."""
 import warnings
-from itertools import combinations_with_replacement
+from types import GenericAlias
 
 import numpy as np
-from numpy.linalg import LinAlgError
 from scipy.spatial import KDTree
-from scipy.special import comb
-from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
-from ._rbfinterp_pythran import (_build_system,
-                                 _build_evaluation_coefficients,
-                                 _polynomial_matrix)
+from . import _rbfinterp_np
+from . import _rbfinterp_xp
+
+from scipy._lib._array_api import (
+    _asarray, array_namespace, xp_size, is_numpy, xp_capabilities
+)
+import scipy._lib.array_api_extra as xpx
 
 
 __all__ = ["RBFInterpolator"]
@@ -47,90 +48,24 @@ _NAME_TO_MIN_DEGREE = {
     }
 
 
-def _monomial_powers(ndim, degree):
-    """Return the powers for each monomial in a polynomial.
-
-    Parameters
-    ----------
-    ndim : int
-        Number of variables in the polynomial.
-    degree : int
-        Degree of the polynomial.
-
-    Returns
-    -------
-    (nmonos, ndim) int ndarray
-        Array where each row contains the powers for each variable in a
-        monomial.
-
-    """
-    nmonos = comb(degree + ndim, ndim, exact=True)
-    out = np.zeros((nmonos, ndim), dtype=np.dtype("long"))
-    count = 0
-    for deg in range(degree + 1):
-        for mono in combinations_with_replacement(range(ndim), deg):
-            # `mono` is a tuple of variables in the current monomial with
-            # multiplicity indicating power (e.g., (0, 1, 1) represents x*y**2)
-            for var in mono:
-                out[count, var] += 1
-
-            count += 1
-
-    return out
+def _get_backend(xp):
+    if is_numpy(xp):
+        return _rbfinterp_np
+    return _rbfinterp_xp
 
 
-def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
-    """Build and solve the RBF interpolation system of equations.
+extra_note="""Only the default ``neighbors=None`` is Array API compatible.
+    If a non-default value of ``neighbors`` is given, the behavior is NumPy -only.
 
-    Parameters
-    ----------
-    y : (P, N) float ndarray
-        Data point coordinates.
-    d : (P, S) float ndarray
-        Data values at `y`.
-    smoothing : (P,) float ndarray
-        Smoothing parameter for each data point.
-    kernel : str
-        Name of the RBF.
-    epsilon : float
-        Shape parameter.
-    powers : (R, N) int ndarray
-        The exponents for each monomial in the polynomial.
+"""
 
-    Returns
-    -------
-    coeffs : (P + R, S) float ndarray
-        Coefficients for each RBF and monomial.
-    shift : (N,) float ndarray
-        Domain shift used to create the polynomial matrix.
-    scale : (N,) float ndarray
-        Domain scaling used to create the polynomial matrix.
-
-    """
-    lhs, rhs, shift, scale = _build_system(
-        y, d, smoothing, kernel, epsilon, powers
-        )
-    _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
-    if info < 0:
-        raise ValueError(f"The {-info}-th argument had an illegal value.")
-    elif info > 0:
-        msg = "Singular matrix."
-        nmonos = powers.shape[0]
-        if nmonos > 0:
-            pmat = _polynomial_matrix((y - shift)/scale, powers)
-            rank = np.linalg.matrix_rank(pmat)
-            if rank < nmonos:
-                msg = (
-                    "Singular matrix. The matrix of monomials evaluated at "
-                    "the data point coordinates does not have full column "
-                    f"rank ({rank}/{nmonos})."
-                    )
-
-        raise LinAlgError(msg)
-
-    return shift, scale, coeffs
-
-
+@xp_capabilities(
+    skip_backends=[
+        ("dask.array", "linalg.lu is broken; array_api_extra#488"),
+        ("array_api_strict", "array-api#977, diag, view")
+    ],
+    extra_note=extra_note
+)
 class RBFInterpolator:
     """Radial basis function interpolator in N ≥ 1 dimensions.
 
@@ -203,7 +138,7 @@ class RBFInterpolator:
     linear equations
 
     .. math::
-        (K(y, y) + \\lambda I) a + P(y) b = d
+        (K(x, y) + \\lambda I) a + P(y) b = d
 
     and
 
@@ -271,8 +206,9 @@ class RBFInterpolator:
     >>> xobs = 2*Halton(2, seed=rng).random(100) - 1
     >>> yobs = np.sum(xobs, axis=1)*np.exp(-6*np.sum(xobs**2, axis=1))
 
-    >>> xgrid = np.mgrid[-1:1:50j, -1:1:50j]
-    >>> xflat = xgrid.reshape(2, -1).T
+    >>> x1 = np.linspace(-1, 1, 50)
+    >>> xgrid = np.asarray(np.meshgrid(x1, x1, indexing='ij'))
+    >>> xflat = xgrid.reshape(2, -1).T     # make it a 2-D array
     >>> yflat = RBFInterpolator(xobs, yobs)(xflat)
     >>> ygrid = yflat.reshape(50, 50)
 
@@ -284,36 +220,53 @@ class RBFInterpolator:
 
     """
 
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, y, d,
                  neighbors=None,
                  smoothing=0.0,
                  kernel="thin_plate_spline",
                  epsilon=None,
                  degree=None):
-        y = np.asarray(y, dtype=float, order="C")
+        xp = array_namespace(y, d, smoothing)
+        _backend = _get_backend(xp)
+
+        if neighbors is not None:
+            if not is_numpy(xp):
+                raise NotImplementedError(
+                    "neighbors not None is numpy-only because it relies on KDTree"
+                )
+
+        y = _asarray(y, dtype=xp.float64, order="C", xp=xp)
         if y.ndim != 2:
             raise ValueError("`y` must be a 2-dimensional array.")
 
         ny, ndim = y.shape
 
-        d_dtype = complex if np.iscomplexobj(d) else float
-        d = np.asarray(d, dtype=d_dtype, order="C")
+        d = xp.asarray(d)
+        if xp.isdtype(d.dtype, 'complex floating'):
+            d_dtype = xp.complex128
+        else:
+            d_dtype = xp.float64
+        d = _asarray(d, dtype=d_dtype, order="C", xp=xp)
+
         if d.shape[0] != ny:
             raise ValueError(
                 f"Expected the first axis of `d` to have length {ny}."
                 )
 
         d_shape = d.shape[1:]
-        d = d.reshape((ny, -1))
+        d = xp.reshape(d, (ny, -1))
         # If `d` is complex, convert it to a float array with twice as many
         # columns. Otherwise, the LHS matrix would need to be converted to
         # complex and take up 2x more memory than necessary.
-        d = d.view(float)
+        d = d.view(float)     # NB not Array API compliant (and jax copies)
 
-        if np.isscalar(smoothing):
-            smoothing = np.full(ny, smoothing, dtype=float)
+        if isinstance(smoothing, int | float) or smoothing.shape == ():
+            smoothing = xp.full(ny, smoothing, dtype=xp.float64)
         else:
-            smoothing = np.asarray(smoothing, dtype=float, order="C")
+            smoothing = _asarray(smoothing, dtype=float, order="C", xp=xp)
             if smoothing.shape != (ny,):
                 raise ValueError(
                     "Expected `smoothing` to be a scalar or have shape "
@@ -360,7 +313,7 @@ class RBFInterpolator:
             neighbors = int(min(neighbors, ny))
             nobs = neighbors
 
-        powers = _monomial_powers(ndim, degree)
+        powers = _backend._monomial_powers(ndim, degree, xp)
         # The polynomial matrix must have full column rank in order for the
         # interpolant to be well-posed, which is not possible if there are
         # fewer observations than monomials.
@@ -371,9 +324,10 @@ class RBFInterpolator:
                 )
 
         if neighbors is None:
-            shift, scale, coeffs = _build_and_solve_system(
-                y, d, smoothing, kernel, epsilon, powers
-                )
+            shift, scale, coeffs = _backend._build_and_solve_system(
+                y, d, smoothing, kernel, epsilon, powers,
+                xp
+            )
 
             # Make these attributes private since they do not always exist.
             self._shift = shift
@@ -392,6 +346,31 @@ class RBFInterpolator:
         self.kernel = kernel
         self.epsilon = epsilon
         self.powers = powers
+        self._xp = xp
+
+    def __setstate__(self, state):
+        tpl1, tpl2 = state
+        (self.y, self.d, self.d_shape, self.d_dtype, self.neighbors,
+         self.smoothing, self.kernel, self.epsilon, self.powers) = tpl1
+
+        if self.neighbors is None:
+            self._shift, self._scale, self._coeffs = tpl2
+        else:
+            self._tree, = tpl2
+
+        self._xp = array_namespace(self.y, self.d, self.smoothing)
+
+    def __getstate__(self):
+        tpl = (self.y, self.d, self.d_shape, self.d_dtype, self.neighbors,
+               self.smoothing, self.kernel, self.epsilon, self.powers
+        )
+
+        if self.neighbors is None:
+            tpl2 = (self._shift, self._scale, self._coeffs)
+        else:
+            tpl2 = (self._tree,)
+
+        return (tpl, tpl2)
 
     def _chunk_evaluator(
             self,
@@ -429,35 +408,42 @@ class RBFInterpolator:
         (Q, S) float ndarray
         Interpolated array
         """
+        _backend = _get_backend(self._xp)
+
         nx, ndim = x.shape
         if self.neighbors is None:
-            nnei = len(y)
+            nnei = y.shape[0]
         else:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
         chunksize = memory_budget // (self.powers.shape[0] + nnei) + 1
         if chunksize <= nx:
-            out = np.empty((nx, self.d.shape[1]), dtype=float)
+            out = self._xp.empty((nx, self.d.shape[1]), dtype=self._xp.float64)
             for i in range(0, nx, chunksize):
-                vec = _build_evaluation_coefficients(
+                chunk = _backend.compute_interpolation(
                     x[i:i + chunksize, :],
                     y,
                     self.kernel,
                     self.epsilon,
                     self.powers,
                     shift,
-                    scale)
-                out[i:i + chunksize, :] = np.dot(vec, coeffs)
+                    scale,
+                    coeffs,
+                    self._xp
+                )
+                out = xpx.at(out, (slice(i, i + chunksize), slice(None,))).set(chunk)
         else:
-            vec = _build_evaluation_coefficients(
+            out = _backend.compute_interpolation(
                 x,
                 y,
                 self.kernel,
                 self.epsilon,
                 self.powers,
                 shift,
-                scale)
-            out = np.dot(vec, coeffs)
+                scale,
+                coeffs,
+                self._xp
+            )
         return out
 
     def __call__(self, x):
@@ -465,16 +451,16 @@ class RBFInterpolator:
 
         Parameters
         ----------
-        x : (Q, N) array_like
+        x : (npts, ndim) array_like
             Evaluation point coordinates.
 
         Returns
         -------
-        (Q, ...) ndarray
+        ndarray, shape (npts, )
             Values of the interpolant at `x`.
 
         """
-        x = np.asarray(x, dtype=float, order="C")
+        x = _asarray(x, dtype=self._xp.float64, order="C", xp=self._xp)
         if x.ndim != 2:
             raise ValueError("`x` must be a 2-dimensional array.")
 
@@ -488,7 +474,7 @@ class RBFInterpolator:
         # If this number is below 1e6 we just use 1e6
         # This memory budget is used to decide how we chunk
         # the inputs
-        memory_budget = max(x.size + self.y.size + self.d.size, 1000000)
+        memory_budget = max(xp_size(x) + xp_size(self.y) + xp_size(self.d), 1_000_000)
 
         if self.neighbors is None:
             out = self._chunk_evaluator(
@@ -499,6 +485,9 @@ class RBFInterpolator:
                 self._coeffs,
                 memory_budget=memory_budget)
         else:
+            # XXX: this relies on KDTree, hence is numpy-only until KDTree is converted
+            _build_and_solve_system = _get_backend(np)._build_and_solve_system
+
             # Get the indices of the k nearest observation points to each
             # evaluation point.
             _, yindices = self._tree.query(x, self.neighbors)
@@ -536,6 +525,7 @@ class RBFInterpolator:
                     self.kernel,
                     self.epsilon,
                     self.powers,
+                    np
                 )
                 out[xidx] = self._chunk_evaluator(
                     xnbr,
@@ -545,6 +535,6 @@ class RBFInterpolator:
                     coeffs,
                     memory_budget=memory_budget)
 
-        out = out.view(self.d_dtype)
-        out = out.reshape((nx, ) + self.d_shape)
+        out = out.view(self.d_dtype)    # NB not Array API compliant (and jax copies)
+        out = self._xp.reshape(out, (nx, ) + self.d_shape)
         return out

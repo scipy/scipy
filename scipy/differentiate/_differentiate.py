@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_promote
+from scipy._lib._array_api import array_namespace, xp_copy, xp_promote, xp_capabilities
 import scipy._lib.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
@@ -57,10 +57,17 @@ def _derivative_iv(f, x, args, tolerances, maxiter, order, initial_step,
             step_factor, step_direction, preserve_shape, callback)
 
 
+
+_array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
+_dask_reason = 'boolean indexing assignment'
+
+
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
-    """Evaluate the derivative of a elementwise, real scalar function numerically.
+    """Evaluate the derivative of an elementwise, real scalar function numerically.
 
     For each element of the output of `f`, `derivative` approximates the first
     derivative of `f` at the corresponding element of `x` using finite difference
@@ -709,6 +716,8 @@ def _derivative_weights(work, n, xp):
             xp.asarray(diff_state.right, dtype=work.dtype))
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
              step_factor=2.0, step_direction=0):
     r"""Evaluate the Jacobian of a function numerically.
@@ -937,6 +946,8 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     return res
 
 
+@xp_capabilities(skip_backends=[('array_api_strict', _array_api_strict_skip_reason),
+                                ('dask.array', _dask_reason)], jax_jit=False)
 def hessian(f, x, *, tolerances=None, maxiter=10,
             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Hessian of a function numerically.

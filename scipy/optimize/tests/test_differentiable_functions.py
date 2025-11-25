@@ -349,7 +349,6 @@ class TestScalarFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
-    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # Scalar_Function should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -780,6 +779,15 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+        # Test VectorFunction.hess_wrapped with J0=None
+        x = np.array([1.5, 0.5])
+        v = np.array([1.0, 2.0])
+        njev_before = approx.hess_wrapped.njev
+        H = approx.hess_wrapped(x, v, J0=None)
+        assert isinstance(H, LinearOperator)
+        # The njev counter should be incremented by exactly 1
+        assert approx.hess_wrapped.njev == njev_before + 1
+
     def test_fgh_overlap(self):
         # VectorFunction.fun/jac should return copies to internal attributes
         ex = ExVectorialFunction()
@@ -803,7 +811,6 @@ class TestVectorialFunction(TestCase):
         assert_equal(f, vf.f)
         assert_equal(J, vf.J)
 
-    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # VectorFunction should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes

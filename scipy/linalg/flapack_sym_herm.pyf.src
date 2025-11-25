@@ -1411,24 +1411,39 @@ subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
 
 end subroutine <prefix2c>heequb
 
-
-subroutine <prefix>sytri(lower,n,a,lda,ipiv,work,info)
+subroutine <prefix2>sytri(lower,n,a,lda,ipiv,work,info)
     ! ?SYTRI computes the inverse of a symmetric indefinite matrix
     ! A using the factorization A = U*D*U**T or A = L*D*L**T computed by
     ! ?SYTRF.
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&info)
-    callprotoargument char*, F_INT*, <ctype>*, F_INT*, F_INT*, <ctype>*, F_INT*
+    callprotoargument char*, F_INT*, <ctype2>*, F_INT*, F_INT*, <ctype2>*, F_INT*
 
     integer optional intent(in), check(lower==0||lower==1) :: lower = 0
     integer intent(hide), depend(a) :: n=shape(a,1)
-    <ftype> dimension(lda,n),intent(in,out,copy,out=inv_a) :: a
+    <ftype2> dimension(lda,n),intent(in,out,copy,out=inv_a) :: a
     integer depend(a),intent(hide) :: lda = max(shape(a,0),1)
     integer depend(n),dimension(n),intent(in) :: ipiv
-    <ftype> depend(n),dimension(n),intent(hide,cache) :: work
+    <ftype2> depend(n),dimension(n),intent(hide,cache) :: work
     integer intent(out):: info
-end subroutine <prefix>sytri
+end subroutine <prefix2>sytri
 
+subroutine <prefix2c>sytri(lower,n,a,lda,ipiv,work,info)
+    ! ?SYTRI computes the inverse of a symmetric indefinite matrix
+    ! A using the factorization A = U*D*U**T or A = L*D*L**T computed by
+    ! ?SYTRF.
+    threadsafe
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&info)
+    callprotoargument char*, F_INT*, <ctype2c>*, F_INT*, F_INT*, <ctype2c>*, F_INT*
+
+    integer optional intent(in), check(lower==0||lower==1) :: lower = 0
+    integer intent(hide), depend(a) :: n=shape(a,1)
+    <ftype2c> dimension(lda,n),intent(in,out,copy,out=inv_a) :: a
+    integer depend(a),intent(hide) :: lda = max(shape(a,0),1)
+    integer depend(n),dimension(n),intent(in) :: ipiv
+    <ftype2c> depend(n),dimension(2*n),intent(hide,cache) :: work
+    integer intent(out):: info
+end subroutine <prefix2>sytri
 
 subroutine <prefix2c>hetri(lower,n,a,lda,ipiv,work,info)
     ! ?HETRI computes the inverse of a complex Hermitian indefinite matrix

@@ -1,51 +1,56 @@
 from itertools import product
 
 import numpy as np
-import random
 import functools
 import pytest
-from numpy.testing import (assert_, assert_equal, assert_allclose,
-                           assert_almost_equal)  # avoid new uses
+from numpy.testing import assert_, assert_equal, assert_allclose
 from pytest import raises as assert_raises
 
-import scipy.stats as stats
+from scipy import stats, special
 from scipy.stats import distributions
 from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
-from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
+from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
+                                   eager_warns)
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 
+@make_xp_test_case(epps_singleton_2samp)
 class TestEppsSingleton:
-    def test_statistic_1(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_statistic_1(self, dtype, xp):
         # first example in Goerg & Kaiser, also in original paper of
         # Epps & Singleton. Note: values do not match exactly, the
         # value of the interquartile range varies depending on how
         # quantiles are computed
-        x = np.array([-0.35, 2.55, 1.73, 0.73, 0.35,
-                      2.69, 0.46, -0.94, -0.37, 12.07])
-        y = np.array([-1.15, -0.15, 2.48, 3.25, 3.71,
-                      4.29, 5.00, 7.74, 8.38, 8.60])
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([-0.35, 2.55, 1.73, 0.73, 0.35,
+                        2.69, 0.46, -0.94, -0.37, 12.07], dtype=dtype)
+        y = xp.asarray([-1.15, -0.15, 2.48, 3.25, 3.71,
+                     4.29, 5.00, 7.74, 8.38, 8.60], dtype=dtype)
         w, p = epps_singleton_2samp(x, y)
-        assert_almost_equal(w, 15.14, decimal=1)
-        assert_almost_equal(p, 0.00442, decimal=3)
+        xp_assert_close(w, xp.asarray(15.14, dtype=dtype), atol=0.03)
+        xp_assert_close(p, xp.asarray(0.00442, dtype=dtype), atol=0.0001)
 
-    def test_statistic_2(self):
+    def test_statistic_2(self, xp):
         # second example in Goerg & Kaiser, again not a perfect match
-        x = np.array((0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 6, 10,
-                      10, 10, 10))
-        y = np.array((10, 4, 0, 5, 10, 10, 0, 5, 6, 7, 10, 3, 1, 7, 0, 8, 1,
-                      5, 8, 10))
+        x = xp.asarray([0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4,
+                        5, 5, 5, 5, 6, 10, 10, 10, 10])
+        y = xp.asarray([10, 4, 0, 5, 10, 10, 0, 5, 6, 7,
+                        10, 3, 1, 7, 0, 8, 1, 5, 8, 10])
         w, p = epps_singleton_2samp(x, y)
-        assert_allclose(w, 8.900, atol=0.001)
-        assert_almost_equal(p, 0.06364, decimal=3)
+        xp_assert_close(w, xp.asarray(8.900), atol=1e-3)
+        xp_assert_close(p, xp.asarray(0.06364), atol=5e-5)
 
-    def test_epps_singleton_array_like(self):
-        np.random.seed(1234)
+    def test_epps_singleton_array_like(self):  # only relevant for NumPy
         x, y = np.arange(30), np.arange(28)
 
         w1, p1 = epps_singleton_2samp(list(x), list(y))
@@ -55,119 +60,131 @@ class TestEppsSingleton:
         assert_(w1 == w2 == w3)
         assert_(p1 == p2 == p3)
 
-    def test_epps_singleton_size(self):
+    def test_epps_singleton_size(self, xp):
         # warns if sample contains fewer than 5 elements
-        x, y = (1, 2, 3, 4), np.arange(10)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        x, y = xp.asarray([1, 2, 3, 4]), xp.arange(10)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = epps_singleton_2samp(x, y)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_epps_singleton_nonfinite(self):
-        # raise error if there are non-finite values
-        x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
+    def test_epps_singleton_nonfinite(self, xp):
+        rng = np.random.default_rng(83249872384543)
+        x = rng.random(size=(10, 11))
+        y = rng.random(size=(10, 12))
+        i = np.asarray([1, 4, 9])  # arbitrary rows
 
-    def test_names(self):
-        x, y = np.arange(20), np.arange(30)
-        res = epps_singleton_2samp(x, y)
-        attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        w_ref, p_ref = epps_singleton_2samp(x, y, axis=-1)
+        w_ref[i] = np.nan
+        p_ref[i] = np.nan
+
+        x[i[0], 0] = np.nan
+        x[i[1], 1] = np.inf
+        y[i[2], 2] = -np.inf
+
+        x, y = xp.asarray(x), xp.asarray(y)
+        w_res, p_res = epps_singleton_2samp(x, y, axis=-1)
+        xp_assert_close(w_res, xp.asarray(w_ref))
+        xp_assert_close(p_res, xp.asarray(p_ref))
 
 
+@make_xp_test_case(stats.cramervonmises)
 class TestCvm:
     # the expected values of the cdfs are taken from Table 1 in
     # Csorgo / Faraway: The Exact and Asymptotic Distribution of
     # Cramér-von Mises Statistics, 1996.
-    def test_cdf_4(self):
-        assert_allclose(
-                _cdf_cvm([0.02983, 0.04111, 0.12331, 0.94251], 4),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
+    @pytest.mark.parametrize('n, x, ref', [
+        (4, [0.02983, 0.04111, 0.12331, 0.94251], [0.01, 0.05, 0.5, 0.999]),
+        (10, [0.02657, 0.03830, 0.12068, 0.56643], [0.01, 0.05, 0.5, 0.975]),
+        (1000, [0.02481, 0.03658, 0.11889, 1.16120], [0.01, 0.05, 0.5, 0.999]),
+        (None, [0.02480, 0.03656, 0.11888, 1.16204], [0.01, 0.05, 0.5, 0.999]),
+    ])
+    def test_cdf_ref(self, n, x, ref, xp):
+        xp_assert_close(_cdf_cvm(xp.asarray(x), n), xp.asarray(ref), atol=1e-4)
 
-    def test_cdf_10(self):
-        assert_allclose(
-                _cdf_cvm([0.02657, 0.03830, 0.12068, 0.56643], 10),
-                [0.01, 0.05, 0.5, 0.975],
-                atol=1e-4)
-
-    def test_cdf_1000(self):
-        assert_allclose(
-                _cdf_cvm([0.02481, 0.03658, 0.11889, 1.16120], 1000),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_inf(self):
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204]),
-                [0.01, 0.05, 0.5, 0.999],
-                atol=1e-4)
-
-    def test_cdf_support(self):
+    def test_cdf_support(self, xp):
         # cdf has support on [1/(12*n), n/3]
-        assert_equal(_cdf_cvm([1/(12*533), 533/3], 533), [0, 1])
-        assert_equal(_cdf_cvm([1/(12*(27 + 1)), (27 + 1)/3], 27), [0, 1])
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*533), 533/3]), 533),
+                        xp.asarray([0., 1.]))
+        xp_assert_equal(_cdf_cvm(xp.asarray([1/(12*(27 + 1)), (27 + 1)/3]), 27),
+                        xp.asarray([0., 1.]))
 
-    def test_cdf_large_n(self):
+    def test_cdf_large_n(self, xp):
         # test that asymptotic cdf and cdf for large samples are close
-        assert_allclose(
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100], 10000),
-                _cdf_cvm([0.02480, 0.03656, 0.11888, 1.16204, 100]),
-                atol=1e-4)
+        x = xp.asarray([0.02480, 0.03656, 0.11888, 1.16204, 100])
+        xp_assert_close(_cdf_cvm(x, 10000), _cdf_cvm(x), atol=1e-4)
 
-    def test_large_x(self):
+    def test_large_x(self, xp):
         # for large values of x and n, the series used to compute the cdf
         # converges slowly.
         # this leads to bug in R package goftest and MAPLE code that is
         # the basis of the implementation in scipy
         # note: cdf = 1 for x >= 1000/3 and n = 1000
-        assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
-        assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
+        x = xp.asarray(333.3, dtype=xp.float64)
+        assert (0.99999 < _cdf_cvm(x, 1000) < 1.0)
+        assert (0.99999 < _cdf_cvm(x) < 1.0)
 
-    def test_low_p(self):
+    def test_low_p(self, xp):
         # _cdf_cvm can return values larger than 1. In that case, we just
         # return a p-value of zero.
         n = 12
-        res = cramervonmises(np.ones(n)*0.8, 'norm')
-        assert_(_cdf_cvm(res.statistic, n) > 1.0)
-        assert_equal(res.pvalue, 0)
+        res = cramervonmises(xp.ones(n)*0.8, special.ndtr)
+        assert _cdf_cvm(res.statistic, n, xp=xp) > 1.0
+        xp_assert_equal(res.pvalue, xp.asarray(0.))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('x', [(), [1.5]])
-    def test_invalid_input(self, x):
+    def test_invalid_input(self, x, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises(x, "norm")
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = cramervonmises(xp.asarray(x), special.ndtr)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_values_R(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_values_R(self, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         # compared against R package goftest, version 1.1.1
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm")
-        assert_allclose(res.statistic, 0.288156, atol=1e-6)
-        assert_allclose(res.pvalue, 0.1453465, atol=1e-6)
+        # library(goftest)
+        # options(digits=16)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm")
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             special.ndtr)
+        xp_assert_close(res.statistic, xp.asarray(0.28815604599198, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray( 0.1453465252039, dtype=dtype))
 
-        # goftest::cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6),
-        #                   "pnorm", mean = 3, sd = 1.5)
-        res = cramervonmises([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], "norm", (3, 1.5))
-        assert_allclose(res.statistic, 0.9426685, atol=1e-6)
-        assert_allclose(res.pvalue, 0.002026417, atol=1e-6)
+        # cvm.test(c(-1.7, 2, 0, 1.3, 4, 0.1, 0.6), "pnorm", mean = 3, sd = 1.5)
+        res = cramervonmises(xp.asarray([-1.7, 2, 0, 1.3, 4, 0.1, 0.6], dtype=dtype),
+                             lambda x: special.ndtr((x - 3)/1.5))
+        xp_assert_close(res.statistic, xp.asarray(0.94266847977072, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.002026416728467, dtype=dtype))
 
-        # goftest::cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
-        res = cramervonmises([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], "expon")
-        assert_allclose(res.statistic, 0.8421854, atol=1e-6)
-        assert_allclose(res.pvalue, 0.004433406, atol=1e-6)
+        # cvm.test(c(1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5), "pexp")
+        res = cramervonmises(
+            xp.asarray([1, 2, 5, 1.4, 0.14, 11, 13, 0.9, 7.5], dtype=dtype),
+            lambda x: -xp.expm1(-x))
+        xp_assert_close(res.statistic, xp.asarray(0.84218540922393, dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(0.004433406063014, dtype=dtype))
 
-    def test_callable_cdf(self):
+    def test_str_cdf(self, xp):
+        if not is_numpy(xp):
+            message = "`cdf` must be a callable if `rvs` is a non-NumPy array."
+            with pytest.raises(ValueError, match=message):
+                cramervonmises(xp.asarray([1, 2, 3]), "beta")
+            return
+
         x, args = np.arange(5), (1.4, 0.7)
-        r1 = cramervonmises(x, distributions.expon.cdf)
-        r2 = cramervonmises(x, "expon")
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.expon.cdf)
+        res = cramervonmises(x, "expon")
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
-        r1 = cramervonmises(x, distributions.beta.cdf, args)
-        r2 = cramervonmises(x, "beta", args)
-        assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
+        ref = cramervonmises(x, distributions.beta.cdf, args)
+        res = cramervonmises(x, "beta", args)
+        assert_equal((res.statistic, res.pvalue), (ref.statistic, ref.pvalue))
 
 
+@make_xp_test_case(stats.mannwhitneyu)
 class TestMannWhitneyU:
 
     # All magic numbers are from R wilcox.test unless otherwise specified
@@ -175,21 +192,31 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
-    @pytest.mark.parametrize('kwargs_update', [{'x': []}, {'y': []},
-                                               {'x': [], 'y': []}])
-    def test_empty(self, kwargs_update):
-        x = np.array([1, 2])  # generic, valid inputs
-        y = np.array([3, 4])
-        kwargs = dict(x=x, y=y)
-        kwargs.update(kwargs_update)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = mannwhitneyu(**kwargs)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    def test_empty(self, xp):
+        x = xp.asarray([1, 2])  # generic, valid inputs
+        y = xp.asarray([3, 4])
+        empty = xp.asarray([], dtype=x.dtype)
+        nan = xp.asarray(xp.nan)
 
-    def test_input_validation(self):
-        x = np.array([1, 2])  # generic, valid inputs
-        y = np.array([3, 4])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = mannwhitneyu(x, empty)
+            xp_assert_close(res.statistic, nan)
+            xp_assert_close(res.pvalue, nan)
+
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = mannwhitneyu(empty, y)
+            xp_assert_close(res.statistic, nan)
+            xp_assert_close(res.pvalue, nan)
+
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = mannwhitneyu(empty, empty)
+            xp_assert_close(res.statistic, nan)
+            xp_assert_close(res.pvalue, nan)
+
+    def test_input_validation(self, xp):
+        x = xp.asarray([1, 2])  # generic, valid inputs
+        y = xp.asarray([3, 4])
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -199,15 +226,15 @@ class TestMannWhitneyU:
         with assert_raises(ValueError, match="`method` must be one of"):
             mannwhitneyu(x, y, method='ekki')
 
-    def test_auto(self):
+    def test_auto(self, xp):
         # Test that default method ('auto') chooses intended method
 
-        rng = np.random.RandomState(1)
+        rng = np.random.default_rng(923823782530925934)
         n = 8  # threshold to switch from exact to asymptotic
 
         # both inputs are smaller than threshold; should use exact
-        x = rng.rand(n-1)
-        y = rng.rand(n-1)
+        x = xp.asarray(rng.random(n-1))
+        y = xp.asarray(rng.random(n-1))
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -215,8 +242,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # one input is smaller than threshold; should use exact
-        x = rng.rand(n-1)
-        y = rng.rand(n+1)
+        x = xp.asarray(rng.random(n-1))
+        y = xp.asarray(rng.random(n+1))
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -231,8 +258,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # both inputs are larger than threshold; should use asymptotic
-        x = rng.rand(n+1)
-        y = rng.rand(n+1)
+        x = xp.asarray(rng.random(n+1))
+        y = xp.asarray(rng.random(n+1))
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -241,9 +268,9 @@ class TestMannWhitneyU:
 
         # both inputs are smaller than threshold, but there is a tie
         # should use asymptotic
-        x = rng.rand(n-1)
-        y = rng.rand(n-1)
-        y[3] = x[3]
+        x = xp.asarray(rng.random(n-1))
+        y = xp.asarray(rng.random(n-1))
+        y = xpx.at(y)[3].set(x[3])
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -273,38 +300,44 @@ class TestMannWhitneyU:
     #       187.97508449019588)
     # wilcox.test(x, y, alternative="g", exact=TRUE)
     cases_basic = [[{"alternative": 'two-sided', "method": "asymptotic"},
-                    (16, 0.6865041817876)],
+                    (16., 0.6865041817876)],
                    [{"alternative": 'less', "method": "asymptotic"},
-                    (16, 0.3432520908938)],
+                    (16., 0.3432520908938)],
                    [{"alternative": 'greater', "method": "asymptotic"},
-                    (16, 0.7047591913255)],
+                    (16., 0.7047591913255)],
                    [{"alternative": 'two-sided', "method": "exact"},
-                    (16, 0.7035714285714)],
+                    (16., 0.7035714285714)],
                    [{"alternative": 'less', "method": "exact"},
-                    (16, 0.3517857142857)],
+                    (16., 0.3517857142857)],
                    [{"alternative": 'greater', "method": "exact"},
-                    (16, 0.6946428571429)]]
+                    (16., 0.6946428571429)]]
 
     @pytest.mark.parametrize(("kwds", "expected"), cases_basic)
-    def test_basic(self, kwds, expected):
-        res = mannwhitneyu(self.x, self.y, **kwds)
-        assert_allclose(res, expected)
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_basic(self, kwds, expected, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Scalar dtypes only respected after NEP 50.")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x, y = xp.asarray(self.x, dtype=dtype), xp.asarray(self.y, dtype=dtype)
+        res = mannwhitneyu(x, y, **kwds)
+        xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
 
     cases_continuity = [[{"alternative": 'two-sided', "use_continuity": True},
-                         (23, 0.6865041817876)],
+                         (23., 0.6865041817876)],
                         [{"alternative": 'less', "use_continuity": True},
-                         (23, 0.7047591913255)],
+                         (23., 0.7047591913255)],
                         [{"alternative": 'greater', "use_continuity": True},
-                         (23, 0.3432520908938)],
+                         (23., 0.3432520908938)],
                         [{"alternative": 'two-sided', "use_continuity": False},
-                         (23, 0.6377328900502)],
+                         (23., 0.6377328900502)],
                         [{"alternative": 'less', "use_continuity": False},
-                         (23, 0.6811335549749)],
+                         (23., 0.6811335549749)],
                         [{"alternative": 'greater', "use_continuity": False},
-                         (23, 0.3188664450251)]]
+                         (23., 0.3188664450251)]]
 
     @pytest.mark.parametrize(("kwds", "expected"), cases_continuity)
-    def test_continuity(self, kwds, expected):
+    def test_continuity(self, kwds, expected, xp):
         # When x and y are interchanged, less and greater p-values should
         # swap (compare to above). This wouldn't happen if the continuity
         # correction were applied in the wrong direction. Note that less and
@@ -314,26 +347,28 @@ class TestMannWhitneyU:
         # Note that method='asymptotic' -> exact=FALSE
         # and use_continuity=False -> correct=FALSE, e.g.:
         # wilcox.test(x, y, alternative="t", exact=FALSE, correct=FALSE)
-        res = mannwhitneyu(self.y, self.x, method='asymptotic', **kwds)
-        assert_allclose(res, expected)
+        x, y = xp.asarray(self.x), xp.asarray(self.y)
+        res = mannwhitneyu(y, x, method='asymptotic', **kwds)
+        xp_assert_close(res.statistic, xp.asarray(expected[0]))
+        xp_assert_close(res.pvalue, xp.asarray(expected[1]))
 
-    def test_tie_correct(self):
+    def test_tie_correct(self, xp):
         # Test tie correction against R's wilcox.test
         # options(digits = 16)
         # x = c(1, 2, 3, 4)
         # y = c(1, 2, 3, 4, 5)
         # wilcox.test(x, y, exact=FALSE)
-        x = [1, 2, 3, 4]
-        y0 = np.array([1, 2, 3, 4, 5])
-        dy = np.array([0, 1, 0, 1, 0])*0.01
-        dy2 = np.array([0, 0, 1, 0, 0])*0.01
-        y = [y0-0.01, y0-dy, y0-dy2, y0, y0+dy2, y0+dy, y0+0.01]
+        x = xp.asarray([1., 2., 3., 4.])
+        y0 = xp.asarray([1., 2., 3., 4., 5.])
+        dy = xp.asarray([0., 1., 0., 1., 0.])*0.01
+        dy2 = xp.asarray([0., 0., 1., 0., 0.])*0.01
+        y = xp.stack([y0-0.01, y0-dy, y0-dy2, y0, y0+dy2, y0+dy, y0+0.01])
         res = mannwhitneyu(x, y, axis=-1, method="asymptotic")
         U_expected = [10, 9, 8.5, 8, 7.5, 7, 6]
         p_expected = [1, 0.9017048037317, 0.804080657472, 0.7086240584439,
                       0.6197963884941, 0.5368784563079, 0.3912672792826]
-        assert_equal(res.statistic, U_expected)
-        assert_allclose(res.pvalue, p_expected)
+        xp_assert_equal(res.statistic, xp.asarray(U_expected))
+        xp_assert_close(res.pvalue, xp.asarray(p_expected))
 
     # --- Test Exact Distribution of U ---
 
@@ -393,61 +428,60 @@ class TestMannWhitneyU:
                 pmf2 = _mwu_state.s.pmf(k=u2)
                 assert_allclose(pmf, pmf2)
 
-    def test_asymptotic_behavior(self):
+    def test_asymptotic_behavior(self, xp):
         rng = np.random.default_rng(12543)
 
         # for small samples, the asymptotic test is not very accurate
-        x = rng.random(5)
-        y = rng.random(5)
+        x = xp.asarray(rng.random(5))
+        y = xp.asarray(rng.random(5))
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
-        assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
+        assert xp.abs(res1.pvalue - res2.pvalue) > 1e-2
 
         # for large samples, they agree reasonably well
-        x = rng.random(40)
-        y = rng.random(40)
+        x = xp.asarray(rng.random(40))
+        y = xp.asarray(rng.random(40))
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
-        assert np.abs(res1.pvalue - res2.pvalue) < 1e-3
+        assert xp.abs(res1.pvalue - res2.pvalue) < 1e-3
 
     # --- Test Corner Cases ---
 
-    def test_exact_U_equals_mean(self):
+    def test_exact_U_equals_mean(self, xp):
         # Test U == m*n/2 with exact method
         # Without special treatment, two-sided p-value > 1 because both
         # one-sided p-values are > 0.5
-        res_l = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="less",
-                             method="exact")
-        res_g = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="greater",
-                             method="exact")
-        assert_equal(res_l.pvalue, res_g.pvalue)
+        x, y = xp.asarray([1., 2., 3.]), xp.asarray([1.5, 2.5])
+        res_l = mannwhitneyu(x, y, alternative="less", method="exact")
+        res_g = mannwhitneyu(x, y, alternative="greater", method="exact")
+        xp_assert_equal(res_l.pvalue, res_g.pvalue)
         assert res_l.pvalue > 0.5
 
-        res = mannwhitneyu([1, 2, 3], [1.5, 2.5], alternative="two-sided",
-                           method="exact")
-        assert_equal(res, (3, 1))
+        res = mannwhitneyu(x, y, alternative="two-sided", method="exact")
+        xp_assert_equal(res.statistic, xp.asarray(3.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
         # U == m*n/2 for asymptotic case tested in test_gh_2118
         # The reason it's tricky for the asymptotic test has to do with
         # continuity correction.
 
     cases_scalar = [[{"alternative": 'two-sided', "method": "asymptotic"},
-                     (0, 1)],
+                     (0., 1.)],
                     [{"alternative": 'less', "method": "asymptotic"},
-                     (0, 0.5)],
+                     (0., 0.5)],
                     [{"alternative": 'greater', "method": "asymptotic"},
-                     (0, 0.977249868052)],
-                    [{"alternative": 'two-sided', "method": "exact"}, (0, 1)],
-                    [{"alternative": 'less', "method": "exact"}, (0, 0.5)],
-                    [{"alternative": 'greater', "method": "exact"}, (0, 1)]]
+                     (0., 0.977249868052)],
+                    [{"alternative": 'two-sided', "method": "exact"}, (0., 1)],
+                    [{"alternative": 'less', "method": "exact"}, (0., 0.5)],
+                    [{"alternative": 'greater', "method": "exact"}, (0., 1)]]
 
     @pytest.mark.parametrize(("kwds", "result"), cases_scalar)
-    def test_scalar_data(self, kwds, result):
+    def test_scalar_data(self, kwds, result):  # not important to preserve w/ array API
         # just making sure scalars work
         assert_allclose(mannwhitneyu(1, 2, **kwds), result)
 
-    def test_equal_scalar_data(self):
+    def test_equal_scalar_data(self):  # not important to preserve w/ array API
         # when two scalars are equal, there is an -0.5/0 in the asymptotic
         # approximation. R gives pvalue=1.0 for alternatives 'less' and
         # 'greater' but NA for 'two-sided'. I don't see why, so I don't
@@ -462,21 +496,22 @@ class TestMannWhitneyU:
 
     # --- Test Enhancements / Bug Reports ---
 
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
     @pytest.mark.parametrize("method", ["asymptotic", "exact"])
-    def test_gh_12837_11113(self, method):
+    def test_gh_12837_11113(self, method, xp):
         # Test that behavior for broadcastable nd arrays is appropriate:
         # output shape is correct and all values are equal to when the test
         # is performed on one pair of samples at a time.
         # Tests that gh-12837 and gh-11113 (requests for n-d input)
         # are resolved
-        np.random.seed(0)
+        rng = np.random.default_rng(6083743794)
 
         # arrays are broadcastable except for axis = -3
         axis = -3
         m, n = 7, 10  # sample sizes
-        x = np.random.rand(m, 3, 8)
-        y = np.random.rand(6, n, 1, 8) + 0.1
-        res = mannwhitneyu(x, y, method=method, axis=axis)
+        x = rng.random((m, 3, 8))
+        y = rng.random((6, n, 1, 8)) + 0.1
+        res = mannwhitneyu(xp.asarray(x), xp.asarray(y), method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
         assert res.pvalue.shape == shape
@@ -503,32 +538,36 @@ class TestMannWhitneyU:
             statistics[indices] = temp.statistic
             pvalues[indices] = temp.pvalue
 
-        np.testing.assert_equal(res.pvalue, pvalues)
-        np.testing.assert_equal(res.statistic, statistics)
+        xp_assert_close(res.pvalue, xp.asarray(pvalues), atol=1e-16)
+        xp_assert_close(res.statistic, xp.asarray(statistics), atol=1e-16)
 
-    def test_gh_11355(self):
+    def test_gh_11355(self, xp):
         # Test for correct behavior with NaN/Inf in input
         x = [1, 2, 3, 4]
         y = [3, 6, 7, 8, 9, 3, 2, 1, 4, 4, 5]
-        res1 = mannwhitneyu(x, y)
+        res1 = mannwhitneyu(xp.asarray(x), xp.asarray(y))
 
         # Inf is not a problem. This is a rank test, and it's the largest value
+        x[0] = 1.  # ensure floating point
         y[4] = np.inf
-        res2 = mannwhitneyu(x, y)
+        res2 = mannwhitneyu(xp.asarray(x), xp.asarray(y))
 
-        assert_equal(res1.statistic, res2.statistic)
-        assert_equal(res1.pvalue, res2.pvalue)
+        xp_assert_equal(res1.statistic, res2.statistic)
+        xp_assert_equal(res1.pvalue, res2.pvalue)
 
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    def test_gh11355_nan(self, xp):
         # NaNs should propagate by default.
-        y[4] = np.nan
-        res3 = mannwhitneyu(x, y)
-        assert_equal(res3.statistic, np.nan)
-        assert_equal(res3.pvalue, np.nan)
+        x = [1., 2., 3., 4.]
+        y = [3, 6, 7, np.nan, 9, 3, 2, 1, 4, 4, 5]
+        res3 = mannwhitneyu(xp.asarray(x), xp.asarray(y))
+        xp_assert_equal(res3.statistic, xp.asarray(xp.nan))
+        xp_assert_equal(res3.pvalue, xp.asarray(xp.nan))
 
-    cases_11355 = [([1, 2, 3, 4],
+    cases_11355 = [([1., 2, 3, 4],
                     [3, 6, 7, 8, np.inf, 3, 2, 1, 4, 4, 5],
-                    10, 0.1297704873477),
-                   ([1, 2, 3, 4],
+                    10., 0.1297704873477),
+                   ([1., 2, 3, 4],
                     [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
                     8.5, 0.08735617507695),
                    ([1, 2, np.inf, 4],
@@ -536,17 +575,17 @@ class TestMannWhitneyU:
                     17.5, 0.5988856695752),
                    ([1, 2, np.inf, 4],
                     [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
-                    16, 0.4687165824462),
+                    16., 0.4687165824462),
                    ([1, np.inf, np.inf, 4],
                     [3, 6, 7, 8, np.inf, np.inf, 2, 1, 4, 4, 5],
                     24.5, 0.7912517950119)]
 
     @pytest.mark.parametrize(("x", "y", "statistic", "pvalue"), cases_11355)
-    def test_gh_11355b(self, x, y, statistic, pvalue):
+    def test_gh_11355b(self, x, y, statistic, pvalue, xp):
         # Test for correct behavior with NaN/Inf in input
-        res = mannwhitneyu(x, y, method='asymptotic')
-        assert_allclose(res.statistic, statistic, atol=1e-12)
-        assert_allclose(res.pvalue, pvalue, atol=1e-12)
+        res = mannwhitneyu(xp.asarray(x), xp.asarray(y), method='asymptotic')
+        xp_assert_close(res.statistic, xp.asarray(statistic), atol=1e-12)
+        xp_assert_close(res.pvalue, xp.asarray(pvalue), atol=1e-12)
 
     cases_9184 = [[True, "less", "asymptotic", 0.900775348204],
                   [True, "greater", "asymptotic", 0.1223118025635],
@@ -560,7 +599,7 @@ class TestMannWhitneyU:
 
     @pytest.mark.parametrize(("use_continuity", "alternative",
                               "method", "pvalue_exp"), cases_9184)
-    def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp):
+    def test_gh_9184(self, use_continuity, alternative, method, pvalue_exp, xp):
         # gh-9184 might be considered a doc-only bug. Please see the
         # documentation to confirm that mannwhitneyu correctly notes
         # that the output statistic is that of the first sample (x). In any
@@ -581,21 +620,23 @@ class TestMannWhitneyU:
         # wilcox.test(x, y, alternative = "less", exact = TRUE)
         # wilcox.test(x, y, alternative = "greater", exact = TRUE)
         # wilcox.test(x, y, alternative = "two.sided", exact = TRUE)
-        statistic_exp = 35
-        x = (0.80, 0.83, 1.89, 1.04, 1.45, 1.38, 1.91, 1.64, 0.73, 1.46)
-        y = (1.15, 0.88, 0.90, 0.74, 1.21)
+        statistic_exp = 35.
+        x = xp.asarray([0.80, 0.83, 1.89, 1.04, 1.45, 1.38, 1.91, 1.64, 0.73, 1.46])
+        y = xp.asarray([1.15, 0.88, 0.90, 0.74, 1.21])
         res = mannwhitneyu(x, y, use_continuity=use_continuity,
                            alternative=alternative, method=method)
-        assert_equal(res.statistic, statistic_exp)
-        assert_allclose(res.pvalue, pvalue_exp)
+        xp_assert_equal(res.statistic, xp.asarray(statistic_exp))
+        xp_assert_close(res.pvalue, xp.asarray(pvalue_exp))
 
-    def test_gh_4067(self):
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no _axis_nan_policy")
+    def test_gh_4067(self, xp):
         # Test for correct behavior with all NaN input - default is propagate
-        a = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
-        b = np.array([np.nan, np.nan, np.nan, np.nan, np.nan])
+        nan = xp.asarray(xp.nan)
+        a = xp.stack([nan, nan, nan, nan, nan])
+        b = xp.stack([nan, nan, nan, nan, nan])
         res = mannwhitneyu(a, b)
-        assert_equal(res.statistic, np.nan)
-        assert_equal(res.pvalue, np.nan)
+        xp_assert_equal(res.statistic, xp.asarray(nan))
+        xp_assert_equal(res.pvalue, nan)
 
     # All cases checked against R wilcox.test, e.g.
     # options(digits=16)
@@ -603,23 +644,25 @@ class TestMannWhitneyU:
     # y = c(1.5, 2.5)
     # wilcox.test(x, y, exact=FALSE, alternative='less')
 
-    cases_2118 = [[[1, 2, 3], [1.5, 2.5], "greater", (3, 0.6135850036578)],
-                  [[1, 2, 3], [1.5, 2.5], "less", (3, 0.6135850036578)],
-                  [[1, 2, 3], [1.5, 2.5], "two-sided", (3, 1.0)],
+    cases_2118 = [[[1., 2., 3.], [1.5, 2.5], "greater", (3., 0.6135850036578)],
+                  [[1., 2., 3.], [1.5, 2.5], "less", (3., 0.6135850036578)],
+                  [[1., 2., 3.], [1.5, 2.5], "two-sided", (3., 1.0)],
                   [[1, 2, 3], [2], "greater", (1.5, 0.681324055883)],
                   [[1, 2, 3], [2], "less", (1.5, 0.681324055883)],
-                  [[1, 2, 3], [2], "two-sided", (1.5, 1)],
-                  [[1, 2], [1, 2], "greater", (2, 0.667497228949)],
-                  [[1, 2], [1, 2], "less", (2, 0.667497228949)],
-                  [[1, 2], [1, 2], "two-sided", (2, 1)]]
+                  [[1, 2, 3], [2], "two-sided", (1.5, 1.)],
+                  [[1, 2], [1, 2], "greater", (2., 0.667497228949)],
+                  [[1, 2], [1, 2], "less", (2., 0.667497228949)],
+                  [[1, 2], [1, 2], "two-sided", (2., 1.)]]
 
     @pytest.mark.parametrize(["x", "y", "alternative", "expected"], cases_2118)
-    def test_gh_2118(self, x, y, alternative, expected):
+    def test_gh_2118(self, x, y, alternative, expected, xp):
         # test cases in which U == m*n/2 when method is asymptotic
         # applying continuity correction could result in p-value > 1
-        res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
-                           method="asymptotic")
-        assert_allclose(res, expected, rtol=1e-12)
+        res = mannwhitneyu(xp.asarray(x), xp.asarray(y), use_continuity=True,
+                           alternative=alternative, method="asymptotic")
+        rtol = 1e-6 if xp_default_dtype(xp) == xp.float32 else 1e-12
+        xp_assert_close(res.statistic, xp.asarray(expected[0]), rtol=rtol)
+        xp_assert_close(res.pvalue, xp.asarray(expected[1]), rtol=rtol)
 
     def test_gh19692_smaller_table(self):
         # In gh-19692, we noted that the shape of the cache used in calculating
@@ -661,6 +704,127 @@ class TestMannWhitneyU:
                                   alternative=alternative, axis=1)
         assert_allclose(res.statistic, res2.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, res2.pvalue, rtol=1e-15)
+
+    # Old tests moved from test_stats. Source of magic numbers unknown.
+    X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,
+         20.3269502208702, 20.0009273294025, 19.3440043632957, 20.4216806548105,
+         19.0649894736528, 18.7808043120398, 19.3680942943298, 19.4848044069953,
+         20.7514611265663, 19.0894948874598, 19.4975522356628, 18.9971170734274,
+         20.3239606288208, 20.6921298083835, 19.0724259532507, 18.9825187935021,
+         19.5144462609601, 19.8256857844223, 20.5174677102032, 21.1122407995892,
+         17.9490854922535, 18.2847521114727, 20.1072217648826, 18.6439891962179,
+         20.4970638083542, 19.5567594734914]
+
+    Y = [19.2790668029091, 16.993808441865, 18.5416338448258, 17.2634018833575,
+         19.1577183624616, 18.5119655377495, 18.6068455037221, 18.8358343362655,
+         19.0366413269742, 18.1135025515417, 19.2201873866958, 17.8344909022841,
+         18.2894380745856, 18.6661374133922, 19.9688601693252, 16.0672254617636,
+         19.00596360572, 19.201561539032, 19.0487501090183, 19.0847908674356]
+
+    rtol = 1e-14
+
+    def test_mannwhitneyu_one_sided(self, xp):
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.mannwhitneyu(X, Y, alternative='less')
+        u2, p2 = stats.mannwhitneyu(Y, X, alternative='greater')
+        u3, p3 = stats.mannwhitneyu(X, Y, alternative='greater')
+        u4, p4 = stats.mannwhitneyu(Y, X, alternative='less')
+
+        xp_assert_equal(p1, p2)
+        xp_assert_equal(p3, p4)
+        assert p1 != p3
+        xp_assert_equal(u1, xp.asarray(498.))
+        xp_assert_equal(u2, xp.asarray(102.))
+        xp_assert_equal(u3, xp.asarray(498.))
+        xp_assert_equal(u4, xp.asarray(102.))
+        assert_allclose(p1, xp.asarray(0.999957683256589), rtol=self.rtol)
+        rtol = self.rtol if X.dtype == xp.float64 else 5e-4
+        assert_allclose(p3, xp.asarray(4.5941632666275e-05), rtol=rtol, atol=1e-16)
+
+    def test_mannwhitneyu_two_sided(self, xp):
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.mannwhitneyu(X, Y, alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(Y, X, alternative='two-sided')
+
+        xp_assert_equal(p1, p2)
+        xp_assert_equal(u1, xp.asarray(498.))
+        xp_assert_equal(u2, xp.asarray(102.))
+        rtol = self.rtol if X.dtype == xp.float64 else 5e-4
+        xp_assert_close(p1, xp.asarray(9.188326533255e-05), rtol=rtol, atol=1e-16)
+
+    def test_mannwhitneyu_no_correct_one_sided(self, xp):
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.mannwhitneyu(X, Y, False, alternative='less')
+        u2, p2 = stats.mannwhitneyu(Y, X, False, alternative='greater')
+        u3, p3 = stats.mannwhitneyu(X, Y, False, alternative='greater')
+        u4, p4 = stats.mannwhitneyu(Y, X, False, alternative='less')
+
+        xp_assert_equal(p1, p2)
+        xp_assert_equal(p3, p4)
+        assert p1 != p3
+        xp_assert_equal(u1, xp.asarray(498.))
+        xp_assert_equal(u2, xp.asarray(102.))
+        xp_assert_equal(u3, xp.asarray(498.))
+        xp_assert_equal(u4, xp.asarray(102.))
+        rtol = self.rtol if X.dtype == xp.float64 else 5e-4
+        xp_assert_close(p1, xp.asarray(0.999955905990004), rtol=rtol, atol=1e-16)
+        xp_assert_close(p3, xp.asarray(4.40940099958089e-05), rtol=rtol, atol=1e-16)
+
+    def test_mannwhitneyu_no_correct_two_sided(self, xp):
+        X, Y = xp.asarray(self.X), xp.asarray(self.Y)
+        u1, p1 = stats.mannwhitneyu(X, Y, False, alternative='two-sided')
+        u2, p2 = stats.mannwhitneyu(Y, X, False, alternative='two-sided')
+
+        xp_assert_equal(p1, p2)
+        xp_assert_equal(u1, xp.asarray(498.))
+        xp_assert_equal(u2, xp.asarray(102.))
+        rtol = self.rtol if X.dtype == xp.float64 else 5e-4
+        xp_assert_close(p1, xp.asarray(8.81880199916178e-05), rtol=rtol, atol=1e-16)
+
+    def test_mannwhitneyu_ones(self, xp):
+        # test for gh-1428
+        x = xp.asarray([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 2., 1., 1., 2.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 3., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1.])
+
+        y = xp.asarray([1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1., 1., 1., 1.,
+                        2., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2., 1., 1., 3.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 2., 1., 2., 1.,
+                        1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1., 2.,
+                        2., 1., 1., 2., 1., 1., 2., 1., 2., 1., 1., 1., 1., 2.,
+                        2., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        1., 2., 1., 1., 1., 1., 1., 2., 2., 2., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                        2., 1., 1., 2., 1., 1., 1., 1., 2., 1., 1., 1., 1., 1.,
+                        1., 1., 1., 1., 1., 1., 1., 2., 1., 1., 1., 2., 1., 1.,
+                        1., 1., 1., 1.])
+
+        # p-value from R, e.g. wilcox.test(x, y, alternative="g")
+        res = stats.mannwhitneyu(x, y, alternative='less')
+        xp_assert_close(res.statistic, xp.asarray(16980.5))
+        xp_assert_close(res.pvalue, xp.asarray(2.8214327656317373e-5))
+        res = stats.mannwhitneyu(x, y, alternative='greater')
+        xp_assert_close(res.statistic, xp.asarray(16980.5))
+        xp_assert_close(res.pvalue, xp.asarray(0.9999719954296))
+        res = stats.mannwhitneyu(x, y, alternative='two-sided')
+        xp_assert_close(res.statistic, xp.asarray(16980.5))
+        xp_assert_close(res.pvalue, xp.asarray(5.642865531266e-5))
 
 
 class TestSomersD(_TestPythranFunc):
@@ -1005,7 +1169,6 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
-    @pytest.mark.thread_unsafe
     def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
@@ -1014,16 +1177,16 @@ class TestSomersD(_TestPythranFunc):
         # generate lists of random classes 1-2 (binary)
         classes = [1, 2]
         n_samples = 10 ** 6
-        random.seed(6272161)
-        x = random.choices(classes, k=n_samples)
-        y = random.choices(classes, k=n_samples)
+        rng = np.random.default_rng(6889320191)
+        x = rng.choice(classes, n_samples)
+        y = rng.choice(classes, n_samples)
 
         # get value to compare with: sklearn output
         # from sklearn import metrics
         # val_auc_sklearn = metrics.roc_auc_score(x, y)
         # # convert to the Gini coefficient (Gini = (AUC*2)-1)
         # val_sklearn = 2 * val_auc_sklearn - 1
-        val_sklearn = -0.001528138777036947
+        val_sklearn = 0.000624401938730923
 
         # calculate the Somers' D statistic, which should be equal to the
         # result of val_sklearn until approximately machine precision
@@ -1331,92 +1494,102 @@ class TestBoschlooExact:
         assert_allclose(boschloo_stat, fisher_p)
 
 
+@make_xp_test_case(cramervonmises_2samp)
 class TestCvm_2samp:
     @pytest.mark.parametrize('args', [([], np.arange(5)),
                                       (np.arange(5), [1])])
-    def test_too_small_input(self, args):
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy -> no axis_nan_policy")
+    def test_too_small_input(self, args, xp):
+        args = (xp.asarray(arg, dtype=xp_default_dtype(xp)) for arg in args)
+        with eager_warns(SmallSampleWarning, match=too_small_1d_not_omit, xp=xp):
             res = cramervonmises_2samp(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            xp_assert_equal(res.statistic, xp.asarray(xp.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(xp.nan))
 
-    def test_invalid_input(self):
-        y = np.arange(5)
+    def test_invalid_input(self, xp):
+        y = xp.arange(5)
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, y, 'xyz')
 
-    def test_list_input(self):
+    def test_list_input(self):  # list input only relevant for NumPy
         x = [2, 3, 4, 7, 6]
         y = [0.2, 0.7, 12, 18]
         r1 = cramervonmises_2samp(x, y)
         r2 = cramervonmises_2samp(np.array(x), np.array(y))
         assert_equal((r1.statistic, r1.pvalue), (r2.statistic, r2.pvalue))
 
-    def test_example_conover(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_example_conover(self, dtype, xp):
         # Example 2 in Section 6.2 of W.J. Conover: Practical Nonparametric
         # Statistics, 1971.
-        x = [7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2]
-        y = [5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8, 10.8, 11.3, 11.5, 12.3,
-             12.5, 13.4, 14.6]
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([7.6, 8.4, 8.6, 8.7, 9.3, 9.9, 10.1, 10.6, 11.2], dtype=dtype)
+        y = xp.asarray([5.2, 5.7, 5.9, 6.5, 6.8, 8.2, 9.1, 9.8,
+                        10.8, 11.3, 11.5, 12.3, 12.5, 13.4, 14.6], dtype=dtype)
         r = cramervonmises_2samp(x, y)
-        assert_allclose(r.statistic, 0.262, atol=1e-3)
-        assert_allclose(r.pvalue, 0.18, atol=1e-2)
+        xp_assert_close(r.statistic, xp.asarray(0.262, dtype=dtype), atol=1e-3)
+        xp_assert_close(r.pvalue, xp.asarray(.18, dtype=dtype), atol=1e-2)
 
     @pytest.mark.parametrize('statistic, m, n, pval',
                              [(710, 5, 6, 48./462),
                               (1897, 7, 7, 117./1716),
                               (576, 4, 6, 2./210),
                               (1764, 6, 7, 2./1716)])
-    def test_exact_pvalue(self, statistic, m, n, pval):
+    def test_exact_pvalue(self, statistic, m, n, pval):  # only implemented w/ NumPy
         # the exact values are taken from Anderson: On the distribution of the
         # two-sample Cramer-von-Mises criterion, 1962.
         # The values are taken from Table 2, 3, 4 and 5
         assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
 
     @pytest.mark.xslow
-    def test_large_sample(self):
+    def test_large_sample(self, xp):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan
         rng = np.random.default_rng(4367)
         x = distributions.norm.rvs(size=1000000, random_state=rng)
         y = distributions.norm.rvs(size=900000, random_state=rng)
+        x, y = xp.asarray(x), xp.asarray(y)
         r = cramervonmises_2samp(x, y)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
         r = cramervonmises_2samp(x, y+0.1)
-        assert_(0 < r.pvalue < 1)
+        assert 0 < r.pvalue < 1
 
-    def test_exact_vs_asymptotic(self):
+    def test_exact_vs_asymptotic(self, xp):
         rng = np.random.RandomState(0)
-        x = rng.rand(7)
-        y = rng.rand(8)
+        x = xp.asarray(rng.random(7))
+        y = xp.asarray(rng.random(8))
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='asymptotic')
-        assert_equal(r1.statistic, r2.statistic)
-        assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
+        xp_assert_equal(r1.statistic, r2.statistic)
+        xp_assert_close(r1.pvalue, r2.pvalue, atol=1e-2)
 
-    def test_method_auto(self):
-        x = np.arange(20)
-        y = [0.5, 4.7, 13.1]
+    def test_method_auto(self, xp):
+        x = xp.arange(20.)
+        y = xp.asarray([0.5, 4.7, 13.1])
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
         # switch to asymptotic if one sample has more than 20 observations
-        x = np.arange(21)
+        x = xp.arange(21.)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
-        assert_equal(r1.pvalue, r2.pvalue)
+        xp_assert_equal(r1.pvalue, r2.pvalue)
 
-    def test_same_input(self):
+    def test_same_input(self, xp):
         # make sure trivial edge case can be handled
         # note that _cdf_cvm_inf(0) = nan. implementation avoids nan by
         # returning pvalue=1 for very small values of the statistic
-        x = np.arange(15)
+        x = xp.arange(15)
         res = cramervonmises_2samp(x, x)
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
         # check exact p-value
         res = cramervonmises_2samp(x[:4], x[:4])
-        assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
+        xp_assert_equal(res.statistic, xp.asarray(0.))
+        xp_assert_equal(res.pvalue, xp.asarray(1.))
 
 
 class TestTukeyHSD:
@@ -1614,8 +1787,8 @@ class TestTukeyHSD:
 
     def test_rand_symm(self):
         # test some expected identities of the results
-        np.random.seed(1234)
-        data = np.random.rand(3, 100)
+        rng = np.random.default_rng(2699550179)
+        data = rng.random((3, 100))
         res = stats.tukey_hsd(*data)
         conf = res.confidence_interval()
         # the confidence intervals should be negated symmetric of each other

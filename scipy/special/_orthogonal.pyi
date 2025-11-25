@@ -276,7 +276,7 @@ class orthopoly1d(np.poly1d):
             weights: np.typing.ArrayLike | None,
             hn: float = ...,
             kn: float = ...,
-            wfunc = Optional[Callable[[float], float]],  # noqa: UP007
+            wfunc = Optional[Callable[[float], float]],  # noqa: UP045
             limits = tuple[float, float] | None,
             monic: bool = ...,
             eval_func: np.ufunc = ...,

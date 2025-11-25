@@ -290,14 +290,10 @@ def _check_termination(work, res, res_work_pairs, active, check_termination,
         if not preserve_shape:
             # compress the arrays to avoid unnecessary computation
             for key, val in work.items():
-                # Need to find a better way than these try/excepts
-                # Somehow need to keep compressible numerical args separate
-                if key == 'args':
+                # `continued_fraction` hacks `n`; improve if this becomes a problem
+                if key in {'args', 'n'}:
                     continue
-                try:
-                    work[key] = val[proceed]
-                except (IndexError, TypeError, KeyError):  # not a compressible array
-                    work[key] = val
+                work[key] = val[proceed] if getattr(val, 'ndim', 0) > 0 else val
             work.args = [arg[proceed] for arg in work.args]
 
     return active
@@ -317,24 +313,17 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
             active_mask = xpx.at(active_mask)[active].set(True)
             active_mask = active_mask & mask
             for key, val in update_dict.items():
-                try:
-                    res[key] = xpx.at(res[key])[active_mask].set(val[active_mask])
-                except (IndexError, TypeError, KeyError):
-                    res[key] = xpx.at(res[key])[active_mask].set(val)
+                val = val[active_mask] if getattr(val, 'ndim', 0) > 0 else val
+                res[key] = xpx.at(res[key])[active_mask].set(val)
         else:
             active_mask = active[mask]
             for key, val in update_dict.items():
-                try:
-                    res[key] = xpx.at(res[key])[active_mask].set(val[mask])
-                except (IndexError, TypeError, KeyError):
-                    res[key] = xpx.at(res[key])[active_mask].set(val)
+                val = val[mask] if getattr(val, 'ndim', 0) > 0 else val
+                res[key] = xpx.at(res[key])[active_mask].set(val)
     else:
         for key, val in update_dict.items():
-            if preserve_shape:
-                try:
-                    val = val[active]
-                except (IndexError, TypeError, KeyError):
-                    pass
+            if preserve_shape and getattr(val, 'ndim', 0) > 0:
+                val = val[active]
             res[key] = xpx.at(res[key])[active].set(val)
 
 

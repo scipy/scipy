@@ -431,7 +431,6 @@ class TestDelaunay:
     # Shouldn't be inherently unsafe; retry with cpython 3.14 once traceback
     # thread safety issues are fixed (also goes for other test with same name
     # further down)
-    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.Delaunay, points_with_nan)
@@ -611,7 +610,6 @@ class TestConvexHull:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
-    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
@@ -1219,6 +1217,72 @@ class Test_HalfspaceIntersection:
         ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))
         ind2 = np.lexsort((expected_intersections[:, 1], expected_intersections[:, 0]))
         assert_allclose(actual_intersections[ind1], expected_intersections[ind2])
+
+
+    @pytest.mark.parametrize("halfspaces", [
+    (np.array([-0.70613882, -0.45589431, 0.04178256])),
+    (np.array([[-0.70613882, -0.45589431,  0.04178256],
+               [0.70807342, -0.45464871, -0.45969769],
+               [0.,  0.76515026, -0.35614825]])),
+    ])
+    def test_gh_19865(self, halfspaces):
+        # starting off with a feasible interior point and
+        # adding halfspaces for which it is no longer feasible
+        # should result in an error rather than a problematic
+        # intersection polytope
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        with pytest.raises(qhull.QhullError, match="feasible.*-0.706.*"):
+            incremental_intersector.add_halfspaces(halfspaces)
+
+
+    def test_gh_19865_3d(self):
+        # 3d case where closed half space is enforced for
+        # feasibility
+        halfspaces = np.array([[1, 1, 1, -1], # doesn't exclude origin
+                               [-1, -1, -1, -1], # doesn't exclude origin
+                               [1, 0, 0, 0]]) # the origin is on the line
+        initial_cube = np.array([[1, 0, 0, -1],
+                                 [-1, 0, 0, -1],
+                                 [0, 1, 0, -1],
+                                 [0, -1, 0, -1],
+                                 [0, 0, 1, -1],
+                                 [0, 0, -1, -1]])
+        incremental_intersector = qhull.HalfspaceIntersection(initial_cube,
+                                                              np.zeros(3),
+                                                              incremental=True)
+        with pytest.raises(qhull.QhullError, match="feasible.*[1 0 0 0]"):
+            incremental_intersector.add_halfspaces(halfspaces)
+
+
+    def test_2d_add_halfspace_input(self):
+        # incrementally added halfspaces should respect the 2D
+        # array shape requirement
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        with pytest.raises(ValueError, match="2D array"):
+            incremental_intersector.add_halfspaces(np.ones((4, 4, 4)))
+
+    def test_1d_add_halfspace_input(self):
+        # we do allow 1D `halfspaces` input to add_halfspaces()
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        assert_allclose(incremental_intersector.dual_vertices, np.arange(4))
+        incremental_intersector.add_halfspaces(np.array([2, 2, -1]))
+        assert_allclose(incremental_intersector.dual_vertices, np.arange(5))
+
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):

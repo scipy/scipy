@@ -177,7 +177,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -374,7 +374,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     --------
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Notes
@@ -1189,7 +1189,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
 
     See Also
     --------
-    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eigenvectors for
         symmetric/Hermitian tridiagonal matrices
 
     Examples
@@ -1497,6 +1497,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
 def cdf2rdf(w, v):
     """
+    Complex diagonal form to real diagonal block form.
+
     Converts complex eigenvalues ``w`` and eigenvectors ``v`` to real
     eigenvalues in a block diagonal form ``wr`` and the associated real
     eigenvectors ``vr``, such that::
@@ -1508,6 +1510,10 @@ def cdf2rdf(w, v):
 
     .. versionadded:: 1.1.0
 
+    Array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+    
     Parameters
     ----------
     w : (..., M) array_like

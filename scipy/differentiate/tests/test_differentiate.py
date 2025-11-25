@@ -6,17 +6,15 @@ import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
-from scipy._lib._array_api import is_numpy, is_torch
+from scipy._lib._array_api import is_numpy, is_torch, make_xp_test_case
 
 from scipy import stats, optimize, special
 from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
-array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
+@make_xp_test_case(derivative)
 class TestDerivative:
 
     def f(self, x):
@@ -34,9 +32,8 @@ class TestDerivative:
         if not is_torch(xp):
             xp_assert_less(xp.abs(res.df - ref), res.error)
 
-    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
-    def test_accuracy(self, case, xp):
+    def test_accuracy(self, case):
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
@@ -295,16 +292,18 @@ class TestDerivative:
             if key == 'status':
                 assert res[key] == eim._ECONVERR
                 assert res2[key] == eim._ECALLBACK
+            elif key == 'error':
+                # switched from equality check to accommodate
+                # macosx-x86_64/Accelerate
+                xp_assert_close(res2[key], res[key], atol=1e-14)
+                xp_assert_close(callback.res[key], res[key], atol=1e-14)
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
     @pytest.mark.parametrize("hdir", (-1, 0, 1))
     @pytest.mark.parametrize("x", (0.65, [0.65, 0.7]))
-    @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
+    @pytest.mark.parametrize("dtype", ('float32', 'float64'))
     def test_dtype(self, hdir, x, dtype, xp):
-        if dtype == 'float16' and not is_numpy(xp):
-            pytest.skip('float16 not tested for alternative backends')
-
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
         x = xp.asarray(x, dtype=dtype)
@@ -471,8 +470,7 @@ class JacobianHessianTest:
             jh_func(func, x, maxiter=-1)
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
+@make_xp_test_case(jacobian)
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
 
@@ -626,8 +624,7 @@ class TestJacobian(JacobianHessianTest):
         assert xp.all(xp.isfinite(ref))
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
+@make_xp_test_case(hessian)
 class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
@@ -685,7 +682,6 @@ class TestHessian(JacobianHessianTest):
         # assert np.unique(res.nfev).size == 3
 
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.skip_xp_backends(np_only=True,
                                   reason='Python list input uses NumPy backend')
     def test_small_rtol_warning(self, xp):

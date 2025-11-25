@@ -60,6 +60,16 @@ class _csr_base(_cs_matrix):
 
     tocsr.__doc__ = _spbase.tocsr.__doc__
 
+    def tocoo(self, copy=False):
+        A = super().tocoo(copy=copy)
+        # CSR-to-COO conversion always preserves [non-]canonicity
+        # (indices sorting, presense of duplicate elements).
+        # Handled here instead of _cs_matrix because CSC-to-COO generally does not.
+        A.has_canonical_format = self.has_canonical_format
+        return A
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
+
     def tocsc(self, copy=False):
         if self.ndim != 2:
             raise ValueError("Cannot convert a 1d sparse array to csc format")
@@ -71,8 +81,8 @@ class _csr_base(_cs_matrix):
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(M, N,
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+                  self.indptr.astype(idx_dtype, copy=False),
+                  self.indices.astype(idx_dtype, copy=False),
                   self.data,
                   indptr,
                   indices,
@@ -111,8 +121,8 @@ class _csr_base(_cs_matrix):
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C,
-                      self.indptr.astype(idx_dtype),
-                      self.indices.astype(idx_dtype),
+                      self.indptr.astype(idx_dtype, copy=False),
+                      self.indices.astype(idx_dtype, copy=False),
                       self.data,
                       indptr, indices, data.ravel())
 

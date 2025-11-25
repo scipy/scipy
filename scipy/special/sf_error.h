@@ -1,6 +1,6 @@
 #pragma once
 
-#include "xsf/error.h"
+#include <xsf/error.h>
 
 #ifdef __cplusplus
 extern "C" {

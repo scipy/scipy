@@ -5,6 +5,8 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
+from scipy._lib._array_api import array_namespace, xp_size, xp_capabilities
+from scipy._lib.array_api_compat import numpy as np_compat
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -13,7 +15,7 @@ __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
 
 
-def prepare_input(x, y, axis, dydx=None):
+def prepare_input(x, y, axis, dydx=None, xp=None):
     """Prepare input for cubic spline interpolators.
 
     All data are converted to numpy arrays and checked for correctness.
@@ -22,25 +24,25 @@ def prepare_input(x, y, axis, dydx=None):
     [0, number of dimensions of `y`).
     """
 
-    x, y = map(np.asarray, (x, y))
-    if np.issubdtype(x.dtype, np.complexfloating):
+    x, y = map(xp.asarray, (x, y))
+    if xp.isdtype(x.dtype, "complex floating"):
         raise ValueError("`x` must contain real values.")
-    x = x.astype(float)
+    x = xp.astype(x, xp.float64)
 
-    if np.issubdtype(y.dtype, np.complexfloating):
-        dtype = complex
+    if xp.isdtype(y.dtype, "complex floating"):
+        dtype = xp.complex128
     else:
-        dtype = float
+        dtype = xp.float64
 
     if dydx is not None:
-        dydx = np.asarray(dydx)
+        dydx = xp.asarray(dydx)
         if y.shape != dydx.shape:
             raise ValueError("The shapes of `y` and `dydx` must be identical.")
-        if np.issubdtype(dydx.dtype, np.complexfloating):
-            dtype = complex
-        dydx = dydx.astype(dtype, copy=False)
+        if xp.isdtype(dydx.dtype, "complex floating"):
+            dtype = xp.complex128
+        dydx = xp.astype(dydx, dtype, copy=False)
 
-    y = y.astype(dtype, copy=False)
+    y = xp.astype(y, dtype, copy=False)
     axis = axis % y.ndim
     if x.ndim != 1:
         raise ValueError("`x` must be 1-dimensional.")
@@ -50,25 +52,32 @@ def prepare_input(x, y, axis, dydx=None):
         raise ValueError(f"The length of `y` along `axis`={axis} doesn't "
                          "match the length of `x`")
 
-    if not np.all(np.isfinite(x)):
+    if not xp.all(xp.isfinite(x)):
         raise ValueError("`x` must contain only finite values.")
-    if not np.all(np.isfinite(y)):
+    if not xp.all(xp.isfinite(y)):
         raise ValueError("`y` must contain only finite values.")
 
-    if dydx is not None and not np.all(np.isfinite(dydx)):
+    if dydx is not None and not xp.all(xp.isfinite(dydx)):
         raise ValueError("`dydx` must contain only finite values.")
 
-    dx = np.diff(x)
-    if np.any(dx <= 0):
+    dx = xp.diff(x)
+    if xp.any(dx <= 0):
         raise ValueError("`x` must be strictly increasing sequence.")
 
-    y = np.moveaxis(y, axis, 0)
+    y = xp.moveaxis(y, axis, 0)
     if dydx is not None:
-        dydx = np.moveaxis(dydx, axis, 0)
+        dydx = xp.moveaxis(dydx, axis, 0)
 
     return x, dx, y, axis, dydx
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class CubicHermiteSpline(PPoly):
     """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
@@ -138,25 +147,35 @@ class CubicHermiteSpline(PPoly):
     """
 
     def __init__(self, x, y, dydx, axis=0, extrapolate=None):
+        xp = array_namespace(x, y, dydx)
+
         if extrapolate is None:
             extrapolate = True
 
-        x, dx, y, axis, dydx = prepare_input(x, y, axis, dydx)
+        x, dx, y, axis, dydx = prepare_input(x, y, axis, dydx, xp=xp)
 
-        dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
-        slope = np.diff(y, axis=0) / dxr
-        t = (dydx[:-1] + dydx[1:] - 2 * slope) / dxr
+        dxr = xp.reshape(dx, (dx.shape[0], ) + (1, ) * (y.ndim - 1))
+        slope = xp.diff(y, axis=0) / dxr
+        t = (dydx[:-1, ...] + dydx[1:, ...] - 2 * slope) / dxr
 
-        c = np.empty((4, len(x) - 1) + y.shape[1:], dtype=t.dtype)
-        c[0] = t / dxr
-        c[1] = (slope - dydx[:-1]) / dxr - t
-        c[2] = dydx[:-1]
-        c[3] = y[:-1]
+        c = xp.stack((
+           t / dxr,
+           (slope - dydx[:-1, ...]) / dxr - t,
+           dydx[:-1, ...],
+           y[:-1, ...]
+        ))
 
         super().__init__(c, x, extrapolate=extrapolate)
         self.axis = axis
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class PchipInterpolator(CubicHermiteSpline):
     r"""PCHIP shape-preserving interpolator (C1 smooth).
 
@@ -171,7 +190,7 @@ class PchipInterpolator(CubicHermiteSpline):
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
     y : ndarray, shape (..., npoints, ...)
-        A N-D array of real values. ``y``'s length along the interpolation
+        An N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
     axis : int, optional
@@ -231,31 +250,35 @@ class PchipInterpolator(CubicHermiteSpline):
            monotone piecewise cubic interpolants,
            SIAM J. Sci. Comput., 5(2), 300-304 (1984).
            :doi:`10.1137/0905021`.
-    .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
+    .. [2] C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, extrapolate=None):
-        x, _, y, axis, _ = prepare_input(x, y, axis)
-        if np.iscomplexobj(y):
+        xp = array_namespace(x, y)
+        x, _, y, axis, _ = prepare_input(x, y, axis, xp=xp)
+        if xp.isdtype(y.dtype, "complex floating"):
             msg = ("`PchipInterpolator` only works with real values for `y`. "
                    "If you are trying to use the real components of the passed array, "
                    "use `np.real` on the array before passing to `PchipInterpolator`.")
             raise ValueError(msg)
-        xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-        dk = self._find_derivatives(xp, y)
+        xv = xp.reshape(x, (x.shape[0],) + (1,)*(y.ndim-1))
+        dk = self._find_derivatives(xv, y, xp=xp)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     @staticmethod
-    def _edge_case(h0, h1, m0, m1):
+    def _edge_case(h0, h1, m0, m1, xp):
         # one-sided three-point estimate for the derivative
         d = ((2*h0 + h1)*m0 - h0*m1) / (h0 + h1)
 
         # try to preserve shape
-        mask = np.sign(d) != np.sign(m0)
-        mask2 = (np.sign(m0) != np.sign(m1)) & (np.abs(d) > 3.*np.abs(m0))
+        mask = xp.sign(d) != xp.sign(m0)
+        mask2 = (xp.sign(m0) != xp.sign(m1)) & (xp.abs(d) > 3.*xp.abs(m0))
         mmm = (~mask) & mask2
 
         d[mask] = 0.
@@ -264,7 +287,7 @@ class PchipInterpolator(CubicHermiteSpline):
         return d
 
     @staticmethod
-    def _find_derivatives(x, y):
+    def _find_derivatives(x, y, xp):
         # Determine the derivatives at the points y_k, d_k, by using
         #  PCHIP algorithm is:
         # We choose the derivatives at the point x_k by
@@ -285,12 +308,12 @@ class PchipInterpolator(CubicHermiteSpline):
 
         if y.shape[0] == 2:
             # edge case: only have two points, use linear interpolation
-            dk = np.zeros_like(y)
+            dk = xp.zeros_like(y)
             dk[0] = mk
             dk[1] = mk
-            return dk.reshape(y_shape)
+            return xp.reshape(dk, y_shape)
 
-        smk = np.sign(mk)
+        smk = xp.sign(mk)
         condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
 
         w1 = 2*hk[1:] + hk[:-1]
@@ -307,10 +330,10 @@ class PchipInterpolator(CubicHermiteSpline):
 
         # special case endpoints, as suggested in
         # Cleve Moler, Numerical Computing with MATLAB, Chap 3.6 (pchiptx.m)
-        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1])
-        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2])
+        dk[0] = PchipInterpolator._edge_case(hk[0], hk[1], mk[0], mk[1], xp=xp)
+        dk[-1] = PchipInterpolator._edge_case(hk[-1], hk[-2], mk[-1], mk[-2], xp=xp)
 
-        return dk.reshape(y_shape)
+        return xp.reshape(dk, y_shape)
 
 
 def pchip_interpolate(xi, yi, x, der=0, axis=0):
@@ -375,6 +398,11 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         return [P.derivative(nu)(x) for nu in der]
 
 
+@xp_capabilities(cpu_only=True, xfail_backends=[
+    ("dask.array", "lacks nd fancy indexing"),
+    ("jax.numpy", "immutable arrays"),
+    ("array_api_strict", "fancy indexing __setitem__"),
+])
 class Akima1DInterpolator(CubicHermiteSpline):
     r"""Akima "visually pleasing" interpolator (C1 smooth).
 
@@ -488,15 +516,20 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
         # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
-        x, dx, y, axis, _ = prepare_input(x, y, axis)
 
-        if np.iscomplexobj(y):
+        xp = array_namespace(x, y)
+        x, dx, y, axis, _ = prepare_input(x, y, axis, xp=xp)
+
+        if xp.isdtype(y.dtype, "complex floating"):
             msg = ("`Akima1DInterpolator` only works with real values for `y`. "
                    "If you are trying to use the real components of the passed array, "
                    "use `np.real` on the array before passing to "
@@ -508,43 +541,57 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         if y.shape[0] == 2:
             # edge case: only have two points, use linear interpolation
-            xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
-            hk = xp[1:] - xp[:-1]
-            mk = (y[1:] - y[:-1]) / hk
-            t = np.zeros_like(y)
+            xv = xp.reshape(x, (x.shape[0],) + (1,)*(y.ndim-1))
+            hk = xv[1:, ...] - xv[:-1, ...]
+            mk = (y[1:, ...] - y[:-1, ...]) / hk
+            t = xp.zeros_like(y)
             t[...] = mk
         else:
             # determine slopes between breakpoints
-            m = np.empty((x.size + 3, ) + y.shape[1:])
+            m = xp.empty((x.shape[0] + 3, ) + y.shape[1:])
             dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-            m[2:-2] = np.diff(y, axis=0) / dx
+            m[2:-2, ...] = xp.diff(y, axis=0) / dx
 
             # add two additional points on the left ...
-            m[1] = 2. * m[2] - m[3]
-            m[0] = 2. * m[1] - m[2]
+            m[1, ...] = 2. * m[2, ...] - m[3, ...]
+            m[0, ...] = 2. * m[1, ...] - m[2, ...]
             # ... and on the right
-            m[-2] = 2. * m[-3] - m[-4]
-            m[-1] = 2. * m[-2] - m[-3]
+            m[-2, ...] = 2. * m[-3, ...] - m[-4, ...]
+            m[-1, ...] = 2. * m[-2, ...] - m[-3, ...]
 
             # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
             # defined. This is the fill value:
-            t = .5 * (m[3:] + m[:-3])
+            t = .5 * (m[3:, ...] + m[:-3, ...])
             # get the denominator of the slope t
-            dm = np.abs(np.diff(m, axis=0))
+            dm = xp.abs(xp.diff(m, axis=0))
             if method == "makima":
-                pm = np.abs(m[1:] + m[:-1])
-                f1 = dm[2:] + 0.5 * pm[2:]
-                f2 = dm[:-2] + 0.5 * pm[:-2]
+                pm = xp.abs(m[1:, ...] + m[:-1, ...])
+                f1 = dm[2:, ...] + 0.5 * pm[2:, ...]
+                f2 = dm[:-2, ...] + 0.5 * pm[:-2, ...]
             else:
-                f1 = dm[2:]
-                f2 = dm[:-2]
+                f1 = dm[2:, ...]
+                f2 = dm[:-2, ...]
+
+            # makima is more numerically stable for small f12,
+            # so a finite cutoff should not improve any behavior
+            # however, akima has a qualitative discontinuity near f12=0
+            # a finite cutoff moves it, but cannot remove it.
+            # the cutoff break_mult could be made a keyword argument
+            # method='akima' also benefits from a check for m2=m3
+            break_mult = 1.e-9
+
             f12 = f1 + f2
+
             # These are the mask of where the slope at breakpoint is defined:
-            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            mmax = xp.max(f12) if xp_size(f12) > 0 else -xp.inf
+            ind = xp.nonzero(f12 > break_mult * mmax)
+
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
-            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            t[ind] = m[(x_ind + 1,) + y_ind] + (
+                (f2[ind] / f12[ind])
+                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -566,6 +613,13 @@ class Akima1DInterpolator(CubicHermiteSpline):
                                   "an Akima interpolator.")
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class CubicSpline(CubicHermiteSpline):
     """Piecewise cubic interpolator to fit values (C2 smooth).
 
@@ -734,7 +788,8 @@ class CubicSpline(CubicHermiteSpline):
     """
 
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
-        x, dx, y, axis, _ = prepare_input(x, y, axis)
+        xp = array_namespace(x, y)
+        x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
@@ -899,6 +954,7 @@ class CubicSpline(CubicHermiteSpline):
                                      overwrite_b=True, check_finite=False)
                     s = s.reshape(b.shape)
 
+        x, y, s = map(xp.asarray, (x, y, s))
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
 

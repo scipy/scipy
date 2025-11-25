@@ -99,11 +99,11 @@ def _solve_linear_sys(a, y0, tend=1, dt=0.1,
     r.set_jac_params(a)
 
     t = [t0]
-    y = [y0]
+    y = [y0.copy()]
     while r.successful() and r.t < tend:
         r.integrate(r.t + dt)
         t.append(r.t)
-        y.append(r.y)
+        y.append(r.y.copy())
 
     t = np.array(t)
     y = np.array(y)
@@ -125,7 +125,7 @@ def _analytical_solution(a, y0, t):
     return sol
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="vode integrator is not thread-safe")
 def test_banded_ode_solvers():
     # Test the "lsoda", "vode" and "zvode" solvers of the `ode` class
     # with a system that has a banded Jacobian matrix.
@@ -251,7 +251,7 @@ def banded_stiff_jac(t, y):
         [0,  0.04,           3e7*2*y[2],         0, 0]
     ])
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="lsoda integrator is not thread-safe")
 def test_banded_lsoda():
     # expected solution is given by problem with full jacobian
     tfull, yfull = _solve_robertson_lsoda(use_jac=True, banded=False)
@@ -259,7 +259,9 @@ def test_banded_lsoda():
     for use_jac in [True, False]:
         t, y = _solve_robertson_lsoda(use_jac, True)
         assert_allclose(t, tfull)
-        assert_allclose(y, yfull)
+        # Small tolerance to account for legitimate floating-point differences
+        # After fixing tesco and banded Jacobian bugs, max relative error is ~1.5e-7
+        assert_allclose(y, yfull, rtol=2e-7)
 
 def _solve_robertson_lsoda(use_jac, banded):
 
@@ -290,11 +292,11 @@ def _solve_robertson_lsoda(use_jac, banded):
     r.set_initial_value(y0, t0)
 
     t = [t0]
-    y = [y0]
+    y = [y0.copy()]
     while r.successful() and r.t < tend:
         r.integrate(r.t + dt)
         t.append(r.t)
-        y.append(r.y)
+        y.append(r.y.copy())
 
     # Ensure that the Jacobian was evaluated
     # iwork[12] has the number of Jacobian evaluations.

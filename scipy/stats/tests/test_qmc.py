@@ -9,7 +9,7 @@ from numpy.testing import (assert_allclose, assert_equal, assert_array_equal,
 
 from scipy.spatial import distance
 from scipy.stats import shapiro
-from scipy.stats._sobol import _test_find_index
+from scipy.stats._sobol import _test_find_index, _test_low_0_bit
 from scipy.stats import qmc
 from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
@@ -144,7 +144,6 @@ class TestUtils:
         with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
             qmc.discrepancy(sample, method="toto")
 
-    @pytest.mark.thread_unsafe
     def test_discrepancy_parallel(self, monkeypatch):
         sample = np.array([[2, 1, 1, 2, 2, 2],
                            [1, 2, 2, 2, 2, 2],
@@ -598,12 +597,14 @@ class QMCEngineTests:
         "rng",
         (
             170382760648021597650530316304495310428,
-            np.random.default_rng(170382760648021597650530316304495310428),
-            None,
+            lambda: np.random.default_rng(170382760648021597650530316304495310428),
+            pytest.param(None, marks=pytest.mark.thread_unsafe),
         ),
     )
-    @pytest.mark.thread_unsafe
     def test_reset(self, scramble, rng):
+        if callable(rng):
+            # Initialize local RNG here to make it thread-local in pytest-run-parallel
+            rng = rng()
         engine = self.engine(d=2, scramble=scramble, rng=rng)
         ref_sample = engine.random(n=8)
 
@@ -880,6 +881,25 @@ class TestSobol(QMCEngineTests):
         engine = qmc.Sobol(2, scramble=False, bits=64)
         sample = engine.random(8)
         assert_array_equal(self.unscramble_nd, sample)
+
+
+class TestLow0Bit:
+    def test_examples(self):
+        test_vector = [
+            # from low_0_bit's docstring
+            (0b0000, 1),
+            (0b0001, 2),
+            (0b0010, 1),
+            (0b0101, 2),
+            (0b0111, 4),
+            # gh-23409
+            (2 ** 32 - 1, 33),
+            (2 ** 32, 1),
+            (2 ** 33 - 1, 34),
+            (2 ** 64 - 1, 65),
+        ]
+        for in_, out in test_vector:
+            assert_equal(_test_low_0_bit(in_), out)
 
 
 class TestPoisson(QMCEngineTests):
