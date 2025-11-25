@@ -270,7 +270,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=1, jax_jit=False)
 @_dispatch
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
         orthogonalize=None):
