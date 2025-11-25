@@ -124,7 +124,7 @@ endif
 
 if get_option('b_sanitize') != 'none'
   if cc.get_id() == 'clang'
-    ignore_file = meson.current_source_dir() / 'asan-ignore.txt'
+    ignore_file = meson.current_source_dir() / 'tools' / 'asan-ignore.txt'
     add_global_arguments('-fsanitize-ignorelist=' + ignore_file, language: ['c', 'cpp'])
   endif
 endif
