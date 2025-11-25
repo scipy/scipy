@@ -3350,20 +3350,19 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     return FlignerResult(statistic, pval)
 
 
-def _mood_statistic_with_ties(x, y, t, m, n, N):
+def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
     # First equation of "Mood's Squared Rank Test", Mielke pg 313
     E_0_T = m * (N * N - 1) / 12
 
     # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
     # The only difference is that our `t` has zeros interspersed with the relevant
     # numbers to keep the array rectangular, but these terms add nothing to the sum.
-    np = array_namespace(x, y, t)  # needed to use `cumulative_sum`
-    S = np.cumulative_sum(t, include_initial=True, axis=-1)
+    S = xp.cumulative_sum(t, include_initial=True, axis=-1)
     S_i, S_i_m1 = S[..., 1:], S[..., :-1]
     # Second equation of "Mood's Squared Rank Test", Mielke pg 313
     varM = (m * n * (N + 1.0) * (N**2 - 4) / 180
             - m * n / (180 * N * (N - 1))
-            * np.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
+            * xp.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
                      axis=-1))
 
     # There is a formula for Phi (`phi` in code) in terms of t, S, and Psi(I) at the
@@ -3390,31 +3389,33 @@ def _mood_statistic_with_ties(x, y, t, m, n, N):
         c = (N + 1) / 2
         phi = (sum_I2 - 2*c*sum_I + sum_1*c**2) / t
 
-    phi[t == 0] = 0  # where t = 0 we get NaNs; eliminate them
+    phi = xpx.at(phi)[t == 0].set(0.)  # where t = 0 we get NaNs; eliminate them
 
     # Mielke pg 312 defines `a` as the count of elements in sample `x` for each of the
     # unique values in the combined sample. The tricky thing is getting these to line
     # up with the locations of nonzero elements in `t`/`phi`.
-    x = np.sort(x, axis=-1)
-    xy = np.concatenate((x, y), axis=-1)
-    i = np.argsort(xy, stable=True, axis=-1)
+    x = xp.sort(x, axis=-1)
+    xy = xp.concat((x, y), axis=-1)
+    i = xp.argsort(xy, stable=True, axis=-1)
     _, a = _stats_py._rankdata(x, method='average', return_ties=True)
-    zeros = np.zeros(a.shape[:-1] + (n,))
-    a = np.concatenate((a, zeros), axis=-1)
-    a = np.take_along_axis(a, i, axis=-1)
+    a = xp.astype(a, phi.dtype)
+
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    a = xp.concat((a, zeros), axis=-1)
+    a = xp.take_along_axis(a, i, axis=-1)
 
     # Mielke pg 312 defines test statistic `T` as the inner product `a` and `phi`
-    T = np.vecdot(a, phi, axis=-1)
+    T = xp.vecdot(a, phi, axis=-1)
 
-    return (T - E_0_T) / np.sqrt(varM)
+    return (T - E_0_T) / xp.sqrt(varM)
 
 
-def _mood_statistic_no_ties(r, m, n, N):
+def _mood_statistic_no_ties(r, m, n, N, xp):
     rx = r[..., :m]
-    M = np.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
-    mnM = m * (N * N - 1.0) / 12
+    M = xp.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
+    E_0_T = m * (N * N - 1.0) / 12
     varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    return (M - mnM) / sqrt(varM)
+    return (M - E_0_T) / math.sqrt(varM)
 
 
 def _mood_too_small(samples, kwargs, axis=-1):
@@ -3425,7 +3426,7 @@ def _mood_too_small(samples, kwargs, axis=-1):
     return N < 3
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3517,29 +3518,36 @@ def mood(x, y, axis=0, alternative="two-sided"):
                        pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
+
     # _axis_nan_policy decorator ensures axis=-1
-    xy = np.concatenate((x, y), axis=-1)
+    xy = xp.concat((x, y), axis=-1)
 
     m = x.shape[-1]
     n = y.shape[-1]
     N = m + n
 
     if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
-        NaN = _get_nan(x, y)
+        NaN = _get_nan(x, y, xp=xp)
         return SignificanceResult(NaN, NaN)
 
     # determine if any of the samples contain ties
     # `a` represents ties within `x`; `t` represents ties within `xy`
     r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
 
-    if np.any(t > 1):
-        z = _mood_statistic_with_ties(x, y, t, m, n, N)
+    if xp.any(t > 1):
+        z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
-        z = _mood_statistic_no_ties(r, m, n, N)
+        z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
 
-    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
 
-    return SignificanceResult(z[()], pval[()])
+    z = z[()] if z.ndim == 0 else z
+    pval = pval[()] if pval.ndim == 0 else pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3566,7 +3574,9 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
+                                ("cupy", "no rankdata")],
+                jax_jit=False, cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,

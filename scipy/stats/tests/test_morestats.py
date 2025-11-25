@@ -25,6 +25,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
+import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (is_torch, make_xp_test_case, eager_warns, xp_ravel,
                                    is_numpy, xp_default_dtype)
 from scipy._lib._array_api_no_0d import (
@@ -1194,10 +1195,11 @@ def mood_cases_with_ties():
         yield x, y, 'less', *expected_results[si]
 
 
+@make_xp_test_case(stats.mood)
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
-    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, xp):
         """
         Example code used to generate SAS output:
         DATA myData;
@@ -1225,10 +1227,12 @@ class TestMood:
             title "Data for above results";
           run;
         """
+        x, y = xp.asarray(x.tolist()), xp.asarray(y.tolist())
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
-        assert_allclose(stat_expect, statistic, atol=1e-16)
-        assert_allclose(p_expect, pvalue, atol=1e-16)
+        xp_assert_close(statistic, xp.asarray(stat_expect), atol=1e-16)
+        xp_assert_close(pvalue, xp.asarray(p_expect), atol=1e-16)
 
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
     @pytest.mark.parametrize("alternative, expected",
                              [('two-sided', (1.019938533549930,
                                              .3077576129778760)),
@@ -1236,26 +1240,34 @@ class TestMood:
                                         1 - .1538788064889380)),
                               ('greater', (1.019938533549930,
                                            .1538788064889380))])
-    def test_against_SAS_2(self, alternative, expected):
+    def test_against_SAS_2(self, dtype, alternative, expected, xp):
         # Code to run in SAS in above function
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
              101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
         y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
              96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
         res = stats.mood(x, y, alternative=alternative)
-        assert_allclose(res, expected)
+        xp_assert_close(res.statistic, xp.asarray(expected[0], dtype=dtype))
+        xp_assert_close(res.pvalue, xp.asarray(expected[1], dtype=dtype))
 
-    def test_mood_order_of_args(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_order_of_args(self, xp):
         # z should change sign when the order of arguments changes, pvalue
         # should not change
         rng = np.random.default_rng(4058827756)
-        x1 = rng.standard_normal((10, 1))
-        x2 = rng.standard_normal((15, 1))
+        x1 = xp.asarray(rng.standard_normal((10, 1)))
+        x2 = xp.asarray(rng.standard_normal((15, 1)))
         z1, p1 = stats.mood(x1, x2)
         z2, p2 = stats.mood(x2, x1)
-        assert_array_almost_equal([z1, p1], [-z2, p2])
+        xp_assert_close(z2, -z1)
+        xp_assert_close(p2, p1)
 
-    def test_mood_with_axis_none(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_with_axis_none(self, xp):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
               1.59528080213779, 0.329507771815361, -0.820468384118015,
@@ -1276,14 +1288,16 @@ class TestMood:
               0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
-        x1 = np.array(x1).reshape((10,2))
-        x2 = np.array(x2).reshape((15,2))
-        assert_array_almost_equal(stats.mood(x1, x2, axis=None),
-                                  [-1.31716607555, 0.18778296257])
+        x1 = xp.reshape(xp.asarray(x1), (10, 2))
+        x2 = xp.reshape(xp.asarray(x2), (15, 2))
+        res = stats.mood(x1, x2, axis=None)
+        xp_assert_close(res.statistic, xp.asarray(-1.31716607555))
+        xp_assert_close(res.pvalue, xp.asarray(0.18778296257))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
-    def test_mood_2d(self, rng_method, args):
+    def test_mood_2d(self, rng_method, args, xp):
         # Test if the results of mood test in 2-D vectorized call are consistent
         # result when looping over the slices.
         ny = 5
@@ -1291,33 +1305,38 @@ class TestMood:
         rng_method = getattr(rng, rng_method)
         x1 = rng_method(*args, size=(10, ny))
         x2 = rng_method(*args, size=(15, ny))
-        z_vectest, pval_vectest = stats.mood(x1, x2)
+        dtype = xp.float64
+        res = stats.mood(xp.asarray(x1, dtype=dtype), xp.asarray(x2, dtype=dtype))
 
         for j in range(ny):
-            assert_array_almost_equal([z_vectest[j], pval_vectest[j]],
-                                      stats.mood(x1[:, j], x2[:, j]))
+            ref = stats.mood(x1[:, j], x2[:, j])
+            xp_assert_close(res.statistic[j], xp.asarray(ref.statistic))
+            xp_assert_close(res.pvalue[j], xp.asarray(ref.pvalue))
 
         # inverse order of dimensions
         x1 = x1.transpose()
         x2 = x2.transpose()
-        z_vectest, pval_vectest = stats.mood(x1, x2, axis=1)
+        res = stats.mood(xp.asarray(x1, dtype=dtype), xp.asarray(x2, dtype=dtype),
+                         axis=1)
 
         for i in range(ny):
             # check axis handling is self consistent
-            assert_array_almost_equal([z_vectest[i], pval_vectest[i]],
-                                      stats.mood(x1[i, :], x2[i, :]))
+            ref = stats.mood(x1[i, :], x2[i, :])
+            xp_assert_close(res.statistic[i], xp.asarray(ref.statistic))
+            xp_assert_close(res.pvalue[i], xp.asarray(ref.pvalue))
 
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
     @pytest.mark.parametrize('rng_method, args', [('standard_normal', tuple()),
                                                   ('integers', (8,))])
-    def test_mood_3d(self, rng_method, args):
+    def test_mood_3d(self, rng_method, args, xp):
         shape = (10, 5, 6)
         rng = np.random.default_rng(3602349075)
         rng_method = getattr(rng, rng_method)
-        x1 = rng_method(*args, size=shape)
-        x2 = rng_method(*args, size=shape)
+        x1 = xp.asarray(rng_method(*args, size=shape))
+        x2 = xp.asarray(rng_method(*args, size=shape))
 
         for axis in range(3):
-            z_vectest, pval_vectest = stats.mood(x1, x2, axis=axis)
+            res = stats.mood(x1, x2, axis=axis)
             # Tests that result for 3-D arrays is equal to that for the
             # same calculation on a set of 1-D arrays taken from the
             # 3-D array
@@ -1334,43 +1353,40 @@ class TestMood:
                         slice1 = x1[i, j, :]
                         slice2 = x2[i, j, :]
 
-                    assert_array_almost_equal([z_vectest[i, j],
-                                               pval_vectest[i, j]],
-                                              stats.mood(slice1, slice2))
+                    ref = stats.mood(slice1, slice2)
+                    xp_assert_close(res.statistic[i, j], ref.statistic)
+                    xp_assert_close(res.pvalue[i, j], ref.pvalue)
 
-    def test_mood_bad_arg(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy -> no _axis_nan_policy')
+    def test_mood_bad_arg(self, xp):
         # Warns when the sum of the lengths of the args is less than 3
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.mood([1], [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
+            res = stats.mood(xp.asarray([1.]), xp.asarray([]))
+            xp_assert_equal(res.statistic, xp.asarray(np.nan))
+            xp_assert_equal(res.pvalue, xp.asarray(np.nan))
 
-    def test_mood_alternative(self):
+    @pytest.mark.parametrize("dtype", [None, 'float32', 'float64'])
+    def test_mood_alternative(self, dtype, xp):
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
 
         rng = np.random.RandomState(0)
         x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
         y = stats.norm.rvs(scale=1.25, size=100, random_state=rng)
+        x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
 
         stat1, p1 = stats.mood(x, y, alternative='two-sided')
         stat2, p2 = stats.mood(x, y, alternative='less')
         stat3, p3 = stats.mood(x, y, alternative='greater')
 
         assert stat1 == stat2 == stat3
-        assert_allclose(p1, 0, atol=1e-7)
-        assert_allclose(p2, p1/2)
-        assert_allclose(p3, 1 - p1/2)
+        xp_assert_close(p1, xp.asarray(0., dtype=dtype), atol=1e-7)
+        xp_assert_close(p2, xp.asarray(p1/2, dtype=dtype))
+        xp_assert_close(p3, xp.asarray(1 - p1/2, dtype=dtype))
 
         with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
-
-    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
-    def test_result(self, alternative):
-        rng = np.random.default_rng(265827767938813079281100964083953437622)
-        x1 = rng.standard_normal((10, 1))
-        x2 = rng.standard_normal((15, 1))
-
-        res = stats.mood(x1, x2, alternative=alternative)
-        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
@@ -1469,36 +1485,48 @@ class TestProbplot:
                           (np.nan, np.nan, np.nan)))
 
 
+@make_xp_test_case(stats.wilcoxon)
 class TestWilcoxon:
-    def test_wilcoxon_bad_arg(self):
+    def test_wilcoxon_bad_arg(self, xp):
         # Raise ValueError when two args of different lengths are given or
         # zero_method is unknown.
-        assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2], "dummy")
-        assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2],
-                      alternative="dummy")
-        assert_raises(ValueError, stats.wilcoxon, [1]*10, method="xyz")
+        x = xp.asarray([1, 2])
+        d = xp.asarray([1]*10)
+        message = "`zero_method` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.wilcoxon(x, x, "dummy...")
+        message = "`alternative` must be one of"
+        with pytest.raises(ValueError, match=message):
+            stats.wilcoxon(x, x, alternative="dummy")
+        message = "`method` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.wilcoxon(d, method="xyz")
 
-    def test_zero_diff(self):
-        x = np.arange(20)
+    def test_zero_diff(self, xp):
+        x = xp.arange(20)
         # pratt and wilcox do not work if x - y == 0 and method == "asymptotic"
         # => warning may be emitted and p-value is nan
         with np.errstate(invalid="ignore"):
             w, p = stats.wilcoxon(x, x, "wilcox", method="asymptotic")
-            assert_equal((w, p), (0.0, np.nan))
+            xp_assert_equal(w, xp.asarray(0.0))
+            xp_assert_equal(p, xp.asarray(xp.nan))
             w, p = stats.wilcoxon(x, x, "pratt", method="asymptotic")
-            assert_equal((w, p), (0.0, np.nan))
+            xp_assert_equal(w, xp.asarray(0.0))
+            xp_assert_equal(p, xp.asarray(xp.nan))
         # ranksum is n*(n+1)/2, split in half if zero_method == "zsplit"
-        assert_equal(stats.wilcoxon(x, x, "zsplit", method="asymptotic"),
-                     (20*21/4, 1.0))
+        w, p = stats.wilcoxon(x, x, "zsplit", method="asymptotic")
+        xp_assert_equal(w, xp.asarray(20*21/4))
+        xp_assert_equal(p, xp.asarray(1.0))
 
-    def test_pratt(self):
+    def test_pratt(self, xp):
         # regression test for gh-6805: p-value matches value from R package
         # coin (wilcoxsign_test) reported in the issue
-        x = [1, 2, 3, 4]
-        y = [1, 2, 3, 5]
+        x = xp.asarray([1, 2, 3, 4])
+        y = xp.asarray([1, 2, 3, 5])
         res = stats.wilcoxon(x, y, zero_method="pratt", method="asymptotic",
                              correction=False)
-        assert_allclose(res, (0.0, 0.31731050786291415))
+        xp_assert_close(res.statistic, xp.asarray(0.0))
+        xp_assert_close(res.pvalue, xp.asarray(0.31731050786291415))
 
     def test_wilcoxon_arg_type(self):
         # Should be able to accept list as arguments.
@@ -1509,63 +1537,66 @@ class TestWilcoxon:
         _ = stats.wilcoxon(arr, zero_method="zsplit", method="asymptotic")
         _ = stats.wilcoxon(arr, zero_method="wilcox", method="asymptotic")
 
-    def test_accuracy_wilcoxon(self):
+    def test_accuracy_wilcoxon(self, xp):
         freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
         nums = range(-4, 5)
-        x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
-        y = np.zeros(x.size)
+        x = xp.asarray(np.concatenate([[u] * v for u, v in zip(nums, freq)]))
+        y = xp.zeros_like(x)
 
         T, p = stats.wilcoxon(x, y, "pratt", method="asymptotic",
                               correction=False)
-        assert_allclose(T, 423)
-        assert_allclose(p, 0.0031724568006762576)
+        xp_assert_close(T, xp.asarray(423.))
+        xp_assert_close(p, xp.asarray(0.0031724568006762576))
 
         T, p = stats.wilcoxon(x, y, "zsplit", method="asymptotic",
                               correction=False)
-        assert_allclose(T, 441)
-        assert_allclose(p, 0.0032145343172473055)
+        xp_assert_equal(T, xp.asarray(441.))
+        xp_assert_close(p, xp.asarray(0.0032145343172473055))
 
         T, p = stats.wilcoxon(x, y, "wilcox", method="asymptotic",
                               correction=False)
-        assert_allclose(T, 327)
-        assert_allclose(p, 0.00641346115861)
+        xp_assert_equal(T, xp.asarray(327.))
+        xp_assert_close(p, xp.asarray(0.00641346115861))
 
         # Test the 'correction' option, using values computed in R with:
+        # > options(digits=16)
         # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
-        x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
-        y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+        x = xp.asarray([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+        y = xp.asarray([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
         T, p = stats.wilcoxon(x, y, correction=False, method="asymptotic")
-        assert_equal(T, 34)
-        assert_allclose(p, 0.6948866, rtol=1e-6)
+        xp_assert_equal(T, xp.asarray(34.))
+        xp_assert_close(p, xp.asarray(0.6948866023724735))
         T, p = stats.wilcoxon(x, y, correction=True, method="asymptotic")
-        assert_equal(T, 34)
-        assert_allclose(p, 0.7240817, rtol=1e-6)
+        xp_assert_equal(T, xp.asarray(34.))
+        xp_assert_close(p, xp.asarray(0.7240816609153895))
 
-    def test_approx_mode(self):
+    @pytest.mark.parametrize("kwarg",
+        [{"method": "approx"}, {"mode": "approx"}, {"mode": "asymptotic"}])
+    def test_approx_mode(self, kwarg, xp):
         # Check that `mode` is still an alias of keyword `method`,
         # and `"approx"` is still an alias of argument `"asymptotic"`
-        x = np.array([3, 5, 23, 7, 243, 58, 98, 2, 8, -3, 9, 11])
-        y = np.array([2, -2, 1, 23, 0, 5, 12, 18, 99, 12, 17, 27])
-        res1 = stats.wilcoxon(x, y, "wilcox", method="approx")
-        res2 = stats.wilcoxon(x, y, "wilcox", method="asymptotic")
-        res3 = stats.wilcoxon(x, y, "wilcox", mode="approx")
-        res4 = stats.wilcoxon(x, y, "wilcox", mode="asymptotic")
-        assert res1 == res2 == res3 == res4
+        x = xp.asarray([3, 5, 23, 7, 243, 58, 98, 2, 8, -3, 9, 11])
+        y = xp.asarray([2, -2, 1, 23, 0, 5, 12, 18, 99, 12, 17, 27])
+        res = stats.wilcoxon(x, y, "wilcox", **kwarg)
+        ref = stats.wilcoxon(x, y, "wilcox", method="asymptotic")
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
 
-    def test_wilcoxon_result_attributes(self):
-        x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
-        y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+    def test_wilcoxon_result_attributes(self, xp):
+        x = xp.asarray([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+        y = xp.asarray([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
         res = stats.wilcoxon(x, y, correction=False, method="asymptotic")
         attributes = ('statistic', 'pvalue')
-        check_named_results(res, attributes)
+        check_named_results(res, attributes, xp=xp)
 
-    def test_wilcoxon_has_zstatistic(self):
+    def test_wilcoxon_has_zstatistic(self, xp):
         rng = np.random.default_rng(89426135444)
         x, y = rng.random(15), rng.random(15)
+        x, y = xp.asarray(x), xp.asarray(y)
 
         res = stats.wilcoxon(x, y, method="asymptotic")
-        ref = stats.norm.ppf(res.pvalue/2)
-        assert_allclose(res.zstatistic, ref)
+        ref = special.ndtri(res.pvalue/2)
+        xp_assert_close(res.zstatistic, ref)
 
         res = stats.wilcoxon(x, y, method="exact")
         assert not hasattr(res, 'zstatistic')
@@ -1573,29 +1604,32 @@ class TestWilcoxon:
         res = stats.wilcoxon(x, y)
         assert not hasattr(res, 'zstatistic')
 
-    def test_wilcoxon_tie(self):
+    def test_wilcoxon_tie(self, xp):
         # Regression test for gh-2391.
         # Corresponding R code is:
         #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=FALSE)
         #   > result$p.value
-        #   [1] 0.001565402
+        #   [1] 0.001565402258002551
         #   > result = wilcox.test(rep(0.1, 10), exact=FALSE, correct=TRUE)
         #   > result$p.value
-        #   [1] 0.001904195
-        stat, p = stats.wilcoxon([0.1] * 10, method="asymptotic",
-                                 correction=False)
-        expected_p = 0.001565402
-        assert_equal(stat, 0)
-        assert_allclose(p, expected_p, rtol=1e-6)
+        #   [1] 0.00190419504300439
+        d = xp.asarray([0.1] * 10)
+        expected_stat = xp.asarray(0.0)
 
-        stat, p = stats.wilcoxon([0.1] * 10, correction=True,
-                                 method="asymptotic")
-        expected_p = 0.001904195
-        assert_equal(stat, 0)
-        assert_allclose(p, expected_p, rtol=1e-6)
+        stat, p = stats.wilcoxon(d, method="asymptotic", correction=False)
+        expected_p = xp.asarray(0.001565402258002551)
+        xp_assert_equal(stat, expected_stat)
+        xp_assert_close(p, expected_p)
 
-    def test_onesided(self):
-        # tested against "R version 3.4.1 (2017-06-30)"
+        stat, p = stats.wilcoxon(d, method="asymptotic", correction=True)
+        expected_p = xp.asarray(0.00190419504300439)
+        xp_assert_equal(stat, expected_stat)
+        xp_assert_close(p, expected_p)
+
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_onesided(self, dtype, xp):
+        # tested against "R version 4.0.3 (2020-10-10)"
+        #
         # x <- c(125, 115, 130, 140, 140, 115, 140, 125, 140, 135)
         # y <- c(110, 122, 125, 120, 140, 124, 123, 137, 135, 145)
         # cfg <- list(x = x, y = y, paired = TRUE, exact = FALSE)
@@ -1603,30 +1637,35 @@ class TestWilcoxon:
         # do.call(wilcox.test, c(cfg, list(alternative = "less", correct = TRUE)))
         # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = FALSE)))
         # do.call(wilcox.test, c(cfg, list(alternative = "greater", correct = TRUE)))
-        x = [125, 115, 130, 140, 140, 115, 140, 125, 140, 135]
-        y = [110, 122, 125, 120, 140, 124, 123, 137, 135, 145]
+        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
+            pytest.skip("dtypes not preserved with pre-NEP 50 rules")
 
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([125, 115, 130, 140, 140, 115, 140, 125, 140, 135], dtype=dtype)
+        y = xp.asarray([110, 122, 125, 120, 140, 124, 123, 137, 135, 145], dtype=dtype)
+
+        w_ref = xp.asarray(27.0, dtype=dtype)
         w, p = stats.wilcoxon(x, y, alternative="less", method="asymptotic",
                               correction=False)
-        assert_equal(w, 27)
-        assert_almost_equal(p, 0.7031847, decimal=6)
+        xp_assert_equal(w, w_ref)
+        xp_assert_close(p, xp.asarray(0.7031847042787, dtype=dtype))
 
         w, p = stats.wilcoxon(x, y, alternative="less", correction=True,
                               method="asymptotic")
-        assert_equal(w, 27)
-        assert_almost_equal(p, 0.7233656, decimal=6)
+        xp_assert_equal(w, w_ref)
+        xp_assert_close(p, xp.asarray(0.72336564289, dtype=dtype))
 
         w, p = stats.wilcoxon(x, y, alternative="greater",
                               method="asymptotic", correction=False)
-        assert_equal(w, 27)
-        assert_almost_equal(p, 0.2968153, decimal=6)
+        xp_assert_equal(w, w_ref)
+        xp_assert_close(p, xp.asarray(0.2968152957213, dtype=dtype))
 
         w, p = stats.wilcoxon(x, y, alternative="greater",
                               correction=True, method="asymptotic")
-        assert_equal(w, 27)
-        assert_almost_equal(p, 0.3176447, decimal=6)
+        xp_assert_equal(w, w_ref)
+        xp_assert_close(p, xp.asarray(0.3176446594176, dtype=dtype))
 
-    def test_exact_basic(self):
+    def test_exact_basic(self):  # exact distribution is NumPy-only
         for n in range(1, 51):
             pmf1 = _get_wilcoxon_distr(n)
             pmf2 = _get_wilcoxon_distr2(n)
@@ -1634,27 +1673,34 @@ class TestWilcoxon:
             assert_equal(sum(pmf1), 1)
             assert_array_almost_equal(pmf1, pmf2)
 
-    def test_exact_pval(self):
-        # expected values computed with "R version 3.4.1 (2017-06-30)"
-        x = np.array([1.81, 0.82, 1.56, -0.48, 0.81, 1.28, -1.04, 0.23,
-                      -0.75, 0.14])
-        y = np.array([0.71, 0.65, -0.2, 0.85, -1.1, -0.45, -0.84, -0.24,
-                      -0.68, -0.76])
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_exact_pval(self, dtype, xp):
+        # expected values computed with "R version 4.0.3 (2020-10-10)"
+        # options(digits=16)
+        # x < - c(1.81, 0.82, 1.56, -0.48, 0.81, 1.28, -1.04, 0.23, -0.75, 0.14)
+        # y < - c(0.71, 0.65, -0.2, 0.85, -1.1, -0.45, -0.84, -0.24, -0.68, -0.76)
+        # result = wilcox.test(x - y, exact=TRUE, alternative='l', correct=TRUE)
+        # result$p.value
+        dtype = dtype if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1.81, 0.82, 1.56, -0.48, 0.81, 1.28, -1.04, 0.23,
+                        -0.75, 0.14], dtype=dtype)
+        y = xp.asarray([0.71, 0.65, -0.2, 0.85, -1.1, -0.45, -0.84, -0.24,
+                        -0.68, -0.76], dtype=dtype)
         _, p = stats.wilcoxon(x, y, alternative="two-sided", method="exact")
-        assert_almost_equal(p, 0.1054688, decimal=6)
+        xp_assert_close(p, xp.asarray(0.10546875, dtype=dtype))
         _, p = stats.wilcoxon(x, y, alternative="less", method="exact")
-        assert_almost_equal(p, 0.9580078, decimal=6)
+        xp_assert_close(p, xp.asarray(0.95800781256, dtype=dtype))
         _, p = stats.wilcoxon(x, y, alternative="greater", method="exact")
-        assert_almost_equal(p, 0.05273438, decimal=6)
+        xp_assert_close(p, xp.asarray(0.052734375, dtype=dtype))
 
-        x = np.arange(0, 20) + 0.5
-        y = np.arange(20, 0, -1)
+        x = xp.arange(0., 20., dtype=dtype) + 0.5
+        y = xp.arange(20., 0., -1., dtype=dtype)
         _, p = stats.wilcoxon(x, y, alternative="two-sided", method="exact")
-        assert_almost_equal(p, 0.8694878, decimal=6)
+        xp_assert_close(p, xp.asarray(0.8694877624511719, dtype=dtype))
         _, p = stats.wilcoxon(x, y, alternative="less", method="exact")
-        assert_almost_equal(p, 0.4347439, decimal=6)
+        xp_assert_close(p, xp.asarray(0.4347438812255859, dtype=dtype))
         _, p = stats.wilcoxon(x, y, alternative="greater", method="exact")
-        assert_almost_equal(p, 0.5795889, decimal=6)
+        xp_assert_close(p, xp.asarray(0.5795888900756836, dtype=dtype))
 
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
@@ -1665,67 +1711,76 @@ class TestWilcoxon:
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
-    def test_exact_p_1(self, x):
-        w, p = stats.wilcoxon(x)
+    def test_exact_p_1(self, x, xp):
+        w, p = stats.wilcoxon(xp.asarray(x))
         x = np.array(x)
         wtrue = x[x > 0].sum()
-        assert_equal(w, wtrue)
-        assert_equal(p, 1)
+        xp_assert_equal(w, xp.asarray(float(wtrue)))
+        xp_assert_equal(p, xp.asarray(1.0))
 
-    def test_auto(self):
+    def test_auto(self, xp):
         # auto default to exact if there are no ties and n <= 50
-        x = np.arange(0, 50) + 0.5
-        y = np.arange(50, 0, -1)
-        assert_equal(stats.wilcoxon(x, y),
-                     stats.wilcoxon(x, y, method="exact"))
+        x = xp.arange(0., 50.) + 0.5
+        y = xp.arange(50., 0., -1.)
+        xp_assert_equal(stats.wilcoxon(x, y).pvalue,
+                        stats.wilcoxon(x, y, method="exact").pvalue)
 
-        # n <= 50: if there are zeros in d = x-y, use PermutationMethod
-        pm = stats.PermutationMethod()
-        d = np.arange(-2, 5)
-        w, p = stats.wilcoxon(d)
-        # rerunning the test gives the same results since n_resamples
-        # is large enough to get deterministic results if n <= 13
-        # so we do not need to use a seed. to avoid longer runtimes of the
-        # test, use n=7 only. For n=13, see test_auto_permutation_edge_case
-        assert_equal((w, p), stats.wilcoxon(d, method=pm))
+        if is_numpy(xp):  # PermutationMethod is NumPy-only until gh-23772 merges
+            # n <= 50: if there are zeros in d = x-y, use PermutationMethod
+            pm = stats.PermutationMethod()
+            d = np.arange(-2, 5)
+            w, p = stats.wilcoxon(d)
+            # rerunning the test gives the same results since n_resamples
+            # is large enough to get deterministic results if n <= 13
+            # so we do not need to use a seed. to avoid longer runtimes of the
+            # test, use n=7 only. For n=13, see test_auto_permutation_edge_case
+            assert_equal((w, p), stats.wilcoxon(d, method=pm))
 
         # for larger vectors (n > 13) with ties/zeros, use asymptotic test
-        d = np.arange(-5, 9)  # zero
-        w, p = stats.wilcoxon(d)
-        assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
+        d = xp.arange(-5, 9)  # zero
+        _, p = stats.wilcoxon(d)
+        xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
-        d[d == 0] = 1  # tie
-        w, p = stats.wilcoxon(d)
-        assert_equal((w, p), stats.wilcoxon(d, method="asymptotic"))
+        d = xpx.at(d)[d == 0].set(1)  # tie
+        _, p = stats.wilcoxon(d)
+        xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
         # use approximation for samples > 50
-        d = np.arange(1, 52)
-        assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, method="asymptotic"))
+        d = xp.arange(1, 52)
+        _, p = stats.wilcoxon(d)
+        xp_assert_equal(stats.wilcoxon(d, method="asymptotic").pvalue, xp.asarray(p))
 
     @pytest.mark.xslow
-    def test_auto_permutation_edge_case(self):
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_auto_permutation_edge_case(self, xp):
         # Check that `PermutationMethod()` is used and results are deterministic when
         # `method='auto'`, there are zeros or ties in `d = x-y`, and `len(d) <= 13`.
         d = np.arange(-5, 8)  # zero
-        res = stats.wilcoxon(d)
-        ref = (27.5, 0.3955078125)  # stats.wilcoxon(d, method=PermutationMethod())
-        assert_equal(res, ref)
+        res = stats.wilcoxon(xp.asarray(d))
+        # generated with stats.wilcoxon(d, method=PermutationMethod())
+        w, p = xp.asarray([27.5, 0.3955078125])
+        xp_assert_equal(res.statistic, w)
+        xp_assert_equal(res.pvalue, p)
 
         d[d == 0] = 1  # tie
-        res = stats.wilcoxon(d)
-        ref = (32, 0.3779296875)  # stats.wilcoxon(d, method=PermutationMethod())
-        assert_equal(res, ref)
+        res = stats.wilcoxon(xp.asarray(d))
+        # generated with stats.wilcoxon(d, method=PermutationMethod())
+        w, p = xp.asarray([32, 0.3779296875])
+        xp_assert_equal(res.statistic, w)
+        xp_assert_equal(res.pvalue, p)
+
 
     @pytest.mark.parametrize('size', [3, 5, 10])
-    def test_permutation_method(self, size):
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_permutation_method(self, size, xp):
         rng = np.random.default_rng(92348034828501345)
-        x = rng.random(size=size)
+        x = xp.asarray(rng.random(size=size))
         res = stats.wilcoxon(x, method=stats.PermutationMethod())
         ref = stats.wilcoxon(x, method='exact')
-        assert_equal(res.statistic, ref.statistic)
-        assert_equal(res.pvalue, ref.pvalue)
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
 
-        x = rng.random(size=size*10)
+        x = xp.asarray(rng.random(size=size*10))
         rng = np.random.default_rng(59234803482850134)
         pm = stats.PermutationMethod(n_resamples=99, rng=rng)
         ref = stats.wilcoxon(x, method=pm)
@@ -1734,10 +1789,10 @@ class TestWilcoxon:
         pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
         res = stats.wilcoxon(x, method=pm)
 
-        assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
-        assert_equal(res.pvalue, ref.pvalue)  # rng/random_state used
+        xp_assert_equal(xp.round(res.pvalue, 2), res.pvalue)  # n_resamples used
+        xp_assert_equal(res.pvalue, ref.pvalue)  # rng/random_state used
 
-    def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
+    def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self, xp):
         # When method!='asymptotic', nan_policy='propagate', and a slice of
         # a >1 dimensional array input contained NaN, the result object of
         # `wilcoxon` could (under yet other conditions) return `zstatistic`
@@ -1747,53 +1802,65 @@ class TestWilcoxon:
         rng = np.random.default_rng(235889269872456)
         A = rng.normal(size=(51, 2))  # length along slice > exact threshold
         A[5, 1] = np.nan
+        A = xp.asarray(A)
         res = stats.wilcoxon(A)
         ref = stats.wilcoxon(A, method='asymptotic')
-        assert_allclose(res, ref)
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
         assert hasattr(ref, 'zstatistic')
         assert not hasattr(res, 'zstatistic')
 
     @pytest.mark.parametrize('method', ['exact', 'asymptotic'])
-    def test_symmetry_gh19872_gh20752(self, method):
+    def test_symmetry_gh19872_gh20752(self, method, xp):
         # Check that one-sided exact tests obey required symmetry. Bug reported
         # in gh-19872 and again in gh-20752; example from gh-19872 is more concise:
-        var1 = [62, 66, 61, 68, 74, 62, 68, 62, 55, 59]
-        var2 = [71, 71, 69, 61, 75, 71, 77, 72, 62, 65]
+        var1 = xp.asarray([62, 66, 61, 68, 74, 62, 68, 62, 55, 59])
+        var2 = xp.asarray([71, 71, 69, 61, 75, 71, 77, 72, 62, 65])
         ref = stats.wilcoxon(var1, var2, alternative='less', method=method)
         res = stats.wilcoxon(var2, var1, alternative='greater', method=method)
-        max_statistic = len(var1) * (len(var1) + 1) / 2
+        max_statistic = var1.shape[0] * (var1.shape[0] + 1) / 2
         assert int(res.statistic) != res.statistic
-        assert_allclose(max_statistic - res.statistic, ref.statistic, rtol=1e-15)
-        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-15)
+        xp_assert_close(max_statistic - res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)
 
     @pytest.mark.parametrize("method", ('exact', stats.PermutationMethod()))
-    def test_all_zeros_exact(self, method):
+    def test_all_zeros_exact(self, method, xp):
         # previously, this raised a RuntimeWarning when calculating Z, even
         # when the Z value was not needed. Confirm that this no longer
         # occurs when `method` is 'exact' or a `PermutationMethod`.
-        res = stats.wilcoxon(np.zeros(5), method=method)
-        assert_allclose(res, [0, 1])
+        if method != "exact":
+            pytest.skip("PermutationMethod is NumPy-only until gh-23772 merges")
+        res = stats.wilcoxon(xp.zeros(5), method=method)
+        xp_assert_close(res.statistic, xp.asarray(0.))
+        xp_assert_close(res.pvalue, xp.asarray(1.))
 
-    def test_wilcoxon_axis_broadcasting_errors_gh22051(self):
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='lazy->limited input validation')
+    def test_wilcoxon_axis_broadcasting_errors_gh22051(self, xp):
         # In previous versions of SciPy, `wilcoxon` gave an incorrect error
         # message when `AxisError` was not found in the base NumPy namespace.
         # Check that this is resolved with and without the ANP decorator.
+        x = xp.asarray([1, 2, 3])
+        y = xp.asarray([4, 5, 6])
+
         message = "Array shapes are incompatible for broadcasting."
         with pytest.raises(ValueError, match=message):
-            stats.wilcoxon([1, 2, 3], [4, 5])
+            stats.wilcoxon(x, y[:-1])
+
+        if not is_numpy(xp):
+            return  # hard to generalize the rest
 
         message = "operands could not be broadcast together with..."
         with pytest.raises(ValueError, match=message):
-            stats.wilcoxon([1, 2, 3], [4, 5], _no_deco=True)
+            stats.wilcoxon(x, y[:-1], _no_deco=True)
 
         AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
         message = "source: axis 3 is out of bounds for array of dimension 1"
         with pytest.raises(AxisError, match=message):
-            stats.wilcoxon([1, 2, 3], [4, 5, 6], axis=3)
+            stats.wilcoxon(x, y, axis=3)
 
         message = "`axis` must be compatible with the shape..."
         with pytest.raises(AxisError, match=message):
-            stats.wilcoxon([1, 2, 3], [4, 5, 6], axis=3, _no_deco=True)
+            stats.wilcoxon(x, y, axis=3, _no_deco=True)
 
 
 # data for k-statistics tests from

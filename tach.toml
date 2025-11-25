@@ -205,6 +205,8 @@ exclude = [
     "_registry", # scipy/datasets/_download_all.py
     "_wrappers_common", # scipy/_build_utils/_generate_blas_wrapper.py
     "convert", # scipy/special/utils/datafunc.py
+    # conditional imports
+    "annotationlib", # conditional stdlib for backward compatibility of <3.14
     # optional dependencies
     "Cython",
     "array-api-compat",

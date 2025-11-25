@@ -275,9 +275,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 ruff = "*"
 cython-lint = "*"
 packaging = "*"
-
-[feature.lint.pypi-dependencies]
-dtach = "*"
+tach = "*"
 
 [feature.lint.tasks.lint]
 cmd = "spin lint"
@@ -302,12 +300,6 @@ description = "Check external dependencies"
 [feature.mkl.target.linux-64.dependencies]
 libblas = { version = "*", build = "*mkl" }
 mkl = "*"
-
-[feature.mkl.tasks.build-mkl]
-cmd = "spin build --build-dir=build-mkl --setup-args=-Dblas=mkl-dynamic-ilp64-seq --setup-args=-Duse-g77-abi=true"
-cwd = "scipy"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
-description = "Build with MKL BLAS"
 
 
 [feature.accelerate]
@@ -338,8 +330,7 @@ description = "Test SciPy with accelerate (ilp64)"
 
 
 [feature.scipy-openblas.pypi-dependencies]
-# remove this pin once https://github.com/scipy/scipy/pull/23844#issuecomment-3528226491 is resolved
-scipy-openblas32 = "<=0.3.30.0.2"
+scipy-openblas32 = ">=0.3.30.0.8"
 
 [feature.scipy-openblas.tasks.build-scipy-openblas]
 cmd = "spin build --build-dir=build-scipy-openblas --with-scipy-openblas"

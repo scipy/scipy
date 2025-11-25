@@ -40,12 +40,16 @@ class _BarycentricRational:
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
 
-    def __init__(self, x, y, **kwargs):
+    def __init__(self, x, y, axis=0, **kwargs):
+        self._axis = axis
+
         # input validation
         z = np.asarray(x)
         f = np.asarray(y)
 
         self._input_validation(z, f, **kwargs)
+
+        f = np.moveaxis(f, self._axis, 0)
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = np.logical_and.reduce(
@@ -74,8 +78,9 @@ class _BarycentricRational:
         if not y.ndim >= 1:
             raise ValueError("`y` must be at least 1-D.")
 
-        if x.size != y.shape[0]:
-            raise ValueError("`x` be the same size as the first dimension of `y`.")
+        if x.size != y.shape[self._axis]:
+            msg = f"`x` be of size {y.shape[self._axis]} but got size {x.size}."
+            raise ValueError(msg)
 
         if not np.all(np.isfinite(x)):
             raise ValueError("`x` must be finite.")
@@ -124,7 +129,8 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 r[jj] = support_values[zv[jj] == self._support_points].squeeze()
 
-        return np.reshape(r, z.shape + self._shape)
+        res = np.reshape(r, z.shape + self._shape)
+        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
 
     def poles(self):
         """Compute the poles of the rational approximation.
@@ -132,7 +138,7 @@ class _BarycentricRational:
         Returns
         -------
         poles : array
-            Poles of the AAA approximation, repeated according to their multiplicity
+            Poles of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
         if self._poles is None:
@@ -159,6 +165,9 @@ class _BarycentricRational:
         residues : array
             Residues associated with the `poles` of the approximation
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Residues not implemented for multi-dimensional"
+                                      " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -173,14 +182,17 @@ class _BarycentricRational:
         return self._residues
 
     def roots(self):
-        """Compute the zeros of the rational approximation.
+        """Compute the roots of the rational approximation.
 
         Returns
         -------
         zeros : array
-            Zeros of the AAA approximation, repeated according to their multiplicity
+            Zeros of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Roots not implemented for multi-dimensional"
+                                      " data.")
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
             m = self.weights.size
@@ -633,6 +645,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
         Integer satisfying ``0 <= d < n``. Floater-Hormann interpolation blends
         ``n - d`` polynomials of degree `d` together; for ``d = n - 1``, this is
         equivalent to polynomial interpolation.
+    axis : int, default: 0
+        Axis of `y` corresponding to `x`.
 
     Attributes
     ----------
@@ -712,8 +726,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, points, values, *, d=3):
-        super().__init__(points, values, d=d)
+    def __init__(self, points, values, *, d=3, axis=0):
+        super().__init__(points, values, d=d, axis=axis)
 
     def _input_validation(self, x, y, d):
         d = operator.index(d)

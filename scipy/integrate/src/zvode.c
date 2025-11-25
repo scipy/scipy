@@ -2124,7 +2124,7 @@ zvode(
     const double pt2 = 0.2, hun = 100.0;
 
     // Local variables
-    double h0, hmax, hmx, tolsf, tnext, tp, atoli, rtoli, tcrit = 0.0;
+    double h0 = 0.0, hmax, hmx, tolsf, tnext, tp, atoli, rtoli, tcrit = 0.0;
     int i, iflag, jco, lenwm, lenzw, lenrw, leniw, lf0, mband, mfa, ml = 0, mu = 0;
     int maxord_input, mxstep_input, mxhnil_input;
     int nslast, kgo;
