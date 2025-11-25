@@ -1566,8 +1566,9 @@ class TestCombinatorics:
     def test_comb_repetition_k_zero(self, N, exact):
         # Regression test for gh-23867
         # C(n, 0) should always be 1 for n >= 0, regardless of repetition
-        expected = 1 if exact else 1.0
-        assert_equal(special.comb(N, 0, exact=exact, repetition=True), expected)
+        actual = special.comb(N, 0, exact=exact, repetition=True)
+        assert actual == 1
+        assert type(actual) is int if exact else np.float64
 
     def test_comb_repetition_k_zero_array(self):
         # Test array-like input with exact=False for gh-23867
