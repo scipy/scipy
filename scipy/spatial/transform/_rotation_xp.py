@@ -61,15 +61,20 @@ def from_matrix(matrix: Array) -> Array:
         matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
     gramians = matrix @ xp.matrix_transpose(matrix)
-    # TODO: We need to orthogonalize only the non-orthogonal matrices, but lazy backends
-    # do not support non-concrete boolean indexing or any form of computation without
-    # statically known shapes. We either have to branch depending on lazy/non-lazy
-    # frameworks or pay the performance penalty for the SVD.
     eye = xp.eye(3, dtype=matrix.dtype, device=device)
     is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
-    U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
-    orthogonal_matrix = U @ Vt
-    matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
+
+    if lazy:
+        # Lazy backends do not support non-concrete boolean indexing or any form of
+        # computation without statically known shapes, so we always compute SVD and
+        # use xp.where to select the result.
+        U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+        orthogonal_matrix = U @ Vt
+        matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
+    elif not is_orthogonal:
+        # For eager frameworks, only compute SVD if needed.
+        U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+        matrix = U @ Vt
 
     return _from_matrix_orthogonal(matrix)
 
