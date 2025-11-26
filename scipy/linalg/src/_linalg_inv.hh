@@ -84,6 +84,53 @@ void invert_slice_cholesky(
     }
 }
 
+// Symmetric/hermitian array inversion with sytrf/hetrf and sytri/hetri
+template<typename T>
+void invert_slice_sym_herm(
+    char uplo, CBLAS_INT N, T *data, CBLAS_INT *ipiv, T *work, void *irwork, CBLAS_INT lwork,
+    bool is_symm_not_herm, 
+    SliceStatus& status
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    real_type rcond;
+    real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
+
+    if(is_symm_not_herm) {
+        sytrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    } else {
+        hetrf(&uplo, &N, data, &N, ipiv, work, &lwork, &info);
+    }
+
+    status.lapack_info = (Py_ssize_t)info;
+    if (info == 0) {
+        // {sy,he}trf success
+        if (is_symm_not_herm) {
+            sycon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        } else {
+            hecon(&uplo, &N, data, &N, ipiv, &anorm, &rcond, work, irwork, &info);
+        }
+
+        if (info >= 0) {
+            status.rcond = (double)rcond;
+            status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, invert
+            if (is_symm_not_herm) {
+                sytri(&uplo, &N, data, &N, ipiv, work, &info);
+            } else {
+                hetri(&uplo, &N, data, &N, ipiv, work, &info);
+            }
+            status.is_singular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        status.is_singular = 1;
+    }
+}
+
 
 // triangular array inversion with trtri
 template<typename T>
@@ -119,8 +166,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     npy_intp lower_band = 0, upper_band = 0;
-    bool is_symm = false;
-    char uplo;
+    bool is_symm_or_herm = false, is_symm_not_herm = false;
+    char uplo = lower ? 'L' : 'U';
     St slice_structure = St::NONE;
     bool posdef_fallback = true;
     SliceStatus slice_status;
@@ -144,22 +191,38 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     // Workspace computation and allocation
     // --------------------------------------------------------------------
     T tmp = numeric_limits<T>::zero;
+    T tmp1 = numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, lwork = -1, info;
 
     getri(&intn, NULL, &intn, NULL, &tmp, &lwork, &info);
     if (info != 0) { info = -100; return (int)info; }
 
-    /*
-     * The factor of 1.01 here mirrors
-     * https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
-     *
-     * It was added in commit
-     * https://github.com/scipy/scipy/commit/dfb543c147c
-     * to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
-     */
-    lwork = (CBLAS_INT)(1.01 * real_part(tmp));
+    CBLAS_INT lwork_1 = _calc_lwork(tmp, 1.01);
+    if (lwork_1 < 0) {
+        // too large lwork requested; the computation cannot be done
+        return -99;
+    }
 
-    lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
+    // also query sytrf
+    sytrf(&uplo, &intn, NULL, &intn, NULL, &tmp1, &lwork,  &info);
+    if (info != 0) { info = -100; return (int)info; }
+
+    CBLAS_INT lwork_2 = _calc_lwork(tmp);
+    if (lwork_2 < 0) {
+        // too large lwork requested; the computation cannot be done
+        return -99;
+    }
+
+    lwork = std::max(lwork_1, lwork_2);
+
+    // gecon needs lwork of at least 4*n
+    if (n > std::numeric_limits<CBLAS_INT>::max() / 4) {
+        return -99;
+    }
+
+    lwork = (4*n > lwork ? 4*n : lwork);
+
+    // Finally, can start allocating memory
     T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
     if (NULL == buffer) { info = -101; return (int)info; }
 
@@ -190,9 +253,14 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
     }
 
     // normalize the structure detection inputs
-    uplo = lower? 'L' : 'U';
     if (structure == St::POS_DEF) {
         posdef_fallback = false;
+    }
+    else if (structure == St::SYM) {
+        is_symm_not_herm = true;
+    }
+    else if (structure == St::HER) {
+        is_symm_not_herm = false;
     }
     if (structure == St::LOWER_TRIANGULAR) {
         uplo = 'L';
@@ -228,8 +296,8 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                 uplo = 'L';
             } else {
                 // Check if symmetric/hermitian
-                is_symm = is_sym_herm(data, n);
-                if (is_symm) {
+                std::tie(is_symm_or_herm, is_symm_not_herm) = is_sym_herm(data, n);
+                if (is_symm_or_herm) {
                     slice_structure = St::POS_DEF;
                 }
                 else {
@@ -277,7 +345,7 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                         swap_cf(scratch, data, n, n, n);
                         init_status(slice_status, idx, slice_structure);
 
-                        // no break: fall back to the general solver
+                        // no break: fall back to the symmetric solver
                     }
                     else {
                         // potrf failed but no fallback
@@ -285,6 +353,27 @@ _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int lower, int overwri
                         break;
                     }
                 }
+            }
+            case St::SYM:     // NB: if POS_DEF failed, fall-through to here
+            case St::HER:
+            {
+                invert_slice_sym_herm(uplo, intn, data, ipiv, work, irwork, lwork, is_symm_not_herm, slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular )) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                if (is_symm_not_herm) {
+                    fill_other_triangle_noconj(uplo, data, intn);
+                }
+                else {
+                    fill_other_triangle(uplo, data, intn);
+                }
+                break;
             }
             default:
             {
