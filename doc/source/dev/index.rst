@@ -48,6 +48,7 @@ the organization section.
    contributor/adding_new
    contributor/continuous_integration
    contributor/using_act
+   contributor/sanitizers
    triage
 
 .. These files are not intended to be in any toctree. because they have not
