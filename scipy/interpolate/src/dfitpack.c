@@ -58,6 +58,36 @@ void bispev(const double *tx, int nx, const double *ty, int ny, const double *c,
 
 
 void
+dblint(double* tx, const int nx, double* ty, const int ny, double* c, const int kx, const int ky,
+       const double xb, const double xe, const double yb, const double ye, double* wrk,
+       double* result)
+{
+    int nkx1 = nx - kx - 1;
+    int nky1 = ny - ky - 1;
+    double res = 0.0;
+    *result = 0.0;
+    // we calculate the integrals of the normalized b-splines ni,kx+1(x)
+    fpintb(tx, nx, wrk, nkx1, xb, xe);
+    // we calculate the integrals of the normalized b-splines nj,ky+1(y)
+    fpintb(ty, ny, &wrk[nkx1], nky1, yb, ye);
+    // calculate the integral of s(x,y)
+    res = 0.0;
+    for (int i = 1; i <= nkx1; i++) {
+        res = wrk[i - 1];
+        if (res == 0.0) { continue; }
+        int m = (i - 1) * nky1;
+        int l = nkx1;
+        for (int j = 1; j <= nky1; j++) {
+            m++;
+            l++;
+            *result += res*wrk[l - 1] * c[m - 1];
+        }
+    }
+    return;
+}
+
+
+void
 fprota(double c, double s, double *a, double *b)
 {
     // fprota applies a givens rotation to the pair (a,b).
@@ -338,6 +368,116 @@ fpdisc(const double* t, const int n, const int k2, double* b, const int nest)
             int lk = lp + k1;
             b[lmk-1 + (j-1)*nest] = (t[lk-1] - t[lp-1]) / prod;
             lp++;
+        }
+    }
+}
+
+
+void
+fpintb(const double *t, int n, double *bint, const int nk1, const double x, const double y)
+{
+    int i, ia, ib, it, j, j1, k, k1, l, li, lj, lk, l0, mmin;
+    double a, ak, arg, b, f, one;
+    double aint[6], h[6], h1[6];
+
+    one = 1.0;
+    k1 = n - nk1;
+    ak = (double)k1;
+    k = k1 - 1;
+
+    for (i = 1; i <= nk1; ++i) {
+        bint[i-1] = 0.0;
+    }
+    // the integration limits are arranged in increasing order.
+    a = x;
+    b = y;
+    mmin = 0;
+    if (a >= b) {
+        if (a == b) { return; }
+        a = y;
+        b = x;
+        mmin = 1;
+    }
+    if (a < t[k1 - 1]) { a = t[k1 - 1]; }
+    if (b > t[nk1]) { b = t[nk1]; }
+    if (a > b) { return; }
+    // using the expression of gaffney for the indefinite integral of a
+    // b-spline we find that
+    // bint(j) = (t(j+k+1)-t(j))*(res(j,b)-res(j,a))/(k+1)
+    //   where for t(l) <= x < t(l+1)
+    //   res(j,x) = 0, j=1,2,...,l-k-1
+    //            = 1, j=l+1,l+2,...,nk1
+    //            = aint(j+k-l+1), j=l-k,l-k+1,...,l
+    //              = sumi((x-t(j+i))*nj+i,k+1-i(x)/(t(j+k+1)-t(j+i)))
+    //                i=0,1,...,k
+    l = k1;
+    l0 = l + 1;
+    // set arg = a.
+    arg = a;
+    for (it = 1; it <= 2; ++it) {
+        // search for the knot interval t(l) <= arg < t(l+1).
+        while (!((arg < t[l0-1]) || (l == nk1))) {
+            l = l0;
+            l0 = l + 1;
+        }
+        // calculation of aint(j-1), j=1,2,...,k+1
+        // initialization.
+        for (j = 1; j <= k1; j++) { aint[j-1] = 0.0; }
+        aint[0] = (arg - t[l - 1]) / (t[l] - t[l - 1]);
+        h1[0] = one;
+        for (j = 1; j <= k; ++j) {
+            // evaluation of the non-zero b-splines of degree j at arg, i.e.
+            //     h(i+1) = nl - j + i,j(arg), i=0,1,...,j.
+            h[0] = 0.0;
+            for (i = 1; i <= j; i++) {
+                li = l + i;
+                lj = li - j;
+                f = h1[i - 1] / (t[li - 1] - t[lj - 1]);
+                h[i - 1] = h[i - 1] + f * (t[li - 1] - arg);
+                h[i] = f * (arg - t[lj - 1]);
+            }
+            // updating of the integrals aint
+            j1 = j + 1;
+            for (i = 1; i <= j1; ++i) {
+                li = l + i;
+                lj = li - j1;
+                aint[i - 1] = aint[i - 1] + h[i - 1] * (arg - t[lj - 1]) / (t[li - 1] - t[lj - 1]);
+                h1[i - 1] = h[i - 1];
+            }
+        }
+        if (it == 2) { break; }
+        // updating of the integrals bint
+        lk = l - k;
+        ia = lk;
+        for (i = 1; i <= k1; ++i) {
+            bint[lk - 1] = -aint[i - 1];
+            lk++;
+        }
+        // set arg = b.
+        arg = b;
+    }
+    // updating of the integrals bint.
+    lk = l - k;
+    ib = lk - 1;
+    for (i = 1; i <= k1; ++i) {
+        bint[lk - 1] += aint[i - 1];
+        lk++;
+    }
+    if (ib >= ia) {
+        for (i = ia; i <= ib; ++i) {
+            bint[i - 1] += one;
+        }
+    }
+    // the scaling factors are taken into account.
+    f = one / ak;
+    for (i = 1; i <= nk1; ++i) {
+        j = i + k1;
+        bint[i - 1] = bint[i - 1] * (t[j - 1] - t[i - 1]) * f;
+    }
+    // the order of the integration limits is taken into account.
+    if (mmin != 0) {
+        for (i = 1; i <= nk1; ++i) {
+            bint[i - 1] = -bint[i - 1];
         }
     }
 }
