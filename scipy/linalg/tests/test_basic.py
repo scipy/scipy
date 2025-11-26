@@ -914,9 +914,9 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    # "pos" and "positive definite" need to be added
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
+                                          'pos', 'positive definite',
                                           'symmetric', 'hermitian', 'banded',
                                           'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
@@ -951,8 +951,7 @@ class TestSolve:
         elif assume_a in {'hermitian', 'her'}:
             A = A + A.conj().T
         elif assume_a in {'positive definite', 'pos'}:
-            A = A + A.T
-            A += np.diag(A.sum(axis=1))
+            A = A @ A.T.conj()
 
         if fortran:
             A = np.asfortranarray(A)
