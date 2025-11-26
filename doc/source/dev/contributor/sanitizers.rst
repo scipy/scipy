@@ -65,7 +65,7 @@ recommended:
 #. Set ``ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0``
 #. Compile CPython_ with ``--with-address-sanitizer`` and use it to setup a test environment
 #. Build NumPy_ with the ``setup-args`` config setting set to ``-Db_sanitize=address``
-    * Eg. ``pip install numpy --no-binary numpy -Csetup-args="-Db_sanitize=address" -v``
+    * Eg. ``pip install numpy --no-cache-dir --no-binary numpy -Csetup-args="-Db_sanitize=address" -v``
 #. In the project root directory, set the compiler flags as follows:
     * ``CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt"``
     * ``CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt"``
