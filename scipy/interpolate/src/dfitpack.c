@@ -1,5 +1,61 @@
 #include <math.h>
 
+void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
+            int kx, int ky, const double *x, const double *y, double *z, int m,
+            double *wrk, int lwrk, int *ier)
+{
+
+    int lwest = kx + ky + 2;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if (lwrk < lwest) { return; }
+    if (m < 1) { return; }
+
+    *ier = 0;
+    for (int i = 1; i <= m; i++) {
+        fpbisp(tx, nx, ty, ny, c, kx, ky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], wrk, &wrk[kx + 1], wrk, &wrk[1]);
+    }
+}
+
+
+void bispev(const double *tx, int nx, const double *ty, int ny, const double *c,
+            int kx, int ky, const double *x, int mx, const double *y, int my,
+            double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier)
+{
+    int i, iw, lwest;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    lwest = (kx + 1) * mx + (ky + 1) * my;
+    if (lwrk < lwest || kwrk < (mx + my) || mx < 1 || my < 1) {
+        return;
+    }
+
+    if (mx > 1) {
+        for (i = 2; i <= mx; i++) {
+            if (x[i - 1] < x[i - 2]) {
+                return;
+            }
+        }
+    }
+
+    if (my > 1) {
+        for (i = 2; i <= my; i++) {
+            if (y[i - 1] < y[i - 2]) {
+                return;
+            }
+        }
+    }
+
+    *ier = 0;
+    // Partition the working space and evaluate the bivariate spline
+    iw = mx * (kx + 1) + 1;
+    fpbisp(tx, nx, ty, ny, c, kx, ky, x, mx, y, my, z, wrk, &wrk[iw - 1], iwrk, &iwrk[mx - 1]);
+}
+
 
 void
 fprota(double c, double s, double *a, double *b)
@@ -152,6 +208,75 @@ fpbisp(const double *tx, const int nx, double *ty, const int ny, const double *c
             z[m] = sp;
             m++;
         }
+    }
+}
+
+
+void
+fpchep(double* x, const int m, double* t, const int n, const int k, int* ier)
+{
+    int l;
+    int k1 = k + 1;
+    int k2 = k1 + 1;
+    int nk1 = n - k1;
+    int nk2 = nk1 + 1;
+    int m1 = m - 1;
+    *ier = 10;
+
+    // check condition no 1
+    if ((nk1 < k1) || (n > (m + 2*k))) { return; }
+    // check condition no 2
+    int j = n;
+    for (int i = 1; i <= k; i++) {
+        if (t[i - 1] > t[i]) { return; }
+        if (t[j - 1] < t[j - 2]) { return; }
+        j--;
+    }
+    // check condition no 3
+    for (int i = k2; i <= nk2; i++) {
+        if (t[i - 1] <= t[i - 2]) { return; }
+    }
+    // check condition no 4
+    if ((x[0] < t[k]) || (x[m - 1] > t[nk2 - 1])) { return; }
+    // check condition no 5
+    int l1 = k1;
+    int l2 = 1;
+    for (l = 1; l <= m; l++) {
+        double xi = x[l - 1];
+        int break_twice = 0;
+        while (!((xi < t[l1]) || (l1 == nk1))) {
+            l1++;
+            l2++;
+            if (l2 > k1) { break_twice = 1; break; }
+        }
+        if (break_twice) { break; }
+    }
+
+    double per = t[nk2 - 1] - t[k];
+    for (int i1 = 2; i1 <= l; i1++) {
+        int i = i1 - 1;
+        int mm = i + m1;
+        int spin_i1_loop = 0;
+        for (int j = k1; j <= nk1; j++) {
+            double tj = t[j - 1];
+            int j1 = j + k1;
+            double tl = t[j1 - 1];
+            double xi = 0.0;
+            do {
+                if (++i > mm) { spin_i1_loop = 1; break; }
+                int i2 = i - m1;
+                if (i2 <= 0) {
+                    xi = x[i - 1];
+                } else {
+                    xi = x[i2 - 1] + per;
+                }
+            } while (xi <= tj);
+            if (xi >= tl) { spin_i1_loop = 1; }
+            if (spin_i1_loop) break;
+        }
+        if (spin_i1_loop) continue;
+        *ier = 0;
+        return;
     }
 }
 
@@ -521,6 +646,537 @@ fprati(double* p1, double* f1, double* p2, double* f2, double* p3, double* f3)
         *f1 = *f2;
     }
     return p;
+}
+
+void
+fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const double* v,
+       const int mv, const double* r, const int mr, const double r0, const double r1,
+       const double s, const int nuest, const int nvest, const double tol, const int maxit,
+       const int nc, int* nu, double* tu, int* nv, double* tv, double* c, double* fp,
+       double* fp0, double* fpold, double* reducu, double* reducv, double* fpintu,
+       double* fpintv, double* dr, double* step, int* lastdi, int* nplusu, int* nplusv,
+       int* lastu0, int* lastu1, int* nru, int* nrv, int* nrdatu, int* nrdatv, double* wrk,
+       const int lwrk,int* ier)
+{
+    double acc, fpms, f1, f2, f3, p, per, pi, p1, p2, p3, vb, ve, rmax, rmin, rn, one;
+    double con1, con4, con9;
+    int i, ich1, ich3, ifbu, ifbv, ifsu, ifsv, istart, iter, i1, i2, j, ju;
+    int ktu, l, l1, l2, l3, l4, mpm, mumin, mu0, mu1, nn, nplu, nplv, npl1, nrintu;
+    int nrintv, nue, numax, nve, nvmax;
+    int idd[4];
+    double drr[6];
+
+    // set constants
+    one = 1.0;
+    con1 = 0.1;
+    con9 = 0.9;
+    con4 = 0.04;
+    // initialization
+    ifsu = 0;
+    ifsv = 0;
+    ifbu = 0;
+    ifbv = 0;
+    p = -one;
+    mumin = 4;
+    if (ider[0] >= 0) { mumin = mumin - 1; }
+    if ((iopt[1] == 1) && (ider[1] == 1)) { mumin = mumin - 1; }
+    if (ider[2] >= 0) { mumin = mumin - 1; }
+    if ((iopt[2] == 1) && (ider[3] == 1)) { mumin = mumin - 1; }
+    if (mumin == 0) { mumin = 1; }
+    pi = 3.1415926535897932384626433832795;
+    per = pi + pi;
+    vb = v[0];
+    ve = vb + per;
+    //////////////////////////////////////////////////////////////////////////
+    // part 1: determination of the number of knots and their position.     //
+    // ****************************************************************     //
+    //  given a set of knots we compute the least-squares spline sinf(u,v)  //
+    //  and the corresponding sum of squared residuals fp = f(p=inf).       //
+    //  if iopt(1)=-1  sinf(u,v) is the requested approximation.            //
+    //  if iopt(1)>=0  we check whether we can accept the knots:            //
+    //    if fp <= s we will continue with the current set of knots.        //
+    //    if fp >  s we will increase the number of knots and compute the   //
+    //       corresponding least-squares spline until finally fp <= s.      //
+    //    the initial choice of knots depends on the value of s and iopt.   //
+    //    if s=0 we have spline interpolation; in that case the number of   //
+    //     knots in the u-direction equals nu=numax=mu+6+iopt(2)+iopt(3)    //
+    //     and in the v-direction nv=nvmax=mv+7.                            //
+    //    if s>0 and                                                        //
+    //      iopt(1)=0 we first compute the least-squares polynomial,i.e. a  //
+    //       spline without interior knots : nu=8 ; nv=8.                   //
+    //      iopt(1)=1 we start with the set of knots found at the last call //
+    //       of the routine, except for the case that s > fp0; then we      //
+    //       compute the least-squares polynomial directly.                 //
+    //////////////////////////////////////////////////////////////////////////
+    if (iopt[0] >= 0) {
+        // acc denotes the absolute tolerance for the root of f(p)=s.
+        acc = tol * s;
+        // numax and nvmax denote the number of knots needed for interpolation.
+        numax = mu + 6 + iopt[1] + iopt[2];
+        nvmax = mv + 7;
+        nue = (numax < nuest) ? numax : nuest;
+        nve = (nvmax < nvest) ? nvmax : nvest;
+        if (s > 0.0) {
+            // if s>0 our initial choice of knots depends on the value of iopt(1).
+            // 100
+            *ier = 0;
+            if (iopt[0] != 0) {
+                step[0] = -step[0];
+                step[1] = -step[1];
+                if (*fp0 > s) {
+                    // if iopt(1)=1 and fp0 > s we start computing the least-squares spline
+                    // according to the set of knots found at the last call of the routine.
+                    // we determine the number of grid coordinates u(i) inside each knot
+                    // interval (tu(l),tu(l+1)).
+                    l = 5;
+                    j = 1;
+                    nrdatu[0] = 0;
+                    mu0 = 2 - iopt[1];
+                    mu1 = mu - 1 + iopt[2];
+                    for (i = mu0; i <= mu1; i++) {
+                        nrdatu[j - 1] = nrdatu[j - 1] + 1;
+                        if (u[i - 1] >= tu[l - 1]) {
+                            nrdatu[j - 1] = nrdatu[j - 1] - 1;
+                            l = l + 1;
+                            j = j + 1;
+                            nrdatu[j - 1] = 0;
+                        }
+                    }
+                    // we determine the number of grid coordinates v(i) inside each knot
+                    // interval (tv(l),tv(l+1)).
+                    l = 5;
+                    j = 1;
+                    nrdatv[0] = 0;
+                    for (i = 2; i <= mv; i++) {
+                        nrdatv[j - 1] = nrdatv[j - 1] + 1;
+                        if (v[i - 1] >= tv[l - 1]) {
+                            nrdatv[j - 1] = nrdatv[j - 1] - 1;
+                            l = l + 1;
+                            j = j + 1;
+                            nrdatv[j - 1] = 0;
+                        }
+                    }
+                    idd[0] = ider[0];
+                    idd[1] = ider[1];
+                    idd[2] = ider[2];
+                    idd[3] = ider[3];
+                } else {
+                    // if iopt(1)=0 or iopt(1)=1 and s >= fp0,we start computing the least-
+                    // squares polynomial (which is a spline without interior knots).
+                    // 115
+                    *ier = -2;
+                    idd[0] = ider[0];
+                    idd[1] = 1;
+                    idd[2] = ider[2];
+                    idd[3] = 1;
+                    *nu = 8;
+                    *nv = 8;
+                    nrdatu[0] = mu - 2 + iopt[1] + iopt[2];
+                    nrdatv[0] = mv - 1;
+                    *lastdi = 0;
+                    *nplusu = 0;
+                    *nplusv = 0;
+                    *fp0 = 0.0;
+                    *fpold = 0.0;
+                    *reducu = 0.0;
+                    *reducv = 0.0;
+                }
+            } else {
+                // if iopt(1)=0 or iopt(1)=1 and s >= fp0,we start computing the least-
+                // squares polynomial (which is a spline without interior knots).
+                // 115
+                *ier = -2;
+                idd[0] = ider[0];
+                idd[1] = 1;
+                idd[2] = ider[2];
+                idd[3] = 1;
+                *nu = 8;
+                *nv = 8;
+                nrdatu[0] = mu - 2 + iopt[1] + iopt[2];
+                nrdatv[0] = mv - 1;
+                *lastdi = 0;
+                *nplusu = 0;
+                *nplusv = 0;
+                *fp0 = 0.0;
+                *fpold = 0.0;
+                *reducu = 0.0;
+                *reducv = 0.0;
+            }
+        } else {
+            // if s = 0, s(u,v) is an interpolating spline.
+            *nu = numax;
+            *nv = nvmax;
+            // test whether the required storage space exceeds the available one.
+            if ((*nu > nuest) || (*nv > nvest)) {
+                *ier = 1;
+                return;
+            }
+            // find the position of the knots in the v-direction.
+            for (l = 1; l <= mv; l++) {
+                tv[l + 2] = v[l - 1];
+            }
+            tv[mv + 3] = ve;
+            l1 = mv - 2;
+            l2 = mv + 5;
+            for (i = 1; i <= 3; i++) {
+                tv[i - 1] = v[l1 - 1] - per;
+                tv[l2 - 1] = v[i] + per;
+                l1 = l1 + 1;
+                l2 = l2 + 1;
+            }
+            // if not all the derivative values g(i,j) are given, we will first
+            // estimate these values by computing a least-squares spline
+            idd[0] = ider[0];
+            if (idd[0] == 0) { idd[0] = 1; }
+            if (idd[0] > 0) { dr[0] = r0; }
+            idd[1] = ider[1];
+            idd[2] = ider[2];
+            if (idd[2] == 0) { idd[2] = 1; }
+            if (idd[2] > 0) { dr[3] = r1; }
+            idd[3] = ider[3];
+            if ((ider[0] < 0) || (ider[2] < 0) ||
+                ((iopt[1] != 0) && (ider[1] == 0)) &&
+                (!((iopt[2] == 0) || (ider[3] != 0)))) {
+                // we set up the knots in the u-direction for computing the least-squares
+                // spline.
+                i1 = 3;
+                i2 = mu - 2;
+                *nu = 4;
+                for (i = 1; i <= mu; i++) {
+                    if (i1 > i2) {
+                        break;
+                    } else {
+                        *nu = *nu + 1;
+                        tu[*nu - 1] = u[i1 - 1];
+                        i1 = i1 + 2;
+                    }
+                }
+                for (i = 1; i <= 4; i++) {
+                    tu[i - 1] = 0.0;
+                    *nu = *nu + 1;
+                    tu[*nu - 1] = pi;
+                }
+                // we compute the least-squares spline for estimating the derivatives.
+                fpopsp(ifsu, ifsv, ifbu, ifbv, u, mu, v, mv, r, mr, r0, r1, dr, iopt, idd,
+                        tu, *nu, tv, *nv, nuest, nvest, p, step, c, nc, fp, fpintu, fpintv, nru, nrv,
+                        wrk, lwrk);
+                ifsu = 0;
+            }
+            // if all the derivatives at the origin are known, we compute the
+            // interpolating spline.
+            // we set up the knots in the u-direction, needed for interpolation.
+            nn = numax - 8;
+            if (nn != 0) {
+                ju = 2 - iopt[1];
+                for (l = 1; l <= nn; l++) {
+                    tu[l + 3] = u[ju - 1];
+                    ju = ju + 1;
+                }
+
+                *nu = numax;
+                l = *nu;
+                for (i = 1; i <= 4; i++) {
+                    tu[i - 1] = 0.0;
+                    tu[l - 1] = pi;
+                    l = l - 1;
+                }
+            }
+            // we compute the interpolating spline.
+            fpopsp(ifsu, ifsv, ifbu, ifbv, u, mu, v, mv, r, mr, r0, r1, dr, iopt, idd,
+                   tu, *nu, tv, *nv, nuest, nvest, p, step, c, nc, fp, fpintu, fpintv, nru, nrv,
+                   wrk, lwrk);
+            *ier = -1;
+            *fp = 0.0;
+            return;
+        }
+    }
+    // main loop for the different sets of knots.mpm=mu+mv is a save upper
+    // bound for the number of trials.
+    mpm = mu + mv;
+    for (iter = 1; iter <= mpm; iter++) {
+        // find nrintu (nrintv) which is the number of knot intervals in the
+        // u-direction (v-direction).
+        nrintu = *nu - 7;
+        nrintv = *nv - 7;
+        // find the position of the additional knots which are needed for the
+        // b-spline representation of s(u,v).
+        i = *nu;
+        for (j = 1; j <= 4; j++) {
+            tu[j - 1] = 0.0;
+            tu[i - 1] = pi;
+            i = i - 1;
+        }
+        l1 = 4;
+        l2 = l1;
+        l3 = *nv - 3;
+        l4 = l3;
+        tv[l2 - 1] = vb;
+        tv[l3 - 1] = ve;
+        for (j = 1; j <= 3; j++) {
+            l1 = l1 + 1;
+            l2 = l2 - 1;
+            l3 = l3 + 1;
+            l4 = l4 - 1;
+            tv[l2 - 1] = tv[l4 - 1] - per;
+            tv[l3 - 1] = tv[l1 - 1] + per;
+        }
+        // find an estimate of the range of possible values for the optimal
+        // derivatives at the origin.
+        ktu = nrdatu[0] + 2 - iopt[1];
+        if (ktu < mumin) { ktu = mumin; }
+        if (ktu != *lastu0) {
+            rmin = r0;
+            rmax = r0;
+            l = mv * ktu;
+            for (i = 1; i <= l; i++) {
+                if (r[i - 1] < rmin) { rmin = r[i - 1]; }
+                if (r[i - 1] > rmax) { rmax = r[i - 1]; }
+            }
+            step[0] = rmax - rmin;
+            *lastu0 = ktu;
+        }
+        ktu = nrdatu[nrintu - 1] + 2 - iopt[2];
+        if (ktu < mumin) { ktu = mumin; }
+        if (ktu != *lastu1) {
+            rmin = r1;
+            rmax = r1;
+            l = mv * ktu;
+            j = mr;
+            for (i = 1; i <= l; i++) {
+                if (r[j - 1] < rmin) { rmin = r[j - 1]; }
+                if (r[j - 1] > rmax) { rmax = r[j - 1]; }
+                j = j - 1;
+            }
+            step[1] = rmax - rmin;
+            *lastu1 = ktu;
+        }
+        // find the least-squares spline sinf(u,v).
+        fpopsp(ifsu, ifsv, ifbu, ifbv, u, mu, v, mv, r, mr, r0, r1, dr, iopt, idd,
+               tu, *nu, tv, *nv, nuest, nvest, p, step, c, nc, fp, fpintu, fpintv, nru, nrv,
+               wrk, lwrk);
+        if (step[0] < 0.0) { step[0] = -step[0]; }
+        if (step[1] < 0.0) { step[1] = -step[1]; }
+        if (*ier == -2) { *fp0 = *fp; }
+        // test whether the least-squares spline is an acceptable solution.
+        if (iopt[0] < 0) { return; }
+        fpms = *fp - s;
+        if (fabs(fpms) < acc) { return; }
+        // if f(p=inf) < s, we accept the choice of knots.
+        if (fpms < 0.0) { break; }
+        // if nu=numax and nv=nvmax, sinf(u,v) is an interpolating spline
+        if ((*nu == numax) && (*nv == nvmax)) {
+            *ier = -1;
+            *fp = 0.0;
+            return;
+        }
+        // increase the number of knots.
+        // if nu=nue and nv=nve we cannot further increase the number of knots
+        // because of the storage capacity limitation.
+        if ((*nu == nue) && (*nv == nve)) {
+            *ier = 1;
+            return;
+        }
+        if (ider[0] == 0) { fpintu[0] = fpintu[0] + (r0 - dr[0]) * (r0 - dr[0]); }
+        if (ider[2] == 0) { fpintu[nrintu - 1] = fpintu[nrintu - 1] + (r1 - dr[3]) * (r1 - dr[3]); }
+        *ier = 0;
+        // adjust the parameter reducu or reducv according to the direction
+        // in which the last added knots were located.
+        int goto_230 = 0;
+        if (*lastdi < 0) {
+            *reducu = *fpold - *fp;
+        } else if (*lastdi == 0) {
+            nplv = 3;
+            idd[1] = ider[1];
+            idd[3] = ider[3];
+            *fpold = *fp;
+            goto_230 = 1;
+        } else {
+            *reducv = *fpold - *fp;
+        }
+        if (!goto_230) {
+            // store the sum of squared residuals for the current set of knots.
+            *fpold = *fp;
+            // find nplu, the number of knots we should add in the u-direction.
+            nplu = 1;
+            if (*nu != 8) {
+                npl1 = *nplusu * 2;
+                rn = (double)(*nplusu);
+                if (*reducu > acc) { npl1 = (int)(rn * fpms / (*reducu)); }
+                int max1 = (npl1 > *nplusu / 2) ? npl1 : *nplusu / 2;
+                int max2 = (max1 > 1) ? max1 : 1;
+                int min1 = (*nplusu * 2 < max2) ? *nplusu * 2 : max2;
+                nplu = min1;
+            }
+            // find nplv, the number of knots we should add in the v-direction.
+            nplv = 3;
+            if (*nv != 8) {
+                npl1 = *nplusv * 2;
+                rn = (double)(*nplusv);
+                if (*reducv > acc) { npl1 = (int)(rn * fpms / (*reducv)); }
+                int max1 = (npl1 > *nplusv / 2) ? npl1 : *nplusv / 2;
+                int max2 = (max1 > 1) ? max1 : 1;
+                int min1 = (*nplusv * 2 < max2) ? *nplusv * 2 : max2;
+                nplv = min1;
+            }
+            // test whether we are going to add knots in the u- or v-direction.
+            if (nplu < nplv) {
+                goto_230 = 0;
+            } else if (nplu == nplv) {
+                if (*lastdi < 0) {
+                    goto_230 = 1;
+                } else {
+                    goto_230 = 0;
+                }
+            } else {
+                goto_230 = 1;
+            }
+        }
+        if (!goto_230) {
+            if (*nu != nue) {
+                // addition in the u-direction.
+                *lastdi = -1;
+                *nplusu = nplu;
+                ifsu = 0;
+                istart = 0;
+                if (iopt[1] == 0) { istart = 1; }
+                for (l = 1; l <= *nplusu; l++) {
+                    // add a new knot in the u-direction
+                    fpknot(u, mu, tu, nu, fpintu, nrdatu, nrintu, nuest, istart);
+                    // test whether we cannot further increase the number of knots in the
+                    // u-direction.
+                    if (*nu == nue) {
+                        break;
+                    }
+                }
+                continue;
+            }
+            goto_230 = 1;
+        }
+        if (goto_230) {
+            if (*nv != nve) {
+                // addition in the v-direction.
+                *lastdi = 1;
+                *nplusv = nplv;
+                ifsv = 0;
+                for (l = 1; l <= *nplusv; l++) {
+                    // add a new knot in the v-direction.
+                    fpknot(v, mv, tv, nv, fpintv, nrdatv, nrintv, nvest, 1);
+                    // test whether we cannot further increase the number of knots in the
+                    // v-direction.
+                    if (*nv == nve) {
+                        break;
+                    }
+                }
+                continue;
+            }
+            if (*nu != nue) {
+                // addition in the u-direction.
+                *lastdi = -1;
+                *nplusu = nplu;
+                ifsu = 0;
+                istart = 0;
+                if (iopt[1] == 0) { istart = 1; }
+                for (l = 1; l <= *nplusu; l++) {
+                    // add a new knot in the u-direction
+                    fpknot(u, mu, tu, nu, fpintu, nrdatu, nrintu, nuest, istart);
+                    // test whether we cannot further increase the number of knots in the
+                    // u-direction.
+                    if (*nu == nue) {
+                        break;
+                    }
+                }
+                continue;
+            }
+        }
+    }
+    // test whether the least-squares polynomial is a solution of our
+    // approximation problem.
+    if (*ier == -2) {
+        return;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    // part 2: determination of the smoothing spline sp(u,v)                //
+    // *****************************************************                //
+    //  we have determined the number of knots and their position. we now   //
+    //  compute the b-spline coefficients of the smoothing spline sp(u,v).  //
+    //  this smoothing spline depends on the parameter p in such a way that //
+    //    f(p) = sumi=1,mu(sumj=1,mv((z(i,j)-sp(u(i),v(j)))**2)             //
+    //  is a continuous, strictly decreasing function of p. moreover the    //
+    //  least-squares polynomial corresponds to p=0 and the least-squares   //
+    //  spline to p=infinity. then iteratively we have to determine the     //
+    //  positive value of p such that f(p)=s. the process which is proposed //
+    //  here makes use of rational interpolation. f(p) is approximated by a //
+    //  rational function r(p)=(u*p+v)/(p+w); three values of p (p1,p2,p3)  //
+    //  with corresponding values of f(p) (f1=f(p1)-s,f2=f(p2)-s,f3=f(p3)-s)//
+    //  are used to calculate the new value of p such that r(p)=s.          //
+    //  convergence is guaranteed by taking f1 > 0 and f3 < 0.              //
+    //////////////////////////////////////////////////////////////////////////
+    // initial value for p.
+    p1 = 0.0;
+    f1 = *fp0 - s;
+    p3 = -one;
+    f3 = fpms;
+    p = one;
+    for (i = 1; i <= 6; i++) {
+        drr[i - 1] = dr[i - 1];
+    }
+    ich1 = 0;
+    ich3 = 0;
+    // iteration process to find the root of f(p)=s.
+    for (iter = 1; iter <= maxit; iter++) {
+        // find the smoothing spline sp(u,v) and the corresponding sum f(p).
+        fpopsp(ifsu, ifsv, ifbu, ifbv, u, mu, v, mv, r, mr, r0, r1, drr, iopt, idd,
+               tu, *nu, tv, *nv, nuest, nvest, p, step, c, nc, fp, fpintu, fpintv, nru, nrv,
+               wrk, lwrk);
+        // test whether the approximation sp(u,v) is an acceptable solution.
+        fpms = *fp - s;
+        if (fabs(fpms) < acc) {
+            return;
+        }
+        // test whether the maximum allowable number of iterations has been
+        // reached.
+        if (iter == maxit) {
+            *ier = 3;
+            return;
+        }
+        // carry out one more step of the iteration process.
+        p2 = p;
+        f2 = fpms;
+        if (ich3 == 0) {
+            if ((f2 - f3) > acc) {
+                if (f2 < 0.0) { ich3 = 1; }
+            } else {
+                // our initial choice of p is too large.
+                p3 = p2;
+                f3 = f2;
+                p = p * con4;
+                if (p <= p1) { p = p1 * con9 + p2 * con1; }
+                continue;
+            }
+        }
+        if (ich1 == 0) {
+            if ((f1 - f2) > acc) {
+                if (f2 > 0.0) { ich1 = 1; }
+            } else {
+                // our initial choice of p is too small
+                p1 = p2;
+                f1 = f2;
+                p = p / con4;
+                if (p3 >= 0.0) {
+                    if (p >= p3) { p = p2 * con1 + p3 * con9; }
+                }
+                continue;
+            }
+        }
+        // test whether the iteration process proceeds as theoretically
+        // expected.
+        if ((f2 >= f1) || (f2 <= f3)) {
+            *ier = 2;
+            return;
+        }
+        // find the new value of p.
+        p = fprati(&p1, &f1, &p2, &f2, &p3, &f3);
+    }
 }
 
 
@@ -1712,63 +2368,6 @@ void pardeu(const double *tx, int nx, const double *ty, int ny, double *c,
     for (int i = 1; i <= m; i++) {
         fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy], iwrk, &iwrk[1]);
     }
-}
-
-
-void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
-            int kx, int ky, const double *x, const double *y, double *z, int m,
-            double *wrk, int lwrk, int *ier)
-{
-
-    int lwest = kx + ky + 2;
-
-    // before starting computations a data check is made. if the input data
-    // are invalid control is immediately repassed to the calling program.
-    *ier = 10;
-    if (lwrk < lwest) { return; }
-    if (m < 1) { return; }
-
-    *ier = 0;
-    for (int i = 1; i <= m; i++) {
-        fpbisp(tx, nx, ty, ny, c, kx, ky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], wrk, &wrk[kx + 1], wrk, &wrk[1]);
-    }
-}
-
-
-void bispev(const double *tx, int nx, const double *ty, int ny, const double *c,
-            int kx, int ky, const double *x, int mx, const double *y, int my,
-            double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier)
-{
-    int i, iw, lwest;
-
-    // before starting computations a data check is made. if the input data
-    // are invalid control is immediately repassed to the calling program.
-    *ier = 10;
-    lwest = (kx + 1) * mx + (ky + 1) * my;
-    if (lwrk < lwest || kwrk < (mx + my) || mx < 1 || my < 1) {
-        return;
-    }
-
-    if (mx > 1) {
-        for (i = 2; i <= mx; i++) {
-            if (x[i - 1] < x[i - 2]) {
-                return;
-            }
-        }
-    }
-
-    if (my > 1) {
-        for (i = 2; i <= my; i++) {
-            if (y[i - 1] < y[i - 2]) {
-                return;
-            }
-        }
-    }
-
-    *ier = 0;
-    // Partition the working space and evaluate the bivariate spline
-    iw = mx * (kx + 1) + 1;
-    fpbisp(tx, nx, ty, ny, c, kx, ky, x, mx, y, my, z, wrk, &wrk[iw - 1], iwrk, &iwrk[mx - 1]);
 }
 
 
