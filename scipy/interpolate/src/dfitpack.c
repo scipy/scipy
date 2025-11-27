@@ -42,7 +42,6 @@
 // void fptrpe();
 // void insert();
 // void parcur();
-// void pardtc();
 // void parsur();
 // void percur();
 // void pogrid();
@@ -110,6 +109,7 @@ void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
 void   fpsysy(double* restrict a, const int n, double* restrict g);
 void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
 void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   pardtc(const double* tx, const int nx, const double* ty, const int ny, const double* c, const int kx, const int ky, const int nux, const int nuy, double* newc, int* ier);
 void   spgrid(const int *iopt, const int *ider, const int mu, const double *u, const int mv, const double *v, const double *r, const double r0, const double r1, const double s, const int nuest, const int nvest, int *nu, double *tu, int *nv, double *tv, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier);
 void   sphere(const int iopt, const int m, const double *teta, const double *phi, const double *r, const double *w, const double s, const int ntest, const int npest, const double eps, int *nt, double *tt, int *np, double *tp, double *c, double *fp, double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk, int *ier);
 void   surfit(int iopt, int m, double* x, double* y, double* z, double* w,
@@ -4489,6 +4489,92 @@ void pardeu(const double *tx, int nx, const double *ty, int ny, double *c,
     for (int i = 1; i <= m; i++) {
         fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy], iwrk, &iwrk[1]);
     }
+}
+
+
+void
+pardtc(const double* tx, const int nx, const double* ty, const int ny, const double* c,
+       const int kx, const int ky, const int nux, const int nuy, double* newc, int* ier)
+{
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if ((nux < 0) || (nux >= kx)) { return; }
+    if ((nuy < 0) || (nuy >= ky)) { return; }
+    int kx1 = kx + 1;
+    int ky1 = ky + 1;
+    int nkx1 = nx - kx1;
+    int nky1 = ny - ky1;
+    int nc = nkx1 * nky1;
+    *ier = 0;
+    int nxx = nkx1;
+    int nyy = nky1;
+    int newkx = kx;
+    int newky = ky;
+    // the partial derivative of order (nux,nuy) of a bivariate spline of
+    // degrees kx,ky is a bivariate spline of degrees kx-nux,ky-nuy.
+    // we calculate the b-spline coefficients of this spline
+    // that is to say newkx = kx - nux, newky = ky - nuy
+    for (int i = 0; i < nc; i++) { newc[i] = c[i]; }
+
+    if (nux != 0) {
+        int lx = 1;
+        for (int j = 1; j <= nux; j++) {
+            double ak = newkx;
+            nxx--;
+            int l1 = lx;
+            int m0 = 1;
+            for (int i = 1; i <= nxx; i++) {
+                l1++;
+                int l2 = l1 + newkx;
+                double fac = tx[l2 - 1] - tx[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                for (int m = 1; m <= nyy; m++) {
+                    int m1 = m0 + nyy;
+                    newc[m0 - 1] = (newc[m1 - 1] - newc[m0 - 1]) * ak / fac;
+                    m0++;
+                }
+            }
+            lx++;
+            newkx--;
+        }
+    }
+
+    if (nuy != 0) {
+        int ly = 1;
+        for (int j = 1; j <= nuy; j++) {
+            double ak = newky;
+            nyy--;
+            int l1 = ly;
+            for (int i = 1; i <= nyy; i++) {
+                l1++;
+                int l2 = l1 + newky;
+                double fac = ty[l2 - 1] - ty[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                int m0 = i;
+                for (int m = 1; m <= nxx; m++) {
+                    int m1 = m0 + 1;
+                    newc[m0 - 1] = (newc[m1 - 1] - newc[m0 - 1]) * ak / fac;
+                    m0 += nky1;
+                }
+            }
+            ly++;
+            newky--;
+        }
+
+        int m0 = nyy;
+        int m1 = nky1;
+        for (int m = 2; m <= nxx; m++) {
+            for (int i = 1; i <= nyy; i++) {
+                m0++;
+                m1++;
+                newc[m0 - 1] = newc[m1 - 1];
+            }
+            m1 += nuy;
+        }
+    }
+
+    return;
 }
 
 
