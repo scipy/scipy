@@ -29,112 +29,117 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "ipython"]
 solve-group = "default"
 
-[environments.build-debug]
-# tasks: build-debug
-features = ["build-deps", "build-debug"]
-solve-group = "debug"
+[environments.profile]
+# tasks: profile-shell
+features = ["run-deps", "profile"]
+solve-group = "default"
 
-[environments.lldb]
-# tasks: lldb
-features = ["run-deps", "test-deps", "lldb"]
-solve-group = "debug"
+# [environments.build-debug]
+# # tasks: build-debug
+# features = ["build-deps", "build-debug"]
+# solve-group = "debug"
 
-[environments.gdb]
-# tasks: gdb
-features = ["run-deps", "test-deps", "gdb"]
-solve-group = "debug"
+# [environments.lldb]
+# # tasks: lldb
+# features = ["run-deps", "test-deps", "lldb"]
+# solve-group = "debug"
 
-[environments.lint]
-# tasks: lint, check-python-h, tach-check, tach-check-external
-features = ["lint"]
+# [environments.gdb]
+# # tasks: gdb
+# features = ["run-deps", "test-deps", "gdb"]
+# solve-group = "debug"
 
-# TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
-# and create a non-default solve group with minimal dependencies
-# to more reliably test the very latest versions of core dependencies
-[environments.build-cpu]
-# tasks: build-cpu
-features = ["build-deps", "build-cpu"]
-solve-group = "array-api-cpu"
+# [environments.lint]
+# # tasks: lint, check-python-h, tach-check, tach-check-external
+# features = ["lint"]
 
-[environments.array-api-strict]
-# tasks: test-strict
-features = ["run-deps", "test-deps", "array_api_strict", "array_api_strict-tasks"]
-solve-group = "array-api-cpu"
+# # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
+# # and create a non-default solve group with minimal dependencies
+# # to more reliably test the very latest versions of core dependencies
+# [environments.build-cpu]
+# # tasks: build-cpu
+# features = ["build-deps", "build-cpu"]
+# solve-group = "array-api-cpu"
 
-[environments.dask-cpu]
-# tasks: test-dask
-features = ["run-deps", "test-deps", "dask", "dask-tasks"]
-solve-group = "array-api-cpu"
+# [environments.array-api-strict]
+# # tasks: test-strict
+# features = ["run-deps", "test-deps", "array_api_strict", "array_api_strict-tasks"]
+# solve-group = "array-api-cpu"
 
-[environments.jax-cpu]
-# tasks: test-jax
-features = ["run-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
-solve-group = "array-api-cpu"
+# [environments.dask-cpu]
+# # tasks: test-dask
+# features = ["run-deps", "test-deps", "dask", "dask-tasks"]
+# solve-group = "array-api-cpu"
 
-[environments.torch-cpu]
-# tasks: test-torch, test-torch-float32
-features = ["run-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
-solve-group = "array-api-cpu"
+# [environments.jax-cpu]
+# # tasks: test-jax
+# features = ["run-deps", "test-deps", "mkl", "jax-cpu", "jax-cpu-tasks"]
+# solve-group = "array-api-cpu"
 
-[environments.array-api-cpu]
-# tasks: test-cpu
-features = ["run-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
-solve-group = "array-api-cpu"
+# [environments.torch-cpu]
+# # tasks: test-torch, test-torch-float32
+# features = ["run-deps", "test-deps", "mkl", "torch-cpu", "torch-cpu-tasks"]
+# solve-group = "array-api-cpu"
 
-[environments.build-cuda]
-# tasks: build-cuda
-# note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
-features = ["build-deps", "build-cuda", "py-cuda"]
+# [environments.array-api-cpu]
+# # tasks: test-cpu
+# features = ["run-deps", "test-deps", "test-cpu", "mkl", "array_api_strict", "dask", "jax-cpu", "marray", "torch-cpu"]
+# solve-group = "array-api-cpu"
 
-[environments.cupy]
-# tasks: test-cupy
-features = ["run-deps", "test-deps", "cuda13", "py-cuda", "cupy"]
-solve-group = "cuda13"
+# [environments.build-cuda]
+# # tasks: build-cuda
+# # note: py-cuda feature aims to ensure compatibility with both cuda12 and cuda13 solve groups
+# features = ["build-deps", "build-cuda", "py-cuda"]
 
-[environments.jax-cuda]
-# tasks: test-jax-cuda
-features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
-solve-group = "cuda12"
+# [environments.cupy]
+# # tasks: test-cupy
+# features = ["run-deps", "test-deps", "cuda13", "py-cuda", "cupy"]
+# solve-group = "cuda13"
 
-[environments.torch-cuda]
-# tasks: test-torch-cuda
-features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
-solve-group = "cuda12"
+# [environments.jax-cuda]
+# # tasks: test-jax-cuda
+# features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "jax-cuda"]
+# solve-group = "cuda12"
 
-[environments.build-accelerate-lp64]
-# tasks: build-accelerate-lp64
-features = ["build-deps", "accelerate", "build-accelerate-lp64"]
-solve-group = "accelerate-lp64"
+# [environments.torch-cuda]
+# # tasks: test-torch-cuda
+# features = ["run-deps", "test-deps", "cuda12", "py-cuda", "mkl", "torch-cuda"]
+# solve-group = "cuda12"
 
-[environments.accelerate-lp64]
-# tasks: test-accelerate-lp64
-features = ["run-deps", "test-deps", "accelerate", "accelerate-lp64"]
-solve-group = "accelerate-lp64"
+# [environments.build-accelerate-lp64]
+# # tasks: build-accelerate-lp64
+# features = ["build-deps", "accelerate", "build-accelerate-lp64"]
+# solve-group = "accelerate-lp64"
 
-[environments.build-accelerate-ilp64]
-# tasks: build-accelerate-ilp64
-features = ["build-deps", "accelerate", "build-accelerate-ilp64"]
-solve-group = "accelerate-ilp64"
+# [environments.accelerate-lp64]
+# # tasks: test-accelerate-lp64
+# features = ["run-deps", "test-deps", "accelerate", "accelerate-lp64"]
+# solve-group = "accelerate-lp64"
 
-[environments.accelerate-ilp64]
-# tasks: test-accelerate-ilp64
-features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
-solve-group = "accelerate-ilp64"
+# [environments.build-accelerate-ilp64]
+# # tasks: build-accelerate-ilp64
+# features = ["build-deps", "accelerate", "build-accelerate-ilp64"]
+# solve-group = "accelerate-ilp64"
 
-[environments.py311-system-libs-osx]
-# tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-sparse", "system-libs"]
+# [environments.accelerate-ilp64]
+# # tasks: test-accelerate-ilp64
+# features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
+# solve-group = "accelerate-ilp64"
 
-[environments.scipy-openblas]
-# tasks: build-scipy-openblas, test-scipy-openblas
-features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
+# [environments.py311-system-libs-osx]
+# # tasks: build-system-libs, test-system-libs
+# features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-sparse", "system-libs"]
+
+# [environments.scipy-openblas]
+# # tasks: build-scipy-openblas, test-scipy-openblas
+# features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
 
 ### Default dependencies (included in all environments) ###
 
 [dependencies]
 spin = "*"
-python = "*"
+python = "3.13.*"
 
 
 ### Default run dependencies (for environments which run SciPy itself) ###
@@ -241,6 +246,34 @@ ipython = "*"
 cmd = "spin ipython --no-build"
 depends-on = "build"
 description = "Launch IPython"
+
+
+### Profiling ###
+
+[feature.profile.dependencies]
+py-spy = "*"
+
+[feature.profile.pypi-dependencies]
+flamegraph.git = "https://github.com/nickodell/python-flamegraph.git"
+
+[feature.profile.tasks._log_flamegraph]
+cmd = "spin run 'cd tools && python -m flamegraph -o {{ log_name }}.log {{ script_name }}.py'"
+args = ["script_name", "log_name"]
+depends-on = "build"
+
+[feature.profile.tasks.flamegraph]
+cmd = "./flamegraph.pl {{ log_name }}.log > {{ log_name }}.svg"
+args = ["script_name", "log_name"]
+cwd = "tools"
+depends-on = [{ task = "_log_flamegraph", args = ["{{ script_name }}", "{{ log_name }}"]}]
+description = "Generate a flamegraph {{ log_name }}.svg from {{ script_name }}.py"
+
+[feature.profile.tasks.py-spy]
+cmd = "sudo py-spy record -o {{ log_name }}.svg -- python {{ script_name }}.py"
+args = ["script_name", "log_name"]
+cwd = "tools"
+depends-on = "build"
+description = "Generate a py-spy flamegraph {{ log_name }}.svg from {{ script_name }}.py"
 
 
 ### Debugging ###
