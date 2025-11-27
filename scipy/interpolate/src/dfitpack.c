@@ -1,67 +1,75 @@
 #include <math.h>
 
-// void clocur();
-// void cocosp();
-// void concon();
-// void concur();
-// void cualde();
-// void curev();
-// void curfit();
-// void evapol();
-// void fourco();
-// void fpader();
-// void fpadno();
-// void fpadpo();
-// void fpbfout();
-// void fpched();
-// void fpclos();
-// void fpcoco();
-// void fpcons();
-// void fpcosp();
-// void fpcsin();
-// void fpcurf();
-// void fpcuro();
-// void fpdeno();
-// void fpfrno();
-// void fpgrdi();
-// void fpgrpa();
-// void fpgrre();
-// void fpinst();
-// void fpopdi();
-// void fppara();
-// void fppasu();
-// void fpperi();
-// void fppocu();
-// void fppogr();
-// void fppola();
-// void fpregr();
-// void fprppo();
-// void fpseno();
-// void fpsuev();
-// void fptrnp();
-// void fptrpe();
-// void insert();
-// void parcur();
-// void parsur();
-// void percur();
-// void pogrid();
-// void polar();
-// void profil();
-// void regrid();
-// void spalde();
-// void splder();
-// void splev();
-// void splint();
-// void sproot();
-// void surev();
+// The following are not yet translated from the original FITPACK Fortran77 code.
+// clocur
+// cocosp
+// concon
+// concur
+// cualde
+// curev
+// curfit
+// evapol
+// fourco
+// fpader
+// fpadno
+// fpadpo
+// fpbfout
+// fpched
+// fpclos
+// fpcoco
+// fpcons
+// fpcosp
+// fpcsin
+// fpcurf
+// fpcuro
+// fpdeno
+// fpfrno
+// fpgrdi
+// fpgrpa
+// fpgrre
+// fpinst
+// fpopdi
+// fppara
+// fppasu
+// fpperi
+// fppocu
+// fppogr
+// fppola
+// fpregr
+// fprppo
+// fpseno
+// fpsuev
+// fptrnp
+// fptrpe
+// insert
+// parcur
+// parsur
+// percur
+// pogrid
+// polar
+// profil
+// regrid
+// spalde
+// splder
+// splev
+// splint
+// sproot
+// surev
 
 
-void   bispeu(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky, const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *ier);
-void   bispev(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky, const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
-void   dblint(double* tx, const int nx, double* ty, const int ny, double* c, const int kx, const int ky, const double xb, const double xe, const double yb, const double ye, double* wrk, double* result);
+
+/* Forward declarations                                                     */
+
+void   bispeu(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky,
+              const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *ier);
+void   bispev(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky,
+              const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   dblint(double* tx, const int nx, double* ty, const int ny, double* c, const int kx, const int ky, const double xb,
+              const double xe, const double yb, const double ye, double* wrk, double* result);
 void   fpback(double* a, double* z, const int n, const int k, double* c, const int nest);
 void   fpbacp(const double *a, const double *b, const double *z, const int n, const int k, double *c, const int k1, const int nest);
-void   fpbisp(const double *tx, const int nx, double *ty, const int ny, const double *c, const int kx, const int ky, const double *x, const int mx, const double *y, const int my, double *z, double *wx, double *wy, int *lx, int *ly);
+void   fpbisp(const double *tx, const int nx, double *ty, const int ny, const double *c, const int kx, const int ky, const double *x, const int mx,
+              const double *y, const int my, double *z, double *wx, double *wy, int *lx, int *ly);
 void   fpbspl(const double* t, const int n, const int k, const double x, const int l, double* h);
 void   fpchec(const double* x, const int m, const double* t, const int n, const int k, int* ier);
 void   fpchep(double* x, const int m, double* t, const int n, const int k, int* ier);
@@ -77,9 +85,14 @@ void   fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u
               double *c1, double *cosi, int *nru, int *nrv);
 void   fpintb(const double *t, int n, double *bint, const int nk1, const double x, const double y);
 void   fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdata, int* nrint, const int nest, const int istart);
-void   fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const double *u, const int mu, const double *v, const int mv, const double *r, const int mr, const double r0, const double r1, double *dr, const int *iopt, const int *ider, const double *tu, const int nu, const double *tv, const int nv, const int nuest, const int nvest, const double p, const double *step, double *c, const int nc, double *fp, double *fpu, double *fpv, int *nru, int *nrv, double *wrk, const int lwrk);
-void   fporde(const double* x, const double* y, const int m, const int kx, const int ky, const double* tx, const int nx, const double* ty, const int ny, int* nummer, int* index, const int nreg);
-void   fprank(const double* a, const double* f, const int n, const int m, const int na, const double tol, double* c, double* sq, int* rank, double* aa, double* ff, double* h);
+void   fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const double *u, const int mu, const double *v, const int mv,
+              const double *r, const int mr, const double r0, const double r1, double *dr, const int *iopt, const int *ider, const double *tu,
+              const int nu, const double *tv, const int nv, const int nuest, const int nvest, const double p, const double *step, double *c,
+              const int nc, double *fp, double *fpu, double *fpv, int *nru, int *nrv, double *wrk, const int lwrk);
+void   fporde(const double* x, const double* y, const int m, const int kx, const int ky, const double* tx, const int nx, const double* ty,
+              const int ny, int* nummer, int* index, const int nreg);
+void   fprank(const double* a, const double* f, const int n, const int m, const int na, const double tol, double* c, double* sq, int* rank,
+              double* aa, double* ff, double* h);
 double fprati(double* p1, double* f1, double* p2, double* f2, double* p3, double* f3);
 void   fprota(double c, double s, double *a, double *b);
 void   fprpsp(const int nt, const int np, const double *co, const double *si, double *c, double *f, const int ncoff);
@@ -89,34 +102,34 @@ void   fpsphe(const int iopt, const int m, const double *teta, const double *phi
               int *nt, double *tt, int *np, double *tp, double *c, double *fp, double *sup, double *fpint, double *coord,
               double *f, double *ff, double *row, double *coco, double *cosi, double *a, double *q, double *bt, double *bp,
               double *spt, double *spp, double *h, int *index, int *nummer, double *wrk, const int lwrk, int *ier);
-void   fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const double* v,
-              const int mv, const double* r, const int mr, const double r0, const double r1,
-              const double s, const int nuest, const int nvest, const double tol, const int maxit,
-              const int nc, int* nu, double* tu, int* nv, double* tv, double* c, double* fp,
-              double* fp0, double* fpold, double* reducu, double* reducv, double* fpintu,
-              double* fpintv, double* dr, double* step, int* lastdi, int* nplusu, int* nplusv,
-              int* lastu0, int* lastu1, int* nru, int* nrv, int* nrdatu, int* nrdatv, double* wrk,
-              const int lwrk, int* ier);
-void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
-              double xb, double xe, double yb, double ye, int kxx, int kyy,
-              double s, int nxest, int nyest, double eta, double tol, int maxit,
-              int nmax, int km1, int km2, int ib1, int ib3, int nc, int intest,
-              int nrest, int nx0, double* tx, int ny0, double* ty, double* c,
-              double* fp, double* fp0, double* fpint, double* coord, double* f,
-              double* ff, double* a, double* q, double* bx, double* by, double* spx,
-              double* spy, double* h, int* index, int* nummer, double* wrk,
+void   fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const double* v, const int mv, const double* r, const int mr,
+              const double r0, const double r1, const double s, const int nuest, const int nvest, const double tol, const int maxit,
+              const int nc, int* nu, double* tu, int* nv, double* tv, double* c, double* fp, double* fp0, double* fpold, double* reducu, double* reducv,
+              double* fpintu, double* fpintv, double* dr, double* step, int* lastdi, int* nplusu, int* nplusv, int* lastu0, int* lastu1, int* nru, int* nrv,
+              int* nrdatu, int* nrdatv, double* wrk, const int lwrk, int* ier);
+void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w, double xb, double xe, double yb, double ye, int kxx, int kyy,
+              double s, int nxest, int nyest, double eta, double tol, int maxit, int nmax, int km1, int km2, int ib1, int ib3, int nc, int intest,
+              int nrest, int nx0, double* tx, int ny0, double* ty, double* c, double* fp, double* fp0, double* fpint, double* coord, double* f,
+              double* ff, double* a, double* q, double* bx, double* by, double* spx, double* spy, double* h, int* index, int* nummer, double* wrk,
               int lwrk, int* ier);
 void   fpsysy(double* restrict a, const int n, double* restrict g);
-void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
-void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
-void   pardtc(const double* tx, const int nx, const double* ty, const int ny, const double* c, const int kx, const int ky, const int nux, const int nuy, double* newc, int* ier);
-void   spgrid(const int *iopt, const int *ider, const int mu, const double *u, const int mv, const double *v, const double *r, const double r0, const double r1, const double s, const int nuest, const int nvest, int *nu, double *tu, int *nv, double *tv, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier);
-void   sphere(const int iopt, const int m, const double *teta, const double *phi, const double *r, const double *w, const double s, const int ntest, const int npest, const double eps, int *nt, double *tt, int *np, double *tp, double *c, double *fp, double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk, int *ier);
-void   surfit(int iopt, int m, double* x, double* y, double* z, double* w,
-              double xb, double xe, double yb, double ye, int kx, int ky, double s,
-              int nxest, int nyest, int nmax, double eps, int* nx, double* tx,
-              int* ny, double* ty, double* c, double* fp, double* wrk1, int lwrk1,
+void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx,
+              const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy,
+              const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   pardtc(const double* tx, const int nx, const double* ty, const int ny, const double* c, const int kx, const int ky,
+              const int nux, const int nuy, double* newc, int* ier);
+void   spgrid(const int *iopt, const int *ider, const int mu, const double *u, const int mv, const double *v,
+              const double *r, const double r0, const double r1, const double s, const int nuest, const int nvest,
+              int *nu, double *tu, int *nv, double *tv, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier);
+void   sphere(const int iopt, const int m, const double *teta, const double *phi, const double *r, const double *w,
+              const double s, const int ntest, const int npest, const double eps, int *nt, double *tt, int *np, double *tp,
+              double *c, double *fp, double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk, int *ier);
+void   surfit(int iopt, int m, double* x, double* y, double* z, double* w, double xb, double xe, double yb, double ye, int kx, int ky, double s,
+              int nxest, int nyest, int nmax, double eps, int* nx, double* tx, int* ny, double* ty, double* c, double* fp, double* wrk1, int lwrk1,
               double* wrk2, int lwrk2, int* iwrk, int kwrk, int* ier);
+
+/****************************************************************************/
 
 
 void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
