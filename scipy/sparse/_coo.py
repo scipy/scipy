@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
+__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo', 'issparray_coo', 'issparse_coo']
 
 import math
 from warnings import warn
@@ -1640,6 +1640,58 @@ def isspmatrix_coo(x):
     False
     """
     return isinstance(x, coo_matrix)
+
+def issparray_coo(x):
+    """Is `x` of a coo_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a coo array
+
+    Returns
+    -------
+    bool
+        True if `x` is a coo array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, coo_matrix, csr_array, issparray_coo
+    >>> issparray_coo(coo_matrix([[5]]))
+    False
+    >>> issparray_coo(coo_array([[5]]))
+    True
+    >>> issparray_coo(csr_array([[5]]))
+    False
+    """
+    return isinstance(x, coo_array)
+
+def issparse_coo(x):
+    """Is `x` of coo format, i.e. of coo_array or coo_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of coo formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of coo format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_array, coo_matrix, csr_array, csr_matrix, issparse_coo
+    >>> issparse_coo(coo_matrix([[5]]))
+    True
+    >>> issparse_coo(coo_array([[5]]))
+    True
+    >>> issparse_coo(csr_array([[5]]))
+    False
+    >>> issparse_coo(csr_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _coo_base)
 
 
 # This namespace class separates array from matrix with isinstance

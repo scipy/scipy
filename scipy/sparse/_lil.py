@@ -3,7 +3,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
+__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil', 'issparray_lil', 'issparse_lil']
 
 from bisect import bisect_left
 
@@ -492,6 +492,58 @@ def isspmatrix_lil(x):
     False
     """
     return isinstance(x, lil_matrix)
+
+def issparray_lil(x):
+    """Is `x` of a lil_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a lil array
+
+    Returns
+    -------
+    bool
+        True if `x` is a lil array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import lil_array, lil_matrix, coo_array, issparray_lil
+    >>> issparray_lil(lil_matrix([[5]]))
+    False
+    >>> issparray_lil(lil_array([[5]]))
+    True
+    >>> issparray_lil(coo_array([[5]]))
+    False
+    """
+    return isinstance(x, lil_array)
+
+def issparse_lil(x):
+    """Is `x` of lil format, i.e. of lil_array or lil_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of lil formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of lil format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import lil_array, lil_matrix, coo_array, coo_matrix, issparse_lil
+    >>> issparse_lil(lil_matrix([[5]]))
+    True
+    >>> issparse_lil(lil_array([[5]]))
+    True
+    >>> issparse_lil(coo_array([[5]]))
+    False
+    >>> issparse_lil(coo_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _lil_base)
 
 
 # This namespace class separates array from matrix with isinstance

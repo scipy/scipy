@@ -5,6 +5,8 @@ import math
 import numpy as np
 import operator
 
+import scipy
+
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)

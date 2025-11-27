@@ -538,7 +538,7 @@ def test_issparray():
     assert isinstance(m, scipy.sparse.spmatrix)
     assert isinstance(a, scipy.sparse.sparray)
 
-    # Should only be true for sparse matrices, not sparse arrays
+    # Should only be true for sparse arrays, not sparse matrices
     assert scipy.sparse.issparray(a)
     assert not scipy.sparse.issparray(m)
 
@@ -562,11 +562,65 @@ def test_issparray():
 def test_isspmatrix_format(fmt, fn):
     m = scipy.sparse.eye(3, format=fmt)
     a = scipy.sparse.csr_array(m).asformat(fmt)
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.spmatrix)
     assert isinstance(a, scipy.sparse.sparray)
 
     # Should only be true for sparse matrices, not sparse arrays
     assert not fn(a)
+    assert fn(m)
+
+    # ndarray and array_likes are not sparse
+    assert not fn(a.todense())
+    assert not fn(m.todense())
+    
+    
+@pytest.mark.parametrize(
+    ("fmt", "fn"),
+    (
+        ("bsr", scipy.sparse.issparray_bsr),
+        ("coo", scipy.sparse.issparray_coo),
+        ("csc", scipy.sparse.issparray_csc),
+        ("csr", scipy.sparse.issparray_csr),
+        ("dia", scipy.sparse.issparray_dia),
+        ("dok", scipy.sparse.issparray_dok),
+        ("lil", scipy.sparse.issparray_lil),
+    ),
+)
+def test_issparray_format(fmt, fn):
+    m = scipy.sparse.eye(3, format=fmt)
+    a = scipy.sparse.csr_array(m).asformat(fmt)
+    assert isinstance(m, scipy.sparse.spmatrix)
+    assert isinstance(a, scipy.sparse.sparray)
+
+    # Should only be true for sparse arrays, not sparse matrices
+    assert fn(a)
+    assert not fn(m)
+
+    # ndarray and array_likes are not sparse
+    assert not fn(a.todense())
+    assert not fn(m.todense())
+    
+    
+@pytest.mark.parametrize(
+    ("fmt", "fn"),
+    (
+        ("bsr", scipy.sparse.issparse_bsr),
+        ("coo", scipy.sparse.issparse_coo),
+        ("csc", scipy.sparse.issparse_csc),
+        ("csr", scipy.sparse.issparse_csr),
+        ("dia", scipy.sparse.issparse_dia),
+        ("dok", scipy.sparse.issparse_dok),
+        ("lil", scipy.sparse.issparse_lil),
+    ),
+)
+def test_issparse_format(fmt, fn):
+    m = scipy.sparse.eye(3, format=fmt)
+    a = scipy.sparse.csr_array(m).asformat(fmt)
+    assert isinstance(m, scipy.sparse.spmatrix)
+    assert isinstance(a, scipy.sparse.sparray)
+
+    # Should be true for sparse arrays and sparse matrices
+    assert fn(a)
     assert fn(m)
 
     # ndarray and array_likes are not sparse

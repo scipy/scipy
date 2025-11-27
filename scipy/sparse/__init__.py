@@ -19,7 +19,8 @@ SciPy 2-D sparse array package for numeric data.
    This package is switching to an array interface, compatible with
    NumPy arrays, from the older matrix interface.  We recommend that
    you use the array objects (`bsr_array`, `coo_array`, etc.) for
-   all new work.
+   all new work. You can check if an object is a sparse array or 
+   sparse matrix using `issparray` and `isspmatrix`, respectively.
 
    When using the array interface, please note that:
 
@@ -117,8 +118,14 @@ Identifying sparse arrays
 .. autosummary::
    :toctree: generated/
 
-   issparse - Check if the argument is a sparse object (array or matrix).
    issparray
+   issparray_csc
+   issparray_csr
+   issparray_bsr
+   issparray_lil
+   issparray_dok
+   issparray_coo
+   issparray_dia
 
 
 Sparse matrix classes
@@ -158,7 +165,6 @@ Identifying sparse matrices
 .. autosummary::
    :toctree: generated/
 
-   issparse
    isspmatrix
    isspmatrix_csc
    isspmatrix_csr
@@ -167,6 +173,23 @@ Identifying sparse matrices
    isspmatrix_dok
    isspmatrix_coo
    isspmatrix_dia
+   
+
+Identifying sparse objects (arrays and matrices)
+------------------------------------------------
+
+
+.. autosummary::
+   :toctree: generated/
+
+   issparse
+   issparse_csc
+   issparse_csr
+   issparse_bsr
+   issparse_lil
+   issparse_dok
+   issparse_coo
+   issparse_dia
 
 
 Warnings
