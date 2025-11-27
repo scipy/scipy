@@ -29,6 +29,11 @@ solve-group = "default"
 features = ["run-deps", "test-deps", "ipython"]
 solve-group = "default"
 
+[environments.bench]
+# tasks: bench
+features = ["run-deps", "test-deps", "build-deps", "bench"]
+solve-group = "default"
+
 [environments.build-debug]
 # tasks: build-debug
 features = ["build-deps", "build-debug"]
@@ -241,6 +246,16 @@ ipython = "*"
 cmd = "spin ipython --no-build"
 depends-on = "build"
 description = "Launch IPython"
+
+
+### Benchmarking ###
+
+[feature.bench.dependencies]
+# https://github.com/airspeed-velocity/asv/issues/1537
+asv = "==0.6.4"
+
+[feature.bench.tasks.bench]
+cmd = "spin bench"
 
 
 ### Debugging ###
