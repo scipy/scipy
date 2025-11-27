@@ -1276,6 +1276,37 @@ class _spbase(SparseABC):
         the resultant csc_array/matrix.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
+    
+    def tosparray(self, copy=False):
+        """Convert this array/matrix to a sparse array of the same format.
+
+        With copy=False, the data/indices may be shared between this array/matrix and
+        the resultant `sparray`.
+        """
+        if issparray(self):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        else:
+            cls = getattr(scipy.sparse, f'{self.format}_array')
+            return cls(self, copy=copy)
+        
+        
+    def tospmatrix(self, copy=False):
+        """Convert this array/matrix to a sparse matrix of the same format.
+
+        With copy=False, the data/indices may be shared between this array/matrix and
+        the resultant `spmatrix`.
+        """
+        if isspmatrix(self):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        else:
+            cls = getattr(scipy.sparse, f'{self.format}_matrix')
+            return cls(self, copy=copy)
 
     def copy(self):
         """Returns a copy of this array/matrix.
