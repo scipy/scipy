@@ -31,7 +31,7 @@ solve-group = "default"
 
 [environments.bench]
 # tasks: bench
-features = ["run-deps", "test-deps", "build-deps", "bench"]
+features = ["run-deps", "build-deps", "bench"]
 solve-group = "default"
 
 [environments.build-debug]
