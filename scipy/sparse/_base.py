@@ -1282,6 +1282,20 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant `sparray`.
+        
+                Examples
+        --------
+        >>> from scipy.sparse import csr_array, csr_matrix, csc_array, csc_matrix
+        >>> type(csr_array([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csr.csr_array'>
+        >>> type(csc_array([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csc.csc_array'>
+        >>> type(csr_matrix([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csr.csr_array'>
+        >>> type(csc_matrix([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csc.csc_array'>
+        
+        .. versionadded:: 1.16.4
         """
         if issparray(self):
             if copy:
@@ -1298,6 +1312,20 @@ class _spbase(SparseABC):
 
         With copy=False, the data/indices may be shared between this array/matrix and
         the resultant `spmatrix`.
+        
+        Examples
+        --------
+        >>> from scipy.sparse import csr_array, csr_matrix, csc_array, csc_matrix
+        >>> type(csr_array([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csr.csr_matrix'>
+        >>> type(csc_array([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csc.csc_matrix'>
+        >>> type(csr_matrix([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csr.csr_matrix'>
+        >>> type(csc_matrix([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csc.csc_matrix'>
+        
+        .. versionadded:: 1.16.4
         """
         if isspmatrix(self):
             if copy:
