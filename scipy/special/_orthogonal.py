@@ -221,22 +221,22 @@ def roots_jacobi(n, alpha, beta, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        Quadrature order.
     alpha : float
         alpha must be > -1
     beta : float
         beta must be > -1
     mu : bool, optional
-        If True, return the sum of the weights, optional.
+        If True, return the sum of the weights in addition to sample points and weights.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
-    mu : float
-        Sum of the weights
+        Weights.
+    mu : float, optional
+        Sum of the weights, only returned if `mu=True`.
 
     See Also
     --------
@@ -248,7 +248,20 @@ def roots_jacobi(n, alpha, beta, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_jacobi
+    >>> x, w = roots_jacobi(3, 0.5, 0.5)
+    >>> x
+    array([-0.70710678,  0.        ,  0.70710678])
+    >>> w
+    array([0.39269908, 0.78539816, 0.39269908])
+
+    >>> x, w, mu = roots_jacobi(3, 0.5, 0.5, mu=True)
+    >>> mu
+    1.5707963267948966  # Sum of weights, equals pi/2 for alpha = beta = 0.5
     """
+
     m = int(n)
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")

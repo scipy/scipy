@@ -580,6 +580,7 @@ _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
+_cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
 _cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
@@ -773,8 +774,10 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+    conf_data.set(name + '_HAS_ILP64', use_ilp64)
   endif
 endforeach
+
 
 configure_file(
   input: '__config__.py.in',

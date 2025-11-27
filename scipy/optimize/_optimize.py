@@ -28,7 +28,6 @@ __docformat__ = "restructuredtext en"
 import math
 import warnings
 import sys
-import inspect
 from numpy import eye, argmin, zeros, shape, asarray, sqrt
 import numpy as np
 from scipy.linalg import cholesky, issymmetric, LinAlgError
@@ -39,7 +38,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt, _transition_to_rng)
+                              _call_callback_maybe_halt, _transition_to_rng,
+                              wrapped_inspect_signature)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
 from scipy._lib import array_api_extra as xpx
@@ -90,7 +90,7 @@ def _wrap_callback(callback, method=None):
     if callback is None or method in {'tnc', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
-    sig = inspect.signature(callback)
+    sig = wrapped_inspect_signature(callback)
 
     if set(sig.parameters) == {'intermediate_result'}:
         def wrapped_callback(res):
@@ -215,7 +215,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)

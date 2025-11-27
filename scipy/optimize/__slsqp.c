@@ -240,7 +240,7 @@ MODE1:
     }
     S->h1 = S->t - S->t0;
 
-    if ((S->h1 > (S->h3 / 10.0)) && (S->line <= 10))
+    if (!((S->h1 <= (S->h3 / 10.0)) || (S->line > 10)))
     {
         S->alpha = fmax(S->h3/(2.0*(S->h3 - S->h1)), alfmin);
         goto LINE_SEARCH;
