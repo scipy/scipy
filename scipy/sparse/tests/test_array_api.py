@@ -521,7 +521,7 @@ def test_issparse():
 def test_isspmatrix():
     m = scipy.sparse.eye(3)
     a = scipy.sparse.csr_array(m)
-    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(m, scipy.sparse.spmatrix)
     assert isinstance(a, scipy.sparse.sparray)
 
     # Should only be true for sparse matrices, not sparse arrays
@@ -531,6 +531,20 @@ def test_isspmatrix():
     # ndarray and array_likes are not sparse
     assert not scipy.sparse.isspmatrix(a.todense())
     assert not scipy.sparse.isspmatrix(m.todense())
+    
+def test_issparray():
+    m = scipy.sparse.eye(3)
+    a = scipy.sparse.csr_array(m)
+    assert isinstance(m, scipy.sparse.spmatrix)
+    assert isinstance(a, scipy.sparse.sparray)
+
+    # Should only be true for sparse matrices, not sparse arrays
+    assert scipy.sparse.issparray(a)
+    assert not scipy.sparse.issparray(m)
+
+    # ndarray and array_likes are not sparse
+    assert not scipy.sparse.issparray(a.todense())
+    assert not scipy.sparse.issparray(m.todense())
 
 
 @pytest.mark.parametrize(

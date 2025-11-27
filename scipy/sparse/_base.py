@@ -12,7 +12,7 @@ from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
 
-__all__ = ['isspmatrix', 'issparse', 'sparray',
+__all__ = ['isspmatrix', 'issparray', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -1604,3 +1604,32 @@ def isspmatrix(x):
     False
     """
     return isinstance(x, spmatrix)
+
+
+def issparray(x):
+    """Is `x` of a sparse array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse array
+
+    Returns
+    -------
+    bool
+        True if `x` is a sparse array, False otherwise
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, issparray
+    >>> issparray(csr_matrix([[5]]))
+    False
+    >>> issparray(csr_array([[5]]))
+    True
+    >>> issparray(np.array([[5]]))
+    False
+    >>> issparray(5)
+    False
+    """
+    return isinstance(x, sparray)

@@ -118,6 +118,7 @@ Identifying sparse arrays
    :toctree: generated/
 
    issparse - Check if the argument is a sparse object (array or matrix).
+   issparray
 
 
 Sparse matrix classes
