@@ -13,7 +13,6 @@
 // void fpadno();
 // void fpadpo();
 // void fpbfout();
-// void fpchec();
 // void fpched();
 // void fpclos();
 // void fpcoco();
@@ -27,10 +26,8 @@
 // void fpgrdi();
 // void fpgrpa();
 // void fpgrre();
-// void fpgrsp();
 // void fpinst();
 // void fpopdi();
-// void fpopsp();
 // void fppara();
 // void fppasu();
 // void fpperi();
@@ -41,7 +38,6 @@
 // void fprppo();
 // void fpseno();
 // void fpsuev();
-// void fpsysy();
 // void fptrnp();
 // void fptrpe();
 // void insert();
@@ -54,7 +50,6 @@
 // void profil();
 // void regrid();
 // void spalde();
-// void spgrid();
 // void splder();
 // void splev();
 // void splint();
@@ -69,13 +64,21 @@ void   fpback(double* a, double* z, const int n, const int k, double* c, const i
 void   fpbacp(const double *a, const double *b, const double *z, const int n, const int k, double *c, const int k1, const int nest);
 void   fpbisp(const double *tx, const int nx, double *ty, const int ny, const double *c, const int kx, const int ky, const double *x, const int mx, const double *y, const int my, double *z, double *wx, double *wy, int *lx, int *ly);
 void   fpbspl(const double* t, const int n, const int k, const double x, const int l, double* h);
+void   fpchec(const double* x, const int m, const double* t, const int n, const int k, int* ier);
 void   fpchep(double* x, const int m, double* t, const int n, const int k, int* ier);
 void   fpcyt1(double *a, const int n, const int nn);
 void   fpcyt2(const double *a, const int n, const double *b, double *c, const int nn);
 void   fpdisc(const double* t, const int n, const int k2, double* b, const int nest);
 void   fpgivs(const double piv, double* ww, double* cos, double* sin);
+void   fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const int mu, const double *v,
+              const int mv, const double *r, const int mr, const double *dr, int iop0, int iop1, const double *tu, const int nu,
+              const double *tv, const int nv, const double p, double *c, const int nc, double *sq, double *fp, double *fpu,
+              double *fpv, const int mm, const int mvnu, double *spu, double *spv, double *right, double *q, double *au,
+              double *av1, double *av2, double *bu, double *bv, double *a0, double *a1, double *b0, double *b1, double *c0,
+              double *c1, double *cosi, int *nru, int *nrv);
 void   fpintb(const double *t, int n, double *bint, const int nk1, const double x, const double y);
 void   fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdata, int* nrint, const int nest, const int istart);
+void   fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const double *u, const int mu, const double *v, const int mv, const double *r, const int mr, const double r0, const double r1, double *dr, const int *iopt, const int *ider, const double *tu, const int nu, const double *tv, const int nv, const int nuest, const int nvest, const double p, const double *step, double *c, const int nc, double *fp, double *fpu, double *fpv, int *nru, int *nrv, double *wrk, const int lwrk);
 void   fporde(const double* x, const double* y, const int m, const int kx, const int ky, const double* tx, const int nx, const double* ty, const int ny, int* nummer, int* index, const int nreg);
 void   fprank(const double* a, const double* f, const int n, const int m, const int na, const double tol, double* c, double* sq, int* rank, double* aa, double* ff, double* h);
 double fprati(double* p1, double* f1, double* p2, double* f2, double* p3, double* f3);
@@ -104,8 +107,10 @@ void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
               double* ff, double* a, double* q, double* bx, double* by, double* spx,
               double* spy, double* h, int* index, int* nummer, double* wrk,
               int lwrk, int* ier);
+void   fpsysy(double* restrict a, const int n, double* restrict g);
 void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
 void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   spgrid(const int *iopt, const int *ider, const int mu, const double *u, const int mv, const double *v, const double *r, const double r0, const double r1, const double s, const int nuest, const int nvest, int *nu, double *tu, int *nv, double *tv, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier);
 void   sphere(const int iopt, const int m, const double *teta, const double *phi, const double *r, const double *w, const double s, const int ntest, const int npest, const double eps, int *nt, double *tt, int *np, double *tp, double *c, double *fp, double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk, int *ier);
 void   surfit(int iopt, int m, double* x, double* y, double* z, double* w,
               double xb, double xe, double yb, double ye, int kx, int ky, double s,
@@ -391,6 +396,52 @@ fpbspl(const double* t, const int n, const int k, const double x, const int l, d
 
 
 void
+fpchec(const double* x, const int m, const double* t, const int n, const int k, int* ier)
+{
+    int k1 = k + 1;
+    int k2 = k1 + 1;
+    int nk1 = n - k1;
+    int nk2 = nk1 + 1;
+    int m1 = m - 1;
+    *ier = 10;
+
+    // check condition no 1
+    if ((nk1 < k1) || (nk1 > m)) { *ier = 10; return; }
+    // check condition no 2
+    int j = n;
+    for (int i = 1; i <= k; i++) {
+        if (t[i - 1] > t[i]) { *ier = 20; return; }
+        if (t[j - 1] < t[j - 2]) { *ier = 20; return; }
+        j--;
+    }
+    // check condition no 3
+    for (int i = k2; i <= nk2; i++) {
+        if (t[i - 1] <= t[i - 2]) { *ier = 30; return; }
+    }
+    // check condition no 4
+    if ((x[0] < t[k]) || (x[m - 1] > t[nk2 - 1])) { *ier = 40; return; }
+    // check condition no 5
+    if ((x[0] >= t[k2 - 1]) || (x[m - 1] <= t[nk1 - 1])) { *ier = 50; return; }
+    int i = 1;
+    int l = k2;
+    int nk3 = nk1 - 1;
+    if (nk3 < 2) { *ier = 0; return; }
+    for (int j = 2; j <= nk3; j++) {
+        double tj = t[j - 1];
+        l++;
+        double tl = t[l - 1];
+        do {
+            i++;
+            if (i >= m) { *ier = 50; return; }
+        } while (x[i - 1] <= tj);
+        if (x[i - 1] >= tl) { *ier = 50; return; }
+    }
+    *ier = 0;
+    return;
+}
+
+
+void
 fpchep(double* x, const int m, double* t, const int n, const int k, int* ier)
 {
     int l;
@@ -578,6 +629,743 @@ fpgivs(const double piv, double* ww, double* cos, double* sin)
 
 
 void
+fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const int mu, const double *v,
+       const int mv, const double *r, const int mr, const double *dr, int iop0, int iop1, const double *tu, const int nu,
+       const double *tv, const int nv, const double p, double *c, const int nc, double *sq, double *fp, double *fpu,
+       double *fpv, const int mm, const int mvnu, double *spu, double *spv, double *right, double *q, double *au,
+       double *av1, double *av2, double *bu, double *bv, double *a0, double *a1, double *b0, double *b1, double *c0,
+       double *c1, double *cosi, int *nru, int *nrv)
+{
+    double arg, co, dr01, dr02, dr03, dr11, dr12, dr13, fac, fac0, fac1, pinv, piv;
+    double si, term, one, three, half;
+    int i, ic, ii, ij, ik, iq, irot, it, ir, i0, i1, i2, i3, j, jj, jk, jper;
+    int j0, j1, k, k1, k2, l, l0, l1, l2, mvv, ncof, nrold, nroldu, nroldv, number;
+    int numu, numu1, numv, numv1, nuu, nu4, nu7, nu8, nu9, nv11, nv4, nv7, nv8, n1;
+    double h[5], h1[5], h2[4];
+
+    // set constants
+    one = 1.0;
+    three = 3.0;
+    half = 0.5;
+    // initialization
+    nu4 = nu - 4;
+    nu7 = nu - 7;
+    nu8 = nu - 8;
+    nu9 = nu - 9;
+    nv4 = nv - 4;
+    nv7 = nv - 7;
+    nv8 = nv - 8;
+    nv11 = nv - 11;
+    nuu = nu4 - iop0 - iop1 - 2;
+    if (p > 0.0) { pinv = one / p; }
+    // it depends on the value of the flags ifsu,ifsv,ifbu,ifbv,iop0,iop1
+    // and on the value of p whether the matrices (spu), (spv), (bu), (bv),
+    // (cosi) still must be determined.
+    if (ifsu == 0) {
+        // calculate the non-zero elements of the matrix (spu) which is the ob-
+        // servation matrix according to the least-squares spline approximation
+        // problem in the u-direction.
+        l = 4;
+        l1 = 5;
+        number = 0;
+        for (it = 1; it <= mu; it++) {
+            arg = u[it - 1];
+            while (!((arg < tu[l1 - 1]) || (l == nu4))) {
+                l = l1;
+                l1 = l + 1;
+                number++;
+            }
+            fpbspl(tu, nu, 3, arg, l, h);
+            for (i = 1; i <= 4; i++) {
+                spu[(it - 1) + (i - 1) * 4] = h[i - 1];
+            }
+            nru[it - 1] = number;
+        }
+        ifsu = 1;
+    }
+    // calculate the non-zero elements of the matrix (spv) which is the ob-
+    // servation matrix according to the least-squares spline approximation
+    // problem in the v-direction.
+    if (ifsv == 0) {
+        l = 4;
+        l1 = 5;
+        number = 0;
+        for (it = 1; it <= mv; it++) {
+            arg = v[it - 1];
+            while (!((arg < tv[l1 - 1]) || (l == nv4))) {
+                l = l1;
+                l1 = l + 1;
+                number++;
+            }
+            fpbspl(tv, nv, 3, arg, l, h);
+            for (i = 1; i <= 4; i++) {
+                spv[(it - 1) + (i - 1) * 4] = h[i - 1];
+            }
+            nrv[it - 1] = number;
+        }
+        ifsv = 1;
+        if ((iop0 != 0) || (iop1 != 0)) {
+            // calculate the coefficients of the interpolating splines for cos(v)
+            // and sin(v).
+            for (i = 1; i <= nv4; i++) {
+                cosi[0 + (i - 1) * nv] = 0.0;
+                cosi[1 + (i - 1) * nv] = 0.0;
+            }
+            if (nv7 >= 4) {
+                for (i = 1; i <= nv7; i++) {
+                    l = i + 3;
+                    arg = tv[l - 1];
+                    fpbspl(tv, nv, 3, arg, l, h);
+                    for (j = 1; j <= 3; j++) {
+                        av1[(i - 1) + (j - 1) * 6] = h[j - 1];
+                    }
+                    cosi[0 + (i - 1) * nv] = cos(arg);
+                    cosi[1 + (i - 1) * nv] = sin(arg);
+                }
+                fpcyt1(av1, nv7, nv);
+                for (j = 1; j <= 2; j++) {
+                    for (i = 1; i <= nv7; i++) {
+                        right[i - 1] = cosi[(j - 1) + (i - 1) * nv];
+                    }
+                    fpcyt2(av1, nv7, right, right, nv);
+                    for (i = 1; i <= nv7; i++) {
+                        cosi[(j - 1) + i * nv] = right[i - 1];
+                    }
+                    cosi[(j - 1) + 0 * nv] = cosi[(j - 1) + (nv7) * nv];
+                    cosi[(j - 1) + (nv7 + 1) * nv] = cosi[(j - 1) + 1 * nv];
+                    cosi[(j - 1) + (nv4 - 1) * nv] = cosi[(j - 1) + 2 * nv];
+                }
+            }
+        }
+    }
+    if (p > 0.0) {
+        // calculate the non-zero elements of the matrix (bu).
+        if ((ifbu == 0) && (nu8 != 0)) {
+            fpdisc(tu, nu, 5, bu, nu);
+            ifbu = 1;
+        }
+        // calculate the non-zero elements of the matrix (bv).
+        if ((ifbv == 0) && (nv8 != 0)) {
+            fpdisc(tv, nv, 5, bv, nv);
+            ifbv = 1;
+        }
+    }
+    // substituting (2),(3) and (4) into (1), we obtain the overdetermined
+    // system
+    //      (5)  (avv) (cc) (auu)' = (qq)
+    // from which the nuu*nv7 remaining coefficients
+    //      c(i,j) , i=2+iop0,3+iop0,...,nu-5-iop1,j=1,2,...,nv-7.
+    // the elements of (cc), are then determined in the least-squares sense.
+    // simultaneously, we compute the resulting sum of squared residuals sq.
+    dr01 = dr[0];
+    dr11 = dr[3];
+    for (i = 1; i <= mv; i++) {
+        a0[(i - 1) * mv] = dr01;
+        a1[(i - 1) * mv] = dr11;
+    }
+    if ((nv8 != 0) && (p > 0.0)) {
+        for (i = 1; i <= nv8; i++) {
+            b0[(0) + (i - 1) * nv] = 0.0;
+            b1[(0) + (i - 1) * nv] = 0.0;
+        }
+    }
+    mvv = mv;
+    if (iop0 != 0) {
+        fac = (tu[4] - tu[3]) / three;
+        dr02 = dr[1] * fac;
+        dr03 = dr[2] * fac;
+        for (i = 1; i <= nv4; i++) {
+            c0[i - 1] = dr01 + dr02 * cosi[(0) + (i - 1) * nv] + dr03 * cosi[(1) + (i - 1) * nv];
+        }
+        for (i = 1; i <= mv; i++) {
+            number = nrv[i - 1];
+            fac = 0.0;
+            for (j = 1; j <= 4; j++) {
+                number++;
+                fac = fac + c0[number - 1] * spv[(i - 1) + (j - 1) * 4];
+            }
+            a0[(1) + (i - 1) * mv] = fac;
+        }
+        if ((nv8 != 0) && (p > 0.0)) {
+            for (i = 1; i <= nv8; i++) {
+                number = i;
+                fac = 0.0;
+                for (j = 1; j <= 5; j++) {
+                    fac = fac + c0[number - 1] * bv[(i - 1) + (j - 1) * 5];
+                    number++;
+                }
+                b0[(1) + (i - 1) * nv] = fac * pinv;
+            }
+        }
+        mvv = mv + nv8;
+    }
+    if (iop1 != 0) {
+        fac = (tu[nu4 - 1] - tu[nu4]) / three;
+        dr12 = dr[4] * fac;
+        dr13 = dr[5] * fac;
+        for (i = 1; i <= nv4; i++) {
+            c1[i - 1] = dr11 + dr12 * cosi[(0) + (i - 1) * nv] + dr13 * cosi[(1) + (i - 1) * nv];
+        }
+        for (i = 1; i <= mv; i++) {
+            number = nrv[i - 1];
+            fac = 0.0;
+            for (j = 1; j <= 4; j++) {
+                number++;
+                fac = fac + c1[number - 1] * spv[(i - 1) + (j - 1) * 4];
+            }
+            a1[(1) + (i - 1) * mv] = fac;
+        }
+        if ((nv8 != 0) && (p > 0.0)) {
+            for (i = 1; i <= nv8; i++) {
+                number = i;
+                fac = 0.0;
+                for (j = 1; j <= 5; j++) {
+                    fac = fac + c1[number - 1] * bv[(i - 1) + (j - 1) * 5];
+                    number++;
+                }
+                b1[(1) + (i - 1) * 2] = fac * pinv;
+            }
+        }
+        mvv = mv + nv8;
+    }
+    // we first determine the matrices (auu) and (qq). then we reduce the
+    // matrix (auu) to an unit upper triangular form (ru) using givens
+    // rotations without square roots. we apply the same transformations to
+    // the rows of matrix qq to obtain the mv x nuu matrix g.
+    // we store matrix (ru) into au and g into q.
+    l = mvv * nuu;
+    // initialization.
+    *sq = 0.0;
+    if (l != 0) {
+        for (i = 1; i <= l; i++) {
+            q[i - 1] = 0.0;
+        }
+        for (i = 1; i <= nuu; i++) {
+            for (j = 1; j <= 5; j++) {
+                au[(i - 1) + (j - 1) * 5] = 0.0;
+            }
+        }
+    }
+    l = 0;
+    nrold = 0;
+    n1 = nrold + 1;
+    for (it = 1; it <= mu; it++) {
+        number = nru[it - 1];
+        // find the appropriate column of q.
+        while (1) {
+            for (j = 1; j <= mvv; j++) {
+                right[j - 1] = 0.0;
+            }
+            if (nrold == number) {
+                // fetch a new row of matrix (spu).
+                for (j = 1; j <= 4; j++) {
+                    h[j - 1] = spu[(it - 1) + (j - 1) * 4];
+                }
+                // find the appropriate column of q.
+                for (j = 1; j <= mv; j++) {
+                    l++;
+                    right[j - 1] = r[l - 1];
+                }
+                i0 = 1;
+                i1 = 4;
+            } else {
+                if (p <= 0.0) {
+                    nrold = n1;
+                    n1++;
+                    continue;
+                }
+                // fetch a new row of matrix (bu).
+                for (j = 1; j <= 5; j++) {
+                    h[j - 1] = bu[(n1 - 1) + (j - 1) * nu] * pinv;
+                }
+                i0 = 1;
+                i1 = 5;
+            }
+            j0 = n1;
+            j1 = nu7 - number;
+            // take into account that we eliminate the constraints (3)
+            while (j0 - 1 <= iop0) {
+                fac0 = h[i0 - 1];
+                for (j = 1; j <= mv; j++) {
+                    right[j - 1] = right[j - 1] - fac0 * a0[(j0 - 1) + (j - 1) * mv];
+                }
+                if (mv != mvv) {
+                    j = mv;
+                    for (jj = 1; jj <= nv8; jj++) {
+                        j++;
+                        right[j - 1] = right[j - 1] - fac0 * b0[(j0 - 1) + (jj - 1) * nv];
+                    }
+                }
+                j0++;
+                i0++;
+            }
+            // take into account that we eliminate the constraints (4)
+            while (j1 - 1 <= iop1) {
+                fac1 = h[i1 - 1];
+                for (j = 1; j <= mv; j++) {
+                    right[j - 1] = right[j - 1] - fac1 * a1[(j1 - 1) + (j - 1) * mv];
+                }
+                if (mv != mvv) {
+                    j = mv;
+                    for (jj = 1; jj <= nv8; jj++) {
+                        j++;
+                        right[j - 1] = right[j - 1] - fac1 * b1[(j1 - 1) + (jj - 1) * nv];
+                    }
+                }
+                j1++;
+                i1--;
+            }
+            irot = nrold - iop0 - 1;
+            if (irot < 0) { irot = 0; }
+            // rotate the new row of matrix (auu) into triangle.
+            if (i0 <= i1) {
+                for (i = i0; i <= i1; i++) {
+                    irot++;
+                    piv = h[i - 1];
+                    if (piv == 0.0) { continue; }
+                    // calculate the parameters of the givens transformation.
+                    fpgivs(piv, &au[irot - 1], &co, &si);
+                    // apply that transformation to the rows of matrix (qq).
+                    iq = (irot - 1) * mvv;
+                    for (j = 1; j <= mvv; j++) {
+                        iq++;
+                        fprota(co, si, &right[j - 1], &q[iq - 1]);
+                    }
+                    // apply that transformation to the columns of (auu).
+                    if (i != i1) {
+                        i2 = 1;
+                        i3 = i + 1;
+                        for (j = i3; j <= i1; j++) {
+                            i2++;
+                            fprota(co, si, &h[j - 1], &au[(irot - 1) + (i2 - 1) * 5]);
+                        }
+                    }
+                }
+            }
+            // we update the sum of squared residuals.
+            for (j = 1; j <= mvv; j++) {
+                *sq = *sq + (right[j - 1] * right[j - 1]);
+            }
+            if (nrold == number) { break; }
+            nrold = n1;
+            n1++;
+        }
+    }
+    if (nuu == 0) {
+        // calculate from the conditions (2)-(3)-(4), the remaining b-spline
+        // coefficients.
+        ncof = nu4 * nv4;
+        j = ncof;
+        for (l = 1; l <= nv4; l++) {
+            q[l - 1] = dr01;
+            q[j - 1] = dr11;
+            j--;
+        }
+        i = nv4;
+        j = 0;
+        if (iop0 != 0) {
+            for (l = 1; l <= nv4; l++) {
+                i++;
+                q[i - 1] = c0[l - 1];
+            }
+        }
+        if (iop1 != 0) {
+            for (l = 1; l <= nv4; l++) {
+                i++;
+                q[i - 1] = c1[l - 1];
+            }
+        }
+        for (i = 1; i <= ncof; i++) {
+            c[i - 1] = q[i - 1];
+        }
+        // calculate the quantities
+        //   res(i,j) = (r(i,j) - s(u(i),v(j)))**2 , i=1,2,..,mu;j=1,2,..,mv
+        //   fp = sumi=1,mu(sumj=1,mv(res(i,j)))
+        //   fpu(r) = sum''i(sumj=1,mv(res(i,j))) , r=1,2,...,nu-7
+        //                 tu(r+3) <= u(i) <= tu(r+4)
+        //   fpv(r) = sumi=1,mu(sum''j(res(i,j))) , r=1,2,...,nv-7
+        //                 tv(r+3) <= v(j) <= tv(r+4)
+        *fp = 0.0;
+        for (i = 1; i <= nu; i++) {
+            fpu[i - 1] = 0.0;
+        }
+        for (i = 1; i <= nv; i++) {
+            fpv[i - 1] = 0.0;
+        }
+        ir = 0;
+        nroldu = 0;
+        // main loop for the different grid points.
+        for (i1 = 1; i1 <= mu; i1++) {
+            numu = nru[i1 - 1];
+            numu1 = numu + 1;
+            nroldv = 0;
+            for (i2 = 1; i2 <= mv; i2++) {
+                numv = nrv[i2 - 1];
+                numv1 = numv + 1;
+                ir++;
+                // evaluate s(u,v) at the current grid point by making the sum of the
+                // cross products of the non-zero b-splines at (u,v), multiplied with
+                // the appropriate b-spline coefficients.
+                term = 0.0;
+                k1 = numu * nv4 + numv;
+                for (l1 = 1; l1 <= 4; l1++) {
+                    k2 = k1;
+                    fac = spu[(i1 - 1) + (l1 - 1) * mu];
+                    for (l2 = 1; l2 <= 4; l2++) {
+                        k2++;
+                        term = term + fac * spv[(i2 - 1) + (l2 - 1) * 4] * c[k2 - 1];
+                    }
+                    k1 = k1 + nv4;
+                }
+                // calculate the squared residual at the current grid point.
+                term = (r[ir - 1] - term) * (r[ir - 1] - term);
+                // adjust the different parameters.
+                *fp = *fp + term;
+                fpu[numu1 - 1] = fpu[numu1 - 1] + term;
+                fpv[numv1 - 1] = fpv[numv1 - 1] + term;
+                fac = term * half;
+                if (numv != nroldv) {
+                    fpv[numv1 - 1] = fpv[numv1 - 1] - fac;
+                    fpv[numv] = fpv[numv] + fac;
+                }
+                nroldv = numv;
+                if (numu != nroldu) {
+                    fpu[numu1 - 1] = fpu[numu1 - 1] - fac;
+                    fpu[numu] = fpu[numu] + fac;
+                }
+            }
+            nroldu = numu;
+        }
+        return;
+    }
+    // we determine the matrix (avv) and then we reduce her to an unit
+    // upper triangular form (rv) using givens rotations without square
+    // roots. we apply the same transformations to the columns of matrix
+    // g to obtain the (nv-7) x (nu-6-iop0-iop1) matrix h.
+    // we store matrix (rv) into av1 and av2, h into c.
+    // the nv7 x nv7 triangular unit upper matrix (rv) has the form
+    //           | av1 '     |
+    //    (rv) = |     ' av2 |
+    //           |  0  '     |
+    // with (av2) a nv7 x 4 matrix and (av1) a nv11 x nv11 unit upper
+    // triangular matrix of bandwidth 5.
+    ncof = nuu * nv7;
+    // initialization.
+    for (i = 1; i <= ncof; i++) {
+        c[i - 1] = 0.0;
+    }
+    for (i = 1; i <= nv4; i++) {
+        av1[(i - 1) + 4 * 6] = 0.0;
+        for (j = 1; j <= 4; j++) {
+            av1[(i - 1) + (j - 1) * 6] = 0.0;
+            av2[(i - 1) + (j - 1) * 6] = 0.0;
+        }
+    }
+    jper = 0;
+    nrold = 0;
+    for (it = 1; it <= mv; it++) {
+        number = nrv[it - 1];
+        while (1) {
+            if (nrold == number) {
+                // fetch a new row of matrix (spv)
+                h[4] = 0.0;
+                for (j = 1; j <= 4; j++) {
+                    h[j - 1] = spv[(it - 1) + (j - 1) * 4];
+                }
+                // find the appropriate row of g.
+                l = it;
+                for (j = 1; j <= nuu; j++) {
+                    right[j - 1] = q[l - 1];
+                    l = l + mvv;
+                }
+            } else {
+                if (p <= 0.0) {
+                    nrold++;
+                    continue;
+                }
+                // fetch a new row of matrix (bv).
+                n1 = nrold + 1;
+                for (j = 1; j <= 5; j++) {
+                    h[j - 1] = bv[(n1 - 1) + (j - 1) * 5] * pinv;
+                }
+                // find the appropriate row of g.
+                for (j = 1; j <= nuu; j++) {
+                    right[j - 1] = 0.0;
+                }
+                if (mv != mvv) {
+                    l = mv + n1;
+                    for (j = 1; j <= nuu; j++) {
+                        right[j - 1] = q[l - 1];
+                        l = l + mvv;
+                    }
+                }
+            }
+            // test whether there are non-zero values in the new row of (avv)
+            // corresponding to the b-splines n(j;v),j=nv7+1,...,nv4.
+            if (nrold < nv11) {
+                // rotation into triangle of the new row of (avv), in case the elements
+                // corresponding to the b-splines n(j;v),j=nv7+1,...,nv4 are all zero.
+                irot = nrold;
+                for (i = 1; i <= 5; i++) {
+                    irot++;
+                    piv = h[i - 1];
+                    if (piv == 0.0) continue;
+                    // calculate the parameters of the givens transformation.
+                    fpgivs(piv, &av1[(irot - 1) + 0 * nv], &co, &si);
+                    // apply that transformation to the columns of matrix g.
+                    ic = irot;
+                    for (j = 1; j <= nuu; j++) {
+                        fprota(co, si, &right[j - 1], &c[ic - 1]);
+                        ic = ic + nv7;
+                    }
+                    // apply that transformation to the rows of (avv).
+                    if (i != 5) {
+                        i2 = 1;
+                        i3 = i + 1;
+                        for (j = i3; j <= 5; j++) {
+                            i2++;
+                            fprota(co, si, &h[j - 1], &av1[(irot - 1) + (i2 - 1) * nv]);
+                        }
+                    }
+                }
+                // we update the sum of squared residuals.
+                for (i = 1; i <= nuu; i++) {
+                    *sq = *sq + right[i - 1] * right[i - 1];
+                }
+            } else {
+                if (jper == 0) {
+                    // initialize the matrix (av2).
+                    jk = nv11 + 1;
+                    for (i = 1; i <= 4; i++) {
+                        ik = jk;
+                        for (j = 1; j <= 5; j++) {
+                            if (ik <= 0) break;
+                            av2[(ik - 1) + (i - 1) * nv] = av1[(ik - 1) + (j - 1) * nv];
+                            ik--;
+                        }
+                        jk++;
+                    }
+                    jper = 1;
+                }
+                // if one of the non-zero elements of the new row corresponds to one of
+                // the b-splines n(j;v),j=nv7+1,...,nv4, we take account of condition
+                // (2) for setting up this row of (avv). the row is stored in h1( the
+                // part with respect to av1) and h2 (the part with respect to av2).
+                for (i = 1; i <= 4; i++) {
+                    h1[i - 1] = 0.0;
+                    h2[i - 1] = 0.0;
+                }
+                h1[4] = 0.0;
+                j = nrold - nv11;
+                for (i = 1; i <= 5; i++) {
+                    j++;
+                    l0 = j;
+                    while (1) {
+                        l1 = l0 - 4;
+                        if (l1 <= 0) {
+                            h2[l0 - 1] = h2[l0 - 1] + h[i - 1];
+                            break;
+                        }
+                        if (l1 <= nv11) {
+                            h1[l1 - 1] = h[i - 1];
+                            break;
+                        }
+                        l0 = l1 - nv11;
+                    }
+                }
+                // rotate the new row of (avv) into triangle.
+                if (nv11 > 0) {
+                    // rotations with the rows 1,2,...,nv11 of (avv).
+                    for (j = 1; j <= nv11; j++) {
+                        piv = h1[0];
+                        i2 = (nv11 - j < 4) ? (nv11 - j) : 4;
+                        if (piv != 0.0) {
+                            // calculate the parameters of the givens transformation.
+                            fpgivs(piv, &av1[(j - 1) + 0 * nv], &co, &si);
+                            // apply that transformation to the columns of matrix g.
+                            ic = j;
+                            for (i = 1; i <= nuu; i++) {
+                                fprota(co, si, &right[i - 1], &c[ic - 1]);
+                                ic = ic + nv7;
+                            }
+                            // apply that transformation to the rows of (avv) with respect to av2.
+                            for (i = 1; i <= 4; i++) {
+                                fprota(co, si, &h2[i - 1], &av2[(j - 1) + (i - 1) * nv]);
+                            }
+                            // apply that transformation to the rows of (avv) with respect to av1.
+                            if (i2 != 0) {
+                                for (i = 1; i <= i2; i++) {
+                                    i1 = i + 1;
+                                    fprota(co, si, &h1[i1 - 1], &av1[(j - 1) + i1 * nv]);
+                                }
+                            }
+                        }
+                        for (i = 1; i <= i2; i++) {
+                            h1[i - 1] = h1[i];
+                        }
+                        h1[i2] = 0.0;
+                    }
+                }
+                // rotations with the rows nv11+1,...,nv7 of avv.
+                for (j = 1; j <= 4; j++) {
+                    ij = nv11 + j;
+                    if (ij <= 0) continue;
+                    piv = h2[j - 1];
+                    if (piv == 0.0) continue;
+                    // calculate the parameters of the givens transformation.
+                    fpgivs(piv, &av2[(ij - 1) + (j - 1) * nv], &co, &si);
+                    // apply that transformation to the columns of matrix g.
+                    ic = ij;
+                    for (i = 1; i <= nuu; i++) {
+                        fprota(co, si, &right[i - 1], &c[ic - 1]);
+                        ic = ic + nv7;
+                    }
+                    if (j != 4) {
+                        // apply that transformation to the rows of (avv) with respect to av2.
+                        j1 = j + 1;
+                        for (i = j1; i <= 4; i++) {
+                            fprota(co, si, &h2[i - 1], &av2[(ij - 1) + (i - 1) * nv]);
+                        }
+                    }
+                }
+                // we update the sum of squared residuals.
+                for (i = 1; i <= nuu; i++) {
+                    *sq = *sq + right[i - 1] * right[i - 1];
+                }
+            }
+            if (nrold == number) break;
+            nrold++;
+        }
+    }
+    // test whether the b-spline coefficients must be determined.
+    if (iback != 0) return;
+    // backward substitution to obtain the b-spline coefficients as the
+    // solution of the linear system    (rv) (cr) (ru)' = h.
+    // first step: solve the system  (rv) (c1) = h.
+    k = 1;
+    for (i = 1; i <= nuu; i++) {
+        fpbacp(av1, av2, &c[k - 1], nv7, 4, &c[k - 1], 5, nv);
+        k = k + nv7;
+    }
+    // second step: solve the system  (cr) (ru)' = (c1).
+    k = 0;
+    for (j = 1; j <= nv7; j++) {
+        k++;
+        l = k;
+        for (i = 1; i <= nuu; i++) {
+            right[i - 1] = c[l - 1];
+            l = l + nv7;
+        }
+        fpback(au, right, nuu, 5, right, nu);
+        l = k;
+        for (i = 1; i <= nuu; i++) {
+            c[l - 1] = right[i - 1];
+            l = l + nv7;
+        }
+    }
+    // calculate from the conditions (2)-(3)-(4), the remaining b-spline
+    // coefficients.
+    ncof = nu4 * nv4;
+    j = ncof;
+    for (l = 1; l <= nv4; l++) {
+        q[l - 1] = dr01;
+        q[j - 1] = dr11;
+        j--;
+    }
+    i = nv4;
+    j = 0;
+    if (iop0 != 0) {
+        for (l = 1; l <= nv4; l++) {
+            i++;
+            q[i - 1] = c0[l - 1];
+        }
+    }
+    if (nuu != 0) {
+        for (l = 1; l <= nuu; l++) {
+            ii = i;
+            for (k = 1; k <= nv7; k++) {
+                i++;
+                j++;
+                q[i - 1] = c[j - 1];
+            }
+            for (k = 1; k <= 3; k++) {
+                ii++;
+                i++;
+                q[i - 1] = q[ii - 1];
+            }
+        }
+    }
+    if (iop1 != 0) {
+        for (l = 1; l <= nv4; l++) {
+            i++;
+            q[i - 1] = c1[l - 1];
+        }
+    }
+    for (i = 1; i <= ncof; i++) {
+        c[i - 1] = q[i - 1];
+    }
+    // calculate the quantities
+    //   res(i,j) = (r(i,j) - s(u(i),v(j)))**2 , i=1,2,..,mu;j=1,2,..,mv
+    //   fp = sumi=1,mu(sumj=1,mv(res(i,j)))
+    //   fpu(r) = sum''i(sumj=1,mv(res(i,j))) , r=1,2,...,nu-7
+    //                 tu(r+3) <= u(i) <= tu(r+4)
+    //   fpv(r) = sumi=1,mu(sum''j(res(i,j))) , r=1,2,...,nv-7
+    //                 tv(r+3) <= v(j) <= tv(r+4)
+    *fp = 0.0;
+    for (i = 1; i <= nu; i++) {
+        fpu[i - 1] = 0.0;
+    }
+    for (i = 1; i <= nv; i++) {
+        fpv[i - 1] = 0.0;
+    }
+    ir = 0;
+    nroldu = 0;
+    // main loop for the different grid points.
+    for (i1 = 1; i1 <= mu; i1++) {
+        numu = nru[i1 - 1];
+        numu1 = numu + 1;
+        nroldv = 0;
+        for (i2 = 1; i2 <= mv; i2++) {
+            numv = nrv[i2 - 1];
+            numv1 = numv + 1;
+            ir++;
+            // evaluate s(u,v) at the current grid point by making the sum of the
+            // cross products of the non-zero b-splines at (u,v), multiplied with
+            // the appropriate b-spline coefficients.
+            term = 0.0;
+            k1 = numu * nv4 + numv;
+            for (l1 = 1; l1 <= 4; l1++) {
+                k2 = k1;
+                fac = spu[(i1 - 1) + (l1 - 1) * mu];
+                for (l2 = 1; l2 <= 4; l2++) {
+                    k2++;
+                    term = term + fac * spv[(i2 - 1) + (l2 - 1) * 4] * c[k2 - 1];
+                }
+                k1 = k1 + nv4;
+            }
+            // calculate the squared residual at the current grid point.
+            term = (r[ir - 1] - term) * (r[ir - 1] - term);
+            // adjust the different parameters.
+            *fp = *fp + term;
+            fpu[numu1 - 1] = fpu[numu1 - 1] + term;
+            fpv[numv1 - 1] = fpv[numv1 - 1] + term;
+            fac = term * half;
+            if (numv != nroldv) {
+                fpv[numv1 - 1] = fpv[numv1 - 1] - fac;
+                fpv[numv] = fpv[numv] + fac;
+            }
+            nroldv = numv;
+            if (numu != nroldu) {
+                fpu[numu1 - 1] = fpu[numu1 - 1] - fac;
+                fpu[numu] = fpu[numu] + fac;
+            }
+        }
+        nroldu = numu;
+    }
+}
+
+
+void
 fpintb(const double *t, int n, double *bint, const int nk1, const double x, const double y)
 {
     int i, ia, ib, it, j, j1, k, k1, l, li, lj, lk, l0, mmin;
@@ -745,6 +1533,159 @@ void fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdat
     (*n)++;
     (*nrint)++;
     return;
+}
+
+
+void
+fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const double *u,
+       const int mu, const double *v, const int mv, const double *r, const int mr,
+       const double r0, const double r1, double *dr, const int *iopt, const int *ider,
+       const double *tu, const int nu, const double *tv, const int nv, const int nuest,
+       const int nvest, const double p, const double *step, double *c, const int nc,
+       double *fp, double *fpu, double *fpv, int *nru, int *nrv, double *wrk, const int lwrk)
+{
+    double sq, sqq, sq0, sq1, step1, step2, three;
+    int i, id0, iop0, iop1, i1, j, l, lau, lav1, lav2, la0, la1, lbu, lbv, lb0;
+    int lb1, lc0, lc1, lcs, lq, lri, lsu, lsv, l1, l2, mm, mvnu, number, id1;
+    int nr[6];
+    double delta[6], drr[6], sum[6], a[6 * 6], g[6];
+
+    three = 3.0;
+    lsu = 1;
+    lsv = lsu + 4 * mu;
+    lri = lsv + 4 * mv;
+    mm = (nuest > (mv + nvest)) ? nuest : (mv + nvest);
+    lq = lri + mm;
+    mvnu = nuest * (mv + nvest - 8);
+    lau = lq + mvnu;
+    lav1 = lau + 5 * nuest;
+    lav2 = lav1 + 6 * nvest;
+    lbu = lav2 + 4 * nvest;
+    lbv = lbu + 5 * nuest;
+    la0 = lbv + 5 * nvest;
+    la1 = la0 + 2 * mv;
+    lb0 = la1 + 2 * mv;
+    lb1 = lb0 + 2 * nvest;
+    lc0 = lb1 + 2 * nvest;
+    lc1 = lc0 + nvest;
+    lcs = lc1 + nvest;
+
+    iop0 = iopt[1];
+    iop1 = iopt[2];
+    id0 = ider[0];
+    id1 = ider[2];
+    fpgrsp(ifsu, ifsv, ifbu, ifbv, 0, u, mu, v, mv, r, mr, dr, iop0, iop1, tu, nu, tv, nv,
+           p, c, nc, &sq, fp, fpu, fpv, mm, mvnu, &wrk[lsu - 1], &wrk[lsv - 1], &wrk[lri - 1],
+           &wrk[lq - 1], &wrk[lau - 1], &wrk[lav1 - 1], &wrk[lav2 - 1], &wrk[lbu - 1],
+           &wrk[lbv - 1], &wrk[la0 - 1], &wrk[la1 - 1], &wrk[lb0 - 1], &wrk[lb1 - 1], &wrk[lc0 - 1],
+           &wrk[lc1 - 1], &wrk[lcs - 1], nru, nrv);
+    sq0 = 0.0;
+    sq1 = 0.0;
+    if (id0 == 0) { sq0 = (r0 - dr[0]) * (r0 - dr[0]); }
+    if (id1 == 0) { sq1 = (r1 - dr[3]) * (r1 - dr[3]); }
+    sq = sq + sq0 + sq1;
+    // in case all derivative values dr(i) are given (step<=0) or in case
+    // we have spline interpolation, we accept this spline as a solution.
+    if (sq <= 0.0) { return; }
+    if (step[0] <= 0.0 && step[1] <= 0.0) { return; }
+    for (i = 0; i < 6; i++) { drr[i] = dr[i]; }
+    // number denotes the number of derivative values dr(i) that still must
+    // be optimized. let us denote these parameters by g(j),j=1,...,number.
+    number = 0;
+    if (id0 <= 0) {
+        number = 1;
+        nr[0] = 1;
+        delta[0] = step[0];
+    }
+    if (!((iop0 == 0) || (ider[1] != 0))) {
+        step2 = step[0] * three / (tu[4] - tu[3]);
+        nr[number] = 2;
+        nr[number + 1] = 3;
+        delta[number] = step2;
+        delta[number + 1] = step2;
+        number = number + 2;
+    }
+    if (id1 <= 0) {
+        number = number + 1;
+        nr[number - 1] = 4;
+        delta[number - 1] = step[1];
+    }
+    if (!((iop1 == 0) || (ider[3] != 0))) {
+        step2 = step[1] * three / (tu[nu - 1] - tu[nu - 4]);
+        nr[number] = 5;
+        nr[number + 1] = 6;
+        delta[number] = step2;
+        delta[number + 1] = step2;
+        number = number + 2;
+    }
+    if (number == 0) { return; }
+    // the sum of squared residulas sq is a quadratic polynomial in the
+    // parameters g(j). we determine the unknown coefficients of this
+    // polymomial by calculating (number+1)*(number+2)/2 different splines
+    // according to specific values for g(j).
+    int skip_to_110 = 0;
+    for (i = 1; i <= number; i++) {
+        l = nr[i - 1];
+        step1 = delta[i - 1];
+        drr[l - 1] = dr[l - 1] + step1;
+        fpgrsp(ifsu, ifsv, ifbu, ifbv, 1, u, mu, v, mv, r, mr, drr, iop0, iop1, tu, nu, tv, nv,
+               p, c, nc, &sum[i - 1], fp, fpu, fpv, mm, mvnu, &wrk[lsu - 1], &wrk[lsv - 1],
+               &wrk[lri - 1], &wrk[lq - 1], &wrk[lau - 1], &wrk[lav1 - 1], &wrk[lav2 - 1],
+               &wrk[lbu - 1], &wrk[lbv - 1], &wrk[la0 - 1], &wrk[la1 - 1], &wrk[lb0 - 1],
+               &wrk[lb1 - 1], &wrk[lc0 - 1], &wrk[lc1 - 1], &wrk[lcs - 1], nru, nrv);
+        if (id0 == 0) { sq0 = (r0 - drr[0]) * (r0 - drr[0]); }
+        if (id1 == 0) { sq1 = (r1 - drr[3]) * (r1 - drr[3]); }
+        sum[i - 1] = sum[i - 1] + sq0 + sq1;
+        drr[l - 1] = dr[l - 1] - step1;
+        fpgrsp(ifsu, ifsv, ifbu, ifbv, 1, u, mu, v, mv, r, mr, drr, iop0, iop1, tu, nu, tv, nv,
+               p, c, nc, &sqq, fp, fpu, fpv, mm, mvnu, &wrk[lsu - 1], &wrk[lsv - 1], &wrk[lri - 1],
+               &wrk[lq - 1], &wrk[lau - 1], &wrk[lav1 - 1], &wrk[lav2 - 1], &wrk[lbu - 1], &wrk[lbv - 1],
+               &wrk[la0 - 1], &wrk[la1 - 1], &wrk[lb0 - 1], &wrk[lb1 - 1], &wrk[lc0 - 1], &wrk[lc1 - 1],
+               &wrk[lcs - 1], nru, nrv);
+        if (id0 == 0) { sq0 = (r0 - drr[0]) * (r0 - drr[0]); }
+        if (id1 == 0) { sq1 = (r1 - drr[3]) * (r1 - drr[3]); }
+        sqq = sqq + sq0 + sq1;
+        drr[l - 1] = dr[l - 1];
+        a[(i - 1) + (i - 1) * 6] = (sum[i - 1] + sqq - sq - sq) / (step1 * step1);
+        if (a[(i - 1) + (i - 1) * 6] <= 0.0) { skip_to_110 = 1; }
+        g[i - 1] = (sqq - sum[i - 1]) / (step1 + step1);
+    }
+    if (!skip_to_110) {
+        if (number != 1) {
+            for (i = 2; i <= number; i++) {
+                l1 = nr[i - 1];
+                step1 = delta[i - 1];
+                drr[l1 - 1] = dr[l1 - 1] + step1;
+                i1 = i - 1;
+                for (j = 1; j <= i1; j++) {
+                    l2 = nr[j - 1];
+                    step2 = delta[j - 1];
+                    drr[l2 - 1] = dr[l2 - 1] + step2;
+                    fpgrsp(ifsu, ifsv, ifbu, ifbv, 1, u, mu, v, mv, r, mr, drr, iop0, iop1, tu, nu, tv, nv, p, c, nc, &sqq, fp, fpu, fpv, mm, mvnu, &wrk[lsu - 1], &wrk[lsv - 1], &wrk[lri - 1], &wrk[lq - 1], &wrk[lau - 1], &wrk[lav1 - 1], &wrk[lav2 - 1], &wrk[lbu - 1], &wrk[lbv - 1], &wrk[la0 - 1], &wrk[la1 - 1], &wrk[lb0 - 1], &wrk[lb1 - 1], &wrk[lc0 - 1], &wrk[lc1 - 1], &wrk[lcs - 1], nru, nrv);
+                    if (id0 == 0) { sq0 = (r0 - drr[0]) * (r0 - drr[0]); }
+                    if (id1 == 0) { sq1 = (r1 - drr[3]) * (r1 - drr[3]); }
+                    sqq = sqq + sq0 + sq1;
+                    a[(i - 1) + (j - 1) * 6] = (sq + sqq - sum[i - 1] - sum[j - 1]) / (step1 * step2);
+                    drr[l2 - 1] = dr[l2 - 1];
+                }
+                drr[l1 - 1] = dr[l1 - 1];
+            }
+        }
+
+        fpsysy(a, number, g);
+        for (i = 1; i <= number; i++) {
+            l = nr[i - 1];
+            dr[l - 1] = dr[l - 1] + g[i - 1];
+        }
+    }
+    fpgrsp(ifsu, ifsv, ifbu, ifbv, 0, u, mu, v, mv, r, mr, dr, iop0, iop1, tu, nu, tv, nv,
+           p, c, nc, &sq, fp, fpu, fpv, mm, mvnu, &wrk[lsu - 1], &wrk[lsv - 1], &wrk[lri - 1],
+           &wrk[lq - 1], &wrk[lau - 1], &wrk[lav1 - 1], &wrk[lav2 - 1], &wrk[lbu - 1],
+           &wrk[lbv - 1], &wrk[la0 - 1], &wrk[la1 - 1], &wrk[lb0 - 1], &wrk[lb1 - 1],
+           &wrk[lc0 - 1], &wrk[lc1 - 1], &wrk[lcs - 1], nru, nrv);
+    if (id0 == 0) { sq0 = (r0 - dr[0]) * (r0 - dr[0]); }
+    if (id1 == 0) { sq1 = (r1 - dr[3]) * (r1 - dr[3]); }
+    sq = sq + sq0 + sq1;
 }
 
 
@@ -3300,6 +4241,48 @@ interpolating_solution:
 }
 
 
+void
+fpsysy(double* restrict a, const int n, double* restrict g)
+{
+    g[0] /= a[0];
+    if (n == 1) { return; }
+    // decomposition of the symmetric matrix (a) = (l) * (d) *(l)'
+    // with (l) a unit lower triangular matrix and (d) a diagonal
+    // matrix
+    for (int k = 1; k < n; k++) { a[k] /= a[0]; }
+    for (int i = 2; i <= n; i++) {
+        for (int k = i; k <= n; k++) {
+            double fac = a[k - 1 + (i - 1)*6];
+            for (int j = 1; j < i; j++) {
+                fac -= a[j - 1 + (j - 1)*6] * a[k - 1 + (j - 1)*6] * a[i - 1 + (j - 1)*6];
+            }
+            a[k - 1 + (i - 1)*6] = fac;
+            if (k > i) { a[k - 1 + (i - 1)*6] = fac / a[i - 1 + (i - 1)*6]; }
+        }
+    }
+    // solve the system (l)*(d)*(l)'*(b) = (g).
+    // first step : solve (l)*(d)*(c) = (g).
+    for (int i = 2; i <= n; i++) {
+        double fac = g[i - 1];
+        for (int j = 1; j < i; j++) {
+            fac -= g[j - 1] * a[j - 1 + (j - 1)*6] * a[i - 1 + (j - 1)*6];
+        }
+        g[i - 1] = fac / a[i - 1 + (i - 1)*6];
+    }
+    // second step : solve (l)'*(b) = (c)
+    int i = n;
+    for (int j = 2; j <= n; j++) {
+        i--;
+        double fac = g[i - 1];
+        for (int k = i + 1; k <= n; k++) {
+            fac -= g[k - 1] * a[k - 1 + (i - 1)*6];
+        }
+        g[i - 1] = fac;
+    }
+    return;
+}
+
+
 void parder(const double *tx, int nx, const double *ty, int ny, double *c,
             int kx, int ky, int nux, int nuy, const double *x, int mx,
             const double *y, int my, double *z, double *wrk, int lwrk,
@@ -3506,6 +4489,189 @@ void pardeu(const double *tx, int nx, const double *ty, int ny, double *c,
     for (int i = 1; i <= m; i++) {
         fpbisp(&tx[nux], nx - 2 * nux, &ty[nuy], ny - 2 * nuy, wrk, kkx, kky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], &wrk[iwx], &wrk[iwy], iwrk, &iwrk[1]);
     }
+}
+
+
+void
+spgrid(const int *iopt, const int *ider, const int mu, const double *u, const int mv,
+       const double *v, const double *r, const double r0, const double r1, const double s,
+       const int nuest, const int nvest, int *nu, double *tu, int *nv, double *tv, double *c,
+       double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier)
+{
+    double per, pi, tol, uu, ve, rmax, rmin, one, half, rn, rb, re;
+    int i, i1, i2, j, jwrk, j1, j2, kndu, kndv, knru, knrv, kwest, l;
+    int ldr, lfpu, lfpv, lwest, lww, m, maxit, mumin, muu, nc;
+
+    one = 1.0;
+    half = 0.5;
+    pi = atan2(0.0, -one);
+    per = pi + pi;
+    ve = v[1 - 1] + per;
+    maxit = 20;
+    tol = 0.1e-02;
+    *ier = 10;
+
+    if ((iopt[0] < -1) || (iopt[0] > 1)) { return; }
+    if ((iopt[1] < 0 ) || (iopt[1] > 1)) { return; }
+    if ((iopt[2] < 0 ) || (iopt[2] > 1)) { return; }
+    if ((ider[0] < -1) || (ider[0] > 1)) { return; }
+    if ((ider[1] < 0 ) || (ider[1] > 1)) { return; }
+    if ((ider[1] == 1) && (iopt[1] == 0)) { return; }
+    if ((ider[2] < -1) || (ider[2] > 1)) { return; }
+    if ((ider[3] < 0 ) || (ider[3] > 1)) { return; }
+    if ((ider[3] == 1) && (iopt[2] == 0)) { return; }
+
+    mumin = 4;
+    if (ider[0] >= 0) { mumin = mumin - 1; }
+    if ((iopt[1] == 1) && (ider[1] == 1)) { mumin = mumin - 1; }
+    if (ider[2] >= 0) { mumin = mumin - 1; }
+    if (iopt[2] == 1 && ider[3] == 1) { mumin = mumin - 1; }
+    if (mumin == 0) { mumin = 1; }
+    if ((mu < mumin) || (mv < 4)) { return; }
+    if ((nuest < 8) || (nvest < 8)) { return; }
+
+    m = mu * mv;
+    nc = (nuest - 4) * (nvest - 4);
+
+    lwest = 12 + nuest * (mv + nvest + 3) + 24 * nvest + 4 * mu + 8 * mv +
+            ((nuest > (mv + nvest)) ? nuest : (mv + nvest));
+    kwest = 5 + mu + mv + nuest + nvest;
+    if (lwrk < lwest || kwrk < kwest) { return; }
+
+    if (u[0] <= 0.0 || u[mu - 1] >= pi) { return; }
+    if (mu != 1) {
+        for (i = 1; i < mu; ++i) {
+            if (u[i - 1] >= u[i]) { return; }
+        }
+    }
+    if (v[0] < -pi || v[0] >= pi) { return; }
+    if (v[mv - 1] >= v[0] + per) { return; }
+    for (i = 1; i < mv; ++i) {
+        if (v[i - 1] >= v[i]) { return; }
+    }
+
+    if (iopt[0] > 0) {
+        if (iopt[1 - 1] >= 0 && s < 0.0) { return; }
+        if ((s == 0.0) && (nuest < (mu + 6 + iopt[2 - 1] + iopt[3 - 1]) || (nvest < (mv + 7)))) { return; }
+    } else {
+        // if not given, we compute an estimate for r0.
+        rn = (double)mv;
+        if (ider[0] >= 0) {
+            rb = r0;
+        } else {
+            rb = 0.0;
+            for (i = 1; i <= mv; i++) {
+                rb = rb + r[i - 1];
+            }
+            rb = rb / rn;
+        }
+
+        // if not given, we compute an estimate for r1.
+        if (ider[3 - 1] >= 0) {
+            re = r1;
+        } else {
+            re = 0.0;
+            j = m;
+            for (i = 1; i <= mv; i++) {
+                re = re + r[j - 1];
+                j = j - 1;
+            }
+            re = re / rn;
+        }
+
+        // we determine the range of r-values.
+        rmin = rb;
+        rmax = re;
+        for (i = 1; i <= m; i++) {
+            if (r[i - 1] < rmin) { rmin = r[i - 1]; }
+            if (r[i - 1] > rmax) { rmax = r[i - 1]; }
+        }
+        wrk[4] = rb;
+        wrk[5] = 0.0;
+        wrk[6] = 0.0;
+        wrk[7] = re;
+        wrk[8] = 0.0;
+        wrk[9] = 0.0;
+        wrk[10] = rmax - rmin;
+        wrk[11] = wrk[10];
+        iwrk[3] = mu;
+        iwrk[4] = mu;
+        if (iopt[0] == 0) {
+            if (iopt[1 - 1] >= 0 && s < 0.0) { return; }
+            if ((s == 0.0) && (nuest < (mu + 6 + iopt[2 - 1] + iopt[3 - 1]) || (nvest < (mv + 7)))) { return; }
+        } else {
+            if (*nu < 8 || *nu > nuest) { return; }
+            if (*nv < 11 || *nv > nvest) { return; }
+            j = *nu;
+            for (i = 1; i <= 4; i++) {
+                tu[i - 1] = 0.0;
+                tu[j - 1] = pi;
+                j = j - 1;
+            }
+            l = 13;
+            wrk[l - 1] = 0.0;
+            if (iopt[2 - 1] != 0) {
+                l = l + 1;
+                uu = u[1 - 1];
+                if (uu > tu[5 - 1]) { uu = tu[5 - 1]; }
+                wrk[l - 1] = uu * half;
+            }
+            for (i = 1; i <= mu; i++) {
+                l = l + 1;
+                wrk[l - 1] = u[i - 1];
+            }
+            if (iopt[3 - 1] != 0) {
+                l = l + 1;
+                uu = u[mu - 1];
+                if (uu < tu[*nu - 4]) { uu = tu[*nu - 4]; }
+                wrk[l - 1] = uu + (pi - uu) * half;
+            }
+            l = l + 1;
+            wrk[l - 1] = pi;
+            muu = l - 12;
+            fpchec(&wrk[13 - 1], muu, tu, *nu, 3, ier);
+            if (*ier != 0) { return; }
+            j1 = 4;
+            tv[j1 - 1] = v[1 - 1];
+            i1 = *nv - 3;
+            tv[i1 - 1] = ve;
+            j2 = j1;
+            i2 = i1;
+            for (i = 1; i <= 3; i++) {
+                i1 = i1 + 1;
+                i2 = i2 - 1;
+                j1 = j1 + 1;
+                j2 = j2 - 1;
+                tv[j2 - 1] = tv[i2 - 1] - per;
+                tv[i1 - 1] = tv[j1 - 1] + per;
+            }
+            l = 13;
+            for (i = 1; i <= mv; i++) {
+                wrk[l - 1] = v[i - 1];
+                l = l + 1;
+            }
+            wrk[l - 1] = ve;
+            fpchep(&wrk[13 - 1], mv + 1, tv, *nv, 3, ier);
+            if (*ier != 0) { return; }
+        }
+    }
+
+    // we partition the working space and determine the spline approximation
+    ldr = 5;
+    lfpu = 13;
+    lfpv = lfpu + nuest;
+    lww = lfpv + nvest;
+    jwrk = lwrk - 12 - nuest - nvest;
+    knru = 6;
+    knrv = knru + mu;
+    kndu = knrv + mv;
+    kndv = kndu + nuest;
+
+    fpspgr(iopt, ider, u, mu, v, mv, r, m, rb, re, s, nuest, nvest, tol, maxit,
+           nc, nu, tu, nv, tv, c, fp, &wrk[0], &wrk[1], &wrk[2], &wrk[3],
+           &wrk[lfpu - 1], &wrk[lfpv - 1], &wrk[ldr - 1], &wrk[10],
+           &iwrk[0], &iwrk[1], &iwrk[2], &iwrk[3], &iwrk[4], &iwrk[knru - 1],
+           &iwrk[knrv - 1], &iwrk[kndu - 1], &iwrk[kndv - 1], &wrk[lww - 1], jwrk, ier);
 }
 
 
