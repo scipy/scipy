@@ -130,6 +130,30 @@ This may occur if the ``asan-ignore.txt`` file passed to
 You can verify this in the Meson log.
 
 
+THe ASAN runtime failing to intercept libc++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In some cases, such as when loading an extension module that links against
+libc++, the ASAN runtime has some trouble intercepting symbols like
+``__cxa_throw`` to hook into them. This then leads to the interceptor handling
+code to fail.
+
+.. code-block::
+
+    AddressSanitizer: CHECK failed: asan_interceptors.cpp:463 "((__interception::real___cxa_throw)) != (0)" (0x0, 0x0) (tid=77864)
+
+The best solution would be linking the extension modules against an instrumented
+build of libc++, however this can make the execution environment extremely hard
+to setup.
+
+However, a commonly viable work-around is to have the linker load libc++ before
+anything else.
+
+.. code-block::
+
+    $ export LD_PRELOAD=/usr/lib/libstdc++.so
+
+
 Incompatible Runtimes
 ~~~~~~~~~~~~~~~~~~~~~
 
