@@ -1294,8 +1294,6 @@ class _spbase(SparseABC):
         <class 'scipy.sparse._csr.csr_array'>
         >>> type(csc_matrix([[1, 0], [0, 2]]).tosparray())
         <class 'scipy.sparse._csc.csc_array'>
-        
-        .. versionadded:: 1.16.4
         """
         if issparray(self):
             if copy:
@@ -1324,8 +1322,6 @@ class _spbase(SparseABC):
         <class 'scipy.sparse._csr.csr_matrix'>
         >>> type(csc_matrix([[1, 0], [0, 2]]).tospmatrix())
         <class 'scipy.sparse._csc.csc_matrix'>
-        
-        .. versionadded:: 1.16.4
         """
         if isspmatrix(self):
             if copy:
