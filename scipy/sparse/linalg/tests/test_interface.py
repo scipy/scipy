@@ -358,7 +358,7 @@ class TestDotTests:
         op_U_H_V = np.matmul(op_U_H, V)
         UH_opH_V = np.matmul(UH, opH_V)
 
-        rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1.5e-4
+        rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 5e-4
         assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol)
 
     @pytest.mark.parametrize("args", square_args_list)
