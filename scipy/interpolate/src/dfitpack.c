@@ -27,7 +27,6 @@
 // fpgrdi
 // fpgrpa
 // fpgrre
-// fpinst
 // fpopdi
 // fppara
 // fppasu
@@ -41,7 +40,6 @@
 // fpsuev
 // fptrnp
 // fptrpe
-// insert
 // parcur
 // parsur
 // percur
@@ -58,7 +56,7 @@
 
 
 
-/* Forward declarations                                                     */
+/* Forward declarations */
 
 void   bispeu(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky,
               const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *ier);
@@ -83,6 +81,7 @@ void   fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u
               double *fpv, const int mm, const int mvnu, double *spu, double *spv, double *right, double *q, double *au,
               double *av1, double *av2, double *bu, double *bv, double *a0, double *a1, double *b0, double *b1, double *c0,
               double *c1, double *cosi, int *nru, int *nrv);
+void   fpinst(const int iopt, const double* t, const int n, const double* c, const int k, const double x, const int l, double* tt, int* nn, double* cc, const int nest);
 void   fpintb(const double *t, int n, double *bint, const int nk1, const double x, const double y);
 void   fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdata, int* nrint, const int nest, const int istart);
 void   fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const double *u, const int mu, const double *v, const int mv,
@@ -113,6 +112,7 @@ void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w, doubl
               double* ff, double* a, double* q, double* bx, double* by, double* spx, double* spy, double* h, int* index, int* nummer, double* wrk,
               int lwrk, int* ier);
 void   fpsysy(double* restrict a, const int n, double* restrict g);
+void   insert(const int iopt, const double* t, const int n, const double* c, const int k, const double x, double* tt, int* nn, double* cc, const int nest, int* ier);
 void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx,
               const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
 void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy,
@@ -1375,6 +1375,71 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
         }
         nroldu = numu;
     }
+}
+
+void
+fpinst(const int iopt, const double* t, const int n, const double* c, const int k,
+       const double x, const int l, double* tt, int* nn, double* cc, const int nest)
+{
+    int k1 = k + 1;
+    int nk1 = n - k1;
+    // the new knots.
+    int ll = l + 1;
+    int i = n;
+    for (int j = ll; j <= n; j++) {
+        tt[j - 1] = t[i - 1];
+        i--;
+    }
+    tt[ll - 1] = x;
+    for (int j = 1; j <= l; j++) {
+        tt[j - 1] = t[j - 1];
+    }
+    // the new b-spline coefficients
+    i = nk1;
+    for (int j = l; j <= nk1; j++) {
+        cc[i] = c[i - 1];
+        i--;
+    }
+    i = l;
+    for (int j = 1; j <= k; j++) {
+        int m = i + k1;
+        double fac = (x - tt[i - 1]) / (tt[m - 1] - tt[i - 1]);
+        int i1 = i - 1;
+        cc[i - 1] = fac * c[i - 1] + (1.0 - fac) * c[i1 - 1];
+        i--;
+    }
+    for (int j = 1; j <= i; j++) {
+        cc[j - 1] = c[j - 1];
+    }
+    *nn = n + 1;
+    if (iopt == 0) { return; }
+    // incorporate the boundary conditions for a periodic spline.
+    int nk = n - k;
+    int nl = nk + k1;
+    double per = tt[nk - 1] - tt[k1 - 1];
+    i = k1;
+    int j = nk;
+    if (ll > nl) {
+        for (int m = 1; m <= k; m++) {
+            int mk = m + nl;
+            cc[m - 1] = cc[mk - 1];
+            i--;
+            j--;
+            tt[i - 1] = tt[j - 1] - per;
+        }
+        return;
+    }
+    if (ll > (k1 + k)) { return; }
+
+    for (int m = 1; m <= k; m++) {
+        int mk = m + nl;
+        cc[mk - 1] = cc[m - 1];
+        i++;
+        j++;
+        tt[j - 1] = tt[i - 1] + per;
+    }
+
+    return;
 }
 
 
@@ -4292,6 +4357,43 @@ fpsysy(double* restrict a, const int n, double* restrict g)
         }
         g[i - 1] = fac;
     }
+    return;
+}
+
+
+void
+insert(const int iopt, const double* t, const int n, const double* c, const int k, const double x,
+       double* tt, int* nn, double* cc, const int nest, int* ier)
+{
+    // Faithful translation of Fortran insert.f
+    *ier = 10;
+    if (nest <= n) { return; }
+    int k1 = k + 1;
+    int nk = n - k;
+    if (x < t[k1 - 1] || x > t[nk - 1]) { return; }
+
+    // Search for knot interval t[l] <= x < t[l+1]
+    int l = k1;
+    while (x >= t[l]) {
+        l++;
+        if (l == nk) break;
+    }
+    // if no interval found above, then reverse the search and
+    // look for knot interval t[l] < x <= t[l+1]
+    l = nk - 1;
+    while (x <= t[l - 1]) {
+        l--;
+        if (l == k) { return; }
+    }
+    if (t[l - 1] >= t[l]) { return; }
+    if (iopt != 0) {
+        int kk = 2 * k;
+        if ((l <= kk) || (l >= (n - kk + 1))) { return; }
+    }
+    *ier = 0;
+    // insert the new knot.
+    fpinst(iopt, t, n, c, k, x, l, tt, nn, cc, nest);
+
     return;
 }
 
