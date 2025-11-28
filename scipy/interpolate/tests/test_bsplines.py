@@ -2614,6 +2614,11 @@ class TestNdBSpline:
             (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
             (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
             (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+            (2*kx, 1): lambda x, y: 0,
+            (2*kx, 0): lambda x, y: 0,
+            (1, 3*ky): lambda x, y: 0,
+            (0, 3*ky): lambda x, y: 0,
+            (3*kx, 2*ky): lambda x, y: 0,
         }
 
         for nu, expected_fn in test_cases.items():
