@@ -55,6 +55,12 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      * Now do m "derivative" recursions
      * to convert the values of beta into the mth derivative
      */
+    if (m > k + 1) {
+        throw std::runtime_error(
+            "Requested derivative order m exceeds the maximum allowed (k+1). "
+            "Cannot compute derivative of order m for spline of order k."
+        );
+    }
     for (j = k - m + 1; j <= k; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
