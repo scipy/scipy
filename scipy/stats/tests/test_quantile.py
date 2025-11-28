@@ -30,7 +30,7 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
         # hdquantiles returns masked element if length along axis is 1 (bug)
         res = (np.full_like(p, x[0]) if x.size == 1
                else stats.mstats.hdquantiles(x, p).data)
-    elif method.startswith('winsor'):
+    elif method.startswith('round'):
         res = winsor_reference_1d(np.sort(x), p, method)
     else:
         res = np.quantile(x, p, method=method)
@@ -48,11 +48,11 @@ def winsor_reference_1d(y, p, method):
     # Adapted directly from the documentation
     # Note: `y` is the sorted data array
     n = len(y)
-    if method == 'winsor_round':
+    if method == 'round_nearest':
         j = int(np.round(p * n) if p < 0.5 else np.round(n * p - 1))
-    elif method == 'winsor_less':
+    elif method == 'round_outward':
         j = int(np.floor(p * n) if p < 0.5 else np.ceil(n * p - 1))
-    elif method == 'winsor_more':
+    elif method == 'round_inward':
         j = int(np.ceil(p * n) if p < 0.5 else np.floor(n * p - 1))
     return y[j]
 
@@ -116,7 +116,7 @@ class TestQuantile:
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
           'median_unbiased', 'normal_unbiased', 'weibull',
-          'harrell-davis', 'winsor_round', 'winsor_less', 'winsor_more',
+          'harrell-davis', 'round_nearest', 'round_outward', 'round_inward',
           '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
@@ -141,7 +141,7 @@ class TestQuantile:
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
-    @pytest.mark.parametrize('method', ['linear', 'harrell-davis', 'winsor_round'])
+    @pytest.mark.parametrize('method', ['linear', 'harrell-davis', 'round_nearest'])
     def test_against_reference_2(self, axis, keepdims, nan_policy, dtype, method, xp):
         # Test some methods with various combinations of arguments
         if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146

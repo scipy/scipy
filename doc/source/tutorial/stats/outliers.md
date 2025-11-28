@@ -79,19 +79,19 @@ SciPy now offers a {ref}`quantile` function with several methods useful for iden
 ```{code-cell} ipython3
 x = np.arange(22.)
 p = 0.1
-stats.quantile(x, [p, 1-p], method='winsor_less')
+stats.quantile(x, [p, 1-p], method='round_outward')
 ```
 
 Rounding the number of points to trim *up*:
 
 ```{code-cell} ipython3
-stats.quantile(x, [p, 1-p], method='winsor_more')
+stats.quantile(x, [p, 1-p], method='round_inward')
 ```
 
 Rounding the number of points to trim to the nearest integer:
 
 ```{code-cell} ipython3
-stats.quantile(x, [p, 1-p], method='winsor_round')
+stats.quantile(x, [p, 1-p], method='round_nearest')
 ```
 
 Note that these methods are all subtly different from estimating the 10th and 90th percentiles of the data, which might be called for in different circumstances. Using the default method:
@@ -112,7 +112,7 @@ Note that {ref}`quantile` is fully vectorized. Suppose we have two rows of data,
 x2d = np.stack([x, x])
 p2d = [[p  , 1 - p  ],  # thresholds for zeroth row
        [2*p, 1 - 2*p]]  # thresholds for next row
-stats.quantile(x2d, p2d, method='winsor_less', axis=-1)
+stats.quantile(x2d, p2d, method='round_outward', axis=-1)
 ```
 
 ### Missing data
@@ -136,7 +136,7 @@ print(y)
 {ref}`quantile` and many other `scipy.stats` functions natively support `MArray`s, and support grows with each version of SciPy.
 
 ```{code-cell} ipython3
-stats.quantile(y, mxp.asarray(p2d), method='winsor_less', axis=-1)
+stats.quantile(y, mxp.asarray(p2d), method='round_outward', axis=-1)
 ```
 
 ## Trimming and winsorizing
@@ -149,12 +149,12 @@ stats.quantile(y, mxp.asarray(p2d), method='winsor_less', axis=-1)
 
 Once a numerical threshold has been identified, winsorizing is simply an application of a fundamental data operation: `clip`.
 
-Suppose we have $n=22$ observations and we wish to winsorize $p=10\%$ from each side of the data. Rounding down with `method='winsor_less'`, we would expect to winsorize $\left \lfloor{pn}\right \rfloor = 2$ points on each side. In this case, {ref}`quantile` returns the *third* data point from the left (at index `2`) as the lower limit. `clip`ing to this limit will winsorize the two lower observations, leaving the third observation unchanged. The story is similar on the right.
+Suppose we have $n=22$ observations and we wish to winsorize $p=10\%$ from each side of the data. Rounding down with `method='round_outward'`, we would expect to winsorize $\left \lfloor{pn}\right \rfloor = 2$ points on each side. In this case, {ref}`quantile` returns the *third* data point from the left (at index `2`) as the lower limit. `clip`ing to this limit will winsorize the two lower observations, leaving the third observation unchanged. The story is similar on the right.
 
 ```{code-cell} ipython3
 x = np.arange(22.)
 p = 0.1
-low, high = stats.quantile(x, [p, 1-p], method='winsor_less')
+low, high = stats.quantile(x, [p, 1-p], method='round_outward')
 x_winsorized = np.clip(x, low, high)
 x_winsorized
 ```
@@ -162,13 +162,13 @@ x_winsorized
 When extracting the `low` and `high` thresholds from the result of quantile, just remember that their positions correspond with the positions of values in the `p` argument.
 
 ```{code-cell} ipython3
-stats.quantile(x2d, p2d, method='winsor_less', axis=-1)
+stats.quantile(x2d, p2d, method='round_outward', axis=-1)
 ```
 
 Here, we want the columns, and we want to preserve their shape so they still align with the shape of `x2d`.
 
 ```{code-cell} ipython3
-low_high = stats.quantile(x2d, p2d, method='winsor_less', axis=-1)
+low_high = stats.quantile(x2d, p2d, method='round_outward', axis=-1)
 low2d = low_high[:, :1]
 high2d = low_high[:, 1:]
 low2d, high2d
@@ -189,16 +189,16 @@ For 1-D data, trimming is just indexing with a boolean mask that selects data to
 As in the 1-D winsorization example above, suppose we want to trim two points on either side. `low` is the *third* observation from the left - the first we want to keep. Therefore, we'll form a boolean mask with *non-strict* inequalities to select the data to be kept.
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_less')  # get the threshold values
+low, high = stats.quantile(x, [p, 1-p], method='round_outward')  # get the threshold values
 mask = (x >= low) & (x <= high)
 x_trimmed = x[mask]
 x_trimmed
 ```
 
-Rather than changing to strict inequalities, use `method='winsor_more'` if you want to round the other way.
+Rather than changing to strict inequalities, use `method='round_inward'` if you want to round the other way.
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_more')  # get the threshold values
+low, high = stats.quantile(x, [p, 1-p], method='round_inward')  # get the threshold values
 mask = (x >= low) & (x <= high)
 x[mask]
 ```
@@ -278,10 +278,10 @@ p = 0.1
 stats.trim_mean(x, proportiontocut=p)
 ```
 
-It always rounds the number of elements to cut *down*, so we choose `winsor_less`.
+It always rounds the number of elements to cut *down*, so we choose `round_outward`.
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_less')
+low, high = stats.quantile(x, [p, 1-p], method='round_outward')
 mask = (low <= x) & (x <= high)
 np.mean(x[mask])
 ```
@@ -353,7 +353,7 @@ stats.mstats.trimmed_mean(x, (p, p), inclusive=(True, True))
 According to the documentation, `inclusive=(True, True)` means that the number of elements "masked" on each side should be rounded. In our case, `p*len(x) = 1.9`, so we would round to 2 on each side for a total of four.
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_round')
+low, high = stats.quantile(x, [p, 1-p], method='round_nearest')
 mask = (x < low) | (high < x)
 np.count_nonzero(mask)
 ```
@@ -365,7 +365,7 @@ mxp.mean(mxp.asarray(x, mask=mask))
 What happened? Apparently the documentation has been wrong since the function was added in 2008. If we trim *less* data, we get the answer we expect.
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_less')
+low, high = stats.quantile(x, [p, 1-p], method='round_outward')
 mask = (x < low) | (high < x)
 np.count_nonzero(mask)
 ```
@@ -374,13 +374,13 @@ np.count_nonzero(mask)
 mxp.mean(mxp.asarray(x, mask=mask))
 ```
 
-What about `inclusive=(False, False)`? According to the documentation, the number of elements "masked" should be truncated. In our case, `p*len(x) = 1.9`, so we would truncate to 1 on each side for a total of two. This should give us the same result as the `winsor_less` calculation just above.
+What about `inclusive=(False, False)`? According to the documentation, the number of elements "masked" should be truncated. In our case, `p*len(x) = 1.9`, so we would truncate to 1 on each side for a total of two. This should give us the same result as the `round_outward` calculation just above.
 
 ```{code-cell} ipython3
 stats.mstats.trimmed_mean(x, (p, p), inclusive=(False, False))
 ```
 
-But instead, it gives us the same result as the `winsor_round` (or a `winsor_more`) calculation. Apparently, the documentation is backwards.
+But instead, it gives us the same result as the `round_nearest` (or a `round_inward`) calculation. Apparently, the documentation is backwards.
 
 +++
 
@@ -477,7 +477,7 @@ stats.mstats.trimr(x, (p, p), inclusive=(False, False))
 This is equivalent to:
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_round')
+low, high = stats.quantile(x, [p, 1-p], method='round_nearest')
 mxp.asarray(x, mask=(x < low) | (x > high))
 ```
 
@@ -488,7 +488,7 @@ stats.mstats.trimr(x, (p, p), inclusive=(True, True))
 ```
 
 ```{code-cell} ipython3
-low, high = stats.quantile(x, [p, 1-p], method='winsor_less')
+low, high = stats.quantile(x, [p, 1-p], method='round_outward')
 mxp.asarray(x, mask=(x < low) | (x > high))
 ```
 
@@ -538,7 +538,7 @@ In almost all cases, {ref}`stats.mstats.winsorize` is equivalent to:
 
 ```{code-cell} ipython3
 def winsorize(x, limits, inclusive, nan_policy='propagate'):
-    method = 'winsor_less' if all(inclusive) else 'winsor_round'
+    method = 'round_outward' if all(inclusive) else 'round_nearest'
     low_high = stats.quantile(x, [limits[0], 1-limits[1]], method=method, axis=-1, nan_policy=nan_policy)
     return np.clip(x, low_high[..., :1], low_high[..., 1:])
 ```
