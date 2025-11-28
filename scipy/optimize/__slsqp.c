@@ -191,7 +191,7 @@ ITER_START:
     }
 
     // Report Progress (Optimality & Constraint Violation)
-    S->optimality = S->h1;        // Variation of Langragian
+    S->optimality = S->h1;        // Variation of Lagrangian
     S->constr_violation = S->h2;  // Sum of constraint violation
 
     // Check convergence

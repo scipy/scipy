@@ -7,6 +7,7 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import scipy
+from functools import wraps
 
 from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
                             OptimizeResult)
@@ -397,12 +398,83 @@ class TestSLSQP:
         assert res.message.startswith("`callback` raised `StopIteration`")
 
     def test_callback_progres_measures(self):
-        # Test to ensure progress measures are available in a callback
+        # Test to ensure progress measures are available in a callback, and that the
+        #  progress measures match the definitions provided in the docstring of SLSQP
 
+        # Set tolerance
+        tol = 1e-10
+
+        # Interanlly slsqp uses the ACC var which is 10*tol
+        ACC = 10*tol
+
+        # Wraps the slsqp call in order to cache variables required for verification
+        #  that aren't returned as part of the intermediate result callback
+        var_cache = {
+            'x': None,
+            'step': None,
+            'grad': None,
+            'lag_mult': None,
+            'opt_complete': False,
+        }
+        def add_caching_decorator(slsqp):
+            @wraps(slsqp)
+            def wrapper(state_dict, fx, g, C, d, x, mult, xl, xu, buffer, indices):
+                iter_prev = state_dict['iter']
+                # gs and mult are computed based on the value of x at the begining of
+                #  the step. x will be overwritten by the step so we need to store it's
+                #  value before calling slsqp()
+                x_iter_start = x.copy()
+                result = slsqp(
+                    state_dict, fx, g, C, d, x, mult, xl, xu, buffer, indices)
+                if state_dict['iter'] > iter_prev:
+                    var_cache['x'] = x_iter_start
+                    var_cache['grad'] = g
+                    var_cache['step'] = x - x_iter_start
+                    var_cache['grad_step'] = state_dict['gs']
+                    var_cache['lag_mult'] = mult[0:len(x)]
+                    var_cache['opt_complete'] = (abs(state_dict['mode']) != 1)
+                return result
+            return wrapper
+        # This will apply the wrapper to the slsqp call in  _slsqp_py.py to cache the
+        # variables needed for verification
+        import scipy.optimize._slsqp_py as slsqp_py
+        slsqp_py.slsqp = add_caching_decorator(slsqp_py.slsqp)
+
+        # Defines an intermediate result callback that will check the returned values
+        #  for optimality and constr_violation
         def callback(intermediate_result: OptimizeResult):
+            # Gets the progress metrics returned as part of intermediate_result
             optimality = intermediate_result.optimality
-            feasibility = intermediate_result.constr_violation
-            _ = max(optimality, feasibility)
+            constr_violation = intermediate_result.constr_violation
+
+            # Pull values cached from slsqp call required for verification
+            x = var_cache['x']
+            step = var_cache['step']
+            grad = var_cache['grad']
+            mult = var_cache['lag_mult']
+
+            # Recompute the progress metrics to check they are correct
+            optimality_computed = (
+                np.dot(grad, step)
+                + abs(mult[0]*eq_con(x))
+                + abs(mult[1]*ineq_con(x))
+            )
+            constr_violation_computed = abs(eq_con(x)) + max(0.0, -ineq_con(x))
+            assert_allclose(
+                optimality,
+                optimality_computed,
+                rtol=1e-9, atol=1e-9
+            )
+            assert_allclose(
+                constr_violation,
+                constr_violation_computed,
+                rtol=1e-9, atol=1e-9
+            )
+
+            # Check that the desired tolerance has not yet been reached if the
+            #  optimization has not yet completed
+            if not var_cache['opt_complete']:
+                assert max(optimality, constr_violation) >= ACC
 
         def obj(x):
             return (x[0] - 1.0) ** 2 + (x[1] - 0.5) ** 2
@@ -413,19 +485,19 @@ class TestSLSQP:
         def ineq_con(x):
             return x[1] - 10
 
-        tol = 1e-10
         x0 = np.array([0.5, 0.5])
         cons = [
             {"type": "eq", "fun": eq_con},
             {"type": "ineq", "fun": ineq_con},
         ]
 
-        res = minimize(obj, x0, method="SLSQP", constraints=cons, callback=callback, tol=tol)
+        res = minimize(obj, x0, method="SLSQP", constraints=cons,
+                       callback=callback, tol=tol)
 
-        # Check that tolerances acheived
+        # Check that tolerances are acheived once the optimization completes
         assert res.success
-        assert res.optimality <= 10*tol
-        assert res.constr_violation <= 10*tol
+        assert res.optimality <= ACC
+        assert res.constr_violation <= ACC
 
     def test_inconsistent_linearization(self):
         # SLSQP must be able to solve this problem, even if the

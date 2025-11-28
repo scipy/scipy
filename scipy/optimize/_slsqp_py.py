@@ -290,13 +290,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         .. math::
 
             \begin{align}
-                \textit{optimality} &= \bigl|\nabla f^T \mathbf{p}\bigr| + \sum_{j \in \mathcal{M}} \bigl| \lambda_j c_j(x)\bigr|,\\
+                \textit{optimality} &= \bigl|\nabla f^T \mathbf{s}\bigr| + \sum_{j \in \mathcal{M}} \bigl| \lambda_j c_j(x)\bigr|,\\
                 \textit{constr_violation} &= \sum_{j \in \mathcal{M}_{\text{eq}}} \bigl|c_j(x)\bigr| + \sum_{j \in \mathcal{M}_{\text{ineq}}} \max\!\bigl(0,
                 -c_j(x)\bigr)
             \end{align}
 
     respectively, where :math:`\nabla f` is the gradient of the objective function,
-    :math:`x` are the design variables, :math:`\mathbf{p}` is the search direction vector,
+    :math:`x` are the design variables, :math:`\mathbf{s}` is the search direction vector,
     :math:`c` are the constraint functions, :math:`\lambda` are the lagrange multipliers,
     :math:`\mathcal{M}` are the indices of all constraints,
     :math:`\mathcal{M}_{\text{eq}}` are the indices of the equality constraints and
