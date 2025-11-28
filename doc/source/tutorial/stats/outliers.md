@@ -22,9 +22,9 @@ kernelspec:
 
 +++
 
-# Trimming and Winsorization Transition Guide
+# Trimming and winsorization transition guide
 
-An outlier is an observation that differs substantially from other observations in a sample. There are many references available about identifying outliers, whether to make adjustments for outliers, and if so, what adjustments to make. This guide does not make any recommendations on these topics. Instead, the focus is how to perform two of the most common procedures:
+An outlier is an observation that differs substantially from other observations in a sample. There are many references available about identifying outliers, whether to make adjustments for outliers, and if so, what adjustments to make. This guide does not make any recommendations on these topics. Instead, the focus is on how to perform two of the most common procedures:
 
 - trimming: removing outliers from the dataset, and
 - winsorization: replacing outliers with a more central value,
@@ -56,7 +56,7 @@ np.mean(x[1:-1])
 np.mean(x[2:-2])
 ```
 
-Likewise, when the proportion would not result in an integral number of points being removed, how many points are removed? 
+Likewise, when the proportion would not result in an integral number of points being removed, how many points are removed?
 
 For example, in an array with 22 elements, is the number to remove rounded up or down?
 
@@ -129,7 +129,7 @@ Rounding the number of points to trim to the nearest integer:
 stats.quantile(x, [p, 1-p], method='winsor_round')
 ```
 
-Note that these methods are all subtlely different from estimating the 10th and 90th percentiles of the data, which might be called for in different circumstances. Using the default method:
+Note that these methods are all subtly different from estimating the 10th and 90th percentiles of the data, which might be called for in different circumstances. Using the default method:
 
 ```{code-cell} ipython3
 stats.quantile(x, [p, 1-p])
@@ -150,14 +150,14 @@ p2d = [[p  , 1 - p  ],  # thresholds for zeroth row
 stats.quantile(x2d, p2d, method='winsor_less', axis=-1)
 ```
 
-### Missing Data
+### Missing data
 
 +++
 
 When there are missing or ignorable values but omitting them would lead to a ragged array, the two historical options have been to:
 
 - cover the missing/ignorable values with the "mask" of a NumPy masked array and use `stats.mstats` functions for analysis, or
-- place NaNs in place of the missing/ignorable values and use `stats` functions with `nan_poliy='omit'` for analysis.
+- place NaNs in place of the missing/ignorable values and use `stats` functions with `nan_policy='omit'` for analysis.
 
 The downsides of these approaches are documented elsewhere; here, we recommend using an [MArray](https://mdhaber.github.io/marray/tutorial.html) with `stats` functions.
 
@@ -174,7 +174,7 @@ print(y)
 stats.quantile(y, mxp.asarray(p2d), method='winsor_less', axis=-1)
 ```
 
-## Trimming and Winsorizing
+## Trimming and winsorizing
 
 +++
 
@@ -218,7 +218,7 @@ x2d_winsorized
 
 +++
 
-For 1-D data, trimming is equivalent to another fundamental routine: indexing.
+For 1-D data, trimming is equivalent to another fundamental operation: indexing.
 
 In the general case that the data are unsorted and threshold values are known, use a boolean mask to pick out the data to be kept.
 
@@ -410,7 +410,7 @@ np.count_nonzero(mask)
 mxp.mean(mxp.asarray(x, mask=mask))
 ```
 
-What about `inclusive=(False, False)`? According to the documentation, the number of elements "masked" should be truncated. In our case, `p*len(x) = 1.9`, so we would trunctate to 1 on each side for a total of two. This should give us the same result as the `winsor_less` calculation just above.
+What about `inclusive=(False, False)`? According to the documentation, the number of elements "masked" should be truncated. In our case, `p*len(x) = 1.9`, so we would truncate to 1 on each side for a total of two. This should give us the same result as the `winsor_less` calculation just above.
 
 ```{code-cell} ipython3
 stats.mstats.trimmed_mean(x, (p, p), inclusive=(False, False))
@@ -423,7 +423,7 @@ But instead, it gives us the same result as the `winsor_round` (or a `winsor_mor
 As it turns out, `stats.mstats.trimmed_mean` is a convenience function equivalent to:
 
 ```python3
-stats.mstatats.trim(a, limits=limits, inclusive=inclusive, relative=relative).mean(axis=axis)
+stats.mstats.trim(a, limits=limits, inclusive=inclusive, relative=relative).mean(axis=axis)
 ```
 
 So the behavior is best understood in terms of `stats.mstats.trim`.

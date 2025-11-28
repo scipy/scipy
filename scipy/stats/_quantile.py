@@ -273,7 +273,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
         j = int(np.ceil(p*n) if p < 0.5 else np.floor(n*p - 1))
 
-    See :ref:`outliers` for example applications.
+    These methods are also useful for trimming data: removing ``p*n`` of the most
+    extreme observations. See :ref:`outliers` for example applications.
 
     Examples
     --------
