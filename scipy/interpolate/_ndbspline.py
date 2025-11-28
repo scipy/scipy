@@ -180,6 +180,10 @@ class NdBSpline:
         if xi_shape[-1] != ndim:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
 
+        if any(nu > np.asarray(self.k, dtype=np.int64) + 1):
+            return np.zeros(xi_shape[:-1] + self._c.shape[ndim:],
+                            dtype=self._c.dtype)
+
         # complex -> double
         was_complex = self._c.dtype.kind == 'c'
         cc = self._c
