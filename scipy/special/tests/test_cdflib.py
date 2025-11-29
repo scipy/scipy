@@ -213,7 +213,7 @@ class TestCDFlib:
         _assert_inverts(
             sp.bdtrin,
             _binomial_cdf,
-            1, [IntArg(1, 1000), ProbArg(), ProbArg()],
+            1, [IntArg(1, 3000), ProbArg(), ProbArg()],
             rtol=1e-12, endpt_atol=[None, None, 1e-6])
 
     def test_btdtria(self):
