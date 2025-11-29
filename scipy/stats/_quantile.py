@@ -142,7 +142,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         'harrell-davis' is also available to compute the quantile estimate
         according to [2]_.
 
-        `round_outward`, `round_inward`, and `round_nearest` are available for use
+        'round_outward', 'round_inward', and 'round_nearest' are available for use
         in trimming and winsorizing data.
 
         See Notes for details.
