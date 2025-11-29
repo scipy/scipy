@@ -79,7 +79,7 @@ def _format_emit_errors_warnings(err_lst):
 
     if singular:
         raise LinAlgError(
-            f"An ill-conditioned matrix detected: slice(s) {singular} are singular."
+            f"A singular matrix detected: slice(s) {singular} are singular."
         )
 
     if lapack_err:

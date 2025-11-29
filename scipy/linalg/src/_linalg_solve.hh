@@ -187,14 +187,10 @@ inline void solve_slice_diagonal(
         // condition number
         real_type absa = std::abs(ajj), absinva = std::abs(inv_ajj);
 
-        if(absa != absa) {
-            status.is_ill_conditioned = true;
-        } else {
-            if(absa > maxa) {maxa = absa;}
-            if(absinva > maxinva) {maxinva = absinva;}
-        }
+        if(absa > maxa) {maxa = absa;}
+        if(absinva > maxinva) {maxinva = absinva;}
     }
-    status.is_ill_conditioned = status.is_ill_conditioned || (maxa * maxinva > 1./ numeric_limits<real_type>::eps);
+    status.is_ill_conditioned = maxa * maxinva > 1./ numeric_limits<real_type>::eps;
     status.rcond = maxa * maxinva;
 }
 

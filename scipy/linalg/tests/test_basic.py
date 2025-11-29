@@ -1116,6 +1116,26 @@ class TestSolve:
         with assert_raises(LinAlgError):
             solve(A, b, assume_a='pos')
 
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        b = np.ones(3)
+        x = solve(a, b)
+
+        # basic diagonal solve
+        assert_allclose(x[1, ...], 1 / np.arange(1, 4), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="diagonal")
+
 
 class TestSolveTriangular:
 
@@ -1482,6 +1502,11 @@ class TestInv:
         # ill-conditioned inputs warn
         a = np.asarray([[1e30, 0], [0, 1]])
         with pytest.warns(LinAlgWarning):
+            inv(a, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        with pytest.raises(LinAlgError):
             inv(a, assume_a="diagonal")
 
 
