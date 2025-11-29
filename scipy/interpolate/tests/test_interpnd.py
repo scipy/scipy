@@ -484,7 +484,7 @@ def test_interp_from_boundary(interpolation_class, simplex_tolerance):
         assert num_nans == 0
 
 @pytest.mark.parametrize("simplex_tolerance", [1, 10])
-@pytest.mark.parametrize("interpolator_factory", [CloughTocher2DInterpolator, LinearNDInterpolator])
+@pytest.mark.parametrize("interpolator_factory", [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator])
 def test_reproduction_NaN_on_points_linear_combination(simplex_tolerance, interpolator_factory):
     """Test that SciPy can interpolate to the edge of a triangle.
 
