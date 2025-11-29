@@ -3966,7 +3966,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/ruff-0.14.4-h813ae00_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/smmap-5.0.2-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/spin-0.15-pyh8f84b5b_0.conda
-      - conda: https://prefix.dev/conda-forge/linux-64/tach-0.32.0-py310h1570de5_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/tach-0.32.1-py310h1570de5_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/tk-8.6.13-noxft_hd72426e_102.conda
       - conda: https://prefix.dev/conda-forge/noarch/tokenize-rt-6.2.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tomli-2.3.0-pyhcf101f3_0.conda
@@ -4073,7 +4073,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/osx-arm64/ruff-0.14.4-h382de68_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/smmap-5.0.2-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/spin-0.15-pyh8f84b5b_0.conda
-      - conda: https://prefix.dev/conda-forge/osx-arm64/tach-0.32.0-py310h06fc29a_0.conda
+      - conda: https://prefix.dev/conda-forge/osx-arm64/tach-0.32.1-py310h06fc29a_0.conda
       - conda: https://prefix.dev/conda-forge/osx-arm64/tk-8.6.13-h892fb3f_2.conda
       - conda: https://prefix.dev/conda-forge/noarch/tokenize-rt-6.2.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tomli-2.3.0-pyhcf101f3_0.conda
@@ -4157,7 +4157,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/win-64/ruff-0.14.4-h15e3a1f_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/smmap-5.0.2-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/spin-0.15-pyha7b4d00_0.conda
-      - conda: https://prefix.dev/conda-forge/win-64/tach-0.32.0-py310hdba2031_0.conda
+      - conda: https://prefix.dev/conda-forge/win-64/tach-0.32.1-py310hdba2031_0.conda
       - conda: https://prefix.dev/conda-forge/win-64/tk-8.6.13-h2c6b04d_2.conda
       - conda: https://prefix.dev/conda-forge/noarch/tokenize-rt-6.2.0-pyhd8ed1ab_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tomli-2.3.0-pyhcf101f3_0.conda
@@ -16249,10 +16249,10 @@ packages:
   license_family: MIT
   size: 37554
   timestamp: 1733589854804
-- conda: https://prefix.dev/conda-forge/linux-64/tach-0.32.0-py310h1570de5_0.conda
+- conda: https://prefix.dev/conda-forge/linux-64/tach-0.32.1-py310h1570de5_0.conda
   noarch: python
-  sha256: 0e4ca2aa8d6e88cc7c4c4a5af520b6cfee37b0cc1791cac4da3c61c626335468
-  md5: 1fbc9cfd706575c48419bfab533c2521
+  sha256: b67cc20a7a0c301a2327eecaaebc80c8c358a95abe985995d4303400af5f6d9d
+  md5: 013326350b2efcf8861fb26ea2f99286
   depends:
   - gitpython >=3.1,<4.0
   - networkx >=2.6,<4.0
@@ -16263,20 +16263,19 @@ packages:
   - rich >=13.0,<15.0
   - tomli >=1.2.2
   - tomli-w >=1.0,<2.0
-  - __glibc >=2.17,<3.0.a0
   - libgcc >=14
+  - __glibc >=2.17,<3.0.a0
   - _python_abi3_support 1.*
   - cpython >=3.10
   constrains:
   - __glibc >=2.17
   license: MIT
-  license_family: MIT
-  size: 3099005
-  timestamp: 1763563955687
-- conda: https://prefix.dev/conda-forge/osx-arm64/tach-0.32.0-py310h06fc29a_0.conda
+  size: 3095564
+  timestamp: 1764166638729
+- conda: https://prefix.dev/conda-forge/osx-arm64/tach-0.32.1-py310h06fc29a_0.conda
   noarch: python
-  sha256: cda38b0d3a40ff836e7ecd5a9825201c62f4000a4a4d84436a45434e55633a2b
-  md5: aaea13dfab79a4f242c233213b808988
+  sha256: e9ddeed592d67e1f6c472c04a1598ac843ec81ceb2d1ffc567512f940b8830ef
+  md5: 6286a3242365bddc7aa5ad51de954a3c
   depends:
   - gitpython >=3.1,<4.0
   - networkx >=2.6,<4.0
@@ -16293,13 +16292,12 @@ packages:
   constrains:
   - __osx >=11.0
   license: MIT
-  license_family: MIT
-  size: 2897998
-  timestamp: 1763564082756
-- conda: https://prefix.dev/conda-forge/win-64/tach-0.32.0-py310hdba2031_0.conda
+  size: 2893509
+  timestamp: 1764166788530
+- conda: https://prefix.dev/conda-forge/win-64/tach-0.32.1-py310hdba2031_0.conda
   noarch: python
-  sha256: 46f1c9eaa013f92e6e525321a1892b957562e2b8d2df00826e523c9aac1e4161
-  md5: eeb06f8d205d85017b3ec2f17e9457c3
+  sha256: dbc562a35e9f5dcf6653c28b2786cbb9ab4586429f6d794a6043b102a751917f
+  md5: cab1c18931fd7d3a59bb627687b7af24
   depends:
   - gitpython >=3.1,<4.0
   - networkx >=2.6,<4.0
@@ -16319,9 +16317,8 @@ packages:
   - _python_abi3_support 1.*
   - cpython >=3.10
   license: MIT
-  license_family: MIT
-  size: 3178143
-  timestamp: 1763563964655
+  size: 3173523
+  timestamp: 1764166631246
 - conda: https://prefix.dev/conda-forge/osx-arm64/tapi-1300.6.5-h03f4b80_0.conda
   sha256: 37cd4f62ec023df8a6c6f9f6ffddde3d6620a83cbcab170a8fff31ef944402e5
   md5: b703bc3e6cba5943acf0e5f987b5d0e2
