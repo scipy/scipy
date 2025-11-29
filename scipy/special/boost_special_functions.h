@@ -244,10 +244,10 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
     } catch (const std::underflow_error& e) {
         sf_error("betaincinv", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
-    } //catch (...) {
-      //  sf_error("betaincinv", SF_ERROR_OTHER, NULL);
-      //  y = NAN;
-    //}
+    } catch (...) {
+        sf_error("betaincinv", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
     return y;
 }
 
