@@ -3,7 +3,7 @@
 import numpy as np
 import numpy.typing as npt
 from scipy import fft as sp_fft
-from scipy._lib.deprecation import _deprecate_positional_args
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
 from . import _signaltools
 from ._short_time_fft import ShortTimeFFT, FFT_MODE_TYPE
 from .windows import get_window
@@ -22,7 +22,7 @@ def lombscargle(
     y: npt.ArrayLike,
     freqs: npt.ArrayLike,
     *,
-    precenter: bool | None = None,
+    precenter: bool = _NoValue,
     normalize: bool | Literal["power", "normalize", "amplitude"] = False,
     weights: npt.NDArray | None = None,
     floating_mean: bool = False,
@@ -257,7 +257,7 @@ def lombscargle(
     weights = weights * (1.0 / weights.sum())
 
     # if requested, perform precenter
-    if precenter is not None:
+    if precenter is not _NoValue:
         msg = ("Use of parameter 'precenter' is deprecated as of SciPy 1.17.0 and "
                "will be removed in 1.19.0. Please leave 'precenter' unspecified. "
                "Passing True to 'precenter' "
