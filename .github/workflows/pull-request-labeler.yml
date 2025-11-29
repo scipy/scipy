@@ -15,13 +15,13 @@ jobs:
     # label based on changed files
     - uses: actions/labeler@8558fd74291d67161a8a78ce36a881fa63b766a9 # v5.0.0
       continue-on-error: true
-      if: github.repository == 'scipy/scipy'
+      if: github.repository == 'nickodell/scipy'
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
         configuration-path: ".github/label-globs.yml"
     # label based on PR title
     - uses: github/issue-labeler@c1b0f9f52a63158c4adc09425e858e87b32e9685 # v3.4
-      if: github.repository == 'scipy/scipy'
+      if: github.repository == 'nickodell/scipy'
       with:
         configuration-path: .github/labeler.yml
         include-title: 1
