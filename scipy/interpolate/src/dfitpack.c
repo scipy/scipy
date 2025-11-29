@@ -20,7 +20,6 @@
 // fpcons
 // fpcosp
 // fpcsin
-// fpcurf
 // fpcuro
 // fpdeno
 // fpfrno
@@ -48,8 +47,6 @@
 // profil
 // regrid
 // spalde
-// splder
-// splev
 // splint
 // sproot
 // surev
@@ -71,6 +68,10 @@ void   fpbisp(const double *tx, const int nx, double *ty, const int ny, const do
 void   fpbspl(const double* t, const int n, const int k, const double x, const int l, double* h);
 void   fpchec(const double* x, const int m, const double* t, const int n, const int k, int* ier);
 void   fpchep(double* x, const int m, double* t, const int n, const int k, int* ier);
+void   fpcurf(const int iopt, const double *x, const double *y, const double *w, const int m, const double xb, const double xe,
+              const int k, const double s, const int nest, const double tol, const int maxit, const int k1, const int k2,
+              int *n, double *t, double *c, double *fp, double *fpint, double *z, double *a, double *b, double *g,
+              double *q, int *nrdata, int *ier);
 void   fpcyt1(double *a, const int n, const int nn);
 void   fpcyt2(const double *a, const int n, const double *b, double *c, const int nn);
 void   fpdisc(const double* t, const int n, const int k2, double* b, const int nest);
@@ -125,6 +126,9 @@ void   spgrid(const int *iopt, const int *ider, const int mu, const double *u, c
 void   sphere(const int iopt, const int m, const double *teta, const double *phi, const double *r, const double *w,
               const double s, const int ntest, const int npest, const double eps, int *nt, double *tt, int *np, double *tp,
               double *c, double *fp, double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk, int *ier);
+void   splder(const double *t, const int n, const double *c, const int nc, const int k, const int nu,
+              const double *x, double *y, const int m, const int e, double *wrk, int *ier);
+void   splev(const double *t, const int n, const double *c, const int nc, const int k, const double *x, double *y, const int m, const int e, int *ier);
 void   surfit(int iopt, int m, double* x, double* y, double* z, double* w, double xb, double xe, double yb, double ye, int kx, int ky, double s,
               int nxest, int nyest, int nmax, double eps, int* nx, double* tx, int* ny, double* ty, double* c, double* fp, double* wrk1, int lwrk1,
               double* wrk2, int lwrk2, int* iwrk, int kwrk, int* ier);
@@ -519,6 +523,422 @@ fpchep(double* x, const int m, double* t, const int n, const int k, int* ier)
         if (spin_i1_loop) continue;
         *ier = 0;
         return;
+    }
+}
+
+
+void
+fpcurf(const int iopt, const double *x, const double *y, const double *w, const int m,
+       const double xb, const double xe, const int k, const double s, const int nest,
+       const double tol, const int maxit, const int k1, const int k2, int *n, double *t,
+       double *c, double *fp, double *fpint, double *z, double *a, double *b, double *g,
+       double *q, int *nrdata, int *ier)
+{
+    double acc, con1, con4, con9, ccos, half, fpart, fpms, fpold, fp0, one, p, pinv, piv;
+    double p1, p2, p3, rn, ssin, store, term, wi, xi, yi;
+    int i, ich1, ich3, it, iter, i1, i2, i3, j, k3, l, l0;
+    int mk1, new, nk1, nmax, nmin, nplus, npl1, nrint, n8;
+    double h[7];
+
+    // set constants
+    one = 0.1e+01;
+    con1 = 0.1e0;
+    con9 = 0.9e0;
+    con4 = 0.4e-01;
+    half = 0.5e0;
+
+    /////////////////////////////////////////////////////////////////////////
+    //  part 1: determination of the number of knots and their position    //
+    //  **************************************************************     //
+    //  given a set of knots we compute the least-squares spline sinf(x),  //
+    //  and the corresponding sum of squared residuals fp=f(p=inf).        //
+    //  if iopt=-1 sinf(x) is the requested approximation.                 //
+    //  if iopt=0 or iopt=1 we check whether we can accept the knots:      //
+    //    if fp <=s we will continue with the current set of knots.        //
+    //    if fp > s we will increase the number of knots and compute the   //
+    //       corresponding least-squares spline until finally fp<=s.       //
+    //    the initial choice of knots depends on the value of s and iopt.  //
+    //    if s=0 we have spline interpolation; in that case the number of  //
+    //    knots equals nmax = m+k+1.                                       //
+    //    if s > 0 and                                                     //
+    //      iopt=0 we first compute the least-squares polynomial of        //
+    //      degree k; n = nmin = 2*k+2                                     //
+    //      iopt=1 we start with the set of knots found at the last        //
+    //      call of the routine, except for the case that s > fp0; then    //
+    //      we compute directly the least-squares polynomial of degree k.  //
+    /////////////////////////////////////////////////////////////////////////
+    // determine nmin, the number of knots for polynomial approximation.
+    nmin = 2 * k1;
+    if (iopt < 0) {
+        ; // Skip to main loop
+    } else {
+        // calculation of acc, the absolute tolerance for the root of f(p)=s.
+        acc = tol * s;
+        // determine nmax, the number of knots for spline interpolation.
+        nmax = m + k1;
+        if (s > 0.0) {
+            // if s>0 our initial choice of knots depends on the value of iopt.
+            // if iopt=0 or iopt=1 and s>=fp0, we start computing the least-squares
+            // polynomial of degree k which is a spline without interior knots.
+            // if iopt=1 and fp0>s we start computing the least squares spline
+            // according to the set of knots found at the last call of the routine.
+            if ((iopt == 0) || (*n == nmin)) {
+                *n = nmin;
+                fpold = 0.0;
+                nplus = 0;
+                nrdata[0] = m - 2;
+            } else {
+                fp0 = fpint[*n - 1];
+                fpold = fpint[*n - 2];
+                nplus = nrdata[*n - 1];
+                if (fp0 <= s) {
+                    *n = nmin;
+                    fpold = 0.0;
+                    nplus = 0;
+                    nrdata[0] = m - 2;
+                }
+            }
+        } else {
+            // if s=0, s(x) is an interpolating spline.
+            // test whether the required storage space exceeds the available one.
+            *n = nmax;
+            if (nmax > nest) {
+                *ier = 1;
+                return;
+            }
+            // find the position of the interior knots in case of interpolation.
+            mk1 = m - k1;
+            if (mk1 != 0) {
+                k3 = k / 2;
+                i = k2 - 1;
+                j = k3 + 2 - 1;
+                if (k3 * 2 == k) {
+                    for (l = 1; l <= mk1; l++) {
+                        t[i] = (x[j] + x[j - 1]) * half;
+                        i++;
+                        j++;
+                    }
+                } else {
+                    for (l = 1; l <= mk1; l++) {
+                        t[i] = x[j];
+                        i++;
+                        j++;
+                    }
+                }
+            }
+        }
+    }
+
+    // main loop for the different sets of knots. m is a save upper bound
+    // for the number of trials.
+    for (iter = 1; iter <= m; iter++) {
+        if (*n == nmin) { *ier = -2; }
+        // find nrint, tne number of knot intervals.
+        nrint = *n - nmin + 1;
+        // find the position of the additional knots which are needed for
+        // the b-spline representation of s(x).
+        nk1 = *n - k1;
+        i = *n;
+        for (j = 1; j <= k1; j++) {
+            t[j - 1] = xb;
+            t[i - 1] = xe;
+            i--;
+        }
+        // compute the b-spline coefficients of the least-squares spline
+        // sinf(x). the observation matrix a is built up row by row and
+        // reduced to upper triangular form by givens transformations.
+        // at the same time fp=f(p=inf) is computed.
+        *fp = 0.0;
+        // initialize the observation matrix a.
+        for (i = 1; i <= nk1; i++) {
+            z[i - 1] = 0.0;
+            for (j = 1; j <= k1; j++) {
+                a[(i - 1) + (j - 1) * nest] = 0.0;
+            }
+        }
+        l = k1;
+        for (it = 1; it <= m; it++) {
+            // fetch the current data point x(it),y(it).
+            xi = x[it - 1];
+            wi = w[it - 1];
+            yi = y[it - 1] * wi;
+            // search for knot interval t(l) <= xi < t(l+1).
+            while (!(xi < t[l] || l == nk1)) {
+                l++;
+            }
+            // evaluate the (k+1) non-zero b-splines at xi and store them in q.
+            fpbspl(t, *n, k, xi, l, h);
+            for (i = 1; i <= k1; i++) {
+                q[(it - 1) + (i - 1) * m] = h[i - 1];
+                h[i - 1] = h[i - 1] * wi;
+            }
+            // rotate the new row of the observation matrix into triangle.
+            j = l - k1;
+            for (i = 1; i <= k1; i++) {
+                j++;
+                piv = h[i - 1];
+                if (piv == 0.0) { continue; }
+                // calculate the parameters of the givens transformation.
+                fpgivs(piv, &a[(j - 1) + 0 * nest], &ccos, &ssin);
+                // transformations to right hand side.
+                fprota(ccos, ssin, &yi, &z[j - 1]);
+                if (i == k1) { break; }
+                i2 = 1;
+                i3 = i + 1;
+                for (i1 = i3; i1 <= k1; i1++) {
+                    i2++;
+                    // transformations to left hand side.
+                    fprota(ccos, ssin, &h[i1 - 1], &a[(j - 1) + (i2 - 1) * nest]);
+                }
+            }
+            // add contribution of this row to the sum of squares of residual
+            // right hand sides.
+            *fp = *fp + yi * yi;
+        }
+        if (*ier == -2) { fp0 = *fp; }
+        fpint[*n - 1] = fp0;
+        fpint[*n - 2] = fpold;
+        nrdata[*n - 1] = nplus;
+        // backward substitution to obtain the b-spline coefficients.
+        fpback(a, z, nk1, k1, c, nest);
+        // test whether the approximation sinf(x) is an acceptable solution.
+        if (iopt < 0) { return; }
+        fpms = *fp - s;
+        if (fabs(fpms) < acc) { return; }
+        // if f(p=inf) < s accept the choice of knots.
+        if (fpms < 0.0) { break; }
+        // if n = nmax, sinf(x) is an interpolating spline.
+        if (*n == nmax) {
+            *ier = -1;
+            return;
+        }
+        // increase the number of knots.
+        // if n=nest we cannot increase the number of knots because of
+        // the storage capacity limitation.
+        if (*n == nest) {
+            *ier = 1;
+            return;
+        }
+        // determine the number of knots nplus we are going to add.
+        if (*ier != 0) {
+            npl1 = nplus * 2;
+            rn = (double)nplus;
+            if (fpold - *fp > acc) { npl1 = (int)(rn * fpms / (fpold - *fp)); }
+            // nplus = min(nplus*2, max(npl1, nplus/2, 1))
+            int temp1 = npl1;
+            int temp2 = nplus / 2;
+            if (temp2 > temp1) { temp1 = temp2; }
+            if (1 > temp1) { temp1 = 1; }
+            int temp3 = nplus * 2;
+            if (temp1 < temp3) { temp3 = temp1; }
+            nplus = temp3;
+        } else {
+            nplus = 1;
+            *ier = 0;
+        }
+        fpold = *fp;
+        // compute the sum((w(i)*(y(i)-s(x(i))))**2) for each knot interval
+        // t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+        fpart = 0.0;
+        i = 1;
+        l = k2;
+        new = 0;
+        for (it = 1; it <= m; it++) {
+            if (x[it - 1] < t[l - 1] || l > nk1) {
+                // continue
+            } else {
+                new = 1;
+                l++;
+            }
+            term = 0.0;
+            l0 = l - k2;
+            for (j = 1; j <= k1; j++) {
+                l0++;
+                term = term + c[l0 - 1] * q[(it - 1) + (j - 1) * m];
+            }
+            term = (w[it - 1] * (term - y[it - 1]));
+            term = term * term;
+            fpart = fpart + term;
+            if (new == 0) { continue; }
+            store = term * half;
+            fpint[i - 1] = fpart - store;
+            i++;
+            fpart = store;
+            new = 0;
+        }
+        fpint[nrint - 1] = fpart;
+        for (int ll = 1; ll <= nplus; ll++) {
+            // add a new knot.
+            fpknot(x, m, t, n, fpint, nrdata, &nrint, nest, 1);
+            // if n=nmax we locate the knots as for interpolation.
+            if (*n == nmax) {
+                mk1 = m - k1;
+                if (mk1 != 0) {
+                    k3 = k / 2;
+                    i = k2 - 1;
+                    j = k3 + 2 - 1;
+                    if (k3 * 2 == k) {
+                        for (l = 1; l <= mk1; l++) {
+                            t[i] = (x[j] + x[j - 1]) * half;
+                            i++;
+                            j++;
+                        }
+                    } else {
+                        for (l = 1; l <= mk1; l++) {
+                            t[i] = x[j];
+                            i++;
+                            j++;
+                        }
+                    }
+                }
+                break;
+            }
+            // test whether we cannot further increase the number of knots.
+            if (*n == nest) { break; }
+        }
+        // restart the computations with the new set of knots.
+    }
+    // test whether the least-squares kth degree polynomial is a solution
+    // of our approximation problem.
+    if (*ier == -2) { return; }
+
+    /////////////////////////////////////////////////////////////////////////
+    //  part 2: determination of the smoothing spline sp(x).               //
+    //  ***************************************************                //
+    //  we have determined the number of knots and their position.         //
+    //  we now compute the b-spline coefficients of the smoothing spline   //
+    //  sp(x). the observation matrix a is extended by the rows of matrix  //
+    //  b expressing that the kth derivative discontinuities of sp(x) at   //
+    //  the interior knots t(k+2),...t(n-k-1) must be zero. the corres-    //
+    //  ponding weights of these additional rows are set to 1/p.           //
+    //  iteratively we then have to determine the value of p such that     //
+    //  f(p)=sum((w(i)*(y(i)-sp(x(i))))**2) be = s. we already know that   //
+    //  the least-squares kth degree polynomial corresponds to p=0, and    //
+    //  that the least-squares spline corresponds to p=infinity. the       //
+    //  iteration process which is proposed here, makes use of rational    //
+    //  interpolation. since f(p) is a convex and strictly decreasing      //
+    //  function of p, it can be approximated by a rational function       //
+    //  r(p) = (u*p+v)/(p+w). three values of p(p1,p2,p3) with correspond- //
+    //  ing values of f(p) (f1=f(p1)-s,f2=f(p2)-s,f3=f(p3)-s) are used     //
+    //  to calculate the new value of p such that r(p)=s. convergence is   //
+    //  guaranteed by taking f1>0 and f3<0.                                //
+    /////////////////////////////////////////////////////////////////////////
+    // evaluate the discontinuity jump of the kth derivative of the
+    // b-splines at the knots t(l),l=k+2,...n-k-1 and store in b.
+    fpdisc(t, *n, k2, b, nest);
+    // initial value for p.
+    p1 = 0.0;
+    double f1 = fp0 - s;
+    p3 = -one;
+    double f3 = fpms;
+    p = 0.0;
+    for (i = 1; i <= nk1; i++) {
+        p = p + a[(i - 1) + 0 * nest];
+    }
+    rn = (double)nk1;
+    p = rn / p;
+    ich1 = 0;
+    ich3 = 0;
+    n8 = *n - nmin;
+    // iteration process to find the root of f(p) = s.
+    for (iter = 1; iter <= maxit; iter++) {
+        // the rows of matrix b with weight 1/p are rotated into the
+        // triangularised observation matrix a which is stored in g.
+        pinv = one / p;
+        for (i = 1; i <= nk1; i++) {
+            c[i - 1] = z[i - 1];
+            g[(i - 1) + (k2 - 1) * nest] = 0.0;
+            for (j = 1; j <= k1; j++) {
+                g[(i - 1) + (j - 1) * nest] = a[(i - 1) + (j - 1) * nest];
+            }
+        }
+        for (it = 1; it <= n8; it++) {
+            // the row of matrix b is rotated into triangle by givens transformation
+            for (i = 1; i <= k2; i++) {
+                h[i - 1] = b[(it - 1) + (i - 1) * nest] * pinv;
+            }
+            yi = 0.0;
+            for (j = it; j <= nk1; j++) {
+                piv = h[0];
+                // calculate the parameters of the givens transformation.
+                fpgivs(piv, &g[(j - 1) + 0 * nest], &ccos, &ssin);
+                // transformations to right hand side.
+                fprota(ccos, ssin, &yi, &c[j - 1]);
+                if (j == nk1) { break; }
+                i2 = k1;
+                if (j > n8) { i2 = nk1 - j; }
+                for (i = 1; i <= i2; i++) {
+                    // transformations to left hand side.
+                    i1 = i + 1;
+                    fprota(ccos, ssin, &h[i1 - 1], &g[(j - 1) + (i1 - 1) * nest]);
+                    h[i - 1] = h[i1 - 1];
+                }
+                h[i2 + 1 - 1] = 0.0;
+            }
+        }
+        // backward substitution to obtain the b-spline coefficients.
+        fpback(g, c, nk1, k2, c, nest);
+        // computation of f(p).
+        *fp = 0.0;
+        l = k2;
+        for (it = 1; it <= m; it++) {
+            if (x[it - 1] < t[l - 1] || l > nk1) {
+                // continue
+            } else {
+                l++;
+            }
+            l0 = l - k2;
+            term = 0.0;
+            for (j = 1; j <= k1; j++) {
+                l0++;
+                term = term + c[l0 - 1] * q[(it - 1) + (j - 1) * m];
+            }
+            *fp = *fp + (w[it - 1] * (term - y[it - 1])) * (w[it - 1] * (term - y[it - 1]));
+        }
+        // test whether the approximation sp(x) is an acceptable solution.
+        fpms = *fp - s;
+        if (fabs(fpms) < acc) { return; }
+        // test whether the maximal number of iterations is reached.
+        if (iter == maxit) {
+            *ier = 3;
+            return;
+        }
+        // carry out one more step of the iteration process.
+        p2 = p;
+        double f2 = fpms;
+        if (ich3 == 0) {
+            if ((f2 - f3) > acc) {
+                if (f2 < 0.0) { ich3 = 1; }
+            } else {
+                // our initial choice of p is too large.
+                p3 = p2;
+                f3 = f2;
+                p = p * con4;
+                if (p <= p1) { p = p1 * con9 + p2 * con1; }
+                continue;
+            }
+        }
+        if (ich1 == 0) {
+            if ((f1 - f2) > acc) {
+                if (f2 > 0.0) { ich1 = 1; }
+            } else {
+                // our initial choice of p is too small
+                p1 = p2;
+                f1 = f2;
+                p = p / con4;
+                if (p3 < 0.0) { continue; }
+                if (p >= p3) { p = p2 * con1 + p3 * con9; }
+                continue;
+            }
+        }
+        // test whether the iteration process proceeds as theoretically
+        // expected.
+        if (f2 >= f1 || f2 <= f3) {
+            *ier = 2;
+            return;
+        }
+        // find the new value for p.
+        p = fprati(&p1, &f1, &p2, &f2, &p3, &f3);
     }
 }
 
@@ -4970,6 +5390,194 @@ sphere(const int iopt, const int m, const double *teta, const double *phi, const
            &wrk1[lco - 1], &wrk1[lf - 1], &wrk1[lff - 1], &wrk1[lro - 1], &wrk1[lcc - 1], &wrk1[lcs - 1],
            &wrk1[la - 1], &wrk1[lq - 1], &wrk1[lbt - 1], &wrk1[lbp - 1], &wrk1[lst - 1], &wrk1[lsp - 1],
            &wrk1[lh - 1], &iwrk[ki - 1], &iwrk[kn - 1], wrk2, lwrk2, ier);
+}
+
+
+void splder(const double *t, const int n, const double *c, const int nc, const int k, const int nu,
+            const double *x, double *y, const int m, const int e, double *wrk, int *ier)
+{
+    int l, kk, nn, i, j, l1, l2, nk2, k2, ll;
+    double ak, arg, fac, sp;
+    double h[6];
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if ((nu < 0) || (nu > k)) { return; }
+    if (m < 1) { return; }
+
+    *ier = 0;
+    // fetch tb and te, the boundaries of the approximation interval.
+    int k1 = k + 1;
+    int k3 = k1 + 1;
+    int nk1 = n - k1;
+    double tb = t[k1 - 1];
+    double te = t[nk1];
+
+    // the derivative of order nu of a spline of degree k is a spline of
+    // degree k-nu,the b-spline coefficients wrk(i) of which can be found
+    // using the recurrence scheme of de boor.
+    l = 1;
+    kk = k;
+    nn = n;
+    for (i = 1; i <= nk1; i++) {
+        wrk[i - 1] = c[i - 1];
+    }
+    if (nu != 0) {
+        nk2 = nk1;
+        for (j = 1; j <= nu; j++) {
+            ak = (double)kk;
+            nk2 = nk2 - 1;
+            l1 = l;
+            for (i = 1; i <= nk2; i++) {
+                l1++;
+                l2 = l1 + kk;
+                fac = t[l2 - 1] - t[l1 - 1];
+                if (fac <= 0.0) { continue; }
+                wrk[i - 1] = ak * (wrk[i] - wrk[i - 1]) / fac;
+            }
+            l++;
+            kk--;
+        }
+        if (kk == 0) {
+            // if nu=k the derivative is a piecewise constant function
+            j = 1;
+            for (i = 1; i <= m; i++) {
+                arg = x[i - 1];
+                // check if arg is in the support
+                if ((arg < tb) || (arg > te)) {
+                    if (e == 0) {
+                        ; // go to 65
+                    } else if (e == 1) {
+                        y[i - 1] = 0.0;
+                        continue;
+                    } else if (e == 2) {
+                        *ier = 1;
+                        return;
+                    }
+                }
+                // search for knot interval t(l) <= arg < t(l+1)
+                while ((!(arg >= t[l - 1]) || (l + 1 == k3))) {
+                    l1 = l;
+                    l--;
+                    j--;
+                }
+                while (!((arg < t[l]) || (l == nk1))) {
+                    l++;
+                    j++;
+                }
+                y[i - 1] = wrk[j - 1];
+            }
+            return;
+        }
+    }
+
+    l = k1;
+    l1 = l + 1;
+    k2 = k1 - nu;
+    // main loop for the different points.
+    for (i = 1; i <= m; i++) {
+        // fetch a new x-value arg.
+        arg = x[i - 1];
+        // check if arg is in the support
+        if ((arg < tb) || (arg > te)) {
+            if (e == 0) {
+                ; // go to 135
+            } else if (e == 1) {
+                y[i - 1] = 0.0;
+                continue;
+            } else if (e == 2) {
+                *ier = 1;
+                return;
+            }
+        }
+        // search for knot interval t(l) <= arg < t(l+1)
+        while (!(arg >= t[l - 1] || l1 == k3)) {
+            l1 = l;
+            l--;
+        }
+        while (!(arg < t[l1 - 1] || l == nk1)) {
+            l = l1;
+            l1 = l + 1;
+        }
+        // evaluate the non-zero b-splines of degree k-nu at arg.
+        for (int hi = 0; hi < 6; hi++) { h[hi] = 0.0; }
+        fpbspl(t, n, kk, arg, l, h);
+        // find the value of the derivative at x=arg.
+        sp = 0.0;
+        ll = l - k1;
+        for (j = 1; j <= k2; j++) {
+            ll++;
+            sp = sp + wrk[ll - 1] * h[j - 1];
+        }
+        y[i - 1] = sp;
+    }
+}
+
+
+void splev(const double *t, const int n, const double *c, const int nc, const int k,
+           const double *x, double *y, const int m, const int e, int *ier)
+{
+    int i, j, k1, l, ll, l1, nk1, k2;
+    double arg, sp, tb, te;
+    double h[20];
+    // before starting computations a data check is made. if the input data
+    // are invalid control is immediately repassed to the calling program.
+    *ier = 10;
+    if (m < 1) return;
+
+    *ier = 0;
+    // fetch tb and te, the boundaries of the approximation interval.
+    k1 = k + 1;
+    k2 = k1 + 1;
+    nk1 = n - k1;
+    tb = t[k];
+    te = t[nk1];
+    l = k1;
+    l1 = l + 1;
+
+    // main loop for the different points.
+    for (i = 1; i <= m; i++) {
+        // fetch a new x-value arg.
+        arg = x[i - 1];
+        // check if arg is in the support
+        if ((arg < tb) || (arg > te)) {
+            if (e == 0) {
+                ; // go to 135
+            } else if (e == 1) {
+                y[i - 1] = 0.0;
+                continue;
+            } else if (e == 2) {
+                *ier = 1;
+                return;
+            } else if (e == 3) {
+                if (arg < tb) {
+                    arg = tb;
+                } else {
+                    arg = te;
+                }
+            }
+        }
+        // search for knot interval t(l) <= arg < t(l+1)
+        while (!(arg >= t[l - 1] || l1 == k2)) {
+            l1 = l;
+            l--;
+        }
+        while (!(arg < t[l1 - 1] || l == nk1)) {
+            l = l1;
+            l1 = l + 1;
+        }
+        // evaluate the non-zero b-splines at arg.
+        for (int hi = 0; hi < 20; hi++) { h[hi] = 0.0; }
+        fpbspl(t, n, k, arg, l, h);
+        // find the value of s(x) at x=arg.
+        sp = 0.0;
+        ll = l - k1;
+        for (j = 1; j <= k1; j++) {
+            ll++;
+            sp = sp + c[ll - 1] * h[j - 1];
+        }
+        y[i - 1] = sp;
+    }
 }
 
 
