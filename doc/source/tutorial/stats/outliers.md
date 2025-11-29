@@ -32,7 +32,7 @@ An outlier is an observation that differs substantially from other observations 
 using tools available in SciPy, with an emphasis on transitioning from use of legacy functions to the preferred approach.
 
 ## Motivation
-In the past, SciPy has offered several "convenience functions" that combine trimming with computation of a statistic. Consider, for instance, {ref}`scipy.stats.trim_mean`.
+In the past, SciPy has offered several "convenience functions" that combine trimming with computation of a statistic. Consider, for instance, {func}`scipy.stats.trim_mean`.
 
 ```{code-cell} ipython3
 import numpy as np
@@ -46,23 +46,23 @@ Without carefully reading the documentation, it is not immediately obvious how t
 
 Likewise, when the proportion multiplied by the number of elements would not result in an integer, is the number to remove rounded up or down?
 
-What if instead of removing a proportion, we want to remove data below and above specified thresholds. It turns out that we cannot achieve this with {ref}`trim_mean`; we would need to use {ref}`scipy.stats.tmean` or (the similarly-named, but curiously relegated to a separate namespace) {ref}`scipy.stats.mstats.trimmed_mean`, instead.
+What if instead of removing a proportion, we want to remove data below and above specified thresholds. It turns out that we cannot achieve this with {func}`trim_mean <scipy.stats.trim_mean>`; we would need to use {func}`tmean <scipy.stats.tmean>` or (the similarly-named, but curiously relegated to a separate namespace) {func}`scipy.stats.mstats.trimmed_mean`, instead.
 
 What if we want to remove data outside a "confidence interval" estimate. Do any of these functions offer anything to facilitate that?  No, not really.
 
 One could take the mean after using one of the seven functions for trimming data. But which one(s) will do what we need?
 
-- {ref}`stats.mstats.trim`
-- {ref}`stats.mstats.trima`
-- {ref}`stats.mstats.trimr`
-- {ref}`stats.mstats.trimtail`
-- {ref}`stats.mstats.trimboth`
-- {ref}`stats.trimboth`
-- {ref}`stats.trim1`
+- {func}`scipy.stats.mstats.trim`
+- {func}`scipy.stats.mstats.trima`
+- {func}`scipy.stats.mstats.trimr`
+- {func}`scipy.stats.mstats.trimtail`
+- {func}`scipy.stats.mstats.trimboth`
+- {func}`scipy.stats.trimboth`
+- {func}`scipy.stats.trim1`
 
 So at the time of writing, SciPy offers at least half a dozen ways of taking a trimmed mean, but deciding which to use requires a lot of research, and none are able to perform *all* variations of the trimmed mean that we might reasonably expect them.
 
-What about other statistics - should we use {ref}`stats.tvar`, {ref}`stats.mstats.tvar`, or {ref}`stats.mstats.trimmed_var` to compute the trimmed variance? If there are three functions for that and three for the mean, surely there is at least one function for computing the trimmed skewness? (Nope!)
+What about other statistics - should we use {func}`scipy.stats.tvar`, {func}`scipy.stats.mstats.tvar`, or {func}`scipy.stats.mstats.trimmed_var` to compute the trimmed variance? If there are three functions for that and three for the mean, surely there is at least one function for computing the trimmed skewness? (Nope!)
 
 In the spirit of the Zen of Python, we suggest the new "one-- and preferably only one --obvious way" to calculate the trimmed version of many statistics: manually, in two or three lines of code, using more familiar, general-purpose features of NumPy and SciPy. Whether calculating a trimmed or winsorized statistic, there will be three steps:
 
@@ -74,7 +74,7 @@ In the spirit of the Zen of Python, we suggest the new "one-- and preferably onl
 
 ## Identifying the threshold
 
-SciPy now offers a {ref}`quantile` function with several methods useful for identifying thresholds beyond which data are to be trimmed or winsorized. The most common thresholds are those corresponding with a certain *percentage* of the data in each tail. To set the threshold at $p=10\%$ of the data in each tail, rounding the number of points to trim *down*:
+SciPy now offers a {func}`quantile <scipy.stats.quantile>` function with several methods useful for identifying thresholds beyond which data are to be trimmed or winsorized. The most common thresholds are those corresponding with a certain *percentage* of the data in each tail. To set the threshold at $p=10\%$ of the data in each tail, rounding the number of points to trim *down*:
 
 ```{code-cell} ipython3
 x = np.arange(22.)
@@ -106,7 +106,7 @@ The Harrell-Davis method:
 stats.quantile(x, [p, 1-p], method='harrell-davis')
 ```
 
-Note that {ref}`quantile` is fully vectorized. Suppose we have two rows of data, and we wish to set different thresholds for each row.
+Note that {func}`quantile <scipy.stats.quantile>` is fully vectorized. Suppose we have two rows of data, and we wish to set different thresholds for each row.
 
 ```{code-cell} ipython3
 x2d = np.stack([x, x])
@@ -122,7 +122,7 @@ stats.quantile(x2d, p2d, method='round_outward', axis=-1)
 When there are missing or ignorable values but omitting them would lead to a ragged array, the two historical options have been to:
 
 - cover the missing/ignorable values with the "mask" of a NumPy masked array and use `stats.mstats` functions for analysis, or
-- replce missing/ignorable values with NaNs and use `stats` functions with `nan_policy='omit'` for analysis.
+- replace missing/ignorable values with NaNs and use `stats` functions with `nan_policy='omit'` for analysis.
 
 The downsides of these approaches are documented elsewhere; here, we recommend using an [MArray](https://mdhaber.github.io/marray/tutorial.html) with `stats` functions.
 
@@ -133,7 +133,7 @@ y = mxp.asarray(x2d, mask=mask)
 print(y)
 ```
 
-{ref}`quantile` and many other `scipy.stats` functions natively support `MArray`s, and support grows with each version of SciPy.
+{func}`quantile <scipy.stats.quantile>` and many other `scipy.stats` functions natively support `MArray`s, and support grows with each version of SciPy.
 
 ```{code-cell} ipython3
 stats.quantile(y, mxp.asarray(p2d), method='round_outward', axis=-1)
@@ -149,7 +149,7 @@ stats.quantile(y, mxp.asarray(p2d), method='round_outward', axis=-1)
 
 Once a numerical threshold has been identified, winsorizing is simply an application of a fundamental data operation: `clip`.
 
-Suppose we have $n=22$ observations and we wish to winsorize $p=10\%$ from each side of the data. Rounding down with `method='round_outward'`, we would expect to winsorize $\left \lfloor{pn}\right \rfloor = 2$ points on each side. In this case, {ref}`quantile` returns the *third* data point from the left (at index `2`) as the lower limit. `clip`ing to this limit will winsorize the two lower observations, leaving the third observation unchanged. The story is similar on the right.
+Suppose we have $n=22$ observations and we wish to winsorize $p=10\%$ from each side of the data. Rounding down with `method='round_outward'`, we would expect to winsorize $\left \lfloor{pn}\right \rfloor = 2$ points on each side. In this case, {func}`quantile <scipy.stats.quantile>` returns the *third* data point from the left (at index `2`) as the lower limit. `clip`ing to this limit will winsorize the two lower observations, leaving the third observation unchanged. The story is similar on the right.
 
 ```{code-cell} ipython3
 x = np.arange(22.)
@@ -268,11 +268,11 @@ x = rng.random(22)
 p = 0.1
 ```
 
-### {ref}`stats.trim_mean`
+### {func}`stats.trim_mean <scipy.stats.trim_mean>`
 
 +++
 
-{ref}`trim_mean` accepts a proportion of the total number of elements to cut from *each* side.
+{func}`stats.trim_mean <scipy.stats.trim_mean>` accepts a proportion of the total number of elements to cut from *each* side.
 
 ```{code-cell} ipython3
 stats.trim_mean(x, proportiontocut=p)
@@ -286,11 +286,11 @@ mask = (low <= x) & (x <= high)
 np.mean(x[mask])
 ```
 
-### {ref}`stats.tmean`
+### {func}`stats.tmean <scipy.stats.tmean>`
 
 +++
 
-{ref}`tmean` accepts absolute lower and upper `limits`.
+{func}`tmean <scipy.stats.tmean>` accepts absolute lower and upper `limits`.
 
 ```{code-cell} ipython3
 limits = (0.1, 0.9)
@@ -326,11 +326,11 @@ mask = (limits[0] < x) & (x < limits[1])
 np.mean(x[mask])
 ```
 
-### {ref}`stats.mstats.trimmed_mean`
+### {func}`stats.mstats.trimmed_mean <scipy.stats.mstats.trimmed_mean>`
 
 +++
 
-{ref}`trimmed_mean` is, in some ways, a mash-up of {ref}`stats.tmean` and {ref}`stats.trim_mean`. It accepts `limits`, like {ref}`stats.tmean`, but by default, these are relative, like {ref}`stats.trim_mean`.
+{func}`trimmed_mean <scipy.stats.mstats.trimmed_mean>` is, in some ways, a mash-up of {func}`stats.tmean <scipy.stats.tmean>` and {func}`stats.trim_mean <scipy.stats.trim_mean>`. It accepts `limits`, like {func}`stats.tmean <scipy.stats.tmean>`, but by default, these are relative, like {func}`stats.trim_mean <scipy.stats.trim_mean>`.
 
 ```{code-cell} ipython3
 stats.mstats.trimmed_mean(x, (p, p), inclusive=(True, True), relative=True)
@@ -384,21 +384,21 @@ But instead, it gives us the same result as the `round_nearest` (or a `round_inw
 
 +++
 
-As it turns out, {ref}`stats.mstats.trimmed_mean` is a convenience function equivalent to:
+As it turns out, {func}`stats.mstats.trimmed_mean <scipy.stats.mstats.trimmed_mean>` is a convenience function equivalent to:
 
 ```python3
 stats.mstats.trim(a, limits=limits, inclusive=inclusive, relative=relative).mean(axis=axis)
 ```
 
-So the behavior is best understood in terms of {ref}`stats.mstats.trim`.
+So the behavior is best understood in terms of {func}`scipy.stats.mstats.trim`.
 
 +++
 
-### `stats.mstats.trim`
+### {func}`stats.mstats.trim <scipy.stats.mstats.trim>`
 
 +++
 
-The entire implementation of {ref}`stats.mstats.trim` is:
+The entire implementation of {func}`stats.mstats.trim <scipy.stats.mstats.trim>` is:
 
 ```python3
 if relative:
@@ -409,13 +409,13 @@ else:
 
 +++
 
-So it is also convenience function that simply wraps the functions {ref}`stats.mstats.trimr` and {ref}`stats.mstats.trima`.
+So it is also convenience function that simply wraps the functions {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` and {func}`stats.mstats.trima <scipy.stats.mstats.trima>`.
 
 +++
 
-### `stats.mstats.trima`
+### {func}`stats.mstats.trima <scipy.stats.mstats.trima>`
 
-{ref}`stats.mstats.trima` is itself a convenience function that simply masks values outside of a given interval.
+{func}`stats.mstats.trima <scipy.stats.mstats.trima>` is itself a convenience function that simply masks values outside of a given interval.
 
 ```{code-cell} ipython3
 x = np.arange(20)
@@ -447,9 +447,9 @@ we simply adjust the inequalities.
 mxp.asarray(x, mask=(x <= low) | (x >= high))  # mask values 1 or less; also mask values 18 or greater
 ```
 
-### {ref}`stats.mstats.trimr`
+### {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>`
 
-{ref}`stats.mstats.trimr` is also a convenience function that trims a specified proportion of the *total* number of elements from each tail. `inclusive` has no effect when the product of the proportion and the total number of elements is integral.
+{func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` is also a convenience function that trims a specified proportion of the *total* number of elements from each tail. `inclusive` has no effect when the product of the proportion and the total number of elements is integral.
 
 ```{code-cell} ipython3
 p = 0.1
@@ -492,15 +492,15 @@ low, high = stats.quantile(x, [p, 1-p], method='round_outward')
 mxp.asarray(x, mask=(x < low) | (x > high))
 ```
 
-### {ref}`stats.mstats.trimboth`, {ref}`stats.trimboth`,  {ref}`stats.mstats.tail`, and {ref}`stats.trim1`.
+### {func}`stats.mstats.trimboth <scipy.stats.mstats.trimboth>`, {func}`stats.trimboth <scipy.stats.trimboth>`,  {func}`stats.mstats.trimtail <scipy.stats.mstats.trimtail>`, and {func}`stats.trim1 <scipy.stats.trim1>`.
 
-For your convenience, {ref}`stats.mstats.trimboth` passes {ref}`proportiontocut` to `trimr` twice!
+For your convenience, {func}`stats.mstats.trimboth <scipy.stats.mstats.trimboth>` passes `proportiontocut` to {func}`stats.mstats.trimr <scipy.stats.mstats.trimr>` twice!
 
 ```{code-cell} ipython3
 np.all(stats.mstats.trimboth(x, p) == stats.mstats.trimr(x, (p, p)))
 ```
 
-{ref}`stats.trimboth` does the same job, but it removes (rather than masking) the trimmed data, and shuffles the elements.
+{func}`stats.trimboth <scipy.stats.trimboth>` does the same job, but it removes (rather than masking) the trimmed data, and shuffles the elements.
 
 ```{code-cell} ipython3
 a = stats.mstats.trimboth(x, p)
@@ -508,7 +508,7 @@ b = stats.trimboth(x, p)
 np.all(np.ma.compressed(a) == np.sort(b))
 ```
 
-{ref}`trimtail` performs the arduous task of passing `proportiontocut` and `None` as a tuple.
+{func}`trimtail <scipy.stats.mstats.trimtail>` performs the arduous task of passing `proportiontocut` and `None` as a tuple.
 
 ```{code-cell} ipython3
 np.all(stats.mstats.trimtail(x, p, tail='left') == stats.mstats.trimr(x, (p, None)))
@@ -518,7 +518,7 @@ np.all(stats.mstats.trimtail(x, p, tail='left') == stats.mstats.trimr(x, (p, Non
 np.all(stats.mstats.trimtail(x, p, tail='right') == stats.mstats.trimr(x, (None, p)))
 ```
 
-{ref}`stats.trim1` is to {ref}`stats.mstats.trimtail` as `stats.trimboth` is to {ref}`stats.mstats.trimboth`.
+{func}`stats.trim1 <scipy.stats.trim1>` is to {func}`stats.mstats.trimtail <scipy.stats.mstats.trimtail>` as {func}`stats.trimboth <scipy.stats.trimboth>` is to {func}`stats.mstats.trimboth <scipy.stats.mstats.trimboth>`
 
 ```{code-cell} ipython3
 a = stats.mstats.trimtail(x, p, tail='left')
@@ -530,11 +530,11 @@ Replicating these results using `quantile` and `MArray` is left as an exercise f
 
 +++
 
-### {ref}`stats.mstats.winsorize`
+### {func}`stats.mstats.winsorize <scipy.stats.mstats.winsorize>`
 
 +++
 
-In almost all cases, {ref}`stats.mstats.winsorize` is equivalent to:
+In almost all cases, {func}`stats.mstats.winsorize <scipy.stats.mstats.winsorize>` is equivalent to:
 
 ```{code-cell} ipython3
 def winsorize(x, limits, inclusive, nan_policy='propagate'):
@@ -553,7 +553,7 @@ winsorize(x, (p, p), inclusive=(False, False))
 
 Minor generalizations would be needed to support `axis` other than `-1`, different left and right values of `inclusive`, and the `inplace` argument.
 
-Results may be different when NaNs are present and `nan_policy='omit'`. This is because {ref}`stats.mstats.winsorize` is incorrect. If we have two NaNs to be omitted, we would have 17 elements left, so $np = 1.7$, and `inclusive=(False, False)` would round this number up to 2. This means that two of the values *on each side* would be replaced with the next more central element.
+Results may be different when NaNs are present and `nan_policy='omit'`. This is because {func}`stats.mstats.winsorize <scipy.stats.mstats.winsorize>` is incorrect. If we have two NaNs to be omitted, we would have 17 elements left, so $np = 1.7$, and `inclusive=(False, False)` would round this number up to 2. This means that two of the values *on each side* would be replaced with the next more central element.
 
 ```{code-cell} ipython3
 x[9:11] = np.nan
