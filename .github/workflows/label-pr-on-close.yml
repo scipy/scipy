@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: github/issue-labeler@c1b0f9f52a63158c4adc09425e858e87b32e9685 # v3.4
       if: >
-        github.repository == 'nickodell/scipy'
+        github.repository == 'scipy/scipy'
         && github.event.pull_request.merged == true
       with:
         configuration-path: .github/label-title-on-close.yml
