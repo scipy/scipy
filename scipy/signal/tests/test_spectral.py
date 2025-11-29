@@ -1580,7 +1580,9 @@ class TestLombscargle:
         with pytest.deprecated_call(match="leave 'precenter' unspecified"):
             lombscargle(t, y, f, precenter=False)
             
-    @pytest.mark.filterwarnings("ignore:.*leave 'precenter' unspecified.*:DeprecationWarning")
+    @pytest.mark.filterwarnings(
+        "ignore:.*leave 'precenter' unspecified.*:DeprecationWarning"
+    )
     def test_positional_args_deprecation(self):
         with pytest.deprecated_call(match="use keyword arguments"):
             one = np.asarray([1.0])
