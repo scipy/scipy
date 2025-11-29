@@ -38,7 +38,6 @@
 // fpsuev
 // fptrnp
 // fptrpe
-// parcur
 // parsur
 // percur
 // pogrid
@@ -94,7 +93,7 @@ void   fppara(const int iopt, const int idim, const int m, const double *u, cons
               const double ub, const double ue, const int k, const double s, const int nest, const double tol, const int maxit,
               const int k1, const int k2, int *n, double *t, const int nc, double *c, double *fp, double *fpint, double *z,
               double *a, double *b, double *g, double *q, int *nrdata, int *ier);
-void   fprank(const double* a, const double* f, const int n, const int m, const int na, const double tol, double* c, double* sq, int* rank,
+void   fprank(double* a, double* f, const int n, const int m, const int na, const double tol, double* c, double* sq, int* rank,
               double* aa, double* ff, double* h);
 double fprati(double* p1, double* f1, double* p2, double* f2, double* p3, double* f3);
 void   fprota(double c, double s, double *a, double *b);
@@ -117,6 +116,9 @@ void   fpsurf(int iopt, int m, double* x, double* y, double* z, double* w, doubl
               int lwrk, int* ier);
 void   fpsysy(double* restrict a, const int n, double* restrict g);
 void   insert(const int iopt, const double* t, const int n, const double* c, const int k, const double x, double* tt, int* nn, double* cc, const int nest, int* ier);
+void   parcur(const int iopt, const int ipar, const int idim, const int m, double *u, const int mx, const double *x,
+              const double *w, double *ub, double *ue, const int k, const double s, const int nest, int *n, double *t,
+              const int nc, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, int *ier);
 void   parder(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy, const double *x, int mx,
               const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
 void   pardeu(const double *tx, int nx, const double *ty, int ny, double *c, int kx, int ky, int nux, int nuy,
@@ -143,7 +145,7 @@ void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
             int kx, int ky, const double *x, const double *y, double *z, int m,
             double *wrk, int lwrk, int *ier)
 {
-
+    int iwrk[2];
     int lwest = kx + ky + 2;
 
     // before starting computations a data check is made. if the input data
@@ -153,8 +155,8 @@ void bispeu(const double *tx, int nx, const double *ty, int ny, const double *c,
     if (m < 1) { return; }
 
     *ier = 0;
-    for (int i = 1; i <= m; i++) {
-        fpbisp(tx, nx, ty, ny, c, kx, ky, &x[i - 1], 1, &y[i - 1], 1, &z[i - 1], wrk, &wrk[kx + 1], wrk, &wrk[1]);
+    for (int i = 0; i < m; i++) {
+        fpbisp(tx, nx, ty, ny, c, kx, ky, &x[i], 1, &y[i], 1, &z[i], wrk, &wrk[kx + 1], iwrk, &iwrk[1]);
     }
 }
 
@@ -250,8 +252,10 @@ fpback(double* a, double* z, const int n, const int k, double* c, const int nest
 }
 
 
-void fpbacp(const double *a, const double *b, const double *z, const int n, const int k, double *c, const int k1, const int nest)
+void fpbacp(const double *a, const double *b, const double *z, const int n, const int k, double *c,
+            const int k1, const int nest)
 {
+    (void)k1;  // Unused
     int n2 = n - k;
     int l = n;
     for (int i = 1; i <= k; i++) {
@@ -295,11 +299,11 @@ void fpbacp(const double *a, const double *b, const double *z, const int n, cons
 
 
 void
-fpbisp(const double *tx, const int nx, const double *ty, const int ny, const double *c,
-    const int kx, const int ky, const double *x, const int mx, const double *y, const int my,
-    double *z, double *wx, double *wy, int *lx, int *ly)
+fpbisp(const double* tx, const int nx, const double* ty, const int ny, const double* c,
+       const int kx, const int ky, const double* x, const int mx, const double* y, const int my,
+       double* z, double* wx, double* wy, int* lx, int* ly)
 {
-    int kx1, ky1, l, l1, l2, nkx1, nky1, i1, j1, m;
+    int kx1, ky1, l, l1, l2, nkx1, nky1, i1, m;
     double arg, sp, tb, te, h[6];
 
     kx1 = kx + 1;
@@ -378,6 +382,7 @@ fpbisp(const double *tx, const int nx, const double *ty, const int ny, const dou
 void
 fpbspl(const double* t, const int n, const int k, const double x, const int l, double* h)
 {
+    (void)n;  // Unused
     // subroutine fpbspl evaluates the (k+1) non-zero b-splines of degree k
     // at t(l) <= x < t(l+1) using the stable recurrence relation of de boor and cox.
     // Travis Oliphant  2007
@@ -422,7 +427,6 @@ fpchec(const double* x, const int m, const double* t, const int n, const int k, 
     int k2 = k1 + 1;
     int nk1 = n - k1;
     int nk2 = nk1 + 1;
-    int m1 = m - 1;
     *ier = 10;
 
     // check condition no 1
@@ -1072,11 +1076,15 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
        double *av1, double *av2, double *bu, double *bv, double *a0, double *a1, double *b0, double *b1, double *c0,
        double *c1, double *cosi, int *nru, int *nrv)
 {
+    (void)mr;    // Unused
+    (void)nc;    // Unused
+    (void)mm;    // Unused
+    (void)mvnu;  // Unused
     double arg, co, dr01, dr02, dr03, dr11, dr12, dr13, fac, fac0, fac1, pinv, piv;
     double si, term, one, three, half;
     int i, ic, ii, ij, ik, iq, irot, it, ir, i0, i1, i2, i3, j, jj, jk, jper;
     int j0, j1, k, k1, k2, l, l0, l1, l2, mvv, ncof, nrold, nroldu, nroldv, number;
-    int numu, numu1, numv, numv1, nuu, nu4, nu7, nu8, nu9, nv11, nv4, nv7, nv8, n1;
+    int numu, numu1, numv, numv1, nuu, nu4, nu7, nu8, nv11, nv4, nv7, nv8, n1;
     double h[5], h1[5], h2[4];
 
     // set constants
@@ -1087,7 +1095,6 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
     nu4 = nu - 4;
     nu7 = nu - 7;
     nu8 = nu - 8;
-    nu9 = nu - 9;
     nv4 = nv - 4;
     nv7 = nv - 7;
     nv8 = nv - 8;
@@ -1805,6 +1812,7 @@ void
 fpinst(const int iopt, const double* t, const int n, const double* c, const int k,
        const double x, const int l, double* tt, int* nn, double* cc, const int nest)
 {
+    (void)nest; // Unused
     int k1 = k + 1;
     int nk1 = n - k1;
     // the new knots.
@@ -1977,8 +1985,11 @@ fpintb(const double *t, int n, double *bint, const int nk1, const double x, cons
 }
 
 
-void fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdata, int* nrint, const int nest, const int istart)
+void fpknot(const double* x, int m, double* t, int* n, double* fpint, int* nrdata, int* nrint,
+            const int nest, const int istart)
 {
+    (void)m;  // Unused
+    (void)nest;  // Unused
     double an, am, fpmax;
     int ihalf, j, jbegin, jj, jk, jpoint, k, maxbeg = 0, maxpt = 0, next, nrx, number = 0;
     int iserr = 1;
@@ -2046,6 +2057,7 @@ fpopsp(const int ifsu, const int ifsv, const int ifbu, const int ifbv, const dou
        const int nvest, const double p, const double *step, double *c, const int nc,
        double *fp, double *fpu, double *fpv, int *nru, int *nrv, double *wrk, const int lwrk)
 {
+    (void)lwrk;  // Unused
     double sq, sqq, sq0, sq1, step1, step2, three;
     int i, id0, iop0, iop1, i1, j, l, lau, lav1, lav2, la0, la1, lbu, lbv, lb0;
     int lb1, lc0, lc1, lcs, lq, lri, lsu, lsv, l1, l2, mm, mvnu, number, id1;
@@ -2243,7 +2255,7 @@ fporde(const double* x, const double* y, const int m, const int kx, const int ky
 
 
 void
-fprank(const double* a, const double* f, const int n, const int m, const int na,
+fprank(double* a, double* f, const int n, const int m, const int na,
        const double tol, double* c, double* sq, int* rank, double* aa, double* ff,
        double* h)
 {
@@ -2568,11 +2580,14 @@ void fpsphe(
     double *f, double *ff, double *row, double *coco, double *cosi, double *a, double *q, double *bt, double *bp,
     double *spt, double *spp, double *h, int *index, int *nummer, double *wrk, const int lwrk, int *ier)
 {
+    (void)nc;     // Unused
+    (void)intest; // Unused
+    (void)nrest;  // Unused
     double aa, acc, arg, cn, co, c1, dmax, d1, d2, eps, facc, facs, fac1, fac2, fn;
     double fpmax, fpms, f1, f2, f3, hti, htj, p, pi, pinv, piv, pi2, p1, p2, p3, ri, si;
     double sigma, sq, store, wi, rn, one, con1, con9, con4, half, ten;
     int i, iband, iband1, ii, irot, j, jlt, jrot, j1, j2, l, la, lf, lh, ll, lp, lt, lwest, l1, l2, l3, l4;
-    int ncof, ncoff, npp, np4, nreg, nrint, nrr, nr1, ntt, nt4, num, num1, rank, in, iter, i1, i2, i3;
+    int ncof, ncoff, npp, np4, nreg, nrint, nrr, ntt, nt4, num, num1, rank, in, iter, i1, i2, i3;
     double ht[4], hp[4];
 
     // set constants
@@ -2719,7 +2734,6 @@ void fpsphe(
         ntt = *nt - 7;
         npp = *np - 7;
         nrr = npp / 2;
-        nr1 = nrr + 1;
         nrint = ntt + npp;
         nreg = ntt * npp;
 
@@ -3111,10 +3125,10 @@ void fpsphe(
 
     // evaluate the discontinuity jumps of the 3-th order derivative of
     // the b-splines at the knots tt(l),l=5,...,nt-4.
-    fpdisc(tt, nt, 5, bt, ntest);
+    fpdisc(tt, *nt, 5, bt, ntest);
     // evaluate the discontinuity jumps of the 3-th order derivative of
     // the b-splines at the knots tp(l),l=5,...,np-4.
-    fpdisc(tp, np, 5, bp, npest);
+    fpdisc(tp, *np, 5, bp, npest);
 
     // initial value for p.
     p1 = 0.0;
@@ -3577,8 +3591,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
             if (idd[2] == 0) { idd[2] = 1; }
             if (idd[2] > 0) { dr[3] = r1; }
             idd[3] = ider[3];
-            if ((ider[0] < 0) || (ider[2] < 0) ||
-                ((iopt[1] != 0) && (ider[1] == 0)) &&
+            if ((((ider[0] < 0) || (ider[2] < 0)) || ((iopt[1] != 0) && (ider[1] == 0))) &&
                 (!((iopt[2] == 0) || (ider[3] != 0)))) {
                 // we set up the knots in the u-direction for computing the least-squares
                 // spline.
@@ -3784,7 +3797,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
                 if (iopt[1] == 0) { istart = 1; }
                 for (l = 1; l <= *nplusu; l++) {
                     // add a new knot in the u-direction
-                    fpknot(u, mu, tu, nu, fpintu, nrdatu, nrintu, nuest, istart);
+                    fpknot(u, mu, tu, nu, fpintu, nrdatu, &nrintu, nuest, istart);
                     // test whether we cannot further increase the number of knots in the
                     // u-direction.
                     if (*nu == nue) {
@@ -3803,7 +3816,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
                 ifsv = 0;
                 for (l = 1; l <= *nplusv; l++) {
                     // add a new knot in the v-direction.
-                    fpknot(v, mv, tv, nv, fpintv, nrdatv, nrintv, nvest, 1);
+                    fpknot(v, mv, tv, nv, fpintv, nrdatv, &nrintv, nvest, 1);
                     // test whether we cannot further increase the number of knots in the
                     // v-direction.
                     if (*nv == nve) {
@@ -3821,7 +3834,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
                 if (iopt[1] == 0) { istart = 1; }
                 for (l = 1; l <= *nplusu; l++) {
                     // add a new knot in the u-direction
-                    fpknot(u, mu, tu, nu, fpintu, nrdatu, nrintu, nuest, istart);
+                    fpknot(u, mu, tu, nu, fpintu, nrdatu, &nrintu, nuest, istart);
                     // test whether we cannot further increase the number of knots in the
                     // u-direction.
                     if (*nu == nue) {
@@ -3934,9 +3947,14 @@ fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
        double* spy, double* h, int* index, int* nummer, double* wrk,
        int lwrk, int* ier)
 {
-    // ..local scalars..
+    (void)km1;      // unused
+    (void)km2;      // unused
+    (void)ib1;      // unused
+    (void)ib3;      // unused
+    (void)intest;   // unused
+    (void)nrest;    // unused
     double acc, arg, cos, dmax, fac1, fac2, fpmax, fpms, f1, f2, f3, hxi, p, pinv;
-    double piv, p1, p2, p3, rn, sigma, sin, sq, store, wi, x0, x1, y0, y1, zi, eps;
+    double piv, p1, p2, p3, sigma, sin, sq, store, wi, x0, x1, y0, y1, zi, eps;
     int i, iband, iband1, iband3, iband4, ibb, ichang, ich1, ich3, ii;
     int in, irot, iter, i1, i2, i3, j, jrot, jxy, j1, kx, kx1, kx2, ky, ky1, ky2, l;
     int la, lf, lh, lwest, lx, ly, l1, l2, n, ncof, nk1x, nk1y, nminx, nminy, nreg;
@@ -3944,7 +3962,7 @@ fpsurf(int iopt, int m, double* x, double* y, double* z, double* w,
     // ..local arrays..
     double hx[6], hy[6];
 
-    double one = 1.0, con1 = 0.1, con9 = 0.9, con4 = 0.04, half = 0.5, ten = 10.0;
+    double one = 1.0, con1 = 0.1, con9 = 0.9, con4 = 0.04, ten = 10.0;
 
     /////////////////////////////////////////////////////////////////////////////
     // part 1: determination of the number of knots and their position.        //
@@ -4822,7 +4840,93 @@ insert(const int iopt, const double* t, const int n, const double* c, const int 
 }
 
 
-void parder(const double *tx, int nx, const double *ty, int ny, double *c,
+void
+parcur(const int iopt, const int ipar, const int idim, const int m, double *u, const int mx, const double *x,
+       const double *w, double *ub, double *ue, const int k, const double s, const int nest, int *n, double *t,
+       const int nc, double *c, double *fp, double *wrk, const int lwrk, int *iwrk, int *ier)
+{
+    double tol, dist;
+    int i, ia, ib, ifp, ig, iq, iz, i1, i2, j, k1, k2, lwest, maxit, nmin, ncc;
+
+    // we set up the parameters tol and maxit
+    maxit = 20;
+    tol = 0.1e-02;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid, control is immediately repassed to the calling program.
+    *ier = 10;
+    if ((iopt < -1) || (iopt > 1)) { return; }
+    if ((ipar < 0) || (ipar > 1)) { return; }
+    if ((idim <= 0) || (idim > 10)) { return; }
+    if ((k <= 0) || (k > 5)) { return; }
+    k1 = k + 1;
+    k2 = k1 + 1;
+    nmin = 2 * k1;
+    if ((m < k1) || (nest < nmin)) { return; }
+    ncc = nest * idim;
+    if ((mx < m * idim) || (nc < ncc)) { return; }
+    lwest = m * k1 + nest * (6 + idim + 3 * k);
+    if (lwrk < lwest) { return; }
+
+    if (!((ipar != 0) || (iopt > 0))) {
+        i1 = 0;
+        i2 = idim;
+        u[0] = 0.0;
+        for (i = 1; i < m; i++) {
+            dist = 0.0;
+            for (j = 0; j < idim; j++) {
+                i1++;
+                i2++;
+                dist = dist + (x[i2 - 1] - x[i1 - 1]) * (x[i2 - 1] - x[i1 - 1]);
+            }
+            u[i] = u[i - 1] + sqrt(dist);
+        }
+        if (u[m - 1] <= 0.0) { return; }
+        for (i = 1; i < m; i++) {
+            u[i] = u[i] / u[m - 1];
+        }
+        *ub = 0.0;
+        *ue = 1.0;
+        u[m - 1] = *ue;
+    }
+
+    if (((*ub) > u[0]) || ((*ue) < u[m - 1]) || (w[0] <= 0.0)) { return; }
+    for (i = 1; i < m; i++) {
+        if ((u[i - 1] >= u[i]) || (w[i] <= 0.0)) { return; }
+    }
+
+    if (iopt < 0) {
+        if (((*n) < nmin) || ((*n) > nest)) { return; }
+        j = *n;
+        for (i = 1; i <= k1; i++) {
+            t[i - 1] = *ub;
+            t[j - 1] = *ue;
+            j--;
+        }
+        fpchec(u, m, t, *n, k, ier);
+        if (*ier != 0) { return; }
+    } else {
+        if (s < 0.0) { return; }
+        if ((s == 0.0) && (nest < (m + k1))) { return; }
+        *ier = 0;
+    }
+
+    // we partition the working space and determine the spline curve.
+    ifp = 0;
+    iz = ifp + nest;
+    ia = iz + ncc;
+    ib = ia + nest * k1;
+    ig = ib + nest * k2;
+    iq = ig + nest * k2;
+    fppara(iopt, idim, m, u, mx, x, w, *ub, *ue, k, s, nest, tol, maxit, k1, k2,
+           n, t, ncc, c, fp, &wrk[ifp], &wrk[iz], &wrk[ia], &wrk[ib], &wrk[ig], &wrk[iq],
+           iwrk, ier);
+    return;
+}
+
+
+void
+parder(const double *tx, int nx, const double *ty, int ny, double *c,
             int kx, int ky, int nux, int nuy, const double *x, int mx,
             const double *y, int my, double *z, double *wrk, int lwrk,
             int *iwrk, int kwrk, int *ier) {
@@ -5702,6 +5806,7 @@ fppara(const int iopt, const int idim, const int m, const double *u, const int m
        const int k1, const int k2, int *n, double *t, const int nc, double *c, double *fp, double *fpint, double *z,
        double *a, double *b, double *g, double *q, int *nrdata, int *ier)
 {
+    (void)mx; // mx is not used
     double acc, con1, con4, con9, ccos, fac, fpart, fpms, fpold, fp0, f1, f2, f3;
     double half, one, p, pinv, piv, p1, p2, p3, rn, ssin, store, term, ui, wi;
     int i, ich1, ich3, it, iter, i1, i2, i3, j, jj, j1, j2, k3, l, l0;
