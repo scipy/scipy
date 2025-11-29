@@ -1574,8 +1574,17 @@ class TestLombscargle:
         f = np.linspace(0.01, 10., nout)
 
         # Calculate Lomb-Scargle periodogram
-        with pytest.deprecated_call():
+        with pytest.deprecated_call(match="leave 'precenter' unspecified"):
             lombscargle(t, y, f, precenter=True)
+        # Should warn for explicit `False` too
+        with pytest.deprecated_call(match="leave 'precenter' unspecified"):
+            lombscargle(t, y, f, precenter=False)
+            
+    def test_positional_args_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            one = np.asarray([1.0])
+            lombscargle(one, one, one, None)
+
 
 class TestSTFT:
     def test_input_validation(self):
