@@ -87,8 +87,10 @@
         }
     },
     "bdtrin": {
-        "_cdflib_wrappers.pxd": {
-            "bdtrin": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "bdtrin_double": "ddd->d",
+            "bdtrin_float": "fff->f"
+        }
     },
     "betainc": {
         "boost_special_functions.h++": {
