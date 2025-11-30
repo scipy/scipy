@@ -204,6 +204,64 @@ void bispev(const double *tx, int nx, const double *ty, int ny, const double *c,
 
 
 void
+curfit(const int iopt, const int m, const double *x, const double *y, const double *w,
+       const double xb, const double xe, const int k, const double s, const int nest,
+       int *n, double *t, double *c, double *fp, double *wrk, const int lwrk,
+       int *iwrk, int *ier)
+{
+    int i, ia, ib, ifp, ig, iq, iz, j, k1, k2, lwest, maxit, nmin;
+
+    // we set up the parameters tol and maxit
+    double tol = 1e-3;
+    maxit = 20;
+
+    // before starting computations a data check is made. if the input data
+    // are invalid, control is immediately repassed to the calling program.
+    *ier = 10;
+    if ((k <= 0) || (k > 5)) { return; }
+    k1 = k + 1;
+    k2 = k1 + 1;
+    if ((iopt < -1) || (iopt > 1)) { return; }
+    nmin = 2 * k1;
+    if ((m < k1) || (nest < nmin)) { return; }
+    lwest = m * k1 + nest * (7 + 3 * k);
+    if (lwrk < lwest) { return; }
+    if ((xb > x[0]) || (xe < x[m - 1])) { return; }
+    for (i = 1; i < m; i++) {
+        if (x[i - 1] > x[i]) { return; }
+    }
+    if (iopt >= 0) {
+        if (s < 0.0) { return; }
+        if ((s == 0.0) && (nest < (m + k1))) { return; }
+        *ier = 0;
+    } else {
+        if ((*n < nmin) || (*n > nest)) { return; }
+        j = *n;
+        for (i = 0; i < k1; i++) {
+            t[i] = xb;
+            t[j - 1] = xe;
+            j = j - 1;
+        }
+        fpchec(x, m, t, *n, k, ier);
+        if (*ier != 0) { return; }
+    }
+
+    // we partition the working space and determine the spline approximation.
+    ifp = 0;
+    iz = ifp + nest;
+    ia = iz + nest;
+    ib = ia + nest * k1;
+    ig = ib + nest * k2;
+    iq = ig + nest * k2;
+
+    fpcurf(iopt, x, y, w, m, xb, xe, k, s, nest, tol, maxit, k1, k2, n, t, c, fp,
+           &wrk[ifp], &wrk[iz], &wrk[ia], &wrk[ib], &wrk[ig], &wrk[iq], iwrk, ier);
+
+    return;
+}
+
+
+void
 dblint(double* tx, const int nx, double* ty, const int ny, double* c, const int kx, const int ky,
        const double xb, const double xe, const double yb, const double ye, double* wrk,
        double* result)
