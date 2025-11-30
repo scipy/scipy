@@ -363,6 +363,8 @@ class multivariate_normal_gen(multi_rv_generic):
         Draw random samples from a multivariate normal distribution.
     entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    marginal(dimensions, mean=None, cov=1, allow_singular=False)
+        Return a marginal multivariate normal distribution.
     fit(x, fix_mean=None, fix_cov=None)
         Fit a multivariate normal distribution to data.
 
@@ -921,8 +923,8 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
-    def marginal(self, dimensions, *, mean=None, cov=1, allow_singular=False):
-        """Return a marginal multivariate normal distribution
+    def marginal(self, dimensions, mean=None, cov=1, allow_singular=False):
+        """Return a marginal multivariate normal distribution.
 
         Parameters
         ----------
