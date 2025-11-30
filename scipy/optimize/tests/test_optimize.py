@@ -41,7 +41,8 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
-from scipy._lib._array_api_no_0d import xp_assert_equal
+
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._util import MapWrapper
 
@@ -203,6 +204,29 @@ class CheckOptimizeParameterized(CheckOptimize):
             sol = optimize.minimize(f, [x0], method='CG')
             assert sol.success
             assert_allclose(sol.x, [0.5], rtol=1e-5)
+
+    def test_cg_dtype(self):
+        def f(x):
+            return(np.sin(x)-x+(x/10)**2)
+        def g(x):
+            return((np.cos(x)-1+x/500).astype(dtype))
+
+        for dtype in (np.float64, np.float32, np.float16):
+            for x0 in np.linspace(-1., 1, 113, dtype=dtype):
+                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
+                assert sol.x.dtype == dtype
+
+    def test_cg_accuracy(self):
+        def f(x):
+            return(x**4-x)
+        def g(x):
+            return(4*x**3-1)
+
+        for dtype in (np.float64, np.float32, np.float16):
+            xx = np.array([2.], dtype=dtype)**(-2/3)
+            for x0 in np.linspace(-1., 1, 113, dtype=dtype):
+                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g, tol=5e-2)
+                xp_assert_close(f(sol.x), f(xx), rtol=1e-3)
 
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
