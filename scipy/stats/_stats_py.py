@@ -3747,7 +3747,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -3892,7 +3892,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
     Welch ANOVA will be performed if `equal_var` is False.
 
     """
-    samples = xp_promote(*samples, force_floating=True, xp=np)
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
 
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
@@ -3902,12 +3903,12 @@ def f_oneway(*samples, axis=0, equal_var=True):
     num_groups = len(samples)
 
     # axis is guaranteed to be -1 by the _axis_nan_policy decorator
-    alldata = np.concatenate(samples, axis=-1)
+    alldata = xp.concat(samples, axis=-1)
     bign = alldata.shape[-1]
 
     # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
-        NaN = _get_nan(*samples, xp=np)
+        NaN = _get_nan(*samples, xp=xp)
         return F_onewayResult(NaN, NaN)
 
     # Check if all values within each group are identical, and if the common
@@ -3922,16 +3923,16 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
         # to a shift in location, and centering all data around zero vastly
         # improves numerical stability.
-        offset = alldata.mean(axis=-1, keepdims=True)
+        offset = xp.mean(alldata, axis=-1, keepdims=True)
         alldata = alldata - offset
 
-        normalized_ss = np.sum(alldata, axis=-1)**2. / bign
+        normalized_ss = xp.sum(alldata, axis=-1)**2. / bign
 
-        sstot = np_vecdot(alldata, alldata, axis=-1) - normalized_ss
+        sstot = xp.vecdot(alldata, alldata, axis=-1) - normalized_ss
 
         ssbn = 0
         for sample in samples:
-            smo_ss = np.sum(sample - offset, axis=-1)**2.
+            smo_ss = xp.sum(sample - offset, axis=-1)**2.
             ssbn = ssbn + smo_ss / sample.shape[-1]
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
@@ -3951,31 +3952,33 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # calculate basic statistics for each sample
         # Beginning of second paragraph [4] page 1:
         # "As a particular case $y_t$ may be the means ... of samples
-        y_t = np.asarray([np.mean(sample, axis=-1) for sample in samples])
+        y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = np.asarray([sample.shape[-1] for sample in samples])
-        n_t = np.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
+        n_t = xp.stack([sample.shape[-1] for sample in samples])
+        n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
-        s_t2 = np.asarray([np.var(sample, axis=-1, ddof=1) for sample in samples])
+        s_t2 = xp.stack([xp.var(sample, axis=-1, correction=True)
+                         for sample in samples])
 
         # calculate weight by number of data and variance
         # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
         w_t = n_t / s_t2
         # sum of w_t
-        s_w_t = np.sum(w_t, axis=0)
+        s_w_t = xp.sum(w_t, axis=0)
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
-        y_hat = np_vecdot(w_t, y_t, axis=0) / np.sum(w_t, axis=0)
+        axis_zero = -w_t.ndim
+        y_hat = xp.vecdot(w_t, y_t, axis=axis_zero) / xp.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator =  np_vecdot(w_t, (y_t - y_hat)**2, axis=0) / (k - 1)
+        numerator =  xp.vecdot(w_t, (y_t - y_hat)**2, axis=axis_zero) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0)
+                xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero)
         )
         f = numerator / denominator
 
@@ -3987,7 +3990,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # ref.[4] p.334 eq.30
         hat_f2 = (
                 (k**2 - 1) /
-                (3 * np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0))
+                (3 * xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero))
         )
 
         # calculate p value
