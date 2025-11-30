@@ -7,7 +7,6 @@
 // concur
 // cualde
 // curev
-// curfit
 // evapol
 // fourco
 // fpadno
@@ -45,7 +44,7 @@
 // sproot
 // surev
 
-
+static const double PI = 3.1415926535897932384626433832795;
 
 /* Forward declarations */
 
@@ -53,6 +52,10 @@ void   bispeu(const double *tx, int nx, const double *ty, int ny, const double *
               const double *x, const double *y, double *z, int m, double *wrk, int lwrk, int *ier);
 void   bispev(const double *tx, int nx, const double *ty, int ny, const double *c, int kx, int ky,
               const double *x, int mx, const double *y, int my, double *z, double *wrk, int lwrk, int *iwrk, int kwrk, int *ier);
+void   curfit(const int iopt, const int m, const double *x, const double *y, const double *w,
+              const double xb, const double xe, const int k, const double s, const int nest,
+              int *n, double *t, double *c, double *fp, double *wrk, const int lwrk,
+              int *iwrk, int *ier);
 void   dblint(double* tx, const int nx, double* ty, const int ny, double* c, const int kx, const int ky, const double xb,
               const double xe, const double yb, const double ye, double* wrk, double* result);
 void   fpader(const double* t, const int n, const double* c, const int k1, const double x, const int l, double* d);
@@ -67,6 +70,7 @@ void   fpcurf(const int iopt, const double *x, const double *y, const double *w,
               const int k, const double s, const int nest, const double tol, const int maxit, const int k1, const int k2,
               int *n, double *t, double *c, double *fp, double *fpint, double *z, double *a, double *b, double *g,
               double *q, int *nrdata, int *ier);
+void   fpcuro(const double a, const double b, const double c, const double d, double *x, int *n);
 void   fpcyt1(double *a, const int n, const int nn);
 void   fpcyt2(const double *a, const int n, const double *b, double *c, const int nn);
 void   fpdisc(const double* t, const int n, const int k2, double* b, const int nest);
@@ -139,6 +143,7 @@ void   sphere(const int iopt, const int m, const double *teta, const double *phi
 void   splder(const double *t, const int n, const double *c, const int nc, const int k, const int nu,
               const double *x, double *y, const int m, const int e, double *wrk, int *ier);
 void   splev(const double *t, const int n, const double *c, const int nc, const int k, const double *x, double *y, const int m, const int e, int *ier);
+void   sproot(const double *t, const int n, const double *c, const int nc, double *zero, const int mest, int *m, int *ier);
 void   surfit(int iopt, int m, double* x, double* y, double* z, double* w, double xb, double xe, double yb, double ye, int kx, int ky, double s,
               int nxest, int nyest, int nmax, double eps, int* nx, double* tx, int* ny, double* ty, double* c, double* fp, double* wrk1, int lwrk1,
               double* wrk2, int lwrk2, int* iwrk, int kwrk, int* ier);
@@ -1065,6 +1070,83 @@ fpcurf(const int iopt, const double *x, const double *y, const double *w, const 
         // find the new value for p.
         p = fprati(&p1, &f1, &p2, &f2, &p3, &f3);
     }
+}
+
+
+void
+fpcuro(const double a, const double b, const double c, const double d, double *x, int *n)
+{
+    // subroutine fpcuro finds the real zeros of a cubic polynomial
+    // p(x) = a*x**3+b*x**2+c*x+d.
+    int i;
+    double a1, b1, c1, df, disc, d1, e3, f, pi3, p3, q, r;
+    double step, u, u1, u2, y;
+
+    // set constants
+    e3 = 0.1 / 0.3;
+    pi3 = PI / 0.75;
+    a1 = fabs(a);
+    b1 = fabs(b);
+    c1 = fabs(c);
+    d1 = fabs(d);
+
+    // test whether p(x) is a third degree polynomial.
+    if (fmax(fmax(b1, c1), d1) < a1 * 1.0e4) {
+        // p(x) is a third degree polynomial.
+        b1 = b / a * e3;
+        c1 = c / a;
+        d1 = d / a;
+        q = c1 * e3 - b1 * b1;
+        r = b1 * b1 * b1 + (d1 - b1 * c1) * 0.5;
+        disc = q * q * q + r * r;
+        if (disc > 0.0) {
+            // one real root
+            u = sqrt(disc);
+            u1 = -r + u;
+            u2 = -r - u;
+            *n = 1;
+            x[0] = copysign(pow(fabs(u1), e3), u1) + copysign(pow(fabs(u2), e3), u2) - b1;
+        } else {
+            // three real roots
+            u = sqrt(fabs(q));
+            if (r < 0.0) { u = -u; }
+            p3 = atan2(sqrt(-disc), fabs(r)) * e3;
+            u2 = u + u;
+            *n = 3;
+            x[0] = -u2 * cos(p3) - b1;
+            x[1] = u2 * cos(pi3 - p3) - b1;
+            x[2] = u2 * cos(pi3 + p3) - b1;
+        }
+    } else if (fmax(c1, d1) < b1 * 1.0e4) {
+        // p(x) is a second degree polynomial.
+        disc = c * c - 4.0 * b * d;
+        *n = 0;
+        if (disc < 0.0) { return; }
+        *n = 2;
+        u = sqrt(disc);
+        b1 = b + b;
+        x[0] = (-c + u) / b1;
+        x[1] = (-c - u) / b1;
+    } else if (d1 < c1 * 1.0e4) {
+        // p(x) is a first degree polynomial.
+        *n = 1;
+        x[0] = -d / c;
+    } else {
+        // p(x) is a constant function.
+        *n = 0;
+        return;
+    }
+
+    // apply a newton iteration to improve the accuracy of the roots.
+    for (i = 0; i < *n; i++) {
+        y = x[i];
+        f = ((a * y + b) * y + c) * y + d;
+        df = (3.0 * a * y + 2.0 * b) * y + c;
+        step = 0.0;
+        if (fabs(f) < fabs(df) * 0.1) { step = f / df; }
+        x[i] = y - step;
+    }
+    return;
 }
 
 
@@ -4087,7 +4169,7 @@ void fpsphe(
     (void)intest; // Unused
     (void)nrest;  // Unused
     double aa, acc, arg, cn, co, c1, dmax, d1, d2, eps, facc, facs, fac1, fac2, fn;
-    double fpmax, fpms, f1, f2, f3, hti, htj, p, pi, pinv, piv, pi2, p1, p2, p3, ri, si;
+    double fpmax, fpms, f1, f2, f3, hti, htj, p, pinv, piv, pi2, p1, p2, p3, ri, si;
     double sigma, sq, store, wi, rn, one, con1, con9, con4, half, ten;
     int i, iband, iband1, ii, irot, j, jlt, jrot, j1, j2, l, la, lf, lh, ll, lp, lt, lwest, l1, l2, l3, l4;
     int ncof, ncoff, npp, np4, nreg, nrint, nrr, ntt, nt4, num, num1, rank, in, iter, i1, i2, i3;
@@ -4100,8 +4182,7 @@ void fpsphe(
     con4 = 0.04;
     half = 0.5;
     ten = 10.0;
-    pi = 3.1415926535897932384626433832795;
-    pi2 = pi + pi;
+    pi2 = PI + PI;
     eps = sqrt(eta);
 
 
@@ -4120,8 +4201,8 @@ void fpsphe(
             d2 = 0.0;
             c1 = 0.0;
             cn = 0.0;
-            fac1 = pi * (one + half);
-            fac2 = (one + one) / (pi * pi * pi);
+            fac1 = PI * (one + half);
+            fac2 = (one + one) / (PI * PI * PI);
             aa = 0.0;
             for (i = 1; i <= m; i++) {
                 wi = w[i - 1];
@@ -4151,7 +4232,7 @@ void fpsphe(
                 c[i + 7] = cn;
                 c[i + 11] = cn;
                 tt[i - 1] = 0.0;
-                tt[i + 3] = pi;
+                tt[i + 3] = PI;
                 tp[i - 1] = 0.0;
                 tp[i + 3] = pi2;
             }
@@ -4169,9 +4250,9 @@ void fpsphe(
             return;
         }
         *np = 11;
-        tp[4] = pi * half;
-        tp[5] = pi;
-        tp[6] = tp[4] + pi;
+        tp[4] = PI * half;
+        tp[5] = PI;
+        tp[6] = tp[4] + PI;
         *nt = 9;
         tt[4] = tp[4];
         // 60
@@ -4183,9 +4264,9 @@ void fpsphe(
                 return;
             }
             *np = 11;
-            tp[4] = pi * half;
-            tp[5] = pi;
-            tp[6] = tp[4] + pi;
+            tp[4] = PI * half;
+            tp[5] = PI;
+            tp[6] = tp[4] + PI;
             *nt = 9;
             tt[4] = tp[4];
             // 60
@@ -4228,7 +4309,7 @@ void fpsphe(
         l = *nt;
         for (i = 1; i <= 4; i++) {
             tt[i - 1] = 0.0;
-            tt[l - 1] = pi;
+            tt[l - 1] = PI;
             l = l - 1;
         }
         // find nrint, the total number of knot intervals and nreg, the number
@@ -4558,8 +4639,8 @@ void fpsphe(
             if (l > ntt) {
                 // addition in the phi-direction
                 l4 = l + 4 - ntt;
-                if (arg >= pi) {
-                    arg = arg - pi;
+                if (arg >= PI) {
+                    arg = arg - PI;
                     l4 = l4 - nrr;
                 }
                 fpint[l - 1] = 0.0;
@@ -4588,7 +4669,7 @@ void fpsphe(
                 nrr++;
                 for (i = 5; i <= ll; i++) {
                     j = i + nrr;
-                    tp[j - 1] = tp[i - 1] + pi;
+                    tp[j - 1] = tp[i - 1] + PI;
                 }
                 break;
             }   else {
@@ -4918,7 +4999,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
        int* lastu0, int* lastu1, int* nru, int* nrv, int* nrdatu, int* nrdatv, double* wrk,
        const int lwrk,int* ier)
 {
-    double acc, fpms, f1, f2, f3, p, per, pi, p1, p2, p3, vb, ve, rmax, rmin, rn, one;
+    double acc, fpms, f1, f2, f3, p, per, p1, p2, p3, vb, ve, rmax, rmin, rn, one;
     double con1, con4, con9;
     int i, ich1, ich3, ifbu, ifbv, ifsu, ifsv, istart, iter, i1, i2, j, ju;
     int ktu, l, l1, l2, l3, l4, mpm, mumin, mu0, mu1, nn, nplu, nplv, npl1, nrintu;
@@ -4943,8 +5024,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
     if (ider[2] >= 0) { mumin = mumin - 1; }
     if ((iopt[2] == 1) && (ider[3] == 1)) { mumin = mumin - 1; }
     if (mumin == 0) { mumin = 1; }
-    pi = 3.1415926535897932384626433832795;
-    per = pi + pi;
+    per = PI + PI;
     vb = v[0];
     ve = vb + per;
     //////////////////////////////////////////////////////////////////////////
@@ -5113,7 +5193,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
                 for (i = 1; i <= 4; i++) {
                     tu[i - 1] = 0.0;
                     *nu = *nu + 1;
-                    tu[*nu - 1] = pi;
+                    tu[*nu - 1] = PI;
                 }
                 // we compute the least-squares spline for estimating the derivatives.
                 fpopsp(ifsu, ifsv, ifbu, ifbv, u, mu, v, mv, r, mr, r0, r1, dr, iopt, idd,
@@ -5136,7 +5216,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
                 l = *nu;
                 for (i = 1; i <= 4; i++) {
                     tu[i - 1] = 0.0;
-                    tu[l - 1] = pi;
+                    tu[l - 1] = PI;
                     l = l - 1;
                 }
             }
@@ -5162,7 +5242,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
         i = *nu;
         for (j = 1; j <= 4; j++) {
             tu[j - 1] = 0.0;
-            tu[i - 1] = pi;
+            tu[i - 1] = PI;
             i = i - 1;
         }
         l1 = 4;
@@ -6819,17 +6899,14 @@ spgrid(const int *iopt, const int *ider, const int mu, const double *u, const in
        const int nuest, const int nvest, int *nu, double *tu, int *nv, double *tv, double *c,
        double *fp, double *wrk, const int lwrk, int *iwrk, const int kwrk, int *ier)
 {
-    double per, pi, tol, uu, ve, rmax, rmin, one, half, rn, rb = 0.0, re = 0.0;
+    double per, tol, uu, ve, rmax, rmin, rn, rb = 0.0, re = 0.0;
     int i, i1, i2, j, jwrk, j1, j2, kndu, kndv, knru, knrv, kwest, l;
     int ldr, lfpu, lfpv, lwest, lww, m, maxit, mumin, muu, nc;
 
-    one = 1.0;
-    half = 0.5;
-    pi = atan2(0.0, -one);
-    per = pi + pi;
+    per = PI + PI;
     ve = v[1 - 1] + per;
     maxit = 20;
-    tol = 0.1e-02;
+    tol = 1e-03;
     *ier = 10;
 
     if ((iopt[0] < -1) || (iopt[0] > 1)) { return; }
@@ -6859,13 +6936,13 @@ spgrid(const int *iopt, const int *ider, const int mu, const double *u, const in
     kwest = 5 + mu + mv + nuest + nvest;
     if (lwrk < lwest || kwrk < kwest) { return; }
 
-    if (u[0] <= 0.0 || u[mu - 1] >= pi) { return; }
+    if (u[0] <= 0.0 || u[mu - 1] >= PI) { return; }
     if (mu != 1) {
         for (i = 1; i < mu; ++i) {
             if (u[i - 1] >= u[i]) { return; }
         }
     }
-    if (v[0] < -pi || v[0] >= pi) { return; }
+    if (v[0] < -PI || v[0] >= PI) { return; }
     if (v[mv - 1] >= v[0] + per) { return; }
     for (i = 1; i < mv; ++i) {
         if (v[i - 1] >= v[i]) { return; }
@@ -6926,7 +7003,7 @@ spgrid(const int *iopt, const int *ider, const int mu, const double *u, const in
             j = *nu;
             for (i = 1; i <= 4; i++) {
                 tu[i - 1] = 0.0;
-                tu[j - 1] = pi;
+                tu[j - 1] = PI;
                 j = j - 1;
             }
             l = 13;
@@ -6935,7 +7012,7 @@ spgrid(const int *iopt, const int *ider, const int mu, const double *u, const in
                 l = l + 1;
                 uu = u[1 - 1];
                 if (uu > tu[5 - 1]) { uu = tu[5 - 1]; }
-                wrk[l - 1] = uu * half;
+                wrk[l - 1] = uu * 0.5;
             }
             for (i = 1; i <= mu; i++) {
                 l = l + 1;
@@ -6945,10 +7022,10 @@ spgrid(const int *iopt, const int *ider, const int mu, const double *u, const in
                 l = l + 1;
                 uu = u[mu - 1];
                 if (uu < tu[*nu - 4]) { uu = tu[*nu - 4]; }
-                wrk[l - 1] = uu + (pi - uu) * half;
+                wrk[l - 1] = uu + (PI - uu) * 0.5;
             }
             l = l + 1;
-            wrk[l - 1] = pi;
+            wrk[l - 1] = PI;
             muu = l - 12;
             fpchec(&wrk[13 - 1], muu, tu, *nu, 3, ier);
             if (*ier != 0) { return; }
@@ -7003,13 +7080,12 @@ sphere(const int iopt, const int m, const double *teta, const double *phi, const
        double *wrk1, const int lwrk1, double *wrk2, const int lwrk2, int *iwrk, const int kwrk,
        int *ier)
 {
-    double tol, pi, pi2, one;
+    double tol, pi2;
     int i, ib1, ib3, ki, kn, kwest, la, lbt, lcc, lcs, lro, j;
     int lbp, lco, lf, lff, lfp, lh, lq, lst, lsp, lwest, maxit, ncest, ncc, ntt;
     int npp, nreg, nrint, ncof, nt4, np4;
 
-    // set constants
-    one = 1.0;
+
     // we set up the parameters tol and maxit.
     maxit = 20;
     tol = 0.001;
@@ -7037,11 +7113,10 @@ sphere(const int iopt, const int m, const double *teta, const double *phi, const
     kwest = m + nreg;
     if ((lwrk1 < lwest) || (kwrk < kwest)) { return; }
     if (iopt <= 0) {
-        pi = atan(one) * 4;
-        pi2 = pi + pi;
+        pi2 = PI + PI;
         for (i = 1; i <= m; i++) {
             if (w[i - 1] <= 0.0) { return; }
-            if ((teta[i - 1] < 0.0) || (teta[i - 1] > pi)) { return; }
+            if ((teta[i - 1] < 0.0) || (teta[i - 1] > PI)) { return; }
             if ((phi[i - 1] < 0.0) || (phi[i - 1] > pi2)) { return; }
         }
         if (iopt == 0) {
@@ -7053,7 +7128,7 @@ sphere(const int iopt, const int m, const double *teta, const double *phi, const
                 tt[3] = 0.0;
                 for (i = 1; i <= ntt; i++) {
                     j = i + 4;
-                    if ((tt[j - 1] <= tt[j - 2]) || (tt[j - 1] >= pi)) { return; }
+                    if ((tt[j - 1] <= tt[j - 2]) || (tt[j - 1] >= PI)) { return; }
                 }
             }
             npp = *np - 8;
@@ -7280,6 +7355,168 @@ void splev(const double *t, const int n, const double *c, const int nc, const in
         }
         y[i - 1] = sp;
     }
+}
+
+
+void
+sproot(const double *t, const int n, const double *c, const int nc, double *zero, const int mest, int *m, int *ier)
+{
+    (void)nc; // Unused
+    // subroutine sproot finds the zeros of a cubic spline s(x),which is
+    // given in its normalized b-spline representation.
+    int i, j, l;
+    double ah, a0, a1, a2, a3, bh, b0, b1, c1, c2, c3, c4, c5, d4, d5, h1, h2;
+    double t1, t2, t3, t4, t5, zz;
+    int z0, z1, z2, z3, z4, nz0, nz1, nz2, nz3, nz4;
+    double y[3];
+
+    // before starting computations a data check is made. if the input data
+    // are invalid, control is immediately repassed to the calling program.
+    *ier = 10;
+    if (n < 8) { return; }
+    j = n;
+    for (i = 0; i < 3; i++) {
+        if (t[i] > t[i + 1]) { return; }
+        if (t[j - 1] < t[j - 2]) { return; }
+        j--;
+    }
+    for (i = 3; i < n - 4; i++) {
+        if (t[i] >= t[i + 1]) { return; }
+    }
+
+    // the problem considered reduces to finding the zeros of the cubic
+    // polynomials pl(x) which define the cubic spline in each knot
+    // interval t(l)<=x<=t(l+1). a zero of pl(x) is also a zero of s(x) on
+    // the condition that it belongs to the knot interval.
+    // the cubic polynomial pl(x) is determined by computing s(t(l)),
+    // s'(t(l)),s(t(l+1)) and s'(t(l+1)). in fact we only have to compute
+    // s(t(l+1)) and s'(t(l+1)); because of the continuity conditions of
+    // splines and their derivatives, the value of s(t(l)) and s'(t(l))
+    // is already known from the foregoing knot interval.
+    *ier = 0;
+
+    // evaluate some constants for the first knot interval
+    h1 = t[3] - t[2];
+    h2 = t[4] - t[3];
+    t1 = t[3] - t[1];
+    t2 = t[4] - t[2];
+    t3 = t[5] - t[3];
+    t4 = t[4] - t[1];
+    t5 = t[5] - t[2];
+
+    // calculate a0 = s(t(4)) and ah = s'(t(4)).
+    c1 = c[0];
+    c2 = c[1];
+    c3 = c[2];
+    c4 = (c2 - c1) / t4;
+    c5 = (c3 - c2) / t5;
+    d4 = (h2 * c1 + t1 * c2) / t4;
+    d5 = (t3 * c2 + h1 * c3) / t5;
+    a0 = (h2 * d4 + h1 * d5) / t2;
+    ah = 3.0 * (h2 * c4 + h1 * c5) / t2;
+    z1 = (ah >= 0.0);
+    nz1 = !z1;
+    *m = 0;
+
+    // main loop for the different knot intervals.
+    for (l = 3; l < n - 4; l++) {
+        // evaluate some constants for the knot interval t(l) <= x <= t(l+1).
+        h1 = h2;
+        h2 = t[l + 2] - t[l + 1];
+        t1 = t2;
+        t2 = t3;
+        t3 = t[l + 3] - t[l + 1];
+        t4 = t5;
+        t5 = t[l + 3] - t[l];
+
+        // find a0 = s(t(l)), ah = s'(t(l)), b0 = s(t(l+1)) and bh = s'(t(l+1)).
+        c1 = c2;
+        c2 = c3;
+        c3 = c[l];
+        c4 = c5;
+        c5 = (c3 - c2) / t5;
+        d4 = (h2 * c1 + t1 * c2) / t4;
+        d5 = (h1 * c3 + t3 * c2) / t5;
+        b0 = (h2 * d4 + h1 * d5) / t2;
+        bh = 3.0 * (h2 * c4 + h1 * c5) / t2;
+
+        // calculate the coefficients a0,a1,a2 and a3 of the cubic polynomial
+        // pl(x) = ql(y) = a0+a1*y+a2*y**2+a3*y**3 ; y = (x-t(l))/(t(l+1)-t(l)).
+        a1 = ah * h1;
+        b1 = bh * h1;
+        a2 = 3.0 * (b0 - a0) - b1 - 2.0 * a1;
+        a3 = 2.0 * (a0 - b0) + b1 + a1;
+
+        // test whether or not pl(x) could have a zero in the range
+        // t(l) <= x <= t(l+1).
+        z3 = (b1 >= 0.0);
+        nz3 = !z3;
+        if (a0 * b0 <= 0.0) {
+            // find the zeros of ql(y).
+            fpcuro(a3, a2, a1, a0, y, &j);
+            if (j != 0) {
+                // find which zeros of pl(x) are zeros of s(x).
+                for (i = 0; i < j; i++) {
+                    if ((y[i] < 0.0) || (y[i] > 1.0)) { continue; }
+                    // test whether the number of zeros of s(x) exceeds mest.
+                    if (*m >= mest) { *ier = 1; return; }
+                    (*m)++;
+                    zero[*m - 1] = t[l] + h1 * y[i];
+                }
+            }
+        } else {
+            z0 = (a0 >= 0.0);
+            nz0 = !z0;
+            z2 = (a2 >= 0.0);
+            nz2 = !z2;
+            z4 = ((3.0 * a3 + a2) >= 0.0);
+            nz4 = !z4;
+            if (!(((z0) && ((nz1 && (z3 || (z2 && nz4))) || (nz2 && z3 && z4))) ||
+                  ((nz0) && ((z1 && (nz3 || (nz2 && z4))) || (z2 && nz3 && nz4))))) {
+                a0 = b0;
+                ah = bh;
+                z1 = z3;
+                nz1 = nz3;
+                continue;
+            }
+            // find the zeros of ql(y).
+            fpcuro(a3, a2, a1, a0, y, &j);
+            if (j != 0) {
+                // find which zeros of pl(x) are zeros of s(x).
+                for (i = 0; i < j; i++) {
+                    if ((y[i] < 0.0) || (y[i] > 1.0)) { continue; }
+                    if (*m >= mest) { *ier = 1; return; }
+                    (*m)++;
+                    zero[*m - 1] = t[l] + h1 * y[i];
+                }
+            }
+        }
+        a0 = b0;
+        ah = bh;
+        z1 = z3;
+        nz1 = nz3;
+    }
+
+    // the zeros of s(x) are arranged in increasing order.
+    if (*m < 2) { return; }
+    for (i = 1; i < *m; i++) {
+        j = i;
+        while (j > 0) {
+            if (zero[j] >= zero[j - 1]) { break; }
+            zz = zero[j];
+            zero[j] = zero[j - 1];
+            zero[j - 1] = zz;
+            j--;
+        }
+    }
+    j = *m;
+    *m = 1;
+    for (i = 1; i < j; i++) {
+        if (zero[i] == zero[*m - 1]) { continue; }
+        (*m)++;
+        zero[*m - 1] = zero[i];
+    }
+    return;
 }
 
 
