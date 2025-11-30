@@ -38,6 +38,7 @@ def fft1(x):
     phase = np.arange(L).reshape(-1, 1) * phase
     return np.sum(x*np.exp(phase), axis=1)
 
+
 class TestFFT:
     @make_xp_test_case(fft.ifft, fft.fft, fft.rfft, fft.irfft)
     def test_identity(self, xp):
@@ -502,6 +503,7 @@ class TestIRFFTN:
 
         # Should not raise error
         fft.irfftn(a, axes=axes)
+
 
 @pytest.mark.parametrize("func", [make_xp_pytest_param(fft.fft),
                                   make_xp_pytest_param(fft.ifft),
