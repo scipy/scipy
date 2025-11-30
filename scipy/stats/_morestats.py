@@ -12,6 +12,7 @@ from numpy import (isscalar, log, around, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib.deprecation import _NoValue
 import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
@@ -2402,6 +2403,41 @@ def anderson(x, dist='norm'):
     return AndersonResult(A2, critical, sig, fit_result=fit_result)
 
 
+def _anderson_ksamp_continuous(samples, Z, Zstar, k, n, N):
+    """Compute A2akN equation 3 of Scholz & Stephens.
+
+    Parameters
+    ----------
+    samples : sequence of 1-D array_like
+        Array of sample arrays.
+    Z : array_like
+        Sorted array of all observations.
+    Zstar : array_like
+        Sorted array of unique observations. Unused.
+    k : int
+        Number of samples.
+    n : array_like
+        Number of observations in each sample.
+    N : int
+        Total number of observations.
+
+    Returns
+    -------
+    A2KN : float
+        The A2KN statistics of Scholz and Stephens 1987.
+
+    """
+    A2kN = 0.
+
+    j = np.arange(1, N)
+    for i in arange(0, k):
+        s = np.sort(samples[i])
+        Mij = s.searchsorted(Z[:-1], side='right')
+        inner = (N*Mij - j*n[i])**2 / (j * (N - j))
+        A2kN += inner.sum() / n[i]
+    return A2kN / N
+
+
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
     """Compute A2akN equation 7 of Scholz and Stephens.
 
@@ -2488,7 +2524,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 
 
 @xp_capabilities(np_only=True)
-def anderson_ksamp(samples, midrank=True, *, method=None):
+def anderson_ksamp(samples, midrank=_NoValue, *, variant=_NoValue, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2502,10 +2538,20 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     samples : sequence of 1-D array_like
         Array of sample data in arrays.
     midrank : bool, optional
-        Type of Anderson-Darling test which is computed. Default
+        Variant of Anderson-Darling test which is computed. Default
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+
+        .. deprecated::1.17.0
+            Use parameter `variant` instead.
+    variant : {'midrank', 'right', 'continuous'}
+        Variant of Anderson-Darling test to be computed. ``'midrank'`` is applicable
+        to both continuous and discrete populations. ``'discrete'`` and ``'continuous'``
+        perform alternative versions of the test for discrete  and continuous
+        populations, respectively.
+        When `variant` is specified, the return object will not be unpackable as a
+        tuple, and only attributes ``statistic`` and ``pvalue`` will be present.
     method : PermutationMethod, optional
         Defines the method used to compute the p-value. If `method` is an
         instance of `PermutationMethod`, the p-value is computed using
@@ -2523,6 +2569,10 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         critical_values : array
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
+
+            .. deprecated::1.17.0
+                 Present only when `variant` is unspecified.
+
         pvalue : float
             The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
@@ -2545,11 +2595,12 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
     midrank empirical distribution function. This test is applicable
-    to continuous and discrete data. If midrank is set to False, the
+    to continuous and discrete data. If `variant` is set to ``'discrete'``, the
     right side empirical distribution is used for a test for discrete
-    data. According to [1]_, the two discrete test statistics differ
-    only slightly if a few collisions due to round-off errors occur in
-    the test not adjusted for ties between samples.
+    data; if `variant` is ``'continuous'``, the same test statistic and p-value are
+    computed for data with no ties, but with less computation. According to [1]_,
+    the two discrete test statistics differ only slightly if a few collisions due
+    to round-off errors occur in the test not adjusted for ties between samples.
 
     The critical values corresponding to the significance levels from 0.01
     to 0.25 are taken from [1]_. p-values are floored / capped
@@ -2569,41 +2620,33 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
+    >>> rng = np.random.default_rng(44925884305279435)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50), rng.normal(loc=0.5, size=30)],
+    ...                            variant='midrank')
     >>> res.statistic, res.pvalue
-    (1.974403288713695, 0.04991293614572478)
-    >>> res.critical_values
-    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
+    (3.4444310693448936, 0.013106682406720973)
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
-    test value is greater than the critical value for 5% (1.961) but
-    not at the 2.5% level. The interpolation gives an approximate
-    p-value of 4.99%.
+    p-value is less than 0.05, but not at the 1% level.
 
     >>> samples = [rng.normal(size=50), rng.normal(size=30),
     ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous')
     >>> res.statistic, res.pvalue
-    (-0.29103725200789504, 0.25)
-    >>> res.critical_values
-    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101])
+    (-0.6309662273193832, 0.25)
 
-    The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The reported p-value (25%) has been capped and
-    may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.291).
+    As we might expect, the null hypothesis cannot be rejected here for three samples
+    from an identical distribution. The reported p-value (25%) has been capped at the
+    maximum value for which pre-computed p-values are available.
 
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
     >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
-    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res = stats.anderson_ksamp(samples, variant='continuous', method=method)
     >>> res.pvalue
-    0.5254
+    0.699
 
     """
     k = len(samples)
@@ -2623,10 +2666,28 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         raise ValueError("anderson_ksamp encountered sample without "
                          "observations")
 
-    if midrank:
+    if variant == _NoValue or midrank != _NoValue:
+        message = ("Parameter `variant` has been introduced to replace `midrank`; "
+                   "`midrank` will be removed in SciPy 1.19.0. Specify `variant` to "
+                   "silence this warning. Note that the returned object will no longer "
+                   "be unpackable as a tuple, and `critical_values` will be omitted.")
+        warnings.warn(message, category=UserWarning, stacklevel=2)
+
+    return_critical_values = False
+    if variant == _NoValue:
+        return_critical_values = True
+        variant = 'midrank' if midrank else 'right'
+
+    if variant == 'midrank':
         A2kN_fun = _anderson_ksamp_midrank
-    else:
+    elif variant == 'right':
         A2kN_fun = _anderson_ksamp_right
+    elif variant == 'continuous':
+        A2kN_fun = _anderson_ksamp_continuous
+    else:
+        message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
+        raise ValueError(message)
+
     A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
 
     def statistic(*samples):
@@ -2677,10 +2738,15 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
     else:
         p = res.pvalue if method is not None else p
 
-    # create result object with alias for backward compatibility
-    res = Anderson_ksampResult(A2, critical, p)
-    res.significance_level = p
+    if return_critical_values:
+        # create result object with alias for backward compatibility
+        res = Anderson_ksampResult(A2, critical, p)
+        res.significance_level = p
+    else:
+        res = SignificanceResult(statistic=A2, pvalue=p)
+
     return res
+
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
