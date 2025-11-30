@@ -2025,15 +2025,14 @@ def tukey_hsd(*args, equal_var=True):
            Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
     .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
-           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
-           Accessed 25 May 2021.
+           no. 3, 1956, pp. 307-310. https://www.jstor.org/stable/3001469
     .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
            The ANOVA table and tests of hypotheses about means"
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
            2 June 2021.
     .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
-           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
-           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114.
+           https://www.jstor.org/stable/3001913
     .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
            Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
