@@ -347,6 +347,22 @@ class TestQuantile:
         xp_assert_close(res, ref)
         xp_assert_equal(x, x0)  # no input mutation
 
+    @pytest.mark.filterwarnings("ignore:torch.searchsorted:UserWarning")
+    @pytest.mark.parametrize('method',
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation', 'hazen',
+         'interpolated_inverted_cdf', 'linear','median_unbiased', 'normal_unbiased',
+         'weibull'])
+    @pytest.mark.parametrize('shape', [50, (50, 3)])
+    def test_unity_weights(self, method, shape, xp):
+        # Check that result is unchanged if all weights are `1.0`
+        rng = np.random.default_rng(28546892439820560)
+        x = xp.asarray(rng.random(size=shape))
+        p = xp.asarray(rng.random(size=shape))
+        weights = xp.ones_like(x)
+        res = stats.quantile(x, p, weights=weights, method=method)
+        ref = stats.quantile(x, p, method=method)
+        xp_assert_close(res, ref)
+
 
 @_apply_over_batch(('a', 1), ('v', 1))
 def np_searchsorted(a, v, side):
