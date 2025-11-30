@@ -28,6 +28,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         raise ValueError("`weights` must have real dtype.")
 
     x, p, weights = xp_promote(x, p, weights, force_floating=True, xp=xp)
+    p = xp.asarray(p, device=xp_device(x))
     dtype = x.dtype
 
     axis_none = axis is None
