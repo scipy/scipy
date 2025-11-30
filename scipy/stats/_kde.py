@@ -92,6 +92,7 @@ class gaussian_kde:
     resample
     set_bandwidth
     covariance_factor
+    marginal
 
     Notes
     -----
