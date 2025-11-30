@@ -30,16 +30,35 @@ def quantile_reference_last_axis(x, p, nan_policy, method):
         # hdquantiles returns masked element if length along axis is 1 (bug)
         res = (np.full_like(p, x[0]) if x.size == 1
                else stats.mstats.hdquantiles(x, p).data)
-        if nan_policy == 'propagate' and np.any(np.isnan(x)):
-            res[:] = np.nan
+    elif method.startswith('round'):
+        res = winsor_reference_1d(np.sort(x), p, method)
     else:
         res = np.quantile(x, p, method=method)
+
+    res = np.asarray(res)
+    if nan_policy == 'propagate' and np.any(np.isnan(x)):
+        res[:] = np.nan
+
     res[p_mask] = np.nan
     return res
 
 
+@np.vectorize(excluded={0, 2})  # type: ignore[call-arg]
+def winsor_reference_1d(y, p, method):
+    # Adapted directly from the documentation
+    # Note: `y` is the sorted data array
+    n = len(y)
+    if method == 'round_nearest':
+        j = int(np.round(p * n) if p < 0.5 else np.round(n * p - 1))
+    elif method == 'round_outward':
+        j = int(np.floor(p * n) if p < 0.5 else np.ceil(n * p - 1))
+    elif method == 'round_inward':
+        j = int(np.ceil(p * n) if p < 0.5 else np.floor(n * p - 1))
+    return y[j]
+
+
 def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
-    x, p = np.moveaxis(x, axis, -1), np.moveaxis(p, axis, -1)
+    x, p = np.moveaxis(x, axis, -1), np.moveaxis(np.atleast_1d(p), axis, -1)
     res = quantile_reference_last_axis(x, p, nan_policy, method)
     res = np.moveaxis(res, -1, axis)
     if not keepdims:
@@ -91,21 +110,26 @@ class TestQuantile:
         with pytest.raises(ValueError, match=message):
             stats.quantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.",
+                      exceptions=['cupy'])
     @pytest.mark.parametrize('method',
          ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
           'hazen', 'interpolated_inverted_cdf', 'linear',
           'median_unbiased', 'normal_unbiased', 'weibull',
+          'harrell-davis', 'round_nearest', 'round_outward', 'round_inward',
           '_lower', '_higher', '_midpoint', '_nearest'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
          [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
           ((10, 2), None, 0), ((10, 2), None, 0),])
-    def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
+    def test_against_reference(self, method, shape_x, shape_p, axis, xp):
+        # Test all methods with various data shapes
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
-        ref = np.quantile(x, p, axis=axis,
-                          method=method[1:] if method.startswith('_') else method)
+        ref = quantile_reference(
+            x, p, method=method[1:] if method.startswith('_') else method,
+            axis=axis, nan_policy='propagate', keepdims=shape_p is not None)
         x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
         res = stats.quantile(x, p, method=method, axis=axis)
 
@@ -117,8 +141,9 @@ class TestQuantile:
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
-    @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
-    def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
+    @pytest.mark.parametrize('method', ['linear', 'harrell-davis', 'round_nearest'])
+    def test_against_reference_2(self, axis, keepdims, nan_policy, dtype, method, xp):
+        # Test some methods with various combinations of arguments
         if is_jax(xp) and nan_policy == 'marray':  # mdhaber/marray#146
             pytest.skip("`marray` currently incompatible with JAX")
         rng = np.random.default_rng(23458924568734956)

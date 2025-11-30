@@ -83,6 +83,12 @@ class _MultilinearModel(Model):
     r"""
     Arbitrary-dimensional linear model
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
+
     This model is defined by :math:`y=\beta_0 + \sum_{i=1}^m \beta_i x_i`
 
     Examples
@@ -116,6 +122,11 @@ multilinear = _MultilinearModel()
 def polynomial(order):
     """
     Factory function for a general polynomial model.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     Parameters
     ----------
@@ -177,6 +188,11 @@ def polynomial(order):
 class _ExponentialModel(Model):
     r"""
     Exponential model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y=\beta_0 + e^{\beta_1 x}`
 
@@ -245,6 +261,11 @@ class _UnilinearModel(Model):
     r"""
     Univariate linear model
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     This model is defined by :math:`y = \beta_0 x + \beta_1`
 
     Examples
@@ -277,6 +298,11 @@ unilinear = _UnilinearModel()
 class _QuadraticModel(Model):
     r"""
     Quadratic model
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     This model is defined by :math:`y = \beta_0 x^2 + \beta_1 x + \beta_2`
 
