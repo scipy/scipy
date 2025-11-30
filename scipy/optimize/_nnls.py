@@ -44,7 +44,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     Notes
     -----
     The code is based on the classical algorithm of [1]_. It utilizes an active
-    set method and solves the KKK (Karush-Kuhn-Tucker) conditions for the
+    set method and solves the KKT (Karush-Kuhn-Tucker) conditions for the
     non-negative least squares problem.
 
     References

@@ -11,7 +11,6 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import norm
 from scipy._lib._array_api import (xp_capabilities, array_namespace, xp_size,
                                    xp_promote, xp_result_type, xp_copy, is_numpy)
-from scipy._lib._util import _apply_over_batch
 import scipy._lib.array_api_extra as xpx
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
@@ -30,13 +29,8 @@ Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
 
 
-# remove when array-api-extra#502 is resolved
-@_apply_over_batch(('x', 2))
-def cov(x):
-    return xpx.cov(x)
-
-
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "lazy -> no _axis_nan_policy"),
+                                ("jax.numpy", "lazy -> no _axis_nan_policy")])
 @_axis_nan_policy_factory(Epps_Singleton_2sampResult, n_samples=2, too_small=4)
 def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     """Compute the Epps-Singleton (ES) test statistic.
@@ -110,11 +104,11 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
        function", The Stata Journal 9(3), p. 454--465, 2009.
 
     """
-    np = array_namespace(x, y)
+    xp = array_namespace(x, y)
     # x and y are converted to arrays by the decorator
     # and `axis` is guaranteed to be -1.
-    x, y = xp_promote(x, y, force_floating=True, xp=np)
-    t = np.asarray(t, dtype=x.dtype)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    t = xp.asarray(t, dtype=x.dtype)
     # check if x and y are valid inputs
     nx, ny = x.shape[-1], y.shape[-1]
     if (nx < 5) or (ny < 5):  # only used by test_axis_nan_policy
@@ -125,42 +119,45 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
     # check if t is valid
     if t.ndim > 1:
         raise ValueError(f't must be 1d, but t.ndim equals {t.ndim}.')
-    if np.any(t <= 0):
+    if xp.any(t <= 0):
         raise ValueError('t must contain positive elements only.')
 
     # Previously, non-finite input caused an error in linalg functions.
     # To prevent an issue in one slice from halting the calculation, replace non-finite
     # values with a harmless one, and replace results with NaN at the end.
-    i_x = ~np.isfinite(x)
-    i_y = ~np.isfinite(y)
-    x = xpx.at(x)[i_x].set(1)
-    y = xpx.at(y)[i_y].set(1)
-    invalid_result = np.any(i_x, axis=-1) | np.any(i_y, axis=-1)
+    i_x = ~xp.isfinite(x)
+    i_y = ~xp.isfinite(y)
+    # Ideally we would avoid copying all data here; see
+    # discussion in data-apis/array-api-extra#506.
+    x = xp.where(i_x, 1., x)
+    y = xp.where(i_y, 1., y)
+    invalid_result = xp.any(i_x, axis=-1) | xp.any(i_y, axis=-1)
 
     # rescale t with semi-iqr as proposed in [1]; import iqr here to avoid
     # circular import
     from scipy.stats import iqr
-    sigma = iqr(np.concat((x, y), axis=-1), axis=-1, keepdims=True) / 2
-    ts = np.reshape(t, (-1,) + (1,)*x.ndim) / sigma
+    sigma = iqr(xp.concat((x, y), axis=-1), axis=-1, keepdims=True) / 2
+    ts = xp.reshape(t, (-1,) + (1,)*x.ndim) / sigma
 
     # covariance estimation of ES test
-    gx = np.concat((np.cos(ts*x), np.sin(ts*x)), axis=0)
-    gy = np.concat((np.cos(ts*y), np.sin(ts*y)), axis=0)
-    gx, gy = np.moveaxis(gx, 0, -2), np.moveaxis(gy, 0, -2)
-    cov_x = cov(gx) * (nx-1)/nx  # the test uses biased cov-estimate
-    cov_y = cov(gy) * (ny-1)/ny
+    gx = xp.concat((xp.cos(ts*x), xp.sin(ts*x)), axis=0)
+    gy = xp.concat((xp.cos(ts*y), xp.sin(ts*y)), axis=0)
+    gx, gy = xp.moveaxis(gx, 0, -2), xp.moveaxis(gy, 0, -2)
+    cov_x = xpx.cov(gx) * (nx-1)/nx  # the test uses biased cov-estimate
+    cov_y = xpx.cov(gy) * (ny-1)/ny
+    cov_x, cov_y = xp.astype(cov_x, x.dtype), xp.astype(cov_y, y.dtype)
     est_cov = (n/nx)*cov_x + (n/ny)*cov_y
-    est_cov_inv = np.linalg.pinv(est_cov)
-    r = np.linalg.matrix_rank(est_cov_inv)
-    if np.any(r < 2*xp_size(t)):
+    est_cov_inv = xp.linalg.pinv(est_cov)
+    r = xp.asarray(xp.linalg.matrix_rank(est_cov_inv), dtype=est_cov_inv.dtype)
+    if xp.any(r < 2*xp_size(t)):
         warnings.warn('Estimated covariance matrix does not have full rank. '
                       'This indicates a bad choice of the input t and the '
                       'test might not be consistent.', # see p. 183 in [1]_
                       stacklevel=2)
 
     # compute test statistic w distributed asympt. as chisquare with df=r
-    g_diff = np.mean(gx, axis=-1, keepdims=True) - np.mean(gy, axis=-1, keepdims=True)
-    w = n*np.matmul(np.matrix_transpose(g_diff), np.matmul(est_cov_inv, g_diff))
+    g_diff = xp.mean(gx, axis=-1, keepdims=True) - xp.mean(gy, axis=-1, keepdims=True)
+    w = n*xp.matmul(xp.matrix_transpose(g_diff), xp.matmul(est_cov_inv, g_diff))
     w = w[..., 0, 0]
 
     # apply small-sample correction
@@ -169,11 +166,13 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8), *, axis=0):
         w *= corr
 
     chi2 = _stats_py._SimpleChi2(r)
-    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=xp)
 
-    w = xpx.at(w)[invalid_result].set(np.nan)
-    p = xpx.at(p)[invalid_result].set(np.nan)
-    return Epps_Singleton_2sampResult(w[()], p[()])
+    w = xpx.at(w)[invalid_result].set(xp.nan)
+    p = xpx.at(p)[invalid_result].set(xp.nan)
+    w = w[()] if w.ndim == 0 else w
+    p = p[()] if p.ndim == 0 else p
+    return Epps_Singleton_2sampResult(w, p)
 
 
 @xp_capabilities(np_only=True)
@@ -535,7 +534,7 @@ def _cvm_result_to_tuple(res, _):
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=1, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises(rvs, cdf, args=(), *, axis=0):
-    """Perform the one-sample Cramér-von Mises test for goodness of fit.
+    r"""Perform the one-sample Cramér-von Mises test for goodness of fit.
 
     This performs a test of the goodness of fit of a cumulative distribution
     function (cdf) :math:`F` compared to the empirical distribution function
@@ -543,6 +542,13 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     assumed to be independent and identically distributed ([1]_).
     The null hypothesis is that the :math:`X_i` have cumulative distribution
     :math:`F`.
+
+    The test statistic :math:`T` is defined as in [1]_, where :math:`\omega^2`
+    is the Cramér-von Mises criterion and :math:`x_i` are the observed values.
+
+    .. math::
+        T = n\omega^2 =
+        \frac{1}{12n} + \sum_{i=1}^n \left[ \frac{2i-1}{2n} - F(x_i) \right]^2
 
     Parameters
     ----------
@@ -566,7 +572,7 @@ def cramervonmises(rvs, cdf, args=(), *, axis=0):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 
@@ -1630,12 +1636,26 @@ def _pval_cvm_2samp_asymptotic(t, N, nx, ny, k, *, xp):
 @_axis_nan_policy_factory(CramerVonMisesResult, n_samples=2, too_small=1,
                           result_to_tuple=_cvm_result_to_tuple)
 def cramervonmises_2samp(x, y, method='auto', *, axis=0):
-    """Perform the two-sample Cramér-von Mises test for goodness of fit.
+    r"""Perform the two-sample Cramér-von Mises test for goodness of fit.
 
     This is the two-sample version of the Cramér-von Mises test ([1]_):
     for two independent samples :math:`X_1, ..., X_n` and
     :math:`Y_1, ..., Y_m`, the null hypothesis is that the samples
     come from the same (unspecified) continuous distribution.
+
+    The test statistic :math:`T` is defined as in [1]_:
+
+    .. math::
+        T = \frac{nm}{n+m}\omega^2 =
+        \frac{U}{n m (n+m)} - \frac{4 m n - 1}{6(m+n)}
+
+    where :math:`U` is defined as below, and :math:`\omega^2` is the Cramér-von
+    Mises criterion. The function :math:`r(\cdot)` here denotes the rank of the
+    observed values :math:`x_i` and :math:`y_j` within the pooled sample of size
+    :math:`n + m`, with ties assigned mid-rank values:
+
+    .. math::
+        U = n \sum_{i=1}^n (r(x_i)-i)^2 + m \sum_{j=1}^m (r(y_j)-j)^2
 
     Parameters
     ----------
@@ -1658,7 +1678,7 @@ def cramervonmises_2samp(x, y, method='auto', *, axis=0):
     -------
     res : object with attributes
         statistic : float
-            Cramér-von Mises statistic.
+            Cramér-von Mises statistic :math:`T`.
         pvalue : float
             The p-value.
 

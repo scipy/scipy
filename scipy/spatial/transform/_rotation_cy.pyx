@@ -503,12 +503,26 @@ def from_matrix(matrix):
     # algorithm described in [3]_. This will also apply another
     # orthogonalization step to correct for any small errors in the matrices
     # that skipped the SVD step above.
+    if is_single:
+        return _from_matrix_orthogonal(matrix[0])
+    return _from_matrix_orthogonal(matrix)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _from_matrix_orthogonal(matrix):
+    is_single = False
+    if matrix.shape == (3, 3):
+        matrix = matrix[np.newaxis, :, :]
+        is_single = True
+
     cdef double[:, :, :] cmatrix
     cmatrix = matrix
     cdef Py_ssize_t num_rotations = cmatrix.shape[0]
     cdef Py_ssize_t i, j, k
     cdef double[:] decision = _empty1(4)
     cdef int choice
+    cdef int ind
 
     cdef double[:, :] quat = _empty2(num_rotations, 4)
 
@@ -1258,8 +1272,8 @@ def align_vectors(a, b, weights=None, bint return_sensitivity=False):
         with np.errstate(divide='ignore', invalid='ignore'):
             sensitivity = np.mean(weights) / zeta * (
                     kappa * np.eye(3) + np.dot(B, B.T))
-        return from_matrix(C), rssd, sensitivity
-    return from_matrix(C), rssd, None
+        return _from_matrix_orthogonal(C), rssd, sensitivity
+    return _from_matrix_orthogonal(C), rssd, None
 
 
 @cython.embedsignature(True)

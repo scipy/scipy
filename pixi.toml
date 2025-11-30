@@ -15,8 +15,8 @@ features = ["build-deps", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
-# tasks: test
-features = ["run-deps", "test-deps", "test-task", "win-openblas"]
+# tasks: test, test-coverage, test-xslow
+features = ["run-deps", "test-deps", "test-tasks", "win-openblas"]
 solve-group = "default"
 
 [environments.docs]
@@ -27,6 +27,11 @@ solve-group = "default"
 [environments.ipython]
 # tasks: ipython
 features = ["run-deps", "test-deps", "ipython"]
+solve-group = "default"
+
+[environments.bench]
+# tasks: bench
+features = ["run-deps", "build-deps", "bench"]
 solve-group = "default"
 
 [environments.build-debug]
@@ -181,6 +186,7 @@ description = "Build SciPy (default settings)"
 [feature.test-deps.dependencies]
 pytest = "*"
 hypothesis = "*"
+pytest-cov = "*"
 pytest-timeout = "*"
 pytest-xdist = "*"
 threadpoolctl = "*"
@@ -189,10 +195,21 @@ mpmath = "*"
 gmpy2 = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
-[feature.test-task.tasks.test]
+[feature.test-tasks.tasks.test]
 cmd = "spin test --no-build"
 depends-on = "build"
 description = "Test SciPy (default settings)"
+
+[feature.test-tasks.tasks.test-coverage]
+cmd = "spin test --no-build --coverage"
+depends-on = "build"
+description = "Test SciPy with coverage"
+
+[feature.test-tasks.tasks.test-xslow]
+cmd = "spin test --no-build -m full"
+depends-on = "build"
+env.SCIPY_XSLOW = "1"
+description = "Test SciPy (full and x-slow)"
 
 
 ### Documentation ###
@@ -229,6 +246,16 @@ ipython = "*"
 cmd = "spin ipython --no-build"
 depends-on = "build"
 description = "Launch IPython"
+
+
+### Benchmarking ###
+
+[feature.bench.dependencies]
+# https://github.com/airspeed-velocity/asv/issues/1537
+asv = "==0.6.4"
+
+[feature.bench.tasks.bench]
+cmd = "spin bench"
 
 
 ### Debugging ###
