@@ -40,8 +40,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._util import (_get_nan, _rename_parameter, _contains_nan,
-                              normalize_axis_index, np_vecdot,)
+from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan, np_vecdot
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -3747,7 +3746,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-@xp_capabilities()
+@xp_capabilities(jax_jit=False)
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -3954,7 +3953,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # "As a particular case $y_t$ may be the means ... of samples
         y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = xp.stack([sample.shape[-1] for sample in samples])
+        n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
         n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
@@ -3995,8 +3994,10 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
         # calculate p value
         # ref.[4] p.334 eq.28
-        prob = stats.f.sf(f, hat_f1, hat_f2)
+        prob = special.fdtrc(hat_f1, hat_f2, f)
 
+    prob = xp.asarray(prob, dtype=f.dtype)
+    f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
 
 
