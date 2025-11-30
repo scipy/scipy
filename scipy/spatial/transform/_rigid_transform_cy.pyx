@@ -2,6 +2,7 @@
 
 import numpy as np
 from ._rotation_cy import from_matrix as from_rot_matrix
+from ._rotation_cy import _from_matrix_orthogonal as from_rot_matrix_orthogonal
 from ._rotation_cy import inv as rot_inv
 from ._rotation_cy import from_quat, from_rotvec
 from ._rotation_cy import as_matrix, as_quat, as_rotvec, compose_quat
@@ -151,7 +152,7 @@ def from_dual_quat(dual_quat, *, bint scalar_first=False):
 @cython.wraparound(False)
 def as_exp_coords(double[:, :, :] matrix):
     exp_coords = np.empty((matrix.shape[0], 6), dtype=float)
-    rot_vec = as_rotvec(from_rot_matrix(matrix[:, :3, :3]))
+    rot_vec = as_rotvec(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
     exp_coords[:, :3] = rot_vec
     exp_coords[:, 3:] = np.einsum('ijk,ik->ij',
                                   _compute_se3_log_translation_transform(rot_vec),
@@ -163,7 +164,7 @@ def as_exp_coords(double[:, :, :] matrix):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def as_dual_quat(double[:, :, :] matrix, *, bint scalar_first=False):
-    real_parts = as_quat(from_rot_matrix(matrix[:, :3, :3]))
+    real_parts = as_quat(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
 
     pure_translation_quats = np.empty((len(matrix), 4), dtype=float)
     pure_translation_quats[:, :3] = matrix[:, :3, 3]
@@ -246,12 +247,32 @@ def pow(double[:, :, :] matrix, float n):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-@cython.wraparound(False)
-def mean(double[:, :, :] matrix, weights=None):
+def mean(double[:, :, :] matrix, weights=None, axis=None):
     if matrix.shape[0] == 0:
         raise ValueError("Mean of an empty transform set is undefined.")
-    
-    quat = as_quat(from_rot_matrix(matrix[:, :3, :3]))
+
+    # The Cython path assumes matrix is Nx4x4, so axis has to be None, 0, -1, (0,), (-1,),
+    # or (). The code path is unchanged for any of the options except (), where we
+    # immediately return the matrix
+    if axis == ():
+        return matrix
+
+    if axis is None:
+        axis = (0,)
+    if isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):  # Must be tuple by now
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    if min(axis) < -1 or max(axis) > 0:
+        raise ValueError(
+            f"axis {axis} is out of bounds for transform with shape "
+            f"{np.asarray(matrix).shape[:-2]}."
+        )
+    # Axis must be 0 for the cython backend. Everything else should have raised an
+    # error during validation.
+    axis = 0
+
+    quat = as_quat(from_rot_matrix_orthogonal(matrix[:, :3, :3]))
     t = np.asarray(matrix[:, :3, 3])
 
     if weights is None:
@@ -268,8 +289,8 @@ def mean(double[:, :, :] matrix, weights=None):
                              f"number of transforms, got {weights.shape[0]} values and "
                              f"{matrix.shape[0]} transforms.")
 
-    quat_mean = rot_mean(quat, weights=weights)
-    t_mean = np.average(t, axis=0, weights=weights)
+    quat_mean = rot_mean(quat, weights=weights, axis=axis)
+    t_mean = np.average(t, axis=axis, weights=weights)
     r_mean = as_matrix(np.asarray([quat_mean]))
     return _create_transformation_matrix(t_mean, r_mean, single=True)
 

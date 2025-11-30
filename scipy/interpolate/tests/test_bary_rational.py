@@ -81,7 +81,7 @@ def test_integer_promotion(method, dtype):
 
 class TestAAA:
     def test_input_validation(self):
-        with pytest.raises(ValueError, match="same size"):
+        with pytest.raises(ValueError, match="`x` be of size 2 but got size 1."):
             AAA([0], [1, 1])
         with pytest.raises(ValueError, match="1-D"):
             AAA([[0], [0]], [[1], [1]])
@@ -269,6 +269,21 @@ class TestAAA:
         assert_allclose(r(zz), np.sqrt(zz), rtol=9e-6)
 
 
+class BatchFloaterHormann:
+    # FloaterHormann class with reference batch behaviour
+    def __init__(self, x, y, axis):
+        y = np.moveaxis(y, axis, -1)
+        self._batch_shape = y.shape[:-1]
+        self._interps = [FloaterHormannInterpolator(x, yi,)
+                         for yi in y.reshape(-1, y.shape[-1])]
+        self._axis = axis
+
+    def __call__(self, x):
+        y = [interp(x) for interp in self._interps]
+        y = np.reshape(y, self._batch_shape + x.shape)
+        return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+
 class TestFloaterHormann:
     def runge(self, z):
         return 1/(1 + z**2)
@@ -281,7 +296,7 @@ class TestFloaterHormann:
             FloaterHormannInterpolator([[0]], [0], d=0)
         with pytest.raises(ValueError, match="`y`"):
             FloaterHormannInterpolator([0], 0, d=0)
-        with pytest.raises(ValueError, match="dimension"):
+        with pytest.raises(ValueError, match="`x` be of size 2 but got size 1."):
             FloaterHormannInterpolator([0], [[1, 1], [1, 1]], d=0)
         with pytest.raises(ValueError, match="finite"):
             FloaterHormannInterpolator([np.inf], [1], d=0)
@@ -360,6 +375,7 @@ class TestFloaterHormann:
         assert rr.shape == xx.shape + y_shape
         assert_allclose(rr, yy, rtol=1e-6)
 
+
     def test_zeros(self):
         x = np.linspace(0, 10, num=100)
         r = FloaterHormannInterpolator(x, np.sin(np.pi*x))
@@ -373,3 +389,23 @@ class TestFloaterHormann:
         p = r.poles()
         mask = (p.real >= -1) & (p.real <= 1) & (np.abs(p.imag) < 1.e-12)
         assert np.sum(mask) == 0
+
+    @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    def test_batch(self, eval_shape, axis):
+        rng = np.random.default_rng(4329872134985134)
+        n = 10
+        shape = (2, 3, 4, n)
+        domain = (0, 10)
+
+        x = np.linspace(*domain, n)
+        y = np.moveaxis(rng.random(shape), -1, axis)
+
+        res = FloaterHormannInterpolator(x, y, axis=axis)
+        ref = BatchFloaterHormann(x, y, axis=axis)
+
+        x = rng.uniform(*domain, size=eval_shape)
+        assert_allclose(res(x), ref(x))
+
+        pytest.raises(NotImplementedError, res.roots)
+        pytest.raises(NotImplementedError, res.residues)

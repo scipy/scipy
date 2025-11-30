@@ -55,6 +55,12 @@ class OdrWarning(UserWarning):
     Warning indicating that the data passed into
     ODR will cause problems when passed into 'odr'
     that the user should be aware of.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     """
     pass
 
@@ -62,6 +68,12 @@ class OdrWarning(UserWarning):
 class OdrError(Exception):
     """
     Exception indicating an error in fitting.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
 
     This is raised by `~scipy.odr.odr` if an error occurs during fitting.
     """
@@ -71,6 +83,12 @@ class OdrError(Exception):
 class OdrStop(Exception):
     """
     Exception stopping fitting.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
 
     You can raise this exception in your objective function to tell
     `~scipy.odr.odr` to stop fitting.
@@ -185,6 +203,11 @@ class Data:
     """
     The data to fit.
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     Parameters
     ----------
     x : array_like
@@ -298,6 +321,11 @@ class RealData(Data):
     """
     The data, with weightings as actual standard deviations and/or
     covariances.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     Parameters
     ----------
@@ -434,6 +462,11 @@ class Model:
     """
     The Model class stores information about the function you wish to fit.
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     It stores the function itself, at the least, and optionally stores
     functions which compute the Jacobians used during fitting. Also, one
     can provide a function that will provide reasonable starting values
@@ -546,6 +579,11 @@ class Output:
     """
     The Output class stores the output of an ODR run.
 
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
+
     Attributes
     ----------
     beta : ndarray
@@ -624,6 +662,11 @@ class ODR:
     """
     The ODR class gathers all information and coordinates the running of the
     main fitting routine.
+
+    .. deprecated:: 1.17.0
+        `scipy.odr` is deprecated and will be removed in SciPy 1.19.0. Please use
+        `pypi.org/project/odrpack/ <https://pypi.org/project/odrpack/>`_
+        instead.
 
     Members of instances of the ODR class have the same names as the arguments
     to the initialization routine.

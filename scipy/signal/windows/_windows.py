@@ -9,6 +9,7 @@ from scipy._lib import doccer
 from scipy import linalg, special, fft as sp_fft
 from scipy._lib.array_api_compat import numpy as np_compat
 from scipy._lib._array_api import array_namespace, xp_device
+from scipy._lib._array_api import xp_capabilities
 from scipy._lib import array_api_extra as xpx
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
@@ -64,6 +65,7 @@ def _general_cosine_impl(M, a, xp, device, sym=True):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
@@ -146,6 +148,7 @@ def general_cosine(M, a, sym=True):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def boxcar(M, sym=True, *, xp=None, device=None):
     """Return a boxcar or rectangular window.
 
@@ -203,6 +206,7 @@ def boxcar(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def triang(M, sym=True, *, xp=None, device=None):
     """Return a triangular window.
 
@@ -271,6 +275,7 @@ def triang(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def parzen(M, sym=True, *, xp=None, device=None):
     """Return a Parzen window.
 
@@ -337,6 +342,7 @@ def parzen(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def bohman(M, sym=True, *, xp=None, device=None):
     """Return a Bohman window.
 
@@ -397,6 +403,7 @@ def bohman(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def blackman(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Blackman window.
@@ -487,6 +494,7 @@ def blackman(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def nuttall(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
@@ -553,6 +561,7 @@ def nuttall(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def blackmanharris(M, sym=True, *, xp=None, device=None):
     """Return a minimum 4-term Blackman-Harris window.
 
@@ -607,6 +616,7 @@ def blackmanharris(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def flattop(M, sym=True, *, xp=None, device=None):
     """Return a flat top window.
 
@@ -676,6 +686,7 @@ def flattop(M, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def bartlett(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Bartlett window.
@@ -780,6 +791,7 @@ def bartlett(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def hann(M, sym=True, *, xp=None, device=None):
     r"""
     Return a Hann window.
@@ -864,6 +876,7 @@ def hann(M, sym=True, *, xp=None, device=None):
     return general_hamming(M, 0.5, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
@@ -951,6 +964,7 @@ def tukey(M, alpha=0.5, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def barthann(M, sym=True, *, xp=None, device=None):
     """Return a modified Bartlett-Hann window.
 
@@ -1010,6 +1024,7 @@ def barthann(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     r"""Return a generalized Hamming window.
 
@@ -1103,6 +1118,7 @@ def general_hamming(M, alpha, sym=True, *, xp=None, device=None):
     return _general_cosine_impl(M, a, xp, device, sym=sym)
 
 
+@xp_capabilities()
 def hamming(M, sym=True, *, xp=None, device=None):
     r"""Return a Hamming window.
 
@@ -1183,6 +1199,7 @@ def hamming(M, sym=True, *, xp=None, device=None):
     return general_hamming(M, 0.54, sym, xp=xp, device=device)
 
 
+@xp_capabilities()
 def kaiser(M, beta, sym=True, *, xp=None, device=None):
     r"""Return a Kaiser window.
 
@@ -1305,6 +1322,7 @@ def kaiser(M, beta, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     """Return a Kaiser-Bessel derived window.
 
@@ -1394,6 +1412,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
     return xp.asarray(w, device=device)
 
 
+@xp_capabilities()
 def gaussian(M, std, sym=True, *, xp=None, device=None):
     r"""Return a Gaussian window.
 
@@ -1461,6 +1480,7 @@ def gaussian(M, std, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
     r"""Return a window with a generalized Gaussian shape.
 
@@ -1536,6 +1556,8 @@ def general_gaussian(M, p, sig, sym=True, *, xp=None, device=None):
 
 
 # `chebwin` contributed by Kumar Appaiah.
+@xp_capabilities(skip_backends=(("jax.numpy", "item assignment"),
+                                ("dask.array", "data-dependent output shapes")))
 def chebwin(M, at, sym=True, *, xp=None, device=None):
     r"""Return a Dolph-Chebyshev window.
 
@@ -1668,6 +1690,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def cosine(M, sym=True, *, xp=None, device=None):
     """Return a window with a simple cosine shape.
 
@@ -1731,6 +1754,7 @@ def cosine(M, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities()
 def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     r"""Return an exponential (or Poisson) window.
 
@@ -1823,6 +1847,7 @@ def exponential(M, center=None, tau=1., sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities(skip_backends=[("jax.numpy", "item assignment")])
 def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     """
     Return a Taylor window.
@@ -1942,6 +1967,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True, *, xp=None, device=None):
     return _truncate(w, needs_trunc)
 
 
+@xp_capabilities(np_only=True, reason='banded linear algebra is numpy-only')
 def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
          *, xp=None, device=None):
     """
@@ -2212,6 +2238,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
     return (windows, ratios) if return_ratios else windows
 
 
+@xp_capabilities()
 def lanczos(M, *, sym=True, xp=None, device=None):
     r"""Return a Lanczos window also known as a sinc window.
 
@@ -2357,6 +2384,7 @@ for nn_, v_ in _WIN_FUNC_DATA.items():
     _WIN_FUNCS.update({n_: v_ for n_ in nn_})
 
 
+@xp_capabilities()
 def get_window(window, Nx, fftbins=True, *, xp=None, device=None):
     r"""Convenience function for creating various windows.
 

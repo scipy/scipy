@@ -3350,89 +3350,83 @@ def fligner(*samples, center='median', proportiontocut=0.05, axis=0):
     return FlignerResult(statistic, pval)
 
 
-@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
-def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
-    # Obtain the unique values and their frequencies from the pooled samples.
-    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
-    # classes, and "[t]he number of values associated with the x's and y's in
-    # the jth class will be denoted by a_j, and b_j respectively."
-    # (Mielke, 312)
-    # Reuse previously computed sorted array and `diff` arrays to obtain the
-    # unique values and counts. Prepend `diffs` with a non-zero to indicate
-    # that the first element should be marked as not matching what preceded it.
-    diffs_prep = np.concatenate(([1], diffs))
-    # Unique elements are where the was a difference between elements in the
-    # sorted array
-    uniques = sorted_xy[diffs_prep != 0]
-    # The count of each element is the bin size for each set of consecutive
-    # differences where the difference is zero. Replace nonzero differences
-    # with 1 and then use the cumulative sum to count the indices.
-    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
-    k = len(uniques)
-    js = np.arange(1, k + 1, dtype=int)
-    # the `b` array mentioned in the paper is not used, outside of the
-    # calculation of `t`, so we do not need to calculate it separately. Here
-    # we calculate `a`. In plain language, `a[j]` is the number of values in
-    # `x` that equal `uniques[j]`.
-    sorted_xyx = np.sort(np.concatenate((xy, x)))
-    diffs = np.diff(sorted_xyx)
-    diffs_prep = np.concatenate(([1], diffs))
-    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
-    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
-    a = xyx_counts - t
-    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
-    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
-    # indexing.
-    t = np.concatenate(([0], t))
-    a = np.concatenate(([0], a))
-    # S is built from `t`, so it does not need a preceding zero added on.
-    S = np.cumsum(t)
-    # define a copy of `S` with a prepending zero for later use to avoid
-    # the need for indexing.
-    S_i_m1 = np.concatenate(([0], S[:-1]))
+def _mood_statistic_with_ties(x, y, t, m, n, N, xp):
+    # First equation of "Mood's Squared Rank Test", Mielke pg 313
+    E_0_T = m * (N * N - 1) / 12
 
-    # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
-    # Note that in the paper there is an error where the denominator `2` is
-    # squared when it should be the entire equation.
-    def psi(indicator):
-        return (indicator - (N + 1)/2)**2
+    # m, n, N, t, and S are defined in the second paragraph of Mielke pg 312
+    # The only difference is that our `t` has zeros interspersed with the relevant
+    # numbers to keep the array rectangular, but these terms add nothing to the sum.
+    S = xp.cumulative_sum(t, include_initial=True, axis=-1)
+    S_i, S_i_m1 = S[..., 1:], S[..., :-1]
+    # Second equation of "Mood's Squared Rank Test", Mielke pg 313
+    varM = (m * n * (N + 1.0) * (N**2 - 4) / 180
+            - m * n / (180 * N * (N - 1))
+            * xp.sum(t * (t ** 2 - 1) * (t ** 2 - 4 + (15 * (N - S_i - S_i_m1) ** 2)),
+                     axis=-1))
 
-    # define summation range for use in calculation of phi, as seen in sum
-    # in the unnumbered equation on the bottom of page 312 (Mielke).
-    s_lower = S[js - 1] + 1
-    s_upper = S[js] + 1
-    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+    # There is a formula for Phi (`phi` in code) in terms of t, S, and Psi(I) at the
+    # bottom of Mielke pg 312. Psi(I) = [I - (N+1)/2]^2 is defined (with a mistake in
+    # the location of the ^2) at the beginning of "Mood's Squared Rank Test" (pg 313).
+    # To vectorize this calculation, let c = (N + 1) / 2, so Psi(I) = I^2 - 2*c*I + c^2.
+    # We sum each of these three parts of Psi separately using formulas for sums from a
+    # to b (inclusive) of terms I^2, I, and 1 where I takes on successive integers.
+    def sum_I2(a, b=None):
+        return (a * (a + 1) * (2 * a + 1) / 6 if b is None
+                else sum_I2(b) - sum_I2(a) + a**2)
 
-    # for every range in the above array, determine the sum of psi(I) for
-    # every element in the range. Divide all the sums by `t`. Following the
-    # last unnumbered equation on page 312.
-    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
+    def sum_I(a, b=None):
+        return (a * (a + 1) / 2 if b is None
+                else sum_I(b) - sum_I(a) + a)
 
-    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
-    # page 312. `phis` is already in the order based on `js`, so we index
-    # into `a` with `js` as well.
-    T = sum(phis * a[js])
+    def sum_1(a, b):
+        return (b - a) + 1
 
-    # The approximate statistic
-    E_0_T = n * (N * N - 1) / 12
+    with np.errstate(invalid='ignore', divide='ignore'):
+        sum_I2 = sum_I2(S_i_m1 + 1, S_i)
+        sum_I = sum_I(S_i_m1 + 1, S_i)
+        sum_1 = sum_1(S_i_m1 + 1, S_i)
+        c = (N + 1) / 2
+        phi = (sum_I2 - 2*c*sum_I + sum_1*c**2) / t
 
-    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
-            m * n / (180 * N * (N - 1)) * np.sum(
-                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
-            ))
+    phi = xpx.at(phi)[t == 0].set(0.)  # where t = 0 we get NaNs; eliminate them
 
-    return ((T - E_0_T) / np.sqrt(varM),)
+    # Mielke pg 312 defines `a` as the count of elements in sample `x` for each of the
+    # unique values in the combined sample. The tricky thing is getting these to line
+    # up with the locations of nonzero elements in `t`/`phi`.
+    x = xp.sort(x, axis=-1)
+    xy = xp.concat((x, y), axis=-1)
+    i = xp.argsort(xy, stable=True, axis=-1)
+    _, a = _stats_py._rankdata(x, method='average', return_ties=True)
+    a = xp.astype(a, phi.dtype)
+
+    zeros = xp.zeros(a.shape[:-1] + (n,), dtype=a.dtype)
+    a = xp.concat((a, zeros), axis=-1)
+    a = xp.take_along_axis(a, i, axis=-1)
+
+    # Mielke pg 312 defines test statistic `T` as the inner product `a` and `phi`
+    T = xp.vecdot(a, phi, axis=-1)
+
+    return (T - E_0_T) / xp.sqrt(varM)
+
+
+def _mood_statistic_no_ties(r, m, n, N, xp):
+    rx = r[..., :m]
+    M = xp.sum((rx - (N + 1.0) / 2) ** 2, axis=-1)
+    E_0_T = m * (N * N - 1.0) / 12
+    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+    return (M - E_0_T) / math.sqrt(varM)
 
 
 def _mood_too_small(samples, kwargs, axis=-1):
     x, y = samples
-    n = x.shape[axis]
-    m = y.shape[axis]
+    m = x.shape[axis]
+    n = y.shape[axis]
     N = m + n
     return N < 3
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('cupy', 'no rankdata'), ('dask.array', 'no rankdata')])
 @_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
@@ -3524,60 +3518,36 @@ def mood(x, y, axis=0, alternative="two-sided"):
                        pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
 
-    if axis < 0:
-        axis = x.ndim + axis
+    # _axis_nan_policy decorator ensures axis=-1
+    xy = xp.concat((x, y), axis=-1)
 
-    # Determine shape of the result arrays
-    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
-    if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
-                                ax != axis])):
-        raise ValueError("Dimensions of x and y on all axes except `axis` "
-                         "should match")
-
-    n = x.shape[axis]
-    m = y.shape[axis]
+    m = x.shape[-1]
+    n = y.shape[-1]
     N = m + n
-    if N < 3:
-        raise ValueError("Not enough observations.")
 
-    xy = np.concatenate((x, y), axis=axis)
+    if m == 0 or n == 0 or N < 3:  # only needed for test_axis_nan_policy
+        NaN = _get_nan(x, y, xp=xp)
+        return SignificanceResult(NaN, NaN)
+
     # determine if any of the samples contain ties
-    sorted_xy = np.sort(xy, axis=axis)
-    diffs = np.diff(sorted_xy, axis=axis)
-    if 0 in diffs:
-        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
-                                      axis=axis))
+    # `a` represents ties within `x`; `t` represents ties within `xy`
+    r, t = _stats_py._rankdata(xy, method='average', return_ties=True)
+    r, t = xp.asarray(r, dtype=dtype), xp.asarray(t, dtype=dtype)
+
+    if xp.any(t > 1):
+        z = _mood_statistic_with_ties(x, y, t, m, n, N, xp=xp)
     else:
-        if axis != 0:
-            xy = np.moveaxis(xy, axis, 0)
+        z = _mood_statistic_no_ties(r, m, n, N, xp=xp)
 
-        xy = xy.reshape(xy.shape[0], -1)
-        # Generalized to the n-dimensional case by adding the axis argument,
-        # and using for loops, since rankdata is not vectorized.  For improving
-        # performance consider vectorizing rankdata function.
-        all_ranks = np.empty_like(xy)
-        for j in range(xy.shape[1]):
-            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
 
-        Ri = all_ranks[:n]
-        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
-        # Approx stat.
-        mnM = n * (N * N - 1.0) / 12
-        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-        z = (M - mnM) / sqrt(varM)
-    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
-
-    if res_shape == ():
-        # Return scalars, not 0-D arrays
-        z = z[0]
-        pval = pval[0]
-    else:
-        z = z.reshape(res_shape)
-        pval = pval.reshape(res_shape)
-    return SignificanceResult(z[()], pval[()])
+    z = z[()] if z.ndim == 0 else z
+    pval = pval[()] if pval.ndim == 0 else pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3604,7 +3574,9 @@ def wilcoxon_outputs(kwds):
     return 2
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("dask.array", "no rankdata"),
+                                ("cupy", "no rankdata")],
+                jax_jit=False, cpu_only=True)  # null distribution is CPU only
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,

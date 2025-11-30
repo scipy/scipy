@@ -6,6 +6,7 @@ from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
 from scipy._lib._util import _get_nan
+from scipy._lib._array_api import array_namespace, xp_promote, xp_size
 import scipy._lib.array_api_extra as xpx
 
 
@@ -55,22 +56,24 @@ class WilcoxonDistribution:
 
 
 def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
 
-    axis = np.asarray(axis)[()]
+    axis = np.asarray(axis)[()]  # OK to use NumPy for input validation
     message = "`axis` must be an integer."
     if not np.issubdtype(axis.dtype, np.integer) or axis.ndim != 0:
         raise ValueError(message)
+    axis = int(axis)
 
     message = '`axis` must be compatible with the shape(s) of `x` (and `y`)'
     AxisError = getattr(np, 'AxisError', None) or np.exceptions.AxisError
     try:
         if y is None:
-            x = np.asarray(x)
             d = x
         else:
-            x, y = _broadcast_arrays((x, y), axis=axis)
+            x, y = _broadcast_arrays((x, y), axis=axis, xp=xp)
             d = x - y
-        d = np.moveaxis(d, axis, -1)
+        d = xp.moveaxis(d, axis, -1)
     except AxisError as e:
         raise AxisError(message) from e
 
@@ -79,9 +82,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         raise ValueError(message)
 
     message = "`x` (and `y`, if provided) must be an array of real numbers."
-    if np.issubdtype(d.dtype, np.integer):
-        d = d.astype(np.float64)
-    if not np.issubdtype(d.dtype, np.floating):
+    if not xp.isdtype(d.dtype, "real floating"):
         raise ValueError(message)
 
     zero_method = str(zero_method).lower()
@@ -112,43 +113,43 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     # For small samples, we decide later whether to perform an exact test or a
     # permutation test. The reason is that the presence of ties is not
     # known at the input validation stage.
-    n_zero = np.sum(d == 0)
+    n_zero = xp.count_nonzero(d == 0, axis=None)
     if method == "auto" and d.shape[-1] > 50:
         method = "asymptotic"
 
-    return d, zero_method, correction, alternative, method, axis, output_z, n_zero
+    return d, zero_method, correction, alternative, method, axis, output_z, n_zero, xp
 
 
-def _wilcoxon_statistic(d, method, zero_method='wilcox'):
-
+def _wilcoxon_statistic(d, method, zero_method='wilcox', *, xp):
+    dtype = d.dtype
     i_zeros = (d == 0)
 
     if zero_method == 'wilcox':
         # Wilcoxon's method for treating zeros was to remove them from
         # the calculation. We do this by replacing 0s with NaNs, which
         # are ignored anyway.
-        if not d.flags['WRITEABLE']:
-            d = d.copy()
-        d[i_zeros] = np.nan
+        # Copy required for array-api-strict. See data-apis/array-api-extra#506.
+        d = xpx.at(d)[i_zeros].set(xp.nan, copy=True)
 
-    i_nan = np.isnan(d)
-    n_nan = np.sum(i_nan, axis=-1)
-    count = d.shape[-1] - n_nan
+    i_nan = xp.isnan(d)
+    n_nan = xp.count_nonzero(i_nan, axis=-1)
+    count = xp.astype(d.shape[-1] - n_nan, dtype)
 
-    r, t = _rankdata(abs(d), 'average', return_ties=True)
+    r, t = _rankdata(xp.abs(d), 'average', return_ties=True, xp=xp)
+    r, t = xp.astype(r, dtype, copy=False), xp.astype(t, dtype, copy=False)
 
-    r_plus = np.sum((d > 0) * r, axis=-1)
-    r_minus = np.sum((d < 0) * r, axis=-1)
+    r_plus = xp.sum(xp.astype(d > 0, dtype) * r, axis=-1)
+    r_minus = xp.sum(xp.astype(d < 0, dtype) * r, axis=-1)
 
-    has_ties = (t == 0).any()
+    has_ties = xp.any(t == 0)
 
     if zero_method == "zsplit":
         # The "zero-split" method for treating zeros is to add half their contribution
         # to r_plus and half to r_minus.
         # See gh-2263 for the origin of this method.
-        r_zero_2 = np.sum(i_zeros * r, axis=-1) / 2
-        r_plus += r_zero_2
-        r_minus += r_zero_2
+        r_zero_2 = xp.sum(xp.astype(i_zeros, dtype) * r, axis=-1) / 2
+        r_plus = xpx.at(r_plus)[...].add(r_zero_2)
+        r_minus = xpx.at(r_minus)[...].add(r_zero_2)
 
     mn = count * (count + 1.) * 0.25
     se = count * (count + 1.) * (2. * count + 1.)
@@ -157,17 +158,19 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox'):
         # Pratt's method for treating zeros was just to modify the z-statistic.
 
         # normal approximation needs to be adjusted, see Cureton (1967)
-        n_zero = i_zeros.sum(axis=-1)
-        mn -= n_zero * (n_zero + 1.) * 0.25
-        se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
+        n_zero = xp.astype(xp.count_nonzero(i_zeros, axis=-1), dtype)
+        mn = xpx.at(mn)[...].subtract(n_zero * (n_zero + 1.) * 0.25)
+        se = xpx.at(se)[...].subtract(n_zero * (n_zero + 1.) * (2. * n_zero + 1.))
 
         # zeros are not to be included in tie-correction.
         # any tie counts corresponding with zeros are in the 0th column
-        t[i_zeros.any(axis=-1), 0] = 0
+        # t[xp.any(i_zeros, axis=-1), 0] = 0
+        t_i_zeros = xp.zeros_like(i_zeros)
+        t_i_zeros = xpx.at(t_i_zeros)[..., 0].set(xp.any(i_zeros, axis=-1))
+        t = xpx.at(t)[t_i_zeros].set(0.)
 
-    tie_correct = (t**3 - t).sum(axis=-1)
-    se -= tie_correct/2
-    se = np.sqrt(se / 24)
+    tie_correct = xp.sum(t**3 - t, axis=-1)
+    se = xp.sqrt((se - tie_correct/2) / 24)
 
     # se = 0 means that no non-zero values are left in d. we only need z
     # if method is asymptotic. however, if method="auto", the switch to
@@ -177,35 +180,35 @@ def _wilcoxon_statistic(d, method, zero_method='wilcox'):
     if method in ["asymptotic", "auto"]:
         z = (r_plus - mn) / se
     else:
-        z = np.nan
+        z = xp.nan
 
     return r_plus, r_minus, se, z, count, has_ties
 
 
-def _correction_sign(z, alternative):
+def _correction_sign(z, alternative, xp):
     if alternative == 'greater':
         return 1
     elif alternative == 'less':
         return -1
     else:
-        return np.sign(z)
+        return xp.sign(z)
 
 
 def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
                  alternative='two-sided', method='auto', axis=0):
 
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
-    d, zero_method, correction, alternative, method, axis, output_z, n_zero = temp
+    d, zero_method, correction, alternative, method, axis, output_z, n_zero, xp = temp
 
-    if d.size == 0:
-        NaN = _get_nan(d)
+    if xp_size(d) == 0:
+        NaN = _get_nan(d, xp=xp)
         res = _morestats.WilcoxonResult(statistic=NaN, pvalue=NaN)
         if method == 'asymptotic':
             res.zstatistic = NaN
         return res
 
     r_plus, r_minus, se, z, count, has_ties = _wilcoxon_statistic(
-        d, method, zero_method
+        d, method, zero_method, xp=xp
     )
 
     # we only know if there are ties after computing the statistic and not
@@ -229,9 +232,9 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
 
     if method == 'asymptotic':
         if correction:
-            sign = _correction_sign(z, alternative)
-            z -= sign * 0.5 / se
-        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
+            sign = _correction_sign(z, alternative, xp=xp)
+            z = xpx.at(z)[...].subtract(sign * 0.5 / se)
+        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=xp)
     elif method == 'exact':
         dist = WilcoxonDistribution(count)
         # The null distribution in `dist` is exact only if there are no ties
@@ -241,25 +244,29 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
         # non-integral statistic up before computing CDF and down before
         # computing SF. This preserves symmetry w.r.t. alternatives and
         # order of the input arguments. See gh-19872.
+        r_plus_np = np.asarray(r_plus)
         if alternative == 'less':
-            p = dist.cdf(np.ceil(r_plus))
+            p = dist.cdf(np.ceil(r_plus_np))
         elif alternative == 'greater':
-            p = dist.sf(np.floor(r_plus))
+            p = dist.sf(np.floor(r_plus_np))
         else:
-            p = 2 * np.minimum(dist.sf(np.floor(r_plus)),
-                               dist.cdf(np.ceil(r_plus)))
+            p = 2 * np.minimum(dist.sf(np.floor(r_plus_np)),
+                               dist.cdf(np.ceil(r_plus_np)))
             p = np.clip(p, 0, 1)
+        p = xp.asarray(p, dtype=d.dtype)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
-            (d,), lambda d: _wilcoxon_statistic(d, method, zero_method)[0],
+            (d,), lambda d: _wilcoxon_statistic(d, method, zero_method, xp=xp)[0],
             permutation_type='samples', **method._asdict(),
             alternative=alternative, axis=-1).pvalue
 
     # for backward compatibility...
-    statistic = np.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus
-    z = -np.abs(z) if (alternative == 'two-sided' and method == 'asymptotic') else z
+    statistic = xp.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus
+    z = -xp.abs(z) if (alternative == 'two-sided' and method == 'asymptotic') else z
 
-    res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p[()])
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
+    p = p[()] if p.ndim == 0 else p
+    res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p)
     if output_z:
-        res.zstatistic = z[()]
+        res.zstatistic = z[()] if z.ndim == 0 else z
     return res

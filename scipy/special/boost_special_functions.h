@@ -1655,12 +1655,18 @@ template<typename Real>
 Real
 binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
+
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        try {
+            return boost::math::cdf(
+                boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        } catch (...) {
+            /* Boost was unable to produce a result. */
+            return NAN;
+        }
     }
     if (std::isnan(x)) {
-	return std::numeric_limits<double>::quiet_NaN();
+	    return NAN;
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -1682,8 +1688,13 @@ template<typename Real>
 Real
 binom_ppf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    try {
+        return boost::math::quantile(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1702,8 +1713,13 @@ template<typename Real>
 Real
 binom_sf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
@@ -1722,8 +1738,13 @@ template<typename Real>
 Real
 binom_isf_wrap(const Real x, const Real n, const Real p)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    try {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return NAN;
+    }
 }
 
 float
