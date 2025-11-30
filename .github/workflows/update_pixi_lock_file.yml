@@ -1,0 +1,47 @@
+name: Update Pixi lock file
+
+permissions:
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+  schedule:
+    # once a month
+    #       ┌───────────── minute (0 - 59)
+    #       │ ┌───────────── hour (0 - 23)
+    #       │ │ ┌───────────── day of the month (1 - 31)
+    #       │ │ │  ┌───────────── month (1 - 12 or JAN-DEC)
+    #       │ │ │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #       │ │ │  │ │
+    - cron: 0 5 25 * *
+
+jobs:
+  pixi-update:
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@8ca4608ef7f4daeb54f5205b20d0b7cb42f11143 # v0.8.14
+        with:
+          run-install: false
+          pixi-version: v0.59.0
+          cache: false
+
+      - name: Update Pixi lock file
+        run: |
+          set -euo pipefail
+          pixi update --json --no-install | pixi exec pixi-diff-to-markdown >> diff.md
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "MAINT: update Pixi lock file"
+          title: "MAINT: update Pixi lock file"
+          body-path: "diff.md"
+          branch: lock-file-update
+          base: main
+          delete-branch: true
+          add-paths: pixi.lock
