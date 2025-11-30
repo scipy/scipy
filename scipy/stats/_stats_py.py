@@ -4124,7 +4124,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     .. [1] Alexander, Ralph A., and Diane M. Govern. "A New and Simpler
            Approximation for ANOVA under Variance Heterogeneity." Journal
            of Educational Statistics, vol. 19, no. 2, 1994, pp. 91-101.
-           JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
+           https://www.jstor.org/stable/1165140
 
     Examples
     --------
@@ -6645,16 +6645,17 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] B. Efron and T. Hastie. Computer Age Statistical Inference. (2016).
+    .. [3] B. Efron and T. Hastie.
+           Computer Age Statistical Inference. (2016).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
-           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
-           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170.
+           https://www.jstor.org/stable/2334299
 
     .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
            Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
-           no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
-           Accessed 30 Mar. 2021.
+           no. 2, 1973, pp. 369-374.
+           https://www.jstor.org/stable/2334550
 
     Examples
     --------
