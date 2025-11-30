@@ -148,6 +148,18 @@ void BLAS_FUNC(zhecon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *l
 void BLAS_FUNC(chetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 void BLAS_FUNC(zhetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
+/* ?GESVD*/
+void BLAS_FUNC(sgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+/* ?GESDD*/
+void BLAS_FUNC(sgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(cgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(zgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
+
 } // extern "C"
 
 
@@ -425,6 +437,56 @@ GEN_HETRS(c, he, npy_complex64)
 GEN_HETRS(z, he, npy_complex128)
 
 
+/* ?GESDD*/
+// NB: ?GESVD : c- and z- variants have the rwork argument, s- and d- variants do not
+#define GEN_GESVD_SD(PREFIX, TYPE, RTYPE) \
+inline void \
+gesvd(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info); \
+};
+
+GEN_GESVD_SD(s, float, float)
+GEN_GESVD_SD(d, double, double)
+
+
+#define GEN_GESVD_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gesvd(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gesvd)(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, info); \
+};
+
+GEN_GESVD_CZ(c, npy_complex64, float)
+GEN_GESVD_CZ(z, npy_complex128, double)
+
+
+
+/* ?GESDD*/
+// NB: ?GESDD : c- and z- variants have the rwork argument, s- and d- variants do not
+
+#define GEN_GESDD_SD(PREFIX, TYPE, RTYPE) \
+inline void \
+gesdd(char *jobz, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, iwork, info); \
+};
+
+GEN_GESDD_SD(s, float, float)
+GEN_GESDD_SD(d, double, double)
+
+
+#define GEN_GESDD_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gesdd(char *jobz, CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, RTYPE *s, TYPE *u, CBLAS_INT *ldu, TYPE *vt, CBLAS_INT *ldvt, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gesdd)(jobz, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, rwork, iwork, info); \
+};
+
+GEN_GESDD_CZ(c, npy_complex64, float)
+GEN_GESDD_CZ(z, npy_complex128, double)
+
+
 // Structure tags; python side maps assume_a strings to these values
 enum St : Py_ssize_t
 {
@@ -507,6 +569,21 @@ CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
     return lwork;
 }
 
+
+/*
+ * Given an array of ndim >= 2, compute a pointer to the start of the 2D "slice" idx
+ */
+template<typename T>
+T* compute_slice_ptr(npy_intp idx, T *Am_data, npy_intp ndim, npy_intp *shape, npy_intp *strides) {
+    npy_intp offset = 0;
+    npy_intp temp_idx = idx;
+    for (int i = ndim - 3; i >= 0; i--) {
+        offset += (temp_idx % shape[i]) * strides[i];
+        temp_idx /= shape[i];
+    }
+    T* slice_ptr = (T *)(Am_data + (offset/sizeof(T)));
+    return slice_ptr;
+}
 
 
 /*
