@@ -48,12 +48,14 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
+               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest',
+               'round_outward', 'round_inward', 'round_nearest'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
 
-    no_weights = {'_lower', '_midpoint', '_higher', '_nearest', 'harrell-davis'}
+    no_weights = {'_lower', '_midpoint', '_higher', '_nearest', 'harrell-davis',
+                  'round_nearest', 'round_inward', 'round_outward'}
     if weights is not None and method in no_weights:
         message = f"`method='{method}'` does not support `weights`."
         raise ValueError(message)
@@ -168,6 +170,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
         'harrell-davis' is also available to compute the quantile estimate
         according to [2]_.
+
+        'round_outward', 'round_inward', and 'round_nearest' are available for use
+        in trimming and winsorizing data.
+
         See Notes for details.
     axis : int or None, default: 0
         Axis along which the quantiles are computed.
@@ -211,12 +217,18 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         ``quantile(x, p, weights=weights)`` is equivalent to
         ``quantile(np.repeat(x, weights), p)``. Values other than finite counting
         numbers are accepted, but may not have valid statistical interpretations.
-        Not compatible with ``method='harrell-davis'``.
+        Not compatible with ``method='harrell-davis'`` or those that begin with
+        ``'round_'``.
 
     Returns
     -------
     quantile : scalar or ndarray
         The resulting quantile(s). The dtype is the result dtype of `x` and `p`.
+
+    See Also
+    --------
+    numpy.quantile
+    :ref:`outliers`
 
     Notes
     -----
@@ -288,6 +300,23 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     :math:`I` is the regularized, lower incomplete beta function
     (`scipy.special.betainc`).
 
+    ``method='round_nearest'`` is equivalent to indexing ``y[j]``, where::
+
+        j = int(np.round(p*n) if p < 0.5 else np.round(n*p - 1))
+
+    This is useful when winsorizing data: replacing ``p*n`` of the most extreme
+    observations with the next most extreme observation. ``method='round_outward'``
+    adjusts the direction of rounding to winsorize fewer elements::
+
+        j = int(np.floor(p*n) if p < 0.5 else np.ceil(n*p - 1))
+
+    and ``method='round_inward'`` rounds to winsorize more elements::
+
+        j = int(np.ceil(p*n) if p < 0.5 else np.floor(n*p - 1))
+
+    These methods are also useful for trimming data: removing ``p*n`` of the most
+    extreme observations. See :ref:`outliers` for example applications.
+
     Examples
     --------
     >>> import numpy as np
@@ -350,6 +379,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         res = _quantile_hd(y, p, n, xp)
     elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
         res = _quantile_bc(y, p, n, method, xp)
+    else:  # method.startswith('round'):
+        res = _quantile_winsor(y, p, n, method, xp)
 
     res = xpx.at(res, p_mask).set(xp.nan)
 
@@ -421,6 +452,15 @@ def _quantile_hd(y, p, n, xp):
     w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
+
+
+def _quantile_winsor(y, p, n, method, xp):
+    ops = dict(round_outward=(xp.floor, xp.ceil),
+               round_inward=(xp.ceil, xp.floor),
+               round_nearest=(xp.round, xp.round))
+    op_left, op_right = ops[method]
+    j = xp.where(p < 0.5, op_left(p*n), op_right(n*p - 1))
+    return xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
 
 
 def _quantile_bc(y, p, n, method, xp):

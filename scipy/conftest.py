@@ -80,7 +80,7 @@ def pytest_configure(config):
     if not PARALLEL_RUN_AVAILABLE:
         config.addinivalue_line(
             'markers',
-            'parallel_threads(n): run the given test function in parallel '
+            'parallel_threads_limit(n): run the given test function in parallel '
             'using `n` threads.')
         config.addinivalue_line(
             "markers",
@@ -606,6 +606,7 @@ if HAVE_SCPDT:
                     yield
                 else:
                     warnings.simplefilter('error', Warning)
+                    warnings.filterwarnings('ignore', ".*odr.*", DeprecationWarning)
                     yield
 
     dt_config.user_context_mgr = warnings_errors_and_rng

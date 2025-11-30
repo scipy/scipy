@@ -102,6 +102,36 @@ class Bench(Benchmark):
     )
 
 
+class BatchedSolveBench(Benchmark):
+    params = [
+        [(100, 10, 10), (100, 20, 20), (100, 100)],
+        ["gen", "pos", "sym"],
+        ["scipy", "numpy"]
+    ]
+    param_names = ["shape", "structure" ,"module"]
+
+    def setup(self, shape, structure, module):
+        a = random(shape)
+        # larger diagonal ensures non-singularity:
+        for i in range(shape[-1]):
+            a[..., i, i] = 10*(.1+a[..., i, i])
+
+        if structure == "pos":
+            self.a = a @ a.mT
+        elif structure == "sym":
+            self.a = a + a.mT
+        else:
+            self.a = a
+
+        self.b = random([a.shape[-1]])
+
+    def time_solve(self, shape, structure, module):
+        if module == 'numpy':
+            nl.solve(self.a, self.b)
+        else:
+            sl.solve(self.a, self.b, assume_a=structure)
+
+
 class Norm(Benchmark):
     params = [
         [(20, 20), (100, 100), (1000, 1000), (20, 1000), (1000, 20)],
