@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
+__all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia', 'issparray_dia', 'issparse_dia']
 
 import numpy as np
 
@@ -498,6 +498,58 @@ def isspmatrix_dia(x):
     False
     """
     return isinstance(x, dia_matrix)
+
+def issparray_dia(x):
+    """Is `x` of a dia_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dia array
+
+    Returns
+    -------
+    bool
+        True if `x` is a dia array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dia_array, dia_matrix, coo_array, issparray_dia
+    >>> issparray_dia(dia_matrix([[5]]))
+    False
+    >>> issparray_dia(dia_array([[5]]))
+    True
+    >>> issparray_dia(coo_array([[5]]))
+    False
+    """
+    return isinstance(x, dia_array)
+
+def issparse_dia(x):
+    """Is `x` of dia format, i.e. of dia_array or dia_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of dia formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of dia format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dia_array, dia_matrix, coo_array, coo_matrix, issparse_dia
+    >>> issparse_dia(dia_matrix([[5]]))
+    True
+    >>> issparse_dia(dia_array([[5]]))
+    True
+    >>> issparse_dia(coo_array([[5]]))
+    False
+    >>> issparse_dia(coo_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _dia_base)
 
 
 # This namespace class separates array from matrix with isinstance

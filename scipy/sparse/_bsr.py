@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
+__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr', 'issparray_bsr', 'issparse_bsr']
 
 from warnings import warn
 
@@ -656,6 +656,58 @@ def isspmatrix_bsr(x):
     False
     """
     return isinstance(x, bsr_matrix)
+
+def issparray_bsr(x):
+    """Is `x` of a bsr_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a bsr array
+
+    Returns
+    -------
+    bool
+        True if `x` is a bsr array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_array, issparray_bsr
+    >>> issparray_bsr(bsr_matrix([[5]]))
+    False
+    >>> issparray_bsr(bsr_array([[5]]))
+    True
+    >>> issparray_bsr(csr_array([[5]]))
+    False
+    """
+    return isinstance(x, bsr_array)
+
+def issparse_bsr(x):
+    """Is `x` of bsr format, i.e. of bsr_array or bsr_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of bsr formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of bsr format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_array, csr_matrix, issparse_bsr
+    >>> issparse_bsr(bsr_matrix([[5]]))
+    True
+    >>> issparse_bsr(bsr_array([[5]]))
+    True
+    >>> issparse_bsr(csr_array([[5]]))
+    False
+    >>> issparse_bsr(csr_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _bsr_base)
 
 
 # This namespace class separates array from matrix with isinstance

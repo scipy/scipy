@@ -5906,3 +5906,47 @@ def test_broadcast_to():
 
         with pytest.raises(ValueError, match="cannot be broadcast"):
             container([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+
+
+@pytest.mark.parametrize(
+    ("fmt"),
+    (
+        ("bsr"),
+        ("coo"),
+        ("csc"),
+        ("csr"),
+        ("dia"),
+        ("dok"),
+        ("lil"),
+    ),
+)
+def test_tosparray(fmt):
+    m = sparse.eye(3, format=fmt)
+    a = sparse.csr_array(m).asformat(fmt)
+    assert isinstance(m, sparse.spmatrix)
+    assert isinstance(a, sparse.sparray)
+    
+    assert isinstance(m.tosparray(), sparse.sparray)
+    assert isinstance(a.tosparray(), sparse.sparray)
+    
+
+@pytest.mark.parametrize(
+    ("fmt"),
+    (
+        ("bsr"),
+        ("coo"),
+        ("csc"),
+        ("csr"),
+        ("dia"),
+        ("dok"),
+        ("lil"),
+    ),
+)
+def test_tospmatrix(fmt):
+    m = sparse.eye(3, format=fmt)
+    a = sparse.csr_array(m).asformat(fmt)
+    assert isinstance(m, sparse.spmatrix)
+    assert isinstance(a, sparse.sparray)
+    
+    assert isinstance(m.tospmatrix(), sparse.spmatrix)
+    assert isinstance(a.tospmatrix(), sparse.spmatrix)

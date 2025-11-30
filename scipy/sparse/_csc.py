@@ -1,7 +1,7 @@
 """Compressed Sparse Column matrix format"""
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
+__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc', 'issparray_csc', 'issparse_csc']
 
 
 import numpy as np
@@ -173,6 +173,58 @@ def isspmatrix_csc(x):
     False
     """
     return isinstance(x, csc_matrix)
+
+def issparray_csc(x):
+    """Is `x` of a csc_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a csc array
+
+    Returns
+    -------
+    bool
+        True if `x` is a csc array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_array, csc_matrix, coo_array, issparray_csc
+    >>> issparray_csc(csc_matrix([[5]]))
+    False
+    >>> issparray_csc(csc_array([[5]]))
+    True
+    >>> issparray_csc(coo_array([[5]]))
+    False
+    """
+    return isinstance(x, csc_array)
+
+def issparse_csc(x):
+    """Is `x` of csc format, i.e. of csc_array or csc_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of csc formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of csc format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_array, csc_matrix, coo_array, coo_matrix, issparse_csc
+    >>> issparse_csc(csc_matrix([[5]]))
+    True
+    >>> issparse_csc(csc_array([[5]]))
+    True
+    >>> issparse_csc(coo_array([[5]]))
+    False
+    >>> issparse_csc(coo_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _csc_base)
 
 
 # This namespace class separates array from matrix with isinstance

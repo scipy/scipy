@@ -5,6 +5,8 @@ import math
 import numpy as np
 import operator
 
+import scipy
+
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
                        matrix, validateaxis, getdtype, is_pydata_spmatrix)
@@ -12,7 +14,7 @@ from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
 
-__all__ = ['isspmatrix', 'issparse', 'sparray',
+__all__ = ['isspmatrix', 'issparray', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -1274,6 +1276,61 @@ class _spbase(SparseABC):
         the resultant csc_array/matrix.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
+    
+    def tosparray(self, copy=False):
+        """Convert this array/matrix to a sparse array of the same format.
+
+        With copy=False, the data/indices may be shared between this array/matrix and
+        the resultant `sparray`.
+        
+                Examples
+        --------
+        >>> from scipy.sparse import csr_array, csr_matrix, csc_array, csc_matrix
+        >>> type(csr_array([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csr.csr_array'>
+        >>> type(csc_array([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csc.csc_array'>
+        >>> type(csr_matrix([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csr.csr_array'>
+        >>> type(csc_matrix([[1, 0], [0, 2]]).tosparray())
+        <class 'scipy.sparse._csc.csc_array'>
+        """
+        if issparray(self):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        else:
+            cls = getattr(scipy.sparse, f'{self.format}_array')
+            return cls(self, copy=copy)
+        
+        
+    def tospmatrix(self, copy=False):
+        """Convert this array/matrix to a sparse matrix of the same format.
+
+        With copy=False, the data/indices may be shared between this array/matrix and
+        the resultant `spmatrix`.
+        
+        Examples
+        --------
+        >>> from scipy.sparse import csr_array, csr_matrix, csc_array, csc_matrix
+        >>> type(csr_array([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csr.csr_matrix'>
+        >>> type(csc_array([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csc.csc_matrix'>
+        >>> type(csr_matrix([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csr.csr_matrix'>
+        >>> type(csc_matrix([[1, 0], [0, 2]]).tospmatrix())
+        <class 'scipy.sparse._csc.csc_matrix'>
+        """
+        if isspmatrix(self):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        else:
+            cls = getattr(scipy.sparse, f'{self.format}_matrix')
+            return cls(self, copy=copy)
 
     def copy(self):
         """Returns a copy of this array/matrix.
@@ -1604,3 +1661,32 @@ def isspmatrix(x):
     False
     """
     return isinstance(x, spmatrix)
+
+
+def issparray(x):
+    """Is `x` of a sparse array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse array
+
+    Returns
+    -------
+    bool
+        True if `x` is a sparse array, False otherwise
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, issparray
+    >>> issparray(csr_matrix([[5]]))
+    False
+    >>> issparray(csr_array([[5]]))
+    True
+    >>> issparray(np.array([[5]]))
+    False
+    >>> issparray(5)
+    False
+    """
+    return isinstance(x, sparray)

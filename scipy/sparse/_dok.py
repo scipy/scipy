@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
+__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok', 'issparray_dok', 'issparse_dok']
 
 import itertools
 import numpy as np
@@ -556,6 +556,58 @@ def isspmatrix_dok(x):
     False
     """
     return isinstance(x, dok_matrix)
+
+def issparray_dok(x):
+    """Is `x` of a dok_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dok array
+
+    Returns
+    -------
+    bool
+        True if `x` is a dok array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dok_array, dok_matrix, coo_array, issparray_dok
+    >>> issparray_dok(dok_matrix([[5]]))
+    False
+    >>> issparray_dok(dok_array([[5]]))
+    True
+    >>> issparray_dok(coo_array([[5]]))
+    False
+    """
+    return isinstance(x, dok_array)
+
+def issparse_dok(x):
+    """Is `x` of dok format, i.e. of dok_array or dok_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of dok formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of dok format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dok_array, dok_matrix, coo_array, coo_matrix, issparse_dok
+    >>> issparse_dok(dok_matrix([[5]]))
+    True
+    >>> issparse_dok(dok_array([[5]]))
+    True
+    >>> issparse_dok(coo_array([[5]]))
+    False
+    >>> issparse_dok(coo_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _dok_base)
 
 
 # This namespace class separates array from matrix with isinstance

@@ -2,7 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
+__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr', 'issparray_csr', 'issparse_csr']
 
 import numpy as np
 
@@ -318,6 +318,58 @@ def isspmatrix_csr(x):
     False
     """
     return isinstance(x, csr_matrix)
+
+def issparray_csr(x):
+    """Is `x` of a csr_array type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a csr array
+
+    Returns
+    -------
+    bool
+        True if `x` is a csr array, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, csr_matrix, coo_array, issparray_csr
+    >>> issparray_csr(csr_matrix([[5]]))
+    False
+    >>> issparray_csr(csr_array([[5]]))
+    True
+    >>> issparray_csr(coo_array([[5]]))
+    False
+    """
+    return isinstance(x, csr_array)
+
+def issparse_csr(x):
+    """Is `x` of csr format, i.e. of csr_array or csr_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being of csr formar
+
+    Returns
+    -------
+    bool
+        True if `x` is of csr format, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, csr_matrix, coo_array, coo_matrix, issparse_csr
+    >>> issparse_csr(csr_matrix([[5]]))
+    True
+    >>> issparse_csr(csr_array([[5]]))
+    True
+    >>> issparse_csr(coo_array([[5]]))
+    False
+    >>> issparse_csr(coo_matrix([[5]]))
+    False
+    """
+    return isinstance(x, _csr_base)
 
 
 # This namespace class separates array from matrix with isinstance
