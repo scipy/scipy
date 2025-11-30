@@ -9,9 +9,8 @@ from numpy.testing import assert_array_equal
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
-                              ClusterError, _krandinit)
-from scipy.cluster import _vq
+from scipy.cluster.vq import ClusterError, kmeans, kmeans2, vq, whiten
+from scipy.cluster.vq._vq_impl import py_vq, _krandinit, _vq
 from scipy.sparse._sputils import matrix
 
 from scipy._lib import array_api_extra as xpx
