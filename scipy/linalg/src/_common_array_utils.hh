@@ -430,6 +430,7 @@ enum St : Py_ssize_t
 {
     NONE = -1,
     GENERAL = 0,
+    DIAGONAL = 11,
     UPPER_TRIANGULAR = 21,
     LOWER_TRIANGULAR = 22,
     POS_DEF = 101,

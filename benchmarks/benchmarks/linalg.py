@@ -105,7 +105,7 @@ class Bench(Benchmark):
 class BatchedSolveBench(Benchmark):
     params = [
         [(100, 10, 10), (100, 20, 20), (100, 100)],
-        ["gen", "pos", "sym"],
+        ["gen", "pos", "sym", "diagonal"],
         ["scipy", "numpy"]
     ]
     param_names = ["shape", "structure" ,"module"]
@@ -120,6 +120,10 @@ class BatchedSolveBench(Benchmark):
             self.a = a @ a.mT
         elif structure == "sym":
             self.a = a + a.mT
+        elif structure == "diagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
         else:
             self.a = a
 

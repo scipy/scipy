@@ -991,7 +991,7 @@ class TestSolve:
     @pytest.mark.parametrize(
         "assume_a",
         [
-            None, "general", "upper triangular", "lower triangular", "pos"
+            None, "diagonal", "general", "upper triangular", "lower triangular", "pos",
         ]
     )
     def test_vs_np_solve(self, assume_a):
@@ -1115,6 +1115,26 @@ class TestSolve:
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
             solve(A, b, assume_a='pos')
+
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        b = np.ones(3)
+        x = solve(a, b)
+
+        # basic diagonal solve
+        assert_allclose(x[1, ...], 1 / np.arange(1, 4), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="diagonal")
 
 
 class TestSolveTriangular:
@@ -1471,6 +1491,23 @@ class TestInv:
         mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
         y_inv_2_l = inv(y*mask.T, check_finite=False, assume_a='lower triangular')
         assert_allclose(y_inv_2_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        inv_a = inv(a)
+
+        # basic diagonal invert
+        assert_allclose(inv_a[1], np.diag(1 / np.arange(1, 4)), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        with pytest.warns(LinAlgWarning):
+            inv(a, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        with pytest.raises(LinAlgError):
+            inv(a, assume_a="diagonal")
 
 
 class TestDet:
