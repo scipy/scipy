@@ -3727,24 +3727,6 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-def _create_f_oneway_nan_result(shape, axis, samples):
-    """
-    This is a helper function for f_oneway for creating the return values
-    in certain degenerate conditions.  It creates return values that are
-    all nan with the appropriate shape for the given `shape` and `axis`.
-    """
-    axis = normalize_axis_index(axis, len(shape))
-    shp = shape[:axis] + shape[axis+1:]
-    f = np.full(shp, fill_value=_get_nan(*samples))
-    prob = f.copy()
-    return F_onewayResult(f[()], prob[()])
-
-
-def _first(arr, axis):
-    """Return arr[..., 0:1, ...] where 0:1 is in the `axis` position."""
-    return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
-
-
 def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     message = f"At least two samples are required; got {len(samples)}."
     if len(samples) < 2:
@@ -3910,6 +3892,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
     Welch ANOVA will be performed if `equal_var` is False.
 
     """
+    samples = xp_promote(*samples, force_floating=True, xp=np)
+
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
@@ -3917,45 +3901,18 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
 
-    # We haven't explicitly validated axis, but if it is bad, this call of
-    # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis
-    # dimension, are not the same.
-    alldata = np.concatenate(samples, axis=axis)
-    bign = alldata.shape[axis]
+    # axis is guaranteed to be -1 by the _axis_nan_policy decorator
+    alldata = np.concatenate(samples, axis=-1)
+    bign = alldata.shape[-1]
 
-    # Check if the inputs are too small
+    # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
-        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
+        NaN = _get_nan(*samples, xp=np)
+        return F_onewayResult(NaN, NaN)
 
     # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
     # Based on https://github.com/scipy/scipy/issues/11669
-
-    # If axis=0, say, and the groups have shape (n0, ...), (n1, ...), ...,
-    # then is_const is a boolean array with shape (num_groups, ...).
-    # It is True if the values within the groups along the axis slice are
-    # identical. In the typical case where each input array is 1-d, is_const is
-    # a 1-d array with length num_groups.
-    is_const = np.concatenate(
-        [(_first(sample, axis) == sample).all(axis=axis,
-                                              keepdims=True)
-         for sample in samples],
-        axis=axis
-    )
-
-    # all_const is a boolean array with shape (...) (see previous comment).
-    # It is True if the values within each group along the axis slice are
-    # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
-    all_const = is_const.all(axis=axis)
-    if all_const.any():
-        msg = ("Each of the input arrays is constant; "
-               "the F statistic is not defined or infinite")
-        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-
-    # all_same_const is True if all the values in the groups along the axis=0
-    # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
-    all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
 
     if not isinstance(equal_var, bool):
         raise TypeError("Expected a boolean value for 'equal_var'")
@@ -3965,17 +3922,17 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
         # to a shift in location, and centering all data around zero vastly
         # improves numerical stability.
-        offset = alldata.mean(axis=axis, keepdims=True)
+        offset = alldata.mean(axis=-1, keepdims=True)
         alldata = alldata - offset
 
-        normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+        normalized_ss = np.sum(alldata, axis=-1)**2. / bign
 
-        sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+        sstot = np_vecdot(alldata, alldata, axis=-1) - normalized_ss
 
         ssbn = 0
         for sample in samples:
-            smo_ss = _square_of_sums(sample - offset, axis=axis)
-            ssbn = ssbn + smo_ss / sample.shape[axis]
+            smo_ss = np.sum(sample - offset, axis=-1)**2.
+            ssbn = ssbn + smo_ss / sample.shape[-1]
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
         # for "within treatments"
@@ -3994,14 +3951,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # calculate basic statistics for each sample
         # Beginning of second paragraph [4] page 1:
         # "As a particular case $y_t$ may be the means ... of samples
-        y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
+        y_t = np.asarray([np.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = np.asarray([sample.shape[axis] for sample in samples])
+        n_t = np.asarray([sample.shape[-1] for sample in samples])
         n_t = np.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
-        s_t2= np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
+        s_t2 = np.asarray([np.var(sample, axis=-1, ddof=1) for sample in samples])
 
         # calculate weight by number of data and variance
         # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
@@ -4036,21 +3993,6 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # calculate p value
         # ref.[4] p.334 eq.28
         prob = stats.f.sf(f, hat_f1, hat_f2)
-
-    # Fix any f values that should be inf or nan because the corresponding
-    # inputs were constant.
-    if np.isscalar(f):
-        if all_same_const:
-            f = np.nan
-            prob = np.nan
-        elif all_const:
-            f = np.inf
-            prob = 0.0
-    else:
-        f[all_const] = np.inf
-        prob[all_const] = 0.0
-        f[all_same_const] = np.nan
-        prob[all_same_const] = np.nan
 
     return F_onewayResult(f, prob)
 
@@ -9924,66 +9866,6 @@ def _validate_distribution(values, weights):
         return values, weights
 
     return values, None
-
-
-#####################################
-#         SUPPORT FUNCTIONS         #
-#####################################
-
-
-def _sum_of_squares(a, axis=0):
-    """Square each element of the input array, and return the sum(s) of that.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate. Default is 0. If None, compute over
-        the whole array `a`.
-
-    Returns
-    -------
-    sum_of_squares : ndarray
-        The sum along the given axis for (a**2).
-
-    See Also
-    --------
-    _square_of_sums : The square(s) of the sum(s) (the opposite of
-        `_sum_of_squares`).
-
-    """
-    a, axis = _chk_asarray(a, axis)
-    return np_vecdot(a, a, axis=axis)
-
-
-def _square_of_sums(a, axis=0):
-    """Sum elements of the input array, and return the square(s) of that sum.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate. Default is 0. If None, compute over
-        the whole array `a`.
-
-    Returns
-    -------
-    square_of_sums : float or ndarray
-        The square of the sum over `axis`.
-
-    See Also
-    --------
-    _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
-
-    """
-    a, axis = _chk_asarray(a, axis)
-    s = np.sum(a, axis)
-    if not np.isscalar(s):
-        return s.astype(float) * s
-    else:
-        return float(s) * s
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),

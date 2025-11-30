@@ -7738,10 +7738,8 @@ class TestFOneWay:
         ])
     def test_constant_input(self, a, b, expected):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
-        msg = "Each of the input arrays is constant;"
-        with pytest.warns(stats.ConstantInputWarning, match=msg):
-            f, p = stats.f_oneway(a, b)
-            assert f, p == expected
+        f, p = stats.f_oneway(a, b)
+        assert f, p == expected
 
     @pytest.mark.parametrize('axis', [-2, -1, 0, 1])
     def test_2d_inputs(self, axis):
@@ -7771,9 +7769,7 @@ class TestFOneWay:
         else:
             take_axis = 1
 
-        warn_msg = "Each of the input arrays is constant;"
-        with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
-            f, p = stats.f_oneway(a, b, c, axis=axis)
+        f, p = stats.f_oneway(a, b, c, axis=axis)
 
         # Verify that the result computed with the 2d arrays matches
         # the result of calling f_oneway individually on each slice.
@@ -7784,12 +7780,11 @@ class TestFOneWay:
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
-            with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
-                fj, pj = stats.f_oneway(np.take(a, j, take_axis),
-                                        np.take(b, j, take_axis),
-                                        np.take(c, j, take_axis))
-                assert_equal(f[j], fj)
-                assert_equal(p[j], pj)
+            fj, pj = stats.f_oneway(np.take(a, j, take_axis),
+                                    np.take(b, j, take_axis),
+                                    np.take(c, j, take_axis))
+            assert_equal(f[j], fj)
+            assert_equal(p[j], pj)
 
     def test_3d_inputs(self):
         # Some 3-d arrays. (There is nothing special about the values.)
