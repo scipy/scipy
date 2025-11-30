@@ -275,7 +275,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=1)
 @_dispatch
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
