@@ -3849,12 +3849,18 @@ def f_oneway(*samples, axis=0, equal_var=True):
            integrated introduction for psychology", Houghton, Mifflin and
            Company, 2001.
 
-    .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
+    .. [3] J.H. McDonald, "Handbook of Biological Statistics",
+           One-way ANOVA, 2014.
            http://www.biostathandbook.com/onewayanova.html
 
     .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
            An Alternative Approach", Biometrika, vol. 38, no. 3/4,
-           pp. 330-336, 1951, doi: 10.2307/2332579.
+           pp. 330-336, 1951. https://doi.org/10.2307/2332579
+
+    .. [5] J.H. McDonald, R. Seed and R.K. Koehn, "Allozymes and
+           morphometric characters of three species of Mytilus in
+           the Northern and Southern Hemispheres",
+           Marine Biology, vol. 111, pp. 323-333, 1991.
 
     Examples
     --------
@@ -3865,7 +3871,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     adductor muscle scar, standardized by dividing by length) in the mussel
     Mytilus trossulus from five locations: Tillamook, Oregon; Newport, Oregon;
     Petersburg, Alaska; Magadan, Russia; and Tvarminne, Finland, taken from a
-    much larger data set used in McDonald et al. (1991).
+    much larger data set used in [5]_.
 
     >>> tillamook = [0.0571, 0.0813, 0.0831, 0.0976, 0.0817, 0.0859, 0.0735,
     ...              0.0659, 0.0923, 0.0836]
