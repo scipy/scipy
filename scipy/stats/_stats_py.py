@@ -3914,6 +3914,23 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # value in at least one group is different from that in another group.
     # Based on https://github.com/scipy/scipy/issues/11669
 
+    # If axis=0, say, and the groups have shape (n0, ...), (n1, ...), ...,
+    # then is_const is a boolean array with shape (num_groups, ...).
+    # It is True if the values within the groups along the axis slice are
+    # identical. In the typical case where each input array is 1-d, is_const is
+    # a 1-d array with length num_groups.
+    is_const = xp.concat([xp.all(sample[..., :1] == sample, axis=-1, keepdims=True)
+                          for sample in samples], axis=-1)
+
+    # all_const is a boolean array with shape (...) (see previous comment).
+    # It is True if the values within each group along the axis slice are
+    # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
+    all_const = xp.all(is_const, axis=-1)
+
+    # all_same_const is True if all the values in the groups along the axis=0
+    # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
+    all_same_const = xp.all(alldata[..., :1] == alldata, axis=-1)
+
     if not isinstance(equal_var, bool):
         raise TypeError("Expected a boolean value for 'equal_var'")
 
@@ -3944,8 +3961,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         msw = sswn / dfwn
         with np.errstate(divide='ignore', invalid='ignore'):
             f = msb / msw
-
-        prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+        dfn, dfd = dfbn, dfwn
 
     else:
         # calculate basic statistics for each sample
@@ -3992,11 +4008,18 @@ def f_oneway(*samples, axis=0, equal_var=True):
                 (3 * xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero))
         )
 
-        # calculate p value
-        # ref.[4] p.334 eq.28
-        prob = special.fdtrc(hat_f1, hat_f2, f)
+        dfn, dfd = hat_f1, hat_f2
 
+    # Fix any f values that should be inf or nan because the corresponding
+    # inputs were constant.
+    f = xpx.at(f)[all_const].set(xp.inf)
+    f = xpx.at(f)[all_same_const].set(xp.nan)
+
+    # calculate p value
+    # ref.[4] p.334 eq.28
+    prob = special.fdtrc(dfn, dfd, f)
     prob = xp.asarray(prob, dtype=f.dtype)
+
     f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
 
