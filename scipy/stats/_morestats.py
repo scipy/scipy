@@ -2192,8 +2192,19 @@ AndersonResult = _make_tuple_bunch('AndersonResult',
                                     'significance_level'], ['fit_result'])
 
 
+_anderson_warning_message = (
+"""As of SciPy 1.17, users must choose a p-value calculation method by providing the
+`method` parameter. `method='interpolate'` interpolates the p-value from pre-calculated
+tables; `method` may also be an instance of `MonteCarloMethod` to approximate the
+p-value via Monte Carlo simulation. When `method` is specified, the result object will
+include a `pvalue` attribute and not attributes `critical_value`, `significance_level`,
+or `fit_result`. Beginning in 1.19.0, these other attributes will no longer be
+available, and a p-value will always be computed according to one of the available
+`method` options.""".replace('\n', ' '))
+
+
 @xp_capabilities(np_only=True)
-def anderson(x, dist='norm'):
+def anderson(x, dist='norm', *, method=None):
     """Anderson-Darling test for data coming from a particular distribution.
 
     The Anderson-Darling test tests the null hypothesis that a sample is
@@ -2211,11 +2222,35 @@ def anderson(x, dist='norm'):
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
+    method : str or instance of `MonteCarloMethod`
+        Defines the method used to compute the p-value.
+        If `method` is ``"interpolated"``, the p-value is interpolated from
+        pre-calculated tables.
+        If `method` is an instance of `MonteCarloMethod`, the p-value is computed using
+        `scipy.stats.monte_carlo_test` with the provided configuration options and other
+        appropriate settings.
+
+        .. versionadded:: 1.17.0
+            If `method` is not specified, `anderson` will emit a ``FutureWarning``
+            specifying that the user must opt into a p-value calculation method.
+            When `method` is specified, the object returned will include a ``pvalue``
+            attribute, but no ``critical_value``, ``significance_level``, or
+            ``fit_result`` attributes. Beginning in 1.19.0, these other attributes will
+            no longer be available, and a p-value will always be computed according to
+            one of the available `method` options.
 
     Returns
     -------
     result : AndersonResult
-        An object with the following attributes:
+        If `method` is provided, this is an object with the following attributes:
+
+        statistic : float
+            The Anderson-Darling test statistic.
+        pvalue: float
+            The p-value corresponding with the test statistic, calculated according to
+            the specified `method`.
+
+        If `method` is unspecified, this is an object with the following attributes:
 
         statistic : float
             The Anderson-Darling test statistic.
@@ -2230,13 +2265,21 @@ def anderson(x, dist='norm'):
             An object containing the results of fitting the distribution to
             the data.
 
+        .. deprecated :: 1.17.0
+            The tuple-unpacking behavior of the return object and attributes
+            ``critical_values``, ``significance_level``, and ``fit_result`` are
+            deprecated. Beginning in SciPy 1.19.0, these features will no longer be
+            available, and the object returned will have attributes ``statistic`` and
+            ``pvalue``.
+
     See Also
     --------
     kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
 
     Notes
     -----
-    Critical values provided are for the following significance levels:
+    Critical values provided when `method` is unspecified are for the following
+    significance levels:
 
     normal/exponential
         15%, 10%, 5%, 2.5%, 1%
@@ -2295,18 +2338,15 @@ def anderson(x, dist='norm'):
 
     >>> import numpy as np
     >>> from scipy.stats import anderson
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(9781234521)
     >>> data = rng.random(size=35)
-    >>> res = anderson(data)
+    >>> res = anderson(data, dist='norm', method='interpolate')
     >>> res.statistic
-    0.8398018749744764
-    >>> res.critical_values
-    array([0.548, 0.617, 0.735, 0.853, 1.011])
-    >>> res.significance_level
-    array([15. , 10. ,  5. ,  2.5,  1. ])
+    np.float64(0.9887620209957291)
+    >>> res.pvalue
+    np.float64(0.012111200538380142)
 
-    The value of the statistic (barely) exceeds the critical value associated
-    with a significance level of 2.5%, so the null hypothesis may be rejected
+    The p-value is approximately 0.012,, so the null hypothesis may be rejected
     at a significance level of 2.5%, but not at a significance level of 1%.
 
     """ # numpy/numpydoc#87  # noqa: E501
@@ -2399,7 +2439,37 @@ def anderson(x, dist='norm'):
     fit_result = FitResult(getattr(distributions, dist), y,
                            discrete=False, res=res)
 
-    return AndersonResult(A2, critical, sig, fit_result=fit_result)
+    if method is None:
+        warnings.warn(_anderson_warning_message, FutureWarning, stacklevel=2)
+        return AndersonResult(A2, critical, sig, fit_result=fit_result)
+
+    if method == 'interpolate':
+        sig = 1 - sig if dist == 'weibull_min' else sig / 100
+        pvalue = np.interp(A2, critical, sig)
+    elif isinstance(method, stats.MonteCarloMethod):
+        pvalue = _anderson_simulate_pvalue(x, dist, method)
+    else:
+        message = ("`method` must be either 'interpolate' or "
+                   "an instance of `MonteCarloMethod`.")
+        raise ValueError(message)
+    return SignificanceResult(statistic=A2, pvalue=pvalue)
+
+
+def _anderson_simulate_pvalue(x, dist, method):
+    message = ("The `___` attribute of a `MonteCarloMethod` object passed as the "
+               "`method` parameter of `scipy.stats.anderson` is ignored.")
+
+    method = method._asdict()
+    if method.pop('rvs', False):
+        warnings.warn(message.replace('___', 'rvs'), UserWarning, stacklevel=3)
+    if method.pop('batch', False):
+        warnings.warn(message.replace('___', 'batch'), UserWarning, stacklevel=3)
+    method['n_mc_samples'] = method.pop('n_resamples')
+
+    kwargs= {'known_params': {'loc': 0}} if dist == 'expon' else {}
+    dist = getattr(stats, dist)
+    res = stats.goodness_of_fit(dist, x, statistic='ad', **kwargs, **method)
+    return res.pvalue
 
 
 def _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N):
