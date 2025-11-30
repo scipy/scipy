@@ -2022,7 +2022,8 @@ def tukey_hsd(*args, equal_var=True):
            Difference (HSD) Test."
            https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
     .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
-           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+           Tutorials, 2007.
+           https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
     .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
            no. 3, 1956, pp. 307-310. https://www.jstor.org/stable/3001469
@@ -2035,8 +2036,8 @@ def tukey_hsd(*args, equal_var=True):
            https://www.jstor.org/stable/3001913
     .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976.
+           https://doi.org/10.3102/10769986001002113
 
 
     Examples
