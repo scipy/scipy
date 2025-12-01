@@ -2172,6 +2172,14 @@ class TestGivensQR:
 
         xp_assert_close(cc, c, atol=1e-14)
 
+    def test_evaluate_all_bspl(self):
+        n = 10
+        x, _, t, k = self._get_xyt(n)
+        for xval in x:
+            assert (_dierckx.evaluate_all_bspl(t, k, xval, n, k + 2) == 0.0).all()
+        for xval in x:
+            assert (_dierckx.evaluate_all_bspl(t, k, xval, n, 2*k) == 0.0).all()
+
 
 def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
