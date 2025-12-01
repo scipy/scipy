@@ -6,7 +6,9 @@ import math
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
-from scipy._lib._array_api import xp_copy, xp_assert_close
+from scipy._lib._array_api import (xp_copy, xp_assert_close, make_xp_test_case,
+                                   make_xp_pytest_param)
+import scipy._lib.array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -17,8 +19,8 @@ SQRT_2 = math.sqrt(2)
 # fftpack/test_real_transforms.py
 
 
-@skip_xp_backends(cpu_only=True)
-@pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
+@pytest.mark.parametrize("forward, backward", [make_xp_pytest_param(dct, idct),
+                                               make_xp_pytest_param(dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 10, 16])
 @pytest.mark.parametrize("axis", [0, 1])
@@ -66,8 +68,8 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
         assert_allclose(z, x_orig, rtol=1e-6, atol=1e-6)
 
 
-@skip_xp_backends(cpu_only=True)
-@pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
+@pytest.mark.parametrize("forward, backward", [make_xp_pytest_param(dctn, idctn),
+                                               make_xp_pytest_param(dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
                          [
@@ -148,21 +150,25 @@ def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
         assert_array_equal(y, y_orig)
 
 
-@skip_xp_backends(cpu_only=True)
-@pytest.mark.parametrize("func", ['dct', 'dst', 'dctn', 'dstn'])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(dct),
+                                  make_xp_pytest_param(dst),
+                                  make_xp_pytest_param(dctn),
+                                  make_xp_pytest_param(dstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 def test_fftpack_equivalience(func, type, norm, xp):
     x = np.random.rand(8, 16)
-    fftpack_res = xp.asarray(getattr(fftpack, func)(x, type, norm=norm))
+    fftpack_res = xp.asarray(getattr(fftpack, func.__name__)(x, type, norm=norm))
     x = xp.asarray(x)
-    fft_res = getattr(fft, func)(x, type, norm=norm)
+    fft_res = getattr(fft, func.__name__)(x, type, norm=norm)
 
     xp_assert_close(fft_res, fftpack_res)
 
 
-@skip_xp_backends(cpu_only=True)
-@pytest.mark.parametrize("func", [dct, dst, dctn, dstn])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(dct),
+                                  make_xp_pytest_param(dst),
+                                  make_xp_pytest_param(dctn),
+                                  make_xp_pytest_param(dstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 def test_orthogonalize_default(func, type, xp):
     # Test orthogonalize is the default when norm="ortho", but not otherwise
@@ -178,10 +184,10 @@ def test_orthogonalize_default(func, type, xp):
         xp_assert_close(a, b)
 
 
-@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
-@pytest.mark.parametrize("func, type", [
-    (dct, 4), (dst, 1), (dst, 4)])
+@pytest.mark.parametrize("func, type", [make_xp_pytest_param(dct, 4),
+                                        make_xp_pytest_param(dst, 1),
+                                        make_xp_pytest_param(dst, 4)])
 def test_orthogonalize_noop(func, type, norm, xp):
     # Transforms where orthogonalize is a no-op
     x = xp.asarray(np.random.rand(100))
@@ -190,52 +196,48 @@ def test_orthogonalize_noop(func, type, norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment')
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(dct)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
 
     x2 = xp_copy(x, xp=xp)
-    x2[0] *= SQRT_2
-    x2[-1] *= SQRT_2
+    xpx.at(x2, 0).multiply(SQRT_2)
+    xpx.at(x2, -1).multiply(SQRT_2)
 
     y1 = dct(x, type=1, norm=norm, orthogonalize=True)
     y2 = dct(x2, type=1, norm=norm, orthogonalize=False)
 
-    y2[0] /= SQRT_2
-    y2[-1] /= SQRT_2
+    xpx.at(y2, 0).divide(SQRT_2)
+    xpx.at(y2, -1).divide(SQRT_2)
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment')
-@skip_xp_backends(cpu_only=True)
+
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
-@pytest.mark.parametrize("func", [dct, dst])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(dct),
+                                  make_xp_pytest_param(dst)])
 def test_orthogonalize_dcst2(func, norm, xp):
     x = xp.asarray(np.random.rand(100))
     y1 = func(x, type=2, norm=norm, orthogonalize=True)
     y2 = func(x, type=2, norm=norm, orthogonalize=False)
 
-    y2[0 if func == dct else -1] /= SQRT_2
+    xpx.at(y2, 0 if func.__name__ == "dct" else -1).divide(SQRT_2)
     xp_assert_close(y1, y2)
 
 
-@skip_xp_backends('jax.numpy',
-                  reason='jax arrays do not support item assignment')
-@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
-@pytest.mark.parametrize("func", [dct, dst])
+@pytest.mark.parametrize("func", [make_xp_pytest_param(dct),
+                                  make_xp_pytest_param(dst)])
 def test_orthogonalize_dcst3(func, norm, xp):
     x = xp.asarray(np.random.rand(100))
     x2 = xp_copy(x, xp=xp)
-    x2[0 if func == dct else -1] *= SQRT_2
+    xpx.at(x2, 0 if func.__name__ == "dct" else -1).multiply(SQRT_2)
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
     y2 = func(x2, type=3, norm=norm, orthogonalize=False)
     xp_assert_close(y1, y2)
+
 
 @skip_xp_backends(np_only=True,
                   reason='array-likes only supported for NumPy backend')
