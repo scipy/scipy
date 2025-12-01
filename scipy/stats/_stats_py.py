@@ -3746,7 +3746,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-@xp_capabilities(jax_jit=False)
+@xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
