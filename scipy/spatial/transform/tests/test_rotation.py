@@ -418,6 +418,24 @@ def test_from_matrix_normalize(xp):
                            [  0,  0, 1]])
     xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
 
+    # Test a mix of normalized and non-normalized matrices
+    mat = xp.stack([mat, xp.eye(3)])
+    expected = xp.stack([expected, xp.eye(3)])
+    xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+
+@make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
+def test_from_matrix_unnormalized(xp):
+    rng = np.random.default_rng(0)
+    # Test that normal matrices remain unchanged
+    rot = rotation_to_xp(Rotation.from_quat(rng.normal(size=(10, 4))), xp)
+    rot_unnorm = Rotation.from_matrix(rot.as_matrix(), normalize=False)
+    assert xp.all(rot.approx_equal(rot_unnorm, atol=1e-12))
+    # Test that non-normal matrices do not lead to errors, but do not make any
+    # assumptions on the output
+    mat = xp.asarray(rng.random((10, 3, 3)))
+    Rotation.from_matrix(mat, normalize=False)  # Valid, but no guarantees
+
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
 def test_from_matrix_non_positive_determinant(xp):

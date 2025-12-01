@@ -477,7 +477,7 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def from_matrix(matrix: ArrayLike) -> Rotation:
+    def from_matrix(matrix: ArrayLike, *, normalize: bool = True) -> Rotation:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
@@ -492,6 +492,10 @@ class Rotation:
         matrix : array_like, shape (..., 3, 3)
             A single matrix or an ND array of matrices, where the last two dimensions
             contain the rotation matrices.
+        normalize : bool, optional
+            If True, then the given matrices are orthogonalized via Singular Value
+            Decomposition (SVD) to form a valid rotation matrix before the conversion.
+            Default is True.
 
         Returns
         -------
@@ -590,7 +594,7 @@ class Rotation:
         matrix = _promote(matrix, xp=xp)
         # Resulting quat will have 1 less dimension than matrix
         backend = select_backend(xp, cython_compatible=matrix.ndim < 4)
-        quat = backend.from_matrix(matrix)
+        quat = backend.from_matrix(matrix, normalize=normalize)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
