@@ -71,6 +71,7 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_marray,
     xp_size,
     xp_vector_norm,
     xp_promote,
@@ -3903,7 +3904,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     # axis is guaranteed to be -1 by the _axis_nan_policy decorator
     alldata = xp.concat(samples, axis=-1)
-    bign = alldata.shape[-1]
+    bign = _length_nonmasked(alldata, axis=-1, xp=xp)
 
     # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
@@ -3919,7 +3920,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # It is True if the values within the groups along the axis slice are
     # identical. In the typical case where each input array is 1-d, is_const is
     # a 1-d array with length num_groups.
-    is_const = xp.concat([xp.all(sample[..., :1] == sample, axis=-1, keepdims=True)
+    is_const = xp.concat([xp.all(xp.diff(sample, axis=-1) == 0, axis=-1, keepdims=True)
                           for sample in samples], axis=-1)
 
     # all_const is a boolean array with shape (...) (see previous comment).
@@ -3929,7 +3930,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
-    all_same_const = xp.all(alldata[..., :1] == alldata, axis=-1)
+    all_same_const = xp.all(xp.diff(alldata, axis=-1) == 0, axis=-1)
 
     if not isinstance(equal_var, bool):
         raise TypeError("Expected a boolean value for 'equal_var'")
@@ -3949,7 +3950,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         ssbn = 0
         for sample in samples:
             smo_ss = xp.sum(sample - offset, axis=-1)**2.
-            ssbn = ssbn + smo_ss / sample.shape[-1]
+            ssbn = ssbn + smo_ss / _length_nonmasked(sample, axis=-1, xp=xp)
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
         # for "within treatments"
@@ -3969,13 +3970,17 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # "As a particular case $y_t$ may be the means ... of samples
         y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
-        n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
+        if is_marray(xp):
+            n_t = xp.stack([_length_nonmasked(sample, axis=-1, xp=xp)
+                            for sample in samples])
+            n_t = xp.asarray(n_t, dtype=n_t.dtype)
+        else:
+            n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
+            n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
-        s_t2 = xp.stack([xp.var(sample, axis=-1, correction=True)
-                         for sample in samples])
+        s_t2 = xp.stack([xp.var(sample, axis=-1, correction=1) for sample in samples])
 
         # calculate weight by number of data and variance
         # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
