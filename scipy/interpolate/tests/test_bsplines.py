@@ -2175,10 +2175,12 @@ class TestGivensQR:
     def test_evaluate_all_bspl(self):
         n = 10
         x, _, t, k = self._get_xyt(n)
+        zero_array = np.zeros((k + 1,), dtype=float)
         for xval in x:
-            assert (_dierckx.evaluate_all_bspl(t, k, xval, n, k + 2) == 0.0).all()
-        for xval in x:
-            assert (_dierckx.evaluate_all_bspl(t, k, xval, n, 2*k) == 0.0).all()
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, k + 2), zero_array)
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, 2*k), zero_array)
 
 
 def data_file(basename):
