@@ -1046,6 +1046,12 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
     std::vector<double> wrk(2*k + 2);
 
     // compute non-zero bsplines
+    if (nu > k + 1) {
+        throw std::runtime_error(
+            "Requested derivative order nu exceeds the maximum allowed (k+1). "
+            "Cannot compute derivative of order nu for spline of order k."
+        );
+    }
     fitpack::_deBoor_D(
         static_cast<const double*>(PyArray_DATA(a_t)),
         xval,

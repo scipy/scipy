@@ -55,12 +55,6 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
      * Now do m "derivative" recursions
      * to convert the values of beta into the mth derivative
      */
-    if (m > k + 1) {
-        throw std::runtime_error(
-            "Requested derivative order m exceeds the maximum allowed (k+1). "
-            "Cannot compute derivative of order m for spline of order k."
-        );
-    }
     for (j = k - m + 1; j <= k; j++) {
         memcpy(hh, h, j*sizeof(double));
         h[0] = 0.0;
@@ -1211,6 +1205,12 @@ _evaluate_spline(
         else {
             // Evaluate (k+1) b-splines which are non-zero on the interval.
             // on return, first k+1 elements of work are B_{m-k},..., B_{m}
+            if (nu > k + 1) {
+                throw std::runtime_error(
+                    "Requested derivative order nu exceeds the maximum allowed (k+1). "
+                    "Cannot compute derivative of order nu for spline of order k."
+                );
+            }
             _deBoor_D(t.data, xval, k, interval, nu, wrk);
 
             // Form linear combinations
@@ -1381,6 +1381,12 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
             }
 
             // compute non-zero b-splines at this value of xd in dimension d
+            if (nu(d) > kd + 1) {
+                throw std::runtime_error(
+                    "Requested derivative order nu(d) exceeds the maximum allowed (k+1). "
+                    "Cannot compute derivative of order nu(d) for spline of order k."
+                );
+            }
             _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
 
             for (int s=0; s < kd + 1; s++) {
