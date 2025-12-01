@@ -160,6 +160,7 @@ change is made.
   - `scipy.stats.sampling`
 
 .. toctree::
+   :caption: SciPy Modules
    :maxdepth: 1
    :hidden:
    :titlesonly:
