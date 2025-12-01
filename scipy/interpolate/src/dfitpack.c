@@ -18,7 +18,6 @@
 // fpcons
 // fpcosp
 // fpcsin
-// fpcuro
 // fpdeno
 // fpfrno
 // fpgrdi
@@ -41,7 +40,6 @@
 // profil
 // regrid
 // splint
-// sproot
 // surev
 
 static const double PI = 3.1415926535897932384626433832795;
@@ -3012,7 +3010,7 @@ fpperi(const int iopt, const double *x, const double *y, const double *w, const 
     int l, l0, l1, l5, mm, m1, new, nk1, nk2, nmax, nmin, nplus, npl1;
     int nrint, n10, n11, n7, n8;
     double h[6], h1[7], h2[6];
-    fp0 = 0.0;
+
     // set constants
     one = 1.0;
     con1 = 0.1;
@@ -3178,44 +3176,38 @@ fpperi(const int iopt, const double *x, const double *y, const double *w, const 
             }
 
             // find the position of the interior knots in case of interpolation.
-            int need_knot_setup = 1;
             if (((k / 2) * 2) == k) {
+                // k is even
                 for (i = 2; i <= m1; i++) {
                     j = i + k;
                     t[j - 1] = (x[i - 1] + x[i - 2]) * half;
                 }
             } else {
+                // k is odd
                 for (i = 2; i <= m1; i++) {
                     j = i + k;
                     t[j - 1] = x[i - 1];
                 }
-                if (s > 0.0) {
-                    need_knot_setup = 0;
-                } else {
-                    kk = k - 1;
+                // the special case k=1 is treated separately
+                kk = k - 1;
+                if (kk == 0) {
                     kk1 = k;
-                    if (kk > 0) {
-                        need_knot_setup = 0;
-                    } else {
-                        t[0] = t[m - 1] - per;
-                        t[1] = x[0];
-                        t[m] = x[m - 1];
-                        t[m + 1] = t[2] + per;
-                        for (i = 1; i <= m1; i++) {
-                            c[i - 1] = y[i - 1];
-                        }
-                        c[m - 1] = c[0];
-                        *fp = 0.0;
-                        fpint[*n - 1] = fp0;
-                        fpint[*n - 2] = 0.0;
-                        nrdata[*n - 1] = 0;
-                        *ier = -1;
-                        return;
+                    t[0] = t[m - 1] - per;
+                    t[1] = x[0];
+                    t[m] = x[m - 1];
+                    t[m + 1] = t[2] + per;
+                    for (i = 1; i <= m1; i++) {
+                        c[i - 1] = y[i - 1];
                     }
+                    c[m - 1] = c[0];
+                    *fp = 0.0;
+                    fp0 = 0.0;
+                    fpint[*n - 1] = fp0;
+                    fpint[*n - 2] = 0.0;
+                    nrdata[*n - 1] = 0;
+                    *ier = -1;
+                    return;
                 }
-            }
-            if (need_knot_setup == 0) {
-                // Skip to main computation
             }
         }
     }
