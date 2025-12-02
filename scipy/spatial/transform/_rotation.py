@@ -493,9 +493,10 @@ class Rotation:
             A single matrix or an ND array of matrices, where the last two dimensions
             contain the rotation matrices.
         normalize : bool, optional
-            If True, then the given matrices are orthogonalized via Singular Value
-            Decomposition (SVD) to form a valid rotation matrix before the conversion.
-            Default is True.
+            Must be True unless users can guarantee the input is a valid rotation
+            matrix, i.e. it is orthogonal, rows and columns have unit norm and the
+            determinant is 1. Setting this to False without ensuring these properties
+            is unsafe behavior. Default is True.
 
         Returns
         -------
