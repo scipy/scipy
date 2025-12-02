@@ -15,18 +15,6 @@ namespace fitpack{
 void
 _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
     /*
-     * If m > k+1, the B-spline derivative is identically zero.
-     * Avoid the de Boor recursion (which assumes m <= k+1) and
-     * return a zero-filled result directly.
-     */
-    if( m > k + 1 ) {
-        for( size_t i = 0; i < 2*k + 2; i++ ) {
-            result[i] = 0.0;
-        }
-        return ;
-    }
-
-    /*
      * On completion the result array stores
      * the k+1 non-zero values of beta^(m)_i,k(x):  for i=ell, ell-1, ell-2, ell-k.
      * Where t[ell] <= x < t[ell+1].
@@ -1217,7 +1205,18 @@ _evaluate_spline(
         else {
             // Evaluate (k+1) b-splines which are non-zero on the interval.
             // on return, first k+1 elements of work are B_{m-k},..., B_{m}
-            _deBoor_D(t.data, xval, k, interval, nu, wrk);
+            /*
+             * If nu > k+1, the B-spline derivative is identically zero.
+             * Avoid the de Boor recursion (which assumes m <= k+1) and
+             * return a zero-filled result directly.
+             */
+            if( nu > k + 1 ) {
+                for( size_t i = 0; i < 2*k + 2; i++ ) {
+                    wrk[i] = 0.0;
+                }
+            } else {
+                _deBoor_D(t.data, xval, k, interval, nu, wrk);
+            }
 
             // Form linear combinations
             for (int64_t jp=0; jp < m; jp++) {
@@ -1387,7 +1386,18 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
             }
 
             // compute non-zero b-splines at this value of xd in dimension d
-            _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
+            /*
+             * If nu(d) > kd+1, the B-spline derivative is identically zero.
+             * Avoid the de Boor recursion (which assumes m <= k+1) and
+             * return a zero-filled result directly.
+             */
+            if( nu(d) > kd + 1 ) {
+                for( size_t i = 0; i < wrk.size(); i++ ) {
+                    wrk[i] = 0.0;
+                }
+            } else {
+                _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
+            }
 
             for (int s=0; s < kd + 1; s++) {
                 b(d, s) = wrk[s];
