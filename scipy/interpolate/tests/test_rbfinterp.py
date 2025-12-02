@@ -55,7 +55,7 @@ def _is_conditionally_positive_definite(kernel, m):
         seq = Halton(ndim, scramble=False, seed=np.random.RandomState())
         for _ in range(ntests):
             x = 2*seq.random(nx) - 1
-            A = _rbfinterp_pythran._kernel_matrix(x, kernel)
+            A = _rbfinterp_pythran.kernel_matrix_at_centers(x, kernel, np)
             P = _vandermonde(x, m - 1)
             Q, R = np.linalg.qr(P, mode='complete')
             # Q2 forms a basis spanning the space where P.T.dot(x) = 0. Project
