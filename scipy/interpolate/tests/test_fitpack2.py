@@ -20,8 +20,9 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
 
 from scipy._lib._testutils import _run_concurrent_barrier
 
-from scipy.interpolate import make_splrep, NdBSpline, regrid_python
-from scipy.interpolate import ndbspline_call_like_bivariate
+from scipy.interpolate import make_splrep, NdBSpline
+from scipy.interpolate._regrid_python import (regrid_python,
+        ndbspline_call_like_bivariate)
 
 def convert_to_ndbspline(lut):
     tx, ty = lut.get_knots()

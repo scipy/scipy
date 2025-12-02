@@ -10,12 +10,13 @@ import pytest
 from scipy._lib._testutils import check_free_memory
 
 from scipy.interpolate import RectBivariateSpline
-from scipy.interpolate import make_splrep, regrid_python
+from scipy.interpolate import make_splrep
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate._dfitpack import regrid_smth
 from scipy.interpolate._fitpack2 import dfitpack_int
+from scipy.interpolate._regrid_python import regrid_python
 
 
 def data_file(basename):
