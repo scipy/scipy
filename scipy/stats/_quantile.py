@@ -693,6 +693,7 @@ def ogive(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=Non
     Calculate the empirical distribution function at many points for each of two
     samples.
 
+    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng(6110515095)
     >>> x = stats.Normal(mu=[-1, 1]).sample(10000)
     >>> y = np.linspace(-4, 4, 5000)[:, np.newaxis]
@@ -715,7 +716,6 @@ def ogive(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=Non
     the `method` used. This is most noticeable when there are few observations in the
     sample.
 
-    >>> import matplotlib.pyplot as plt
     >>> x = np.asarray([0, 1])
     >>> y_linear = stats.quantile(x, p, method='linear')
     >>> y_weibull = stats.quantile(x, p, method='weibull')
@@ -726,9 +726,8 @@ def ogive(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=Non
     >>> plt.ylabel('y = quantile(x, p)')
     >>> plt.show()
 
-    For example, while `ogive` can invert `quantile` from ``p = 0.0`` to ``p = 1.0``
-    with ``method == 'linear'`, in this case, `quantile` can only be inverted from
-    ``p == 0.5`` to ``p = 1.0` with ``method = 'interpolated_inverted_cdf'``. This is a
+    For example, in the case above, `quantile` is only invertible from
+    ``p = 0.5`` to ``p = 1.0`` with ``method = 'interpolated_inverted_cdf'``. This is a
     fundamental characteristic of the methods, not a shortcoming of `ogive`.
 
     """
