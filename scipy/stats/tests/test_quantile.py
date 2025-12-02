@@ -438,7 +438,7 @@ def ogive_reference(x, y, *, axis=0, nan_policy='propagate',
     return res
 
 
-_ogive_methods_list = list(_ogive_methods)  # avoid variable collection order
+_ogive_methods_list = sorted(list(_ogive_methods))  # avoid variable collection order
 
 
 @make_xp_test_case(stats.ogive)
