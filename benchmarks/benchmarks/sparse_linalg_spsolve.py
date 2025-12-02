@@ -12,10 +12,10 @@ with safe_import():
 class SolveSparseRHS(Benchmark):
     param_names = ["Nsq", "K", "density", "batch_size", "use_umfpack"]
     params = [
-        [5000],  # (Nsq, Nsq) matrix for (N, N) grid
-        [2000],  # (Nsq, K) RHS
+        [500],  # (Nsq, Nsq) matrix for (N, N) grid
+        [5_003],  # (Nsq, K) RHS matrix, arbitrary K
         [0.01, 0.1, 0.5],  # density of the sparse RHS
-        [1, 10, 100, 5000],  # batch size
+        [1, 10, 100, 6000],  # batch size
         [True, False],  # use umfpack or not
     ]
 
