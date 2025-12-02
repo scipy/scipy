@@ -438,6 +438,9 @@ def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
     return res
 
 
+_iquantile_methods_list = list(_iquantile_methods)  # avoid variable collection order
+
+
 @make_xp_test_case(stats.iquantile)
 class TestIQuantile:
     def test_input_validation(self, xp):
@@ -481,7 +484,7 @@ class TestIQuantile:
         with pytest.raises(ValueError, match=message):
             stats.iquantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
-    @pytest.mark.parametrize('method', _iquantile_methods)
+    @pytest.mark.parametrize('method', _iquantile_methods_list)
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
     @pytest.mark.parametrize('y_shape', [None, 25])
@@ -624,7 +627,7 @@ class TestIQuantile:
         assert res.dtype == xp_default_dtype(xp)
 
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
-    @pytest.mark.parametrize('method', _iquantile_methods)
+    @pytest.mark.parametrize('method', _iquantile_methods_list)
     def test_size_one_sample(self, nan_policy, method, xp):
         discontinuous = method in _iquantile_discontinuous_methods
         x = xp.arange(10.)
@@ -662,7 +665,7 @@ class TestIQuantile:
 
     # skipping marray due to mdhaber/marray#24
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit'])
-    @pytest.mark.parametrize('method', _iquantile_methods)
+    @pytest.mark.parametrize('method', _iquantile_methods_list)
     def test_size_zero_sample(self, nan_policy, method, xp):
         x = xp.arange(10.)
         y = xp.asarray([0., -1., 1.])  # this should work
