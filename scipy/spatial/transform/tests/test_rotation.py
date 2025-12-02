@@ -427,6 +427,7 @@ def test_from_matrix_normalize(xp):
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
 def test_from_matrix_unnormalized(xp):
     rng = np.random.default_rng(0)
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Test that normal matrices remain unchanged
     rot = rotation_to_xp(Rotation.from_quat(rng.normal(size=(10, 4))), xp)
