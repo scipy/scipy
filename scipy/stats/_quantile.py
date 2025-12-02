@@ -15,14 +15,15 @@ import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
-    xp = array_namespace(x, p)
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, function='quantile'):
+    xp = array_namespace(x, p, weights)
 
     if function == "quantile":
         methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                    'hazen', 'interpolated_inverted_cdf', 'linear',
                    'median_unbiased', 'normal_unbiased', 'weibull',
-                   'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest'}
+                   'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest',
+                   'round_outward', 'round_inward', 'round_nearest'}
         allowed_types = 'real floating'
         def mask_fun(p): return (p > 1) | (p < 0) | xp.isnan(p)
         var2_name = 'p'
@@ -40,7 +41,11 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
     if not xp.isdtype(xp.asarray(p).dtype, allowed_types):
         raise ValueError(var2_type_msg)
 
-    x, p = xp_promote(x, p, force_floating=True, xp=xp)
+    if not (weights is None
+            or xp.isdtype(xp.asarray(weights).dtype, ('integral', 'real floating'))):
+        raise ValueError("`weights` must have real dtype.")
+
+    x, p, weights = xp_promote(x, p, weights, force_floating=True, xp=xp)
     p = xp.asarray(p, device=xp_device(x))
     dtype = x.dtype
 
@@ -62,6 +67,12 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
 
+    no_weights = {'_lower', '_midpoint', '_higher', '_nearest', 'harrell-davis',
+                  'round_nearest', 'round_inward', 'round_outward'}
+    if weights is not None and method in no_weights:
+        message = f"`method='{method}'` does not support `weights`."
+        raise ValueError(message)
+
     contains_nans = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
 
     if keepdims not in {None, True, False}:
@@ -76,8 +87,20 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
 
-    y = xp.sort(x, axis=axis, stable=False)
-    y, p = _broadcast_arrays((y, p), axis=axis)
+    if weights is None:
+        y = xp.sort(x, axis=axis, stable=False)
+        y, p = _broadcast_arrays((y, p), axis=axis)
+        n_zero_weight = None
+    else:
+        x, weights = xp.broadcast_arrays(x, weights)
+        i_zero_weight = (weights == 0)
+        n_zero_weight = xp.count_nonzero(i_zero_weight, axis=axis, keepdims=True)
+        x = xpx.at(x)[i_zero_weight].set(xp.inf, copy=True)
+        i_y = xp.argsort(x, axis=axis, stable=False)
+        y = xp.take_along_axis(x, i_y, axis=axis)
+        weights = xp.take_along_axis(weights, i_y, axis=axis)
+        y, p, weights, i_y, n_zero_weight = _broadcast_arrays(
+            (y, p, weights, i_y, n_zero_weight), axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
         message = ("`keepdims` may be False only if the length of "
@@ -87,11 +110,15 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
 
     y = xp.moveaxis(y, axis, -1)
     p = xp.moveaxis(p, axis, -1)
+    weights = weights if weights is None else xp.moveaxis(weights, axis, -1)
+    n_zero_weight = (n_zero_weight if n_zero_weight is None
+                     else xp.moveaxis(n_zero_weight, axis, -1))
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
-    n = xp.asarray(n, dtype=dtype, device=xp_device(y))
+    n = n if n_zero_weight is None else n - n_zero_weight
 
     nan_out = None
+
     if contains_nans:
         nans = xp.isnan(y)
 
@@ -100,8 +127,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
         if nan_policy == 'propagate':
             nan_out = xp.any(nans, axis=-1)
         else:  # 'omit'
-            non_nan = xp.astype(~nans, xp.uint64)
-            n_int = xp.sum(non_nan, axis=-1, keepdims=True)
+            n_int = n - xp.count_nonzero(nans, axis=-1, keepdims=True)
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
             nan_out = xp.any(n == 0, axis=-1)
@@ -114,6 +140,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
             y = xp.asarray(y, copy=True)  # ensure writable
             y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
 
+    n = xp.asarray(n, dtype=dtype, device=xp_device(y))
+
     # apparently xpx.at is accepting nan_out as a mask even though it doesn't have the
     # same number of dimensions as `y`, yet it still appears to work correctly?
     # should refactor for clarity, and p_mask that gets returned here should probably
@@ -123,12 +151,14 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, function='quantile'):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
 
-    return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
+    return (y, p, method, axis, nan_policy, keepdims,
+            n, axis_none, ndim, p_mask, weights, xp)
 
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
                  jax_jit=False)
-def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
+def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=None,
+             weights=None):
     """
     Compute the p-th quantile of the data along the specified axis.
 
@@ -160,6 +190,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
         'harrell-davis' is also available to compute the quantile estimate
         according to [2]_.
+
+        'round_outward', 'round_inward', and 'round_nearest' are available for use
+        in trimming and winsorizing data.
+
         See Notes for details.
     axis : int or None, default: 0
         Axis along which the quantiles are computed.
@@ -194,15 +228,27 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         axis to contain the number of quantiles given by ``p.size``. Therefore:
 
         - By default, the axis will be reduced away if possible (i.e. if there is
-          exactly one element of `q` per axis-slice of `x`).
+          exactly one element of `p` per axis-slice of `x`).
         - If `keepdims` is set to True, the axis will not be reduced away.
         - If `keepdims` is set to False, the axis will be reduced away
           if possible, and an error will be raised otherwise.
+    weights : array_like of finite, non-negative real numbers
+        Frequency weights; e.g., for counting number weights,
+        ``quantile(x, p, weights=weights)`` is equivalent to
+        ``quantile(np.repeat(x, weights), p)``. Values other than finite counting
+        numbers are accepted, but may not have valid statistical interpretations.
+        Not compatible with ``method='harrell-davis'`` or those that begin with
+        ``'round_'``.
 
     Returns
     -------
     quantile : scalar or ndarray
         The resulting quantile(s). The dtype is the result dtype of `x` and `p`.
+
+    See Also
+    --------
+    numpy.quantile
+    :ref:`outliers`
 
     Notes
     -----
@@ -255,6 +301,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     3. ``closest_observation``: ``m = -1/2`` and
        ``g = 1 - int((index == j) & (j%2 == 1))``
 
+    Note that for methods ``inverted_cdf`` and ``averaged_inverted_cdf``, only the
+    relative proportions of tied observations (and relative weights) affect the
+    results; for all other methods, the total number of observations (and absolute
+    weights) matter.
+
     A different strategy for computing quantiles from [2]_, ``method='harrell-davis'``,
     uses a weighted combination of all elements. The weights are computed as:
 
@@ -268,6 +319,23 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     :math:`p` is the probability of the quantile, and
     :math:`I` is the regularized, lower incomplete beta function
     (`scipy.special.betainc`).
+
+    ``method='round_nearest'`` is equivalent to indexing ``y[j]``, where::
+
+        j = int(np.round(p*n) if p < 0.5 else np.round(n*p - 1))
+
+    This is useful when winsorizing data: replacing ``p*n`` of the most extreme
+    observations with the next most extreme observation. ``method='round_outward'``
+    adjusts the direction of rounding to winsorize fewer elements::
+
+        j = int(np.floor(p*n) if p < 0.5 else np.ceil(n*p - 1))
+
+    and ``method='round_inward'`` rounds to winsorize more elements::
+
+        j = int(np.ceil(p*n) if p < 0.5 else np.floor(n*p - 1))
+
+    These methods are also useful for trimming data: removing ``p*n`` of the most
+    extreme observations. See :ref:`outliers` for example applications.
 
     Examples
     --------
@@ -319,17 +387,20 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     """
     # Input validation / standardization
 
-    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims)
-    y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp = temp
+    temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights)
+    (y, p, method, axis, nan_policy, keepdims,
+     n, axis_none, ndim, p_mask, weights, xp) = temp
 
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                   'hazen', 'interpolated_inverted_cdf', 'linear',
                   'median_unbiased', 'normal_unbiased', 'weibull'}:
-        res = _quantile_hf(y, p, n, method, xp)
+        res = _quantile_hf(y, p, n, method, weights, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
     elif method in {'_lower', '_midpoint', '_higher', '_nearest'}:
         res = _quantile_bc(y, p, n, method, xp)
+    else:  # method.startswith('round'):
+        res = _quantile_winsor(y, p, n, method, xp)
 
     return _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp)
 
@@ -351,13 +422,26 @@ def _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp):
     return res[()] if res.ndim == 0 else res
 
 
-def _quantile_hf(y, p, n, method, xp):
+def _quantile_hf(y, p, n, method, weights, xp):
     ms = dict(inverted_cdf=0, averaged_inverted_cdf=0, closest_observation=-0.5,
               interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
               median_unbiased=p/3 + 1/3, normal_unbiased=p/4 + 3/8)
     m = ms[method]
-    jg = p*n + m - 1
-    j = jg // 1
+
+    if weights is None:
+        jg = p * n + m
+        jp1 = jg // 1
+        j = jp1 - 1
+    else:
+        cumulative_weights = xp.cumulative_sum(weights, axis=-1)
+        n_int = xp.asarray(n, dtype=xp.int64)
+        n_int = xp.broadcast_to(n_int, cumulative_weights.shape[:-1] + (1,))
+        total_weight = xp.take_along_axis(cumulative_weights, n_int-1, axis=-1)
+        jg = p * total_weight + m
+        jp1 = _xp_searchsorted(cumulative_weights, jg, side='right')
+        j = _xp_searchsorted(cumulative_weights, jg-1, side='right')
+        j, jp1 = xp.astype(j, y.dtype), xp.astype(jp1, y.dtype)
+
     g = jg % 1
     if method == 'inverted_cdf':
         g = xp.astype((g > 0), jg.dtype)
@@ -371,7 +455,7 @@ def _quantile_hf(y, p, n, method, xp):
 
     g = xpx.at(g)[j < 0].set(0)
     j = xp.clip(j, 0., n - 1)
-    jp1 = xp.clip(j + 1, 0., n - 1)
+    jp1 = xp.clip(jp1, 0., n - 1)
 
     return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
             + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
@@ -392,6 +476,15 @@ def _quantile_hd(y, p, n, xp):
     w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
+
+
+def _quantile_winsor(y, p, n, method, xp):
+    ops = dict(round_outward=(xp.floor, xp.ceil),
+               round_inward=(xp.ceil, xp.floor),
+               round_nearest=(xp.round, xp.round))
+    op_left, op_right = ops[method]
+    j = xp.where(p < 0.5, op_left(p*n), op_right(n*p - 1))
+    return xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
 
 
 def _quantile_bc(y, p, n, method, xp):
@@ -639,8 +732,9 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     fundamental characteristic of the methods, not a shortcoming of `iquantile`.
 
     """
-    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, function='iquantile')
-    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, xp = temp
+    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, weights=None,
+                        function='iquantile')
+    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, _, xp = temp
 
     if xp_size(x) == 0:
         res = xp.full_like(y, xp.nan)

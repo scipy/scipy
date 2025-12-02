@@ -2692,7 +2692,7 @@ def hilbert2(x, N=None, axes=(-2, -1)):
         if N <= 0:
             raise ValueError("N must be positive.")
         N = (N, N)
-    elif len(N) != 2 or xp.any(xp.asarray(N) <= 0):
+    elif len(N) != 2 or np.any(np.asarray(N) <= 0):
         raise ValueError("When given as a tuple, N must hold exactly "
                          "two positive integers")
 
@@ -4216,7 +4216,7 @@ def detrend(data: np.ndarray, axis: int = -1,
 
     See Also
     --------
-    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+    :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial.
 
 
     Examples
@@ -4257,7 +4257,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
     degree polynomials. Consult its documentation on how to extract the polynomial
     coefficients.
-    """
+    """  # noqa: E501
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
 
