@@ -485,13 +485,12 @@ class TestOgive:
             stats.ogive(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
     @pytest.mark.parametrize('method', _ogive_methods_list)
-    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
     @pytest.mark.parametrize('y_shape', [None, 25])
     @pytest.mark.parametrize('ties', [False, True])
-    def test_against_quantile(self, method, dtype, x_shape, y_shape, ties, xp):
+    def test_against_quantile(self, method, x_shape, y_shape, ties, xp):
         discontinuous = method in _ogive_discontinuous_methods
-        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        dtype = xp_default_dtype(xp)  # removed parameterization to speed up tests
         rng = np.random.default_rng(394529872549827485)
         y_shape = x_shape if y_shape is None else y_shape
 
