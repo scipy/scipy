@@ -1046,20 +1046,14 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
     std::vector<double> wrk(2*k + 2);
 
     // compute non-zero bsplines
-    if (nu > k + 1) {
-        for( size_t i = 0; i < wrk.size(); i++ ) {
-            wrk[i] = 0.0;
-        }
-    } else {
-        fitpack::_deBoor_D(
-            static_cast<const double*>(PyArray_DATA(a_t)),
-            xval,
-            k,
-            m,
-            nu,
-            wrk.data()
-        );
-    }
+    fitpack::_deBoor_D(
+        static_cast<const double*>(PyArray_DATA(a_t)),
+        xval,
+        k,
+        m,
+        nu,
+        wrk.data()
+    );
 
     // allocate and fill the output
     npy_intp dims[1] = {k+1};
