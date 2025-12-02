@@ -47,7 +47,7 @@ class TestGIL:
             scipy.interpolate.RectBivariateSpline(x, y, z)
 
         def interpolate_custom(x, y, z):
-            scipy.interpolate.regrid_python(x, y, z)
+            scipy.interpolate._regrid_python.regrid_python(x, y, z)
 
         args = calibrate_delay(requested_time=3)
         worker_thread = self.make_worker_thread(interpolate, args)
