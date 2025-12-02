@@ -15,7 +15,7 @@ import numpy as np
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def fht(a, dln, mu, offset=0.0, bias=0.0):
     r'''Compute the fast Hankel transform.
@@ -176,7 +176,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     return (Dispatchable(a, np.ndarray),)
 
 
-@xp_capabilities()
+@xp_capabilities(allow_dask_compute=True)
 @_dispatch
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
     r"""Compute the inverse fast Hankel transform.

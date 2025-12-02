@@ -6,7 +6,7 @@ import numpy as np
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, *, orthogonalize=None):
@@ -72,7 +72,7 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
@@ -138,7 +138,7 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
@@ -204,7 +204,7 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
@@ -270,7 +270,7 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True, allow_dask_compute=1,
+@xp_capabilities(cpu_only=True, allow_dask_compute=True,
                  skip_backends=[('jax.numpy', 'XXX large tolerance violations')])
 @_dispatch
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
@@ -422,7 +422,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
@@ -503,7 +503,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True,
+@xp_capabilities(cpu_only=True, allow_dask_compute=True,
                  skip_backends=[('jax.numpy', 'XXX large tolerance violations')])
 @_dispatch
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
@@ -653,7 +653,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     return (Dispatchable(x, np.ndarray),)
 
 
-@xp_capabilities(cpu_only=True)
+@xp_capabilities(cpu_only=True, allow_dask_compute=True)
 @_dispatch
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
