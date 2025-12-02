@@ -15,9 +15,9 @@ from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,
-                               NearestNDInterpolator, LinearNDInterpolator,
-                               regrid_python,
-                               ndbspline_call_like_bivariate)
+                               NearestNDInterpolator, LinearNDInterpolator)
+from scipy.interpolate._regrid_python import (regrid_python,
+                                              ndbspline_call_like_bivariate)
 
 from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import _run_concurrent_barrier
