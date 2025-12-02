@@ -970,14 +970,18 @@ class TestSmoothSphereBivariateSpline:
 class TestRectBivariateSpline:
     @pytest.mark.parametrize("k", [3, 4])
     def test_defaults(self, k):
-        x = array([1,2,3,4,5])
-        y = array([1,2,3,4,5])
-        z = array([[1,2,1,2,1],[1,2,1,2,1],[1,2,3,2,1],[1,2,2,2,1],[1,2,1,2,1]])
+        x = array([1, 2, 3, 4, 5])
+        y = array([1, 2, 3, 4, 5])
+        z = array([[1, 2, 1, 2, 1],
+                   [1, 2, 1, 2, 1],
+                   [1, 2, 3, 2, 1],
+                   [1, 2, 2, 2, 1],
+                   [1, 2, 1, 2, 1]])
 
-        lut = RectBivariateSpline(x,y,z,kx=k,ky=k)
-        assert_array_almost_equal(lut(x,y),z)
+        lut = RectBivariateSpline(x, y, z, kx=k, ky=k)
+        assert_array_almost_equal(lut(x, y), z)
 
-        lut_custom = regrid_python(x, y, z,kx=k,ky=k)
+        lut_custom = regrid_python(x, y, z, kx=k, ky=k)
         xp_assert_close(
             ndbspline_call_like_bivariate(lut_custom, x, y), z.astype(np.float64))
 
