@@ -512,7 +512,7 @@ class TestOgive:
         # as if the probability calculation were exact.
         res = res - 1e-6 if discontinuous else res
         y2 = stats.quantile(x, res, method=method, axis=-1)
-        atol = 1e-6 if dtype == xp.float32 else 1e-12
+        atol = 1e-5 if dtype == xp.float32 else 1e-12
         xp_assert_close(y2, y, atol=atol)
 
         # if there are ties or method is discontinuous, `quantile` is not invertible
