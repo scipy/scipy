@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy.stats._quantile import (_xp_searchsorted, _iquantile_methods,
-    _iquantile_discontinuous_methods, _iquantile_continuous_methods)
+from scipy.stats._quantile import (_xp_searchsorted, _ogive_methods,
+    _ogive_discontinuous_methods, _ogive_continuous_methods)
 from scipy._lib._array_api import (
     xp_default_dtype,
     is_numpy,
@@ -418,79 +418,79 @@ class Test_XPSearchsorted:
 
 
 @_apply_over_batch(('x', 1), ('y', 1))
-def iquantile_reference_last_axis(x, y, nan_policy, method):
+def ogive_reference_last_axis(x, y, nan_policy, method):
     i_nan = np.isnan(x)
     if nan_policy == 'propagate' and np.any(i_nan):
         return np.full_like(y, np.nan)
     elif nan_policy == 'omit':
         x = x[~i_nan]
-    return stats.iquantile(x, y, keepdims=True, method=method)
+    return stats.ogive(x, y, keepdims=True, method=method)
 
 
-def iquantile_reference(x, y, *, axis=0, nan_policy='propagate',
+def ogive_reference(x, y, *, axis=0, nan_policy='propagate',
                         keepdims=None, method='linear'):
     x, y = _broadcast_arrays((x, y), axis=axis)
     x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
-    res = iquantile_reference_last_axis(x, y, nan_policy, method)
+    res = ogive_reference_last_axis(x, y, nan_policy, method)
     res = np.moveaxis(res, -1, axis)
     if not keepdims:
         res = np.squeeze(res, axis=axis)
     return res
 
 
-_iquantile_methods_list = list(_iquantile_methods)  # avoid variable collection order
+_ogive_methods_list = list(_ogive_methods)  # avoid variable collection order
 
 
-@make_xp_test_case(stats.iquantile)
-class TestIQuantile:
+@make_xp_test_case(stats.ogive)
+class TestOgive:
     def test_input_validation(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray(2)
 
         message = "`x` must have real dtype."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(xp.asarray([True, False]), y)
+            stats.ogive(xp.asarray([True, False]), y)
         with pytest.raises(ValueError):
-            stats.iquantile(xp.asarray([1+1j, 2]), y)
+            stats.ogive(xp.asarray([1+1j, 2]), y)
 
         message = "`y` must have real dtype."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, xp.asarray([0+1j, 1]))
+            stats.ogive(x, xp.asarray([0+1j, 1]))
 
         message = "`axis` must be an integer or None."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, y, axis=0.5)
+            stats.ogive(x, y, axis=0.5)
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, y, axis=(0, -1))
+            stats.ogive(x, y, axis=(0, -1))
 
         message = "`axis` is not compatible with the shapes of the inputs."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, y, axis=2)
+            stats.ogive(x, y, axis=2)
 
         if not is_jax(xp):  # no data-dependent input validation for lazy arrays
             message = "The input contains nan values"
             with pytest.raises(ValueError, match=message):
-                stats.iquantile(xp.asarray([xp.nan, 1, 2]), y, nan_policy='raise')
+                stats.ogive(xp.asarray([xp.nan, 1, 2]), y, nan_policy='raise')
 
         message = "method` must be one of..."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, y, method='a duck')
+            stats.ogive(x, y, method='a duck')
 
         message = "If specified, `keepdims` must be True or False."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, y, keepdims=42)
+            stats.ogive(x, y, keepdims=42)
 
         message = "`keepdims` may be False only if the length of `y` along `axis` is 1."
         with pytest.raises(ValueError, match=message):
-            stats.iquantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
+            stats.ogive(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
-    @pytest.mark.parametrize('method', _iquantile_methods_list)
+    @pytest.mark.parametrize('method', _ogive_methods_list)
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     @pytest.mark.parametrize('x_shape', [2, 10, 11, 100, 1001, (2, 10), (2, 3, 11)])
     @pytest.mark.parametrize('y_shape', [None, 25])
     @pytest.mark.parametrize('ties', [False, True])
     def test_against_quantile(self, method, dtype, x_shape, y_shape, ties, xp):
-        discontinuous = method in _iquantile_discontinuous_methods
+        discontinuous = method in _ogive_discontinuous_methods
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(394529872549827485)
         y_shape = x_shape if y_shape is None else y_shape
@@ -502,10 +502,10 @@ class TestIQuantile:
 
         p = xp.asarray(rng.random(size=y_shape), dtype=dtype)
         y = stats.quantile(x, p, method=method, axis=-1)
-        res = stats.iquantile(x, y, method=method, axis=-1)
+        res = stats.ogive(x, y, method=method, axis=-1)
         ref = xp.broadcast_to(p, (*x.shape[:-1], y.shape[-1]))
 
-        # check that `quantile` is the inverse of `iquantile`
+        # check that `quantile` is the inverse of `ogive`
         # note that for discontinuous methods, res is right on the cusp of a transition,
         # and there can be a tiny bit of error to the right or left. We shift it left
         # to ensure we're on the correct side of the transition, producing the same `y2`
@@ -520,7 +520,7 @@ class TestIQuantile:
             return
 
         # `quantile` is not invertible outside this domain
-        a, b = _iquantile_continuous_methods[method]
+        a, b = _ogive_continuous_methods[method]
         n = x.shape[-1]
         p_min = (1 - a) / (n + 1 - a - b)
         p_max = (n - a) / (n + 1 - a - b)
@@ -573,20 +573,20 @@ class TestIQuantile:
             kwargs = dict(axis=axis, keepdims=keepdims, method=meth)
             mxp = marray._get_namespace(xp)
             x_mp = mxp.asarray(x, mask=mask)
-            res = stats.iquantile(x_mp, mxp.asarray(y), **kwargs)
-            ref = iquantile_reference(x, y, nan_policy='omit', **kwargs)
+            res = stats.ogive(x_mp, mxp.asarray(y), **kwargs)
+            ref = ogive_reference(x, y, nan_policy='omit', **kwargs)
             xp_assert_close(res.data, xp.asarray(ref, dtype=dtype))
             return
 
         kwargs = dict(axis=axis, keepdims=keepdims,
                       nan_policy=nan_policy, method=meth)
-        res = stats.iquantile(xp.asarray(x), xp.asarray(y), **kwargs)
-        ref = iquantile_reference(x, y, **kwargs)
+        res = stats.ogive(xp.asarray(x), xp.asarray(y), **kwargs)
+        ref = ogive_reference(x, y, **kwargs)
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
     @pytest.mark.skip_xp_backends('torch', reason='issues with sorting NaNs')
     @pytest.mark.parametrize('n', [50, 500])
-    @pytest.mark.parametrize('method, ab', _iquantile_continuous_methods.items())
+    @pytest.mark.parametrize('method, ab', _ogive_continuous_methods.items())
     def test_plotting_positions(self, n, method, ab, xp):
         a, b = ab
         rng = np.random.default_rng(539452987254982748)
@@ -601,7 +601,7 @@ class TestIQuantile:
         ref = xp.asarray(ref.data)
 
         x = xp.asarray(x)
-        res = stats.iquantile(x, x, nan_policy='omit', method=method)
+        res = stats.ogive(x, x, nan_policy='omit', method=method)
 
         xp_assert_close(res[~mask], ref[~mask])
         assert xp.all(xp.isnan(res[mask]))
@@ -616,20 +616,20 @@ class TestIQuantile:
         ref = stats.ecdf(x).cdf.evaluate(y)
         ref2 = stats.percentileofscore(x, y, 'weak')
         x, y = xp.asarray(x, dtype=dtype), xp.asarray(y, dtype=dtype)
-        res = stats.iquantile(x, y, method='inverted_cdf')
+        res = stats.ogive(x, y, method='inverted_cdf')
         ref, ref2 = xp.asarray(ref, dtype=dtype), xp.asarray(ref2, dtype=dtype)
         xp_assert_close(res, ref)
         xp_assert_close(res, ref2 / 100)
 
     def test_integer_input_output_dtype(self, xp):
         x = xp.arange(10, dtype=xp.int64)
-        res = stats.iquantile(x, x)
+        res = stats.ogive(x, x)
         assert res.dtype == xp_default_dtype(xp)
 
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit', 'marray'])
-    @pytest.mark.parametrize('method', _iquantile_methods_list)
+    @pytest.mark.parametrize('method', _ogive_methods_list)
     def test_size_one_sample(self, nan_policy, method, xp):
-        discontinuous = method in _iquantile_discontinuous_methods
+        discontinuous = method in _ogive_discontinuous_methods
         x = xp.arange(10.)
         y = xp.asarray([0., -1., 1.])
         n = np.asarray(1.) if is_array_api_strict(xp) else xp.asarray(1.)
@@ -637,7 +637,7 @@ class TestIQuantile:
             if discontinuous:
                 ref = xp.asarray([1., 0., 1.])
             else:
-                a, b = _iquantile_continuous_methods[method]
+                a, b = _ogive_continuous_methods[method]
                 ref = xp.asarray([float((n - a) / (n + 1 - a - b)), 0., 1.])
 
         if nan_policy == 'propagate':
@@ -659,13 +659,13 @@ class TestIQuantile:
             kwargs = {}
 
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
-            res = stats.iquantile(x, y, method=method, **kwargs)
+            res = stats.ogive(x, y, method=method, **kwargs)
         res = res.data if nan_policy == 'marray' else res
         xp_assert_close(res, ref)
 
     # skipping marray due to mdhaber/marray#24
     @pytest.mark.parametrize('nan_policy', ['propagate', 'omit'])
-    @pytest.mark.parametrize('method', _iquantile_methods_list)
+    @pytest.mark.parametrize('method', _ogive_methods_list)
     def test_size_zero_sample(self, nan_policy, method, xp):
         x = xp.arange(10.)
         y = xp.asarray([0., -1., 1.])  # this should work
@@ -690,7 +690,7 @@ class TestIQuantile:
             kwargs = {}
 
         with np.errstate(divide='ignore', invalid='ignore'):  # for method = 'linear'
-            res = stats.iquantile(x, y, method=method, **kwargs)
+            res = stats.ogive(x, y, method=method, **kwargs)
 
         if nan_policy == 'marray':
             assert xp.all(res.mask)
@@ -734,11 +734,11 @@ class TestIQuantile:
             pytest.skip('Fails; need to investigate.')
         default_dtype = xp_default_dtype(xp)
         x, y, ref = xp.asarray(x), xp.asarray(y), xp.asarray(ref, dtype=default_dtype)
-        res = stats.iquantile(x, y, **kwargs)
+        res = stats.ogive(x, y, **kwargs)
         xp_assert_equal(res, ref)
 
     @pytest.mark.skip_xp_backends('jax.numpy', reason="-1e-45 is not less than 0?")
-    @pytest.mark.parametrize('method', _iquantile_discontinuous_methods.keys())
+    @pytest.mark.parametrize('method', _ogive_discontinuous_methods.keys())
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are as expected around
         # transition point
@@ -751,6 +751,6 @@ class TestIQuantile:
         ref_l[0] = 0.0  # value is less than the minimum observation
         x, xl, xr = xp.asarray(x), xp.asarray(xl), xp.asarray(xr)
         ref_l, ref_r = xp.asarray(ref_l), xp.asarray(ref_r)
-        xp_assert_equal(stats.iquantile(x, x, method=method), ref_r)
-        xp_assert_equal(stats.iquantile(x, xr, method=method), ref_r)
-        xp_assert_equal(stats.iquantile(x, xl, method=method), ref_l)
+        xp_assert_equal(stats.ogive(x, x, method=method), ref_r)
+        xp_assert_equal(stats.ogive(x, xr, method=method), ref_r)
+        xp_assert_equal(stats.ogive(x, xl, method=method), ref_l)

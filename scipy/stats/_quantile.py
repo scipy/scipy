@@ -15,10 +15,10 @@ import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, function='quantile'):
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, fun='quantile'):
     xp = array_namespace(x, p, weights)
 
-    if function == "quantile":
+    if fun == "quantile":
         methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                    'hazen', 'interpolated_inverted_cdf', 'linear',
                    'median_unbiased', 'normal_unbiased', 'weibull',
@@ -29,7 +29,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, function='qu
         var2_name = 'p'
         var2_type_msg = '`p` must have real floating dtype.'
     else:
-        methods = set(_iquantile_methods)
+        methods = set(_ogive_methods)
         allowed_types = ('integral', 'real floating')
         mask_fun = xp.isnan
         var2_name = 'y'
@@ -82,7 +82,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, function='qu
     # If data has length zero along `axis`, the result will be an array of NaNs just
     # as if the data had length 1 along axis and were filled with NaNs. This is treated
     # naturally below whether `nan_policy` is `'propagate'` or `'omit'`.
-    if x.shape[axis] == 0 and function == 'quantile':
+    if x.shape[axis] == 0 and fun == 'quantile':
         shape = list(x.shape)
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
@@ -548,7 +548,7 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
 
 @xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
                  jax_jit=False)
-def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
+def ogive(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
     """
     Compute the empirical distribution function of the data along the specified axis.
 
@@ -618,7 +618,7 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
 
     Notes
     -----
-    Given a sample `x` from an underlying distribution, `iquantile` provides a
+    Given a sample `x` from an underlying distribution, `ogive` provides a
     nonparametric estimate of the empirical distribution function.
 
     By default, this is done by computing the "fractional index" ``p`` at which ``y``
@@ -675,18 +675,18 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
 
     Calculate the empirical distribution function of one sample at a single point.
 
-    >>> stats.iquantile(x, 5, axis=-1)
+    >>> stats.ogive(x, 5, axis=-1)
     np.float64(0.5)
 
     Calculate the empirical distribution function of one sample at two points.
 
-    >>> stats.iquantile(x, [2.5, 7.5], axis=-1)
+    >>> stats.ogive(x, [2.5, 7.5], axis=-1)
     array([0.25, 0.75])
 
     Calculate the empirical distribution function of two samples at different points.
 
     >>> x = np.stack((np.arange(0, 11), np.arange(10, 21)))
-    >>> stats.iquantile(x, [[2.5], [17.5]], axis=-1, keepdims=True)
+    >>> stats.ogive(x, [[2.5], [17.5]], axis=-1, keepdims=True)
     array([[0.25],
            [0.75]])
 
@@ -696,22 +696,22 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     >>> rng = np.random.default_rng(6110515095)
     >>> x = stats.Normal(mu=[-1, 1]).sample(10000)
     >>> y = np.linspace(-4, 4, 5000)[:, np.newaxis]
-    >>> p = stats.iquantile(x, y, axis=0)
+    >>> p = stats.ogive(x, y, axis=0)
     >>> plt.plot(y, p)
     >>> plt.show()
 
-    Note that the `quantile` and `iquantile` functions are inverses of one another
+    Note that the `quantile` and `ogive` functions are inverses of one another
     within a certain domain.
 
     >>> p = np.linspace(0, 1, 300)
     >>> x = rng.standard_normal(300)
     >>> y = stats.quantile(x, p)
-    >>> p2 = stats.iquantile(x, y)
+    >>> p2 = stats.ogive(x, y)
     >>> np.testing.assert_allclose(p2, p)
     >>> y2 = stats.quantile(x, p2)
     >>> np.testing.assert_allclose(y2, y)
 
-    However, the domain over which `quantile` can be inverted by `iquantile` depends on
+    However, the domain over which `quantile` can be inverted by `ogive` depends on
     the `method` used. This is most noticeable when there are few observations in the
     sample.
 
@@ -726,32 +726,32 @@ def iquantile(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims
     >>> plt.ylabel('y = quantile(x, p)')
     >>> plt.show()
 
-    For example, while `iquantile` can invert `quantile` from ``p = 0.0`` to ``p = 1.0``
+    For example, while `ogive` can invert `quantile` from ``p = 0.0`` to ``p = 1.0``
     with ``method == 'linear'`, in this case, `quantile` can only be inverted from
     ``p == 0.5`` to ``p = 1.0` with ``method = 'interpolated_inverted_cdf'``. This is a
-    fundamental characteristic of the methods, not a shortcoming of `iquantile`.
+    fundamental characteristic of the methods, not a shortcoming of `ogive`.
 
     """
     temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, weights=None,
-                        function='iquantile')
+                        fun='ogive')
     x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, _, xp = temp
 
     if xp_size(x) == 0:
         res = xp.full_like(y, xp.nan)
     else:
-        res = _iquantile_hf(x, y, n, method, xp)
+        res = _ogive_hf(x, y, n, method, xp)
 
     return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
 
 
-_iquantile_discontinuous_methods = dict(
+_ogive_discontinuous_methods = dict(
     inverted_cdf=0.0,
     averaged_inverted_cdf=0.0,
     closest_observation=0.5,
 )
 
 
-_iquantile_continuous_methods = dict(
+_ogive_continuous_methods = dict(
     interpolated_inverted_cdf=(0, 1),
     hazen=(0.5, 0.5),
     weibull=(0, 0),
@@ -761,18 +761,18 @@ _iquantile_continuous_methods = dict(
 )
 
 
-_iquantile_methods = (set(_iquantile_continuous_methods).union(
-                      set(_iquantile_discontinuous_methods)))
+_ogive_methods = (set(_ogive_continuous_methods).union(
+                      set(_ogive_discontinuous_methods)))
 
 
-def _iquantile_hf(x, y, n, method, xp):
+def _ogive_hf(x, y, n, method, xp):
     n_int = xp.astype(n, xp.int64)
     j_max = n_int - 1
     j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype))
     jp1 = _xp_searchsorted(x, y, side='right')
 
-    if method in _iquantile_discontinuous_methods:
-        dp = _iquantile_discontinuous_methods[method]
+    if method in _ogive_discontinuous_methods:
+        dp = _ogive_discontinuous_methods[method]
         p = (xp.astype(jp1, x.dtype)+dp)/n
 
     else:
@@ -781,10 +781,9 @@ def _iquantile_hf(x, y, n, method, xp):
         xj = xp.take_along_axis(x, j, axis=-1)
         xjp1 = xp.take_along_axis(x, jp1, axis=-1)
         with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
-            # delta = xp.where(((xjp1 == xj) & (y == xj)) | xp.isinf(xj), 1., (y - xj) / (xjp1 - xj))
             delta = xp.where((xjp1 > xj) & xp.isfinite(xj), (y - xj) / (xjp1 - xj), 1.)
 
-        a, b = _iquantile_continuous_methods[method]
+        a, b = _ogive_continuous_methods[method]
         p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
 
     xmin = x[..., :1]
