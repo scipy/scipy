@@ -118,7 +118,17 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         "Please also check CXXFLAGS and FFLAGS.")
 
     if asan:
-        meson_args = meson_args + ('-Db_sanitize=address,undefined', )
+        build_dir = os.path.abspath(kwargs['build_dir'])
+        root = Path(build_dir).parent
+        asan_ignore_file = os.path.join(root, 'tools', 'asan-ignore.txt')
+        compiler_args = (
+            f'-fsanitize=address -fno-omit-frame-pointer '
+            f'-fsanitize-ignorelist={asan_ignore_file}'
+        )
+        meson_args += (f'-Dc_args={compiler_args}', )
+        meson_args += (f'-Dcpp_args={compiler_args}', )
+        meson_args += ('-Dc_link_args=-fsanitize=address', )
+        meson_args += ('-Dcpp_link_args=-fsanitize=address', )
 
     if setup_args:
         meson_args = meson_args + tuple([str(arg) for arg in setup_args])
@@ -159,6 +169,10 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     help="Show timing for the given number of slowest tests"
 )
 @click.option(
+    '--no-capture', default=False, is_flag=True,
+    help="Pass `--capture=no` to pytest"
+)
+@click.option(
     '--submodule', '-s', default=None, metavar='MODULE_NAME',
     help="Submodule whose tests to run (cluster, constants, ...)")
 @click.option(
@@ -175,7 +189,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     )
 )
 @spin.util.extend_command(spin.cmds.meson.test, doc="")
-def test(*, parent_callback, pytest_args, tests, coverage,
+def test(*, parent_callback, pytest_args, tests, coverage, no_capture,
          durations, submodule, mode, array_api_backend, **kwargs):
     """🔧 Run tests
 
@@ -259,6 +273,9 @@ def test(*, parent_callback, pytest_args, tests, coverage,
 
     if durations:
         pytest_args += ('--durations', durations)
+    
+    if no_capture:
+        pytest_args += ('--capture=no',)
 
     if len(array_api_backend) != 0:
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
