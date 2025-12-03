@@ -1605,7 +1605,7 @@ add_newdoc(
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
 		   :doi:`10.1007/BF02198293`.
-           https://arxiv.org/abs/math/9409227
+		   https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1720,8 +1720,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-		   :doi:`10.1007/BF02198293`.
-           https://arxiv.org/abs/math/9409227
+		   :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1812,8 +1811,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-		   :doi:`10.1007/BF02198293`.
-           https://arxiv.org/abs/math/9409227
+		   :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
@@ -1911,8 +1909,7 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-		   :doi:`10.1007/BF02198293`.
-           https://arxiv.org/abs/math/9409227
+		   :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
@@ -2036,8 +2033,7 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-		   :doi:`10.1007/BF02198293`.
-           https://arxiv.org/abs/math/9409227
+		   :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.20.iii
@@ -2050,12 +2046,11 @@ add_newdoc(
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
            Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
            Switzerland: Springer Nature Switzerland).
-		   :doi:`10.1007/978-3-030-04480-0`.
-           https://arxiv.org/abs/1806.06725
+		   :doi:`10.1007/978-3-030-04480-0`. https://arxiv.org/abs/1806.06725
     .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
            Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
            pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
-           https://arxiv.org/abs/math/9310223
+		   https://arxiv.org/abs/math/9310223
 
     Examples
     --------
