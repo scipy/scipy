@@ -496,8 +496,9 @@ class Rotation:
             Must be False unless users can guarantee the input is a valid rotation
             matrix, i.e. it is orthogonal, rows and columns have unit norm and the
             determinant is 1. Setting this to True without ensuring these properties
-            is unsafe behavior. If True, normalization steps are skipped, which can
-            improve runtime performance. Default is False.
+            is unsafe and will silently lead to incorrect results. If True,
+            normalization steps are skipped, which can improve runtime performance.
+            Default is False.
 
         Returns
         -------

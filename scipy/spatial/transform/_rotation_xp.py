@@ -73,7 +73,7 @@ def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
             # computation without statically known shapes, so we always compute SVD and
             # use xp.where to select the result.
             U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
-            matrix = U @ Vt
+            matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
         elif not xp.all(is_orthogonal):
             # For eager frameworks, only compute SVD if needed.
             is_not_orthogonal = ~is_orthogonal
