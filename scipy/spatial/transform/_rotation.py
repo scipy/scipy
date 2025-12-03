@@ -596,7 +596,7 @@ class Rotation:
         matrix = _promote(matrix, xp=xp)
         # Resulting quat will have 1 less dimension than matrix
         backend = select_backend(xp, cython_compatible=matrix.ndim < 4)
-        quat = backend.from_matrix(matrix, normalize=normalize)
+        quat = backend.from_matrix(matrix, assume_valid=assume_valid)
         return Rotation._from_raw_quat(quat, xp=xp, backend=backend)
 
     @staticmethod
