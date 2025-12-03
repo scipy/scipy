@@ -458,7 +458,7 @@ def from_euler(seq, angles, bint degrees=False):
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_matrix(matrix, bint normalize=True):
+def from_matrix(matrix, bint assume_valid=False):
     cdef int ind
     is_single = False
     matrix = np.array(matrix, dtype=float)
@@ -475,7 +475,7 @@ def from_matrix(matrix, bint normalize=True):
         matrix = matrix[np.newaxis, :, :]
         is_single = True
 
-    if normalize:
+    if not assume_valid:
         # Calculate the determinant of the rotation matrix
         # (should be positive for right-handed rotations)
         dets = np.linalg.det(matrix)
