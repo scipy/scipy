@@ -45,13 +45,14 @@ def from_quat(
     return quat
 
 
-def from_matrix(matrix: Array, normalize: bool = True) -> Array:
+def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    # Only non-lazy backends raise an error for non-positive determinants.
-    if normalize:
+
+    if not assume_valid:
         mask = xp.linalg.det(matrix) <= 0
         lazy = is_lazy_array(mask)
+        # Only non-lazy backends raise an error for non-positive determinants.
         if not lazy and xp.any(mask):
             ind = int(xp.nonzero(xpx.atleast_nd(mask, ndim=1, xp=xp))[0][0])
             raise ValueError(
