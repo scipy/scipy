@@ -1191,6 +1191,20 @@ _evaluate_spline(
     auto xp = ConstRealArray1D(xp_ptr, s);
     auto out = RealArray2D(out_ptr, s, m);
 
+    /*
+     * If nu > k+1, the B-spline derivative is identically zero.
+     * Avoid the de Boor recursion (which assumes nu <= k+1) and
+     * return a zero-filled result directly.
+     */
+    if( nu > k + 1 ) {
+        for( int64_t i = 0; i < s; i++ ) {
+            for( int64_t j = 0; j < m; j++ ) {
+                out(i, j) = 0.0;
+            }
+        }
+        return ;
+    }
+
     int64_t interval = k;
     for(int64_t ip=0; ip < s; ip++) {
 
@@ -1205,18 +1219,7 @@ _evaluate_spline(
         else {
             // Evaluate (k+1) b-splines which are non-zero on the interval.
             // on return, first k+1 elements of work are B_{m-k},..., B_{m}
-            /*
-             * If nu > k+1, the B-spline derivative is identically zero.
-             * Avoid the de Boor recursion (which assumes m <= k+1) and
-             * return a zero-filled result directly.
-             */
-            if( nu > k + 1 ) {
-                for( size_t i = 0; i < 2*k + 2; i++ ) {
-                    wrk[i] = 0.0;
-                }
-            } else {
-                _deBoor_D(t.data, xval, k, interval, nu, wrk);
-            }
+            _deBoor_D(t.data, xval, k, interval, nu, wrk);
 
             // Form linear combinations
             for (int64_t jp=0; jp < m; jp++) {
@@ -1351,6 +1354,22 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
     auto indices_k1d = ConstIndexArray2D(indices_k1d_ptr, num_k1d, ndim);
     auto out = RealArray2D(out_ptr, npts, num_c_tr);
 
+    /*
+     * If nu(d) > k(d) + 1, the B-spline derivative is identically zero.
+     * Avoid the de Boor recursion (which assumes nu(d) <= k(d) + 1) and
+     * return a zero-filled result directly.
+     */
+    for( int d = 0; d < ndim; d++ ) {
+        if( nu(d) > k(d) + 1 ) {
+            for( int64_t i = 0; i < npts; i++ ) {
+                for( int64_t j = 0; j < num_c_tr; j++ ) {
+                    out(i, j) = 0.0;
+                }
+            }
+            return ;
+        }
+    }
+
     // allocate work arrays (small, allocations unlikely to fail)
     int64_t max_k = *std::max_element(k_ptr, k_ptr + ndim);
     std::vector<double> wrk(2*max_k + 2);
@@ -1386,18 +1405,7 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
             }
 
             // compute non-zero b-splines at this value of xd in dimension d
-            /*
-             * If nu(d) > kd+1, the B-spline derivative is identically zero.
-             * Avoid the de Boor recursion (which assumes m <= k+1) and
-             * return a zero-filled result directly.
-             */
-            if( nu(d) > kd + 1 ) {
-                for( size_t i = 0; i < wrk.size(); i++ ) {
-                    wrk[i] = 0.0;
-                }
-            } else {
-                _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
-            }
+            _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
 
             for (int s=0; s < kd + 1; s++) {
                 b(d, s) = wrk[s];
