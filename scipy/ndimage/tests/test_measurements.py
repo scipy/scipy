@@ -26,6 +26,7 @@ IS_WINDOWS_AND_NP1 = os.name == 'nt' and np.__version__ < '2'
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_stats:
     """ndimage._measurements._stats() is a utility used by other functions.
 
@@ -109,6 +110,7 @@ class Test_measurements_stats:
 
 
 @skip_xp_backends(np_only=True, reason='test internal numpy-only helpers')
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_measurements_select:
     """ndimage._measurements._select() is a utility used by other functions."""
 

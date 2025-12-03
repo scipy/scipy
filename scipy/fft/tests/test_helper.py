@@ -10,10 +10,11 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy._lib._array_api import xp_assert_close, xp_device
+from scipy._lib._array_api import xp_assert_close, xp_device, make_xp_test_case
 from scipy import fft
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+lazy_xp_modules = [fft]
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -50,6 +51,7 @@ def _assert_n_smooth(x, n):
            f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestNextFastLen:
 
     def test_next_fast_len(self):
@@ -240,6 +242,7 @@ class TestPrevFastLen:
 
 
 @skip_xp_backends(cpu_only=True)
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class Test_init_nd_shape_and_axes:
 
     def test_py_0d_defaults(self, xp):
@@ -428,6 +431,7 @@ class Test_init_nd_shape_and_axes:
             _init_nd_shape_and_axes(x, shape=-2, axes=None)
 
 
+@make_xp_test_case(fft.fftshift, fft.ifftshift)
 class TestFFTShift:
 
     def test_definition(self, xp):
@@ -502,6 +506,7 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
+@make_xp_test_case(fft.fftfreq)
 class TestFFTFreq:
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
@@ -528,6 +533,7 @@ class TestFFTFreq:
             assert xp_device(y) == xp_device(x)
 
 
+@make_xp_test_case(fft.rfftfreq)
 class TestRFFTFreq:
 
     def test_definition(self, xp):

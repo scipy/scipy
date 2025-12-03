@@ -355,6 +355,7 @@ class TestC2D:
         xp_assert_close(den, den2, rtol=1e-13)
 
 @skip_xp_backends(np_only=True, reason="lti currently not supported")
+@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
 class TestC2dLti:
     def test_c2d_ss(self, xp):
         # StateSpace

@@ -998,6 +998,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
         capabilities = capabilities_table[func]
         exceptions = capabilities['exceptions']
         reason = capabilities['reason']
+
         if capabilities['cpu_only']:
             marks.append(pytest.mark.skip_xp_backends(
                 cpu_only=True, exceptions=exceptions, reason=reason))

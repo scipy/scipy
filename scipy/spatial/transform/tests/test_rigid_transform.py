@@ -1470,7 +1470,7 @@ def test_rigid_transform_iter(xp):
             raise RuntimeError("Iteration exceeded length of transforms")
 
 
-@make_xp_test_case()
+@make_xp_test_case(RigidTransform.from_translation)
 @pytest.mark.parametrize("dim", range(1, 5))
 def test_shape_property(xp, dim: int):
     shape = (dim,) * (dim - 1)

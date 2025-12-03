@@ -594,6 +594,7 @@ class TestIsValidInconsistent:
                 eager.is_valid_im(R, throw=True)
 
 
+@make_xp_test_case(num_obs_linkage)
 class TestNumObsLinkage:
 
     def test_num_obs_linkage_empty(self, xp):
@@ -1205,6 +1206,7 @@ def test_optimal_leaf_ordering(xp):
 
 
 @skip_xp_backends(np_only=True, reason='`Heap` only supports NumPy backend')
+@pytest.mark.uses_xp_capabilities(False, reason="no `xp_capabilities` entry for Heap")
 def test_Heap(xp):
     values = xp.asarray([2, -1, 0, -1.5, 3])
     heap = Heap(values)
