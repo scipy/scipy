@@ -425,14 +425,14 @@ def test_from_matrix_normalize(xp):
 
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
-def test_from_matrix_unnormalized(xp):
+def test_from_matrix_assume_valid(xp):
     rng = np.random.default_rng(0)
     dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Test that normal matrices remain unchanged
     rot = rotation_to_xp(Rotation.from_quat(rng.normal(size=(10, 4))), xp)
-    rot_unnorm = Rotation.from_matrix(rot.as_matrix(), normalize=False)
-    assert xp.all(rot.approx_equal(rot_unnorm, atol=atol))
+    rot_no_norm = Rotation.from_matrix(rot.as_matrix(), assume_valid=True)
+    assert xp.all(rot.approx_equal(rot_no_norm, atol=atol))
     # We make no guarantees about matrices that are not orthogonal or do not
     # have unit norm
 
