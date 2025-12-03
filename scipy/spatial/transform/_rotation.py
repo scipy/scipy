@@ -477,7 +477,7 @@ class Rotation:
     @xp_capabilities(
         skip_backends=[("dask.array", "missing linalg.cross/det functions")]
     )
-    def from_matrix(matrix: ArrayLike, *, normalize: bool = True) -> Rotation:
+    def from_matrix(matrix: ArrayLike, *, assume_valid: bool = False) -> Rotation:
         """Initialize from rotation matrix.
 
         Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
@@ -492,11 +492,12 @@ class Rotation:
         matrix : array_like, shape (..., 3, 3)
             A single matrix or an ND array of matrices, where the last two dimensions
             contain the rotation matrices.
-        normalize : bool, optional
-            Must be True unless users can guarantee the input is a valid rotation
+        assume_valid : bool, optional
+            Must be False unless users can guarantee the input is a valid rotation
             matrix, i.e. it is orthogonal, rows and columns have unit norm and the
-            determinant is 1. Setting this to False without ensuring these properties
-            is unsafe behavior. Default is True.
+            determinant is 1. Setting this to True without ensuring these properties
+            is unsafe behavior. If True, normalization steps are skipped, which can
+            improve runtime performance. Default is False.
 
         Returns
         -------
