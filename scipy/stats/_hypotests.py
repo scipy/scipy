@@ -1828,7 +1828,7 @@ class TukeyHSDResult:
     .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
            Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           :doi:`10.3102/10769986001002113`.
     """
 
     def __init__(self, statistic, pvalue, _ntreatments, _df, _stand_err):
@@ -1883,7 +1883,7 @@ class TukeyHSDResult:
         .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
                with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
                Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-               doi: https://doi.org/10.3102/10769986001002113.
+               :doi:`10.3102/10769986001002113`.
 
         Examples
         --------
@@ -2037,7 +2037,7 @@ def tukey_hsd(*args, equal_var=True):
     .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
            Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976.
-           https://doi.org/10.3102/10769986001002113
+           :doi:`10.3102/10769986001002113`.
 
 
     Examples

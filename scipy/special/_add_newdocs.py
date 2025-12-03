@@ -1604,8 +1604,8 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+		   :doi:`10.1007/BF02198293`.
            https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
 
     Examples
     --------
@@ -1720,8 +1720,8 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E5
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+		   :doi:`10.1007/BF02198293`.
            https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
 
     Examples
     --------
@@ -1812,8 +1812,8 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E1
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+		   :doi:`10.1007/BF02198293`.
            https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
 
     Examples
     --------
@@ -1911,8 +1911,8 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+		   :doi:`10.1007/BF02198293`.
            https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.16.E1
@@ -2036,27 +2036,26 @@ add_newdoc(
     ----------
     .. [1] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
+		   :doi:`10.1007/BF02198293`.
            https://arxiv.org/abs/math/9409227
-           https://doi.org/10.1007/BF02198293
     .. [2] B. C. Carlson, ed., Chapter 19 in "Digital Library of Mathematical
            Functions," NIST, US Dept. of Commerce.
            https://dlmf.nist.gov/19.20.iii
     .. [3] B. C. Carlson, J. FitzSimmons, "Reduction Theorems for Elliptic
            Integrands with the Square Root of Two Quadratic Factors," J.
            Comput. Appl. Math., vol. 118, nos. 1-2, pp. 71-85, 2000.
-           https://doi.org/10.1016/S0377-0427(00)00282-X
+           :doi:`10.1016/S0377-0427(00)00282-X`.
     .. [4] F. Johansson, "Numerical Evaluation of Elliptic Functions, Elliptic
            Integrals and Modular Forms," in J. Blumlein, C. Schneider, P.
            Paule, eds., "Elliptic Integrals, Elliptic Functions and Modular
            Forms in Quantum Field Theory," pp. 269-293, 2019 (Cham,
-           Switzerland: Springer Nature Switzerland)
+           Switzerland: Springer Nature Switzerland).
+		   :doi:`10.1007/978-3-030-04480-0`.
            https://arxiv.org/abs/1806.06725
-           https://doi.org/10.1007/978-3-030-04480-0
     .. [5] B. C. Carlson, J. L. Gustafson, "Asymptotic Approximations for
            Symmetric Elliptic Integrals," SIAM J. Math. Anls., vol. 25, no. 2,
-           pp. 288-303, 1994.
+           pp. 288-303, 1994. :doi:`10.1137/S0036141092228477`.
            https://arxiv.org/abs/math/9310223
-           https://doi.org/10.1137/S0036141092228477
 
     Examples
     --------
@@ -2140,7 +2139,7 @@ add_newdoc("entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -3934,7 +3933,7 @@ add_newdoc("gdtrib",
            "A new hybrid quadratic/bisection algorithm for finding the zero of a
            nonlinear function without using derivatives".
            Advances in Engineering Software, 28(3), 145-149.
-           https://doi.org/10.1016/s0965-9978(96)00051-8
+           :doi:`10.1016/s0965-9978(96)00051-8`.
 
     Examples
     --------
@@ -4397,7 +4396,7 @@ add_newdoc("kl_div",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
 
     """)
 
@@ -4445,7 +4444,7 @@ add_newdoc("kn",
            http://netlib.org/amos/
     .. [2] Donald E. Amos, "Algorithm 644: A portable package for Bessel
            functions of a complex argument and nonnegative order", ACM
-           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
+           TOMS Vol. 12 Issue 3, Sept. 1986, p. 265.
 
     Examples
     --------
@@ -6573,7 +6572,7 @@ add_newdoc("rel_entr",
     ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
-           :doi:`https://doi.org/10.1017/CBO9780511804441`
+           :doi:`10.1017/CBO9780511804441`.
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 

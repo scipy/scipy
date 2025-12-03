@@ -3491,7 +3491,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     ----------
     [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
         Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
-        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
+        :doi:`10.2307/1266427`. Accessed 18 May 2022.
 
     Examples
     --------
