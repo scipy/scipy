@@ -63,6 +63,12 @@ def pytest_configure(config):
         ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
          "eager_only=False, exceptions=None): mark the desired xfail configuration " +
          "for the `xfail_xp_backends` fixture"))
+    config.addinivalue_line("markers",
+                            ("uses_xp_capabilities(status, funcs=None, " +
+                             "reason=None): mark " +
+                            "whether pytest markers for array API backends are " +
+                            " generated from the xp_capabilities entries for one or "
+                             " more functions"))
 
     try:
         import pytest_timeout  # noqa:F401
@@ -309,6 +315,18 @@ def xp(request):
     # Read all @pytest.marks.xfail_xp_backends markers that decorate the test,
     # if any, and raise pytest.xfail() if the current xp is in the list.
     skip_or_xfail_xp_backends(request, "xfail")
+
+    # Check if ``uses_xp_capabilities`` mark is present.
+    # ``scipy._lib._array_api.make_xp_pytest_marks``, which draws from
+    # ``xp_capabilities`` will set ``pytest.mark.uses_xp_capabilities(True)``.
+    # Tests which are unconverted or which are for private functions without
+    # ``xp_capabilities`` entries should have
+    # ``pytest.mark.uses_xp_capabilities(False)`` explicitly set.
+    if request.node.get_closest_marker("uses_xp_capabilities") is None:
+        warnings.warn(
+            "test uses `xp` fixture without drawing from `xp_capabilities` "
+            " but is not explicitly marked with"
+            " ``pytest.mark.uses_xp_capabilities(False)``")
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
