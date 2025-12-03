@@ -1604,8 +1604,7 @@ add_newdoc(
            https://dlmf.nist.gov/19.16.E6
     .. [2] B. C. Carlson, "Numerical computation of real or complex elliptic
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
-		   :doi:`10.1007/BF02198293`.
-		   https://arxiv.org/abs/math/9409227
+		   :doi:`10.1007/BF02198293`. https://arxiv.org/abs/math/9409227
 
     Examples
     --------
