@@ -938,7 +938,7 @@ class multivariate_normal_gen(multi_rv_generic):
         -------
         marginal_multivariate_normal : multivariate_normal_frozen
             An object representing the marginal distribution.
-        
+
         Notes
         -----
         %(_mvn_doc_callparams_note)s
@@ -949,7 +949,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         mean = mean[dims]
         cov = cov_object.covariance[np.ix_(dims, dims)]
-        
+
         return multivariate_normal_frozen(mean, cov, allow_singular)
 
 multivariate_normal = multivariate_normal_gen()
@@ -1059,7 +1059,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
     def marginal(self, dimensions):
-        return self._dist.marginal(dimensions, self.mean, 
+        return self._dist.marginal(dimensions, self.mean,
                                    self.cov_object, self.allow_singular)
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -5517,7 +5517,7 @@ class multivariate_t_gen(multi_rv_generic):
         -------
         marginal_multivariate_t : multivariate_t_frozen
             An object representing the marginal t.
-        
+
         Notes
         -----
         %(_mvt_doc_frozen_callparams_note)s
@@ -5528,7 +5528,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         loc = loc[dims]
         shape = shape[np.ix_(dims, dims)]
-        
+
         return multivariate_t_frozen(loc, shape, df, allow_singular)
 
 class multivariate_t_frozen(multi_rv_frozen):
@@ -5588,7 +5588,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         return self._dist._entropy(self.dim, self.df, self.shape)
 
     def marginal(self, dimensions):
-        return self._dist.marginal(dimensions, self.loc, 
+        return self._dist.marginal(dimensions, self.loc,
                                    self.shape, self.df, self.allow_singular)
 
 multivariate_t = multivariate_t_gen()
