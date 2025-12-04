@@ -1191,7 +1191,7 @@ class TestCubatureProblems:
         )
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRules:
     """
     Tests related to the general Rule interface (currently private).
@@ -1232,7 +1232,7 @@ class TestRules:
                 base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRulesQuadrature:
     """
     Tests underlying quadrature rules (ndim == 1).
@@ -1305,7 +1305,7 @@ class TestRulesQuadrature:
             quadrature(1, xp=xp)
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestRulesCubature:
     """
     Tests underlying cubature rules (ndim >= 2).
@@ -1329,7 +1329,7 @@ class TestRulesCubature:
 
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (
