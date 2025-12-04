@@ -47,7 +47,6 @@ Direct methods for linear equation systems:
    is_sptriangular -- Check if sparse A is triangular.
    spbandwidth -- Find the bandwidth of a sparse matrix.
    factorized -- Pre-factorize matrix to a function solving a linear system
-   MatrixRankWarning -- Warning on exactly singular matrices
 
 Iterative methods for linear equation systems:
 
