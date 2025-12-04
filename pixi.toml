@@ -50,7 +50,7 @@ features = ["run-deps", "test-deps", "gdb"]
 solve-group = "debug"
 
 [environments.lint]
-# tasks: lint, check-python-h, tach-check, tach-check-external
+# tasks: lint, check-python-h, tach-check, tach-check-external, check-xp-untested
 features = ["lint"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
@@ -307,6 +307,10 @@ tach = "*"
 [feature.lint.tasks.lint]
 cmd = "spin lint"
 description = "Run main lint checks"
+
+[feature.lint.tasks.check-xp-untested]
+cmd = "spin check-xp-untested"
+description = "Check for advertised alt-backend support that is untested."
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
