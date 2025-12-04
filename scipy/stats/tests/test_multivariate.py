@@ -1498,7 +1498,8 @@ class TestMarginal:
     @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
     @pytest.mark.parametrize('frozen', [True, False])
     @pytest.mark.parametrize('cov_object', [True, False])
-    def test_marginal_distribution(self, dist, X_ndim, dimensions, frozen, cov_object, kwargs):
+    def test_marginal_distribution(self, dist, X_ndim, dimensions, frozen, 
+                                   cov_object, kwargs):
         rng = np.random.default_rng(413911473)
         loc = rng.standard_normal(X_ndim)
         A = rng.standard_normal((X_ndim, X_ndim))
