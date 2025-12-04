@@ -58,7 +58,7 @@ from . import _add_newdocs
 from . import linsolve
 
 __all__ = [
-    'MatrixRankWarning', 'SuperLU', 'factorized',
+    'SuperLU', 'factorized',
     'spilu', 'splu', 'spsolve', 'is_sptriangular',
     'spsolve_triangular', 'spbandwidth',
 ]
