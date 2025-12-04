@@ -5531,6 +5531,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         return multivariate_t_frozen(loc, shape, df, allow_singular)
 
+
 class multivariate_t_frozen(multi_rv_frozen):
     __class_getitem__ = None
 
