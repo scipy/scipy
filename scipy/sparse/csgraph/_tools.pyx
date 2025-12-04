@@ -220,6 +220,61 @@ def csgraph_from_dense(graph,
     return res
 
 
+def csgraph_from_adjacency_list(adjacency_list, *, weighted=True):
+    """Construct a CSR-format sparse graph from an adjacency list.
+
+    .. versionadded:: 1.8.0
+
+    Parameters
+    ----------
+    adjacency_list : dict
+        Input adjacency list. Could be either a dict of lists (for unweighted graph) or
+        a dict of dicts (for weighted graph). Dict length should be ``n_nodes``.
+    weighted : bool
+        If True (default), then construct a weighted graph.
+
+    Returns
+    -------
+    csgraph : csr_matrix
+        Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_from_adjacency_list
+
+    >>> graph = {
+    ...     0: {1: 1, 2: 2},
+    ...     1: {3: 1},
+    ...     2: {3: 3},
+    ...     3: {},
+    ... }
+
+    >>> csgraph_from_adjacency_list(graph)
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+	    with 4 stored elements in Compressed Sparse Row format>
+
+    """
+    N = len(adjacency_list)
+
+    row = []
+    col = []
+    data = []
+
+    for row_idx in adjacency_list:
+        for col_idx in adjacency_list[row_idx]:
+            row.append(row_idx)
+            col.append(col_idx)
+
+            if weighted:
+                if not isinstance(adjacency_list[row_idx], dict):
+                    raise ValueError("if 'weighted=True', adjacency_list should be a dict of dicts.")
+                data.append(adjacency_list[row_idx][col_idx])
+            else:
+                data.append(1)
+
+    return csr_matrix((data, (row, col)), shape=(N, N))
+
+
 def csgraph_to_dense(csgraph, null_value=0):
     """
     csgraph_to_dense(csgraph, null_value=0)
@@ -385,6 +440,59 @@ def csgraph_to_masked(csgraph):
 
     """
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
+
+
+def csgraph_to_adjacency_list(csgraph):
+    """Convert a sparse graph representation to an adjacency list
+
+    .. versionadded:: 1.8.0
+
+    Parameters
+    ----------
+    csgraph : csr_matrix
+        Sparse representation of a graph.
+
+    Returns
+    -------
+    graph : dict
+        An adjacency list of the sparse graph (dict of dicts).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_adjacency_list
+
+    >>> graph = csr_matrix([
+    ... [0, 1, 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_adjacency_list(graph)
+    {
+        0: {1: 1, 2: 2},
+        1: {3: 1},
+        2: {3: 3},
+        3: {},
+    }
+
+    """
+    adjacency_list = {}
+
+    for row_idx in range(len(csgraph.indptr) - 1):
+        adjacency_list[row_idx] = {}
+
+        for i in range(csgraph.indptr[row_idx], csgraph.indptr[row_idx+1]):
+            col_idx = csgraph.indices[i]
+            weight = csgraph.data[i]
+            
+            adjacency_list[row_idx][col_idx] = weight
+
+    return adjacency_list
 
 
 cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
