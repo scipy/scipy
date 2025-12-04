@@ -43,11 +43,13 @@ from scipy.cluster.hierarchy import (
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
-    _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
+    _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS,
+    complete, average, weighted, centroid, median, ward)
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
 from scipy._lib._array_api import (eager_warns, make_xp_test_case,
-                                   xp_assert_close, xp_assert_equal)
+                                   xp_assert_close, xp_assert_equal,
+                                   make_xp_pytest_param, _xp_copy_to_numpy)
 import scipy._lib.array_api_extra as xpx
 
 from threading import Lock
@@ -177,6 +179,22 @@ class TestLinkage:
         with pytest.raises(ValueError):
             # This is just checking that this doesn't crash
             linkage(values, method='centroid')
+
+    @pytest.mark.parametrize(
+        "func", [
+            make_xp_pytest_param(func)
+            for func in [complete, average, weighted, centroid, median, ward]
+        ]
+    )
+    def test_wrappers(self, func, xp):
+        # This test is required because it enforced that all functions advertised as
+        # supporting alt-backends must be tested with the xp fixture.
+        X = xp.asarray([[-1, -1], [0, 0], [1, 1]])
+        expected = xp.asarray(
+            linkage(_xp_copy_to_numpy(X), method=func.__name__, metric="euclidean")
+        )
+        observed = func(X)
+        xp_assert_close(observed, expected)
 
 
 @make_xp_test_case(inconsistent)
