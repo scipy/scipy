@@ -4431,6 +4431,7 @@ class TestSOSFilt:
         return a, b, sos
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions(self, dt, xp):
         a, b, sos = self._get_ab_sos(xp)
 
@@ -4458,6 +4459,7 @@ class TestSOSFilt:
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
     @skip_xp_backends('array_api_strict', reason='fancy indexing not supported')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_2(self, dt, xp):
         dt = getattr(xp, dt)
         x = xp.ones(8, dtype=dt)
@@ -4481,6 +4483,7 @@ class TestSOSFilt:
         xp_assert_close(zf[:, 0, 0, :], zi, check_dtype=False)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_initial_conditions_3d_axis1(self, dt, xp):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
@@ -4548,6 +4551,7 @@ class TestSOSFilt:
             sosfilt(sos, x, zi=zi, axis=1)
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi(self, dt, xp):
         dt = getattr(xp, dt)
         sos = signal.butter(6, 0.2, output='sos')
@@ -4562,6 +4566,7 @@ class TestSOSFilt:
         xp_assert_close(y, ss * xp.ones_like(y), rtol=1e-13)
 
     @skip_xp_backends(np_only=True)
+    @make_xp_test_case(sosfilt_zi)
     def test_sosfilt_zi_2(self, dt, xp):
         # zi as array-like
         dt = getattr(xp, dt)
