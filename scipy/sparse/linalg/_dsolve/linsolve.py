@@ -7,7 +7,6 @@ from scipy.sparse import (issparse, SparseEfficiencyWarning,
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
                                    safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
-import threading
 
 from . import _superlu
 
@@ -17,82 +16,14 @@ try:
 except ImportError:
     has_umfpack = False
 
-useUmfpack = threading.local()
 
-
-__all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
+__all__ = ['spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 class MatrixRankWarning(UserWarning):
     """Warning for exactly singular matrices."""
     pass
-
-
-def use_solver(**kwargs):
-    """
-    Select default sparse direct solver to be used.
-
-    Parameters
-    ----------
-    useUmfpack : bool, optional
-        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if ``sksparse.umfpack`` is installed. Default: True
-    assumeSortedIndices : bool, optional
-        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and ``sksparse.umfpack`` is
-        installed. Default: False
-
-    Notes
-    -----
-    The default sparse solver is UMFPACK when available
-    (``sksparse.umfpack`` is installed). This can be changed by passing
-    useUmfpack = False, which then causes the always present SuperLU
-    based solver to be used.
-
-    UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
-    sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
-    to gain some speed.
-
-    References
-    ----------
-    .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
-           multifrontal method with a column pre-ordering strategy, ACM
-           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
-           https://dl.acm.org/doi/abs/10.1145/992200.992206
-
-    .. [2] T. A. Davis, A column pre-ordering strategy for the
-           unsymmetric-pattern multifrontal method, ACM Trans.
-           on Mathematical Software, 30(2), 2004, pp. 165--195.
-           https://dl.acm.org/doi/abs/10.1145/992200.992205
-
-    .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
-           method for unsymmetric sparse matrices, ACM Trans. on
-           Mathematical Software, 25(1), 1999, pp. 1--19.
-           https://doi.org/10.1145/305658.287640
-
-    .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
-           method for sparse LU factorization, SIAM J. Matrix Analysis and
-           Computations, 18(1), 1997, pp. 140--158.
-           https://doi.org/10.1137/S0895479894246905T.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse.linalg import use_solver, spsolve
-    >>> from scipy.sparse import csc_array
-    >>> R = np.random.randn(5, 5)
-    >>> A = csc_array(R)
-    >>> b = np.random.randn(5)
-    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
-    >>> x = spsolve(A, b)
-    >>> np.allclose(A.dot(x), b)
-    True
-    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
-    """
-    global useUmfpack
-    if 'useUmfpack' in kwargs:
-        useUmfpack.u = kwargs['useUmfpack']
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
@@ -115,9 +46,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
         - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
 
     use_umfpack : bool, optional
-        if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
-        [6]_ . This is only referenced if b is a vector and
-        ``sksparse.umfpack`` is installed.
+        If True, then use UMFPACK for the solution [3]_, [4]_, [5]_,
+        [6]_ . This input is only valid if ``sksparse.umfpack`` is installed.
     rhs_batch_size : int, optional
         If ``b`` is a 2D sparse array, this parameter controls the number of
         columns to be solved simultaneously. A larger number will increase
@@ -217,10 +147,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     if M != b.shape[0]:
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
-    if not hasattr(useUmfpack, 'u'):
-        useUmfpack.u = has_umfpack
-
-    use_umfpack = use_umfpack and useUmfpack.u
+    use_umfpack = use_umfpack and has_umfpack  # only use it if available
 
     if use_umfpack:
         # sksparse.umfpack handles 1D and 2D, sparse or dense b
@@ -297,7 +224,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     return x
 
 
-# TODO use_umfpack?
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
          relax=None, panel_size=None, options=None):
     """
@@ -509,7 +435,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
                           ilu=True, options=_options)
 
 
-def factorized(A):
+def factorized(A, use_umfpack=True):
     """
     Return a function for solving a sparse linear system, with A pre-factorized.
 
@@ -518,12 +444,38 @@ def factorized(A):
     A : (N, N) array_like
         Input. A in CSC format is most efficient. A CSR format matrix will
         be converted to CSC before factorization.
+    use_umfpack : bool, optional
+        If True, use UMFPACK for the factorization [1]_, [2]_, [3]_, [4]_. This
+        input is only valid if ``sksparse.umfpack`` is installed.
 
     Returns
     -------
     solve : callable
         To solve the linear system of equations given in `A`, the `solve`
         callable should be passed an ndarray of shape (N,).
+
+    References
+    ----------
+    .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           https://dl.acm.org/doi/abs/10.1145/992200.992206
+
+    .. [2] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           https://dl.acm.org/doi/abs/10.1145/992200.992205
+
+    .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           https://doi.org/10.1145/305658.287640
+
+    .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           https://doi.org/10.1137/S0895479894246905T.
+
 
     Examples
     --------
@@ -542,13 +494,9 @@ def factorized(A):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if not hasattr(useUmfpack, 'u'):
-        useUmfpack.u = has_umfpack
+    use_umfpack = use_umfpack and has_umfpack  # only use it if available
 
-    if useUmfpack.u:
-        if not has_umfpack:
-            raise RuntimeError('sksparse.umfpack not installed.')
-
+    if use_umfpack:
         return umfpack.umf_factor(A).solve
     else:
         return splu(A).solve
