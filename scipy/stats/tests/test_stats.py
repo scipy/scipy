@@ -5039,6 +5039,31 @@ class TestKSTwoSamples:
         assert res.statistic_location == ref_location
         assert res.statistic_sign == ref_sign
 
+@make_xp_test_case(stats.ttest_rel)
+def test_ttest_rel_xp(xp):
+    # stats.ttest_rel had no tests using the xp fixture, which causes a failure
+    # in tools/check_xp_untested.py. A portion of the below test has been
+    # converted as a temporarily measure. TODO: Convert all of test_ttest_rel
+    # and refactor it into separate tests.
+    tr, pr = xp.asarray(0.81248591389165692), xp.asarray(0.41846234511362157)
+
+    rvs1 = xp.linspace(1,100,100)
+    rvs2 = xp.linspace(1.01,99.989,100)
+    rvs1_2D = xp.stack([xp.linspace(1,100,100), xp.linspace(1.01,99.989,100)])
+    rvs2_2D = xp.stack([xp.linspace(1.01,99.989,100), xp.linspace(1,100,100)])
+
+    t, p = stats.ttest_rel(rvs1, rvs2, axis=0)
+    xp_assert_close(t, tr)
+    xp_assert_close(p, pr)
+
+    t, p = stats.ttest_rel(rvs1_2D.T, rvs2_2D.T, axis=0)
+    xp_assert_close(t, xp.stack([tr, -tr]))
+    xp_assert_close(p, xp.stack([pr, pr]))
+
+    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, axis=1)
+    xp_assert_close(t, xp.stack([tr, -tr]))
+    xp_assert_close(p, xp.stack([pr, pr]))
+
 
 def test_ttest_rel():
     # regression test
