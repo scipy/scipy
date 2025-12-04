@@ -32,7 +32,7 @@ New features
 `scipy.integrate` improvements
 ==============================
 - The integration routines ``dopri5``, ``dopri853``, ``LSODA``, ``vode``, and
-``zvode`` have been ported from Fortran77 to C.
+  ``zvode`` have been ported from Fortran77 to C.
 
 `scipy.cluster` improvements
 ============================
@@ -41,19 +41,19 @@ New features
 `scipy.interpolate` improvements
 ================================
 - A new ``bc_type`` argument has been added to `scipy.interpolate.make_splrep`
-and `scipy.interpolate.make_splprep` to control the boundary conditions for
-spline fitting. Allowed values are ``"not-a-knot"`` (default) and
-``"periodic"``.
+  and `scipy.interpolate.make_splprep` to control the boundary conditions for
+  spline fitting. Allowed values are ``"not-a-knot"`` (default) and
+  ``"periodic"``.
 - A new ``derivative`` method has been added to the
-`scipy.interpolate.NdBSpline` class, to construct a new spline representing a
-partial derivative of the given spline. This method is similar to the
-``BSpline.derivative`` method of 1-D spline objects.
+  `scipy.interpolate.NdBSpline` class, to construct a new spline representing a
+  partial derivative of the given spline. This method is similar to the
+  ``BSpline.derivative`` method of 1-D spline objects.
 - Performance of ``"cubic"`` and ``"quintic"`` modes of
-`scipy.interpolate.RegularGridInterpolator` has been improved.
+  `scipy.interpolate.RegularGridInterpolator` has been improved.
 - Numerical stability of `scipy.interpolate.AAA` has been improved.
 - `scipy.interpolate.FloaterHormannInterpolator` added support for
-multidimensional, batched inputs and gained a new ``axis`` parameter to
-select the interpolation axis.
+  multidimensional, batched inputs and gained a new ``axis`` parameter to
+  select the interpolation axis.
 
 
 `scipy.linalg` improvements
@@ -80,111 +80,111 @@ select the interpolation axis.
 `scipy.optimize` improvements
 =============================
 - `~scipy.optimize.minimize(method="trust-exact")` now accepts a
-solver-specific "subproblem_maxiter" option. This option can be used to
-assure that the algorithm converges for functions with an ill-conditioned
-Hessian.
+  solver-specific "subproblem_maxiter" option. This option can be used to
+  assure that the algorithm converges for functions with an ill-conditioned
+  Hessian.
 - Callback functions used by `~scipy.optimize.minimize(method="slsqp")` can
-opt into the new callback interface by accepting a single keyword argument
-``intermediate_result``.
+  opt into the new callback interface by accepting a single keyword argument
+  ``intermediate_result``.
 
 
 `scipy.signal` improvements
 ===========================
 - `~scipy.signal.abcd_normalize` gained more informative error messages and the
-documentation was improved.
+  documentation was improved.
 - `~scipy.signal.get_window` now accepts the suffixes ``'_periodic'`` and
-``'_symmetric'`` to distinguish between periodic and symmetric windows
-(overriding the ``fftbin`` parameter). This benefits the functions
-``coherence``, ``csd``, ``periodogram``, ``welch``, ``spectrogram``,
-``stft``, ``istft``, ``resample``, ``resample_poly``, ``firwin``,
-``firwin2``, ``firwin_2d``, ``check_COLA`` and ``check_NOLA``, which utilize
-``get_window`` but do not expose the ``fftbin`` parameter.
+  ``'_symmetric'`` to distinguish between periodic and symmetric windows
+  (overriding the ``fftbin`` parameter). This benefits the functions
+  ``coherence``, ``csd``, ``periodogram``, ``welch``, ``spectrogram``,
+  ``stft``, ``istft``, ``resample``, ``resample_poly``, ``firwin``,
+  ``firwin2``, ``firwin_2d``, ``check_COLA`` and ``check_NOLA``, which utilize
+  ``get_window`` but do not expose the ``fftbin`` parameter.
 - `~scipy.signal.hilbert` gained the new keyword ``axes`` for specifying the
-axes along which the two-dimensional analytic signal should be calculated.
-Furthermore, its documentation was significantly improved.
+  axes along which the two-dimensional analytic signal should be calculated.
+  Furthermore, its documentation was significantly improved.
 
 
 `scipy.sparse` improvements
 ===========================
 - ARPACK Fortran77 library is ported to C. Among many changes, it is now
-possible to use external random generators including NumPy PRNGs for
-reproducible runs. Previously this was not the case due to internal seeding
-behavior of the original ARPACK code.
+  possible to use external random generators including NumPy PRNGs for
+  reproducible runs. Previously this was not the case due to internal seeding
+  behavior of the original ARPACK code.
 - Similarly, PROPACK Fortran77 library is also ported to C with the same PRNG
-enhancements and other improvements.
+  enhancements and other improvements.
 - `~scipy.sparse.dok_array` now supports an ``update`` method which can be
-used to update the sparse array using a dict, ``dict.items()``-like iterable,
-or another ``dok_array`` matrix. It performs additional validation that keys
-are valid index tuples.
+  used to update the sparse array using a dict, ``dict.items()``-like iterable,
+  or another ``dok_array`` matrix. It performs additional validation that keys
+  are valid index tuples.
 - `~scipy.sparse.dia_array.tocsr()` is approximately three times faster.
 
 `scipy.spatial` improvements
 ============================
-- The `spatial.transform` module has gained an array API standard compatible
-backend.
+- The ``spatial.transform`` module has gained an array API standard compatible
+  backend.
 - ``transform.Rotation`` and ``transform.RigidTransform`` have been extended
-from 0D single values and 1D arrays to N-D arrays, with standard indexing and
-broadcasting rules. Both now have the following additions:
+  from 0D single values and 1D arrays to N-D arrays, with standard indexing and
+  broadcasting rules. Both now have the following additions:
 
   - A ``shape`` property.
   - A ``shape`` argument to their ``identity()`` constructors, which should be
-  preferred over the existing ``num`` argument. This has also been added as an
-  argument for ``Rotation.random()`` (``RigidTransform`` does not currently
-  have a ``random`` constructor).
+    preferred over the existing ``num`` argument. This has also been added as an
+    argument for ``Rotation.random()`` (``RigidTransform`` does not currently
+    have a ``random`` constructor).
   - An ``axis`` argument to their ``mean()`` functions.
 
 - The resulting shapes for ``transform.Rotation.from_euler`` /
-``from_davenport`` have changed to make them consistent with broadcasting
-rules. Angle inputs to Euler angles must now strictly match the number of
-provided axes in the last dimension. The resulting ``Rotation`` has the shape
-``np.atleast_1d(angles).shape[:-1]``. Angle inputs to Davenport angles must
-also match the number of axes in the last dimension. The resulting ``Rotation``
-has the shape ``np.broadcast_shapes(np.atleast_2d(axes).shape[:-2],
-np.atleast_1d(angles).shape[:-1])``.
+  ``from_davenport`` have changed to make them consistent with broadcasting
+  rules. Angle inputs to Euler angles must now strictly match the number of
+  provided axes in the last dimension. The resulting ``Rotation`` has the shape
+  ``np.atleast_1d(angles).shape[:-1]``. Angle inputs to Davenport angles must
+  also match the number of axes in the last dimension. The resulting ``Rotation``
+  has the shape ``np.broadcast_shapes(np.atleast_2d(axes).shape[:-2],
+  np.atleast_1d(angles).shape[:-1])``.
 - The `spatial.geometric_slerp` function can now extrapolate. When given a
-value outside the range [0, 1], ``geometric_slerp()`` will continue with
-the same rotation outside this range. For example, if spherically
-interpolating with ``start`` being a point on the equator, and ``end``
-being a point at the north pole, then a value of ``t=-1`` would give you a
-point at the south pole.
+  value outside the range [0, 1], ``geometric_slerp()`` will continue with
+  the same rotation outside this range. For example, if spherically
+  interpolating with ``start`` being a point on the equator, and ``end``
+  being a point at the north pole, then a value of ``t=-1`` would give you a
+  point at the south pole.
 
 `scipy.special` improvements
 ============================
 - The following functions for statistical applications have significantly
-improved parameter ranges and reduced error rates: ``btdtria``, ``btdtrib``,
-``chdtriv``, ``chndtr``, ``chndtrix``, ``chndtridf``, ``chndtrinc``, ``fdtr``,
-``fdtrc``, ``fdtri``, ``pdtrik``, ``stdtr`` and ``stdtrit``.
+  improved parameter ranges and reduced error rates: ``btdtria``, ``btdtrib``,
+  ``chdtriv``, ``chndtr``, ``chndtrix``, ``chndtridf``, ``chndtrinc``, ``fdtr``,
+  ``fdtrc``, ``fdtri``, ``pdtrik``, ``stdtr`` and ``stdtrit``.
 
 
 `scipy.stats` improvements
 ==========================
 - `scipy.stats.matrix_t` has been added to represent the matrix t distribution.
-It supports methods ``pdf`` (and ``logpdf``) for computing the probability
-density function and ``rvs`` for generating random variates.
+  It supports methods ``pdf`` (and ``logpdf``) for computing the probability
+  density function and ``rvs`` for generating random variates.
 - `scipy.stats.Logistic` was added for modeling random variables that follow a
-logistic distribution.
+  logistic distribution.
 - `scipy.stats.quantile` now accepts a ``weights`` argument to specify
-frequency weights.
+  frequency weights.
 - `scipy.stats.quantile` supports three new values of the ``method`` argument,
-``'round_inward'``, ``'round_outward'``, and ``'round_neareast'``, for use in
-the context of trimming and winsorizing data.
+  ``'round_inward'``, ``'round_outward'``, and ``'round_neareast'``, for use in
+  the context of trimming and winsorizing data.
 - `scipy.stats.truncpareto` now accepts negative values for the exponent shape
-parameter, enabling use of ``truncpareto`` as a more general power law
-distribution.
+  parameter, enabling use of ``truncpareto`` as a more general power law
+  distribution.
 - `scipy.stats.logser` now provides a distribution-specific implementation of
-the ``sf`` method, improving speed and accuracy.
+  the ``sf`` method, improving speed and accuracy.
 - Implementations of the following function have been vectorized:
-`scipy.stats.ansari`, `scipy.stats.cramervonmises`,
-`scipy.stats.cramervonmises_2samp`, `scipy.stats.epps_singleton_2samp`,
-`scipy.stats.fligner`, `scipy.stats.friedmanchisquare`, `scipy.stats.kruskal`,
-`scipy.stats.ks_1samp`, `scipy.stats.levene`, and `scipy.stats.mood`.
-Typically, this improves performance with multidimensional (batch) input.
+  `scipy.stats.ansari`, `scipy.stats.cramervonmises`,
+  `scipy.stats.cramervonmises_2samp`, `scipy.stats.epps_singleton_2samp`,
+  `scipy.stats.fligner`, `scipy.stats.friedmanchisquare`, `scipy.stats.kruskal`,
+  `scipy.stats.ks_1samp`, `scipy.stats.levene`, and `scipy.stats.mood`.
+  Typically, this improves performance with multidimensional (batch) input.
 - The critical value tables of `scipy.stats.anderson` have been updated.
 - The speed and accuracy of most `scipy.stats.zipfian` methods has been
-improved.
+  improved.
 - The accuracies of the `scipy.stats.Binomial` methods ``logcdf`` and
-``logccdf`` have been improved in the tails.
-- The default guess of `scipy.stats.trapezoid.fit` has been improved.
+  ``logccdf`` have been improved in the tails.
+- The default guess of ``scipy.stats.trapezoid.fit`` has been improved.
 
 
 **************************
@@ -194,63 +194,63 @@ Array API Standard Support
 - `scipy.integrate.qmc_quad`
 - `scipy.linalg.block_diag`
 - Support added for `scipy.stats.alexandergovern`, `scipy.stats.bootstrap`,
-`scipy.stats.brunnermunzel`, `scipy.stats.chatterjeexi`,
-`scipy.stats.cramervonmises`, `scipy.stats.cramervonmises_2samp`,
-`scipy.stats.epps_singleton_2samp`, `scipy.stats.false_discovery_control`,
-`scipy.stats.fligner`, `scipy.stats.friedmanchisquare`, `scipy.stats.iqr`,
-`scipy.stats.kruskal`, `scipy.stats.ks_1samp`, `scipy.stats.levene`,
-`scipy.stats.lmoment`, `scipy.stats.mannwhitneyu`,
-`scipy.stats.median_abs_deviation`, `scipy.stats.mode`, `scipy.stats.mood`,
-`scipy.stats.power`, `scipy.stats.permutation_test`, `scipy.stats.sigmaclip`,
-`scipy.stats.wilcoxon`, and `scipy.stats.yeojohnson_llf`.
+  `scipy.stats.brunnermunzel`, `scipy.stats.chatterjeexi`,
+  `scipy.stats.cramervonmises`, `scipy.stats.cramervonmises_2samp`,
+  `scipy.stats.epps_singleton_2samp`, `scipy.stats.false_discovery_control`,
+  `scipy.stats.fligner`, `scipy.stats.friedmanchisquare`, `scipy.stats.iqr`,
+  `scipy.stats.kruskal`, `scipy.stats.ks_1samp`, `scipy.stats.levene`,
+  `scipy.stats.lmoment`, `scipy.stats.mannwhitneyu`,
+  `scipy.stats.median_abs_deviation`, `scipy.stats.mode`, `scipy.stats.mood`,
+  `scipy.stats.power`, `scipy.stats.permutation_test`, `scipy.stats.sigmaclip`,
+  `scipy.stats.wilcoxon`, and `scipy.stats.yeojohnson_llf`.
 
 **************************************
 Deprecated features and future changes
 **************************************
 - The `scipy.odr` module is deprecated in v1.17.0 and will be completely
-removed in v1.19.0. Users are suggested to use the ``odrpack`` package instead.
+  removed in v1.19.0. Users are suggested to use the ``odrpack`` package instead.
 
 ********************
 Expired deprecations
 ********************
-- `scipy.stats.find_repeats`
+- ``scipy.stats.find_repeats``
 - `scipy.linalg` functions for Toeplitz matrices no longer ravel n-d input
-arguments; instead, multidimensional input is treated as a batch.
+  arguments; instead, multidimensional input is treated as a batch.
 
 
 ******************************
 Backwards incompatible changes
 ******************************
 - The resulting shapes for ``transform.Rotation.from_euler`` /
-``from_davenport`` have changed to make them consistent with broadcasting
-rules. Angle inputs to Euler angles must now strictly match the number of
-provided axes in the last dimension. The resulting ``Rotation`` has the shape
-``np.atleast_1d(angles).shape[:-1]``. Angle inputs to Davenport angles must
-also match the number of axes in the last dimension. The resulting ``Rotation``
-has the shape ``np.broadcast_shapes(np.atleast_2d(axes).shape[:-2],
-np.atleast_1d(angles).shape[:-1])``.
+  ``from_davenport`` have changed to make them consistent with broadcasting
+  rules. Angle inputs to Euler angles must now strictly match the number of
+  provided axes in the last dimension. The resulting ``Rotation`` has the shape
+  ``np.atleast_1d(angles).shape[:-1]``. Angle inputs to Davenport angles must
+  also match the number of axes in the last dimension. The resulting ``Rotation``
+  has the shape ``np.broadcast_shapes(np.atleast_2d(axes).shape[:-2],
+  np.atleast_1d(angles).shape[:-1])``.
 
 *************
 Other changes
 *************
 - On POSIX operating systems, SciPy will now use the ``'forkserver'``
-multiprocessing context on Python 3.13 and older for ``workers=<an-int>``
-calls if the user hasn't configured a default method themselves. This follows
-the default behavior on Python 3.14.
+  multiprocessing context on Python 3.13 and older for ``workers=<an-int>``
+  calls if the user hasn't configured a default method themselves. This follows
+  the default behavior on Python 3.14.
 - Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has been
-added. To enable it, build SciPy with ``-Duse-ilp64=true`` meson option, and make
-sure to have a LAPACK library which exposes both LP64 and ILP64 symbols.
-Currently supported LAPACK libraries are MKL, Apple Accelerate and OpenBLAS
-through the ``scipy-openblas64`` package. Note that:
+  added. To enable it, build SciPy with ``-Duse-ilp64=true`` meson option, and make
+  sure to have a LAPACK library which exposes both LP64 and ILP64 symbols.
+  Currently supported LAPACK libraries are MKL, Apple Accelerate and OpenBLAS
+  through the ``scipy-openblas64`` package. Note that:
 
   - the ILP64 support is optional, and is in addition to the always-available
-  LP64 interface;
+    LP64 interface;
   - at runtime, you can select the ILP64 variants via the
-  ``get_{blas,lapack}_funcs`` functions:
-  ``scipy.linalg.lapack.get_lapack_funcs(..., use_ilp64="preferred")`` selects
-  the ILP64 variant if available and LP64 variant otherwise;
+    ``get_{blas,lapack}_funcs`` functions:
+    ``scipy.linalg.lapack.get_lapack_funcs(..., use_ilp64="preferred")`` selects
+    the ILP64 variant if available and LP64 variant otherwise;
   - ``cython_blas`` and ``cython_lapack`` modules always contain the LP64
-  routines for ABI compatibility.
+    routines for ABI compatibility.
 
 Please report any issues with ILP64 you encounter.
 
@@ -720,7 +720,7 @@ Pull requests for 1.17.0
 * `#23465 <https://github.com/scipy/scipy/pull/23465>`__: BUG: sparse: nD sparse save_npz and load_npz
 * `#23466 <https://github.com/scipy/scipy/pull/23466>`__: DOC: Remove boilerplate text in a remark
 * `#23467 <https://github.com/scipy/scipy/pull/23467>`__: ENH: spatial.transform.Rotation: support broadcasting
-* `#23468 <https://github.com/scipy/scipy/pull/23468>`__: DOC: optimize.shgo: correct ``minimize_every_iter `` description
+* `#23468 <https://github.com/scipy/scipy/pull/23468>`__: DOC: optimize.shgo: correct ``minimize_every_iter`` description
 * `#23470 <https://github.com/scipy/scipy/pull/23470>`__: DOC: Update a link about numba support
 * `#23473 <https://github.com/scipy/scipy/pull/23473>`__: DOC: special.hankel1: add example and remove old docstring copy
 * `#23476 <https://github.com/scipy/scipy/pull/23476>`__: DEP: signal.lombscargle: deprecate argument ``precenter``
@@ -855,7 +855,7 @@ Pull requests for 1.17.0
 * `#23745 <https://github.com/scipy/scipy/pull/23745>`__: DOC: stats.beta: document issues with 3- and 4- parameter MLE
 * `#23746 <https://github.com/scipy/scipy/pull/23746>`__: ENH: add Array API support to RBFInterpolator
 * `#23752 <https://github.com/scipy/scipy/pull/23752>`__: DOC: Move a paragraph from code to markdown in ndimage tutorial
-* `#23753 <https://github.com/scipy/scipy/pull/23753>`__: MAINT: interpolate: use xp-capabilities for make_\* functions
+* `#23753 <https://github.com/scipy/scipy/pull/23753>`__: MAINT: interpolate: use xp-capabilities for ``make\_`` functions
 * `#23755 <https://github.com/scipy/scipy/pull/23755>`__: BUG: interpolate: fail gracefully if all weights are zero
 * `#23759 <https://github.com/scipy/scipy/pull/23759>`__: ENH: interpolate: make NdBSpline and RGI Array API compatible
 * `#23764 <https://github.com/scipy/scipy/pull/23764>`__: DOC: special: consistent modified Bessel order and fix Hankel...
