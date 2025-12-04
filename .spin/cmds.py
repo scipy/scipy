@@ -638,6 +638,19 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
     ]
     util.run(cmd_check_test_name)
 
+
+@click.command()
+@click.pass_context
+def check_xp_untested(ctx):
+    """Check for functions advertising alt backend support without tests."""
+    cmd_prefix = ["spin", "python"]
+    cmd_check_xp_untested = cmd_prefix + [
+        os.path.join("tools", "check_xp_untested.py")
+    ]
+    print(cmd_check_xp_untested)
+    util.run(cmd_check_xp_untested)
+
+
 # From scipy: benchmarks/benchmarks/common.py
 def _set_mem_rlimit(max_mem=None):
     """
