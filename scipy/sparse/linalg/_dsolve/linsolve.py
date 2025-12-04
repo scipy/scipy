@@ -18,12 +18,7 @@ except ImportError:
 
 
 __all__ = ['spsolve', 'splu', 'spilu', 'factorized',
-           'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
-
-
-class MatrixRankWarning(UserWarning):
-    """Warning for exactly singular matrices."""
-    pass
+           'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
@@ -151,7 +146,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
 
     if use_umfpack:
         # sksparse.umfpack handles 1D and 2D, sparse or dense b
-        x = umfpack.umf_solve(A, b, rhs_batch_size=rhs_batch_size)
+        try:
+            x = umfpack.umf_solve(A, b, rhs_batch_size=rhs_batch_size)
+        except umfpack.UMFPACKSingularMatrixError as e:
+            raise LinAlgError("A is singular.") from e
 
         # Convert back to consistent sparse class
         if b_is_sparse and not b_is_vector:
@@ -173,12 +171,13 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
         x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                 b, flag, options=options)
         if info != 0:
-            # TODO raise? splu raises, and la.solve raises LinAlgError.
-            warn("Matrix is exactly singular", MatrixRankWarning, stacklevel=2)
-            x.fill(np.nan)
+            raise LinAlgError("A is singular.")
     else:
         # Sparse SuperLU solver
-        Afactsolve = splu(A, permc_spec=permc_spec).solve
+        try:
+            Afactsolve = splu(A, permc_spec=permc_spec).solve
+        except RuntimeError as e:
+            raise LinAlgError("A is singular.") from e
 
         if b_is_vector:
             # convert to 2D sparse matrix with one column

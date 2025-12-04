@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'MatrixRankWarning', 'SuperLU', 'factorized',
+    'SuperLU', 'factorized',
     'spilu', 'splu', 'spsolve',
     'spsolve_triangular', 'use_solver', 'test'
 ]
