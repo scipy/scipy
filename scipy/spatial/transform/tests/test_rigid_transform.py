@@ -1460,7 +1460,11 @@ def test_pickling(xp):
     xp_assert_close(tf.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-@make_xp_test_case(RigidTransform.as_matrix, RigidTransform.__iter__)
+@make_xp_test_case(
+    RigidTransform.as_matrix,
+    RigidTransform.__iter__,
+    RigidTransform.identity,
+)
 def test_rigid_transform_iter(xp):
     r = rigid_transform_to_xp(RigidTransform.identity(3), xp)
     for i, r_i in enumerate(r):
