@@ -55,13 +55,18 @@ if __name__ == "__main__":
             # We can use this to identify which functions have associated tests
             # using the `xp` fixture.
             for item in items:
-                marker = item.get_closest_marker("uses_xp_capabilities")
-                if marker is None:
-                    continue
-                funcs = marker.kwargs.get("funcs")
-                if funcs is None:
-                    continue
-                tested_functions.update(funcs)
+                current = item
+                # `make_xp_test_case` can be used separately on both a test method
+                # and test class. It's not sufficient to just get the closest marker,
+                # this needs to walk the hierarchy to get all `uses_xp_capabilities`
+                # markers.
+                while current is not None:
+                    marker = current.get_closest_marker("uses_xp_capabilities")
+                    if marker is not None:
+                        funcs = marker.kwargs.get("funcs", [])
+                        tested_functions.update(funcs)
+                    current = current.parent
+
 
     with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull):
         # Suppress output because it is extremely long and not needed.
