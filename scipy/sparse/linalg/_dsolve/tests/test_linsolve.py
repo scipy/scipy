@@ -19,7 +19,7 @@ from scipy.sparse import (issparse, SparseEfficiencyWarning,
                           eye_array, random_array, tril, triu, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, splu, spilu,
-        MatrixRankWarning, _superlu, spsolve_triangular, factorized,
+        _superlu, spsolve_triangular, factorized,
         is_sptriangular, spbandwidth)
 import scipy.sparse
 
@@ -29,7 +29,10 @@ from scipy._lib._testutils import check_free_memory
 # sksparse.umfpack is not a SciPy dependency but it is optionally used in
 # dsolve, so check whether it's available
 try:
-    from sksparse.umfpack import UMFPACKError, UMFPACKSingularMatrixWarning
+    from sksparse.umfpack import (
+        UMFPACKSingularMatrixError,
+        UMFPACKSingularMatrixWarning,
+    )
     has_umfpack = True
 except ImportError:
     has_umfpack = False
@@ -81,8 +84,9 @@ class TestFactorized:
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_singular_with_umfpack(self):
-        # FIXME? umf_factor will warn with UMFPACKSingularMatrixWarning, but
-        # then the solve will raise UMFPACKError for exactly singular matrix.
+        # NOTE umf_factor (called by factorized) will warn with
+        # UMFPACKSingularMatrixWarning, but then the solve will raise
+        # UMFPACKSingularMatrixError for an exactly singular matrix.
         #   * SuperLU raises a RuntimeError on factorization.
         #   * scipy.linalg.lu(A) does not raise or warn
         #   * scipy.linalg.solve(A, b) raises a LinAlgError on solve.
@@ -91,7 +95,8 @@ class TestFactorized:
         # one of these is raised?
         with assert_warns(UMFPACKSingularMatrixWarning, match="Matrix is singular"):
             with assert_raises(
-                UMFPACKError, match="indefinite or singular to working precision"
+                UMFPACKSingularMatrixError,
+                match="indefinite or singular to working precision"
             ):
                 self._check_singular(use_umfpack=True)
 
@@ -180,11 +185,8 @@ class TestLinsolve:
     def test_singular(self):
         A = csc_array((5,5), dtype='d')
         b = array([1, 2, 3, 4, 5],dtype='d')
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Matrix is exactly singular", MatrixRankWarning)
-            x = self.spsolve(A, b)
-        assert_(not np.isfinite(x).any())
+        with assert_raises(scipy.linalg.LinAlgError, match="A is singular"):
+            self.spsolve(A, b)
 
     def test_singular_gh_3312(self):
         # "Bad" test case that leads SuperLU to call LAPACK with invalid
@@ -197,11 +199,8 @@ class TestLinsolve:
         try:
             # should either raise a runtime error or return value
             # appropriate for singular input (which yields the warning)
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore", "Matrix is exactly singular", MatrixRankWarning)
-                x = self.spsolve(A, b)
-            assert not np.isfinite(x).any()
+            with assert_raises(scipy.linalg.LinAlgError, match="A is singular"):
+                self.spsolve(A, b)
         except RuntimeError:
             pass
 
@@ -714,9 +713,8 @@ class TestSplu:
         A = eye_array(10, format='csr')
         A[-1, -1] = 0
         b = np.zeros(10)
-        with pytest.warns(MatrixRankWarning):
-            res = self.spsolve(A, b)
-            assert np.isnan(res).all()
+        with assert_raises(scipy.linalg.LinAlgError, match="A is singular"):
+            self.spsolve(A, b)
 
 
 class TestGstrsErrors:
