@@ -33,6 +33,10 @@ from scipy._lib._public_api import PUBLIC_MODULES
 if __name__ == "__main__":
 
     if not SCIPY_ARRAY_API:
+        print(
+            "check_xp_untested will only be run if the environment variable"
+            " SCIPY_ARRAY_API=1"
+        )
         sys.exit(0)
 
     # `xp_capabilities_table` is populated lazily, so need to import
