@@ -48,7 +48,6 @@ Direct methods for linear equation systems:
    spbandwidth -- Find the bandwidth of a sparse matrix.
    factorized -- Pre-factorize matrix to a function solving a linear system
    MatrixRankWarning -- Warning on exactly singular matrices
-   use_solver -- Select direct solver to use
 
 Iterative methods for linear equation systems:
 
