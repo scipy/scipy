@@ -1,3 +1,4 @@
+from functools import partial
 import sys
 import threading
 import warnings
@@ -15,7 +16,7 @@ from scipy.linalg import norm, inv
 from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
         csr_array, eye_array, issparse, dok_array, lil_array, bsr_array, kron)
 from scipy.sparse.linalg import SuperLU
-from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
+from scipy.sparse.linalg._dsolve import (spsolve, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized,
         is_sptriangular, spbandwidth)
 import scipy.sparse
@@ -23,7 +24,7 @@ import scipy.sparse
 from scipy._lib._testutils import check_free_memory
 
 
-# scikits.umfpack is not a SciPy dependency but it is optionally used in
+# sksparse.umfpack is not a SciPy dependency but it is optionally used in
 # dsolve, so check whether it's available
 try:
     from sksparse.umfpack import UMFPACKError, UMFPACKSingularMatrixWarning
@@ -57,12 +58,12 @@ class TestFactorized:
         self.n = n
         self.A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(n,n)).tocsc()
 
-    def _check_singular(self):
+    def _check_singular(self, use_umfpack=False):
         A = csc_array((5,5), dtype='d')
         b = ones(5)
-        assert_array_almost_equal(0. * b, factorized(A)(b))
+        assert_array_almost_equal(0. * b, factorized(A, use_umfpack)(b))
 
-    def _check_non_singular(self):
+    def _check_non_singular(self, use_umfpack=False):
         # Make a diagonal dominant, to make sure it is not singular
         n = 5
         rng = np.random.default_rng(14332)
@@ -70,16 +71,14 @@ class TestFactorized:
         b = ones(n)
 
         expected = splu(a).solve(b)
-        assert_array_almost_equal(factorized(a)(b), expected)
+        assert_array_almost_equal(factorized(a, use_umfpack)(b), expected)
 
     def test_singular_without_umfpack(self):
-        use_solver(useUmfpack=False)
         with assert_raises(RuntimeError, match="Factor is exactly singular"):
-            self._check_singular()
+            self._check_singular(use_umfpack=False)
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_singular_with_umfpack(self):
-        use_solver(useUmfpack=True)
         # FIXME? umf_factor will warn with UMFPACKSingularMatrixWarning, but
         # then the solve will raise UMFPACKError for exactly singular matrix.
         #   * SuperLU raises a RuntimeError on factorization.
@@ -92,32 +91,27 @@ class TestFactorized:
             with assert_raises(
                 UMFPACKError, match="indefinite or singular to working precision"
             ):
-                self._check_singular()
+                self._check_singular(use_umfpack=True)
 
     def test_non_singular_without_umfpack(self):
-        use_solver(useUmfpack=False)
-        self._check_non_singular()
+        self._check_non_singular(use_umfpack=False)
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_non_singular_with_umfpack(self):
-        use_solver(useUmfpack=True)
-        self._check_non_singular()
+        self._check_non_singular(use_umfpack=True)
 
     def test_cannot_factorize_nonsquare_matrix_without_umfpack(self):
-        use_solver(useUmfpack=False)
         msg = "can only factor square matrices"
         with assert_raises(ValueError, match=msg):
-            factorized(self.A[:, :4])
+            factorized(self.A[:, :4], use_umfpack=False)
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_factorizes_nonsquare_matrix_with_umfpack(self):
-        use_solver(useUmfpack=True)
         # does not raise
-        factorized(self.A[:,:4])
+        factorized(self.A[:,:4], use_umfpack=True)
 
     def test_call_with_incorrectly_sized_matrix_without_umfpack(self):
-        use_solver(useUmfpack=False)
-        solve = factorized(self.A)
+        solve = factorized(self.A, use_umfpack=False)
 
         rng = np.random.default_rng(230498)
         b = rng.random(4)
@@ -134,8 +128,7 @@ class TestFactorized:
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_call_with_incorrectly_sized_matrix_with_umfpack(self):
-        use_solver(useUmfpack=True)
-        solve = factorized(self.A)
+        solve = factorized(self.A, use_umfpack=True)
 
         rng = np.random.default_rng(643095823)
         b = rng.random(4)
@@ -151,8 +144,7 @@ class TestFactorized:
             solve(BB)
 
     def test_call_with_cast_to_complex_without_umfpack(self):
-        use_solver(useUmfpack=False)
-        solve = factorized(self.A)
+        solve = factorized(self.A, use_umfpack=False)
         rng = np.random.default_rng(23454)
         b = rng.random(5)
         for t in [np.complex64, np.complex128]:
@@ -161,52 +153,27 @@ class TestFactorized:
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_call_with_cast_to_complex_with_umfpack(self):
-        use_solver(useUmfpack=True)
-        solve = factorized(self.A)
+        solve = factorized(self.A, use_umfpack=True)
         rng = np.random.default_rng(23454)
         b = rng.random(5)
         for t in [np.complex64, np.complex128]:
             with assert_raises(TypeError, match="Cannot safely cast"):
                 solve(b.astype(t))
 
-    @pytest.mark.skip(reason="option not implemented in sksparse.umfpack")
-    @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
-    def test_assume_sorted_indices_flag(self):
-        # a sparse matrix with unsorted indices
-        unsorted_inds = np.array([2, 0, 1, 0])
-        data = np.array([10, 16, 5, 0.4])
-        indptr = np.array([0, 1, 2, 4])
-        A = csc_array((data, unsorted_inds, indptr), (3, 3))
-        b = ones(3)
-
-        # should raise when incorrectly assuming indices are sorted
-        use_solver(useUmfpack=True, assumeSortedIndices=True)
-        with assert_raises(RuntimeError,
-                           match="UMFPACK_ERROR_invalid_matrix"):
-            factorized(A)
-
-        # should sort indices and succeed when not assuming indices are sorted
-        use_solver(useUmfpack=True, assumeSortedIndices=False)
-        expected = splu(A.copy()).solve(b)
-
-        assert_equal(A.has_sorted_indices, 0)
-        assert_array_almost_equal(factorized(A)(b), expected)
-
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         check_free_memory(8000)
-        use_solver(useUmfpack=True)
         A, b = setup_bug_8278()
         A = A.tocsc()
-        f = factorized(A)
+        f = factorized(A, use_umfpack=True)
         x = f(b)
         assert_array_almost_equal(A @ x, b)
 
 
 class TestLinsolve:
     def setup_method(self):
-        use_solver(useUmfpack=False)
+        self.spsolve = partial(spsolve, use_umfpack=False)
 
     def test_singular(self):
         A = csc_array((5,5), dtype='d')
@@ -214,7 +181,7 @@ class TestLinsolve:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Matrix is exactly singular", MatrixRankWarning)
-            x = spsolve(A, b)
+            x = self.spsolve(A, b)
         assert_(not np.isfinite(x).any())
 
     def test_singular_gh_3312(self):
@@ -231,7 +198,7 @@ class TestLinsolve:
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore", "Matrix is exactly singular", MatrixRankWarning)
-                x = spsolve(A, b)
+                x = self.spsolve(A, b)
             assert not np.isfinite(x).any()
         except RuntimeError:
             pass
@@ -253,7 +220,7 @@ class TestLinsolve:
             Asp.indices = Asp.indices.astype(idx_dtype, copy=False)
             Asp.indptr = Asp.indptr.astype(idx_dtype, copy=False)
 
-            x = spsolve(Asp, b)
+            x = self.spsolve(Asp, b)
             assert_(norm(b - Asp@x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
@@ -264,7 +231,7 @@ class TestLinsolve:
         rng = np.random.default_rng(1234)
         x = rng.standard_normal(3)
         b = As@x
-        x2 = spsolve(As, b)
+        x2 = self.spsolve(As, b)
 
         assert_array_almost_equal(x, x2)
 
@@ -277,7 +244,7 @@ class TestLinsolve:
         x = rng.standard_normal((3, 4))
         Bdense = As.dot(x)
         Bs = csc_array(Bdense)
-        x2 = spsolve(As, Bs)
+        x2 = self.spsolve(As, Bs)
         assert_array_almost_equal(x, x2.toarray())
 
     def test_non_square(self):
@@ -286,11 +253,11 @@ class TestLinsolve:
             # A is not square.
             A = ones((3, 4))
             b = ones((4, 1))
-            assert_raises(ValueError, spsolve, A, b)
+            assert_raises(ValueError, self.spsolve, A, b)
             # A2 and b2 have incompatible shapes.
             A2 = csc_array(eye(3))
             b2 = array([1.0, 2.0])
-            assert_raises(ValueError, spsolve, A2, b2)
+            assert_raises(ValueError, self.spsolve, A2, b2)
 
     def test_example_comparison(self):
         with warnings.catch_warnings():
@@ -307,7 +274,7 @@ class TestLinsolve:
             sN = csr_array((data, (row,col)), shape=(3,3), dtype=float)
             N = sN.toarray()
 
-            sX = spsolve(sM, sN)
+            sX = self.spsolve(sM, sN)
             X = scipy.linalg.solve(M, N)
 
             assert_array_almost_equal(X, sX.toarray())
@@ -316,7 +283,6 @@ class TestLinsolve:
     def test_shape_compatibility(self):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', SparseEfficiencyWarning)
-            use_solver(useUmfpack=True)
             A = csc_array([[1., 0], [0, 2]])
             bs = [
                 [1, 6],
@@ -340,8 +306,8 @@ class TestLinsolve:
             for spmattype in [csc_array, csr_array, dok_array, lil_array]:
                 with warnings.catch_warnings():
                     warnings.simplefilter('ignore', SparseEfficiencyWarning)
-                    x1 = spsolve(spmattype(A), b, use_umfpack=True)
-                    x2 = spsolve(spmattype(A), b, use_umfpack=False)
+                    x1 = self.spsolve(spmattype(A), b, use_umfpack=True)
+                    x2 = self.spsolve(spmattype(A), b, use_umfpack=False)
 
                 assert_array_almost_equal(toarray(x1), x,
                                           err_msg=repr((b, spmattype, 1)))
@@ -362,7 +328,7 @@ class TestLinsolve:
 
         A = csc_array((3, 3))
         b = csc_array((1, 3))
-        assert_raises(ValueError, spsolve, A, b)
+        assert_raises(ValueError, self.spsolve, A, b)
 
     def test_ndarray_support(self):
         with warnings.catch_warnings():
@@ -371,7 +337,7 @@ class TestLinsolve:
             x = array([[1., 1.], [0.5, -0.5]])
             b = array([[2., 0.], [2., 2.]])
 
-            assert_array_almost_equal(x, spsolve(A, b))
+            assert_array_almost_equal(x, self.spsolve(A, b))
 
     def test_gssv_badinput(self):
         N = 10
@@ -418,7 +384,7 @@ class TestLinsolve:
             [0, 1],
             [1, 0],
             [0, 0]])
-        x = spsolve(ident, b)
+        x = self.spsolve(ident, b)
         assert_equal(ident.nnz, 3)
         assert_equal(b.nnz, 2)
         assert_equal(x.nnz, 2)
@@ -433,32 +399,31 @@ class TestLinsolve:
                                              [4, 0, 5 + 1j]])
         b_real = np.array([1,1,1])
         b_complex = np.array([1,1,1]) + 1j*np.array([1,1,1])
-        x = spsolve(A_real, b_real)
+        x = self.spsolve(A_real, b_real)
         assert_(np.issubdtype(x.dtype, np.floating))
-        x = spsolve(A_real, b_complex)
+        x = self.spsolve(A_real, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
-        x = spsolve(A_complex, b_real)
+        x = self.spsolve(A_complex, b_real)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
-        x = spsolve(A_complex, b_complex)
+        x = self.spsolve(A_complex, b_complex)
         assert_(np.issubdtype(x.dtype, np.complexfloating))
 
     @pytest.mark.slow
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_bug_8278(self):
         check_free_memory(8000)
-        use_solver(useUmfpack=True)
         A, b = setup_bug_8278()
-        x = spsolve(A, b)
+        x = self.spsolve(A, b, use_umfpack=True)
         assert_array_almost_equal(A @ x, b)
 
 
 class TestSplu:
     def setup_method(self):
-        use_solver(useUmfpack=False)
         n = 40
         d = arange(n) + 1
         self.n = n
         self.A = dia_array(((d, 2*d, d[::-1]), (-3, 0, 5)), shape=(n, n)).tocsc()
+        self.spsolve = partial(spsolve, use_umfpack=False)
 
     def _smoketest(self, spxlu, check, dtype, idx_dtype):
         if np.issubdtype(dtype, np.complexfloating):
@@ -748,7 +713,7 @@ class TestSplu:
         A[-1, -1] = 0
         b = np.zeros(10)
         with pytest.warns(MatrixRankWarning):
-            res = spsolve(A, b)
+            res = self.spsolve(A, b)
             assert np.isnan(res).all()
 
 
@@ -794,10 +759,8 @@ class TestGstrsErrors:
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr,
                                 self.b.astype(np.uint8))
 
-class TestSpsolveTriangular:
-    def setup_method(self):
-        use_solver(useUmfpack=False)
 
+class TestSpsolveTriangular:
     @pytest.mark.parametrize("fmt",["csr","csc"])
     def test_zero_diagonal(self,fmt):
         n = 5
