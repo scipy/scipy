@@ -1247,71 +1247,6 @@ class TestMultivariateNormal:
                                                      ).sum()
         assert logp_perturbed < logp_fix
 
-    @pytest.mark.parametrize('X_ndim', [3])
-    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
-    @pytest.mark.parametrize('frozen', [True, False])
-    @pytest.mark.parametrize('cov_object', [True, False])
-    def test_marginal_distribution(self, X_ndim, dimensions, frozen, cov_object):
-        rng = np.random.default_rng(413911473)
-        mean = rng.standard_normal(X_ndim)
-        A = rng.standard_normal((X_ndim, X_ndim))
-        cov = A @ A.T
-        
-        if cov_object:
-            cov = _covariance.CovViaPrecision(cov)
-
-        # number of points at which to evaluate marginal PDF
-        x = np.random.standard_normal((4, len(dimensions)))
-        X = multivariate_normal(mean, cov)
-        
-        if frozen:
-            Y = X.marginal(dimensions)
-            res = Y.pdf(x)
-        else: 
-            Y = multivariate_normal.marginal(dimensions, mean, cov)
-            res = Y.pdf(x)
-
-        ref = marginal_pdf(X, X_ndim, dimensions, x)
-        assert_allclose(ref, res)
-
-    def test_marginal_input_validation(self):
-        rng = np.random.default_rng(413911473)
-        mean = rng.standard_normal(3)
-        A = rng.standard_normal((3, 3))
-        cov = A @ A.T
-
-        X = multivariate_normal(mean, cov)
-
-        msg = r"Dimensions \[3\] are invalid .*"
-        with pytest.raises(ValueError, match=msg):
-            X.marginal(3)
-
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([0, 1, 2, 3])
-
-        msg = r"All elements of `dimensions` must be unique."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([2, -1])
-
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([[0, 1]])
-        
-        msg = r"Elements of `dimensions` must be integers."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([1.1, 2.0])
-    
-    def test_marginal_special_cases(self):
-        rng = np.random.default_rng(413911473)
-        mean = rng.standard_normal(3)
-        A = rng.standard_normal((3, 3))
-        cov = A @ A.T
-
-        X = multivariate_normal(mean, cov)
-        
-        msg = r"Cannot marginalize all dimensions."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([])
-
 class TestMatrixNormal:
 
     def test_bad_input(self):
@@ -1514,6 +1449,79 @@ class TestMatrixNormal:
         )
         assert_allclose(actual, expected)
 
+class TestMarginal:
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_input_validation(self, dist):
+        rng = np.random.default_rng(413911473)
+        mean = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        cov = A @ A.T
+
+        X = dist(mean, cov)
+
+        msg = r"Dimensions \[3\] are invalid .*"
+        with pytest.raises(ValueError, match=msg):
+            X.marginal(3)
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([0, 1, 2, 3])
+
+        msg = r"All elements of `dimensions` must be unique."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([2, -1])
+
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([[0, 1]])
+        
+        msg = r"Elements of `dimensions` must be integers."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([1.1, 2.0])
+    
+    @pytest.mark.parametrize('dist', [multivariate_normal, multivariate_t])
+    def test_marginal_special_cases(self, dist):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(3)
+        A = rng.standard_normal((3, 3))
+        scale = A @ A.T
+
+        X = dist(loc, scale)
+        
+        msg = r"Cannot marginalize all dimensions."
+        with pytest.raises(ValueError, match=msg):
+            X.marginal([])
+    
+    @pytest.mark.parametrize('dist,kwargs', [(multivariate_normal, {}), 
+                                             (multivariate_t, {'df': 0.1}),
+                                             (multivariate_t, {'df': 1.0}),
+                                             (multivariate_t, {'df': 4})])
+    @pytest.mark.parametrize('X_ndim', [3])
+    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
+    @pytest.mark.parametrize('frozen', [True, False])
+    @pytest.mark.parametrize('cov_object', [True, False])
+    def test_marginal_distribution(self, dist, X_ndim, dimensions, frozen, cov_object, kwargs):
+        rng = np.random.default_rng(413911473)
+        loc = rng.standard_normal(X_ndim)
+        A = rng.standard_normal((X_ndim, X_ndim))
+        scale = A @ A.T
+
+        if cov_object and dist == multivariate_t:
+            pytest.skip('`multivariate_t` does not accept a `Covariance` object')
+        elif cov_object:
+            scale = _covariance.CovViaPrecision(scale)
+
+        # number of points at which to evaluate marginal PDF
+        x = np.random.standard_normal((4, len(dimensions)))
+        X = dist(loc, scale, **kwargs)
+        
+        if frozen:
+            Y = X.marginal(dimensions)
+            res = Y.pdf(x)
+        else: 
+            Y = dist.marginal(dimensions, loc, scale, **kwargs)
+            res = Y.pdf(x)
+
+        ref = marginal_pdf(X, X_ndim, dimensions, x)
+        assert_allclose(ref, res)
 
 class TestMatrixT:
 
@@ -3717,71 +3725,6 @@ class TestMultivariateT:
     #     limit = 100
     #     return -integrate.dblquad(integrand, -limit, limit, -limit, limit,
     #                               args=(mvt, ))[0]
-
-    @pytest.mark.parametrize('X_ndim', [3])
-    @pytest.mark.parametrize('dimensions', [[1], [-1, 1]])
-    @pytest.mark.parametrize('frozen', [True, False])
-    @pytest.mark.parametrize('df', [0.1, 1, 2])
-    def test_marginal_distribution(self, X_ndim, dimensions, frozen, df):
-        rng = np.random.default_rng(413911473)
-        loc = rng.standard_normal(X_ndim)
-        A = rng.standard_normal((X_ndim, X_ndim))
-        shape = A @ A.T
-
-        # number of points at which to evaluate marginal PDF
-        x = np.random.standard_normal((4, len(dimensions)))
-        X = multivariate_t(loc, shape, df)
-        
-        if frozen:
-            Y = X.marginal(dimensions)
-            res = Y.pdf(x)
-        else: 
-            Y = multivariate_t.marginal(dimensions, loc, shape, df)
-            res = Y.pdf(x)
-
-        ref = marginal_pdf(X, X_ndim, dimensions, x)
-        assert_allclose(ref, res)
-
-    def test_marginal_input_validation(self):
-        rng = np.random.default_rng(413911473)
-        loc = rng.standard_normal(3)
-        A = rng.standard_normal((3, 3))
-        shape = A @ A.T
-        df = rng.uniform(low=0, high=5)
-
-        X = multivariate_t(loc, shape, df)
-
-        msg = r"Dimensions \[3\] are invalid .*"
-        with pytest.raises(ValueError, match=msg):
-            X.marginal(3)
-
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([0, 1, 2, 3])
-
-        msg = r"All elements of `dimensions` must be unique."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([2, -1])
-
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([[0, 1]])
-        
-        msg = r"Elements of `dimensions` must be integers."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([1.1, 2.0])
-    
-    def test_marginal_special_cases(self):
-        rng = np.random.default_rng(413911473)
-        loc = rng.standard_normal(3)
-        A = rng.standard_normal((3, 3))
-        shape = A @ A.T
-        df = rng.uniform(low=0, high=5)
-
-        X = multivariate_t(loc, shape, df)
-        
-        msg = r"Cannot marginalize all dimensions."
-        with pytest.raises(ValueError, match=msg):
-            X.marginal([])
-
 
     @pytest.mark.parametrize("df, cov, ref, tol",
                              [(10, np.eye(2, 2), 3.0378770664093313, 1e-14),
