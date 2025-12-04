@@ -706,7 +706,7 @@ def test_sum12(xp):
         assert_array_almost_equal(output, xp.asarray([4.0, 0.0, 5.0]))
 
 
-@make_xp_test_case(ndimage.sum)
+@make_xp_test_case(ndimage.sum, ndimage.sum_labels)
 def test_sum_labels(xp):
     labels = xp.asarray([[1, 2], [2, 4]], dtype=xp.int8)
     for type in types:

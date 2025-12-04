@@ -109,25 +109,23 @@ def _cases_axes_tuple_length_mismatch():
     filter_func = ndimage.gaussian_filter
     kwargs = dict(radius=3, mode='constant', sigma=1.0, order=0)
     for key, val in kwargs.items():
-        yield filter_func, kwargs, key, val
+        yield make_xp_pytest_param(filter_func, kwargs, key, val)
 
     filter_funcs = [ndimage.uniform_filter, ndimage.minimum_filter,
                     ndimage.maximum_filter]
     kwargs = dict(size=3, mode='constant', origin=0)
     for filter_func in filter_funcs:
         for key, val in kwargs.items():
-            yield filter_func, kwargs, key, val
+            yield make_xp_pytest_param(filter_func, kwargs, key, val)
 
     filter_funcs = [ndimage.correlate, ndimage.convolve]
     # sequence of mode not supported for correlate or convolve
     kwargs = dict(origin=0)
     for filter_func in filter_funcs:
         for key, val in kwargs.items():
-            yield filter_func, kwargs, key, val
+            yield make_xp_pytest_param(filter_func, kwargs, key, val)
 
 
-@make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
-                   ndimage.convolve, ndimage.convolve1d)
 class TestNdimageFilters:
     def _validate_complex(self, xp, array, kernel, type2, mode='reflect',
                           cval=0, check_warnings=True):
@@ -191,6 +189,8 @@ class TestNdimageFilters:
         with assert_raises(RuntimeError):
             convolve(array, kernel, output=output_real)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate01(self, xp):
         array = xp.asarray([1, 2])
         weights = xp.asarray([2])
@@ -210,6 +210,7 @@ class TestNdimageFilters:
 
     @xfail_xp_backends('cupy', reason="Differs by a factor of two?")
     @uses_output_array
+    @make_xp_test_case(ndimage.correlate1d)
     def test_correlate01_overlap(self, xp):
         array = xp.reshape(xp.arange(256), (16, 16))
         weights = xp.asarray([2])
@@ -218,6 +219,8 @@ class TestNdimageFilters:
         ndimage.correlate1d(array, weights, output=array)
         assert_array_almost_equal(array, expected)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate02(self, xp):
         array = xp.asarray([1, 2, 3])
         kernel = xp.asarray([1])
@@ -234,6 +237,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, kernel)
         assert_array_almost_equal(array, output)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate03(self, xp):
         array = xp.asarray([1])
         weights = xp.asarray([1, 1])
@@ -251,6 +256,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate04(self, xp):
         array = xp.asarray([1, 2])
         tcor = xp.asarray([2, 3])
@@ -265,6 +272,9 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, tcov)
 
+
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate05(self, xp):
         array = xp.asarray([1, 2, 3])
         tcor = xp.asarray([2, 3, 5])
@@ -279,6 +289,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, kernel)
         assert_array_almost_equal(tcov, output)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate06(self, xp):
         array = xp.asarray([1, 2, 3])
         tcor = xp.asarray([9, 14, 17])
@@ -293,6 +305,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, tcov)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate07(self, xp):
         array = xp.asarray([1, 2, 3])
         expected = xp.asarray([5, 8, 11])
@@ -306,6 +320,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, expected)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate08(self, xp):
         array = xp.asarray([1, 2, 3])
         tcor = xp.asarray([1, 2, 5])
@@ -320,6 +336,8 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights)
         assert_array_almost_equal(output, tcov)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate09(self, xp):
         array = xp.asarray([])
         kernel = xp.asarray([1, 1])
@@ -332,6 +350,7 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, kernel)
         assert_array_almost_equal(array, output)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate10(self, xp):
         array = xp.asarray([[]])
         kernel = xp.asarray([[1, 1]])
@@ -340,6 +359,7 @@ class TestNdimageFilters:
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(array, output)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate11(self, xp):
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]])
@@ -350,6 +370,7 @@ class TestNdimageFilters:
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(xp.asarray([[12, 16, 18], [18, 22, 24]]), output)
 
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate12(self, xp):
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6]])
@@ -363,6 +384,7 @@ class TestNdimageFilters:
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate13(self, dtype_array, dtype_kernel, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_kernel = getattr(xp, dtype_kernel)
@@ -383,6 +405,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate14(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -402,6 +425,7 @@ class TestNdimageFilters:
 
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate15(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
 
@@ -419,6 +443,7 @@ class TestNdimageFilters:
 
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate16(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
 
@@ -433,6 +458,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[3, 4, 4.5], [4.5, 5.5, 6]]), output)
         assert output.dtype.type == xp.float32
 
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate17(self, xp):
         array = xp.asarray([1, 2, 3])
         tcor = xp.asarray([3, 5, 6])
@@ -449,6 +476,7 @@ class TestNdimageFilters:
 
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate18(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
 
@@ -468,6 +496,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[2, 3, 5], [5, 6, 8]]), output)
         assert output.dtype.type == xp.float32
 
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate_mode_sequence(self, xp):
         kernel = xp.ones((2, 2))
         array = xp.ones((3, 3), dtype=xp.float64)
@@ -478,6 +507,7 @@ class TestNdimageFilters:
 
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.convolve)
     def test_correlate19(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
 
@@ -500,6 +530,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate20(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -514,6 +545,7 @@ class TestNdimageFilters:
         ndimage.convolve1d(array, weights, axis=0, output=output)
         assert_array_almost_equal(output, expected)
 
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate21(self, xp):
         array = xp.asarray([[1, 2, 3],
                             [2, 4, 6]])
@@ -527,6 +559,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate22(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -546,6 +579,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate23(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -565,6 +599,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate24(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -585,6 +620,7 @@ class TestNdimageFilters:
     @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate25(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -602,6 +638,7 @@ class TestNdimageFilters:
                            mode='nearest', output=output, origin=1)
         assert_array_almost_equal(output, tcov)
 
+    @make_xp_test_case(ndimage.correlate1d, ndimage.convolve1d)
     def test_correlate26(self, xp):
         # test fix for gh-11661 (mirror extension of a length 1 signal)
         y = ndimage.convolve1d(xp.ones(1), xp.ones(5), mode='mirror')
@@ -614,6 +651,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
                                       dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
@@ -631,6 +670,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     @pytest.mark.parametrize('mode', ['grid-constant', 'constant'])
     def test_correlate_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                            dtype_output, mode, xp,
@@ -655,6 +696,8 @@ class TestNdimageFilters:
     @xfail_xp_backends('cupy', reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel, xp):
         dtype_input = getattr(xp, dtype_input)
@@ -675,6 +718,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
                                         dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
@@ -690,6 +735,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                              dtype_output, xp,
                                              num_parallel_threads):
@@ -707,6 +754,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
                                      dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
@@ -724,6 +773,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
                                        dtype_output, xp, num_parallel_threads):
         dtype_input = getattr(xp, dtype_input)
@@ -740,6 +791,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
                                             dtype_output, xp,
                                             num_parallel_threads):
@@ -757,6 +810,8 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="unhashable type: 'ndarray'")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp,
                                                 num_parallel_threads):
         dtype = getattr(xp, dtype)
@@ -773,6 +828,8 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
                                                      dtype_output, xp,
                                                      num_parallel_threads):
@@ -791,6 +848,8 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="unhashable type: 'ndarray'")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output, xp,
                                                   num_parallel_threads):
         dtype = getattr(xp, dtype)
@@ -805,6 +864,8 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.correlate, ndimage.correlate1d,
+                       ndimage.convolve, ndimage.convolve1d)
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
                                                        dtype_output, xp,
                                                        num_parallel_threads):
@@ -818,12 +879,14 @@ class TestNdimageFilters:
                                cval=5.0 + 2.0j,
                                check_warnings=num_parallel_threads == 1)
 
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss01(self, xp):
         input = xp.asarray([[1, 2, 3],
                             [2, 4, 6]], dtype=xp.float32)
         output = ndimage.gaussian_filter(input, 0)
         assert_array_almost_equal(output, input)
 
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss02(self, xp):
         input = xp.asarray([[1, 2, 3],
                             [2, 4, 6]], dtype=xp.float32)
@@ -832,6 +895,7 @@ class TestNdimageFilters:
         assert input.shape == output.shape
 
     @xfail_xp_backends("cupy", reason="cupy/cupy#8403")
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss03(self, xp):
         # single precision data
         input = xp.arange(100 * 100, dtype=xp.float32)
@@ -849,6 +913,7 @@ class TestNdimageFilters:
         assert sumsq(input, output) > 1.0
 
     @uses_output_dtype
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss04(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -859,6 +924,7 @@ class TestNdimageFilters:
         assert sumsq(input, output) > 1.0
 
     @uses_output_dtype
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss05(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -870,6 +936,7 @@ class TestNdimageFilters:
         assert sumsq(input, output) > 1.0
 
     @uses_output_dtype
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss06(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -879,6 +946,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, output2)
 
     @uses_output_array
+    @make_xp_test_case(ndimage.gaussian_filter)
     def test_gauss_memory_overlap(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -887,14 +955,18 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, input)
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
-    @pytest.mark.parametrize(('filter_func', 'extra_args', 'size0', 'size'),
-                             [(ndimage.gaussian_filter, (), 0, 1.0),
-                              (ndimage.uniform_filter, (), 1, 3),
-                              (ndimage.minimum_filter, (), 1, 3),
-                              (ndimage.maximum_filter, (), 1, 3),
-                              (ndimage.median_filter, (), 1, 3),
-                              (ndimage.rank_filter, (1,), 1, 3),
-                              (ndimage.percentile_filter, (40,), 1, 3)])
+    @pytest.mark.parametrize(
+        ('filter_func', 'extra_args', 'size0', 'size'),
+        [
+            make_xp_pytest_param(ndimage.gaussian_filter, (), 0, 1.0),
+            make_xp_pytest_param(ndimage.uniform_filter, (), 1, 3),
+            make_xp_pytest_param(ndimage.minimum_filter, (), 1, 3),
+            make_xp_pytest_param(ndimage.maximum_filter, (), 1, 3),
+            make_xp_pytest_param(ndimage.median_filter, (), 1, 3),
+            make_xp_pytest_param(ndimage.rank_filter, (1,), 1, 3),
+            make_xp_pytest_param(ndimage.percentile_filter, (40,), 1, 3),
+        ],
+    )
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -921,11 +993,14 @@ class TestNdimageFilters:
 
     @skip_xp_backends("cupy",
                       reason="these filters do not yet have axes support")
-    @pytest.mark.parametrize(('filter_func', 'kwargs'),
-                             [(ndimage.laplace, {}),
-                              (ndimage.gaussian_gradient_magnitude,
-                               {"sigma": 1.0}),
-                              (ndimage.gaussian_laplace, {"sigma": 0.5})])
+    @pytest.mark.parametrize(
+        ('filter_func', 'kwargs'),
+        [
+            make_xp_pytest_param(ndimage.laplace, {}),
+            make_xp_pytest_param(ndimage.gaussian_gradient_magnitude, {"sigma": 1.0}),
+            make_xp_pytest_param(ndimage.gaussian_laplace, {"sigma": 0.5})
+        ],
+    )
     def test_derivative_filter_axes(self, xp, filter_func, kwargs):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
@@ -967,6 +1042,7 @@ class TestNdimageFilters:
         tuple(itertools.combinations(range(-3, 3), 1))
         + tuple(itertools.combinations(range(-3, 3), 2))
         + ((0, 1, 2),))
+    @make_xp_test_case(ndimage.generic_filter, ndimage.maximum_filter)
     def test_generic_filter_axes(self, xp, axes):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
         array = xp.reshape(array, (6, 8, 12))
@@ -984,7 +1060,13 @@ class TestNdimageFilters:
 
     @skip_xp_backends("cupy",
                        reason="https://github.com/cupy/cupy/pull/8339")
-    @pytest.mark.parametrize('func', [ndimage.correlate, ndimage.convolve])
+    @pytest.mark.parametrize(
+        'func',
+        [
+            make_xp_pytest_param(ndimage.correlate),
+            make_xp_pytest_param(ndimage.convolve),
+        ]
+    )
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64, np.complex64, np.complex128]
     )
@@ -1024,14 +1106,18 @@ class TestNdimageFilters:
     kwargs_rank = dict(origin=(-1, 0, 1))
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
-    @pytest.mark.parametrize("filter_func, size0, size, kwargs",
-                             [(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
-                              (ndimage.uniform_filter, 1, 3, kwargs_other),
-                              (ndimage.maximum_filter, 1, 3, kwargs_other),
-                              (ndimage.minimum_filter, 1, 3, kwargs_other),
-                              (ndimage.median_filter, 1, 3, kwargs_rank),
-                              (ndimage.rank_filter, 1, 3, kwargs_rank),
-                              (ndimage.percentile_filter, 1, 3, kwargs_rank)])
+    @pytest.mark.parametrize(
+        "filter_func, size0, size, kwargs",
+        [
+            make_xp_pytest_param(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
+            make_xp_pytest_param(ndimage.uniform_filter, 1, 3, kwargs_other),
+            make_xp_pytest_param(ndimage.maximum_filter, 1, 3, kwargs_other),
+            make_xp_pytest_param(ndimage.minimum_filter, 1, 3, kwargs_other),
+            make_xp_pytest_param(ndimage.median_filter, 1, 3, kwargs_rank),
+            make_xp_pytest_param(ndimage.rank_filter, 1, 3, kwargs_rank),
+            make_xp_pytest_param(ndimage.percentile_filter, 1, 3, kwargs_rank),
+        ]
+    )
     @pytest.mark.parametrize('axes', itertools.combinations(range(-3, 3), 2))
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes, xp):
         array = xp.arange(6 * 8 * 12, dtype=xp.float64)
@@ -1075,14 +1161,18 @@ class TestNdimageFilters:
 
 
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
-    @pytest.mark.parametrize("filter_func, kwargs",
-                             [(ndimage.convolve, {}),
-                              (ndimage.correlate, {}),
-                              (ndimage.minimum_filter, {}),
-                              (ndimage.maximum_filter, {}),
-                              (ndimage.median_filter, {}),
-                              (ndimage.rank_filter, {"rank": 1}),
-                              (ndimage.percentile_filter, {"percentile": 30})])
+    @pytest.mark.parametrize(
+        "filter_func, kwargs",
+        [
+            make_xp_pytest_param(ndimage.convolve, {}),
+            make_xp_pytest_param(ndimage.correlate, {}),
+            make_xp_pytest_param(ndimage.minimum_filter, {}),
+            make_xp_pytest_param(ndimage.maximum_filter, {}),
+            make_xp_pytest_param(ndimage.median_filter, {}),
+            make_xp_pytest_param(ndimage.rank_filter, {"rank": 1}),
+            make_xp_pytest_param(ndimage.percentile_filter, {"percentile": 30}),
+        ]
+    )
     def test_filter_weights_subset_axes_origins(self, filter_func, kwargs, xp):
         axes = (-2, -1)
         origins = (0, 1)
@@ -1119,15 +1209,21 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize(
         'filter_func, args',
-        [(ndimage.convolve, (np.ones((3, 3, 3)),)),  # args = (weights,)
-         (ndimage.correlate,(np.ones((3, 3, 3)),)),  # args = (weights,)
-         (ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)
-         (ndimage.uniform_filter, (3,)),         # args = (size,)
-         (ndimage.minimum_filter, (3,)),         # args = (size,)
-         (ndimage.maximum_filter, (3,)),         # args = (size,)
-         (ndimage.median_filter, (3,)),          # args = (size,)
-         (ndimage.rank_filter, (2, 3)),          # args = (rank, size)
-         (ndimage.percentile_filter, (30, 3))])  # args = (percentile, size)
+        [
+            make_xp_pytest_param(*t) for t in
+            [
+                (ndimage.convolve, (np.ones((3, 3, 3)),)),  # args = (weights,)
+                (ndimage.correlate,(np.ones((3, 3, 3)),)),  # args = (weights,)
+                (ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)
+                (ndimage.uniform_filter, (3,)),         # args = (size,)
+                (ndimage.minimum_filter, (3,)),         # args = (size,)
+                (ndimage.maximum_filter, (3,)),         # args = (size,)
+                (ndimage.median_filter, (3,)),          # args = (size,)
+                (ndimage.rank_filter, (2, 3)),          # args = (rank, size)
+                (ndimage.percentile_filter, (30, 3)),   # args = (percentile, size)
+            ]
+        ]
+    )
     @pytest.mark.parametrize(
         'axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)]
     )
@@ -1150,13 +1246,16 @@ class TestNdimageFilters:
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize(
         'filter_func, kwargs',
-        [(ndimage.convolve, {}),
-         (ndimage.correlate, {}),
-         (ndimage.minimum_filter, {}),
-         (ndimage.maximum_filter, {}),
-         (ndimage.median_filter, {}),
-         (ndimage.rank_filter, dict(rank=3)),
-         (ndimage.percentile_filter, dict(percentile=30))])
+        [
+            make_xp_pytest_param(ndimage.convolve, {}),
+            make_xp_pytest_param(ndimage.correlate, {}),
+            make_xp_pytest_param(ndimage.minimum_filter, {}),
+            make_xp_pytest_param(ndimage.maximum_filter, {}),
+            make_xp_pytest_param(ndimage.median_filter, {}),
+            make_xp_pytest_param(ndimage.rank_filter, dict(rank=3)),
+            make_xp_pytest_param(ndimage.percentile_filter, dict(percentile=30)),
+        ]
+    )
     @pytest.mark.parametrize(
         'axes', [(0, ), (1, 2), (0, 1, 2)]
     )
@@ -1205,6 +1304,7 @@ class TestNdimageFilters:
             filter_func(array, **kwargs)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.prewitt)
     def test_prewitt01(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1217,6 +1317,7 @@ class TestNdimageFilters:
 
     @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.prewitt)
     def test_prewitt02(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1229,6 +1330,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.prewitt)
     def test_prewitt03(self, dtype, xp):
         dtype = getattr(xp, dtype)
         if is_cupy(xp) and dtype in [xp.uint32, xp.uint64]:
@@ -1243,6 +1345,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.prewitt)
     def test_prewitt04(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1253,6 +1356,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.sobel)
     def test_sobel01(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1265,6 +1369,7 @@ class TestNdimageFilters:
 
     @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.sobel)
     def test_sobel02(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1277,6 +1382,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.sobel)
     def test_sobel03(self, dtype, xp):
         if is_cupy(xp) and dtype in ["uint32", "uint64"]:
             pytest.xfail("uint UB? XXX")
@@ -1292,6 +1398,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.sobel)
     def test_sobel04(self, dtype, xp):
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1304,6 +1411,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.correlate1d, ndimage.laplace)
     def test_laplace01(self, dtype, xp):
         dtype = getattr(xp, dtype)
 
@@ -1319,6 +1427,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.correlate1d, ndimage.laplace)
     def test_laplace02(self, dtype, xp):
         dtype = getattr(xp, dtype)
 
@@ -1334,6 +1443,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.gaussian_filter, ndimage.gaussian_laplace)
     def test_gaussian_laplace01(self, dtype, xp):
         dtype = getattr(xp, dtype)
 
@@ -1349,6 +1459,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.gaussian_filter, ndimage.gaussian_laplace)
     def test_gaussian_laplace02(self, dtype, xp):
         dtype = getattr(xp, dtype)
 
@@ -1363,6 +1474,11 @@ class TestNdimageFilters:
 
     @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
+    @make_xp_test_case(
+        ndimage.gaussian_filter,
+        ndimage.generic_laplace,
+        ndimage.gaussian_laplace,
+    )
     def test_generic_laplace01(self, dtype, xp):
         def derivative2(input, axis, output, mode, cval, a, b):
             sigma = np.asarray([a, b / 2.0])
@@ -1386,6 +1502,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.gaussian_filter, ndimage.gaussian_gradient_magnitude)
     def test_gaussian_gradient_magnitude01(self, dtype, xp):
         is_int_dtype = dtype == "int32"
         dtype = getattr(xp, dtype)
@@ -1406,6 +1523,7 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
+    @make_xp_test_case(ndimage.gaussian_filter, ndimage.gaussian_gradient_magnitude)
     def test_gaussian_gradient_magnitude02(self, dtype, xp):
         is_int_dtype = dtype == 'int32'
         dtype = getattr(xp, dtype)
@@ -1424,6 +1542,11 @@ class TestNdimageFilters:
         expected = xp.astype(xp.sqrt(fl_expected), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
+    @make_xp_test_case(
+        ndimage.gaussian_filter,
+        ndimage.gaussian_gradient_magnitude,
+        ndimage.generic_gradient_magnitude,
+    )
     def test_generic_gradient_magnitude01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1441,12 +1564,14 @@ class TestNdimageFilters:
             extra_keywords={'b': 2.0})
         assert_array_almost_equal(tmp1, tmp2)
 
+    @make_xp_test_case(ndimage.uniform_filter1d)
     def test_uniform01(self, xp):
         array = xp.asarray([2, 4, 6])
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
         assert_array_almost_equal(xp.asarray([3, 5, 6]), output)
 
+    @make_xp_test_case(ndimage.uniform_filter1d)
     def test_uniform01_complex(self, xp):
         array = xp.asarray([2 + 1j, 4 + 2j, 6 + 3j], dtype=xp.complex128)
         size = 2
@@ -1454,24 +1579,28 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.real(output), xp.asarray([3., 5, 6]))
         assert_array_almost_equal(xp.imag(output), xp.asarray([1.5, 2.5, 3]))
 
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform02(self, xp):
         array = xp.asarray([1, 2, 3])
         filter_shape = [0]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(array, output)
 
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform03(self, xp):
         array = xp.asarray([1, 2, 3])
         filter_shape = [1]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(array, output)
 
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform04(self, xp):
         array = xp.asarray([2, 4, 6])
         filter_shape = [2]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([2, 3, 5]), output)
 
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform05(self, xp):
         array = xp.asarray([])
         filter_shape = [1]
@@ -1481,6 +1610,7 @@ class TestNdimageFilters:
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform06(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -1496,6 +1626,7 @@ class TestNdimageFilters:
     @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
+    @make_xp_test_case(ndimage.uniform_filter)
     def test_uniform06_complex(self, dtype_array, dtype_output, xp):
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
@@ -1508,30 +1639,35 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[4, 6, 10], [10, 12, 16]]), output.real)
         assert output.dtype.type == dtype_output
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter01(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         filter_shape = xp.asarray([2])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([1, 1, 2, 3, 4]), output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter02(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         filter_shape = xp.asarray([3])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([1, 1, 2, 3, 4]), output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter03(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         filter_shape = xp.asarray([2])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([3, 2, 2, 1, 1]), output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter04(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         filter_shape = xp.asarray([3])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([2, 2, 1, 1, 1]), output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter05(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1543,6 +1679,7 @@ class TestNdimageFilters:
                                               [5, 3, 3, 1, 1]]), output)
 
     @uses_output_array
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter05_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1553,6 +1690,7 @@ class TestNdimageFilters:
                                               [2, 2, 1, 1, 1],
                                               [5, 3, 3, 1, 1]]), array)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter06(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1567,6 +1705,7 @@ class TestNdimageFilters:
                                          mode=['reflect', 'reflect'])
         assert_array_almost_equal(output2, output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter07(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1580,6 +1719,7 @@ class TestNdimageFilters:
             ndimage.minimum_filter(array, footprint=footprint,
                                    mode=['reflect', 'constant'])
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter08(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1590,6 +1730,7 @@ class TestNdimageFilters:
                                               [5, 3, 3, 1, 1],
                                               [3, 3, 1, 1, 1]]), output)
 
+    @make_xp_test_case(ndimage.minimum_filter)
     def test_minimum_filter09(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1601,30 +1742,35 @@ class TestNdimageFilters:
                                               [5, 5, 3, 3, 1],
                                               [5, 3, 3, 1, 1]]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter01(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         filter_shape = xp.asarray([2])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([1, 2, 3, 4, 5]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter02(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         filter_shape = xp.asarray([3])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([2, 3, 4, 5, 5]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter03(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         filter_shape = xp.asarray([2])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([3, 3, 5, 5, 4]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter04(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         filter_shape = xp.asarray([3])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([3, 5, 5, 5, 4]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter05(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1635,6 +1781,7 @@ class TestNdimageFilters:
                                               [7, 9, 9, 9, 5],
                                               [8, 9, 9, 9, 7]]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter06(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1649,6 +1796,7 @@ class TestNdimageFilters:
                                          mode=['reflect', 'reflect'])
         assert_array_almost_equal(output2, output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter07(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1663,6 +1811,7 @@ class TestNdimageFilters:
             ndimage.maximum_filter(array, footprint=footprint,
                                    mode=['reflect', 'reflect'])
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter08(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1673,6 +1822,7 @@ class TestNdimageFilters:
                                               [9, 8, 9, 7, 5],
                                               [8, 8, 7, 7, 7]]), output)
 
+    @make_xp_test_case(ndimage.maximum_filter)
     def test_maximum_filter09(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1690,11 +1840,13 @@ class TestNdimageFilters:
     )
     @pytest.mark.parametrize(
         'filter_func, kwargs',
-        [(ndimage.minimum_filter, {}),
-         (ndimage.maximum_filter, {}),
-         (ndimage.median_filter, {}),
-         (ndimage.rank_filter, dict(rank=3)),
-         (ndimage.percentile_filter, dict(percentile=60))]
+        [
+            make_xp_pytest_param(ndimage.minimum_filter, {}),
+            make_xp_pytest_param(ndimage.maximum_filter, {}),
+            make_xp_pytest_param(ndimage.median_filter, {}),
+            make_xp_pytest_param(ndimage.rank_filter, dict(rank=3)),
+            make_xp_pytest_param(ndimage.percentile_filter, dict(percentile=60)),
+        ]
     )
     def test_minmax_nonseparable_axes(self, filter_func, axes, kwargs, xp):
         array = xp.arange(6 * 8 * 12, dtype=xp.float32)
@@ -1716,6 +1868,9 @@ class TestNdimageFilters:
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
         xp_assert_close(output, expected)
 
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
     def test_rank01(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=2)
@@ -1725,6 +1880,9 @@ class TestNdimageFilters:
         output = ndimage.median_filter(array, 2)
         xp_assert_equal(array, output)
 
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
     def test_rank02(self, xp):
         array = xp.asarray([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=[3])
@@ -1734,6 +1892,9 @@ class TestNdimageFilters:
         output = ndimage.median_filter(array, (3,))
         xp_assert_equal(array, output)
 
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter
+    )
     def test_rank03(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         output = ndimage.rank_filter(array, 1, size=[2])
@@ -1741,6 +1902,9 @@ class TestNdimageFilters:
         output = ndimage.percentile_filter(array, 100, size=2)
         xp_assert_equal(xp.asarray([3, 3, 5, 5, 4]), output)
 
+    @make_xp_test_case(
+        ndimage.rank_filter, ndimage.percentile_filter, ndimage.median_filter
+    )
     def test_rank04(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         expected = xp.asarray([3, 3, 2, 4, 4])
@@ -1751,12 +1915,14 @@ class TestNdimageFilters:
         output = ndimage.median_filter(array, size=3)
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank05(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         expected = xp.asarray([3, 3, 2, 4, 4])
         output = ndimage.rank_filter(array, -2, size=3)
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank06(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1772,6 +1938,7 @@ class TestNdimageFilters:
 
     @xfail_xp_backends("cupy", reason="cupy/cupy#8406")
     @uses_output_array
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank06_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1789,6 +1956,7 @@ class TestNdimageFilters:
                                   output=array_copy)
         xp_assert_equal(expected, array_copy)
 
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank07(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1800,6 +1968,7 @@ class TestNdimageFilters:
         output = ndimage.rank_filter(array, -2, size=[2, 3])
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank08(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1825,6 +1994,7 @@ class TestNdimageFilters:
             ndimage.median_filter(array, size=(2, 3), mode=['reflect']*2)
 
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank09(self, dtype, xp):
         dtype = getattr(xp, dtype)
         expected = [[3, 3, 2, 4, 4],
@@ -1840,6 +2010,7 @@ class TestNdimageFilters:
         output = ndimage.percentile_filter(array, 35, footprint=footprint)
         assert_array_almost_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank10(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1854,6 +2025,7 @@ class TestNdimageFilters:
         output = ndimage.percentile_filter(array, 0.0, footprint=footprint)
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank11(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1869,6 +2041,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.rank_filter, ndimage.percentile_filter)
     def test_rank12(self, dtype, xp):
         dtype = getattr(xp, dtype)
         expected = [[3, 3, 2, 4, 4],
@@ -1888,6 +2061,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank13(self, dtype, xp):
         dtype = getattr(xp, dtype)
         expected = [[5, 2, 5, 1, 1],
@@ -1903,6 +2077,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank14(self, dtype, xp):
         dtype = getattr(xp, dtype)
         expected = [[3, 5, 2, 5, 1],
@@ -1918,6 +2093,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank15(self, dtype, xp):
         dtype = getattr(xp, dtype)
         expected = [[2, 3, 1, 4, 1],
@@ -1941,6 +2117,7 @@ class TestNdimageFilters:
         output = ndimage.rank_filter(array, -2, size=3)
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank17(self, xp):
         array = xp.asarray([3, 2, 5, 1, 4])
         if not hasattr(array, 'flags'):
@@ -1950,6 +2127,7 @@ class TestNdimageFilters:
         output = ndimage.rank_filter(array, -2, size=3)
         xp_assert_equal(expected, output)
 
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank18(self, xp):
         # module 'array_api_strict' has no attribute 'float16'
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
@@ -1960,6 +2138,7 @@ class TestNdimageFilters:
             y = ndimage.rank_filter(x, -2, size=3)
             assert y.dtype == x.dtype
 
+    @make_xp_test_case(ndimage.rank_filter)
     def test_rank19(self, xp):
         # module 'array_api_strict' has no attribute 'float16'
         tested_dtypes = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64',
@@ -1974,6 +2153,7 @@ class TestNdimageFilters:
                       reason="off-by-ones on alt backends")
     @xfail_xp_backends("cupy", reason="does not support extra_arguments")
     @pytest.mark.parametrize('dtype', types)
+    @make_xp_test_case(ndimage.correlate1d, ndimage.generic_filter1d)
     def test_generic_filter1d01(self, dtype, xp):
         weights = xp.asarray([1.1, 2.2, 3.3])
 
@@ -1996,6 +2176,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(r1, r2)
 
     @xfail_xp_backends("cupy", reason="does not support extra_arguments")
+    @make_xp_test_case(ndimage.correlate, ndimage.generic_filter)
     @pytest.mark.parametrize('dtype', types)
     def test_generic_filter01(self, dtype, xp):
         if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
@@ -2039,6 +2220,7 @@ class TestNdimageFilters:
          ('mirror', [2, 1, 2]),
          ('constant', [0, 1, 2])]
     )
+    @make_xp_test_case(ndimage.correlate1d)
     def test_extend01(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([1, 0])
@@ -2054,6 +2236,7 @@ class TestNdimageFilters:
          ('mirror', [1, 2, 3]),
          ('constant', [0, 0, 0])]
     )
+    @make_xp_test_case(ndimage.correlate1d)
     def test_extend02(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([1, 0, 0, 0, 0, 0, 0, 0])
@@ -2069,6 +2252,7 @@ class TestNdimageFilters:
          ('mirror', [2, 3, 2]),
          ('constant', [2, 3, 0])]
     )
+    @make_xp_test_case(ndimage.correlate1d)
     def test_extend03(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([0, 0, 1])
@@ -2084,6 +2268,7 @@ class TestNdimageFilters:
          ('mirror', [1, 2, 3]),
          ('constant', [0, 0, 0])]
     )
+    @make_xp_test_case(ndimage.correlate1d)
     def test_extend04(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 1])
@@ -2099,6 +2284,7 @@ class TestNdimageFilters:
          ('mirror', [[5, 4, 5], [2, 1, 2], [5, 4, 5]]),
          ('constant', [[0, 0, 0], [0, 1, 2], [0, 4, 5]])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend05(self, mode, expected_value, xp):
         array = xp.asarray([[1, 2, 3],
                             [4, 5, 6],
@@ -2116,6 +2302,7 @@ class TestNdimageFilters:
          ('mirror', [[5, 6, 5], [8, 9, 8], [5, 6, 5]]),
          ('constant', [[5, 6, 0], [8, 9, 0], [0, 0, 0]])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend06(self, mode, expected_value, xp):
         array = xp.asarray([[1, 2, 3],
                           [4, 5, 6],
@@ -2133,6 +2320,7 @@ class TestNdimageFilters:
          ('mirror', [1, 2, 3]),
          ('constant', [0, 0, 0])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend07(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 1])
@@ -2148,6 +2336,7 @@ class TestNdimageFilters:
          ('mirror', [[1], [2], [3]]),
          ('constant', [[0], [0], [0]])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend08(self, mode, expected_value, xp):
         array = xp.asarray([[1], [2], [3]])
         weights = xp.asarray([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
@@ -2163,6 +2352,7 @@ class TestNdimageFilters:
          ('mirror', [1, 2, 3]),
          ('constant', [0, 0, 0])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend09(self, mode, expected_value, xp):
         array = xp.asarray([1, 2, 3])
         weights = xp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 1])
@@ -2178,6 +2368,7 @@ class TestNdimageFilters:
          ('mirror', [[1], [2], [3]]),
          ('constant', [[0], [0], [0]])]
     )
+    @make_xp_test_case(ndimage.correlate)
     def test_extend10(self, mode, expected_value, xp):
         array = xp.asarray([[1], [2], [3]])
         weights = xp.asarray([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
