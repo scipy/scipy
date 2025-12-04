@@ -1,6 +1,5 @@
 # Pytest customization
 import json
-import importlib
 import multiprocessing
 import os
 import sys
@@ -517,47 +516,6 @@ def devices(xp):
         return (device for device in devices if device.type != 'meta')
 
     return xp.__array_namespace_info__().devices() + [None]
-
-
-def pytest_collection_finish(session):
-    # After test collection, identify functions/classes/methods which
-    # are documented as being supported on one or more alternative backen
-    # but which have no known tests using the `xp` fixture.
-
-    # `xp_capabilities_table` is populated lazily, so need to import
-    # everything to make sure all entries are there.
-    for module_name in PUBLIC_MODULES:
-        importlib.import_module(module_name)
-    from scipy._lib._array_api import xp_capabilities_table
-
-    # `make_xp_pytest_marks(funcs)` adds a mark `pytest.mark.uses_xp_capabilities`
-    # which stores funcs in a kwarg. We can use this to identify which functions
-    # have associated tests using the `xp` fixture.
-    tested_functions = set()
-    for item in session.items:
-        marker = item.get_closest_marker("uses_xp_capabilities")
-        if marker is None:
-            continue
-        funcs = marker.kwargs.get("funcs")
-        if funcs is None:
-            continue
-        tested_functions.update(funcs)
-
-    # Find everything in `xp_capabilities_table` which was not tested and is
-    # not marked as `np_only=True`.
-    incorrectly_decorated = []
-    for func, data in xp_capabilities_table.items():
-        if func not in tested_functions and not data["np_only"]:
-           incorrectly_decorated.append(func)
-
-    if incorrectly_decorated:
-        reporter = session.config.pluginmanager.getplugin("terminalreporter")
-        reporter.section(
-            "Documented as supported on one or more alternative backends"
-            " with no known tests using `xp` fixture."
-        )
-        for func in incorrectly_decorated:
-            reporter.line(f"- {func.__module__}.{func.__qualname__}")
 
 
 if hypothesis_available:
