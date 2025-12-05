@@ -33,6 +33,8 @@ New features
 ==============================
 - The integration routines ``dopri5``, ``dopri853``, ``LSODA``, ``vode``, and
   ``zvode`` have been ported from Fortran77 to C.
+- `scipy.integrate.quad` now has a fast path for returning 0 when the integration
+  interval is empty.
 
 `scipy.cluster` improvements
 ============================
@@ -208,11 +210,12 @@ New features
 **************************
 Array API Standard Support
 **************************
-- `scipy.signal.savgol_filter` and `scipy.signal.savgol_coeffs` have gained
-  support.
+- `scipy.signal.savgol_filter`, `scipy.signal.savgol_coeffs`, and
+  `scipy.signal.abcd_normalize` have gained support.
 - ``spatial.transform`` has gained support.
-- `scipy.integrate.qmc_quad`, `scipy.integrate.cumulative_simpson`, and
-  `scipy.integrate.cumulative_trapezoid` have gained support.
+- `scipy.integrate.qmc_quad`, `scipy.integrate.cumulative_simpson`,
+  `scipy.integrate.cumulative_trapezoid`, and `scipy.integrate.romb` have
+  gained support.
 - `scipy.linalg.block_diag`, `scipy.linalg.fiedler`, and
   `scipy.linalg.orthogonal_procrustes` have gained support.
 - `scipy.interpolate.NdBSpline`, `scipy.interpolate.RegularGridInterpolator`,
@@ -258,6 +261,8 @@ Backwards incompatible changes
 *************
 Other changes
 *************
+- The default version of the Boost Math library leveraged by SciPy has been
+  increased from ``1.88.0`` to ``1.89.0``.
 - On POSIX operating systems, SciPy will now use the ``'forkserver'``
   multiprocessing context on Python 3.13 and older for ``workers=<an-int>``
   calls if the user hasn't configured a default method themselves. This follows
