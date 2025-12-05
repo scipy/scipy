@@ -73,6 +73,8 @@ New features
     input;
   - performance for batched inputs has been improved.
 - `scipy.linalg.fiedler` has gained native support for batched inputs.
+- performance has improved for `scipy.linalg.solve` with batched inputs
+  for certain matrix structures.
 
 `scipy.ndimage` improvements
 ============================
@@ -209,8 +211,10 @@ Array API Standard Support
 - `scipy.signal.savgol_filter` and `scipy.signal.savgol_coeffs` have gained
   support.
 - ``spatial.transform`` has gained support.
-- `scipy.integrate.qmc_quad`
-- `scipy.linalg.block_diag` and `scipy.linalg.fiedler` have gained support.
+- `scipy.integrate.qmc_quad`, `scipy.integrate.cumulative_simpson`, and
+  `scipy.integrate.cumulative_trapezoid` have gained support.
+- `scipy.linalg.block_diag`, `scipy.linalg.fiedler`, and
+  `scipy.linalg.orthogonal_procrustes` have gained support.
 - `scipy.interpolate.NdBSpline`, `scipy.interpolate.RegularGridInterpolator`,
   and `scipy.interpolate.RBFInterpolator` gained support.
 - Support added for `scipy.stats.alexandergovern`, `scipy.stats.bootstrap`,
