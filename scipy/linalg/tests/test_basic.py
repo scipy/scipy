@@ -839,7 +839,7 @@ class TestSolve:
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
     @pytest.mark.parametrize("size", [10, 100])
-    @pytest.mark.parametrize("assume_a", ['gen', 'sym', 'pos', 'her'])
+    @pytest.mark.parametrize("assume_a", ['gen', 'sym', 'pos', 'her', 'tridiagonal'])
     @pytest.mark.parametrize(
         "dtype", [np.float32, np.float64, np.complex64, np.complex128]
     )
@@ -858,6 +858,11 @@ class TestSolve:
             a = a + a.T.conj()
         elif assume_a == 'pos':
             a = a.T.conj() @ a + 0.1*np.eye(size)
+        elif assume_a == 'tridiagonal':
+            a = (np.diag(np.diag(a)) +
+                 np.diag(np.diag(a, 1), 1) +
+                 np.diag(np.diag(a, -1), -1)
+            )
 
         tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
 
@@ -1121,6 +1126,26 @@ class TestSolve:
         b = np.ones(2)
         with pytest.raises(LinAlgError):
             solve(a, b, assume_a="diagonal")
+
+    def test_tridiagonal(self):
+        n = 4
+        a = -2*np.diag(np.ones(n)) + np.diag(np.ones(3), 1) + np.diag(np.ones(3), -1)
+        a = np.stack([np.triu(np.ones((n, n))), a])
+        b = np.ones(4)
+        x = solve(a, b)
+
+        # basic tridiag solve
+        assert_allclose(x[1, ...], np.asarray([-2., -3., -3., -2.]), atol=1e-15)
+
+        # ill-conditioned inputs warn
+        a[1, 0, 0] = 1e20
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="tridiagonal")
+
+        # singular inputss raise
+        a[1, 0, 0] = a[1, 0, 1] = 0
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="tridiagonal")
 
 
 class TestSolveTriangular:
