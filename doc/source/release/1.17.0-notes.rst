@@ -165,6 +165,8 @@ New features
   interpolating with ``start`` being a point on the equator, and ``end``
   being a point at the north pole, then a value of ``t=-1`` would give you a
   point at the south pole.
+- ``Rotation.as_euler`` and ``Rotation.as_davenport`` methods have gained a
+  ``suppress_warnings`` parameter to enable suppression of gimbal lock warnings.
 
 `scipy.special` improvements
 ============================
@@ -231,6 +233,8 @@ Array API Standard Support
   `scipy.stats.ansari`,
   `scipy.stats.power`, `scipy.stats.permutation_test`, `scipy.stats.sigmaclip`,
   `scipy.stats.wilcoxon`, and `scipy.stats.yeojohnson_llf`.
+- `scipy.stats.pearsonr` has gained support for JAX and Dask backends.
+- `scipy.stats.variation` has gained support for the Dask backend.
 
 **************************************
 Deprecated features and future changes
