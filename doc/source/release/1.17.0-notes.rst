@@ -99,13 +99,20 @@ New features
   ``stft``, ``istft``, ``resample``, ``resample_poly``, ``firwin``,
   ``firwin2``, ``firwin_2d``, ``check_COLA`` and ``check_NOLA``, which utilize
   ``get_window`` but do not expose the ``fftbin`` parameter.
-- `~scipy.signal.hilbert` gained the new keyword ``axes`` for specifying the
+- `~scipy.signal.hilbert2` gained the new keyword ``axes`` for specifying the
   axes along which the two-dimensional analytic signal should be calculated.
-  Furthermore, its documentation was significantly improved.
+  Furthermore, the documentation of `~scipy.signal.hilbert` and
+  `~scipy.signal.hilbert2` was significantly improved.
 
 
 `scipy.sparse` improvements
 ===========================
+- ``coo_array`` now supports indexing. This includes slices, arrays,
+  ``np.newaxis``, ``Ellipsis``, in 1D, 2D and the new nD. So COO format now
+  has full support for nD and COO now allows indexing without converting
+  formats.
+- Additional sparse construction functions include ``expand_dims``,
+  ``swapaxes``, ``permute_dims``, and nD support for the ``kron`` function.
 - ARPACK Fortran77 library is ported to C. Among many changes, it is now
   possible to use external random generators including NumPy PRNGs for
   reproducible runs. Previously this was not the case due to internal seeding
@@ -116,7 +123,7 @@ New features
   used to update the sparse array using a dict, ``dict.items()``-like iterable,
   or another ``dok_array`` matrix. It performs additional validation that keys
   are valid index tuples.
-- `~scipy.sparse.dia_array.tocsr()` is approximately three times faster and
+- `~scipy.sparse.dia_array.tocsr` is approximately three times faster and
   some unneccesary copy operations have been removed from sparse format
   interconversions more broadly.
 
