@@ -838,55 +838,41 @@ class TestSolve:
     def test_assume_a_keyword(self):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
-    @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
-                             "crash on Windows (gh-8064)")
-    def test_all_type_size_routine_combinations(self):
+    @pytest.mark.parametrize("size", [10, 100])
+    @pytest.mark.parametrize("assume_a", ['gen', 'sym', 'pos', 'her'])
+    @pytest.mark.parametrize(
+        "dtype", [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    def test_all_type_size_routine_combinations(self, size, dtype, assume_a):
         rng = np.random.default_rng(1234)
-        sizes = [10, 100]
-        assume_as = ['gen', 'sym', 'pos', 'her']
-        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-        for size, assume_a, dtype in itertools.product(sizes, assume_as,
-                                                       dtypes):
-            is_complex = dtype in (np.complex64, np.complex128)
-            if assume_a == 'her' and not is_complex:
-                continue
+        is_complex = dtype in (np.complex64, np.complex128)
 
-            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
-                       f"dtype: {dtype}")
+        a = rng.standard_normal((size, size)).astype(dtype)
+        b = rng.standard_normal(size).astype(dtype)
+        if is_complex:
+            a += (1j*rng.standard_normal((size, size))).astype(dtype)
 
-            a = rng.standard_normal((size, size)).astype(dtype)
-            b = rng.standard_normal(size).astype(dtype)
-            if is_complex:
-                a += (1j*rng.standard_normal((size, size))).astype(dtype)
+        if assume_a == 'sym':  # Can still be complex but only symmetric
+            a = a + a.T
+        elif assume_a == 'her':  # Handle hermitian matrices here instead
+            a = a + a.T.conj()
+        elif assume_a == 'pos':
+            a = a.T.conj() @ a + 0.1*np.eye(size)
 
-            if assume_a == 'sym':  # Can still be complex but only symmetric
-                a = a + a.T
-            elif assume_a == 'her':  # Handle hermitian matrices here instead
-                a = a + a.T.conj()
-            elif assume_a == 'pos':
-                a = a.conj().T.dot(a) + 0.1*np.eye(size)
+        tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
 
-            tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+        if assume_a in ['gen', 'sym', 'her']:
+            # We revert the tolerance from before
+            #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+            if dtype in (np.float32, np.complex64):
+                tol *= 10
 
-            if assume_a in ['gen', 'sym', 'her']:
-                # We revert the tolerance from before
-                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
-                if dtype in (np.float32, np.complex64):
-                    tol *= 10
+        x = solve(a, b, assume_a=assume_a)
+        assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
-            x = solve(a, b, assume_a=assume_a)
-            assert_allclose(a.dot(x), b,
-                            atol=tol * size,
-                            rtol=tol * size,
-                            err_msg=err_msg)
-
-            if assume_a == 'sym' and dtype not in (np.complex64,
-                                                   np.complex128):
-                x = solve(a, b, assume_a=assume_a, transposed=True)
-                assert_allclose(a.dot(x), b,
-                                atol=tol * size,
-                                rtol=tol * size,
-                                err_msg=err_msg)
+        if assume_a == 'sym' and not is_complex:
+            x = solve(a, b, assume_a=assume_a, transposed=True)
+            assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
@@ -914,9 +900,9 @@ class TestSolve:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
     @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
-    # "pos" and "positive definite" need to be added
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
+                                          'pos', 'positive definite',
                                           'symmetric', 'hermitian', 'banded',
                                           'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
@@ -951,8 +937,7 @@ class TestSolve:
         elif assume_a in {'hermitian', 'her'}:
             A = A + A.conj().T
         elif assume_a in {'positive definite', 'pos'}:
-            A = A + A.T
-            A += np.diag(A.sum(axis=1))
+            A = A @ A.T.conj()
 
         if fortran:
             A = np.asfortranarray(A)
@@ -992,8 +977,7 @@ class TestSolve:
     @pytest.mark.parametrize(
         "assume_a",
         [
-            None, "general", "upper triangular", "lower triangular",
-            "pos", "pos upper", "pos lower"
+            None, "diagonal", "general", "upper triangular", "lower triangular", "pos",
         ]
     )
     def test_vs_np_solve(self, assume_a):
@@ -1022,19 +1006,9 @@ class TestSolve:
         result_np = np.linalg.solve(aa, b)
         assert_allclose(out, result_np, atol=1e-15)
 
-        out = solve(a, b, assume_a='pos lower')
-        assert_allclose(out, result_np, atol=1e-15)
-
         # repeat with uplo='U'
         out = solve(a.T, b, assume_a='pos', lower=False)
         assert_allclose(out, result_np, atol=1e-15)
-
-        out = solve(a.T, b, assume_a='pos upper')
-        assert_allclose(out, result_np, atol=1e-15)
-
-        # conflicting assume_a & lower
-        with assert_raises(ValueError):
-            solve(a, b, assume_a='pos upper', lower=True)
 
     def test_readonly(self):
         a = np.eye(3)
@@ -1127,6 +1101,26 @@ class TestSolve:
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
             solve(A, b, assume_a='pos')
+
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        b = np.ones(3)
+        x = solve(a, b)
+
+        # basic diagonal solve
+        assert_allclose(x[1, ...], 1 / np.arange(1, 4), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        b = np.ones(2)
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="diagonal")
 
 
 class TestSolveTriangular:
@@ -1368,6 +1362,10 @@ class TestInv:
         with pytest.warns(LinAlgWarning):
             inv(a)
 
+        a2 = np.stack([np.diag([1., 1e-20]), np.diag([1, 1]), np.diag([1, 1e-20])])
+        with pytest.warns(LinAlgWarning):
+            inv(a2)
+
     def test_wrong_assume_a(self):
         with assert_raises(KeyError):
             inv(np.eye(2), assume_a="kaboom")
@@ -1382,27 +1380,67 @@ class TestInv:
 
         assert_allclose(y_inv1, y_inv0, atol=1e-15)
 
-        # check that the lower triangle is not referenced for "pos upper"
+        # check that the lower triangle is not referenced for `lower=False`
         mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
-        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos upper")
+        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos", lower=False)
         assert_allclose(y_inv2, y_inv0, atol=1e-15)
 
-        # repeat with the upper triangle and "pos lower"
-        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos lower")
+        # repeat with the upper triangle
+        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos", lower=True)
         assert_allclose(y_inv3, y_inv0, atol=1e-15)
 
-    def test_posdef_not_posdef(self):
-        # the `b` matrix is invertible but not positive definite
+    @pytest.mark.parametrize('complex_', [False, True])
+    def test_posdef_not_posdef(self, complex_):
+        # the `b` matrix is invertible but not pos definite: test the "sym" fallback
         a = np.arange(9).reshape(3, 3)
         b = a + a.T + np.eye(3)
+        if complex_:
+            b = b + 1j*b
 
-        # cholesky solver fails, and the routine falls back to the general inverse
+        # cholesky solver fails, and the routine falls back to the symmetric inverse
         b_inv0 = inv(b)
         assert_allclose(b_inv0 @ b, np.eye(3), atol=3e-15)
 
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
             inv(b, assume_a='pos')
+
+        # test posdef fallback to the hermitian solver, too
+        if complex_:
+            a = np.arange(9).reshape(3, 3)
+            a = a + 1j*a
+            b = a + a.T.conj() + np.eye(3)
+            assert_allclose(inv(b) @ b, np.eye(3), atol=3e-15)
+
+    @pytest.mark.parametrize('complex_', [False, True])
+    @pytest.mark.parametrize('sym_herm', ['sym', 'her'])
+    def test_sym_her(self, complex_, sym_herm):
+        # test "sym" and "her" modes
+        a = np.arange(9).reshape(3, 3)
+        if complex_:
+            a = a + 1j*a
+
+        if sym_herm == "sym":
+            b = a + a.T
+        else:   # sym_herm == "herm":
+            b = a + a.T.conj()
+
+        b = b + np.eye(3)
+
+        b_inv0 = np.linalg.inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-14)
+
+        b_inv1 = inv(b, assume_a=sym_herm)
+        assert_allclose(b_inv0, b_inv1, atol=1e-15)
+
+        # check that the "other" triangle is not referenced
+        mask = np.where(1 - np.tri(*a.shape, -1) == 0, np.nan, 1)
+        b_inv2 = inv(b*mask, check_finite=False, assume_a=sym_herm, lower=False)
+        assert_allclose(b_inv2, b_inv0, atol=1e-15)
+
+        # repeat with the upper triangle
+        b_inv3 = inv(b*mask.T, check_finite=False, assume_a=sym_herm, lower=True)
+        assert_allclose(b_inv3, b_inv0, atol=1e-15)
 
     def test_triangular_1(self):
         x = np.arange(25, dtype=float).reshape(5, 5)
@@ -1440,12 +1478,22 @@ class TestInv:
         y_inv_2_l = inv(y*mask.T, check_finite=False, assume_a='lower triangular')
         assert_allclose(y_inv_2_l @ np.tril(y), np.eye(5), atol=1e-15)
 
-        # TODO
-        # 1. general, ill-conditioned: warns
-        # 2. posdef, ill-conditioned: warns
-        # 4. triangular, upper, lower, ill-conditioned: warns
-        # 5. assume_a="posdef" but Cholesky fails: fall back to general or raise?
-        # 6. error control (fast-fail, fill with nans, fill and raise)
+    def test_diagonal(self):
+        a = np.stack([np.triu(np.ones((3, 3))), np.diag(np.arange(1, 4))])
+        inv_a = inv(a)
+
+        # basic diagonal invert
+        assert_allclose(inv_a[1], np.diag(1 / np.arange(1, 4)), atol=1e-14)
+
+        # ill-conditioned inputs warn
+        a = np.asarray([[1e30, 0], [0, 1]])
+        with pytest.warns(LinAlgWarning):
+            inv(a, assume_a="diagonal")
+
+        # singular input raises
+        a = np.asarray([[0, 0], [0, 1]])
+        with pytest.raises(LinAlgError):
+            inv(a, assume_a="diagonal")
 
 
 class TestDet:
