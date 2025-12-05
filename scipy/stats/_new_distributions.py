@@ -535,15 +535,14 @@ class Binomial(DiscreteDistribution):
 class VonMises(ContinuousDistribution, CircularDistribution):
     r"""von Mises distribution.
 
-    The probability density function of the von Mises distribution is:
+    Denoting the modified Bessel function of the first kind of order zero as
+    :math:`I_0(\cdot)`, the probability density function of the von Mises distribution
+    is:
 
     .. math::
 
          f(x; \mu, \kappa) = \frac{\exp( \kappa \cos(x - \mu))}
                                   {2\pi I_0(\kappa)           }
-
-    where :math:`I_0(\cdot)` is the modified Bessel function of the first
-    kind of order zero.
     """
 
     _mu_domain = _RealInterval(endpoints=(-np.pi, np.pi))  # change to (0, 2*np.pi)?

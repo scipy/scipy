@@ -215,17 +215,17 @@ class _ProbabilityDistribution(ABC):
 
         The definitions for discrete random variables are analogous, with
         sums over the support replacing the integrals.
-        
+
         For circular distributions, this method computes trigonometric moments
 
         .. math::
 
             \int_{\chi} \exp(in(x - c)) f(x) dx
-            
+
         where :math:`c = 0` for the "raw" moment and :math:`c = \mu`, the circular
-        mean, for the "central" moment. Standardized moments are not defined for
-        circular distributions. 
-        
+        mean, for the "central" moment ([2]_ 28). Standardized moments are not defined
+        for circular distributions.
+
         Parameters
         ----------
         order : int
@@ -325,6 +325,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Moment, *Wikipedia*,
                https://en.wikipedia.org/wiki/Moment_(mathematics)
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -359,17 +361,16 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def mean(self, *, method):
-        r"""Mean (raw first moment about the origin)
+        r"""Mean, a measure of location
 
         For real-line distributions, the mean is the first raw moment about the origin.
 
-        For circular distributions, the (circular) mean is the phase of the first raw
-        trigonometric moment,
+        For circular distributions, the (circular) mean is defined ([2]_ 29) as the
+        phase of the first raw trigonometric moment,
 
         .. math::
 
                 \mu = \arg E\left[ \exp (iX) \right].
-
 
         Parameters
         ----------
@@ -388,6 +389,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Mean, *Wikipedia*,
                https://en.wikipedia.org/wiki/Mean#Mean_of_a_probability_distribution
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -408,7 +411,7 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def median(self, *, method):
-        r"""Median (50th percentile)
+        r"""Median, a measure of location
 
         If a continuous, real-line random variable :math:`X` has probability :math:`0.5`
         of taking on a value less than :math:`m`, then :math:`m` is the median.
@@ -423,7 +426,7 @@ class _ProbabilityDistribution(ABC):
         For discrete random variables, the median may not be unique, in which
         case the smallest value satisfying the definition is reported.
 
-        For circular random variables, the median of a random angle :math:`X` is an
+        The median of a circular random variable :math:`X` is defined ([2]_ 30) as an
         angle :math:`x'` which minimizes
 
         .. math::
@@ -461,6 +464,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Median, *Wikipedia*,
                https://en.wikipedia.org/wiki/Median#Probability_distributions
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -481,7 +486,7 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def mode(self, *, method):
-        r"""Mode (most likely value)
+        r"""Mode, the most likely value
 
         Informally, the mode is a value that a random variable has the highest
         probability (density) of assuming. That is, the mode is the element of
@@ -579,11 +584,11 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def variance(self, *, method):
-        r"""Variance (central second moment)
+        r"""Variance, a measure of dispersion
 
         For real-line distributions, the mean is the second central moment.
-        For circular distributions, the variance :math:`\nu` of a random angle
-        :math:`X` is defined as
+
+        The variance :math:`\nu` of a random angle :math:`X` is defined ([2]_ 29) as
 
         .. math::
 
@@ -608,6 +613,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Variance, *Wikipedia*,
                https://en.wikipedia.org/wiki/Variance#Absolutely_continuous_random_variable
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -628,13 +635,13 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def standard_deviation(self, *, method):
-        r"""Standard deviation (square root of the second central moment)
+        r"""Standard deviation, a measure of dispersion
 
         For real-line distributions, the standard deviation is the square root of the
         second central moment.
 
-        For circular distributions, the standard deviation :math:`\sigma` of a random
-        angle :math:`X` is defined as
+        The standard deviation :math:`\sigma` of a circular random variable :math:`X`
+        is defined ([2]_ 30) as
 
         .. math::
 
@@ -659,6 +666,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Standard deviation, *Wikipedia*,
                https://en.wikipedia.org/wiki/Standard_deviation#Definition_of_population_values
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -679,7 +688,21 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def skewness(self, *, method):
-        r"""Skewness (standardized third moment)
+        r"""Skewness, a measure of asymmetry
+
+        For real-line distributions, the skewness is the standardized third moment.
+
+        The skewness :math:`\nu` of a circular random variable :math:`X` is defined
+        ([2]_ 31) as
+
+        .. math::
+
+                s = \frac{ \bar{\beta}_2  }
+                         {(1 - \rho)^{3/2}}
+
+        where :math:`\rho` and :math:`\bar{\beta}_2` are the real and imaginary
+        components of the first and second central trigonometric moments of :math:`X`,
+        respectively.
 
         Parameters
         ----------
@@ -698,6 +721,8 @@ class _ProbabilityDistribution(ABC):
         ----------
         .. [1] Skewness, *Wikipedia*,
                https://en.wikipedia.org/wiki/Skewness
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -718,12 +743,20 @@ class _ProbabilityDistribution(ABC):
 
     @abstractmethod
     def kurtosis(self, *, method):
-        r"""Kurtosis (standardized fourth moment)
+        r"""Kurtosis, a measure of tailedness
 
-        By default, this is the standardized fourth moment, also known as the
-        "non-excess" or "Pearson" kurtosis (e.g. the kurtosis of the normal
-        distribution is 3). The "excess" or "Fisher" kurtosis (the standardized
-        fourth moment minus 3) is available via the `convention` parameter.
+        For real-line distributions, the skewness is the standardized fourth moment.
+
+        The kurtosis :math:`k` of a circular random variable :math:`X` is defined
+        ([2]_ 31) as
+
+        .. math::
+
+                k = \frac{\bar{\alpha}_2 - \rho^2}
+                         {    (1 - \rho)^{2}     }
+
+        where :math:`\rho` and :math:`\bar{\alpha}_2` are the real components of the
+        first and second central trigonometric moments of :math:`X`, respectively.
 
         Parameters
         ----------
@@ -745,10 +778,19 @@ class _ProbabilityDistribution(ABC):
         mean
         variance
 
+        Notes
+        -----
+        By default, this is the standardized fourth moment, also known as the
+        "non-excess" or "Pearson" kurtosis (e.g. the kurtosis of the normal
+        distribution is 3). The "excess" or "Fisher" kurtosis (the standardized
+        fourth moment minus 3) is available via the `convention` parameter.
+
         References
         ----------
         .. [1] Kurtosis, *Wikipedia*,
                https://en.wikipedia.org/wiki/Kurtosis
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -812,9 +854,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        By definition of the support, the PDF evaluates to its minimum value
-        of :math:`0` outside the support; i.e. for :math:`x < l` or
+        Suppose a continuous (real-line) probability distribution has support
+        :math:`[l, r]`. By definition of the support, the PDF evaluates to its minimum
+        value of :math:`0` outside the support; i.e. for :math:`x < l` or
         :math:`x > r`. The maximum of the PDF may be less than or greater than
         :math:`1`; since the value is a probability *density*, only its integral
         over the support must equal :math:`1`.
@@ -822,10 +864,18 @@ class _ProbabilityDistribution(ABC):
         For discrete distributions, `pdf` returns ``inf`` at supported points
         and ``0`` elsewhere.
 
+        For circular distributions, the probability density function ([2]_ 26)
+        is periodic:
+
+        .. math::
+            f(x + 2\pi) = f(x), \quad -\infty < x < \infty.
+
         References
         ----------
         .. [1] Probability density function, *Wikipedia*,
                https://en.wikipedia.org/wiki/Probability_density_function
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -890,11 +940,11 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a continuous probability distribution has support :math:`[l, r]`.
-        By definition of the support, the log-PDF evaluates to its minimum value
-        of :math:`-\infty` (i.e. :math:`\log(0)`) outside the support; i.e. for
-        :math:`x < l` or :math:`x > r`. The maximum of the log-PDF may be less
-        than or greater than :math:`\log(1) = 0` because the maximum of the PDF
+        Suppose a continuous (real-line) probability distribution has support
+        :math:`[l, r]`. By definition of the support, the log-PDF evaluates to its
+        minimum value of :math:`-\infty` (i.e. :math:`\log(0)`) outside the support;
+        i.e. for :math:`x < l` or :math:`x > r`. The maximum of the log-PDF may be
+        less than or greater than :math:`\log(1) = 0` because the maximum of the PDF
         can be any positive real.
 
         For distributions with infinite support, it is common for `pdf` to return
@@ -1085,13 +1135,15 @@ class _ProbabilityDistribution(ABC):
     def cdf(self, x, y, /, *, method):
         r"""Cumulative distribution function
 
-        The cumulative distribution function ("CDF"), denoted :math:`F(x)`, is
-        the probability the random variable :math:`X` will assume a value
-        less than or equal to :math:`x`:
+        The cumulative distribution function ("CDF"), denoted :math:`F(x)` is the
+        probability that a random variable :math:`X` will assume a value less than or
+        equal to :math:`x`:
 
         .. math::
 
             F(x) = P(X ≤ x)
+
+        for :math:`x` within the support.
 
         A two-argument variant of this function is also defined as the
         probability the random variable :math:`X` will assume a value between
@@ -1153,8 +1205,16 @@ class _ProbabilityDistribution(ABC):
 
             F(x, y) = \int_x^y f(u) du = F(y) - F(x)
 
-        The CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
+        For real line distributions,
+        the CDF evaluates to its minimum value of :math:`0` for :math:`x ≤ l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
+
+        For circular distributions, the CDF evaluates to :math:`0` at :math:`x = l`,
+        but the distribution function is periodic ([2]_ 25):
+
+        .. math::
+
+            F(x + 2\pi) - F(x) = 1, \quad -\infty < x < \infty.
 
         Suppose a discrete probability distribution has support :math:`[l, r]`.
         The CDF :math:`F(x)` is related to the probability mass function
@@ -1167,12 +1227,15 @@ class _ProbabilityDistribution(ABC):
         The CDF evaluates to its minimum value of :math:`0` for :math:`x < l`
         and its maximum value of :math:`1` for :math:`x ≥ r`.
 
-        The CDF is also known simply as the "distribution function".
+        The CDF is also known simply as the "distribution function", especially
+        for circular distributions.
 
         References
         ----------
         .. [1] Cumulative distribution function, *Wikipedia*,
                https://en.wikipedia.org/wiki/Cumulative_distribution_function
+        .. [2] Mardia, Kanti V., and Peter E. Jupp. *Directional statistics*.
+               John Wiley & Sons, 1999. :doi:`10.1002/9780470316979`.
 
         Examples
         --------
@@ -1216,7 +1279,8 @@ class _ProbabilityDistribution(ABC):
 
             F^{-1}(p) = \min_\chi \quad \text{s.t.} \quad F(x) ≥ p
 
-        `icdf` accepts `p` for :math:`p \in [0, 1]`.
+        For real-line distributions, `icdf` accepts `p` for :math:`p \in [0, 1]`.
+        For circular distributions, `icdf` is defined for all real input.
 
         Parameters
         ----------
@@ -1249,7 +1313,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a probability distribution has support :math:`[l, r]`. The
+        Suppose a real-line probability distribution has support :math:`[l, r]`. The
         inverse CDF returns its minimum value of :math:`l` at :math:`p = 0`
         and its maximum value of :math:`r` at :math:`p = 1`. Because the CDF
         has range :math:`[0, 1]`, the inverse CDF is only defined on the
@@ -1299,6 +1363,8 @@ class _ProbabilityDistribution(ABC):
         .. math::
 
             G(x) = 1 - F(x) = P(X > x)
+
+        for :math:`x` within the support.
 
         A two-argument variant of this function is:
 
@@ -1358,8 +1424,16 @@ class _ProbabilityDistribution(ABC):
 
             G(x, y) = \int_l^x f(u) du + \int_y^r f(u) du
 
-        The CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
+        For continuous, real-line distributions,
+        the CCDF returns its minimum value of :math:`0` for :math:`x ≥ r`
         and its maximum value of :math:`1` for :math:`x ≤ l`.
+
+        For circular distributions, the CCDF evaluates to :math:`0` at :math:`x = r`,
+        but it is periodic:
+
+        .. math::
+
+            G(x + 2\pi) - G(x) = 1, \quad -\infty < x < \infty.
 
         Suppose a discrete probability distribution has support :math:`[l, r]`.
         The CCDF :math:`G(x)` is related to the probability mass function
@@ -1424,7 +1498,8 @@ class _ProbabilityDistribution(ABC):
 
             G^{-1}(p) = \min_\chi \quad \text{s.t.} \quad G(x) ≤ p
 
-        `iccdf` accepts `p` for :math:`p \in [0, 1]`.
+        For real-line distributions, `iccdf` accepts `p` for :math:`p \in [0, 1]`.
+        For circular distributions, `iccdf` is defined for all real input.
 
         Parameters
         ----------
@@ -1452,7 +1527,7 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
-        Suppose a probability distribution has support :math:`[l, r]`. The
+        Suppose a real-line probability distribution has support :math:`[l, r]`. The
         inverse CCDF returns its minimum value of :math:`l` at :math:`p = 1`
         and its maximum value of :math:`r` at :math:`p = 0`. Because the CCDF
         has range :math:`[0, 1]`, the inverse CCDF is only defined on the
@@ -1492,7 +1567,7 @@ class _ProbabilityDistribution(ABC):
         r"""Log of the cumulative distribution function
 
         The cumulative distribution function ("CDF"), denoted :math:`F(x)`, is
-        the probability the random variable :math:`X` will assume a value
+        the probability the real-line random variable :math:`X` will assume a value
         less than or equal to :math:`x`:
 
         .. math::
@@ -1551,6 +1626,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        Currently, `logcdf` is implemented only for real-line distributions; for
+        circular distributions, it raises a ``NotImplementedError``.
+
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CDF evaluates to its minimum value of :math:`\log(0) = -\infty`
         for :math:`x ≤ l` and its maximum value of :math:`\log(1) = 0` for
@@ -1648,6 +1726,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        Currently, `ilogcdf` is implemented only for real-line distributions; for
+        circular distributions, it raises a ``NotImplementedError``.
+
         Suppose a probability distribution has support :math:`[l, r]`.
         The inverse log-CDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(0) = -\infty` and its maximum value of :math:`r` at
@@ -1691,7 +1772,7 @@ class _ProbabilityDistribution(ABC):
 
         The complementary cumulative distribution function ("CCDF"), denoted
         :math:`G(x)` is the complement of the cumulative distribution function
-        :math:`F(x)`; i.e., probability the random variable :math:`X` will
+        :math:`F(x)`; i.e., probability the real-line random variable :math:`X` will
         assume a value greater than :math:`x`:
 
         .. math::
@@ -1749,6 +1830,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        Currently, `logccdf` is implemented only for real-line distributions; for
+        circular distributions, it raises a ``NotImplementedError``.
+
         Suppose a continuous probability distribution has support :math:`[l, r]`.
         The log-CCDF returns its minimum value of :math:`\log(0)=-\infty` for
         :math:`x ≥ r` and its maximum value of :math:`\log(1) = 0` for
@@ -1836,6 +1920,9 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        Currently, `ilogccdf` is implemented only for real-line distributions; for
+        circular distributions, it raises a ``NotImplementedError``.
+
         Suppose a probability distribution has support :math:`[l, r]`. The
         inverse log-CCDF returns its minimum value of :math:`l` at
         :math:`\log(p) = \log(1) = 0` and its maximum value of :math:`r` at

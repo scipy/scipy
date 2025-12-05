@@ -217,7 +217,8 @@ class _Domain(ABC):
         Used for generating documentation.
 
     """
-    symbols = {np.inf: r"\infty", -np.inf: r"-\infty", np.pi: r"\pi", -np.pi: r"-\pi"}
+    symbols = {np.inf: r"\infty", -np.inf: r"-\infty",
+               np.pi: r"\pi", -np.pi: r"-\pi", 2*np.pi: r"2\pi"}
 
     # generic type compatibility with scipy-stubs
     __class_getitem__ = classmethod(GenericAlias)
@@ -3805,12 +3806,11 @@ class DiscreteDistribution(UnivariateDistribution):
 
 class CircularDistribution(UnivariateDistribution):
     # todo:
-    #  - fix documentation example
     #  - write tests
-    #  - write documentation
     #  - does median need edge handling like mode?
     #  - better guess for median?
     #  - better guess for mode? (median is too expensive for circular distributions!)
+    #  - fix kurtosis excess/non-excess
 
     @cached_property
     def _moment_methods(self):
