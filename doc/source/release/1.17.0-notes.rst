@@ -116,7 +116,9 @@ New features
   used to update the sparse array using a dict, ``dict.items()``-like iterable,
   or another ``dok_array`` matrix. It performs additional validation that keys
   are valid index tuples.
-- `~scipy.sparse.dia_array.tocsr()` is approximately three times faster.
+- `~scipy.sparse.dia_array.tocsr()` is approximately three times faster and
+  some unneccesary copy operations have been removed from sparse format
+  interconversions more broadly.
 
 `scipy.spatial` improvements
 ============================
@@ -141,7 +143,11 @@ New features
   also match the number of axes in the last dimension. The resulting ``Rotation``
   has the shape ``np.broadcast_shapes(np.atleast_2d(axes).shape[:-2],
   np.atleast_1d(angles).shape[:-1])``.
-- The `spatial.geometric_slerp` function can now extrapolate. When given a
+- ``Rotation.from_matrix`` has gained an ``assume_valid`` argument that allows for
+  performance improvements when users can guarantee valid matrix inputs.
+  ``from_matrix`` is now also faster in cases where a known orthogonal matrix
+  is used.
+- The `scipy.spatial.geometric_slerp` function can now extrapolate. When given a
   value outside the range [0, 1], ``geometric_slerp()`` will continue with
   the same rotation outside this range. For example, if spherically
   interpolating with ``start`` being a point on the equator, and ``end``
@@ -165,6 +171,8 @@ New features
   logistic distribution.
 - `scipy.stats.quantile` now accepts a ``weights`` argument to specify
   frequency weights.
+- `scipy.stats.quantile` is now faster on large arrays as it no longer uses
+  stable sort internally.
 - `scipy.stats.quantile` supports three new values of the ``method`` argument,
   ``'round_inward'``, ``'round_outward'``, and ``'round_neareast'``, for use in
   the context of trimming and winsorizing data.
@@ -190,9 +198,11 @@ New features
 **************************
 Array API Standard Support
 **************************
-- `spatial.transform` has gained support.
+- ``spatial.transform`` has gained support.
 - `scipy.integrate.qmc_quad`
 - `scipy.linalg.block_diag`
+- `scipy.interpolate.NdBSpline`, `scipy.interpolate.RegularGridInterpolator`,
+  and `scipy.interpolate.RBFInterpolator` gained support.
 - Support added for `scipy.stats.alexandergovern`, `scipy.stats.bootstrap`,
   `scipy.stats.brunnermunzel`, `scipy.stats.chatterjeexi`,
   `scipy.stats.cramervonmises`, `scipy.stats.cramervonmises_2samp`,
@@ -201,6 +211,7 @@ Array API Standard Support
   `scipy.stats.kruskal`, `scipy.stats.ks_1samp`, `scipy.stats.levene`,
   `scipy.stats.lmoment`, `scipy.stats.mannwhitneyu`,
   `scipy.stats.median_abs_deviation`, `scipy.stats.mode`, `scipy.stats.mood`,
+  `scipy.stats.ansari`,
   `scipy.stats.power`, `scipy.stats.permutation_test`, `scipy.stats.sigmaclip`,
   `scipy.stats.wilcoxon`, and `scipy.stats.yeojohnson_llf`.
 
