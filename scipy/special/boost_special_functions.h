@@ -66,6 +66,24 @@ boost::math::policies::user_overflow_error(const char* function, const char* mes
     return 0;
 }
 
+// Simple wrapper to avoid C++ exceptions from crashing Python
+// Should be used for all functions that do not have special error handling
+template<typename Real, typename Callable>
+Real error_handler(Callable&& func) {
+    try {
+        return func();
+    } catch (const std::underflow_error&) {
+        /* Boost underflow - return 0 */
+        return Real(0);
+    } catch (const std::overflow_error&) {
+        /* Boost overflow - return infinity */
+        return std::numeric_limits<Real>::infinity();
+    } catch (...) {
+        /* Boost was unable to produce a result. */
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
+}
+
 template<typename Real>
 static inline
 Real ibeta_wrap(Real a, Real b, Real x)
@@ -73,12 +91,12 @@ Real ibeta_wrap(Real a, Real b, Real x)
     Real y;
 
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betainc", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     /* In limiting cases, SciPy treats `betainc` as a two parameter family
@@ -95,7 +113,7 @@ Real ibeta_wrap(Real a, Real b, Real x)
 	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
 	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
 	 */
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     if ((a == 0) || std::isinf(b)) {
@@ -116,16 +134,16 @@ Real ibeta_wrap(Real a, Real b, Real x)
         y = boost::math::ibeta(a, b, x, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("betainc", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("betainc", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("betainc", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("betainc", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -150,12 +168,12 @@ Real ibetac_wrap(Real a, Real b, Real x)
     Real y;
 
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     /* In limiting cases, SciPy treats `betaincc` as a two parameter family
@@ -172,7 +190,7 @@ Real ibetac_wrap(Real a, Real b, Real x)
 	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
 	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
 	 */
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     if ((a == 0) || std::isinf(b)) {
@@ -193,16 +211,16 @@ Real ibetac_wrap(Real a, Real b, Real x)
         y = boost::math::ibetac(a, b, x);
     } catch (const std::domain_error& e) {
         sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("betaincc", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("betaincc", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("betaincc", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -227,26 +245,26 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
     Real y;
 
     if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
         sf_error("betaincinv", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     try {
         y = boost::math::ibeta_inv(a, b, p, policy_);
     } catch (const std::domain_error& e) {
         sf_error("betaincinv", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("betaincinv", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("betaincinv", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("betaincinv", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -270,26 +288,26 @@ Real ibeta_inva_wrap(Real p, Real b, Real x)
     Real y;
 
     if (std::isnan(p) || std::isnan(b) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((b <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
         sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     try {
         y = boost::math::ibeta_inva(b, x, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("btdtria", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("btdtria", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("btdtria", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("btdtria", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -313,26 +331,26 @@ Real ibeta_invb_wrap(Real a, Real p, Real x)
     Real y;
 
     if (std::isnan(p) || std::isnan(a) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((a <= 0) || (x <= 0) || (p < 0) || (p > 1)) {
         sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     try {
         y = boost::math::ibeta_invb(a, x, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("btdtrib", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("btdtrib", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("btdtrib", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("btdtrib", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -356,26 +374,26 @@ Real ibetac_inv_wrap(Real a, Real b, Real p)
     Real y;
 
     if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
         sf_error("betainccinv", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     try {
         y = boost::math::ibetac_inv(a, b, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("betainccinv", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("betainccinv", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("betainccinv", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("betainccinv", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -399,26 +417,26 @@ Real erfinv_wrap(Real x)
     Real y;
 
     if (x == -1) {
-        return -INFINITY;
+        return -std::numeric_limits<Real>::infinity();
     }
     if (x == 1) {
-        return INFINITY;
+        return std::numeric_limits<Real>::infinity();
     }
 
     try {
         y = boost::math::erf_inv(x, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("erfinv", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("erfinv", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("erfinv", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("erfinv", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -453,7 +471,7 @@ Real powm1_wrap(Real x, Real y)
     if (x == 0) {
         if (y < 0) {
             sf_error("powm1", SF_ERROR_DOMAIN, NULL);
-            return INFINITY;
+            return std::numeric_limits<Real>::infinity();
         }
         else if (y > 0) {
             return -1;
@@ -462,14 +480,14 @@ Real powm1_wrap(Real x, Real y)
     if (x < 0 && std::trunc(y) != y) {
         // To compute x**y with x < 0, y must be an integer.
         sf_error("powm1", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
 
     try {
         z = boost::math::powm1(x, y, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("powm1", SF_ERROR_DOMAIN, NULL);
-        z = NAN;
+        z = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("powm1", SF_ERROR_OVERFLOW, NULL);
 
@@ -482,11 +500,11 @@ Real powm1_wrap(Real x, Real y)
                 z = 1;
             }
             else {
-                z = INFINITY;
+                z = std::numeric_limits<Real>::infinity();
             }
         }
         else if (x == 0) {
-            z = INFINITY;
+            z = std::numeric_limits<Real>::infinity();
         }
         else {
             if (y < 0) {
@@ -502,10 +520,10 @@ Real powm1_wrap(Real x, Real y)
             }
             else {
                 if (std::fmod(y, 2) == 0) {
-                    z = INFINITY;
+                    z = std::numeric_limits<Real>::infinity();
                 }
                 else {
-                    z = -INFINITY;
+                    z = -std::numeric_limits<Real>::infinity();
                 }
             }
         }
@@ -514,7 +532,7 @@ Real powm1_wrap(Real x, Real y)
         z = 0;
     } catch (...) {
         sf_error("powm1", SF_ERROR_OTHER, NULL);
-        z = NAN;
+        z = std::numeric_limits<Real>::quiet_NaN();
     }
     return z;
 }
@@ -553,16 +571,16 @@ Real call_hypergeometric_pFq(Real a, Real b, Real x)
         // "hypqfq".  The string refers to the SciPy special function, not the
         // underlying Boost function that is being called.
         sf_error("hyp1f1", SF_ERROR_DOMAIN, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::overflow_error& e) {
         sf_error("hyp1f1", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("hyp1f1", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("hyp1f1", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -574,7 +592,7 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
     Real y;
 
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (b <= 0 && std::trunc(b) == b) {
         // b is a non-positive integer.
@@ -589,7 +607,7 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
             return call_hypergeometric_pFq(a, b, x);
         }
         if (!(a < 0 && std::trunc(a) == a && a >= b)) {
-            return INFINITY;
+            return std::numeric_limits<Real>::infinity();
         }
         // Fall through and let the Boost function handle the remaining
         // cases.
@@ -612,16 +630,16 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
         y = boost::math::hypergeometric_1F1(a, b, x, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("hyp1f1", SF_ERROR_DOMAIN, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::overflow_error& e) {
         sf_error("hyp1f1", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("hyp1f1", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("hyp1f1", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -651,15 +669,17 @@ Real beta_pdf_wrap(const Real x, const Real a, const Real b)
     if (std::isfinite(x)) {
         if ((x >= 1) && (b < 1)) {
             // x>1 should really be 0, but rv_continuous will do that for us
-            return INFINITY;
+            return std::numeric_limits<Real>::infinity();
         }
         else if ((x <= 0) && (a < 1)) {
-            return INFINITY;
+            return std::numeric_limits<Real>::infinity();
         }
-        return boost::math::pdf(
-            boost::math::beta_distribution<Real, StatsPolicy>(a, b), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::beta_distribution<Real, StatsPolicy>(a, b), x);
+        });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -683,7 +703,9 @@ Real beta_ppf_wrap(const Real x, const Real a, const Real b)
         boost::math::policies::evaluation_error<boost::math::policies::user_error >,
         boost::math::policies::promote_double<false > > BetaPolicyForStats;
 
-    return ibeta_inv_wrap(a, b, x, BetaPolicyForStats());
+    return error_handler<Real>([=]() {
+        return ibeta_inv_wrap(a, b, x, BetaPolicyForStats());
+    });
 }
 
 float
@@ -702,8 +724,10 @@ template<typename Real>
 Real
 invgauss_ppf_wrap(const Real x, const Real mu, const Real s)
 {
-    return boost::math::quantile(
-        boost::math::inverse_gaussian_distribution<Real, StatsPolicy>(mu, s), x);
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(
+            boost::math::inverse_gaussian_distribution<Real, StatsPolicy>(mu, s), x);
+    });
 }
 
 float
@@ -722,8 +746,10 @@ template<typename Real>
 Real
 invgauss_isf_wrap(const Real x, const Real mu, const Real s)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::inverse_gaussian_distribution<Real, StatsPolicy>(mu, s), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::inverse_gaussian_distribution<Real, StatsPolicy>(mu, s), x));
+    });
 }
 
 float
@@ -742,8 +768,10 @@ template<typename Real>
 Real
 cauchy_ppf_wrap(const Real p, const Real loc, const Real scale)
 {
-    return boost::math::quantile(
-        boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p);
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(
+            boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p);
+    });
 }
 
 float
@@ -762,8 +790,10 @@ template<typename Real>
 Real
 cauchy_isf_wrap(const Real p, const Real loc, const Real scale)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::cauchy_distribution<Real, StatsPolicy>(loc, scale), p));
+    });
 }
 
 float
@@ -783,24 +813,12 @@ Real
 ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {
-        try {
+    return error_handler<Real>([=]() {
         return boost::math::pdf(
             boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    });
     }
-    catch (const std::overflow_error& e) {
-        sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
-        return INFINITY;
-    }
-    catch (const std::underflow_error& e) {
-        sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
-        return 0;
-    }
-    catch (...) {
-        sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
-        return NAN;
-    }
-    }
-    return NAN; // inf or -inf returns NAN
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -820,11 +838,11 @@ Real
 ncx2_cdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (k < 0 || x < 0 || l < 0) {
 	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     /* Special case handling for zero noncentrality
     to get the same edge case behaviour as chdtr */
@@ -836,7 +854,7 @@ ncx2_cdf_wrap(const Real x, const Real k, const Real l)
     }
     /* Edge case handling including noncentrality*/
     if (k == 0 || (!std::isinf(l) && std::isinf(k))) {
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(l)) {
     return (std::isinf(x)) ? NAN : 0;
@@ -851,13 +869,13 @@ ncx2_cdf_wrap(const Real x, const Real k, const Real l)
     } catch (...) {
 	/* Boost was unable to produce a result. */
         sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if (y < 0 || y > 1) {
 	/* Result must be between 0 and 1 to be a valid CDF value.
        Return NAN if the result is out of bounds because the answer cannot be trusted. */
 	    sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -879,11 +897,11 @@ Real
 ncx2_ppf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (k < 0 || x < 0 || l < 0 || x > 1) {
         sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
@@ -891,20 +909,20 @@ ncx2_ppf_wrap(const Real x, const Real k, const Real l)
             boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
     } catch (const std::domain_error& e) {
         sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("chndtrix", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("chndtrix", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("chndtrix", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if (y < 0) {
         sf_error("chndtrix", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -926,31 +944,31 @@ Real
 ncx2_find_noncentrality_wrap(const Real x, const Real k, const Real p)
 {
     if (std::isnan(x) || std::isnan(k) || std::isnan(p)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (k < 0 || x < 0 || p < 0 || p > 1) {
         sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
         y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_non_centrality(k, x, p);
     } catch (const std::domain_error& e) {
         sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("chndtrinc", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("chndtrinc", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("chndtrinc", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if (y < 0) {
         sf_error("chndtrinc", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -972,31 +990,31 @@ Real
 ncx2_find_degrees_of_freedom_wrap(const Real x, const Real p, const Real l)
 {
     if (std::isnan(x) || std::isnan(l) || std::isnan(p)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (l < 0 || x < 0 || p < 0 || p > 1) {
         sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
         y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_degrees_of_freedom(l, x, p);
     } catch (const std::domain_error& e) {
         sf_error("chndtridf", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("chndtridf", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("chndtridf", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("chndtridf", SF_ERROR_OTHER, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if (y < 0) {
         sf_error("chndtridf", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1017,8 +1035,10 @@ template<typename Real>
 Real
 ncx2_sf_wrap(const Real x, const Real k, const Real l)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x));
+    });
 }
 
 float
@@ -1037,8 +1057,10 @@ template<typename Real>
 Real
 ncx2_isf_wrap(const Real x, const Real k, const Real l)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x));
+    });
 }
 
 float
@@ -1058,10 +1080,12 @@ Real
 ncf_pdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 {
     if (std::isfinite(x)) {
-        return boost::math::pdf(
-            boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x);
+        });
     }
-    return NAN; // inf or -inf returns NAN
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -1081,11 +1105,11 @@ Real
 ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0)) {
 	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(x)) {
 	// inf => 1. We've already returned if x < 0, so this can only be +inf.
@@ -1100,14 +1124,14 @@ ncf_cdf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 	 * of v1 and v2 is very small and x is very large. e.g.
 	 * ncdtr(1e-100, 3, 1.5, 1e100). */
         sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if ((y < 0) || (y > 1)) {
 	/* Boost can return results far out of bounds when dfd and dfn are both large
 	 * and of similar magnitude. Return NAN if the result is out of bounds because
 	 * the answer cannot be trusted. */
 	sf_error("ncfdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1129,11 +1153,11 @@ Real
 ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v1) || std::isnan(v2) || std::isnan(l)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0) || (x > 1)) {
 	sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
@@ -1141,16 +1165,16 @@ ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
                 boost::math::non_central_f_distribution<Real, SpecialPolicy>(v1, v2, l), x);
     } catch (const std::domain_error& e) {
         sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("ncfdtri", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("ncfdtri", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("ncfdtri", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1171,8 +1195,10 @@ template<typename Real>
 Real
 ncf_sf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x));
+    });
 }
 
 float
@@ -1191,8 +1217,10 @@ template<typename Real>
 Real
 ncf_isf_wrap(const Real x, const Real v1, const Real v2, const Real l)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l), x));
+    });
 }
 
 float
@@ -1208,63 +1236,96 @@ ncf_isf_double(double x, double v1, double v2, double l)
 }
 
 #define RETURN_NAN(v, c) if( v <= c ) { \
-        return NAN; \
+        return std::numeric_limits<Real>::quiet_NaN(); \
     } \
 
-float
-ncf_mean_float(float v1, float v2, float l)
+template<typename Real>
+Real
+ncf_mean_wrap(const Real v1, const Real v2, const Real l)
 {
     RETURN_NAN(v2, 2.0);
-    return boost::math::mean(boost::math::non_central_f_distribution<float, StatsPolicy>(v1, v2, l));
+    return error_handler<Real>([=]() {
+        return boost::math::mean(boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l));
+    });
 }
 
 double
 ncf_mean_double(double v1, double v2, double l)
 {
-    RETURN_NAN(v2, 2.0);
-    return boost::math::mean(boost::math::non_central_f_distribution<double, StatsPolicy>(v1, v2, l));
+    return ncf_mean_wrap(v1, v2, l);
 }
 
 float
-ncf_variance_float(float v1, float v2, float l)
+ncf_mean_float(float v1, float v2, float l)
+{
+    return ncf_mean_wrap(v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_variance_wrap(const Real v1, const Real v2, const Real l)
 {
     RETURN_NAN(v2, 4.0);
-    return boost::math::variance(boost::math::non_central_f_distribution<float, StatsPolicy>(v1, v2, l));
+    return error_handler<Real>([=]() {
+        return boost::math::variance(boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l));
+    });
 }
 
 double
 ncf_variance_double(double v1, double v2, double l)
 {
-    RETURN_NAN(v2, 4.0);
-    return boost::math::variance(boost::math::non_central_f_distribution<double, StatsPolicy>(v1, v2, l));
+    return ncf_variance_wrap(v1, v2, l);
 }
 
 float
-ncf_skewness_float(float v1, float v2, float l)
+ncf_variance_float(float v1, float v2, float l)
+{
+    return ncf_variance_wrap(v1, v2, l);
+}
+
+
+template<typename Real>
+Real
+ncf_skewness_wrap(const Real v1, const Real v2, const Real l)
 {
     RETURN_NAN(v2, 6.0);
-    return boost::math::skewness(boost::math::non_central_f_distribution<float, StatsPolicy>(v1, v2, l));
+    return error_handler<Real>([=]() {
+        return boost::math::skewness(boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l));
+    });
 }
 
 double
 ncf_skewness_double(double v1, double v2, double l)
 {
-    RETURN_NAN(v2, 6.0);
-    return boost::math::skewness(boost::math::non_central_f_distribution<double, StatsPolicy>(v1, v2, l));
+    return ncf_skewness_wrap(v1, v2, l);
 }
 
 float
-ncf_kurtosis_excess_float(float v1, float v2, float l)
+ncf_skewness_float(float v1, float v2, float l)
+{
+    return ncf_skewness_wrap(v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_kurtosis_excess_wrap(const Real v1, const Real v2, const Real l)
 {
     RETURN_NAN(v2, 8.0);
-    return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<float, StatsPolicy>(v1, v2, l));
+    return error_handler<Real>([=]() {
+        return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<Real, StatsPolicy>(v1, v2, l));
+    });
 }
 
 double
 ncf_kurtosis_excess_double(double v1, double v2, double l)
 {
-    RETURN_NAN(v2, 8.0);
-    return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<double, StatsPolicy>(v1, v2, l));
+    return ncf_kurtosis_excess_wrap(v1, v2, l);
+}
+
+float
+ncf_kurtosis_excess_float(float v1, float v2, float l)
+{
+    return ncf_kurtosis_excess_wrap(v1, v2, l);
 }
 
 template<typename Real>
@@ -1272,11 +1333,11 @@ Real
 nct_cdf_wrap(const Real v, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (v <= 0) {
 	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(x)) {
 	return  (x > 0) ? 1.0 : 0.0;
@@ -1288,13 +1349,13 @@ nct_cdf_wrap(const Real v, const Real l, const Real x)
     } catch (...) {
 	/* Boost was unable to produce a result. */
         sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if ((y < 0) || (y > 1)) {
 	/* Result must be between 0 and 1 to be a valid CDF value.
        Return NAN if the result is out of bounds because the answer cannot be trusted. */
 	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1316,10 +1377,12 @@ Real
 nct_pdf_wrap(const Real x, const Real v, const Real l)
 {
     if (std::isfinite(x)) {
-        return boost::math::pdf(
-            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+        });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -1339,11 +1402,11 @@ Real
 nct_ppf_wrap(const Real v, const Real l, const Real x)
 {
     if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (v <= 0 || x < 0 || x > 1) {
         sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
@@ -1352,17 +1415,17 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
     }
     catch (const std::domain_error& e) {
         sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("nctdtrit", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
         y = 0; 
     } catch (...) {
 	/* Boost was unable to produce a result. */
         sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1383,8 +1446,10 @@ template<typename Real>
 Real
 nct_sf_wrap(const Real x, const Real v, const Real l)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x));
+    });
 }
 
 float
@@ -1403,8 +1468,10 @@ template<typename Real>
 Real
 nct_isf_wrap(const Real x, const Real v, const Real l)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x));
+    });
 }
 
 float
@@ -1419,60 +1486,93 @@ nct_isf_double(double x, double v, double l)
     return nct_isf_wrap(x, v, l);
 }
 
-float
-nct_mean_float(float v, float l)
+
+template<typename Real>
+Real
+nct_mean_wrap(const Real v, const Real l)
 {
     RETURN_NAN(v, 1.0);
-    return boost::math::mean(boost::math::non_central_t_distribution<float, StatsPolicy>(v, l));
+    return error_handler<Real>([=]() {
+        return boost::math::mean(boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l));
+    });
 }
 
 double
 nct_mean_double(double v, double l)
 {
-    RETURN_NAN(v, 1.0);
-    return boost::math::mean(boost::math::non_central_t_distribution<double, StatsPolicy>(v, l));
+    return nct_mean_wrap(v, l);
 }
 
 float
-nct_variance_float(float v, float l)
+nct_mean_float(float v, float l)
+{
+    return nct_mean_wrap(v, l);
+}
+
+template<typename Real>
+Real
+nct_variance_wrap(const Real v, const Real l)
 {
     RETURN_NAN(v, 2.0);
-    return boost::math::variance(boost::math::non_central_t_distribution<float, StatsPolicy>(v, l));
+    return error_handler<Real>([=]() {
+        return boost::math::variance(boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l));
+    });
 }
 
 double
 nct_variance_double(double v, double l)
 {
-    RETURN_NAN(v, 2.0);
-    return boost::math::variance(boost::math::non_central_t_distribution<double, StatsPolicy>(v, l));
+    return nct_variance_wrap(v, l);
 }
 
 float
-nct_skewness_float(float v, float l)
+nct_variance_float(float v, float l)
+{
+    return nct_variance_wrap(v, l);
+}
+
+template<typename Real>
+Real
+nct_skewness_wrap(const Real v, const Real l)
 {
     RETURN_NAN(v, 3.0);
-    return boost::math::skewness(boost::math::non_central_t_distribution<float, StatsPolicy>(v, l));
+    return error_handler<Real>([=]() {
+        return boost::math::skewness(boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l));
+    });
 }
 
 double
 nct_skewness_double(double v, double l)
 {
-    RETURN_NAN(v, 3.0);
-    return boost::math::skewness(boost::math::non_central_t_distribution<double, StatsPolicy>(v, l));
+    return nct_skewness_wrap(v, l);
 }
 
 float
-nct_kurtosis_excess_float(float v, float l)
+nct_skewness_float(float v, float l)
+{
+    return nct_skewness_wrap(v, l);
+}
+
+template<typename Real>
+Real
+nct_kurtosis_excess_wrap(const Real v, const Real l)
 {
     RETURN_NAN(v, 4.0);
-    return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<float, StatsPolicy>(v, l));
+    return error_handler<Real>([=]() {
+        return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l));
+    });
 }
 
 double
 nct_kurtosis_excess_double(double v, double l)
 {
-    RETURN_NAN(v, 4.0);
-    return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<double, StatsPolicy>(v, l));
+    return nct_kurtosis_excess_wrap(v, l);
+}
+
+float
+nct_kurtosis_excess_float(float v, float l)
+{
+    return nct_kurtosis_excess_wrap(v, l);
 }
 
 template<typename Real>
@@ -1480,11 +1580,11 @@ Real
 t_cdf_wrap(const Real v, const Real x)
 {
     if (std::isnan(x) || std::isnan(v)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (v <= 0) {
         sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(x)) {
         return  (x > 0) ? 1.0 : 0.0;
@@ -1496,13 +1596,13 @@ t_cdf_wrap(const Real v, const Real x)
     } catch (...) {
         /* Boost was unable to produce a result. */
         sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if ((y < 0) || (y > 1)) {
         /* Result must be between 0 and 1 to be a valid CDF value.
            Return NAN if the result is out of bounds because the answer cannot be trusted. */
         sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1524,11 +1624,11 @@ Real
 t_ppf_wrap(const Real v, const Real x)
 {
     if (std::isnan(x) || std::isnan(v)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (v <= 0 || x < 0 || x > 1) {
         sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
@@ -1537,17 +1637,17 @@ t_ppf_wrap(const Real v, const Real x)
     }
     catch (const std::domain_error& e) {
         sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("stdtrit", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("stdtrit", SF_ERROR_UNDERFLOW, NULL);
         y = 0; 
     } catch (...) {
         /* Boost was unable to produce a result. */
         sf_error("stdtrit", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -1569,8 +1669,10 @@ Real
 skewnorm_cdf_wrap(const Real x, const Real l, const Real sc, const Real sh)
 {
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x);
+        return error_handler<Real>([=]() {
+            return boost::math::cdf(
+                boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x);
+        });
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -1592,8 +1694,10 @@ template<typename Real>
 Real
 skewnorm_ppf_wrap(const Real x, const Real l, const Real sc, const Real sh)
 {
-    return boost::math::quantile(
-        boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x);
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(
+            boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x);
+    });
 }
 
 float
@@ -1612,8 +1716,10 @@ template<typename Real>
 Real
 skewnorm_isf_wrap(const Real x, const Real l, const Real sc, const Real sh)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::skew_normal_distribution<Real, StatsPolicy>(l, sc, sh), x));
+    });
 }
 
 float
@@ -1633,10 +1739,12 @@ Real
 binom_pmf_wrap(const Real x, const Real n, const Real p)
 {
     if (std::isfinite(x)) {
-        return boost::math::pdf(
-            boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
+        });
     }
-    return NAN; // inf or -inf returns NAN
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -1655,19 +1763,15 @@ template<typename Real>
 Real
 binom_cdf_wrap(const Real x, const Real n, const Real p)
 {
-
+    if (std::isnan(x)) {
+        return std::numeric_limits<Real>::quiet_NaN();
+    }
     if (std::isfinite(x)) {
-        try {
+        return error_handler<Real>([=]() {
             return boost::math::cdf(
                 boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
-        } catch (...) {
-            /* Boost was unable to produce a result. */
-            return NAN;
+            });
         }
-    }
-    if (std::isnan(x)) {
-	    return NAN;
-    }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
 }
@@ -1688,13 +1792,10 @@ template<typename Real>
 Real
 binom_ppf_wrap(const Real x, const Real n, const Real p)
 {
-    try {
+    return error_handler<Real>([=]() {
         return boost::math::quantile(
             boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
-    } catch (...) {
-        /* Boost was unable to produce a result. */
-        return NAN;
-    }
+        });
 }
 
 float
@@ -1713,13 +1814,10 @@ template<typename Real>
 Real
 binom_sf_wrap(const Real x, const Real n, const Real p)
 {
-    try {
+    return error_handler<Real>([=]() {
         return boost::math::cdf(boost::math::complement(
             boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
-    } catch (...) {
-        /* Boost was unable to produce a result. */
-        return NAN;
-    }
+    });
 }
 
 float
@@ -1738,13 +1836,10 @@ template<typename Real>
 Real
 binom_isf_wrap(const Real x, const Real n, const Real p)
 {
-    try {
+    return error_handler<Real>([=]() {
         return boost::math::quantile(boost::math::complement(
             boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x));
-    } catch (...) {
-        /* Boost was unable to produce a result. */
-        return NAN;
-    }
+    });
 }
 
 float
@@ -1764,10 +1859,12 @@ Real
 nbinom_pmf_wrap(const Real x, const Real r, const Real p)
 {
     if (std::isfinite(x)) {
-        return boost::math::pdf(
-            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+        });
     }
-    return NAN; // inf or -inf returns NAN
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -1787,8 +1884,10 @@ Real
 nbinom_cdf_wrap(const Real x, const Real r, const Real p)
 {
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+        return error_handler<Real>([=]() {
+            return boost::math::cdf(
+                boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+        });
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
@@ -1810,8 +1909,10 @@ template<typename Real>
 Real
 nbinom_ppf_wrap(const Real x, const Real r, const Real p)
 {
-    return boost::math::quantile(
-        boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(
+            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x);
+    });
 }
 
 float
@@ -1830,8 +1931,10 @@ template<typename Real>
 Real
 nbinom_sf_wrap(const Real x, const Real r, const Real p)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x));
+    return error_handler<Real>([=]() {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x));
+    });
 }
 
 float
@@ -1850,8 +1953,10 @@ template<typename Real>
 Real
 nbinom_isf_wrap(const Real x, const Real r, const Real p)
 {
-    return boost::math::quantile(boost::math::complement(
-        boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x));
+    return error_handler<Real>([=]() {
+        return boost::math::quantile(boost::math::complement(
+            boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p), x));
+    });
 }
 
 float
@@ -1866,52 +1971,88 @@ nbinom_isf_double(double x, double r, double p)
     return nbinom_isf_wrap(x, r, p);
 }
 
-float
-nbinom_mean_float(float r, float p)
+template<typename Real>
+Real
+nbinom_mean_wrap(const Real r, const Real p)
 {
-    return boost::math::mean(boost::math::negative_binomial_distribution<float, StatsPolicy>(r, p));
+    return error_handler<Real>([=]() {
+        return boost::math::mean(boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p));
+    });
 }
 
 double
 nbinom_mean_double(double r, double p)
 {
-    return boost::math::mean(boost::math::negative_binomial_distribution<double, StatsPolicy>(r, p));
+    return nbinom_mean_wrap(r, p);
 }
 
 float
-nbinom_variance_float(float r, float p)
+nbinom_mean_float(float r, float p)
 {
-    return boost::math::variance(boost::math::negative_binomial_distribution<float, StatsPolicy>(r, p));
+    return nbinom_mean_wrap(r, p);
+}
+
+template<typename Real>
+Real
+nbinom_variance_wrap(const Real r, const Real p)
+{
+    return error_handler<Real>([=]() {
+        return boost::math::variance(boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p));
+    });
 }
 
 double
 nbinom_variance_double(double r, double p)
 {
-    return boost::math::variance(boost::math::negative_binomial_distribution<double, StatsPolicy>(r, p));
+    return nbinom_variance_wrap(r, p);
 }
 
 float
-nbinom_skewness_float(float r, float p)
+nbinom_variance_float(float r, float p)
 {
-    return boost::math::skewness(boost::math::negative_binomial_distribution<float, StatsPolicy>(r, p));
+    return nbinom_variance_wrap(r, p);
+}
+
+template<typename Real>
+Real
+nbinom_skewness_wrap(const Real r, const Real p)
+{
+    return error_handler<Real>([=]() {
+        return boost::math::skewness(boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p));
+    });
 }
 
 double
 nbinom_skewness_double(double r, double p)
 {
-    return boost::math::skewness(boost::math::negative_binomial_distribution<double, StatsPolicy>(r, p));
+    return nbinom_skewness_wrap(r, p);
 }
 
 float
-nbinom_kurtosis_excess_float(float r, float p)
+nbinom_skewness_float(float r, float p)
 {
-    return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<float, StatsPolicy>(r, p));
+    return nbinom_skewness_wrap(r, p);
+}
+
+template<typename Real>
+Real
+nbinom_kurtosis_excess_wrap(const Real r, const Real p)
+{
+    return error_handler<Real>([=]() {
+        return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<Real, StatsPolicy>(r, p));
+    });
 }
 
 double
 nbinom_kurtosis_excess_double(double r, double p)
 {
-    return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<double, StatsPolicy>(r, p));
+    return nbinom_kurtosis_excess_wrap(r, p);
+}
+
+float
+nbinom_kurtosis_excess_float(float r, float p)
+{
+    return nbinom_kurtosis_excess_wrap(r, p);
 }
 
 template<typename Real>
@@ -1919,10 +2060,12 @@ Real
 hypergeom_pmf_wrap(const Real k, const Real n, const Real N, const Real M)
 {
     if (std::isfinite(k)) {
-        return boost::math::pdf(
-            boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k);
+        });
     }
-    return NAN; // inf or -inf returns NAN
+    return std::numeric_limits<Real>::quiet_NaN(); // inf or -inf returns NAN
 }
 
 float
@@ -1942,8 +2085,10 @@ Real
 hypergeom_cdf_wrap(const Real k, const Real n, const Real N, const Real M)
 {
     if (std::isfinite(k)) {
-        return boost::math::cdf(
-            boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k);
+        return error_handler<Real>([=]() {
+            return boost::math::cdf(
+                boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k);
+        });
     }
     // -inf => 0, inf => 1
     return 1 - std::signbit(k);
@@ -1965,8 +2110,10 @@ template<typename Real>
 Real
 hypergeom_sf_wrap(const Real k, const Real n, const Real N, const Real M)
 {
-    return boost::math::cdf(boost::math::complement(
-        boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k));
+    return error_handler<Real>([=]() {
+        return boost::math::cdf(boost::math::complement(
+            boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M), k));
+    });
 }
 
 float
@@ -1981,40 +2128,67 @@ hypergeom_sf_double(double k, double n, double N, double M)
     return hypergeom_sf_wrap(k, n, N, M);
 }
 
-float
-hypergeom_mean_float(float n, float N, float M)
+template<typename Real>
+Real
+hypergeom_mean_wrap(const Real n, const Real N, const Real M)
 {
-    return boost::math::mean(boost::math::hypergeometric_distribution<float, StatsPolicy>(n, N, M));
+    return error_handler<Real>([=]() {
+        return boost::math::mean(boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M));
+    });
 }
 
 double
 hypergeom_mean_double(double n, double N, double M)
 {
-    return boost::math::mean(boost::math::hypergeometric_distribution<double, StatsPolicy>(n, N, M));
+    return hypergeom_mean_wrap(n, N, M);
+}
+
+float
+hypergeom_mean_float(float n, float N, float M)
+{
+    return hypergeom_mean_wrap(n, N, M);
+}
+
+template<typename Real>
+Real
+hypergeom_variance_wrap(const Real n, const Real N, const Real M)
+{
+    return error_handler<Real>([=]() {
+        return boost::math::variance(boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M));
+    });
 }
 
 float
 hypergeom_variance_float(float n, float N, float M)
 {
-    return boost::math::variance(boost::math::hypergeometric_distribution<float, StatsPolicy>(n, N, M));
+    return hypergeom_variance_wrap(n, N, M);
 }
 
 double
 hypergeom_variance_double(double n, double N, double M)
 {
-    return boost::math::variance(boost::math::hypergeometric_distribution<double, StatsPolicy>(n, N, M));
+    return hypergeom_variance_wrap(n, N, M);
 }
 
-float
-hypergeom_skewness_float(float n, float N, float M)
+template<typename Real>
+Real
+hypergeom_skewness(const Real n, const Real N, const Real M)
 {
-    return boost::math::skewness(boost::math::hypergeometric_distribution<float, StatsPolicy>(n, N, M));
+    return error_handler<Real>([=]() {
+        return boost::math::skewness(boost::math::hypergeometric_distribution<Real, StatsPolicy>(n, N, M));
+    });
 }
 
 double
 hypergeom_skewness_double(double n, double N, double M)
 {
-    return boost::math::skewness(boost::math::hypergeometric_distribution<double, StatsPolicy>(n, N, M));
+    return hypergeom_skewness(n, N, M);
+}
+
+float
+hypergeom_skewness_float(float n, float N, float M)
+{
+    return hypergeom_skewness(n, N, M);
 }
 
 template<typename Real>
@@ -2022,10 +2196,12 @@ Real
 landau_pdf_wrap(const Real x, const Real loc, const Real scale)
 {
     if (std::isfinite(x)) {
-        return boost::math::pdf(
-            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+        return error_handler<Real>([=]() {
+            return boost::math::pdf(
+                boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+    });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -2045,10 +2221,12 @@ Real
 landau_cdf_wrap(const Real x, const Real loc, const Real scale)
 {
     if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+        return error_handler<Real>([=]() {
+            return boost::math::cdf(
+                boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x);
+    });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -2068,10 +2246,12 @@ Real
 landau_sf_wrap(const Real x, const Real loc, const Real scale)
 {
     if (std::isfinite(x)) {
-        return boost::math::cdf(boost::math::complement(
-            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x));
+        return error_handler<Real>([=]() {
+            return boost::math::cdf(boost::math::complement(
+                boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), x));
+    });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -2091,10 +2271,12 @@ Real
 landau_ppf_wrap(const Real p, const Real loc, const Real scale)
 {
     if (std::isfinite(p)) {
-        return boost::math::quantile(
-            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p);
+        return error_handler<Real>([=]() {
+            return boost::math::quantile(
+                boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p);
+    });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -2114,10 +2296,12 @@ Real
 landau_isf_wrap(const Real p, const Real loc, const Real scale)
 {
     if (std::isfinite(p)) {
-        return boost::math::quantile(boost::math::complement(
-            boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p));
+        return error_handler<Real>([=]() {
+            return boost::math::quantile(boost::math::complement(
+                boost::math::landau_distribution<Real, StatsPolicy>(loc, scale), p));
+    });
     }
-    return NAN;
+    return std::numeric_limits<Real>::quiet_NaN();
 }
 
 float
@@ -2138,11 +2322,11 @@ Real
 f_cdf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
 	sf_error("fdtr", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(x)) {
 	// inf => 1. We've already returned if x < 0, so this can only be +inf.
@@ -2155,11 +2339,11 @@ f_cdf_wrap(const Real dfn, const Real dfd, const Real x)
     } catch (...) {
 	/* Boost was unable to produce a result. */
         sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if ((y < 0) || (y > 1)) {
 	sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -2181,11 +2365,11 @@ Real
 f_ppf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0) || (x > 1)) {
 	sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     Real y;
     try {
@@ -2193,20 +2377,20 @@ f_ppf_wrap(const Real dfn, const Real dfd, const Real x)
                 boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
     } catch (const std::domain_error& e) {
         sf_error("fdtri", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("fdtri", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("fdtri", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("fdtri", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if (y < 0) {
         sf_error("fdtri", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -2228,11 +2412,11 @@ Real
 f_sf_wrap(const Real dfn, const Real dfd, const Real x)
 {
     if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
 	sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
-	return NAN;
+	return std::numeric_limits<Real>::quiet_NaN();
     }
     if (std::isinf(x)) {
 	// inf => 0. We've already returned if x < 0, so this can only be +inf.
@@ -2244,11 +2428,11 @@ f_sf_wrap(const Real dfn, const Real dfd, const Real x)
                 boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
     } catch (...) {
         sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     if ((y < 0) || (y > 1)) {
 	sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -2270,11 +2454,11 @@ Real
 chdtriv_wrap(const Real p, const Real x)
 {
     if (std::isnan(p) || std::isnan(x)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if ((x <= 0) || (p < 0) || (p > 1)) {
         sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     if (p == 1) {
         return 0.0;
@@ -2284,22 +2468,22 @@ chdtriv_wrap(const Real p, const Real x)
         y = 2 * boost::math::gamma_p_inva<Real>(0.5 * x, p, SpecialPolicy());
     } catch (const std::domain_error& e) {
         sf_error("chdtriv", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error& e) {
         sf_error("chdtriv", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error& e) {
         sf_error("chdtriv", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     // In theory, y should never be negative, but with an overabundance of caution
     // we check and return NAN if it happens.
     if (y < 0) {
         sf_error("chdtriv", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     return y;
 }
@@ -2321,17 +2505,17 @@ Real
 poisson_ppf_wrap(const Real p, const Real n)
 {
     if (std::isnan(p) || std::isnan(n)) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     // validate input
     if ((n < 0) || (p < 0) || (p > 1)) {
         sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     // cdflib returns nan for p == 1, so we do the same
     // for backwards compatibility
     if (p == 1) {
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     // keep backwards compatible with cdflib which returns 0
     // for p==0 or n==0
@@ -2343,22 +2527,22 @@ poisson_ppf_wrap(const Real p, const Real n)
         y = boost::math::gamma_q_inva<Real>(n, p, SpecialPolicy()) - 1;
     } catch (const std::domain_error&) {
         sf_error("pdtrik", SF_ERROR_DOMAIN, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     } catch (const std::overflow_error&) {
         sf_error("pdtrik", SF_ERROR_OVERFLOW, NULL);
-        y = INFINITY;
+        y = std::numeric_limits<Real>::infinity();
     } catch (const std::underflow_error&) {
         sf_error("pdtrik", SF_ERROR_UNDERFLOW, NULL);
         y = 0;
     } catch (...) {
         sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
-        y = NAN;
+        y = std::numeric_limits<Real>::quiet_NaN();
     }
     // In the unlikely case that the computation becomes smaller
     // than -1, we return NAN. This should never happen.
     if (y < -1) {
         sf_error("pdtrik", SF_ERROR_NO_RESULT, NULL);
-        return NAN;
+        return std::numeric_limits<Real>::quiet_NaN();
     }
     // For small p, the direct formula yields values
     // between -1 and 0. 
