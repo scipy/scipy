@@ -7,10 +7,10 @@ from scipy._lib import array_api_extra as xpx
 from scipy import special
 from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
-    _RealParameter, _Parameterization, _combine_docs)
+    ContinuousDistribution, DiscreteDistribution, CircularDistribution,
+    _RealInterval, _IntegerInterval, _RealParameter, _Parameterization, _combine_docs)
 
-__all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial']
+__all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
 
 class Normal(ContinuousDistribution):
@@ -530,6 +530,41 @@ class Binomial(DiscreteDistribution):
             return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
         return None
     _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
+
+
+class VonMises(ContinuousDistribution, CircularDistribution):
+    r"""von Mises distribution.
+
+    The probability density function of the von Mises distribution is:
+
+    .. math::
+
+        to be provided
+
+    """
+
+    _mu_domain = _RealInterval(endpoints=(-np.pi, np.pi))
+    _kappa_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
+
+    _mu_param = _RealParameter('mu', domain=_mu_domain, symbol=r'\mu',
+                               typical=(-np.pi, np.pi))
+    _kappa_param = _RealParameter('kappa', domain=_kappa_domain, symbol=r'\kappa',
+                                  typical=(0.5, 5))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 2*np.pi))
+
+    _x_support.define_parameters(_mu_param, _kappa_param)
+
+    _parameterizations = [_Parameterization(_mu_param, _kappa_param)]
+    _variable = _x_param
+
+    def __init__(self, *, mu=None, kappa=None, **kwargs):
+        super().__init__(mu=mu, kappa=kappa, **kwargs)
+
+    # could use _process_parameters to cache i_0(kappa)
+
+    def _pdf_formula(self, x, *, mu, kappa, **kwargs):
+        return np.exp(kappa * np.cos(x - mu)) / (2 * np.pi * special.i0(kappa))
 
 
 # Distribution classes need only define the summary and beginning of the extended

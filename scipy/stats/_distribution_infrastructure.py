@@ -947,6 +947,9 @@ def _set_invalid_nan(f):
     clip_log = {'_logcdf1', '_logccdf1'}
     # relevant to discrete distributions only
     replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
+    # relevant to circular distributions only
+    wrap_unit = {'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
+    no_unwrap = {'pdf', 'logpdf', 'pmf', 'logpmf'}
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -958,6 +961,7 @@ def _set_invalid_nan(f):
         dtype = self._dtype
         shape = self._shape
         discrete = isinstance(self, DiscreteDistribution)
+        circular = isinstance(self, CircularDistribution)
         keep_low_endpoint = discrete and method_name in {'_cdf1', '_logcdf1',
                                                          '_ccdf1', '_logccdf1'}
 
@@ -983,6 +987,19 @@ def _set_invalid_nan(f):
                 raise ValueError(message) from e
 
         low, high = endpoints.get(method_name, self.support())
+
+        if circular:
+            x = np.array(x, dtype=dtype, copy=True)  # ideally, avoid multiple copies
+            x[np.isinf(x)] = np.nan
+            period = 2*np.pi  # when we support scaling, this may need to change
+            if method_name in wrap_unit:
+                turn = x // 1
+                x = x % 1
+            else:
+                turn = (x - low) // period
+                x = (x - low) % period + low
+            # much of the code below that deals with high/low values could be skipped
+            # leaving it untouched while adding circular distributions; optimize later
 
         # Check for arguments outside of domain. They'll be replaced with NaNs,
         # and the result will be set to the appropriate value.
@@ -1073,6 +1090,9 @@ def _set_invalid_nan(f):
         elif method_name in clip_log:
             res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
+
+        if circular and method_name not in no_unwrap:
+            res += turn * period if method_name in wrap_unit else turn
 
         return res[()]
 
@@ -2340,6 +2360,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _median_dispatch(self, method=None, **params):
         if self._overrides('_median_formula'):
             method = self._median_formula
+        elif isinstance(self, CircularDistribution):
+            method = self._median_optimization
         else:
             method = self._median_icdf
         return method
@@ -3144,8 +3166,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
     @_set_invalid_nan_property
     def moment(self, order=1, kind='raw', *, method=None):
         kinds = {'raw': self._moment_raw,
-                 'central': self._moment_central,
-                 'standardized': self._moment_standardized}
+                 'central': self._moment_central}
+        if not isinstance(self, CircularDistribution):
+            kinds['standardized'] = self._moment_standardized
         order = self._validate_order_kind(order, kind, kinds)
         moment_kind = kinds[kind]
         return moment_kind(order, method=method)
@@ -3237,6 +3260,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if moment is None and 'quadrature' in methods:
             mean = self._moment_raw_dispatch(self._one, **params,
                                              methods=self._moment_methods)
+            if isinstance(self, CircularDistribution):
+                mean = np.angle(mean)
             moment = self._moment_from_pxf(order, center=mean, **params)
 
         if moment is None and 'quadrature_icdf' in methods:
@@ -3769,6 +3794,136 @@ class DiscreteDistribution(UnivariateDistribution):
             # expect because each term of the entropy summand is positive).
             return np.where(np.isfinite(logpmf), logpmf + np.log(-logpmf), -np.inf)
         return self._quadrature(logintegrand, params=params, log=True)
+
+
+class CircularDistribution(UnivariateDistribution):
+    # todo:
+    #  - fix documentation example
+    #  - write tests
+    #  - write documentation
+    #  - does median need edge handling like mode?
+    #  - better guess for median?
+    #  - better guess for mode? (median is too expensive for circular distributions!)
+
+    @cached_property
+    def _moment_methods(self):
+        return {'cache', 'formula', 'transform', 'general', 'quadrature'}
+
+    def _cdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not "
+                                  "support two-argument `cdf`.")
+
+    def _ccdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not "
+                                  "support two-argument `ccdf`.")
+
+    def _logcdf1(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logcdf`.")
+
+    def _logcdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logcdf`.")
+
+    def _logccdf1(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logccdf`.")
+
+    def _logccdf2(self, x, y, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `logccdf`.")
+
+    def _ilogcdf_dispatch(self, p, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `ilogcdf`.")
+
+    def _ilogccdf_dispatch(self, x, *, method, **kwargs):
+        raise NotImplementedError("Circular distributions do not support `ilogccdf`.")
+
+    def _median_optimization(self, **params):
+        def f(m, **params):
+
+            def integrand1(x, m, **params):
+                a, b = self._support(**params)
+                x_wrapped = (x - a) % (b - a) + a
+                return (x - m) * self._pdf_dispatch(x_wrapped, **params)
+
+            def integrand2(x, m, **params):
+                a, b = self._support(**params)
+                x_wrapped = (x - a) % (b - a) + a
+                return (m - x) * self._pdf_dispatch(x_wrapped, **params)
+
+            res1 = self._quadrature(integrand1, limits=(m, m + np.pi), args=(m,), params=params)
+            res2 = self._quadrature(integrand2, limits=(m - np.pi, m), args=(m,), params=params)
+            return res1 + res2
+
+        a, b = self._support(**params)
+        m0 = (a + b) / 2
+        f, args = _kwargs2args(f, args=(), kwargs=params)
+        res_b = _bracket_minimum(f, m0, xmin=a, xmax=b, args=args)
+        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr, args=args)
+        median = np.asarray(res.x)
+
+        return median[()]
+
+    def _moment_from_pxf(self, order, center, **params):
+        def integrand(x, order, center, **params):
+            pdf = self._pdf_dispatch(x, **params)
+            return np.exp(1j * order * (x - center)) * pdf
+        return self._quadrature(integrand, args=(order, center), params=params)
+
+    def mean(self, *, method=None):
+        phi = self.moment(1, kind='raw', method=method)
+        return np.angle(phi) % (2 * np.pi)
+
+    def variance(self, *, method=None):
+        rho = self.moment(1, kind='central', method=method).real
+        return 1 - rho
+
+    def standard_deviation(self, *, method=None):
+        rho = self.moment(1, kind='central', method=method).real
+        return np.sqrt(-2*np.log(rho))
+
+    def skewness(self, *, method=None):
+        b2 = self.moment(2, kind='central', method=method).imag
+        rho = self.moment(1, kind='central', method=method).real
+        return b2 / (1 - rho)**1.5
+
+    def kurtosis(self, *, method=None, convention='non-excess'):
+        conventions = {'non-excess'}
+        message = (f'Parameter `convention` of `{self.__class__.__name__}.kurtosis` '
+                   f"must be one of {conventions}.")
+        convention = convention.lower()
+        if convention not in conventions:
+            raise ValueError(message)
+
+        # This is the most common definition
+        a2 = self.moment(2, kind='central', method=method).real
+        rho = self.moment(1, kind='central', method=method).real
+        return (a2 - rho**4) / (1 - rho)**2
+
+    def _moment_central_general(self, order, **params):
+        general_central_moments = {0: self._one}
+        return general_central_moments.get(order, None)
+
+    def _moment_central_transform(self, order, **params):
+        methods = {'cache', 'formula', 'general'}
+        moment = self._moment_raw_dispatch(order=order, methods=methods, **params)
+        phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
+        if moment is None or phi1 is None:
+            return None
+        moment = self._moment_transform_center(order, moment, self._zero, np.angle(phi1))
+        return moment
+
+    def _moment_raw_transform(self, order, **params):
+        methods = {'cache', 'formula', 'general'}
+        moment = self._moment_central_dispatch(order=order, methods=methods, **params)
+        phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
+        if moment is None or phi1 is None:
+            return None
+        moment = self._moment_transform_center(order, moment, np.angle(phi1), self._zero)
+        return moment
+
+    def _moment_transform_center(self, order, moment, a, b):
+        a, b, moment = np.broadcast_arrays(a, b, moment)
+        n = order
+        moment_b = moment * np.exp(1j*n*(a - b))
+        return moment_b
 
 
 # Special case the names of some new-style distributions in `make_distribution`
