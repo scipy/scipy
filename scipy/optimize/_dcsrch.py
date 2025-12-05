@@ -194,6 +194,7 @@ class DCSRCH:
         self.xtol = xtol
         self.stpmin = stpmin
         self.stpmax = stpmax
+        self.dtype = None
 
         self.phi = phi
         self.derphi = derphi
@@ -235,6 +236,15 @@ class DCSRCH:
             phi0 = self.phi(0.0)
         if derphi0 is None:
             derphi0 = self.derphi(0.0)
+        if self.dtype is None:
+            self.dtype = np.result_type(phi0, derphi0, np.float32)
+            finfo = np.finfo(self.dtype)
+            # Safely clip stpmin/stpmax before casting
+            stpmin_val = np.clip(np.float64(self.stpmin), finfo.tiny, finfo.max)
+            stpmax_val = np.clip(np.float64(self.stpmax), finfo.tiny, finfo.max)
+
+            self.stpmin = np.array(stpmin_val, dtype=self.dtype)
+            self.stpmax = np.array(stpmax_val, dtype=self.dtype)
 
         phi1 = phi0
         derphi1 = derphi0
@@ -313,10 +323,10 @@ class DCSRCH:
               If task(1:5) == b'ERROR' then there is an error in the
               input arguments.
         """
-        p5 = 0.5
-        p66 = 0.66
-        xtrapl = 1.1
-        xtrapu = 4.0
+        p5 = np.array(0.5, dtype=self.dtype)
+        p66 = np.array(0.66, dtype=self.dtype)
+        xtrapl = np.array(1.1, dtype=self.dtype)
+        xtrapu = np.array(4.0, dtype=self.dtype)
 
         if task[:5] == b"START":
             if stp < self.stpmin:
@@ -346,8 +356,15 @@ class DCSRCH:
             self.finit = f
             self.ginit = g
             self.gtest = self.ftol * self.ginit
-            self.width = self.stpmax - self.stpmin
-            self.width1 = self.width / p5
+            finfo = np.finfo(self.dtype)
+            width_val = np.float64(self.stpmax) - np.float64(self.stpmin)
+            width_val = np.clip(width_val, -finfo.max / 2, finfo.max / 2)
+            self.width = np.array(width_val, dtype=self.dtype)
+
+            # Compute width1 safely, guarding against inf or overflow
+            width1_val = width_val / 0.5
+            width1_val = np.clip(width1_val, -finfo.max/2, finfo.max/2)
+            self.width1 = np.array(width1_val, dtype=self.dtype)
 
             # The variables stx, fx, gx contain the values of the step,
             # function, and derivative at the best step.
@@ -480,7 +497,7 @@ class DCSRCH:
             self.stmax = stp + xtrapu * (stp - self.stx)
 
         # Force the step to be within the bounds stpmax and stpmin.
-        stp = np.clip(stp, self.stpmin, self.stpmax)
+        stp = np.clip(np.asarray(stp, dtype=self.dtype), self.stpmin, self.stpmax)
 
         # If further progress is not possible, let stp be the best
         # point obtained during the search.

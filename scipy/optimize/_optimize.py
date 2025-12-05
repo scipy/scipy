@@ -1425,7 +1425,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     k = 0
     N = len(x0)
-    I = np.eye(N, dtype=int)
+    I = np.eye(N, dtype=gfk.dtype)
     Hk = I if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
@@ -1437,7 +1437,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = -np.dot(Hk, gfk)
+        pk = -np.dot(Hk, gfk).astype(gfk.dtype, copy=False)
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,

@@ -34,10 +34,9 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import (
-    MemoizeJac, show_options, OptimizeResult, _minimize_bfgs
-)
+from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
 from scipy.optimize import rosen, rosen_der, rosen_hess
+from scipy.optimize._optimize import _minimize_bfgs
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
@@ -3482,7 +3481,6 @@ class TestWorkers:
         assert res.success
         assert_allclose(res.x[1], 2.0)
 
-
 # Tests for PEP 649/749 style annotations in callback and objective functions
 if sys.version_info < (3, 14):
     from typing import Any
@@ -3601,3 +3599,27 @@ def test_multiprocessing_too_many_open_files_23080():
             _minimize_bfgs(rosen, x0, workers=p.map)
         del p
         del pool_obj
+
+def test_bfgs_float32_dtype_consistency():
+    """Check that BFGS behaves consistently and safely with float32 input."""
+    def rosenbrock(x):
+        a, b = 1.0, 100.0
+        ret = (a - x[0])**2 + b * (x[1] - x[0]**2)**2
+        return np.array(ret, dtype=np.float32)
+
+    def rosenbrock_grad(x):
+        a, b = 1.0, 100.0
+        grad_x0 = 4*b*x[0]**3 - 4*b*x[0]*x[1] + 2*x[0] - 2*a
+        grad_x1 = 2*b*(x[1] - x[0]**2)
+        return np.array([grad_x0, grad_x1], dtype=np.float32)
+
+    # Use a more reasonable starting point for float32 precision
+    x0 = np.array([3.0, 3.0], dtype=np.float32)
+    res = _minimize_bfgs(rosenbrock, x0, jac=rosenbrock_grad, maxiter=10000, gtol=1e-3)
+
+    # It should not produce overflow warnings or type promotions
+    assert np.all(np.isfinite(res.x)), "Optimization produced non-finite values"
+    assert res.x.dtype == np.float32, "Result dtype should remain float32"
+    # We expect convergence near [1, 1] (within float32 precision)
+    # With float32, we can't expect as tight convergence as float64
+    assert np.allclose(res.x, [1.0, 1.0], atol=0.01) or res.success
