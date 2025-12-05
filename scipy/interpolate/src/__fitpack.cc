@@ -63,7 +63,7 @@ _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) {
             xb = t[ind];
             xa = t[ind - j];
             if (xb == xa) {
-                h[m] = 0.0;
+                h[n] = 0.0;
                 continue;
             }
             w = j*hh[n - 1]/(xb - xa);
