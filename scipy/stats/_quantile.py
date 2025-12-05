@@ -7,6 +7,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_promote,
     xp_device,
+    xp_size,
     _length_nonmasked,
     is_torch,
 )
@@ -14,14 +15,31 @@ import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 
 
-def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
+def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights, fun='quantile'):
     xp = array_namespace(x, p, weights)
+
+    if fun == "quantile":
+        methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+                   'hazen', 'interpolated_inverted_cdf', 'linear',
+                   'median_unbiased', 'normal_unbiased', 'weibull',
+                   'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest',
+                   'round_outward', 'round_inward', 'round_nearest'}
+        allowed_types = 'real floating'
+        def mask_fun(p): return (p > 1) | (p < 0) | xp.isnan(p)
+        var2_name = 'p'
+        var2_type_msg = '`p` must have real floating dtype.'
+    else:
+        methods = set(_ogive_methods)
+        allowed_types = ('integral', 'real floating')
+        mask_fun = xp.isnan
+        var2_name = 'y'
+        var2_type_msg = '`y` must have real dtype.'
 
     if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
         raise ValueError("`x` must have real dtype.")
 
-    if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
-        raise ValueError("`p` must have real floating dtype.")
+    if not xp.isdtype(xp.asarray(p).dtype, allowed_types):
+        raise ValueError(var2_type_msg)
 
     if not (weights is None
             or xp.isdtype(xp.asarray(weights).dtype, ('integral', 'real floating'))):
@@ -45,11 +63,6 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
         raise ValueError(message)
     axis = int(axis)
 
-    methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
-               'hazen', 'interpolated_inverted_cdf', 'linear',
-               'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis', '_lower', '_midpoint', '_higher', '_nearest',
-               'round_outward', 'round_inward', 'round_nearest'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -69,7 +82,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
     # If data has length zero along `axis`, the result will be an array of NaNs just
     # as if the data had length 1 along axis and were filled with NaNs. This is treated
     # naturally below whether `nan_policy` is `'propagate'` or `'omit'`.
-    if x.shape[axis] == 0:
+    if x.shape[axis] == 0 and fun == 'quantile':
         shape = list(x.shape)
         shape[axis] = 1
         x = xp.full(shape, xp.nan, dtype=dtype, device=xp_device(x))
@@ -90,7 +103,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
             (y, p, weights, i_y, n_zero_weight), axis=axis)
 
     if (keepdims is False) and (p.shape[axis] != 1):
-        message = "`keepdims` may be False only if the length of `p` along `axis` is 1."
+        message = ("`keepdims` may be False only if the length of "
+                   f"`{var2_name}` along `axis` is 1.")
         raise ValueError(message)
     keepdims = (p.shape[axis] != 1) if keepdims is None else keepdims
 
@@ -102,6 +116,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
 
     n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
     n = n if n_zero_weight is None else n - n_zero_weight
+
+    nan_out = None
 
     if contains_nans:
         nans = xp.isnan(y)
@@ -126,7 +142,11 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims, weights):
 
     n = xp.asarray(n, dtype=dtype, device=xp_device(y))
 
-    p_mask = (p > 1) | (p < 0) | xp.isnan(p)
+    # apparently xpx.at is accepting nan_out as a mask even though it doesn't have the
+    # same number of dimensions as `y`, yet it still appears to work correctly?
+    # should refactor for clarity, and p_mask that gets returned here should probably
+    # get a different name - `nan_out` would be more appropriate!
+    p_mask = mask_fun(p) if nan_out is None else mask_fun(p) | nan_out[..., xp.newaxis]
     if xp.any(p_mask):
         p = xp.asarray(p, copy=True)
         p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
@@ -382,6 +402,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     else:  # method.startswith('round'):
         res = _quantile_winsor(y, p, n, method, xp)
 
+    return _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp)
+
+
+def _post_quantile(res, p_mask, axis, axis_none, ndim, keepdims, xp):
     res = xpx.at(res, p_mask).set(xp.nan)
 
     # Reshape per axis/keepdims
@@ -520,3 +544,250 @@ def _xp_searchsorted(x, y, *, side='left', xp=None):
     out = xp.where(xp.isnan(y), x.shape[-1], out) if side == 'right' else out
     out = xp.astype(out, xp_default_int, copy=False)
     return out
+
+
+@xp_capabilities(skip_backends=[("dask.array", "No take_along_axis yet.")],
+                 jax_jit=False)
+def ogive(x, y, *, method='linear', axis=0, nan_policy='propagate', keepdims=None):
+    """
+    Compute the empirical distribution function of the data along the specified axis.
+
+    Parameters
+    ----------
+    x : array_like of real numbers
+        Data array.
+    y : array_like of real numbers
+        Datum or data for which to estimate the cumulative probabilities.
+        See `axis`, `keepdims`, and the examples for broadcasting behavior.
+    method : str, default: 'linear'
+        The method to use for estimating the empirical distribution function.
+        The available options, numbered as they appear in [1]_, are:
+
+        4. 'interpolated_inverted_cdf'
+        5. 'hazen'
+        6. 'weibull'
+        7. 'linear'  (default)
+        8. 'median_unbiased'
+        9. 'normal_unbiased'
+
+        Only the continuous methods are available at this time.
+        See Notes for details.
+    axis : int or None, default: 0
+        Axis along which the quantiles are computed.
+        ``None`` ravels both `x` and `y` before performing the calculation,
+        without checking whether the original shapes were compatible.
+        As in other `scipy.stats` functions, a positive integer `axis` is resolved
+        after prepending 1s to the shape of `x` or `y` as needed until the two arrays
+        have the same dimensionality. When providing `x` and `y` with different
+        dimensionality, consider using negative `axis` integers for clarity.
+    nan_policy : str, default: 'propagate'
+        Defines how to handle NaNs in the input data `x`.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding slice of the output
+          will contain NaN(s).
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding slice of the output will
+          contain NaN(s).
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+        If NaNs are present in `y`, the corresponding entries in the output will be NaN.
+    keepdims : bool, optional
+        Consider the case in which `x` is 1-D and `y` is a scalar: the empirical
+        distribution function is a reducing statistic, and the default behavior is to
+        return a scalar.
+        If `keepdims` is set to True, the axis will not be reduced away, and the
+        result will be a 1-D array with one element.
+
+        The general case is more subtle, since multiple probabilities may be
+        requested for each axis-slice of `x`. For instance, if both `x` and `y`
+        are 1-D and ``y.size > 1``, no axis can be reduced away; there must be an
+        axis to contain the number of probabilities given by ``y.size``. Therefore:
+
+        - By default, the axis will be reduced away if possible (i.e. if there is
+          exactly one element of `y` per axis-slice of `x`).
+        - If `keepdims` is set to True, the axis will not be reduced away.
+        - If `keepdims` is set to False, the axis will be reduced away
+          if possible, and an error will be raised otherwise.
+
+    Returns
+    -------
+    probability : scalar or ndarray
+        The resulting probabilities(s). The dtype is the result dtype of `x` and `y`.
+
+    Notes
+    -----
+    Given a sample `x` from an underlying distribution, `ogive` provides a
+    nonparametric estimate of the empirical distribution function.
+
+    By default, this is done by computing the "fractional index" ``p`` at which ``y``
+    would appear within ``z``, a sorted copy of `x`::
+
+        p = 1 / (n - 1) * (j +  (     y - z[j])
+                              / (z[j+1] - z[j]))
+
+    where the index ``j`` is that of the largest element of ``z`` that does not exceed
+    ``y``, and ``n`` is the number of elements in the sample. Note that if ``y`` is an
+    element of ``z``, then ``j`` is the index such that ``y = z[j]``, and the formula
+    simplifies to the intuitive ``j / (n - 1)``. The full formula linearly interpolates
+    between ``j / (n - 1)`` and ``(j + 1) / (n - 1)``.
+
+    This is a special case of the more general:
+
+        p = (j + (y - z[j]) / (z[j+1] - z[j] + 1 - m) / n
+
+    where ``m`` may be defined according to several different conventions.
+    The preferred convention may be selected using the ``method`` parameter:
+
+    =============================== =============== ===============
+    ``method``                      number in H&F   ``m``
+    =============================== =============== ===============
+    ``interpolated_inverted_cdf``   4               ``0``
+    ``hazen``                       5               ``1/2``
+    ``weibull``                     6               ``p``
+    ``linear`` (default)            7               ``1 - p``
+    ``median_unbiased``             8               ``p/3 + 1/3``
+    ``normal_unbiased``             9               ``p/4 + 3/8``
+    =============================== =============== ===============
+
+    Note that indices ``j`` and ``j + 1`` are clipped to the range ``0`` to
+    ``n - 1`` when the results of the formula would be outside the allowed
+    range of non-negative indices, and resulting ``p`` is clipped to the range
+    ``0`` to ``1``.
+
+    When all the data in ``x`` are unique, the empirical distribution and quantile
+    functions are inverses of one another within a certain domain, hence the name.
+    Although `quantile` with ``method='linear'`` is invertible over the whole domain
+    of ``p`` from ``0`` to ``1``, this is not true of other methods.
+
+    References
+    ----------
+    .. [1] R. J. Hyndman and Y. Fan,
+       "Sample quantiles in statistical packages,"
+       The American Statistician, 50(4), pp. 361-365, 1996
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    Calculate the empirical distribution function of one sample at a single point.
+
+    >>> stats.ogive(x, 5, axis=-1)
+    np.float64(0.5)
+
+    Calculate the empirical distribution function of one sample at two points.
+
+    >>> stats.ogive(x, [2.5, 7.5], axis=-1)
+    array([0.25, 0.75])
+
+    Calculate the empirical distribution function of two samples at different points.
+
+    >>> x = np.stack((np.arange(0, 11), np.arange(10, 21)))
+    >>> stats.ogive(x, [[2.5], [17.5]], axis=-1, keepdims=True)
+    array([[0.25],
+           [0.75]])
+
+    Calculate the empirical distribution function at many points for each of two
+    samples.
+
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(6110515095)
+    >>> x = stats.Normal(mu=[-1, 1]).sample(10000)
+    >>> y = np.linspace(-4, 4, 5000)[:, np.newaxis]
+    >>> p = stats.ogive(x, y, axis=0)
+    >>> plt.plot(y, p)
+    >>> plt.show()
+
+    Note that the `quantile` and `ogive` functions are inverses of one another
+    within a certain domain.
+
+    >>> p = np.linspace(0, 1, 300)
+    >>> x = rng.standard_normal(300)
+    >>> y = stats.quantile(x, p)
+    >>> p2 = stats.ogive(x, y)
+    >>> np.testing.assert_allclose(p2, p)
+    >>> y2 = stats.quantile(x, p2)
+    >>> np.testing.assert_allclose(y2, y)
+
+    However, the domain over which `quantile` can be inverted by `ogive` depends on
+    the `method` used. This is most noticeable when there are few observations in the
+    sample.
+
+    >>> x = np.asarray([0, 1])
+    >>> y_linear = stats.quantile(x, p, method='linear')
+    >>> y_weibull = stats.quantile(x, p, method='weibull')
+    >>> y_iicdf = stats.quantile(x, p, method='interpolated_inverted_cdf')
+    >>> plt.plot(p, y_linear, p, y_weibull, p, y_iicdf)
+    >>> plt.legend(['linear', 'weibull', 'iicdf'])
+    >>> plt.xlabel('p')
+    >>> plt.ylabel('y = quantile(x, p)')
+    >>> plt.show()
+
+    For example, in the case above, `quantile` is only invertible from
+    ``p = 0.5`` to ``p = 1.0`` with ``method = 'interpolated_inverted_cdf'``. This is a
+    fundamental characteristic of the methods, not a shortcoming of `ogive`.
+
+    """
+    temp = _quantile_iv(x, y, method, axis, nan_policy, keepdims, weights=None,
+                        fun='ogive')
+    x, y, method, axis, nan_policy, keepdims, n, axis_none, ndim, y_mask, _, xp = temp
+
+    if xp_size(x) == 0:
+        res = xp.full_like(y, xp.nan)
+    else:
+        res = _ogive_hf(x, y, n, method, xp)
+
+    return _post_quantile(res, y_mask, axis, axis_none, ndim, keepdims, xp)
+
+
+_ogive_discontinuous_methods = dict(
+    inverted_cdf=0.0,
+    averaged_inverted_cdf=0.0,
+    closest_observation=0.5,
+)
+
+
+_ogive_continuous_methods = dict(
+    interpolated_inverted_cdf=(0, 1),
+    hazen=(0.5, 0.5),
+    weibull=(0, 0),
+    linear=(1, 1),
+    median_unbiased=(1 / 3, 1 / 3),
+    normal_unbiased=(3 / 8, 3 / 8),
+)
+
+
+_ogive_methods = (set(_ogive_continuous_methods).union(
+                      set(_ogive_discontinuous_methods)))
+
+
+def _ogive_hf(x, y, n, method, xp):
+    n_int = xp.astype(n, xp.int64)
+    j_max = n_int - 1
+    j_min = xp.minimum(j_max, xp.asarray(1, dtype=j_max.dtype))
+    jp1 = _xp_searchsorted(x, y, side='right')
+
+    if method in _ogive_discontinuous_methods:
+        dp = _ogive_discontinuous_methods[method]
+        p = (xp.astype(jp1, x.dtype)+dp)/n
+
+    else:
+        jp1 = xp.clip(jp1, j_min, j_max)
+        j = xp.clip(jp1-1, 0)
+        xj = xp.take_along_axis(x, j, axis=-1)
+        xjp1 = xp.take_along_axis(x, jp1, axis=-1)
+        with np.errstate(divide='ignore', invalid='ignore'):  # refactor to apply_where?
+            delta = xp.where((xjp1 > xj) & xp.isfinite(xj), (y - xj) / (xjp1 - xj), 1.)
+
+        a, b = _ogive_continuous_methods[method]
+        p = (xp.astype(jp1, x.dtype) + delta - a) / (n + 1 - a - b)
+
+    xmin = x[..., :1]
+    xmax = (x[..., -1:] if n.shape == () else xp.take_along_axis(x, j_max))
+    p = xpx.at(p)[y < xmin].set(0.)
+    p = xpx.at(p)[y > xmax].set(1.)
+
+    return xp.clip(p, 0., 1.)
