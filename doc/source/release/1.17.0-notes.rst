@@ -72,6 +72,7 @@ New features
   - the routine emits a ``LinAlgWarning`` if it detects an ill-conditioned
     input;
   - performance for batched inputs has been improved.
+- `scipy.linalg.fiedler` has gained native support for batched inputs.
 
 `scipy.ndimage` improvements
 ============================
@@ -205,9 +206,11 @@ New features
 **************************
 Array API Standard Support
 **************************
+- `scipy.signal.savgol_filter` and `scipy.signal.savgol_coeffs` have gained
+  support.
 - ``spatial.transform`` has gained support.
 - `scipy.integrate.qmc_quad`
-- `scipy.linalg.block_diag`
+- `scipy.linalg.block_diag` and `scipy.linalg.fiedler` have gained support.
 - `scipy.interpolate.NdBSpline`, `scipy.interpolate.RegularGridInterpolator`,
   and `scipy.interpolate.RBFInterpolator` gained support.
 - Support added for `scipy.stats.alexandergovern`, `scipy.stats.bootstrap`,
