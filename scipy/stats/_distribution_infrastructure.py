@@ -1458,17 +1458,21 @@ def _generate_example(dist_family):
     >>> x = {x}
     >>> X.pdf(x), X.pmf(x)
     {X.pdf(x), X.pmf(x)}
+    """
 
+    if not issubclass(dist_family, CircularDistribution):
+        example += """
     The cumulative distribution function, its complement, and the logarithm
     of these functions are evaluated similarly.
 
     >>> np.allclose(np.exp(X.logccdf(x)), 1 - X.cdf(x))
     True
-    """
+        """
 
-    # When two-arg CDF is implemented for DiscreteDistribution, consider removing
-    # the special-casing here.
-    if issubclass(dist_family, ContinuousDistribution):
+    # When two-arg CDF is implemented for circular and discrete distributions, consider
+    # removing the special-casing here.
+    if (issubclass(dist_family, ContinuousDistribution)
+            and not issubclass(dist_family, CircularDistribution)):
         example_continuous = f"""
     The inverse of these functions with respect to the argument ``x`` is also
     available.
@@ -1500,11 +1504,14 @@ def _generate_example(dist_family):
 
     >>> X.skewness(), X.kurtosis()
     {X.skewness(), X.kurtosis()}
+    """
 
+    if not issubclass(dist_family, CircularDistribution):
+        example += """
     >>> np.allclose(X.moment(order=6, kind='standardized'),
     ...             X.moment(order=6, kind='central') / X.variance()**3)
     True
-    """
+        """
 
     # When logentropy is implemented for DiscreteDistribution, remove special-casing
     if issubclass(dist_family, ContinuousDistribution):
@@ -3848,8 +3855,10 @@ class CircularDistribution(UnivariateDistribution):
                 x_wrapped = (x - a) % (b - a) + a
                 return (m - x) * self._pdf_dispatch(x_wrapped, **params)
 
-            res1 = self._quadrature(integrand1, limits=(m, m + np.pi), args=(m,), params=params)
-            res2 = self._quadrature(integrand2, limits=(m - np.pi, m), args=(m,), params=params)
+            res1 = self._quadrature(integrand1, limits=(m, m + np.pi),
+                                    args=(m,), params=params)
+            res2 = self._quadrature(integrand2, limits=(m - np.pi, m),
+                                    args=(m,), params=params)
             return res1 + res2
 
         a, b = self._support(**params)
@@ -3907,7 +3916,8 @@ class CircularDistribution(UnivariateDistribution):
         phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
         if moment is None or phi1 is None:
             return None
-        moment = self._moment_transform_center(order, moment, self._zero, np.angle(phi1))
+        mu = np.angle(phi1)
+        moment = self._moment_transform_center(order, moment, self._zero, mu)
         return moment
 
     def _moment_raw_transform(self, order, **params):
@@ -3916,7 +3926,8 @@ class CircularDistribution(UnivariateDistribution):
         phi1 = self._moment_raw_dispatch(self._one, methods=methods, **params)
         if moment is None or phi1 is None:
             return None
-        moment = self._moment_transform_center(order, moment, np.angle(phi1), self._zero)
+        mu = np.angle(phi1)
+        moment = self._moment_transform_center(order, moment, mu, self._zero)
         return moment
 
     def _moment_transform_center(self, order, moment, a, b):

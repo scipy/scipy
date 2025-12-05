@@ -12,7 +12,7 @@ class _ProbabilityDistribution(ABC):
     def support(self):
         r"""Support of the random variable
 
-        The support of a random variable is set of all possible outcomes;
+        The support of a (real-line) random variable is set of all possible outcomes;
         i.e., the subset of the domain of argument :math:`x` for which
         the probability density function :math:`f(x)` is nonzero.
 
@@ -34,6 +34,16 @@ class _ProbabilityDistribution(ABC):
 
         Notes
         -----
+        The probability density function of a circular random variable is nonzero for
+        all real arguments, so by convention, the "support" is the interval used to
+        parameterize the unit circle. Specificically, suppose a circular probability
+        distribution has "support" ``(l, r)``; then ``cdf(l)`` is ``0`` and ``cdf(r)``
+        is ``1``. Methods that return angles on the unit circle (e.g. ``sample``,
+        ``median``) will return a value within the support.
+
+        The remainder of the notes apply to real-line (non-circular) probability
+        distributions.
+
         Suppose a continuous probability distribution has support ``(l, r)``.
         The following table summarizes the value returned by several
         methods when the argument is outside the support.
@@ -181,7 +191,7 @@ class _ProbabilityDistribution(ABC):
 
         In terms of probability density function :math:`f(x)` and support
         :math:`\chi`, the "raw" moment (about the origin) of order :math:`n` of
-        a continuous random variable :math:`X` is:
+        a continuous (real-line) random variable :math:`X` is:
 
         .. math::
 
@@ -205,7 +215,17 @@ class _ProbabilityDistribution(ABC):
 
         The definitions for discrete random variables are analogous, with
         sums over the support replacing the integrals.
+        
+        For circular distributions, this method computes trigonometric moments
 
+        .. math::
+
+            \int_{\chi} \exp(in(x - c)) f(x) dx
+            
+        where :math:`c = 0` for the "raw" moment and :math:`c = \mu`, the circular
+        mean, for the "central" moment. Standardized moments are not defined for
+        circular distributions. 
+        
         Parameters
         ----------
         order : int
@@ -259,7 +279,8 @@ class _ProbabilityDistribution(ABC):
         for an enhancement.
 
         The definition of a raw moment in the summary is specific to the raw moment
-        about the origin. The raw moment about any point :math:`a` is:
+        about the origin. The raw moment of a real-line distribution about any point
+        :math:`a` is:
 
         .. math::
 
@@ -340,6 +361,16 @@ class _ProbabilityDistribution(ABC):
     def mean(self, *, method):
         r"""Mean (raw first moment about the origin)
 
+        For real-line distributions, the mean is the first raw moment about the origin.
+
+        For circular distributions, the (circular) mean is the phase of the first raw
+        trigonometric moment,
+
+        .. math::
+
+                \mu = \arg E\left[ \exp (iX) \right].
+
+
         Parameters
         ----------
         method : {None, 'formula', 'transform', 'quadrature', 'cache'}
@@ -379,10 +410,11 @@ class _ProbabilityDistribution(ABC):
     def median(self, *, method):
         r"""Median (50th percentile)
 
-        If a continuous random variable :math:`X` has probability :math:`0.5` of
-        taking on a value less than :math:`m`, then :math:`m` is the median.
+        If a continuous, real-line random variable :math:`X` has probability :math:`0.5`
+        of taking on a value less than :math:`m`, then :math:`m` is the median.
 
-        More generally, a median is a value :math:`m` for which:
+        More generally, the median of a real-line random variable is a value :math:`m`
+        for which:
 
         .. math::
 
@@ -390,6 +422,13 @@ class _ProbabilityDistribution(ABC):
 
         For discrete random variables, the median may not be unique, in which
         case the smallest value satisfying the definition is reported.
+
+        For circular random variables, the median of a random angle :math:`X` is an
+        angle :math:`x'` which minimizes
+
+        .. math::
+
+            E\left[\pi - | \pi - |X - x'|| \right].
 
         Parameters
         ----------
@@ -399,7 +438,9 @@ class _ProbabilityDistribution(ABC):
             following options, listed in order of precedence.
 
             - ``'formula'``: use a formula for the median
-            - ``'icdf'``: evaluate the inverse CDF of 0.5
+            - ``'icdf'``: evaluate the inverse CDF of 0.5 (real-line distributions only)
+            - ``'optimization'``: evaluate the inverse CDF of 0.5
+              (circular distributions only)
 
             Not all `method` options are available for all distributions.
             If the selected `method` is not available, a ``NotImplementedError``
@@ -540,6 +581,16 @@ class _ProbabilityDistribution(ABC):
     def variance(self, *, method):
         r"""Variance (central second moment)
 
+        For real-line distributions, the mean is the second central moment.
+        For circular distributions, the variance :math:`\nu` of a random angle
+        :math:`X` is defined as
+
+        .. math::
+
+                \nu = 1 - E\left[ \cos(X - \mu) \right]
+
+        where :math:`\mu` is the circular mean.
+
         Parameters
         ----------
         method : {None, 'formula', 'transform', 'normalize', 'quadrature', 'cache'}
@@ -578,6 +629,18 @@ class _ProbabilityDistribution(ABC):
     @abstractmethod
     def standard_deviation(self, *, method):
         r"""Standard deviation (square root of the second central moment)
+
+        For real-line distributions, the standard deviation is the square root of the
+        second central moment.
+
+        For circular distributions, the standard deviation :math:`\sigma` of a random
+        angle :math:`X` is defined as
+
+        .. math::
+
+                \sigma = \sqrt{-2 \log( E\left[ \cos(X - \mu) \right]) }
+
+        where :math:`\mu` is the circular mean.
 
         Parameters
         ----------

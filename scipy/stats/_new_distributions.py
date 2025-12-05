@@ -539,11 +539,14 @@ class VonMises(ContinuousDistribution, CircularDistribution):
 
     .. math::
 
-        to be provided
+         f(x; \mu, \kappa) = \frac{\exp( \kappa \cos(x - \mu))}
+                                  {2\pi I_0(\kappa)           }
 
+    where :math:`I_0(\cdot)` is the modified Bessel function of the first
+    kind of order zero.
     """
 
-    _mu_domain = _RealInterval(endpoints=(-np.pi, np.pi))
+    _mu_domain = _RealInterval(endpoints=(-np.pi, np.pi))  # change to (0, 2*np.pi)?
     _kappa_domain = _RealInterval(endpoints=(0, inf))
     _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
 
@@ -561,7 +564,8 @@ class VonMises(ContinuousDistribution, CircularDistribution):
     def __init__(self, *, mu=None, kappa=None, **kwargs):
         super().__init__(mu=mu, kappa=kappa, **kwargs)
 
-    # could use _process_parameters to cache i_0(kappa)
+    # could use _process_parameters to cache i_0(kappa), etc..., but let's leave
+    # that to future optimizations
 
     def _pdf_formula(self, x, *, mu, kappa, **kwargs):
         return np.exp(kappa * np.cos(x - mu)) / (2 * np.pi * special.i0(kappa))
