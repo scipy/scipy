@@ -222,6 +222,14 @@ Array API Standard Support
   `scipy.interpolate.make_splrep`, `scipy.interpolate.make_splprep`,
   `scipy.interpolate.generate_knots`, and `scipy.interpolate.make_interp_spline`
   have gained support.
+- `scipy.signal.bilinear`, `scipy.signal.iircomb`, `scipy.signal.iirdesign`,
+  `scipy.signal.iirfilter`, `scipy.signal.iirpeak`, `scipy.signal.iirnotch`,
+  `scipy.signal.gammatone`, and `scipy.signal.group_delay` have gained support.
+- `scipy.signal.butter`, `scipy.signal.buttap`, `scipy.signal.buttord`,
+  `scipy.signal.cheby1`, `scipy.signal.cheb1ap`, `scipy.signal.cheb1ord`,
+  `scipy.signal.cheby2`, `scipy.signal.cheb2ap`, `scipy.signal.cheb2ord`,
+  `scipy.signal.bessel`, `scipy.signal.besselap`, `scipy.signal.ellip`,
+  `scipy.signal.ellipap`, and `scipy.signal.ellipord` have gained support.
 - `scipy.signal.savgol_filter`, `scipy.signal.savgol_coeffs`, and
   `scipy.signal.abcd_normalize` have gained support.
 - ``spatial.transform`` has gained support.
@@ -246,6 +254,9 @@ Array API Standard Support
   `scipy.stats.wilcoxon`, and `scipy.stats.yeojohnson_llf`.
 - `scipy.stats.pearsonr` has gained support for JAX and Dask backends.
 - `scipy.stats.variation` has gained support for the Dask backend.
+- ``marray`` support was added for ``stats.gtstd``, ``stats.directional_stats``,
+  ``stats.bartlett``, ``stats.variation``, ``stats.pearsonr``, and
+  ``stats.entropy``.
 
 **************************************
 Deprecated features and future changes
