@@ -45,36 +45,40 @@ def from_quat(
     return quat
 
 
-def from_matrix(matrix: Array) -> Array:
+def from_matrix(matrix: Array, assume_valid: bool = False) -> Array:
     xp = array_namespace(matrix)
     device = xp_device(matrix)
-    # Only non-lazy backends raise an error for non-positive determinants.
-    mask = xp.linalg.det(matrix) <= 0
-    lazy = is_lazy_array(mask)
-    if not lazy and xp.any(mask):
-        ind = int(xp.nonzero(xpx.atleast_nd(mask, ndim=1, xp=xp))[0][0])
-        raise ValueError(
-            "Non-positive determinant (left-handed or null coordinate frame) in "
-            f"rotation matrix {ind}: {matrix[ind, ...]}."
+
+    if not assume_valid:
+        mask = xp.linalg.det(matrix) <= 0
+        lazy = is_lazy_array(mask)
+        # Only non-lazy backends raise an error for non-positive determinants.
+        if not lazy and xp.any(mask):
+            ind = int(xp.nonzero(xpx.atleast_nd(mask, ndim=1, xp=xp))[0][0])
+            raise ValueError(
+                "Non-positive determinant (left-handed or null coordinate frame) in "
+                f"rotation matrix {ind}: {matrix[ind, ...]}."
+            )
+        elif lazy:
+            matrix = xp.where(mask[..., None, None], xp.nan, matrix)
+
+        gramians = matrix @ xp.matrix_transpose(matrix)
+        eye = xp.eye(3, dtype=matrix.dtype, device=device)
+        is_orthogonal = xp.all(
+            xpx.isclose(gramians, eye, atol=1e-12, xp=xp), axis=(-2, -1)
         )
-    elif lazy:
-        matrix = xp.where(mask[..., None, None], xp.nan, matrix)
 
-    gramians = matrix @ xp.matrix_transpose(matrix)
-    eye = xp.eye(3, dtype=matrix.dtype, device=device)
-    is_orthogonal = xp.all(xpx.isclose(gramians, eye, atol=1e-12, xp=xp))
-
-    if lazy:
-        # Lazy backends do not support non-concrete boolean indexing or any form of
-        # computation without statically known shapes, so we always compute SVD and
-        # use xp.where to select the result.
-        U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
-        orthogonal_matrix = U @ Vt
-        matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
-    elif not is_orthogonal:
-        # For eager frameworks, only compute SVD if needed.
-        U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
-        matrix = U @ Vt
+        if lazy:
+            # Lazy backends do not support non-concrete boolean indexing or any form of
+            # computation without statically known shapes, so we always compute SVD and
+            # use xp.where to select the result.
+            U, _, Vt = xp.linalg.svd(matrix, full_matrices=False)
+            matrix = xp.where(is_orthogonal[..., None, None], matrix, U @ Vt)
+        elif not xp.all(is_orthogonal):
+            # For eager frameworks, only compute SVD if needed.
+            is_not_orthogonal = ~is_orthogonal
+            U, _, Vt = xp.linalg.svd(matrix[is_not_orthogonal], full_matrices=False)
+            matrix = xpx.at(matrix)[is_not_orthogonal].set(U @ Vt)
 
     return _from_matrix_orthogonal(matrix)
 
@@ -503,10 +507,9 @@ def mean(
     if not isinstance(axis, tuple):
         raise ValueError("`axis` must be None, int, or tuple of ints.")
     # Ensure all axes are within bounds
-    if axis != () and ( min(axis) < -(quat.ndim - 1) or max(axis) > (quat.ndim - 2)):
+    if axis != () and (min(axis) < -(quat.ndim - 1) or max(axis) > (quat.ndim - 2)):
         raise ValueError(
-            f"axis {axis} is out of bounds for rotation with shape "
-            f"{quat.shape[:-1]}."
+            f"axis {axis} is out of bounds for rotation with shape {quat.shape[:-1]}."
         )
     # Ensure all axes are positive and unique
     axis = tuple(sorted(set(x % (quat.ndim - 1) for x in axis)))
