@@ -70,12 +70,12 @@ def use_solver(**kwargs):
     .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
            method for unsymmetric sparse matrices, ACM Trans. on
            Mathematical Software, 25(1), 1999, pp. 1--19.
-           https://doi.org/10.1145/305658.287640
+           :doi:`10.1145/305658.287640`.
 
     .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
            method for sparse LU factorization, SIAM J. Matrix Analysis and
            Computations, 18(1), 1997, pp. 140--158.
-           https://doi.org/10.1137/S0895479894246905T.
+           :doi:`10.1137/S0895479894246905T`.
 
     Examples
     --------
@@ -194,12 +194,12 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     .. [5] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
            method for unsymmetric sparse matrices, ACM Trans. on
            Mathematical Software, 25(1), 1999, pp. 1--19.
-           https://doi.org/10.1145/305658.287640
+           :doi:`10.1145/305658.287640`.
 
     .. [6] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
            method for sparse LU factorization, SIAM J. Matrix Analysis and
            Computations, 18(1), 1997, pp. 140--158.
-           https://doi.org/10.1137/S0895479894246905T.
+           :doi:`10.1137/S0895479894246905T`.
 
 
     Examples

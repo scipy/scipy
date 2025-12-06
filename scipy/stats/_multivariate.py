@@ -7077,7 +7077,7 @@ class vonmises_fisher_gen(multi_rv_generic):
            https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
-           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+           1 (1994), 157-164. :doi:`10.1080/03610919408813161`.
     .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
            https://github.com/geomstats/geomstats
     .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
@@ -7364,7 +7364,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from an n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
-        Reference: https://doi.org/10.1080/03610919408813161
+        Reference: :doi:`10.1080/03610919408813161`.
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
