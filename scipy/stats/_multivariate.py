@@ -5057,6 +5057,8 @@ class multivariate_t_gen(multi_rv_generic):
         Draw random samples from a multivariate t-distribution.
     entropy(loc=None, shape=1, df=1)
         Differential entropy of a multivariate t-distribution.
+    marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
+        Return a marginal multivariate t-distribution.
 
     Parameters
     ----------
@@ -5503,7 +5505,7 @@ class multivariate_t_gen(multi_rv_generic):
         return dim, loc, shape, df
 
     def marginal(self, dimensions, loc=None, shape=1, df=1, allow_singular=False):
-        """Return a marginal multivariate t distribution.
+        """Return a marginal multivariate t-distribution.
 
         Parameters
         ----------
@@ -5516,7 +5518,7 @@ class multivariate_t_gen(multi_rv_generic):
         Returns
         -------
         marginal_multivariate_t : multivariate_t_frozen
-            An object representing the marginal t.
+            An object representing the marginal t-distribution.
 
         Notes
         -----
