@@ -888,7 +888,7 @@ class TestPdtrik:
     (np.inf, np.inf, 1, np.nan)
 ])
 def test_gdtrix_edge_cases(a, b, p, ref):
-    assert_allclose(sp.gdtrix(a, b, p), ref, rtol=0)
+    assert_equal(sp.gdtrix(a, b, p), ref)
 
 @pytest.mark.parametrize("p, b, x, ref", [
     (0, 0, 0, np.nan),
@@ -901,4 +901,4 @@ def test_gdtrix_edge_cases(a, b, p, ref):
     (np.inf, 1, np.inf, np.nan)
 ])
 def test_gdtria_edge_cases(p, b, x, ref):
-    assert_allclose(sp.gdtria(p, b, x), ref, rtol=0)
+    assert_equal(sp.gdtria(p, b, x), ref)
