@@ -16,6 +16,8 @@ from pytest import raises as assert_raises
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,
                                NearestNDInterpolator, LinearNDInterpolator)
+from scipy.interpolate._regrid_python import (regrid_python,
+                                              ndbspline_call_like_bivariate)
 
 from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import _run_concurrent_barrier
@@ -841,11 +843,16 @@ class TestInterpN:
     def test_spline_2d(self):
         x, y, z = self._sample_2d_data()
         lut = RectBivariateSpline(x, y, z)
+        lut_custom = regrid_python(x, y, z)
 
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
+        xp_assert_close(interpn((x, y), z, xi, method="splinef2d"),
+                                  ndbspline_call_like_bivariate(
+                                      lut_custom, xi[:, 0], xi[:, 1],
+                                      grid=False))
 
     @parametrize_rgi_interp_methods
     def test_list_input(self, method):
@@ -864,6 +871,7 @@ class TestInterpN:
         z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         lut = RectBivariateSpline(x, y, z)
+        lut_custom = regrid_python(x, y, z)
 
         xi = np.array([[1, 2.3, 6.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, -4.0, 5.0, 1.0, 3]]).T
@@ -872,6 +880,14 @@ class TestInterpN:
         expected = lut.ev(xi[:, 0], xi[:, 1])
         expected[2:4] = 999.99
         assert_array_almost_equal(actual, expected)
+
+        expected_custom = ndbspline_call_like_bivariate(
+            lut_custom, xi[:, 0], xi[:, 1], grid=False)
+        expected_custom[2:4] = 999.99
+        xp_assert_close(actual, expected_custom)
+
+        expected_custom[2:4] = 999.99
+        xp_assert_close(actual, expected_custom)
 
         # no extrapolation for splinef2d
         assert_raises(ValueError, interpn, (x, y), z, xi, method="splinef2d",
