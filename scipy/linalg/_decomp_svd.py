@@ -1,5 +1,8 @@
 """SVD decomposition functions."""
+import math
+
 import numpy as np
+import numpy.typing as npt
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 from scipy._lib._util import _apply_over_batch
@@ -9,8 +12,8 @@ from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
-
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'higher_order_svd', 'orth',
+           'subspace_angles', 'null_space']
 
 
 @_apply_over_batch(('a', 2))
@@ -305,6 +308,101 @@ def diagsvd(s, M, N):
         return r_[part, zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
+
+
+def higher_order_svd(
+    a: npt.ArrayLike, *, compact_rtol: float | None = None, check_finite: bool = True
+) -> tuple[list[np.ndarray], np.ndarray]:
+    """Higher-order SVD (HOSVD)
+
+    Factorizes the M-D tensor `a` into a list of M matrices ``U_k`` containing
+    the left singular vectors of the unfolded tensor with respect to the
+    ``k``\\ th axis and a core tensor ``S`` such that
+    :math:`a = (U_1, U_2, \\dots, U_M) \\cdot S`.
+
+    Parameters
+    ----------
+    a : array_like
+        Tensor to decompose
+    compact_rtol : float, optional
+        By default, ``S`` is of the same shape as the input tensor `a`
+        and all ``U_k`` are of the shape ``(n_k, n_k)``, where ``n_k = a.shape[k]``.
+        If set to a non-negative float, singular values less than `compact_rtol` times
+        the maximum magnitude singular value are treated as zero when determining
+        the multilinear rank. Then ``S`` has shape ``m_1, ..., m_k, ... m_M``
+        and the shapes of the ``U_k`` are ``(n_k, m_k)``, where ``n_k`` is as
+        above and the ``m_k`` are the elements of multilinear rank of `a`.
+    check_finite : bool, default: True
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    U : list of ndarray
+        List of the unitary matrices ``U_k`` with shapes as described in
+        the documentation of `compact_rtol`.
+    S : ndarray
+        The core tensor with shapes as described in the documentation of
+        `compact_rtol`.
+
+    Raises
+    ------
+    LinAlgError
+        If SVD computation does not converge.
+
+    .. versionadded:: 1.17.0
+
+    See Also
+    --------
+    svd : Singular value decomposition of a matrix
+
+    References
+    ----------
+    .. [1] Lieven De Lathauwer, Bart De Moor, and Joos Vandewalle (2000)
+           "A Multilinear Singular Value Decomposition"
+           SIAM Journal on Matrix Analysis and Applications,
+           21 (4), pp. 1253-1278. ISSN 1095-7162
+           :doi:`10.1137/S0895479896305696`
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((2, 3, 4, 5))
+    >>> U, S = linalg.higher_order_svd(a)
+    >>> S.shape
+    (2, 3, 4, 5)
+    >>> [i.shape for i in U]
+    [(2, 2), (3, 3), (4, 4), (5, 5)]
+
+    Reconstruct the original tensor:
+
+    >>> a1 = S
+    >>> for i, _ in enumerate(U):
+    ...     a1 = np.tensordot(a1, U[i], (0, 1))
+    >>> np.allclose(a, a1)
+    True
+    """
+    a = _asarray_validated(a, check_finite=check_finite)
+    if compact_rtol is not None and compact_rtol < 0:
+        raise ValueError("`compact_rtol` must be a positive floating point number.")
+    rtol = compact_rtol  # shorter alias
+
+    core_tensor = a
+    left_singular_basis = []
+
+    for k in range(a.ndim):
+        newshape = (a.shape[k], math.prod(a.shape[:k]) * math.prod(a.shape[k + 1:]))
+        unfold = np.reshape(np.moveaxis(a, k, 0), newshape)
+        U, s, _ = svd(unfold, check_finite=False)
+        tol = np.max(np.abs(s)) * rtol if (rtol is not None and s.size) else None
+        U = U[:, np.abs(s) > tol] if tol is not None else U
+        left_singular_basis.append(U)
+        core_tensor = np.tensordot(core_tensor, U.T.conj(), (0, 1))
+
+    return left_singular_basis, core_tensor
 
 
 # Orthonormal decomposition
