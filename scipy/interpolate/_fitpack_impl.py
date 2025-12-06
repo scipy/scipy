@@ -30,14 +30,10 @@ from . import _fitpack
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
                    empty, iinfo, asarray)
 
-# Try to replace _fitpack interface with
-#  f2py-generated version
-from . import _dfitpack as dfitpack
-
 from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
 
-dfitpack_int = dfitpack.types.intvar.dtype
+dfitpack_int = np.int32
 
 
 def _int_overflow(x, exception, msg=None):
@@ -48,7 +44,7 @@ def _int_overflow(x, exception, msg=None):
         if msg is None:
             msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
         raise exception(msg)
-    return dfitpack_int.type(x)
+    return dfitpack_int(x)
 
 
 _iermess = {
@@ -102,7 +98,7 @@ _iermess2 = {
 }
 
 _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], dfitpack_int), 'u': array([], float),
+                 'iwrk': array([], np.int32), 'u': array([], float),
                  'ub': 0, 'ue': 1}
 
 
@@ -111,7 +107,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     # see the docstring of `_fitpack_py/splprep`
     if task <= 0:
         _parcur_cache = {'t': array([], float), 'wrk': array([], float),
-                         'iwrk': array([], dfitpack_int), 'u': array([], float),
+                         'iwrk': array([], np.int32), 'u': array([], float),
                          'ub': 0, 'ue': 1}
     x = atleast_1d(x)
     idim, m = x.shape
@@ -120,7 +116,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             if x[i][0] != x[i][-1]:
                 if not quiet:
                     warnings.warn(
-                        RuntimeWarning(f'Setting x[{i}][{m}]=x[{i}][0]'), 
+                        RuntimeWarning(f'Setting x[{i}][{m}]=x[{i}][0]'),
                         stacklevel=2
                     )
                 x[i][-1] = x[i][0]
@@ -175,8 +171,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     t = _parcur_cache['t']
     wrk = _parcur_cache['wrk']
     iwrk = _parcur_cache['iwrk']
-    t, c, o = _fitpack._parcur(ravel(transpose(x)), w, u, ub, ue, k,
-                               task, ipar, s, t, nest, wrk, iwrk, per)
+    t, c, o = _fitpack.parcur(ravel(x, 'F'), w, u, ub, ue, k, task, ipar, s, t, nest, wrk, iwrk, per)
     _parcur_cache['u'] = o['u']
     _parcur_cache['ub'] = o['ub']
     _parcur_cache['ue'] = o['ue']
@@ -193,7 +188,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         warnings.warn(
             RuntimeWarning(
                 _iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}"
-            ), 
+            ),
             stacklevel=2
         )
     if ier > 0 and not full_output:
@@ -214,7 +209,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
 
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
-                 'iwrk': array([], dfitpack_int)}
+                 'iwrk': array([], np.int32)}
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -270,7 +265,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(8 + 5*k),), float)
         else:
             _curfit_cache['wrk'] = empty((m*(k + 1) + nest*(7 + 3*k),), float)
-        _curfit_cache['iwrk'] = empty((nest,), dfitpack_int)
+        _curfit_cache['iwrk'] = empty((nest,), np.int32)
     try:
         t = _curfit_cache['t']
         wrk = _curfit_cache['wrk']
@@ -279,10 +274,12 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         raise TypeError("must call with task=1 only after"
                         " call with task=0,-1") from e
     if not per:
-        n, c, fp, ier = dfitpack.curfit(task, x, y, w, t, wrk, iwrk,
-                                        xb, xe, k, s)
+        n, t, c, fp, ier = _fitpack.curfit(task, x, y, w, xb, xe, k, s,
+                                           t, wrk, iwrk)
     else:
-        n, c, fp, ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
+        n, t, c, fp, ier = _fitpack.percur(task, x, y, w, k, s,
+                                           t, wrk, iwrk)
+
     tck = (t[:n], c[:n], k)
     if ier <= 0 and not quiet:
         _mess = (_iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}")
@@ -325,9 +322,9 @@ def splev(x, tck, der=0, ext=0):
         shape = x.shape
         x = atleast_1d(x).ravel()
         if der == 0:
-            y, ier = dfitpack.splev(t, c, k, x, ext)
+            y, ier = _fitpack.splev(t, c, k, x, ext)
         else:
-            y, ier = dfitpack.splder(t, c, k, x, der, ext)
+            y, ier = _fitpack.splder(t, c, k, der, x, ext)
 
         if ier == 10:
             raise ValueError("Invalid input data")
@@ -351,9 +348,9 @@ def splint(a, b, tck, full_output=0):
         return list(map(lambda c, a=a, b=b, t=t, k=k:
                         splint(a, b, [t, c, k]), c))
     else:
-        aint, wrk = dfitpack.splint(t, c, k, a, b)
+        aint = _fitpack.splint(t, c, k, a, b)
         if full_output:
-            return aint, wrk
+            return aint, None
         else:
             return aint
 
@@ -374,7 +371,7 @@ def sproot(tck, mest=10):
     else:
         if len(t) < 8:
             raise TypeError(f"The number of knots {len(t)}>=8")
-        z, m, ier = dfitpack.sproot(t, c, mest)
+        z, m, ier = _fitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
                             "t1<=..<=t4<t5<..<tn-3<=..<=tn must hold.")
@@ -402,7 +399,7 @@ def spalde(x, tck):
         x = atleast_1d(x)
         if len(x) > 1:
             return list(map(lambda x, tck=tck: spalde(x, tck), x))
-        d, ier = dfitpack.spalde(t, c, k+1, x[0])
+        d, ier = _fitpack.spalde(t, c, k+1, x[0])
         if ier == 0:
             return d
         if ier == 10:
@@ -414,7 +411,7 @@ def spalde(x, tck):
 
 
 _surfit_cache = {'tx': array([], float), 'ty': array([], float),
-                 'wrk': array([], float), 'iwrk': array([], dfitpack_int)}
+                 'wrk': array([], float), 'iwrk': array([], np.int32)}
 
 
 @xp_capabilities(out_of_scope=True)
@@ -577,24 +574,31 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     if bx > by:
         b1, b2 = by, by + u - kx
     msg = "Too many data points to interpolate"
-    lwrk1 = _int_overflow(u*v*(2 + b1 + b2) +
+    # This computation is required to catch overflow on Python side
+    _ = _int_overflow(u*v*(2 + b1 + b2) +
                           2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
                           OverflowError,
                           msg=msg)
-    lwrk2 = _int_overflow(u*v*(b2 + 1) + b2, OverflowError, msg=msg)
-    tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
-                                    task, s, eps, tx, ty, nxest, nyest,
-                                    wrk, lwrk1, lwrk2)
-    _curfit_cache['tx'] = tx
-    _curfit_cache['ty'] = ty
-    _curfit_cache['wrk'] = o['wrk']
-    ier, fp = o['ier'], o['fp']
+    nmax = max(nxest, nyest)
+    wrk = _surfit_cache['wrk']
+    nx, tx, ny, ty, c, fp, ier, wrk = _fitpack.surfit(
+        task, x, y, z, w, xb, xe, yb, ye, kx, ky, s, nxest, nyest, nmax, eps, wrk
+    )
+
+    # The low-level routine may return `c` sized for the estimate (nxest, nyest)
+    # rather than the final (nx, ny). Trim to the coefficient count implied by
+    # the returned knots so downstream evaluators (bispev/parder) accept it.
+    ncoef = (len(tx) - kx - 1) * (len(ty) - ky - 1)
+    if ncoef > 0 and c.size != ncoef:
+        c = c[:ncoef]
+    _surfit_cache['tx'] = tx
+    _surfit_cache['ty'] = ty
     tck = [tx, ty, c, kx, ky]
 
     ierm = min(11, max(-3, ier))
     if ierm <= 0 and not quiet:
         _mess = (
-            _iermess2[ierm][0] + 
+            _iermess2[ierm][0] +
             f"\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}"
         )
         warnings.warn(RuntimeWarning(_mess), stacklevel=2)
@@ -687,9 +691,9 @@ def bisplev(x, y, tck, dx=0, dy=0):
     if dx != 0 or dy != 0:
         _int_overflow((tx.size - kx - 1)*(ty.size - ky - 1),
                       MemoryError, msg=msg)
-        z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
+        z, ier = _fitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
     else:
-        z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
+        z, ier = _fitpack.bispev(tx, ty, c, kx, ky, x, y)
 
     if ier == 10:
         raise ValueError("Invalid input data")
@@ -723,7 +727,7 @@ def dblint(xa, xb, ya, yb, tck):
         The value of the resulting integral.
     """
     tx, ty, c, kx, ky = tck
-    return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
+    return _fitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
 
 def insert(x, tck, m=1, per=0):
@@ -741,7 +745,7 @@ def insert(x, tck, m=1, per=0):
             cc.append(cc_val)
         return (tt, cc, kk)
     else:
-        tt, cc, ier = _fitpack._insert(per, t, c, k, x, m)
+        tt, cc, ier = _fitpack.insert(per, t, c, k, x, m)
         if ier == 10:
             raise ValueError("Invalid input data")
         if ier:
