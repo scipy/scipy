@@ -2198,6 +2198,70 @@ class TestMixture:
         np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))
 
 
+class TestCircular:
+    def test_input_validation(self):
+        X = stats.VonMises(mu=0, kappa=1)
+
+        message = "Circular distributions do not support "
+        with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
+            X.logcdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`logcdf`.'):
+            X.logcdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`logccdf`.'):
+            X.logccdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`logccdf`.'):
+            X.logccdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`ilogcdf`.'):
+            X.ilogcdf(1)
+        with pytest.raises(NotImplementedError, match=message + '`ilogccdf`.'):
+            X.ilogccdf(1)
+
+        message = "Circular distributions do not support two-argument "
+        with pytest.raises(NotImplementedError, match=message + '`cdf`.'):
+            X.cdf(1, 2)
+        with pytest.raises(NotImplementedError, match=message + '`ccdf`.'):
+            X.ccdf(1, 2)
+
+        message = "Parameter `convention` of `VonMises.kurtosis` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            X.kurtosis(convention='excess')
+
+        message = "Argument `kind` of `VonMises.moment` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            X.moment(3, kind='standardized')
+
+        message = "`VonMises` does not provide an accurate implementation of..."
+        with pytest.raises(NotImplementedError, match=message):
+            X.moment(3, kind='central', method='normalize')
+
+    @pytest.mark.parametrize('shape', [(), (20,)])
+    def test_basic(self, shape):
+        rng = np.random.default_rng(582348972387243524)
+        X = stats.VonMises(mu=0, kappa=1)
+        x = rng.uniform(-10, 10, size=shape)
+        period = 2 * np.pi
+        x_turn = (x + np.pi) // period
+        x_wrapped = (x + np.pi) % period - np.pi
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
+
+        assert_allclose(X.pdf(x), X.pdf(x_wrapped))
+        assert_allclose(X.logpdf(x), X.logpdf(x_wrapped))
+        assert_allclose(X.pmf(x), X.pmf(x_wrapped))
+        assert_allclose(X.logpmf(x), X.logpmf(x_wrapped))
+        assert_allclose(X.cdf(x), X.cdf(x_wrapped) + x_turn)
+        assert_allclose(X.ccdf(x), X.ccdf(x_wrapped) + x_turn)
+        assert_allclose(X.icdf(x), X.icdf(x % 1) + (x // 1)*period)
+        assert_allclose(X.iccdf(x), X.iccdf(x % 1) + (x // 1)*period)
+        assert_allclose(X.cdf(X.icdf(x)), x)
+        assert_allclose(X.icdf(X.cdf(x)), x)
+        assert_allclose(X.ccdf(X.iccdf(x)), x)
+        assert_allclose(X.iccdf(X.ccdf(x)), x)
+
+
 def test_zipfian_distribution_wrapper():
     # Regression test for gh-23678: calling the cdf method at the end
     # point of the Zipfian distribution would generate a warning.
