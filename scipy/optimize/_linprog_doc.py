@@ -999,10 +999,10 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     For sparse problems:
 
-    1. ``sksparse.cholmod.cholesky`` (if scikit-sparse and SuiteSparse are
-       installed)
+    1. ``sksparse.cholmod.CholeskyFactor.solve`` (if scikit-sparse and
+       SuiteSparse are installed)
 
-    2. ``scipy.sparse.linalg.factorized`` (if scikit-umfpack and SuiteSparse
+    2. ``sksparse.umfpack.UMFFactor.solve`` (if scikit-sparse and SuiteSparse
        are installed)
 
     3. ``scipy.sparse.linalg.splu`` (which uses SuperLU distributed with SciPy)
