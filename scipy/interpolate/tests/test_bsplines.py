@@ -39,7 +39,7 @@ from scipy._lib._testutils import _run_concurrent_barrier
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import _dfitpack as dfitpack
+from scipy.interpolate import _fitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 from scipy.interpolate import _dierckx
 
