@@ -38,7 +38,8 @@ New features
 
 `scipy.cluster` improvements
 ============================
-
+- `scipy.cluster.hierarchy.is_isomorphic` has improved performance and array
+  API support.
 
 `scipy.interpolate` improvements
 ================================
@@ -131,6 +132,8 @@ New features
 - `~scipy.sparse.dia_array.tocsr` is approximately three times faster and
   some unneccesary copy operations have been removed from sparse format
   interconversions more broadly.
+- Added `scipy.sparse.linalg.funm_multiply_krylov`, a restarted Krylov method
+  for evaluating ``y = f(tA) b``.
 
 `scipy.spatial` improvements
 ============================
@@ -212,6 +215,13 @@ New features
 **************************
 Array API Standard Support
 **************************
+- The overhead associated with array namespace determination has been reduced,
+  providing improved performance in dispatching to different backends.
+- `scipy.cluster.hierarchy.is_isomorphic` has gained support.
+- `scipy.interpolate.make_lsq_spline`, `scipy.interpolate.make_smoothing_spline`,
+  `scipy.interpolate.make_splrep`, `scipy.interpolate.make_splprep`,
+  `scipy.interpolate.generate_knots`, and `scipy.interpolate.make_interp_spline`
+  have gained support.
 - `scipy.signal.savgol_filter`, `scipy.signal.savgol_coeffs`, and
   `scipy.signal.abcd_normalize` have gained support.
 - ``spatial.transform`` has gained support.
@@ -220,8 +230,9 @@ Array API Standard Support
   gained support.
 - `scipy.linalg.block_diag`, `scipy.linalg.fiedler`, and
   `scipy.linalg.orthogonal_procrustes` have gained support.
-- `scipy.interpolate.NdBSpline`, `scipy.interpolate.RegularGridInterpolator`,
-  and `scipy.interpolate.RBFInterpolator` gained support.
+- `scipy.interpolate.BSpline`, `scipy.interpolate.NdBSpline`,
+  `scipy.interpolate.RegularGridInterpolator`, and
+  `scipy.interpolate.RBFInterpolator` gained support.
 - Support added for `scipy.stats.alexandergovern`, `scipy.stats.bootstrap`,
   `scipy.stats.brunnermunzel`, `scipy.stats.chatterjeexi`,
   `scipy.stats.cramervonmises`, `scipy.stats.cramervonmises_2samp`,
