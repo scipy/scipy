@@ -938,7 +938,7 @@ class multivariate_normal_gen(multi_rv_generic):
         -------
         marginal_multivariate_normal : multivariate_normal_frozen
             An object representing the marginal distribution.
-        
+
         Notes
         -----
         %(_mvn_doc_callparams_note)s
@@ -949,7 +949,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         mean = mean[dims]
         cov = cov_object.covariance[np.ix_(dims, dims)]
-        
+
         return multivariate_normal_frozen(mean, cov, allow_singular)
 
 multivariate_normal = multivariate_normal_gen()
@@ -1059,7 +1059,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
     def marginal(self, dimensions):
-        return self._dist.marginal(dimensions, self.mean, 
+        return self._dist.marginal(dimensions, self.mean,
                                    self.cov_object, self.allow_singular)
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -5057,6 +5057,8 @@ class multivariate_t_gen(multi_rv_generic):
         Draw random samples from a multivariate t-distribution.
     entropy(loc=None, shape=1, df=1)
         Differential entropy of a multivariate t-distribution.
+    marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
+        Return a marginal multivariate t-distribution.
 
     Parameters
     ----------
@@ -5502,6 +5504,35 @@ class multivariate_t_gen(multi_rv_generic):
 
         return dim, loc, shape, df
 
+    def marginal(self, dimensions, loc=None, shape=1, df=1, allow_singular=False):
+        """Return a marginal multivariate t-distribution.
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate t corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+        %(_mvt_doc_default_callparams)s
+
+        Returns
+        -------
+        marginal_multivariate_t : multivariate_t_frozen
+            An object representing the marginal t-distribution.
+
+        Notes
+        -----
+        %(_mvt_doc_frozen_callparams_note)s
+        """
+        params = self._process_parameters(loc, shape, df)
+        n, loc, shape, df = params
+        dims = _validate_marginal_input(dimensions, n)
+
+        loc = loc[dims]
+        shape = shape[np.ix_(dims, dims)]
+
+        return multivariate_t_frozen(loc, shape, df, allow_singular)
+
 
 class multivariate_t_frozen(multi_rv_frozen):
     __class_getitem__ = None
@@ -5532,6 +5563,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
         self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
         self.shape_info = _PSD(shape, allow_singular=allow_singular)
+        self.allow_singular = allow_singular
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
@@ -5558,6 +5590,9 @@ class multivariate_t_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.shape)
 
+    def marginal(self, dimensions):
+        return self._dist.marginal(dimensions, self.loc,
+                                   self.shape, self.df, self.allow_singular)
 
 multivariate_t = multivariate_t_gen()
 
