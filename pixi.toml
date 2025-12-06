@@ -575,3 +575,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [feature.py311.dependencies]
 python = "3.11.*"
+
+
+### tool config
+
+[tool.pixi-diff-to-markdown]
+change-type-column = false
