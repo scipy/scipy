@@ -428,7 +428,7 @@ add_newdoc("bdtrik",
     """)
 
 add_newdoc("bdtrin",
-    """
+    r"""
     bdtrin(k, y, p, out=None)
 
     Inverse function to `bdtr` with respect to `n`.
@@ -460,24 +460,35 @@ add_newdoc("bdtrin",
 
     Notes
     -----
-    Formula 26.5.24 of [1]_ (or equivalently [2]_) is used to reduce the binomial
-    distribution to the cumulative incomplete beta distribution.
-
-    Computation of `n` involves a search for a value that produces the desired
-    value of `y`. The search relies on the monotonicity of `y` with `n`.
-
-    Wrapper for the CDFLIB [3]_ Fortran routine `cdfbin`.
+    This function uses the `find_minimum_number_of_trials` method of the
+    `binomial_distribution` class of the Boost.Math C++ library [1]_.
 
     References
     ----------
-    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
-           Handbook of Mathematical Functions with Formulas,
-           Graphs, and Mathematical Tables. New York: Dover, 1972.
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/8.17.5#E5
-    .. [3] Barry Brown, James Lovato, and Kathy Russell,
-           CDFLIB: Library of Fortran Routines for Cumulative Distribution
-           Functions, Inverses, and Other Parameters.
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    How often do we have to flip a fair coin to have at least a 90% chance
+    of getting 10 heads? `bdtrin` answers this question:
+
+    >>> import scipy.special as sc
+    >>> k = 10  # number of times we want heads
+    >>> p = 0.5  # probability of flipping heads
+    >>> y = 0.9  # cumulative probability
+    >>> result = sc.bdtrin(k, y, p)
+    >>> result
+    15.90442928275109
+
+    To verify, compute the cumulative probability of getting 10 or fewer
+    successes in 16 trials with probability 0.5 using the binomial
+    distribution from `scipy.stats`. Since `bdtrin` returns a non-integer
+    number of trials, we round up to the next integer:
+
+    >>> from scipy.stats import Binomial
+    >>> Binomial(n=16, p=p).cdf(k)
+    0.8949432373046875
+
     """)
 
 add_newdoc("btdtria",
