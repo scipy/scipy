@@ -483,7 +483,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     The following custom strategy function mimics 'best1bin':
 
     >>> def custom_strategy_fn(candidate, population, rng=None):
-    ...     parameter_count = population.shape(-1)
+    ...     parameter_count = population.shape[-1]
     ...     mutation, recombination = 0.7, 0.9
     ...     trial = np.copy(population[candidate])
     ...     fill_point = rng.choice(parameter_count)
