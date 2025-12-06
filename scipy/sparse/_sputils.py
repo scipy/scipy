@@ -533,7 +533,9 @@ def broadcast_shapes(*shapes):
         for i, x in enumerate(shp, start=-len(shp)):
             if x != 1 and x != out[i]:
                 if out[i] != 1:
-                    raise ValueError("shapes cannot be broadcast to a single shape.")
+                    raise ValueError(
+                        f"Incompatible shapes cannot be broadcast: {shapes}"
+                    )
                 out[i] = x
     return (*out,)
 
