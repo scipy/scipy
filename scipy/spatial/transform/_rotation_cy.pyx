@@ -787,7 +787,7 @@ def as_euler(
     # directly by Rotation. See:
     # Bernardes E, Viollet S (2022) Quaternion to Euler angles conversion: A
     # direct, general and computationally efficient method.
-    # PLoS ONE 17(11): e0276302. :doi:`10.1371/journal.pone.0276302`.
+    # PLoS ONE 17(11): e0276302. https://doi.org/10.1371/journal.pone.0276302
     cdef const uchar[:] cseq = seq.encode()
     cdef int i = _elementary_basis_index(cseq[0])
     cdef int j = _elementary_basis_index(cseq[1])
