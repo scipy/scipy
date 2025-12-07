@@ -838,55 +838,46 @@ class TestSolve:
     def test_assume_a_keyword(self):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
-    @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
-                             "crash on Windows (gh-8064)")
-    def test_all_type_size_routine_combinations(self):
+    @pytest.mark.parametrize("size", [10, 100])
+    @pytest.mark.parametrize("assume_a", ['gen', 'sym', 'pos', 'her', 'tridiagonal'])
+    @pytest.mark.parametrize(
+        "dtype", [np.float32, np.float64, np.complex64, np.complex128]
+    )
+    def test_all_type_size_routine_combinations(self, size, dtype, assume_a):
         rng = np.random.default_rng(1234)
-        sizes = [10, 100]
-        assume_as = ['gen', 'sym', 'pos', 'her']
-        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-        for size, assume_a, dtype in itertools.product(sizes, assume_as,
-                                                       dtypes):
-            is_complex = dtype in (np.complex64, np.complex128)
-            if assume_a == 'her' and not is_complex:
-                continue
+        is_complex = dtype in (np.complex64, np.complex128)
 
-            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
-                       f"dtype: {dtype}")
+        a = rng.standard_normal((size, size)).astype(dtype)
+        b = rng.standard_normal(size).astype(dtype)
+        if is_complex:
+            a += (1j*rng.standard_normal((size, size))).astype(dtype)
 
-            a = rng.standard_normal((size, size)).astype(dtype)
-            b = rng.standard_normal(size).astype(dtype)
-            if is_complex:
-                a += (1j*rng.standard_normal((size, size))).astype(dtype)
+        if assume_a == 'sym':  # Can still be complex but only symmetric
+            a = a + a.T
+        elif assume_a == 'her':  # Handle hermitian matrices here instead
+            a = a + a.T.conj()
+        elif assume_a == 'pos':
+            a = a.T.conj() @ a + 0.1*np.eye(size)
+        elif assume_a == 'tridiagonal':
+            a = (np.diag(np.diag(a)) +
+                 np.diag(np.diag(a, 1), 1) +
+                 np.diag(np.diag(a, -1), -1)
+            )
 
-            if assume_a == 'sym':  # Can still be complex but only symmetric
-                a = a + a.T
-            elif assume_a == 'her':  # Handle hermitian matrices here instead
-                a = a + a.T.conj()
-            elif assume_a == 'pos':
-                a = a.conj().T.dot(a) + 0.1*np.eye(size)
+        tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
 
-            tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+        if assume_a in ['gen', 'sym', 'her']:
+            # We revert the tolerance from before
+            #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+            if dtype in (np.float32, np.complex64):
+                tol *= 10
 
-            if assume_a in ['gen', 'sym', 'her']:
-                # We revert the tolerance from before
-                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
-                if dtype in (np.float32, np.complex64):
-                    tol *= 10
+        x = solve(a, b, assume_a=assume_a)
+        assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
-            x = solve(a, b, assume_a=assume_a)
-            assert_allclose(a.dot(x), b,
-                            atol=tol * size,
-                            rtol=tol * size,
-                            err_msg=err_msg)
-
-            if assume_a == 'sym' and dtype not in (np.complex64,
-                                                   np.complex128):
-                x = solve(a, b, assume_a=assume_a, transposed=True)
-                assert_allclose(a.dot(x), b,
-                                atol=tol * size,
-                                rtol=tol * size,
-                                err_msg=err_msg)
+        if assume_a == 'sym' and not is_complex:
+            x = solve(a, b, assume_a=assume_a, transposed=True)
+            assert_allclose(a @ x, b, atol=tol * size, rtol=tol * size)
 
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
@@ -1135,6 +1126,26 @@ class TestSolve:
         b = np.ones(2)
         with pytest.raises(LinAlgError):
             solve(a, b, assume_a="diagonal")
+
+    def test_tridiagonal(self):
+        n = 4
+        a = -2*np.diag(np.ones(n)) + np.diag(np.ones(3), 1) + np.diag(np.ones(3), -1)
+        a = np.stack([np.triu(np.ones((n, n))), a])
+        b = np.ones(4)
+        x = solve(a, b)
+
+        # basic tridiag solve
+        assert_allclose(x[1, ...], np.asarray([-2., -3., -3., -2.]), atol=1e-15)
+
+        # ill-conditioned inputs warn
+        a[1, 0, 0] = 1e20
+        with pytest.warns(LinAlgWarning):
+            solve(a, b, assume_a="tridiagonal")
+
+        # singular inputss raise
+        a[1, 0, 0] = a[1, 0, 1] = 0
+        with pytest.raises(LinAlgError):
+            solve(a, b, assume_a="tridiagonal")
 
 
 class TestSolveTriangular:

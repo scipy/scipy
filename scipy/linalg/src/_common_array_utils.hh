@@ -148,6 +148,26 @@ void BLAS_FUNC(zhecon)(char *uplo, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *l
 void BLAS_FUNC(chetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 void BLAS_FUNC(zhetrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
+
+/* ?GTTRF */
+void BLAS_FUNC(sgttrf)(CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(dgttrf)(CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(cgttrf)(CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+void BLAS_FUNC(zgttrf)(CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, CBLAS_INT *info);
+
+/* ?GTTRS */
+void BLAS_FUNC(sgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zgttrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+
+/* ?GTCON */
+void BLAS_FUNC(sgtcon)(char *norm, CBLAS_INT *n, float *dl, float *d, float *du, float *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dgtcon)(char *norm, CBLAS_INT *n, double *dl, double *d, double *du, double *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(cgtcon)(char *norm, CBLAS_INT *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, CBLAS_INT *ipiv, float *anorm, float *rcond, npy_complex64 *work, CBLAS_INT *info);
+void BLAS_FUNC(zgtcon)(char *norm, CBLAS_INT *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, CBLAS_INT *ipiv, double *anorm, double *rcond, npy_complex128 *work, CBLAS_INT *info);
+
 } // extern "C"
 
 
@@ -425,12 +445,64 @@ GEN_HETRS(c, he, npy_complex64)
 GEN_HETRS(z, he, npy_complex128)
 
 
+#define GEN_GTTRF(PREFIX, TYPE) \
+inline void \
+gttrf(CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gttrf)(n, dl, d, du, du2, ipiv, info); \
+};
+
+GEN_GTTRF(s, float)
+GEN_GTTRF(d, double)
+GEN_GTTRF(c, npy_complex64)
+GEN_GTTRF(z, npy_complex128)
+
+
+#define GEN_GTTRS(PREFIX, TYPE) \
+inline void \
+gttrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gttrs)(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info); \
+};
+
+GEN_GTTRS(s, float)
+GEN_GTTRS(d, double)
+GEN_GTTRS(c, npy_complex64)
+GEN_GTTRS(z, npy_complex128)
+
+
+#define GEN_GTCON(PREFIX, TYPE) \
+inline void \
+gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, TYPE *anorm, TYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, iwork, info); \
+};
+
+GEN_GTCON(s, float)
+GEN_GTCON(d, double)
+
+
+// NB: `iwork` is not used for c- and z- variants of ?gtcon
+#define GEN_GTCON_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gtcon(char *norm, CBLAS_INT *n, TYPE *dl, TYPE *d, TYPE *du, TYPE *du2, CBLAS_INT *ipiv, RTYPE *anorm, RTYPE *rcond, TYPE *work, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gtcon)(norm, n, dl, d, du, du2, ipiv, anorm, rcond, work, info); \
+};
+
+GEN_GTCON_CZ(c, npy_complex64, float)
+GEN_GTCON_CZ(z, npy_complex128, double)
+
+
+
+
 // Structure tags; python side maps assume_a strings to these values
 enum St : Py_ssize_t
 {
     NONE = -1,
     GENERAL = 0,
     DIAGONAL = 11,
+    TRIDIAGONAL = 31,
     UPPER_TRIANGULAR = 21,
     LOWER_TRIANGULAR = 22,
     POS_DEF = 101,
@@ -649,6 +721,34 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
 }
 
 
+template<typename T>
+typename type_traits<T>::real_type
+norm1_tridiag(T* dl, T *d, T *du, T *work, const npy_intp n) {
+    using real_type = typename type_traits<T>::real_type;
+    using value_type = typename type_traits<T>::value_type;
+
+    value_type *pd = reinterpret_cast<value_type *>(d);
+    value_type *pdu = reinterpret_cast<value_type *>(du);
+    value_type *pdl = reinterpret_cast<value_type *>(dl);
+    real_type *rwork = (real_type *)work;
+
+    npy_intp i;
+    for (i=0; i<n; i++) {
+        rwork[i] = std::abs(pd[i]);
+    }
+    for (i=0; i<n-1; i++) {
+        rwork[i] += std::abs(pdl[i]);
+    }
+    for (i=1; i<n-1; i++) {
+        rwork[i] += std::abs(pdu[i-1]);
+    }
+
+    real_type temp = 0.0;
+    for (i = 0; i < n; i++) { if (rwork[i] > temp) { temp = rwork[i]; } }
+    return temp;
+}
+
+
 /***************************
  ***  Structure detection
  ***************************/
@@ -787,6 +887,28 @@ fill_other_triangle_noconj(char uplo, T *data, npy_intp n) {
     }
 }
 
+
+/*
+ * Helper for converting an NxN matrix to tridiagonal form:
+ * extract the diagonals of `data` (a full NxN matrix) into du, d, dl
+ *
+ * the upper and lower subdiagonals, `dl` and `du`, are have length N-1
+ * the main diagonal, `d`, has length N
+ *
+ */
+template<typename T>
+inline void
+to_tridiag(const T *data, npy_intp N, T *du, T *d, T *dl) {
+    for (npy_intp i=0; i<N; i++) {
+        d[i] = data[i + i*N];
+    }
+    for (npy_intp i=0; i<N-1; i++) {
+        dl[i] = data[i*N + i + 1];
+    }
+    for (npy_intp i=0; i<N-1; i++) {
+        du[i] = data[(i+1)*N + i];
+    }
+}
 
 
 template<typename T>

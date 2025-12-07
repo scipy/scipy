@@ -105,8 +105,8 @@ class Bench(Benchmark):
 class BatchedSolveBench(Benchmark):
     params = [
         [(100, 10, 10), (100, 20, 20), (100, 100)],
-        ["gen", "pos", "sym", "diagonal"],
-        ["scipy", "numpy"]
+        ["gen", "pos", "sym", "diagonal", "tridiagonal"],
+        ["scipy/detect", "scipy/assume", "numpy"]
     ]
     param_names = ["shape", "structure" ,"module"]
 
@@ -124,16 +124,28 @@ class BatchedSolveBench(Benchmark):
             self.a = np.zeros_like(a)
             for i in range(shape[-1]):
                 self.a[..., i, i] = a[..., i, i]
+        elif structure == "tridiagonal":
+            self.a = np.zeros_like(a)
+            for i in range(shape[-1]):
+                self.a[..., i, i] = a[..., i, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i+1, i] = a[..., i+1, i]
+            for i in range(shape[-1]-1):
+                self.a[..., i, i+1] = a[..., i, i+1]
         else:
             self.a = a
 
         self.b = random([a.shape[-1]])
 
+        self.kwd = {}
+        if module.split("/")[-1] == "assume":
+            self.kwd = {"assume_a": structure}
+
     def time_solve(self, shape, structure, module):
         if module == 'numpy':
             nl.solve(self.a, self.b)
         else:
-            sl.solve(self.a, self.b, assume_a=structure)
+            sl.solve(self.a, self.b, check_finite=False, **self.kwd)
 
 
 class Norm(Benchmark):
