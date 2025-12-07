@@ -114,7 +114,7 @@ Additional caveats may be listed in the docstring of the function.
 While the elements of the table marked with "n/a" are inherently out of scope, we are
 continually working on filling in the rest.
 Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
-but it may change in the future.
+but this may change in the future.
 
 Please see `the tracker issue`_ for updates.
 
