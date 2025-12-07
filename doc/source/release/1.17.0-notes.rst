@@ -79,10 +79,6 @@ New features
 - performance has improved for `scipy.linalg.solve` with batched inputs
   for certain matrix structures.
 
-``scipy.ndimage`` improvements
-==============================
-
-
 ``scipy.optimize`` improvements
 ===============================
 - `~scipy.optimize.minimize(method="trust-exact")` now accepts a
