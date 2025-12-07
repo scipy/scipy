@@ -172,7 +172,10 @@ New features
 - The following functions for statistical applications have significantly
   improved parameter ranges and reduced error rates: ``btdtria``, ``btdtrib``,
   ``chdtriv``, ``chndtr``, ``chndtrix``, ``chndtridf``, ``chndtrinc``, ``fdtr``,
-  ``fdtrc``, ``fdtri``, ``pdtrik``, ``stdtr`` and ``stdtrit``.
+  ``fdtrc``, ``fdtri``, ``gdtria``, ``gdtrix``, ``pdtrik``, ``stdtr`` and
+  ``stdtrit``.
+- The incomplete beta functions ``betainc``, ``betaincc``, ``betaincinv`` and
+  ``betainccinv`` are improved for extreme parameter ranges.
 
 
 ``scipy.stats`` improvements
@@ -206,6 +209,8 @@ New features
 - The accuracies of the `scipy.stats.Binomial` methods ``logcdf`` and
   ``logccdf`` have been improved in the tails.
 - The default guess of ``scipy.stats.trapezoid.fit`` has been improved.
+- The accuracy and range of the ``cdf``, ``sf``, ``isf``, and ``ppf`` methods
+  of `scipy.stats.binom` and `scipy.stats.nbinom` has been improved.
 
 
 **************************
@@ -309,7 +314,7 @@ Backwards incompatible changes
 *************
 Other changes
 *************
-- The default version of the Boost Math library leveraged by SciPy has been
+- The version of the Boost Math library leveraged by SciPy has been
   increased from ``1.88.0`` to ``1.89.0``.
 - On POSIX operating systems, SciPy will now use the ``'forkserver'``
   multiprocessing context on Python 3.13 and older for ``workers=<an-int>``
