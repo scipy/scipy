@@ -215,6 +215,8 @@ New features
 **************************
 Array API Standard Support
 **************************
+- An overall summary table for our array API standard support/coverage is
+  :ref:`now availalble <dev-arrayapi_coverage>`.
 - The overhead associated with array namespace determination has been reduced,
   providing improved performance in dispatching to different backends.
 - `scipy.cluster.hierarchy.is_isomorphic` has gained support.
@@ -263,13 +265,37 @@ Deprecated features and future changes
 **************************************
 - The `scipy.odr` module is deprecated in v1.17.0 and will be completely
   removed in v1.19.0. Users are suggested to use the ``odrpack`` package instead.
+- The default dype behavior of `scipy.sparse.diags` and
+  `scipy.sparse.diags_array` will change in v1.19.0.
+- In v1.19.0, `scipy.linalg.hankel` will no longer ravel multidimensional
+  inputs and instead will treat them as a batch.
+- The ``precenter`` argument of `scipy.signal.lombscargle` is deprecated and
+  will be removed in v1.19.0. Furthermore, some arguments will become keyword
+  only.
 
 ********************
 Expired deprecations
 ********************
-- ``scipy.stats.find_repeats``
+- ``scipy.stats.find_repeats`` has been removed. Please use
+  ``numpy.unique``/``numpy.unique_counts`` instead.
 - `scipy.linalg` functions for Toeplitz matrices no longer ravel n-d input
   arguments; instead, multidimensional input is treated as a batch.
+- The ``seed`` and ``rand`` functions from `scipy.linalg.interpolative` have
+  been removed. Use the ``rng`` argument instead.
+- Complex inputs to `scipy.spatial.distance.cosine` and
+  `scipy.spatial.distance.correlation` now raise an error.
+- Support for object arrays and longdoubles has been removed from
+  `scipy.signal.correlate`, `scipy.signal.convolve`, `scipy.signal.lfilter`,
+  and `scipy.signal.sosfilt`.
+- ``kulczynski1`` and ``sokalmichener`` have been removed from
+  `scipy.spatial.distance`.
+- ``kron`` has been removed from `scipy.linalg`. Please use ``numpy.kron``.
+- Accidentally exposed functions have been removed from
+  `scipy.interpolate.interpnd`.
+- The ``random_state`` and ``permutation`` arguments of
+  `scipy.stats.ttest_ind` have been removed.
+- ``sph_harm``, ``clpmn``, ``lpn``, and ``lpmn`` have been removed from
+  `scipy.special`.
 
 
 ******************************
