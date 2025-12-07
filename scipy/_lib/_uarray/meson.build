@@ -10,7 +10,6 @@ py3.extension_module('_uarray',
 python_sources = [
   '__init__.py',
   '_backend.py',
-  'LICENSE'
 ]
 
 py3.install_sources(

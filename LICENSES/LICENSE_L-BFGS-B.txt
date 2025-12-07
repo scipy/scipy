@@ -1,0 +1,71 @@
+3-clause license ("New BSD License" or "Modified BSD License")
+New BSD License
+Author	Regents of the University of California
+Publisher	Public Domain
+Published	July 22, 1999[8]
+DFSG compatible	Yes[7]
+FSF approved	Yes[1]
+OSI approved	Yes[3]
+GPL compatible	Yes[1]
+Copyleft	No[1]
+Copyfree	Yes
+Linking from code with a different license	Yes
+
+The advertising clause was removed from the license text in the official BSD on July 22, 1999 by William Hoskins, Director of 
+the Office of Technology Licensing for UC Berkeley.[8] Other BSD distributions removed the clause, but many similar clauses 
+remain in BSD-derived code from other sources, and unrelated code using a derived license.
+
+While the original license is sometimes referred to as "BSD-old", the resulting 3-clause version is sometimes referred to by 
+"BSD-new." Other names include "New BSD", "revised BSD", "BSD-3", or "3-clause BSD". This version has been vetted as 
+an Open source license by the OSI as the "The BSD License".[3] The Free Software Foundation, which refers to the license 
+as the "Modified BSD License", states that it is compatible with the GNU GPL. The FSF encourages users to be specific 
+when referring to the license by name (i.e. not simply referring to it as "a BSD license" or "BSD-style") to avoid confusion with 
+the original BSD license.[1]
+
+This version allows unlimited redistribution for any purpose as long as its copyright notices and the license's disclaimers of 
+warranty are maintained. The license also contains a clause restricting use of the names of contributors for endorsement of a 
+derived work without specific permission.
+
+Copyright (c) <year>, <copyright holder>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+References
+
+1. ^ a b c d e "Various Licenses and Comments about Them - GNU Project - Free Software Foundation (FSF): Modified BSD license". 
+     Free Software Foundation. Retrieved 02 October 2010.
+2. ^ a b c d e "Various Licenses and Comments about Them - GNU Project - Free Software Foundation (FSF): FreeBSD license". 
+     Free Software Foundation. Retrieved 02 October 2010.
+3. ^ a b c d e f "Open Source Initiative OSI - The BSD License:Licensing". Open Source Initiative. Retrieved 06 December 2009.
+4. ^ a b c d "Various Licenses and Comments about Them - GNU Project - Free Software Foundation (FSF): Original BSD license". 
+     Free Software Foundation. Retrieved 02 October 2010.
+5. ^ The year given is the year 4.3BSD-Tahoe was released. Whether this is the first use of the license is not known.
+6. ^ The year given is the year 4.3BSD-Reno was released. Whether this is the first use of the license is not known.
+7. ^ a b "Debian -- License information". Debian. Retrieved 18 February 2010.
+8. ^ a b c "To All Licensees, Distributors of Any Version of BSD". University of California, Berkeley. 1999-07-22. Retrieved 
+     2006-11-15.
+9. ^ Richard Stallman. "The BSD License Problem". Free Software Foundation. Retrieved 2006-11-15.
+10. ^ "The FreeBSD Copyright". The FreeBSD Project. Retrieved 6 December 2009.
+11. ^ "NetBSD Licensing and Redistribution". The NetBSD Foundation. Retrieved 06 December 2009.
