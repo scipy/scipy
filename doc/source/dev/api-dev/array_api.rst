@@ -484,6 +484,7 @@ feasability are demonstrated.
 
 .. toctree::
    :hidden:
+   :caption: API Coverage
 
    array_api_modules_tables/cluster_vq
    array_api_modules_tables/cluster_hierarchy

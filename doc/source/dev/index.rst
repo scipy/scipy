@@ -37,6 +37,8 @@ the organization section.
 .. This toctree defines previous/next for contributor guide documents
 .. toctree::
    :hidden:
+   :caption: Contributor Guide
+
 
    contributor/development_workflow
    contributor/pep8
