@@ -573,25 +573,29 @@ description = "Test SciPy with system libs"
 
 
 [feature.asan]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [feature.asan.dependencies]
 python.git = "https://github.com/lucascolley/cpython"
 python.subdirectory = "Tools/pixi-packages/asan"
-python.rev = "677db6f991719b5baf38ff1daec5a50b013eab78"
+python.rev = "54274f2c4e017ef58b5cd73ce45f9277ee5c52f5"
 
 numpy.git = "https://github.com/lucascolley/numpy"
 numpy.subdirectory = "pixi-packages/asan"
-numpy.rev = "9f05918520d2579134758b63a45da9a7ebcacaa3"
+numpy.rev = "aa50cf47999591b0594785a7476763ee34769eb6"
 
 [feature.asan.tasks.build-asan]
 cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
-env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
+env.CC = "ccache $CC"
+env.CXX = "ccache $CXX"
+env.FC = "ccache $FC"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
 description = "Build SciPy, NumPy, and CPython with address sanitizer"
 
 [feature.asan.tasks.test-asan]
 cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan'"
 depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
 description = "Test SciPy with address sanitizer"
 
 ### Alternative python versions ###

@@ -1,0 +1,11 @@
+# from scipy.optimize._minpack._lmdif
+interceptor_via_fun:enorm
+
+# from scipy.interpolate._dierckx.qr_reduce_periodic
+interceptor_via_fun:_ZN7fitpack18qr_reduce_periodic*
+
+# from scipy.ndimage._rank_filter_1d.rank_filter
+interceptor_via_fun:_Z12_rank_filterIfEiPT_iiiS1_iS0_i
+
+# from scipy.signal._spline.sepfir2d
+interceptor_via_fun:*_fir_mirror_symmetric*

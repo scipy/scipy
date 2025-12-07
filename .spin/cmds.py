@@ -120,11 +120,15 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     if asan:
         build_dir = os.path.abspath(kwargs['build_dir'])
         root = Path(build_dir).parent
-        asan_ignore_file = os.path.join(root, 'tools', 'asan-ignore.txt')
-        compiler_args = (
-            f'-fsanitize=address -fno-omit-frame-pointer '
-            f'-fsanitize-ignorelist={asan_ignore_file}'
-        )
+        compiler_args = f'-fsanitize=address -fno-omit-frame-pointer'
+        if sys.platform == "darwin":
+            asan_ignore_file = os.path.join(root, 'tools', 'asan-ignore.txt')
+            compiler_args += f' -fsanitize-ignorelist={asan_ignore_file}'
+        elif sys.platform == "linux":
+            if asan_opts := os.environ.get('ASAN_OPTIONS'):
+                os.environ['ASAN_OPTIONS'] = asan_opts + f":suppressions={os.path.join(root, 'tools', 'asan.supp')}"
+            else:
+                os.environ['ASAN_OPTIONS'] = f":suppressions={os.path.join(root, 'tools', 'asan.supp')}"
         meson_args += (f'-Dc_args={compiler_args}', )
         meson_args += (f'-Dcpp_args={compiler_args}', )
         meson_args += ('-Dc_link_args=-fsanitize=address', )
