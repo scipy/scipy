@@ -57,7 +57,8 @@ values:
 
 Note that the above example works for PyTorch CPU tensors. For GPU tensors or
 CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
-uses compiled code in its implementation, which won't work on GPU.
+uses compiled code in its implementation, which won't work on GPU, and there
+are currently no GPU specific implementations to dispatch to.
 
 More strict array input validation will reject ``np.matrix`` and
 ``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
