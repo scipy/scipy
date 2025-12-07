@@ -445,7 +445,7 @@ const char *airy_doc = R"(
     The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two 
     independent solutions of
 
-    .. math:: y''(x) = x y(x).
+    .. math:: y''(z) = z y(z).
 
     For real :math:`z` in :math:`[-10, 10]`, the computation is carried out by calling
     the Cephes [1]_ `airy` routine, which uses power series summation
