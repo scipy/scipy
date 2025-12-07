@@ -362,10 +362,11 @@ Authors
 
 * Name (commits)
 * h-vetinari (3)
-* AdrianRasoOnGit (1) +
 * Joshua Alexander (1) +
 * Amit Aronovitch (1) +
 * Ayush Baranwal (1) +
+* Cristrian Batrin (1) +
+* Ole Bialas (1) +
 * Om Biradar (1) +
 * Florian Bourgey (1)
 * Jake Bowhay (100)
@@ -377,22 +378,21 @@ Authors
 * Luca Cerina (1) +
 * Christine P. Chai (35)
 * Saransh Chopra (1)
-* ChrisAB (1) +
 * Lucas Colley (115)
 * Björn Ingvar Dahlgren (2) +
+* Sumit Das (1) +
 * Hans Dembinski (1)
 * John M Dusel (1) +
 * DWesl (4)
 * Pieter Eendebak (6)
 * Kian Eliasi (2)
 * Rob Falck (1)
-* Abdullah Fayed (2) +
-* Abdullah Sabri Fayed (1) +
+* Abdullah Fayed (3) +
 * Emmanuel Ferdman (2) +
 * Filipe Laíns (1) +
 * Daniel Fremont (1) +
 * Neil Girdhar (1)
-* Ilan Gold (5)
+* Ilan Gold (35)
 * Nathan Goldbaum (3) +
 * Ralf Gommers (121)
 * Nicolas Guidotti (1) +
@@ -400,21 +400,18 @@ Authors
 * Matt Haberland (175)
 * Joren Hammudoglu (56)
 * Jacob Hass (1) +
-* hippowm (4) +
 * Nick Hodgskin (1) +
 * Stephen Huan (1) +
-* ilan-gold (30) +
 * Guido Imperiale (41)
 * Gert-Ludwig Ingold (1)
-* jaimergp (2) +
-* JaRoSchm (1) +
+* Jaime Rodríguez-Guerra (2) +
 * JBlitzar (1) +
 * Adam Jones (2)
-* joshuamarkovic (1) +
 * Dustin Kenefake (1) +
 * Robert Kern (3)
 * Gleb Khmyznikov (1) +
 * Daniil Kiktenko (1) +
+* Pascal Klein (2) +
 * kleiter (1) +
 * Oliver Kovacs (1) +
 * Koven (1) +
@@ -428,6 +425,7 @@ Authors
 * Philip Loche (1)
 * Yuxi Long (4) +
 * Christian Lorentzen (1)
+* Joshua Markovic (1) +
 * Gabryel Mason-Williams (1) +
 * mcdigman (1) +
 * Rafael Menezes (1) +
@@ -438,10 +436,8 @@ Authors
 * Andrew Nelson (72)
 * newyork_loki (2) +
 * Nick ODell (33)
-* Ole (1) +
 * Dimitri Papadopoulos Orfanos (2)
 * Drew Parsons (1)
-* Pascal (2) +
 * Gilles Peiffer (3) +
 * Matti Picus (1)
 * Jonas Pleyer (2) +
@@ -450,11 +446,13 @@ Authors
 * Mohammed Abdul Rahman (1) +
 * Daniele Raimondi (2) +
 * Ritesh Rana (1) +
+* Adrian Raso (1) +
 * Dan Raviv (1) +
 * Tyler Reddy (83)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
+* Jaro Schmidt (1) +
 * Daniel Schmitz (24)
 * Martin Schuck (24)
 * Dan Schult (29)
@@ -465,7 +463,6 @@ Authors
 * Kartik Sirohi (1) +
 * Albert Steppi (177)
 * Matthias Straka (1) +
-* Sumit (1) +
 * Theo Teske (1) +
 * Noam Teyssier (1) +
 * tommie979 (1) +
@@ -473,15 +470,15 @@ Authors
 * Pierre Veron (1) +
 * Shuhei Watanabe (1) +
 * Warren Weckesser (23)
-* WhimsyHippo (3) +
+* WhimsyHippo (7) +
 * Rory Yorke (2)
 * Will Zhang (1) +
-* Zhenyu Zhu ajz34 (1) +
 * Eric Zitong Zhou (1)
 * Tingwei Zhu (1) +
+* Zhenyu Zhu (1) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (36)
 
-    A total of 119 people contributed to this release.
+    A total of 116 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
