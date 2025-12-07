@@ -23,6 +23,23 @@ This release requires Python 3.11-3.14 and NumPy 1.26.4 or greater.
 **************************
 Highlights of this release
 **************************
+- Many SciPy functions have gained native support for batching of N-dimensional
+  array input and additional support for the array API standard. An overall
+  summary of the latter is now available in a
+  :ref:`set of tables <dev-arrayapi_coverage>`.
+- In `scipy.sparse`, ``coo_array`` now has full support for indexing across
+  dimensions without needing to convert between sparse formats. ARPACK
+  and PROPACK rewrites from Fortran77 to C now empower the use of external
+  pseudorandom number generators.
+- In `scipy.spatial`, ``transform.Rotation`` and ``transform.RigidTransform``
+  have been extended to support N-D arrays. ``geometric_slerp`` now has support
+  for extrapolation.
+- `scipy.stats` has gained the matrix t and logistic distributions and many
+  performance and accuracy improvements.
+- Initial support for 64-bit integer (ILP64) BLAS and LAPACK libraries has
+  been added, including for MKL, Apple Accelerate and OpenBLAS. Please
+  report any issues with ILP64 you encounter.
+
 
 
 ************
@@ -81,11 +98,11 @@ New features
 
 ``scipy.optimize`` improvements
 ===============================
-- `~scipy.optimize.minimize(method="trust-exact")` now accepts a
-  solver-specific "subproblem_maxiter" option. This option can be used to
+- ``optimize.minimize(method="trust-exact")`` now accepts a
+  solver-specific ``"subproblem_maxiter"`` option. This option can be used to
   assure that the algorithm converges for functions with an ill-conditioned
   Hessian.
-- Callback functions used by `~scipy.optimize.minimize(method="slsqp")` can
+- Callback functions used by ``optimize.minimize(method="slsqp")`` can
   opt into the new callback interface by accepting a single keyword argument
   ``intermediate_result``.
 
