@@ -175,11 +175,49 @@ void BLAS_FUNC(dgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, doub
 void BLAS_FUNC(cgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(zgesvd)(char *jobu, char *jobvt, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
 
+
 /* ?GESDD*/
 void BLAS_FUNC(sgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *s, float *u, CBLAS_INT *ldu, float *vt, CBLAS_INT *ldvt, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(dgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *s, double *u, CBLAS_INT *ldu, double *vt, CBLAS_INT *ldvt, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(cgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, float *s, npy_complex64 *u, CBLAS_INT *ldu, npy_complex64 *vt, CBLAS_INT *ldvt, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(zgesdd)(char *jobz, CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, double *s, npy_complex128 *u, CBLAS_INT *ldu, npy_complex128 *vt, CBLAS_INT *ldvt, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
+
+
+/* ?GEQRF */
+void BLAS_FUNC(sgeqrf)(CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dgeqrf)(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cgeqrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(zgeqrf)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+
+
+/* ?GEQP3 */
+void BLAS_FUNC(sgeqp3)(CBLAS_INT *m, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *jpvt, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dgeqp3)(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *jpvt, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cgeqp3)(CBLAS_INT *m, CBLAS_INT *n, npy_complex64 *a, CBLAS_INT *lda, CBLAS_INT *jpvt, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zgeqp3)(CBLAS_INT *m, CBLAS_INT *n, npy_complex128 *a, CBLAS_INT *lda, CBLAS_INT *jpvt, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+
+/* ?ORGQR, ?UNGQR */
+void BLAS_FUNC(sorgqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, float *a, CBLAS_INT *lda, float *tau, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dorgqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, double *a, CBLAS_INT *lda, double *tau, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cungqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *tau, npy_complex64 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(zungqr)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *tau, npy_complex128 *work, CBLAS_INT *lwork, CBLAS_INT *info);
+
+
+
+/* ?GELSS*/
+void BLAS_FUNC(sgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a,  CBLAS_INT *lda, npy_complex64 *b,  CBLAS_INT *ldb, float *s,  float *rcond,  CBLAS_INT *rank, npy_complex64 *work,  CBLAS_INT *lwork, float *rwork,  CBLAS_INT *info);
+void BLAS_FUNC(zgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
+
+
+/* ?GELSD*/
+void BLAS_FUNC(sgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(cgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(zgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, int *iwork, int *info);
+
 
 } // extern "C"
 
@@ -591,6 +629,83 @@ inline void call_gesdd(
 };
 
 
+
+
+#define GEN_GEQRF(PREFIX, TYPE) \
+inline void \
+geqrf(CBLAS_INT *m, CBLAS_INT *n, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## geqrf)(m, n, a, lda, tau, work, lwork, info); \
+};
+
+GEN_GEQRF(s, float)
+GEN_GEQRF(d, double)
+GEN_GEQRF(c, npy_complex64)
+GEN_GEQRF(z, npy_complex128)
+
+
+
+// NB: wrap {s-,d-}orgqr for reals and {c-,z-}ungqr for complex
+#define GEN_OR_UN_GQR(PREFIX, TYPE) \
+inline void \
+or_un_gqr(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *k, TYPE *a, CBLAS_INT *lda, TYPE *tau, TYPE *work, CBLAS_INT *lwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gqr)(m, n, k, a, lda, tau, work, lwork, info); \
+};
+
+GEN_OR_UN_GQR(sor, float)
+GEN_OR_UN_GQR(dor, double)
+GEN_OR_UN_GQR(cun, npy_complex64)
+GEN_OR_UN_GQR(zun, npy_complex128)
+
+
+
+// NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
+#define GEN_GELSS_SD(PREFIX, TYPE, RTYPE) \
+inline void \
+gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, info); \
+};
+
+GEN_GELSS_SD(s, float, float)
+GEN_GELSS_SD(d, double, double)
+
+
+#define GEN_GELSS_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gelss(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelss)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, info); \
+};
+
+GEN_GELSS_CZ(c, npy_complex64, float)
+GEN_GELSS_CZ(z, npy_complex128, double)
+
+
+//void BLAS_FUNC(sgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
+
+// NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
+#define GEN_GELSD_SD(PREFIX, TYPE, RTYPE) \
+inline void \
+gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, iwork, info); \
+};
+
+GEN_GELSD_SD(s, float, float)
+GEN_GELSD_SD(d, double, double)
+
+
+#define GEN_GELSD_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, RTYPE *s, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *iwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelsd)(m, n, nrhs, a, lda, b, ldb, s, rcond, rank, work, lwork, rwork, iwork, info); \
+};
+
+GEN_GELSD_CZ(c, npy_complex64, float)
+GEN_GELSD_CZ(z, npy_complex128, double)
 
 
 // Structure tags; python side maps assume_a strings to these values
