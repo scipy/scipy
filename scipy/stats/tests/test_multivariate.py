@@ -467,7 +467,8 @@ class SingularMVNProblem:
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
            singular multivariate normal distribution." Journal of Statistical
-           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+           Computation and Simulation, 51(2-4), 121-135.
+           :doi:`10.1080/00949659508811627`.
     """
     ndim : int
     low : np.ndarray
