@@ -29,20 +29,20 @@ Highlights of this release
 New features
 ************
 
-`scipy.integrate` improvements
-==============================
+``scipy.integrate`` improvements
+================================
 - The integration routines ``dopri5``, ``dopri853``, ``LSODA``, ``vode``, and
   ``zvode`` have been ported from Fortran77 to C.
 - `scipy.integrate.quad` now has a fast path for returning 0 when the integration
   interval is empty.
 
-`scipy.cluster` improvements
-============================
+``scipy.cluster`` improvements
+==============================
 - `scipy.cluster.hierarchy.is_isomorphic` has improved performance and array
   API support.
 
-`scipy.interpolate` improvements
-================================
+``scipy.interpolate`` improvements
+==================================
 - A new ``bc_type`` argument has been added to `scipy.interpolate.make_splrep`
   and `scipy.interpolate.make_splprep` to control the boundary conditions for
   spline fitting. Allowed values are ``"not-a-knot"`` (default) and
@@ -59,8 +59,8 @@ New features
   select the interpolation axis.
 
 
-`scipy.linalg` improvements
-===========================
+``scipy.linalg`` improvements
+=============================
 - `scipy.linalg.inv` routine has been improved:
 
   - it now attempts to detect the structure of its argument and selects an
@@ -79,12 +79,12 @@ New features
 - performance has improved for `scipy.linalg.solve` with batched inputs
   for certain matrix structures.
 
-`scipy.ndimage` improvements
-============================
+``scipy.ndimage`` improvements
+==============================
 
 
-`scipy.optimize` improvements
-=============================
+``scipy.optimize`` improvements
+===============================
 - `~scipy.optimize.minimize(method="trust-exact")` now accepts a
   solver-specific "subproblem_maxiter" option. This option can be used to
   assure that the algorithm converges for functions with an ill-conditioned
@@ -94,8 +94,8 @@ New features
   ``intermediate_result``.
 
 
-`scipy.signal` improvements
-===========================
+``scipy.signal`` improvements
+=============================
 - `~scipy.signal.abcd_normalize` gained more informative error messages and the
   documentation was improved.
 - `~scipy.signal.get_window` now accepts the suffixes ``'_periodic'`` and
@@ -111,8 +111,8 @@ New features
   `~scipy.signal.hilbert2` was significantly improved.
 
 
-`scipy.sparse` improvements
-===========================
+``scipy.sparse`` improvements
+=============================
 - ``coo_array`` now supports indexing. This includes slices, arrays,
   ``np.newaxis``, ``Ellipsis``, in 1D, 2D and the new nD. So COO format now
   has full support for nD and COO now allows indexing without converting
@@ -135,8 +135,8 @@ New features
 - Added `scipy.sparse.linalg.funm_multiply_krylov`, a restarted Krylov method
   for evaluating ``y = f(tA) b``.
 
-`scipy.spatial` improvements
-============================
+``scipy.spatial`` improvements
+==============================
 - The ``spatial.transform`` module has gained an array API standard compatible
   backend.
 - ``transform.Rotation`` and ``transform.RigidTransform`` have been extended
@@ -171,16 +171,16 @@ New features
 - ``Rotation.as_euler`` and ``Rotation.as_davenport`` methods have gained a
   ``suppress_warnings`` parameter to enable suppression of gimbal lock warnings.
 
-`scipy.special` improvements
-============================
+``scipy.special`` improvements
+==============================
 - The following functions for statistical applications have significantly
   improved parameter ranges and reduced error rates: ``btdtria``, ``btdtrib``,
   ``chdtriv``, ``chndtr``, ``chndtrix``, ``chndtridf``, ``chndtrinc``, ``fdtr``,
   ``fdtrc``, ``fdtri``, ``pdtrik``, ``stdtr`` and ``stdtrit``.
 
 
-`scipy.stats` improvements
-==========================
+``scipy.stats`` improvements
+============================
 - `scipy.stats.matrix_t` has been added to represent the matrix t distribution.
   It supports methods ``pdf`` (and ``logpdf``) for computing the probability
   density function and ``rvs`` for generating random variates.
