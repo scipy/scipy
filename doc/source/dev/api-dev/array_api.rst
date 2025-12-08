@@ -235,9 +235,137 @@ support for an existing function, it is useful to check which backends have
 native implementations for the function and/or its compiled dependencies. There
 is also some effort being put into expanding access to native implementations,
 such as the [xsf project](https://github.com/scipy/xsf/issues/1) to establish
-a library of special function implementations which support both CPU and GPU.
+a library of mathematical special function implementations which support both CPU and
+GPU.
 
 .. _dev-arrayapi_adding_tests:
+
+Documenting array API standard support
+--------------------------------------
+
+Support for alternative array API standard backends can be registered and
+documented using the `xp_capabilities` decorator::
+
+  def xp_capabilities(
+      *,
+      # Alternative capabilities table.
+      # Used only for testing this decorator.
+      capabilities_table=None,
+      # Generate pytest.mark.skip/xfail_xp_backends.
+      # See documentation in conftest.py.
+      # lists of tuples [(module name, reason), ...]
+      skip_backends=(), xfail_backends=(),
+      cpu_only=False, np_only=False, reason=None,
+      out_of_scope=False, exceptions=(),
+      # lists of tuples [(module name, reason), ...]
+      warnings=(),
+      # xpx.testing.lazy_xp_function kwargs.
+      # Refer to array-api-extra documentation.
+      allow_dask_compute=False, jax_jit=True,
+      # Extra note to inject into the docstring
+      extra_note=None,
+  ):
+
+This is available in `scipy._lib._array_api` and can be applied to functions,
+methods, and classes to declare the current extent of their array API standard
+support. For the sake of brevity, in the remainder of this document, we write
+as if ``xp_capabilities`` only applies to functions unless describing aspects
+particular to applying it to classes or methods.
+
+The `xp_capabilities` decorator is what inserts the capabilities table into
+docstrings. It also allows developers to tag tests with ``@make_xp_test_case``
+or ``make_xp_pytest_param`` to automatically generate backend specific
+SKIP/XFAIL markers, and setting up testing that functions work with the JAX jit
+or work in Dask lazily (i.e. without materializing arrays with
+``dask.compute`` or otherwise triggering computation with ``dask.persist``).
+
+Basic behavior
+``````````````
+
+Using ``xp_capabilities``  with no arguments, like this::
+
+  @xp_capabilities()
+  def my_function(x):
+      ...
+
+declares that a function works on all supported backends, on JAX with the jit
+and lazily in Dask. This is most likely to occur if a function is written
+entirely in terms of the array API standard as described earlier in this
+document. Such functions are commonly referred to as array API agnostic. For
+functions which are written mostly in terms of the array API standard, but
+include calls to compiled code sandwiched between conversions to and from NumPy,
+``xp_capabilities`` should be given the ``cpu_only=True`` option. Backends
+which are supported on GPU by such a function ``f`` through dispatch to a
+native implementation (either for the function itself or for its compiled
+dependencies) can be specified with the ``exceptions`` kwarg, which
+takes a list of strings specifying GPU-capable backends. The currently
+supported string values are ``"cupy"``, ``"torch"``, and ``"jax.numpy"``.
+
+It is recommended to reserve ``cpu_only=False`` (the default) for array API
+agnostic functions which are expected to work on all array API compliant
+backends, including ones not tested in SciPy and ones that do not yet exist.
+If a function is supported on GPU on all tested backends through dispatch to
+respective native implementations (either for the function itself or its
+compiled dependencies) it is recommended to use ``cpu_only=True`` while listing
+each backend in the list of ``exceptions``.
+
+When setting ``cpu_only=True``, one may list a reason by passing a string with
+the ``reason`` kwarg. This can be helpful for documenting why something is not
+supported for other developers. The reason will appear in the ``pytest`` output
+when the SciPy test suite is run with ``pytest`` in verbose mode
+(with the ``-v`` flag).
+
+
+JAX JIT
+```````
+One may declare a function as not supporting the JAX JIT with the option
+``jax_jit=False`. If a function is neither array API agnostic nor supported
+on JAX through dispatch to a native JAX implementation (again either dispatch to
+a native implementation of the function itself or dispatch for its compiled
+dependencies) then it is virtually certain that the JIT is not supported and
+one should set ``jax_jit=False``. The following ``xp_capabilities` call is almost
+certainly incorrect::
+
+  @xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"])
+  def my_other_function(x):
+      ...
+
+It must be the case here that ``jax_jit=False``::
+
+  @xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"], jax_jit=False)
+  def my_other_function(x):
+      ...
+
+However, the opposite situation where something is supported on GPU natively
+but does not work with the JIT can occur::
+
+
+  @xp_capabilities(cpu_only=True, exceptions=["jax.numpy"]], jax_jit=False)
+  def yet_another_function(x):
+      ...
+
+One such example is situations where there are data-dependent array shapes.
+
+Dask Compute
+````````````
+
+The default, ``allow_dask_compute=False`` declares that a function works lazily
+in Dask and will not materialize any Dask arrays with ``dask.compute`` or
+otherwise initiate computation with ``dask.persist``. Use
+``allow_dask_compute=True`` to declare that a function supports Dask arrays but
+not lazily. Developers can also pass an integer to give a cap for the number of
+allowed calls to ``dask.compute`` and ``dask.persist``. If a function is not array
+array API agnostic, then it will typically be the case that ``allow_dask_compute=True``
+should be set, unless Dask specific codepaths have been added.
+
+Unsupported functions
+`````````````````````
+
+Functions which do not support the array API standard through the means described
+earlier in this document should either receive the ``np_only=True`` option or the
+``out_of_scope=True`` option. The former should be used for functions which are not
+currently supported but which 
+
 
 Adding tests
 ------------
