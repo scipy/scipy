@@ -608,7 +608,60 @@ class VonMises(ContinuousDistribution, CircularDistribution):
             return ink/i0k
 
     def _sample_formula(self, full_shape, rng, *, mu, kappa, **kwargs):
-        return rng.vonmises(loc=mu, scale=kappa, size=full_shape)[()]
+        return rng.vonmises(mu=mu, kappa=kappa, size=full_shape)[()]
+
+
+class _TestCircular(ContinuousDistribution, CircularDistribution):
+    r"""Distribution with very simple formulas for testing.
+    """
+
+    _x_support = _RealInterval(endpoints=(-1, 1), inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
+    _variable = _x_param
+    _parameterizations = []
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _logpdf_formula(self, x, **kwargs):
+        return np.log(0.75) + np.log(1 - x**2)
+
+    def _pdf_formula(self, x, **kwargs):
+        return 0.75 * (1 - x**2)
+
+    def _cdf_formula(self, x, **kwargs):
+        return 0.5 + 0.75*x - 0.25*x**3
+
+    def _ccdf_formula(self, x, **kwargs):
+        return 0.5 - 0.75*x + 0.25*x**3
+
+    def _icdf_formula(self, p, **kwargs):
+        return 2*np.cos(1/3 * np.acos(1 - 2*p) + 4*np.pi/3)
+
+    def _iccdf_formula(self, p, **kwargs):
+        return 2*np.cos(1/3 * np.acos(2*p - 1) + 4*np.pi/3)
+
+    def _moment_raw_formula(self, order, **kwargs):
+        return 3/order**3 * (np.sin(order) - order*np.cos(order)) + 0j
+
+    def _moment_central_formula(self, order, **kwargs):
+        return self._moment_raw_formula(order, **kwargs)
+
+    def _entropy_formula(self):
+        return 5/3 - np.log(3)
+
+    def _logentropy_formula(self, **kwargs):
+        return np.log(5/3 - np.log(3))
+
+    def _median_formula(self, **kwargs):
+        return 0.0
+
+    def _mode_formula(self, **kwargs):
+        return 0.0
+
+    def _sample_formula(self, full_shape, rng, **kwargs):
+        return self._icdf_formula(rng.random(size=full_shape), **kwargs)
+
 
 # # Distribution classes need only define the summary and beginning of the extended
 # # summary portion of the class documentation. All other documentation, including

@@ -949,7 +949,7 @@ def _set_invalid_nan(f):
     # relevant to discrete distributions only
     replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
     # relevant to circular distributions only
-    wrap_unit = {'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
+    wrap_unit = {'icdf', 'iccdf'}
     no_unwrap = {'pdf', 'logpdf', 'pmf', 'logpmf'}
 
     @functools.wraps(f)
@@ -992,13 +992,14 @@ def _set_invalid_nan(f):
         if circular:
             x = np.array(x, dtype=dtype, copy=True)  # ideally, avoid multiple copies
             x[np.isinf(x)] = np.nan
-            period = 2*np.pi  # when we support scaling, this may need to change
+            a, b = self.support()  # not the same as low, high for inverse methods
+            period = b - a
             if method_name in wrap_unit:
                 turn = x // 1
                 x = x % 1
             else:
-                turn = (x - low) // period
-                x = (x - low) % period + low
+                turn = (x - a) // period
+                x = (x - a) % period + a
             # much of the code below that deals with high/low values could be skipped
             # leaving it untouched while adding circular distributions; optimize later
 
@@ -1093,6 +1094,7 @@ def _set_invalid_nan(f):
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
         if circular and method_name not in no_unwrap:
+            turn = -turn if method_name in {'_ccdf1', 'iccdf'} else turn
             res += turn * period if method_name in wrap_unit else turn
 
         return res[()]
