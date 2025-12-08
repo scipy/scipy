@@ -309,7 +309,7 @@ Expired deprecations
   `scipy.spatial.distance`.
 - ``kron`` has been removed from `scipy.linalg`. Please use ``numpy.kron``.
 - Accidentally exposed functions have been removed from
-  `scipy.interpolate.interpnd`.
+  ``scipy.interpolate.interpnd``.
 - The ``random_state`` and ``permutation`` arguments of
   `scipy.stats.ttest_ind` have been removed.
 - ``sph_harm``, ``clpmn``, ``lpn``, and ``lpmn`` have been removed from
