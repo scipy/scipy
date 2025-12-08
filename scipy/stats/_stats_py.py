@@ -3837,7 +3837,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
            An Alternative Approach", Biometrika, vol. 38, no. 3/4,
-           pp. 330-336, 1951. :doi:`doi.org/10.2307/2332579`.
+           pp. 330-336, 1951. :doi:`10.2307/2332579`.
 
     .. [5] J.H. McDonald, R. Seed and R.K. Koehn, "Allozymes and
            morphometric characters of three species of Mytilus in
