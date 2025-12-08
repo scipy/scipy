@@ -271,7 +271,7 @@ jobs:
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.26.4"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==2.0.0"
 
       - name: Run tests
         run: |
@@ -346,10 +346,10 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
-    - name: Downgrade NumPy from 2.0-dev to lowest supported
+    - name: Downgrade NumPy to lowest supported
       if: matrix.python-version == '3.11'
       run: |
-        python -m pip install "numpy==1.26.4"
+        python -m pip install "numpy==2.0.0"
 
     - name: Test SciPy
       run: |
@@ -392,7 +392,7 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==1.26.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"

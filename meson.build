@@ -19,7 +19,7 @@ meson.add_dist_script('tools/trim_sdist_content.py')
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
-min_numpy_version = '1.26.4'  # keep in sync with pyproject.toml
+min_numpy_version = '2.0.0'  # keep in sync with pyproject.toml
 min_python_version = '3.11'   # keep in sync with pyproject.toml
 
 python_version = py3.language_version()
