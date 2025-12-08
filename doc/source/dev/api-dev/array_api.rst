@@ -227,6 +227,16 @@ conversion will raise an exception. The reason for that is that silent data
 transfer between devices is considered bad practice, as it is likely to be a
 large and hard-to-detect performance bottleneck.
 
+In some cases, compiled code can be supported through dispatch to native
+implementations. Such dispatch has currently been set up in `fft`, `ndimage`,
+`signal`, and `special`, though there is not yet a standard approach and support
+in each module has mostly evolved separately. When adding array API standard
+support for an existing function, it is useful to check which backends have
+native implementations for the function and/or its compiled dependencies. There
+is also some effort being put into expanding access to native implementations,
+such as the [xsf project](https://github.com/scipy/xsf/issues/1) to establish
+a library of special function implementations which support both CPU and GPU.
+
 .. _dev-arrayapi_adding_tests:
 
 Adding tests
