@@ -366,19 +366,20 @@ Authors
 * Amit Aronovitch (1) +
 * Ayush Baranwal (1) +
 * Cristrian Batrin (1) +
+* Marco Berzborn (1) +
 * Ole Bialas (1) +
 * Om Biradar (1) +
 * Florian Bourgey (1)
-* Jake Bowhay (100)
+* Jake Bowhay (102)
 * Matteo Brivio (1) +
 * Dietrich Brunn (34)
 * Johannes Buchner (2) +
-* Evgeni Burovski (284)
+* Evgeni Burovski (288)
 * Nicholas Carlini (1) +
 * Luca Cerina (1) +
 * Christine P. Chai (35)
 * Saransh Chopra (1)
-* Lucas Colley (115)
+* Lucas Colley (117)
 * Björn Ingvar Dahlgren (2) +
 * Sumit Das (1) +
 * Hans Dembinski (1)
@@ -397,9 +398,9 @@ Authors
 * Ralf Gommers (121)
 * Nicolas Guidotti (1) +
 * Geoffrey Gunter (1) +
-* Matt Haberland (175)
+* Matt Haberland (177)
 * Joren Hammudoglu (56)
-* Jacob Hass (1) +
+* Jacob Hass (2) +
 * Nick Hodgskin (1) +
 * Stephen Huan (1) +
 * Guido Imperiale (41)
@@ -448,20 +449,20 @@ Authors
 * Ritesh Rana (1) +
 * Adrian Raso (1) +
 * Dan Raviv (1) +
-* Tyler Reddy (83)
+* Tyler Reddy (116)
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
 * Jaro Schmidt (1) +
-* Daniel Schmitz (24)
-* Martin Schuck (24)
+* Daniel Schmitz (25)
+* Martin Schuck (25)
 * Dan Schult (29)
 * Mugunthan Selvanayagam (1) +
 * Scott Shambaugh (14)
 * Rodrigo Silva (1) +
 * Samaresh Kumar Singh (8) +
 * Kartik Sirohi (1) +
-* Albert Steppi (177)
+* Albert Steppi (178)
 * Matthias Straka (1) +
 * Theo Teske (1) +
 * Noam Teyssier (1) +
@@ -469,16 +470,16 @@ Authors
 * Christian Veenhuis (1)
 * Pierre Veron (1) +
 * Shuhei Watanabe (1) +
-* Warren Weckesser (23)
+* Warren Weckesser (25)
 * WhimsyHippo (7) +
 * Rory Yorke (2)
 * Will Zhang (1) +
 * Eric Zitong Zhou (1)
 * Tingwei Zhu (1) +
 * Zhenyu Zhu (1) +
-* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (36)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (38)
 
-    A total of 116 people contributed to this release.
+    A total of 117 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -540,6 +541,7 @@ Issues closed for 1.17.0
 * `#23021 <https://github.com/scipy/scipy/issues/23021>`__: DEV: can we 'scrape' package-wide ``make_xp_test_case`` info?
 * `#23053 <https://github.com/scipy/scipy/issues/23053>`__: DEV: ``spin smoke-docs`` adds an option twice
 * `#23080 <https://github.com/scipy/scipy/issues/23080>`__: BUG: optimize: too many open files with multiprocessing
+* `#23101 <https://github.com/scipy/scipy/issues/23101>`__: BUG: special: Discontinuity in associated Legendre functions
 * `#23111 <https://github.com/scipy/scipy/issues/23111>`__: BUG: stats.pmean: wrong value for infinite orders
 * `#23116 <https://github.com/scipy/scipy/issues/23116>`__: BUG: ``UserWarning`` due to ``spin build``
 * `#23124 <https://github.com/scipy/scipy/issues/23124>`__: CI: (re-)adopt ``(d)tach`` for modularity enforcement
@@ -555,6 +557,7 @@ Issues closed for 1.17.0
 * `#23297 <https://github.com/scipy/scipy/issues/23297>`__: BUG [nightly]: spatial.transform.Rotation.from_quat: fails for...
 * `#23301 <https://github.com/scipy/scipy/issues/23301>`__: BUG: free-threading: functionality based on multiprocessing.Pool...
 * `#23303 <https://github.com/scipy/scipy/issues/23303>`__: BUG: spatial.transform.Rotation: Warning Inconsistency
+* `#23330 <https://github.com/scipy/scipy/issues/23330>`__: BUG: special.kv: incorrect translation of AMOS Fortran code resulting...
 * `#23334 <https://github.com/scipy/scipy/issues/23334>`__: DEV: ``spin lint``\ : use ``sys.executable`` always
 * `#23344 <https://github.com/scipy/scipy/issues/23344>`__: CircleCI benchmarks job requires ``hypothesis``
 * `#23345 <https://github.com/scipy/scipy/issues/23345>`__: DOC: Incorrect dimension of PPoly.c in docstring
@@ -575,6 +578,7 @@ Issues closed for 1.17.0
 * `#23449 <https://github.com/scipy/scipy/issues/23449>`__: DOC/ENH: signal.get_window: different default for symmetric/periodic...
 * `#23462 <https://github.com/scipy/scipy/issues/23462>`__: BUG: sparse: load_npz fails for coo_arry with dim>2
 * `#23477 <https://github.com/scipy/scipy/issues/23477>`__: DOC: The file ``scipy/_lib/_lazy_testing.py`` has been removed
+* `#23510 <https://github.com/scipy/scipy/issues/23510>`__: BUG: NdBSpline segfaults for too high derivative orders
 * `#23514 <https://github.com/scipy/scipy/issues/23514>`__: DOC: add LFX Insights badge to README
 * `#23517 <https://github.com/scipy/scipy/issues/23517>`__: SHGO: issue passing args to objective function
 * `#23542 <https://github.com/scipy/scipy/issues/23542>`__: BUG: interpolate: Internal error from ``fpknot`` while running...
@@ -618,6 +622,7 @@ Issues closed for 1.17.0
 * `#24043 <https://github.com/scipy/scipy/issues/24043>`__: DEV: switch from ``dtach`` to ``tach``
 * `#24046 <https://github.com/scipy/scipy/issues/24046>`__: TST: stats: TestStudentT.test_moments_t failure
 * `#24052 <https://github.com/scipy/scipy/issues/24052>`__: CI: TypeError: Multiple namespaces for array inputs
+* `#24089 <https://github.com/scipy/scipy/issues/24089>`__: ENH: spatial.transform: Add ``normalize`` argument to ``Rotation.from_matrix``
 
 ************************
 Pull requests for 1.17.0
@@ -954,6 +959,7 @@ Pull requests for 1.17.0
 * `#23752 <https://github.com/scipy/scipy/pull/23752>`__: DOC: Move a paragraph from code to markdown in ndimage tutorial
 * `#23753 <https://github.com/scipy/scipy/pull/23753>`__: MAINT: interpolate: use xp-capabilities for ``make\_`` functions
 * `#23755 <https://github.com/scipy/scipy/pull/23755>`__: BUG: interpolate: fail gracefully if all weights are zero
+* `#23758 <https://github.com/scipy/scipy/pull/23758>`__: ENH: implement ``gdtrix`` and ``gdtria`` using xsf's incomplete...
 * `#23759 <https://github.com/scipy/scipy/pull/23759>`__: ENH: interpolate: make NdBSpline and RGI Array API compatible
 * `#23764 <https://github.com/scipy/scipy/pull/23764>`__: DOC: special: consistent modified Bessel order and fix Hankel...
 * `#23765 <https://github.com/scipy/scipy/pull/23765>`__: TST: signal: isolate use of alternative backend only to function...
@@ -1001,6 +1007,7 @@ Pull requests for 1.17.0
 * `#23847 <https://github.com/scipy/scipy/pull/23847>`__: ENH: stats.fligner: vectorize implementation
 * `#23849 <https://github.com/scipy/scipy/pull/23849>`__: ENH: stats.chatterjeexi: add array API support
 * `#23850 <https://github.com/scipy/scipy/pull/23850>`__: DOC: Improve documentation for the directed Hausdorff distance
+* `#23851 <https://github.com/scipy/scipy/pull/23851>`__: ENH: stats.spearmanrho: array API compatible substitute for ``spearmanr``
 * `#23853 <https://github.com/scipy/scipy/pull/23853>`__: DOC: spin: Copy-edit help text for python and ipython commands.
 * `#23855 <https://github.com/scipy/scipy/pull/23855>`__: TST: stats.multiscale_graph_correlation: update reference values
 * `#23856 <https://github.com/scipy/scipy/pull/23856>`__: TST: sparse.linalg.tfqmr: avoid failure due to platform-dependent,...
@@ -1081,6 +1088,7 @@ Pull requests for 1.17.0
 * `#24012 <https://github.com/scipy/scipy/pull/24012>`__: TST: optimize.minimize: make trust-constr test thread safe by...
 * `#24013 <https://github.com/scipy/scipy/pull/24013>`__: BUG: Ensure C-contiguous inputs in ``_fitpack_repro._validate_inputs``...
 * `#24016 <https://github.com/scipy/scipy/pull/24016>`__: CI: run cache-heavy OneAPI job on main every 2 days to optimize...
+* `#24017 <https://github.com/scipy/scipy/pull/24017>`__: BUG: special.assoc_legendre_p: update ``xsf`` to fix ``z=-1,``...
 * `#24023 <https://github.com/scipy/scipy/pull/24023>`__: TST: integrate.qmc_quad: tolerance bump
 * `#24024 <https://github.com/scipy/scipy/pull/24024>`__: ENH/TST: signal: Add xp_capabilities for scipy.signal
 * `#24025 <https://github.com/scipy/scipy/pull/24025>`__: DOC: stats: add equations for Cramer von Mises functions
@@ -1106,10 +1114,16 @@ Pull requests for 1.17.0
 * `#24068 <https://github.com/scipy/scipy/pull/24068>`__: DEV: tach: use ``respect_gitignore = "if_git_repo"``
 * `#24070 <https://github.com/scipy/scipy/pull/24070>`__: MAINT: interpolate/RBF: use fixed-width ints with pythran
 * `#24071 <https://github.com/scipy/scipy/pull/24071>`__: DEV: add ``bench`` task
+* `#24076 <https://github.com/scipy/scipy/pull/24076>`__: BUG: Return zero for out-of-range derivative orders in ``NdBSpline``\...
 * `#24077 <https://github.com/scipy/scipy/pull/24077>`__: MAINT: lock Pixi to fix CI
 * `#24080 <https://github.com/scipy/scipy/pull/24080>`__: DEP: signal.lombscargle: deprecate positional args, warn on ``precenter=False``
+* `#24083 <https://github.com/scipy/scipy/pull/24083>`__: ENH: stats.f_oneway: add array API support
 * `#24085 <https://github.com/scipy/scipy/pull/24085>`__: DOC: linalg: edit the doc note: we no longer import numpy linalg...
+* `#24092 <https://github.com/scipy/scipy/pull/24092>`__: ENH: spatial.transform: Add ``assume_valid`` argument to ``Rotation.from_matrix```...
 * `#24094 <https://github.com/scipy/scipy/pull/24094>`__: TST: fft: ``allow_dask_compute`` for all ``uarray``\ -using funcs
 * `#24095 <https://github.com/scipy/scipy/pull/24095>`__: DOC: differential_evolution - fix typo in custom strategy example
-
-
+* `#24097 <https://github.com/scipy/scipy/pull/24097>`__: ENH: stats: added marginal function to ``stats.multivariate_t``
+* `#24098 <https://github.com/scipy/scipy/pull/24098>`__: TST: linalg: unskip a test
+* `#24106 <https://github.com/scipy/scipy/pull/24106>`__: BUG: interpolate: Fix h[m] -> h[n] typo in _deBoor_D derivative...
+* `#24107 <https://github.com/scipy/scipy/pull/24107>`__: ENH: linalg/solve: move the tridiagonal solve slice iteration...
+* `#24113 <https://github.com/scipy/scipy/pull/24113>`__: DOC: signal: mark some legacy functions as out of scope for array...
