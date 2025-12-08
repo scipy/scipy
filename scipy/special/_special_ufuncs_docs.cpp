@@ -483,7 +483,7 @@ const char *airy_doc = R"(
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
 
-    Plot \operatorname{Ai}(x) and \operatorname{Bi}(x).
+    Plot :math:`\operatorname{Ai}(x)` and :math:`\operatorname{Bi}(x)`.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, ai, 'r', label='Ai(x)')
