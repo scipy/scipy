@@ -800,32 +800,28 @@ void csr_binop_broadcast_general(const I n_row, const I n_col,
     std::vector<T> BC_row(n_col, 0);
     std::vector<T> FC_row(n_col, 0);
     const T *BC_data, *FC_data, **Left_data, **Right_data;
-    const I *BCp, *BCj, *FCp, *FCj;
+    const I *BCp, *FCp, *FCj;
     const T *FCx, *BCx;
-    I n_BCrow, n_FCrow, n_FCcol;
+    I n_BCrow, n_FCrow;
 
     if (n_Acol == 1) {  //Columns of A are broadcast
         BCp = Ap;
-        BCj = Aj;
         BCx = Ax;
         FCp = Bp;
         FCj = Bj;
         FCx = Bx;
         n_BCrow = n_Arow;
         n_FCrow = n_Brow;
-        n_FCcol = n_Bcol;
         Left_data = &BC_data;
         Right_data = &FC_data;
     } else {  //Columns of B are broadcast
         BCp = Bp;
-        BCj = Bj;
         BCx = Bx;
         FCp = Ap;
         FCj = Aj;
         FCx = Ax;
         n_BCrow = n_Brow;
         n_FCrow = n_Arow;
-        n_FCcol = n_Acol;
         Left_data = &FC_data;
         Right_data = &BC_data;
     }
@@ -1162,33 +1158,29 @@ void csr_binop_broadcast_canonical(const I n_row, const I n_col,
     Cp[0] = 0;
     I nnz = 0;
     const T *BC_data, *FC_data, **Left_data, **Right_data;
-    const I *BCp, *BCj, *FCp, *FCj;
+    const I *BCp, *FCp, *FCj;
     const T *FCx, *BCx;
     const T zero=0;
-    I n_BCrow, n_FCrow, n_FCcol;
+    I n_BCrow, n_FCrow;
 
     if (n_Acol == 1) {  //Columns of A are broadcast
         BCp = Ap;
-        BCj = Aj;
         BCx = Ax;
         FCp = Bp;
         FCj = Bj;
         FCx = Bx;
         n_BCrow = n_Arow;
         n_FCrow = n_Brow;
-        n_FCcol = n_Bcol;
         Left_data = &BC_data;
         Right_data = &FC_data;
     } else {  //Columns of B are broadcast
         BCp = Bp;
-        BCj = Bj;
         BCx = Bx;
         FCp = Ap;
         FCj = Aj;
         FCx = Ax;
         n_BCrow = n_Brow;
         n_FCrow = n_Arow;
-        n_FCcol = n_Acol;
         Left_data = &FC_data;
         Right_data = &BC_data;
     }
