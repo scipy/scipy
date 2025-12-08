@@ -3837,7 +3837,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
     .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
            An Alternative Approach", Biometrika, vol. 38, no. 3/4,
-           pp. 330-336, 1951. https://doi.org/10.2307/2332579
+           pp. 330-336, 1951. :doi:`doi.org/10.2307/2332579`.
 
     .. [5] J.H. McDonald, R. Seed and R.K. Koehn, "Allozymes and
            morphometric characters of three species of Mytilus in
@@ -9217,8 +9217,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
        https://www.jstor.org/stable/2957563.
     .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
        Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
-       159-170. Available:
-       https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7.
+       159-170. :doi:`10.1002/0471722162.ch7`.
     .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
        Confidence Intervals for Quantiles," R package,
        https://cran.r-project.org/package=QuantileNPCI

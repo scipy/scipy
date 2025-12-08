@@ -1114,7 +1114,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     References
     ----------
     .. [1] Barnard, G. A. "Significance Tests for 2x2 Tables". *Biometrika*.
-           34.1/2 (1947): 123-138. :doi:`dpgkg3`
+           34.1/2 (1947): 123-138. :doi:`10.2307/2332517`.
 
     .. [2] Mehta, Cyrus R., and Pralay Senchaudhuri. "Conditional versus
            unconditional exact tests for comparing two binomials."
