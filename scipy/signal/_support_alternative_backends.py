@@ -74,7 +74,6 @@ untested = {
     "argrelmax",
     "argrelmin",
     "band_stop_obj",
-    "check_COLA",
     "check_NOLA",
     "chirp",
     "coherence",
@@ -89,7 +88,6 @@ untested = {
     "findfreqs",
     "freqresp",
     "gausspulse",
-    "istft",
     "lombscargle",
     "lsim",
     "max_len_seq",
@@ -99,12 +97,10 @@ untested = {
     "place_pols",
     "sawtooth",
     "sepfir2d",
-    "spectrogram",
     "square",
     "ss2tf",
     "ss2zpk",
     "step",
-    "stft",
     "sweep_poly",
     "symiirorder1",
     "symiirorder2",
@@ -343,7 +339,7 @@ capabilities_overrides = {
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                                 jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True),
     "spline_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False, allow_dask_compute=True),
     "tf2sos": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
@@ -361,13 +357,17 @@ capabilities_overrides = {
                               allow_dask_compute=True, jax_jit=False,
                               reason="uses scipy.signal.correlate"),
     "zpk2sos": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
-                              allow_dask_compute=True),
+                               allow_dask_compute=True),
     "zpk2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True,
                               extra_note=zpk2tf_extra_note),
+    "spectrogram": xp_capabilities(out_of_scope=True),  # legacy
+    "stft": xp_capabilities(out_of_scope=True),  # legacy
+    "istft": xp_capabilities(out_of_scope=True),  # legacy
+    "check_COLA": xp_capabilities(out_of_scope=True),  # legacy
 }
 
-        
+
 # ### decorate ###
 for obj_name in _signal_api.__all__:
     bare_obj = getattr(_signal_api, obj_name)

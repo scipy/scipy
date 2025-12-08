@@ -337,11 +337,16 @@ def test_directional_stats(xp):
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
 @skip_backend('torch', reason="array-api-compat#242")
 @skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('fun, kwargs', [
+    (stats.bartlett, {}),
+    (stats.f_oneway, {'equal_var': True}),
+    (stats.f_oneway, {'equal_var': False}),
+])
 @pytest.mark.parametrize('axis', [0, 1, None])
-def test_bartlett(axis, xp):
+def test_k_sample_tests(fun, kwargs, axis, xp):
     mxp, marrays, narrays = get_arrays(3, xp=xp)
-    res = stats.bartlett(*marrays, axis=axis)
-    ref = stats.bartlett(*narrays, nan_policy='omit', axis=axis)
+    res = fun(*marrays, axis=axis, **kwargs)
+    ref = fun(*narrays, nan_policy='omit', axis=axis, **kwargs)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
 

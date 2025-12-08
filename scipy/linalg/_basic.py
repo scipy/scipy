@@ -208,7 +208,7 @@ def solve(a, b, lower=False, overwrite_a=False,
            [ 3. , -2.5],
            [ 5. , -4.5]])
     """
-    if assume_a in ['tridiagonal', 'banded']:
+    if assume_a in ['banded']:
         # TODO: handle these structures in this function
         return solve0(
             a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -220,6 +220,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         None: -1,
         'general': 0, 'gen': 0,
         'diagonal': 11,
+        'tridiagonal': 31,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101, 'positive definite': 101,
