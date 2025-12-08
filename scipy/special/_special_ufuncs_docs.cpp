@@ -476,14 +476,14 @@ const char *airy_doc = R"(
 
     Examples
     --------
-    Compute the Airy functions on the interval [-15, 5].
+    Compute the Airy functions on the interval :math:`[-15, 5]`.
 
     >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
 
-    Plot Ai(x) and Bi(x).
+    Plot \operatorname{Ai}(x) and \operatorname{Bi}(x).
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, ai, 'r', label='Ai(x)')
