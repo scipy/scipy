@@ -64,7 +64,7 @@ del _distributor_init
 from scipy._lib import _pep440
 # In maintenance branch, change to np_maxversion N+3 if numpy is at N
 np_minversion = '1.26.4'
-np_maxversion = '9.9.99'
+np_maxversion = '2.7.0'
 if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
         _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
     import warnings
