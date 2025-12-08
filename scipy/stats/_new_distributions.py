@@ -9,6 +9,7 @@ from scipy.special import _ufuncs as scu
 from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, DiscreteDistribution, CircularDistribution,
     _RealInterval, _IntegerInterval, _RealParameter, _Parameterization, _combine_docs)
+from scipy.stats._stats import von_mises_cdf
 
 __all__ = ['Normal', 'Logistic', 'Uniform', 'Binomial', 'VonMises']
 
@@ -569,10 +570,49 @@ class VonMises(ContinuousDistribution, CircularDistribution):
     def _pdf_formula(self, x, *, mu, kappa, **kwargs):
         return np.exp(kappa * np.cos(x - mu)) / (2 * np.pi * special.i0(kappa))
 
+    def _cdf_formula(self, x, *, mu, kappa, **kwargs):
+        # compensate for von_mises_cdf defined on [-pi, pi) and =0 at x = mu
+        # x0 = x.copy()
+        # x = (x + np.pi) % (2*np.pi) - np.pi
+        x = np.where(x < 0, x + 2*np.pi, x)
+        res = np.asarray(von_mises_cdf(kappa, x - mu) - von_mises_cdf(kappa, -mu))
+        # return res % 1  # doesn't work because 1 % 1 = 0
+        res[res < 0] += 1
+        return res
 
-# Distribution classes need only define the summary and beginning of the extended
-# summary portion of the class documentation. All other documentation, including
-# examples, is generated automatically.
-_module = sys.modules[__name__].__dict__
-for dist_name in __all__:
-    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+    def _entropy_formula(self, *, mu, kappa, **kwargs):
+        i0k = special.i0(kappa)
+        i1k = special.i1(kappa)
+        return -kappa * i1k/i0k + np.log(np.abs(2*np.pi*i0k))
+
+    def _median_formula(self, *, mu, kappa, **kwargs):
+        return mu
+
+    def _mode_formula(self, *, mu, kappa, **kwargs):
+        return mu
+
+    def _moment_raw_formula(self, order, *, mu, kappa, **kwargs):
+        if order == 0:
+            return np.ones_like(mu)
+        else:
+            i0k = special.i0(kappa)
+            ink = special.iv(order, kappa)
+            return ink/i0k * np.exp(1j*order*mu)
+
+    def _moment_central_formula(self, order, *, mu, kappa, **kwargs):
+        if order == 0:
+            return np.ones_like(mu)
+        else:
+            i0k = special.i0(kappa)
+            ink = special.iv(order, kappa)
+            return ink/i0k
+
+    def _sample_formula(self, full_shape, rng, *, mu, kappa, **kwargs):
+        return rng.vonmises(loc=mu, scale=kappa, size=full_shape)[()]
+
+# # Distribution classes need only define the summary and beginning of the extended
+# # summary portion of the class documentation. All other documentation, including
+# # examples, is generated automatically.
+# _module = sys.modules[__name__].__dict__
+# for dist_name in __all__:
+#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])

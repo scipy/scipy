@@ -1086,9 +1086,9 @@ def _set_invalid_nan(f):
             res[mask_high_endpoint] = replace_high_endpoint
 
         # Clip probabilities to [0, 1]
-        if method_name in clip:
+        if not circular and method_name in clip:
             res = np.clip(res, 0., 1.)
-        elif method_name in clip_log:
+        elif not circular and method_name in clip_log:
             res = res.real  # exp(res) > 0
             res = np.clip(res, None, 0.)  # exp(res) < 1
 

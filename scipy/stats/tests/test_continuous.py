@@ -2237,7 +2237,7 @@ class TestCircular:
     @pytest.mark.parametrize('shape', [(), (20,)])
     def test_basic(self, shape):
         rng = np.random.default_rng(582348972387243524)
-        X = stats.VonMises(mu=0, kappa=1)
+        X = stats.VonMises(mu=1.23, kappa=2.34)
         x = rng.uniform(-10, 10, size=shape)
         period = 2 * np.pi
         x_turn = (x + np.pi) // period
@@ -2260,6 +2260,16 @@ class TestCircular:
         assert_allclose(X.icdf(X.cdf(x)), x)
         assert_allclose(X.ccdf(X.iccdf(x)), x)
         assert_allclose(X.iccdf(X.ccdf(x)), x)
+
+        assert_allclose(X.cdf(x, method='quadrature'), X.cdf(x, method='formula'))
+        assert_allclose(X.mode(method='optimization'), X.mode(method='formula'))
+        assert_allclose(X.median(method='optimization'), X.mode(method='formula'))
+        assert_allclose(X.entropy(method='quadrature'), X.entropy(method='formula'))
+        for order in range(5):
+            for kind in ['raw', 'central']:
+                assert_allclose(X.moment(order, kind=kind, method='quadrature'),
+                                X.moment(order, kind=kind, method='formula'))
+
 
 
 def test_zipfian_distribution_wrapper():
