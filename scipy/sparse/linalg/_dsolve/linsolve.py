@@ -1,3 +1,4 @@
+from functools import partial
 from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
@@ -21,8 +22,8 @@ __all__ = ['spsolve', 'splu', 'spilu', 'factorized',
            'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
-    """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
+def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=10):
+    r"""Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
     ----------
@@ -39,6 +40,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
         - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
+
+    trans : {'N', 'T', 'H'}, optional
+        Type of system to solve:
+
+        * ``'N'``: A x = b  (default)
+        * ``'T'``: A^T x = b
+        * ``'H'``: A^H x = b
+
+        *i.e.*, normal, transposed, and Hermitian conjugate.
+
+        .. versionadded:: 1.18.0
 
     use_umfpack : bool, optional
         If True, then use UMFPACK for the solution [3]_, [4]_, [5]_,
@@ -147,7 +159,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     if use_umfpack:
         # sksparse.umfpack handles 1D and 2D, sparse or dense b
         try:
-            x = umfpack.umf_solve(A, b, rhs_batch_size=rhs_batch_size)
+            x = umfpack.umf_solve(A, b, trans=trans, rhs_batch_size=rhs_batch_size)
         except umfpack.UMFPACKSingularMatrixError as e:
             raise LinAlgError("A is singular.") from e
     else:
@@ -157,8 +169,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
         except RuntimeError as e:
             raise LinAlgError("A is singular.") from e
 
+        lu_solve = partial(factor.solve, trans=trans)
+
         if not b_is_sparse:
-            x = factor.solve(b)
+            x = lu_solve(b)
         else:
             if b_is_vector:
                 # convert to 2D sparse matrix with one column
@@ -184,7 +198,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
                 b_view = b_batch[:, :width]
                 b[:, k:batch_end].toarray(out=b_view)
                 # Solve the linear systems
-                x_dense = factor.solve(b_view)
+                x_dense = lu_solve(b_view)
                 x_blocks.append(csc_array(x_dense, dtype=b.dtype))
 
             x = hstack(x_blocks)
