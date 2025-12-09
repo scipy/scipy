@@ -374,8 +374,11 @@ Functions for which array API support has *not* been added following the
 procedures described earlier in this document, but for which dispatch to a
 native implementation has been set up for one or more array API backends should
 also still have ``xp_capabilities`` entries with ``np_only=True``. Just as for
-``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg. Valid
-strings to pass in the exceptions list are ``"cupy"``, ``"dask.array"``,
+``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg (and
+also just as for ``cpu_only=True`` one can pass a reason with the ``reason``
+kwarg).
+
+Valid strings to pass in the exceptions list are ``"cupy"``, ``"dask.array"``,
 ``"jax.numpy"``, and ``"torch"``. A caveat: if ``np_only=True`` and one or both
 of ``"torch"`` or ``"jax.numpy"`` are added to the lists of exceptions, these
 will be declared as supported on both CPU and GPU. However, it's possible for a
