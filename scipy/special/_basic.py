@@ -1530,8 +1530,6 @@ def assoc_laguerre(x, n, k=0.0):
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
 
     """
-    n = _nonneg_int_or_fail(n, 'n')
-    k = _nonneg_int_or_fail(k, 'k')
     return _ufuncs.eval_genlaguerre(n, k, x)
 
 
