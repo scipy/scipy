@@ -1867,10 +1867,10 @@ def euler(n):
 def lqn(n, z):
     """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, :math:`Q_n(z)` and
-    derivatives for all degrees from :math:`0` to :math:`n` (inclusive).
-    Returns two arrays of size :math:`(n+1,)` containing :math:`Q_n(z)` and
-    :math:`Q_n'(z)`.
+    Compute sequence of Legendre functions of the second kind, ``Qn(z)`` and
+    derivatives for all degrees from 0 to `n` (inclusive).
+    Returns two arrays of size ``(n+1,) + z.shape`` containing ``Qn(z)`` and
+    ``Qn'(z)``.
 
     Parameters
     ----------
@@ -1882,9 +1882,9 @@ def lqn(n, z):
     Returns
     -------
     Qn_z : ndarray, shape (n+1,) + shape(z)
-        Values for all degrees 0..n
+        Values for all degrees ``0..n``
     Qn_d_z : ndarray, shape (n+1,) + shape(z)
-        Derivatives for all degrees 0..n
+        Derivatives for all degrees ``0..n``
 
     References
     ----------
@@ -1907,21 +1907,19 @@ def lqn(n, z):
     Plot the Legendre functions of the second kind :math:`Q_n(x)`.
 
     >>> fig, ax = plt.subplots()
-    >>> for n in range(n_max + 1):
-    ...     ax.plot(xs, Qn[n], "-", label=rf"$n={n}$")
+    >>> ax.plot(xs, Qn.T, "-", label=rf"$n={n}$")
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$Q_n(x)$")
-    >>> ax.legend()
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
     >>> plt.show()
 
     Plot the derivatives :math:`Q_n'(x)`.
 
     >>> fig, ax = plt.subplots()
-    >>> for n in range(n_max + 1):
-    ...     ax.plot(xs, dQn[n], "-", label=rf"$n={n}$")
+    >>> ax.plot(xs, dQn.T, "-", label=rf"$n={n}$")
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$Q_n'(x)$")
-    >>> ax.legend()
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
     >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
