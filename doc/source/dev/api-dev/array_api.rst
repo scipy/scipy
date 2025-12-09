@@ -466,8 +466,26 @@ and passing in any backends which are not even supported on CPU to ``skip_backen
   def oddball_function(x):
       ...
 
-``xp_capabilities`` has evolved naturally over time to meet developer needs. Good
+Such situations are hopefully rare enough that special handling isn't needed.
+``xp_capabilities`` has evolved naturally over time to meet developer needs; good
 suggestions for ways to improve developer ergonomics are welcome.
+
+``extra_note``
+``````````````
+Some functions may be supported on an alternative backend, but only in particular
+cases, perhaps only for some values of a kwarg, for real arrays but not complex ones,
+or only for arrays with fewer than a given number of dimensions. Such caveats should
+be supplied with the ``extra_note`` kwarg of ``xp_capabilities``. Note that the
+implementation of ``extra_note`` simply inserts a string directly into the Notes section
+of the docstring, and one must be careful about whitespace. This is perhaps
+best demonstrated with an example::
+
+  uses_choose_conv_extra_note = \
+    """CuPy does not support inputs with ``ndim>1`` when ``method="auto"``
+    but does support higher dimensional arrays for ``method="direct"``
+    and ``method="fft"``.
+
+    """
 
 Adding tests
 ------------
