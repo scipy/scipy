@@ -12,7 +12,6 @@ from numpy.testing import (assert_, assert_allclose, assert_equal,
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
 from scipy.optimize._numdiff import approx_derivative
-from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 import scipy.sparse
 import pytest
@@ -2103,8 +2102,6 @@ class TestLinprogIPSparse(LinprogIPTests):
         bounds = (0, 1)
 
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Matrix is exactly singular", MatrixRankWarning)
             warnings.filterwarnings(
                 "ignore", "Solving system with option...", OptimizeWarning)
 
