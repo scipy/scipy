@@ -3302,7 +3302,7 @@ class TestFDRControl:
             xp_assert_equal(stats.false_discovery_control(0.25), 0.25)
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 class TestCommonAxis:
     # More thorough testing of `axis` in `test_axis_nan_policy`,
     # but those tests aren't run with array API yet. This class

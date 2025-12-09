@@ -1224,7 +1224,7 @@ def test_optimal_leaf_ordering(xp):
 
 
 @skip_xp_backends(np_only=True, reason='`Heap` only supports NumPy backend')
-@pytest.mark.uses_xp_capabilities(False, reason="no `xp_capabilities` entry for Heap")
+@pytest.mark.uses_xp_capabilities(False, reason="private")
 def test_Heap(xp):
     values = xp.asarray([2, -1, 0, -1.5, 3])
     heap = Heap(values)

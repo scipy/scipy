@@ -6068,7 +6068,7 @@ class TestTTestIndFromStats:
 @pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-@pytest.mark.uses_xp_capabilities(False, reason="unconverted")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
