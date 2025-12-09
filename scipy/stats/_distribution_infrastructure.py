@@ -3808,7 +3808,6 @@ class DiscreteDistribution(UnivariateDistribution):
 
 class CircularDistribution(UnivariateDistribution):
     # todo:
-    #  - write tests
     #  - does median need edge handling like mode?
     #  - better guess for median?
     #  - better guess for mode? (median is too expensive for circular distributions!)
@@ -3845,6 +3844,7 @@ class CircularDistribution(UnivariateDistribution):
         raise NotImplementedError("Circular distributions do not support `ilogccdf`.")
 
     def _median_optimization(self, **params):
+
         def f(m, **params):
 
             def integrand1(x, m, **params):
@@ -3857,9 +3857,11 @@ class CircularDistribution(UnivariateDistribution):
                 x_wrapped = (x - a) % (b - a) + a
                 return (m - x) * self._pdf_dispatch(x_wrapped, **params)
 
-            res1 = self._quadrature(integrand1, limits=(m, m + np.pi),
+            a, b = self._support(**params)
+            half_period = (b - a) / 2
+            res1 = self._quadrature(integrand1, limits=(m, m + half_period),
                                     args=(m,), params=params)
-            res2 = self._quadrature(integrand2, limits=(m - np.pi, m),
+            res2 = self._quadrature(integrand2, limits=(m - half_period, m),
                                     args=(m,), params=params)
             return res1 + res2
 

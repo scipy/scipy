@@ -546,7 +546,7 @@ class VonMises(ContinuousDistribution, CircularDistribution):
                                   {2\pi I_0(\kappa)           }
     """
 
-    _mu_domain = _RealInterval(endpoints=(-np.pi, np.pi))  # change to (0, 2*np.pi)?
+    _mu_domain = _RealInterval(endpoints=(0, 2*np.pi))
     _kappa_domain = _RealInterval(endpoints=(0, inf))
     _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
 
@@ -642,6 +642,8 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return 2*np.cos(1/3 * np.acos(2*p - 1) + 4*np.pi/3)
 
     def _moment_raw_formula(self, order, **kwargs):
+        if order == 0:
+            return 1.0 + 0.0j
         return 3/order**3 * (np.sin(order) - order*np.cos(order)) + 0j
 
     def _moment_central_formula(self, order, **kwargs):
@@ -663,9 +665,9 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return self._icdf_formula(rng.random(size=full_shape), **kwargs)
 
 
-# # Distribution classes need only define the summary and beginning of the extended
-# # summary portion of the class documentation. All other documentation, including
-# # examples, is generated automatically.
-# _module = sys.modules[__name__].__dict__
-# for dist_name in __all__:
-#     _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
+# Distribution classes need only define the summary and beginning of the extended
+# summary portion of the class documentation. All other documentation, including
+# examples, is generated automatically.
+_module = sys.modules[__name__].__dict__
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])
