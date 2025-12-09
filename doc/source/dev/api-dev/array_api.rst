@@ -378,21 +378,22 @@ also still have ``xp_capabilities`` entries with ``np_only=True``. Just as for
 also just as for ``cpu_only=True`` one can pass a reason with the ``reason``
 kwarg).
 
-Valid strings to pass in the exceptions list are ``"cupy"``, ``"dask.array"``,
-``"jax.numpy"``, and ``"torch"``. A caveat: if ``np_only=True`` and one or both
-of ``"torch"`` or ``"jax.numpy"`` are added to the lists of exceptions, these
-will be declared as supported on both CPU and GPU. However, it's possible for a
-function to be natively available in JAX, support the jit, but not be supported
-on GPU. Because ``exceptions`` does double duty declaring exceptions to
-``cpu_only=True`` and ``np_only=True``, it is not possible to express this
-situation using ``xp_capabilities`` in the way described above. This is not too
-serious of an issue because the intention is that ``np_only=True`` is only a
-temporary state. Through the means described above in the section "Adding array
-API standard support to a SciPy function", it is feasible for all functions in
-SciPy's public API to at least reach the state ``cpu_only=True``. For functions
-still waiting in the ``np_only=True`` state, ``xp_capabilities``'s ``skip_backends``
-kwarg can be used as an escape hatch to allow more fine grained declaration of
-capabilities. This will be described further along in this document.
+Valid strings to pass in the exceptions list are ``"array_api_strict"``,
+``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``. A caveat: if
+``np_only=True`` and one or both of ``"torch"`` or ``"jax.numpy"`` are added to
+the lists of exceptions, these will be declared as supported on both CPU and
+GPU. However, it's possible for a function to be natively available in JAX,
+support the jit, but not be supported on GPU. Because ``exceptions`` does double
+duty declaring exceptions to ``cpu_only=True`` and ``np_only=True``, it is not
+possible to express this situation using ``xp_capabilities`` in the way
+described above. This is not too serious of an issue because the intention is
+that ``np_only=True`` is only a temporary state. Through the means described
+above in the section "Adding array API standard support to a SciPy function", it
+is feasible for all functions in SciPy's public API to at least reach the state
+``cpu_only=True``. For functions still waiting in the ``np_only=True`` state,
+``xp_capabilities``'s ``skip_backends`` kwarg can be used as an escape hatch to
+allow more fine grained declaration of capabilities. This will be described
+further along in this document.
 
 ``out_of_scope=True`` signals that there is no intention to ever provide array
 API support for a given function. There is not yet a formal policy for which
@@ -419,6 +420,54 @@ Considerations of what to consider in-scope are evolving, and something which is
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
 interest and feasability are demonstrated.
 
+``skip_backends`` and ``xfail_backends``
+````````````````````````````````````````
+One may pass lists of tuples of backend string, reason pairs to ``xp_capabilities``
+with the ``skip_backends`` and ``xfail_backends`` kwargs. The valid backend strings
+are ``"array_api_strict"``, ``"cupy"``, ``"dask.array"``, ``"jax.numpy"`` and ``"torch"``.
+Any backend passed in such a way with either kwarg is declared as unsupported with both
+CPU and GPU. The difference between ``skip_backends`` and ``xfail_backends`` is that for
+tests using the ``xp`` fixture, ``skip_backends`` adds ``pytest.skip`` markers for
+backends and the corresponding tests are skipped entirely. With ``xfail_backends``,
+``pytest.xfail`` markers are added, and tests are still run but expected to fail.
+When using ``cpu_only`` or ``np_only`` along with ``exceptions``, what happens under the
+hood is that ``skip_backends`` and ``xfail_backends`` lists are populated internally.
+The ``skip_backends`` and ``xfail_backends`` kwargs allow passing additional tuples
+to be appended to these lists. One example in which it is pertinent to use
+``skip_backends`` is for functions which otherwise support the array API standard, but
+use features which are not available on a particular backend, such as mutation of
+arrays through item assignment, which is not supported in JAX. For instance the following
+can be used to signify a function which is otherwise array API agnostic, but uses
+in-place item-assignment::
+
+  @xp_capabilities(skip_backends=[("jax.numpy", "in-place item assignment")])
+  def function_with_internal_mutation(x):
+      ...
+
+``xfail_backends`` is useful for situations where in-principle, a function should be
+supported, but due to something like numerical troubles, the results returned are
+not accurate.
+
+Earlier we discussed the edge-case of a function which has not been given array
+API standard support in the usual way but is available on JAX through dispatch to
+a native implementation which supports ``jax.jit`` but does not work on the GPU.
+For now, such situations can in principle be handled by using ``cpu_only=True``
+and passing in any backends which are not even supported on CPU to ``skip_backends``::
+
+  @xp_capabilities(
+      cpu_only=True,
+      skip_backends=[
+          ("array_api_strict", "not supported"),
+	  ("cupy", "not supported"),
+	  ("dask.array", "not supported"),
+	  ("torch", "not supported"),
+      ]
+  )
+  def oddball_function(x):
+      ...
+
+``xp_capabilities`` has evolved naturally over time to meet developer needs. Good
+suggestions for ways to improve developer ergonomics are welcome.
 
 Adding tests
 ------------
