@@ -546,7 +546,7 @@ class VonMises(ContinuousDistribution, CircularDistribution):
                                   {2\pi I_0(\kappa)           }
     """
 
-    _mu_domain = _RealInterval(endpoints=(0, 2*np.pi))
+    _mu_domain = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
     _kappa_domain = _RealInterval(endpoints=(0, inf))
     _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
 

@@ -764,13 +764,15 @@ class _ProbabilityDistribution(ABC):
             Method used to calculate the standardized fourth moment. Not
             all methods are available for all distributions. See
             `moment` for details.
-        convention : {'non-excess', 'excess'}
-            Two distinct conventions are available:
+        convention : str, optional
+            For real-line distributions, two distinct conventions are available:
 
             - ``'non-excess'``: the standardized fourth moment (Pearson's kurtosis)
             - ``'excess'``: the standardized fourth moment minus 3 (Fisher's kurtosis)
 
             The default is ``'non-excess'``.
+
+            For circular distributions, only the default convention [2]_ is supported.
 
         See Also
         --------

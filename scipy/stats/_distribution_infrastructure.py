@@ -2182,6 +2182,28 @@ class UnivariateDistribution(_ProbabilityDistribution):
         tolerances = dict(xrtol=xrtol, xatol=xatol, fatol=0, frtol=0)
         return _chandrupatla(f3, a=res.xl, b=res.xr, args=args, **tolerances)
 
+    def _optimization(self, f, x0, xatol, params):
+        if not self._size:
+            return np.empty(self._shape, dtype=self._dtype)
+
+        a, b = self._support(**params)
+
+        f, args = _kwargs2args(f, args=(), kwargs=params)
+        res_b = _bracket_minimum(f, x0, xmin=a, xmax=b, args=args)
+        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
+                                     args=args, xatol=xatol)
+        x = np.asarray(res.x)
+        # If the optimum is at an endpoint, `_bracket_minimum` cannot produce a valid
+        # bracket; it may terminate with `fl < fm < fr` (and, e.g. `xl < xm < xr` but
+        # all very close to `a`. In this case, we assume the function is unimodal, and
+        # the optimum is at the endpoint.
+        x_at_boundary = res_b.status == -1
+        x_at_left = x_at_boundary & (res_b.fl <= res_b.fm)
+        x_at_right = x_at_boundary & (res_b.fr < res_b.fm)
+        x[x_at_left] = a[x_at_left]
+        x[x_at_right] = b[x_at_right]
+        return x[()]
+
     ## Other
 
     def _overrides(self, method_name):
@@ -2400,24 +2422,9 @@ class UnivariateDistribution(_ProbabilityDistribution):
         raise NotImplementedError(self._not_implemented)
 
     def _mode_optimization(self, xatol=None, **params):
-        if not self._size:
-            return np.empty(self._shape, dtype=self._dtype)
-
-        a, b = self._support(**params)
         m = self._median_dispatch(**params)
-
-        f, args = _kwargs2args(lambda x, **params: -self._pxf_dispatch(x, **params),
-                               args=(), kwargs=params)
-        res_b = _bracket_minimum(f, m, xmin=a, xmax=b, args=args)
-        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr,
-                                     args=args, xatol=xatol)
-        mode = np.asarray(res.x)
-        mode_at_boundary = res_b.status == -1
-        mode_at_left = mode_at_boundary & (res_b.fl <= res_b.fm)
-        mode_at_right = mode_at_boundary & (res_b.fr < res_b.fm)
-        mode[mode_at_left] = a[mode_at_left]
-        mode[mode_at_right] = b[mode_at_right]
-        return mode[()]
+        def f(x, **params): return -self._pxf_dispatch(x, **params)
+        return self._optimization(f, m, xatol, params)
 
     def mean(self, *, method=None):
         return self.moment(1, kind='raw', method=method)
@@ -2431,7 +2438,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def skewness(self, *, method=None):
         return self.moment(3, kind='standardized', method=method)
 
-    def kurtosis(self, *, method=None, convention='non-excess'):
+    def kurtosis(self, *, method=None, convention=None):
+        convention = 'non-excess' if convention is None else convention
         conventions = {'non-excess', 'excess'}
         message = (f'Parameter `convention` of `{self.__class__.__name__}.kurtosis` '
                    f"must be one of {conventions}.")
@@ -3807,11 +3815,6 @@ class DiscreteDistribution(UnivariateDistribution):
 
 
 class CircularDistribution(UnivariateDistribution):
-    # todo:
-    #  - does median need edge handling like mode?
-    #  - better guess for median?
-    #  - better guess for mode? (median is too expensive for circular distributions!)
-    #  - fix kurtosis excess/non-excess
 
     @cached_property
     def _moment_methods(self):
@@ -3843,6 +3846,13 @@ class CircularDistribution(UnivariateDistribution):
     def _ilogccdf_dispatch(self, x, *, method, **kwargs):
         raise NotImplementedError("Circular distributions do not support `ilogccdf`.")
 
+    def _mode_optimization(self, xatol=None, **params):
+        # super()._mode_optimization guess is the median, which can be expensive
+        a, b = self._support(**params)
+        m = (a + b) / 2
+        def f(x, **params): return -self._pxf_dispatch(x, **params)
+        return self._optimization(f, m, xatol, params)
+
     def _median_optimization(self, **params):
 
         def f(m, **params):
@@ -3867,12 +3877,7 @@ class CircularDistribution(UnivariateDistribution):
 
         a, b = self._support(**params)
         m0 = (a + b) / 2
-        f, args = _kwargs2args(f, args=(), kwargs=params)
-        res_b = _bracket_minimum(f, m0, xmin=a, xmax=b, args=args)
-        res = _chandrupatla_minimize(f, res_b.xl, res_b.xm, res_b.xr, args=args)
-        median = np.asarray(res.x)
-
-        return median[()]
+        return self._optimization(f, m0, None, params)
 
     def _moment_from_pxf(self, order, center, **params):
         def integrand(x, order, center, **params):
@@ -3897,12 +3902,10 @@ class CircularDistribution(UnivariateDistribution):
         rho = self.moment(1, kind='central', method=method).real
         return b2 / (1 - rho)**1.5
 
-    def kurtosis(self, *, method=None, convention='non-excess'):
-        conventions = {'non-excess'}
-        message = (f'Parameter `convention` of `{self.__class__.__name__}.kurtosis` '
-                   f"must be one of {conventions}.")
-        convention = convention.lower()
-        if convention not in conventions:
+    def kurtosis(self, *, method=None, convention=None):
+        message = (f'`{self.__class__.__name__}.kurtosis` supports only the default '
+                   f"value of `convention`.")
+        if convention is not None:
             raise ValueError(message)
 
         # This is the most common definition

@@ -473,16 +473,13 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
     # Mean can be 0, which makes logmean -inf.
     if fname in {'logmean', 'mean', 'logskewness', 'skewness'}:
         tol_override = {'atol': 1e-15}
-    elif fname in {'mode'}:
+    elif (fname in {'mode'}) or (fname in {'median'}
+                                 and dist.__class__ in circular_families):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
     elif fname in {'logcdf'}:  # gh-22276
         tol_override = {'rtol': 2e-7}
-    elif fname in {'median'} and isinstance(dist, _TestCircular):
-        # all values between -5e-9 and 5e-9 result in the same expected circular
-        # absolute deviation (3/8) in float64
-        tol_override = {'atol': 5e-9}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')
@@ -496,9 +493,15 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
     for method in methods:
         res = getattr(dist, fname)(*args, method=method)
         if 'log' in fname:
-            np.testing.assert_allclose(np.exp(res), np.exp(ref),
-                                       **tol_override)
+            np.testing.assert_allclose(np.exp(res), np.exp(ref), **tol_override)
         else:
+            if fname in {'median', 'mode'} and dist.__class__ in circular_families:
+                # wrap to center around 0
+                a, b = dist.support()
+                period = b - a
+                res = np.where(res > period/2, res - period, res)[()]
+                ref = np.where(ref > period/2, ref - period, ref)[()]
+
             np.testing.assert_allclose(res, ref, **tol_override)
 
         # for now, make sure dtypes are consistent; later, we can check whether
@@ -507,6 +510,7 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         np.testing.assert_equal(res.shape, result_shape)
         if result_shape == tuple():
             assert np.isscalar(res)
+
 
 def check_cdf2(dist, log, x, y, result_shape, methods):
     # Specialized test for 2-arg cdf since the interface is a bit different
@@ -2292,7 +2296,7 @@ class TestCircular:
         with pytest.raises(NotImplementedError, match=message + '`ccdf`.'):
             X.ccdf(1, 2)
 
-        message = "Parameter `convention` of `VonMises.kurtosis` must be one of..."
+        message = "`VonMises.kurtosis` supports only the default value of `convention`."
         with pytest.raises(ValueError, match=message):
             X.kurtosis(convention='excess')
 
@@ -2306,6 +2310,9 @@ class TestCircular:
 
     @pytest.mark.parametrize('shape', [(), (20,)])
     def test_basic(self, shape):
+        # This test was developed before circular distributions were supported by the
+        # `TestDistributions` class. That mostly makes this redundant, but it is very
+        # fast, so I see little harm in keeping it.
         rng = np.random.default_rng(582348972387243524)
         X = stats.VonMises(mu=1.23, kappa=2.34)
         x = rng.uniform(-10, 10, size=shape)
@@ -2323,9 +2330,9 @@ class TestCircular:
         assert_allclose(X.pmf(x), X.pmf(x_wrapped))
         assert_allclose(X.logpmf(x), X.logpmf(x_wrapped))
         assert_allclose(X.cdf(x), X.cdf(x_wrapped) + x_turn)
-        assert_allclose(X.ccdf(x), X.ccdf(x_wrapped) + x_turn)
+        assert_allclose(X.ccdf(x), X.ccdf(x_wrapped) - x_turn)
         assert_allclose(X.icdf(x), X.icdf(x % 1) + (x // 1)*period)
-        assert_allclose(X.iccdf(x), X.iccdf(x % 1) + (x // 1)*period)
+        assert_allclose(X.iccdf(x), X.iccdf(x % 1) - (x // 1)*period)
         assert_allclose(X.cdf(X.icdf(x)), x)
         assert_allclose(X.icdf(X.cdf(x)), x)
         assert_allclose(X.ccdf(X.iccdf(x)), x)
