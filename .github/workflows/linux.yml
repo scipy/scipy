@@ -292,9 +292,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Both use numpy 2.x-dev at build time; 3.12 job then downgrades to
-        # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.12', '3.13']
+        python-version: ['3.12']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -316,7 +314,6 @@ jobs:
         python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
-        # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
     - name:  Prepare compiler cache
@@ -347,7 +344,6 @@ jobs:
       run: ccache -s
 
     - name: Downgrade NumPy to lowest supported
-      if: matrix.python-version == '3.12'
       run: |
         python -m pip install "numpy==2.0.0"
 
