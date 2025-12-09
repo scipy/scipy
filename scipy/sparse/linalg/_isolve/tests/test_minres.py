@@ -7,17 +7,15 @@ from functools import lru_cache
 
 from pytest import raises as assert_raises
 
-@lru_cache()
+@lru_cache
 def _cached_sample_problem(make_complex: bool):
     # A random 10 x 10 symmetric matrix
     rng = np.random.RandomState(1234)
     if make_complex:
         matrix = rng.rand(10, 10) + 1j * rng.rand(10, 10)
-    else:
-        matrix = rng.rand(10, 10)
-    if make_complex:
         matrix = matrix + matrix.T.conj()
     else:
+        matrix = rng.rand(10, 10)
         matrix = matrix + matrix.T
     # A random vector of length 10
     vector = rng.rand(10)
@@ -31,7 +29,8 @@ def get_sample_problem_complex():
     A, b = _cached_sample_problem(True)
     return A.copy(), b.copy()
 
-@pytest.mark.parametrize("problem_func", [get_sample_problem, get_sample_problem_complex])
+@pytest.mark.parametrize("problem_func",
+                         [get_sample_problem, get_sample_problem_complex])
 def test_singular(problem_func):
     A, b = problem_func()
     A[0, ] = 0
@@ -40,7 +39,8 @@ def test_singular(problem_func):
     assert_equal(info, 0)
     assert norm(A @ xp - b) <= 1e-5 * norm(b)
 
-@pytest.mark.parametrize("problem_func", [get_sample_problem, get_sample_problem_complex])
+@pytest.mark.parametrize("problem_func",
+                         [get_sample_problem, get_sample_problem_complex])
 def test_x0_is_used_by(problem_func):
     A, b = problem_func()
     # Random x0 to feed minres
@@ -57,7 +57,8 @@ def test_x0_is_used_by(problem_func):
     minres(A, b, callback=trace_iterates)
     assert_(not np.array_equal(trace_with_x0[0], trace[0]))
 
-@pytest.mark.parametrize("problem_func", [get_sample_problem, get_sample_problem_complex])
+@pytest.mark.parametrize("problem_func",
+                         [get_sample_problem, get_sample_problem_complex])
 def test_shift(problem_func):
     A, b = problem_func()
     shift = 0.5
@@ -67,7 +68,8 @@ def test_shift(problem_func):
     assert_equal(info1, 0)
     assert_allclose(x1, x2, rtol=1e-5)
 
-@pytest.mark.parametrize("problem_func", [get_sample_problem, get_sample_problem_complex])
+@pytest.mark.parametrize("problem_func",
+                         [get_sample_problem, get_sample_problem_complex])
 def test_asymmetric_fail(problem_func):
     """Asymmetric matrix should raise `ValueError` when check=True"""
     A, b = problem_func()
@@ -76,9 +78,11 @@ def test_asymmetric_fail(problem_func):
     with assert_raises(ValueError):
         xp, info = minres(A, b, check=True)
 
-@pytest.mark.parametrize("problem_func", [get_sample_problem, get_sample_problem_complex])
+@pytest.mark.parametrize("problem_func",
+                         [get_sample_problem, get_sample_problem_complex])
 def test_asymmetric_preconditioner_fail(problem_func):
-    """Non-symmetric (non-Hermitian) preconditioner M should raise ValueError when check=True."""
+    """Non-symmetric (non-Hermitian) preconditioner M
+       should raise ValueError when check=True."""
     A, b = problem_func()
     rng = np.random.RandomState(4321)
     if np.iscomplexobj(A):
