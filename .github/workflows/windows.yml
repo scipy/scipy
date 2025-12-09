@@ -55,7 +55,7 @@ jobs:
 
   #############################################################################
   full_spin_min_numpy:
-    name: full, py3.11/npMin, spin
+    name: full, py3.12/npMin, spin
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
@@ -98,7 +98,7 @@ jobs:
   #############################################################################
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
-    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest
+    name: no pythran & sdist+wheel, full, py3.12/npPre, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -112,7 +112,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
           cache-dependency-path: "environment.yml"
 
@@ -198,7 +198,7 @@ jobs:
 
   #############################################################################
   full_build_sdist_wheel_arm64:
-    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest (Win-ARM64)
+    name: no pythran & sdist+wheel, full, py3.12/npPre, pip+pytest (Win-ARM64)
     runs-on: windows-11-arm
     needs: get_commit_message
     if: >
@@ -213,7 +213,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           architecture: "arm64"
           cache: "pip"
           cache-dependency-path: "environment.yml"

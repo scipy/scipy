@@ -20,7 +20,7 @@ py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
 min_numpy_version = '2.0.0'  # keep in sync with pyproject.toml
-min_python_version = '3.11'   # keep in sync with pyproject.toml
+min_python_version = '3.12'   # keep in sync with pyproject.toml
 
 python_version = py3.language_version()
 if python_version.version_compare(f'<@min_python_version@')
