@@ -567,14 +567,14 @@ relevant ``xp_capabilities`` entries, one should use
 ``pytest.mark.uses_xp_capabilities`` with reasons other than `"private"` or
 `"not applicable"` is a good way of finding work that needs to be done.
 
-Manually adding markers
-```````````````````````
+Directly adding pytest markers
+``````````````````````````````
 
 In addition to using ``make_xp_test_case``, ``make_xp_pytest_param``, order
 ``make_xp_pytest_marks``, the following ``pytest`` markers are available and
 be added directly (What ``make_xp_test_case`` and friends actually do is give a
-process for adding ``skip_xp_backends`` and ``xfail_xp_backends`` markers in
-a declarative way).
+declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends`` markers).
+
 
 * ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
@@ -605,6 +605,47 @@ a declarative way).
   through ``make_xp_test_case`` or one of its equivalents. ``funcs`` is used to declare
   a list of public functions which a test is testing.
 
+Test specific skips and xfails
+``````````````````````````````
+
+For a public function ``f``, `skip_xp_backends` and `xfail_xp_backends` should
+only be used directly for backend related skips and xfails which are needed for
+the specific test but which do not reflect the general capabilities of
+``f``. Reasons to directly use `skip_xp_backends` include when:
+
+   1. the test body itself contains unsupported functionality (though one should
+      try to avoid this whenever possible, see the subsection on testing
+      practice below).
+   2. ``f`` is only partially supported on a backend and the test relies on
+   cases which are not supported, e.g. tests involving complex values for
+   functions which only support real values on a given backend, tests involving
+   higher dimensional arrays for functions which only support arrays of size 2d
+   or less on a given backend.
+   3. the test exposes a bug in ``f`` on a given backend which crashes test
+      execution.
+
+Direct uses of `xfail_xp_backends` should be reserved for tests which expose a
+bug in ``f`` on a given backend which causes incorrect results or an exception
+to be raised, but still allows all other tests to run normally. `xfail_xp_backends`
+should not be used for test failures for an alternative backend which are not
+related to ``f`` but are instead due to bugs exposed in other parts of the test
+body. To avoid such situations, we recommend as a general practice to attempt to
+isolate use of the alternative backend only to the function ``f`` being tested
+with a caveat that there are situations where or it is necessary or desired to
+do otherwise: see the section on testing practice below for more information.
+
+Note that in one case `xp_capabilities`, offers more granularity than
+`skip_xp_backends` and `xfail_xp_backends`. `xp_capabilities` allows developers
+to separately declare support for the JAX jit and support for lazy computation
+with Dask with the respective `jax_jit` and `allow_dask_compute` kwargs.
+`skip_xp_backends` (`xfail_xp_backends`) offers only an `eager_only` kwarg which
+can only adds skips (xfails) for both the JAX jit and lazy Dask together. The
+current state is that one cannot add test specific skips (xfails) for the JAX jit
+without also adding them for lazy Dask and vice versa. This is a known limitation
+and a consequence of the process through which `xp_capabilities`, `skip_xp_backends`,
+and `xfail_xp_backends` have evolved naturally to meet developer needs.
+
+
 Array-agnostic assertions
 `````````````````````````
 
@@ -617,8 +658,6 @@ which was set by the fixture. Tests without the ``xp`` fixture infer the namespa
 the desired array. This machinery can be overridden by explicitly passing the ``xp=``
 parameter to the assertion functions.
 
-Test specific skips and xfails
-``````````````````````````````
 
 
 Examples
