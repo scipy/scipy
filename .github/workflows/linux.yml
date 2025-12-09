@@ -429,7 +429,6 @@ jobs:
       - name: Install test dependencies
         run: |
           python3.12 -m pip install pytest hypothesis
-          python3.13 -m pip install meson  # ensure compile test work with this
 
       - name: Run tests
         run: |
