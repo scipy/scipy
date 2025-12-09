@@ -285,6 +285,20 @@ SKIP/XFAIL markers, and setting up testing that functions work with the JAX jit
 or work in Dask lazily (i.e. without materializing arrays with
 ``dask.compute`` or otherwise triggering computation with ``dask.persist``).
 
+.. warning::
+
+   The modification of docstrings by ``xp_capabilities`` can potentially break
+   intersphinx references because it currently has the side effect of replacing
+   implicit roles with ``:func:``. This can be avoided by explicitly
+   setting the role for references to classes and methods outside of SciPy.
+
+
+   .. code-block:: rst
+
+       See Also
+       --------
+       :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial
+
 Basic behavior
 ``````````````
 
