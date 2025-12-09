@@ -35,10 +35,7 @@ from scipy.sparse._sputils import matrix
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
 from scipy.conftest import skip_xp_invalid_arg
-try:
-    from scipy.__config__ import CONFIG
-except ImportError:
-    CONFIG = None
+from scipy.__config__ import CONFIG
 
 IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"])
 
@@ -1217,7 +1214,8 @@ class TestSVD_GESVD(TestSVD_GESDD):
 # Allocating an array of such a size leads to _ArrayMemoryError(s)
 # since the maximum memory that can be in 32-bit (WASM) is 4GB
 @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
-@pytest.mark.parallel_threads(2)  # 1.9 GiB per thread RAM usage
+@pytest.mark.xfail_on_32bit("out of memory in 32-bit CI workflow")
+@pytest.mark.parallel_threads_limit(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
@@ -2317,9 +2315,8 @@ class TestHessenberg:
 
 
 blas_provider = blas_version = None
-if CONFIG is not None:
-    blas_provider = CONFIG['Build Dependencies']['blas']['name']
-    blas_version = CONFIG['Build Dependencies']['blas']['version']
+blas_provider = CONFIG['Build Dependencies']['blas']['name']
+blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 class TestQZ:

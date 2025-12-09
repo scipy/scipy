@@ -460,6 +460,10 @@ class TestCloughTocher2DInterpolator:
     [interpnd.LinearNDInterpolator, interpnd.CloughTocher2DInterpolator]
 )
 def test_interp_from_boundary(interpolation_class, simplex_tolerance):
+    """Test that SciPy can interpolate to a regular grid from the boundary.
+
+    Based on gh-21910
+    """
     coords = np.block(
         [[0, np.arange(400, 500), np.zeros(100), 800],
          [0, np.zeros(100), np.arange(400, 500), 800]]
@@ -478,3 +482,32 @@ def test_interp_from_boundary(interpolation_class, simplex_tolerance):
         # The larger tolerance allows QHull to assign a simplex
         # for each point
         assert num_nans == 0
+
+
+@pytest.mark.parametrize("simplex_tolerance", [1, 10])
+@pytest.mark.parametrize(
+    "interpolator_factory",
+    [interpnd.CloughTocher2DInterpolator, interpnd.LinearNDInterpolator]
+)
+def test_reproduction_NaN_on_points_linear_combination(
+    simplex_tolerance, interpolator_factory
+):
+    """Test that SciPy can interpolate to the edge of a triangle.
+
+    Based on gh-22831
+    """
+    inputs = np.array([[ 0.       ,  0.       ],
+                      [ 0.       ,  0.008016],
+                      [ 3.       , -2.       ]])
+    values = np.ones(len(inputs))
+    # Create the interpolator
+    interpolator = interpolator_factory(inputs, values)
+    t1 = 0.6
+    p1 = inputs[0]
+    p2 = inputs[2]
+    point_on_edge = p1 + t1 * (p2 - p1)
+    value = interpolator(*point_on_edge, simplex_tolerance=simplex_tolerance)
+    if simplex_tolerance == 1:
+        assert np.isnan(value)
+    else:
+        assert np.isfinite(value)

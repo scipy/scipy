@@ -77,6 +77,9 @@ def test_distributions_submodule():
 
 
 class TestVonMises:
+    def setup_method(self):
+        self.rng = np.random.default_rng(6320571663)
+
     @pytest.mark.parametrize('k', [0.1, 1, 101])
     @pytest.mark.parametrize('x', [0, 1, np.pi, 10, 100])
     def test_vonmises_periodic(self, k, x):
@@ -257,7 +260,7 @@ class TestVonMises:
         assert_allclose(dist.ppf(0.9), np.pi*0.8, rtol=1e-15)
         assert_allclose(dist.mean(), 0, atol=1e-15)
         assert_allclose(dist.expect(), 0, atol=1e-15)
-        assert np.all(np.abs(dist.rvs(size=10, random_state=1234)) <= np.pi)
+        assert np.all(np.abs(dist.rvs(size=10, random_state=self.rng)) <= np.pi)
 
     def test_vonmises_fit_equal_data(self):
         # When all data are equal, expect kappa = 1e16.
@@ -355,19 +358,19 @@ def test_support(dist):
 
 class TestRandInt:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(8826485737)
 
     def test_rvs(self):
-        vals = stats.randint.rvs(5, 30, size=100)
+        vals = stats.randint.rvs(5, 30, size=100, random_state=self.rng)
         assert_(np.all(vals < 30) & np.all(vals >= 5))
         assert_(len(vals) == 100)
-        vals = stats.randint.rvs(5, 30, size=(2, 50))
+        vals = stats.randint.rvs(5, 30, size=(2, 50), random_state=self.rng)
         assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
-        val = stats.randint.rvs(15, 46)
+        val = stats.randint.rvs(15, 46, random_state=self.rng)
         assert_((val >= 15) & (val < 46))
         assert_(isinstance(val, np.ScalarType), msg=repr(type(val)))
-        val = stats.randint(15, 46).rvs(3)
+        val = stats.randint(15, 46).rvs(3, random_state=self.rng)
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_pdf(self):
@@ -386,16 +389,16 @@ class TestRandInt:
 
 class TestBinom:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(1778595878)
 
     def test_rvs(self):
-        vals = stats.binom.rvs(10, 0.75, size=(2, 50))
+        vals = stats.binom.rvs(10, 0.75, size=(2, 50), random_state=self.rng)
         assert_(np.all(vals >= 0) & np.all(vals <= 10))
         assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
-        val = stats.binom.rvs(10, 0.75)
+        val = stats.binom.rvs(10, 0.75, random_state=self.rng)
         assert_(isinstance(val, int))
-        val = stats.binom(10, 0.75).rvs(3)
+        val = stats.binom(10, 0.75).rvs(3, random_state=self.rng)
         assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
@@ -469,16 +472,16 @@ class TestArcsine:
 
 class TestBernoulli:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(7836792223)
 
     def test_rvs(self):
-        vals = stats.bernoulli.rvs(0.75, size=(2, 50))
+        vals = stats.bernoulli.rvs(0.75, size=(2, 50), random_state=self.rng)
         assert_(np.all(vals >= 0) & np.all(vals <= 1))
         assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
-        val = stats.bernoulli.rvs(0.75)
+        val = stats.bernoulli.rvs(0.75, random_state=self.rng)
         assert_(isinstance(val, int))
-        val = stats.bernoulli(0.75).rvs(3)
+        val = stats.bernoulli(0.75).rvs(3, random_state=self.rng)
         assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
@@ -854,16 +857,16 @@ class TestCrystalBall:
 
 class TestNBinom:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(5861367021)
 
     def test_rvs(self):
-        vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
+        vals = stats.nbinom.rvs(10, 0.75, size=(2, 50), random_state=self.rng)
         assert_(np.all(vals >= 0))
         assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
-        val = stats.nbinom.rvs(10, 0.75)
+        val = stats.nbinom.rvs(10, 0.75, random_state=self.rng)
         assert_(isinstance(val, int))
-        val = stats.nbinom(10, 0.75).rvs(3)
+        val = stats.nbinom(10, 0.75).rvs(3, random_state=self.rng)
         assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
@@ -884,34 +887,34 @@ class TestNBinom:
 
 class TestGenInvGauss:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(6473281180)
 
     @pytest.mark.slow
     def test_rvs_with_mode_shift(self):
         # ratio_unif w/ mode shift
         gig = stats.geninvgauss(2.3, 1.5)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_without_mode_shift(self):
         # ratio_unif w/o mode shift
         gig = stats.geninvgauss(0.9, 0.75)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_new_method(self):
         # new algorithm of Hoermann / Leydold
         gig = stats.geninvgauss(0.1, 0.2)
-        _, p = stats.kstest(gig.rvs(size=1500, random_state=1234), gig.cdf)
+        _, p = stats.kstest(gig.rvs(size=1500, random_state=self.rng), gig.cdf)
         assert_equal(p > 0.05, True)
 
     @pytest.mark.slow
     def test_rvs_p_zero(self):
         def my_ks_check(p, b):
             gig = stats.geninvgauss(p, b)
-            rvs = gig.rvs(size=1500, random_state=1234)
+            rvs = gig.rvs(size=1500, random_state=self.rng)
             return stats.kstest(rvs, gig.cdf)[1] > 0.05
         # boundary cases when p = 0
         assert_equal(my_ks_check(0, 0.2), True)  # new algo
@@ -926,7 +929,7 @@ class TestGenInvGauss:
 
     def test_invgauss(self):
         # test that invgauss is special case
-        ig = stats.geninvgauss.rvs(size=1500, p=-0.5, b=1, random_state=1234)
+        ig = stats.geninvgauss.rvs(size=1500, p=-0.5, b=1, random_state=1464878613)
         assert_equal(stats.kstest(ig, 'invgauss', args=[1])[1] > 0.15, True)
         # test pdf and cdf
         mu, x = 100, np.linspace(0.01, 1, 10)
@@ -955,8 +958,6 @@ class TestGenInvGauss:
 
 
 class TestGenHyperbolic:
-    def setup_method(self):
-        np.random.seed(1234)
 
     def test_pdf_r(self):
         # test against R package GeneralizedHyperbolic
@@ -1189,9 +1190,6 @@ class TestHypSecant:
 
 
 class TestNormInvGauss:
-    def setup_method(self):
-        np.random.seed(1234)
-
     def test_cdf_R(self):
         # test pdf and cdf vals against R
         # require("GeneralizedHyperbolic")
@@ -1260,16 +1258,16 @@ class TestNormInvGauss:
 
 class TestGeom:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(7672986002)
 
     def test_rvs(self):
-        vals = stats.geom.rvs(0.75, size=(2, 50))
+        vals = stats.geom.rvs(0.75, size=(2, 50), random_state=self.rng)
         assert_(np.all(vals >= 0))
         assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
-        val = stats.geom.rvs(0.75)
+        val = stats.geom.rvs(0.75, random_state=self.rng)
         assert_(isinstance(val, int))
-        val = stats.geom(0.75).rvs(3)
+        val = stats.geom(0.75).rvs(3, random_state=self.rng)
         assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
@@ -1277,8 +1275,7 @@ class TestGeom:
         # previously, RVS were converted to `np.int32` on some platforms,
         # causing overflow for moderately large integer output (gh-9313).
         # Check that this is resolved to the extent possible w/ `np.int64`.
-        rng = np.random.default_rng(649496242618848)
-        rvs = stats.geom.rvs(np.exp(-35), size=5, random_state=rng)
+        rvs = stats.geom.rvs(np.exp(-35), size=5, random_state=self.rng)
         assert rvs.dtype == np.int64
         assert np.all(rvs > np.iinfo(np.int32).max)
 
@@ -1332,9 +1329,8 @@ class TestGeom:
         random_state = np.random.RandomState(294582935)
         assert (stats.geom.rvs(1e-30, size=10, random_state=random_state) > 0).all()
 
+
 class TestPlanck:
-    def setup_method(self):
-        np.random.seed(1234)
 
     def test_sf(self):
         vals = stats.planck.sf([1, 2, 3], 5.)
@@ -1365,9 +1361,9 @@ class TestGennorm:
         assert_almost_equal(pdf1, pdf2)
 
     def test_rvs(self):
-        rng = np.random.RandomState(0)
         # 0 < beta < 1
         dist = stats.gennorm(0.5)
+        rng = np.random.default_rng(2204049394)
         rvs = dist.rvs(size=1000, random_state=rng)
         assert stats.kstest(rvs, dist.cdf).pvalue > 0.1
         # beta = 1
@@ -1383,10 +1379,9 @@ class TestGennorm:
         assert stats.ks_2samp(rvs, rvs_norm).pvalue > 0.1
 
     def test_rvs_broadcasting(self):
-        rng = np.random.default_rng(0)
         dist = stats.gennorm([[0.5, 1.], [2., 5.]])
-        dist.random_state = rng
-        rvs = dist.rvs(size=[1000, 2, 2])
+        rng = np.random.default_rng(2204049394)
+        rvs = dist.rvs(size=[1000, 2, 2], random_state=rng)
         assert stats.kstest(rvs[:, 0, 0], stats.gennorm(0.5).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 0, 1], stats.gennorm(1.0).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
@@ -1723,7 +1718,7 @@ class TestLaplaceasymmetric:
 
 class TestTruncnorm:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(3255963201)
 
     @pytest.mark.parametrize("a, b, ref",
                              [(0, 100, 0.7257913526447274),
@@ -1778,30 +1773,30 @@ class TestTruncnorm:
     def test_gh_2477_small_values(self):
         # Check a case that worked in the original issue.
         low, high = -11, -10
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
         # Check a case that failed in the original issue.
         low, high = 10, 11
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
 
     def test_gh_2477_large_values(self):
         # Check a case that used to fail because of extreme tailness.
         low, high = 100, 101
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low <= x.min() <= x.max() <= high), str([low, high, x])
 
         # Check some additional extreme tails
         low, high = 1000, 1001
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
 
         low, high = 10000, 10001
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
 
         low, high = -10001, -10000
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
 
     def test_gh_9403_nontail_values(self):
@@ -1951,7 +1946,7 @@ class TestTruncnorm:
     def test_gh_1489_trac_962_rvs(self):
         # Check the original example.
         low, high = 10, 15
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        x = stats.truncnorm.rvs(low, high, 0, 1, size=10, random_state=self.rng)
         assert_(low < x.min() < x.max() < high)
 
     def test_gh_11299_rvs(self):
@@ -1959,7 +1954,7 @@ class TestTruncnorm:
         # Test multiple shape parameters simultaneously.
         low = [-10, 10, -np.inf, -5, -np.inf, -np.inf, -45, -45, 40, -10, 40]
         high = [-5, 11, 5, np.inf, 40, -40, 40, -40, 45, np.inf, np.inf]
-        x = stats.truncnorm.rvs(low, high, size=(5, len(low)))
+        x = stats.truncnorm.rvs(low, high, size=(5, len(low)), random_state=self.rng)
         assert np.shape(x) == (5, len(low))
         assert_(np.all(low <= x.min(axis=0)))
         assert_(np.all(x.max(axis=0) <= high))
@@ -1967,8 +1962,7 @@ class TestTruncnorm:
     def test_rvs_Generator(self):
         # check that rvs can use a Generator
         if hasattr(np.random, "default_rng"):
-            stats.truncnorm.rvs(-10, -5, size=5,
-                                random_state=np.random.default_rng())
+            stats.truncnorm.rvs(-10, -5, size=5, random_state=self.rng)
 
     def test_logcdf_gh17064(self):
         # regression test for gh-17064 - avoid roundoff error for logcdfs ~0
@@ -2057,16 +2051,16 @@ class TestGenLogistic:
 
 class TestHypergeom:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(1765545342)
 
     def test_rvs(self):
-        vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50))
+        vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50), random_state=self.rng)
         assert np.all(vals >= 0) & np.all(vals <= 3)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllInteger']
-        val = stats.hypergeom.rvs(20, 3, 10)
+        val = stats.hypergeom.rvs(20, 3, 10, random_state=self.rng)
         assert isinstance(val, int)
-        val = stats.hypergeom(20, 3, 10).rvs(3)
+        val = stats.hypergeom(20, 3, 10).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllInteger']
 
@@ -2219,6 +2213,8 @@ class TestHypergeom:
 
 
 class TestLoggamma:
+    def setup_method(self):
+        self.rng = np.random.default_rng(8638464332)
 
     # Expected cdf values were computed with mpmath. For given x and c,
     #     x = mpmath.mpf(x)
@@ -2296,7 +2292,7 @@ class TestLoggamma:
     @pytest.mark.parametrize('c', [0.1, 0.001])
     def test_rvs(self, c):
         # Regression test for gh-11094.
-        x = stats.loggamma.rvs(c, size=100000)
+        x = stats.loggamma.rvs(c, size=100000, random_state=self.rng)
         # Before gh-11094 was fixed, the case with c=0.001 would
         # generate many -inf values.
         assert np.isfinite(x).all()
@@ -2370,6 +2366,9 @@ class TestJohnsonb:
 
 
 class TestLogistic:
+    def setup_method(self):
+        self.rng = np.random.default_rng(2807014525)
+
     # gh-6226
     def test_cdf_ppf(self):
         x = np.linspace(-20, 20)
@@ -2407,7 +2406,8 @@ class TestLogistic:
     @pytest.mark.parametrize("loc_rvs,scale_rvs", [(0.4484955, 0.10216821),
                                                    (0.62918191, 0.74367064)])
     def test_fit(self, loc_rvs, scale_rvs):
-        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+        data = stats.logistic.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
+                                  random_state=self.rng)
 
         # test that result of fit method is the same as optimization
         def func(input, data):
@@ -2429,7 +2429,7 @@ class TestLogistic:
         assert_allclose(fit_method, expected_solution, atol=1e-30)
 
     def test_fit_comp_optimizer(self):
-        data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
+        data = stats.logistic.rvs(size=100, loc=0.5, scale=2, random_state=self.rng)
         _assert_less_or_close_loglike(stats.logistic, data)
         _assert_less_or_close_loglike(stats.logistic, data, floc=1)
         _assert_less_or_close_loglike(stats.logistic, data, fscale=1)
@@ -2459,16 +2459,16 @@ class TestLogistic:
 
 class TestLogser:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(187505461)
 
     def test_rvs(self):
-        vals = stats.logser.rvs(0.75, size=(2, 50))
+        vals = stats.logser.rvs(0.75, size=(2, 50), random_state=self.rng)
         assert np.all(vals >= 1)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllInteger']
-        val = stats.logser.rvs(0.75)
+        val = stats.logser.rvs(0.75, random_state=self.rng)
         assert isinstance(val, int)
-        val = stats.logser(0.75).rvs(3)
+        val = stats.logser(0.75).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllInteger']
 
@@ -2819,15 +2819,15 @@ class TestGenpareto:
 
 class TestPearson3:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(2775995570)
 
     def test_rvs(self):
-        vals = stats.pearson3.rvs(0.1, size=(2, 50))
+        vals = stats.pearson3.rvs(0.1, size=(2, 50), random_state=self.rng)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllFloat']
-        val = stats.pearson3.rvs(0.5)
+        val = stats.pearson3.rvs(0.5, random_state=self.rng)
         assert isinstance(val, float)
-        val = stats.pearson3(0.5).rvs(3)
+        val = stats.pearson3(0.5).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllFloat']
         assert len(val) == 3
@@ -2970,7 +2970,7 @@ class TestKappa4:
 
 class TestPoisson:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(9799340796)
 
     def test_pmf_basic(self):
         # Basic case
@@ -2989,13 +2989,13 @@ class TestPoisson:
         assert_equal(interval, (0, 0))
 
     def test_rvs(self):
-        vals = stats.poisson.rvs(0.5, size=(2, 50))
+        vals = stats.poisson.rvs(0.5, size=(2, 50), random_state=self.rng)
         assert np.all(vals >= 0)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllInteger']
-        val = stats.poisson.rvs(0.5)
+        val = stats.poisson.rvs(0.5, random_state=self.rng)
         assert isinstance(val, int)
-        val = stats.poisson(0.5).rvs(3)
+        val = stats.poisson(0.5).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllInteger']
 
@@ -3011,8 +3011,6 @@ class TestPoisson:
 
 
 class TestKSTwo:
-    def setup_method(self):
-        np.random.seed(1234)
 
     def test_cdf(self):
         for n in [1, 2, 3, 10, 100, 1000]:
@@ -3158,16 +3156,16 @@ class TestKSTwo:
 
 class TestZipf:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(2444103536)
 
     def test_rvs(self):
-        vals = stats.zipf.rvs(1.5, size=(2, 50))
+        vals = stats.zipf.rvs(1.5, size=(2, 50), random_state=self.rng)
         assert np.all(vals >= 1)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllInteger']
-        val = stats.zipf.rvs(1.5)
+        val = stats.zipf.rvs(1.5, random_state=self.rng)
         assert isinstance(val, int)
-        val = stats.zipf(1.5).rvs(3)
+        val = stats.zipf(1.5).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllInteger']
 
@@ -3183,18 +3181,18 @@ class TestZipf:
 
 class TestDLaplace:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(460403075)
 
     def test_rvs(self):
-        vals = stats.dlaplace.rvs(1.5, size=(2, 50))
+        vals = stats.dlaplace.rvs(1.5, size=(2, 50), random_state=self.rng)
         assert np.shape(vals) == (2, 50)
         assert vals.dtype.char in typecodes['AllInteger']
-        val = stats.dlaplace.rvs(1.5)
+        val = stats.dlaplace.rvs(1.5, random_state=self.rng)
         assert isinstance(val, int)
-        val = stats.dlaplace(1.5).rvs(3)
+        val = stats.dlaplace(1.5).rvs(3, random_state=self.rng)
         assert isinstance(val, np.ndarray)
         assert val.dtype.char in typecodes['AllInteger']
-        assert stats.dlaplace.rvs(0.8) is not None
+        assert stats.dlaplace.rvs(0.8, random_state=self.rng) is not None
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf
@@ -3219,13 +3217,13 @@ class TestDLaplace:
 
 class TestInvgauss:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(5422839947)
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (4.635, 4.362, 6.303)])
     def test_fit(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
-                                  loc=rvs_loc, scale=rvs_scale)
+                                  loc=rvs_loc, scale=rvs_scale, random_state=self.rng)
         # Analytical MLEs are calculated with formula when `floc` is fixed
         mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc)
 
@@ -3239,7 +3237,7 @@ class TestInvgauss:
         assert_allclose(scale_mle, scale, atol=1e-15, rtol=1e-15)
         assert_equal(loc, rvs_loc)
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
-                                  loc=rvs_loc, scale=rvs_scale)
+                                  loc=rvs_loc, scale=rvs_scale, random_state=self.rng)
         # fixed parameters are returned
         mu, loc, scale = stats.invgauss.fit(data, floc=rvs_loc - 1,
                                             fscale=rvs_scale + 1)
@@ -3286,7 +3284,7 @@ class TestInvgauss:
         # fixed `fscale` to an arbitrary number still provides a better fit
         # than the super method
         _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc,
-                                      fscale=np.random.rand(1)[0])
+                                      fscale=self.rng.random(1)[0])
 
     def test_fit_raise_errors(self):
         assert_fit_warnings(stats.invgauss)
@@ -3909,7 +3907,8 @@ class TestStudentT:
         assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
         assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
         assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
-        assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+        assert_allclose(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)),
+                        rtol=1e-14)
 
     def test_t_entropy(self):
         df = [1, 2, 25, 100]
@@ -3942,10 +3941,10 @@ class TestStudentT:
                                             [[1, 0], [0, 1]],
                                             [[0], [1]]])
     def test_t_inf_df(self, methname, df_infmask):
-        np.random.seed(0)
         df_infmask = np.asarray(df_infmask, dtype=bool)
-        df = np.random.uniform(0, 10, size=df_infmask.shape)
-        x = np.random.randn(*df_infmask.shape)
+        rng = np.random.default_rng(5442451539)
+        df = rng.uniform(0, 10, size=df_infmask.shape)
+        x = rng.standard_normal(df_infmask.shape)
         df[df_infmask] = np.inf
         t_dist = stats.t(df=df, loc=3, scale=1)
         t_dist_ref = stats.t(df=df[~df_infmask], loc=3, scale=1)
@@ -3962,9 +3961,9 @@ class TestStudentT:
                                             [[1, 0], [0, 1]],
                                             [[0], [1]]])
     def test_t_inf_df_stats_entropy(self, df_infmask):
-        np.random.seed(0)
         df_infmask = np.asarray(df_infmask, dtype=bool)
-        df = np.random.uniform(0, 10, size=df_infmask.shape)
+        rng = np.random.default_rng(5442451539)
+        df = rng.uniform(0, 10, size=df_infmask.shape)
         df[df_infmask] = np.inf
         res = stats.t.stats(df=df, loc=3, scale=1, moments='mvsk')
         res_ex_inf = stats.norm.stats(loc=3, scale=1, moments='mvsk')
@@ -4008,20 +4007,20 @@ class TestStudentT:
 
 class TestRvDiscrete:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(333348228)
 
     def test_rvs(self):
         states = [-1, 0, 1, 2, 3, 4]
         probability = [0.0, 0.3, 0.4, 0.0, 0.3, 0.0]
         samples = 1000
         r = stats.rv_discrete(name='sample', values=(states, probability))
-        x = r.rvs(size=samples)
+        x = r.rvs(size=samples, random_state=self.rng)
         assert isinstance(x, np.ndarray)
 
         for s, p in zip(states, probability):
             assert abs(sum(x == s)/float(samples) - p) < 0.05
 
-        x = r.rvs()
+        x = r.rvs(random_state=self.rng)
         assert np.issubdtype(type(x), np.integer)
 
     def test_entropy(self):
@@ -5484,6 +5483,9 @@ class TestChi2:
 
 
 class TestGumbelL:
+    def setup_method(self):
+        self.rng = np.random.default_rng(3922444007)
+
     # gh-6228
     def test_cdf_ppf(self):
         x = np.linspace(-100, -4)
@@ -5509,7 +5511,7 @@ class TestGumbelL:
     def test_fit_fixed_param(self, loc):
         # ensure fixed location is correctly reflected from `gumbel_r.fit`
         # See comments at end of gh-12737.
-        data = stats.gumbel_l.rvs(size=100, loc=loc)
+        data = stats.gumbel_l.rvs(size=100, loc=loc, random_state=self.rng)
         fitted_loc, _ = stats.gumbel_l.fit(data, floc=loc)
         assert_equal(fitted_loc, loc)
 
@@ -5536,6 +5538,9 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    def setup_method(self):
+        self.rng = np.random.default_rng(7195199371)
+
     @pytest.fixture(autouse=True)
     def reset_levy_stable_params(self):
         """Setup default parameters for levy_stable generator"""
@@ -5662,7 +5667,7 @@ class TestLevyStable:
             alpha=alpha, beta=beta, scale=gamma, loc=delta
         )
         _, p = stats.kstest(
-            ls.rvs(size=sample_size, random_state=1234), ls.cdf
+            ls.rvs(size=sample_size, random_state=self.rng), ls.cdf
         )
         assert p > 0.05
 
@@ -5670,12 +5675,11 @@ class TestLevyStable:
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
-        np.random.seed(987654321)
         alpha = 1.0
         loc = 0.5
         scale = 1.5
         x = stats.levy_stable.rvs(alpha, beta, loc=loc, scale=scale,
-                                  size=5000)
+                                  size=5000, random_state=self.rng)
         stat, p = stats.kstest(x, 'levy_stable',
                                args=(alpha, beta, loc, scale))
         assert p > 0.01
@@ -5719,7 +5723,7 @@ class TestLevyStable:
         """Test that fit agrees with rvs for each parametrization."""
         stats.levy_stable.parametrization = parametrization
         data = stats.levy_stable.rvs(
-            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=1234
+            alpha, beta, loc=delta, scale=gamma, size=10000, random_state=self.rng
         )
         fit = stats.levy_stable._fitstart(data)
         alpha_obs, beta_obs, delta_obs, gamma_obs = fit
@@ -6399,11 +6403,11 @@ class TestLevyStable:
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(7556981556)
 
     def test_noexception(self):
         rvs = stats.norm.rvs(loc=(np.arange(5)), scale=np.ones(5),
-                             size=(10, 5))
+                             size=(10, 5), random_state=self.rng)
         assert_equal(rvs.shape, (10, 5))
 
 
@@ -6442,7 +6446,7 @@ class TestFitMethod:
     skip = ['ncf', 'ksone', 'kstwo', 'irwinhall']
 
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(4522425749)
 
     # skip these b/c deprecated, or only loc and scale arguments
     fitSkipNonFinite = ['expon', 'norm', 'uniform', 'irwinhall']
@@ -6460,9 +6464,8 @@ class TestFitMethod:
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
-        np.random.seed(12345)
         with np.errstate(all='ignore'):
-            x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+            x = stats.lognorm.rvs(0.25, 0., 20.0, size=20, random_state=self.rng)
             expected_shape = np.sqrt(((np.log(x) - np.log(20))**2).mean())
             assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
                             [expected_shape, 0, 20], atol=1e-8)
@@ -6634,7 +6637,7 @@ class TestFitMethod:
         # take a beta distribution, with shapes='a, b', and make sure that
         # fa is equivalent to f0, and fb is equivalent to f1
         a, b = 3., 4.
-        x = stats.beta.rvs(a, b, size=100, random_state=1234)
+        x = stats.beta.rvs(a, b, size=100, random_state=self.rng)
         res_1 = stats.beta.fit(x, f0=3., method=method)
         res_2 = stats.beta.fit(x, fa=3., method=method)
         assert_allclose(res_1, res_2, atol=1e-12, rtol=1e-12)
@@ -6664,7 +6667,7 @@ class TestFitMethod:
 
         # gamma distribution
         a = 3.
-        data = stats.gamma.rvs(a, size=100)
+        data = stats.gamma.rvs(a, size=100, random_state=self.rng)
         aa, ll, ss = stats.gamma.fit(data, fa=a, method=method)
         assert_equal(aa, a)
 
@@ -6672,15 +6675,12 @@ class TestFitMethod:
     def test_extra_params(self, method):
         # unknown parameters should raise rather than be silently ignored
         dist = stats.exponnorm
-        data = dist.rvs(K=2, size=100)
+        data = dist.rvs(K=2, size=100, random_state=self.rng)
         dct = dict(enikibeniki=-101)
         assert_raises(TypeError, dist.fit, data, **dct, method=method)
 
 
 class TestFrozen:
-    def setup_method(self):
-        np.random.seed(1234)
-
     # Test that a frozen distribution gives the same results as the original
     # object.
     #
@@ -7229,6 +7229,9 @@ class TestRecipInvGauss:
 
 
 class TestRice:
+    def setup_method(self):
+        self.rng = np.random.default_rng(666822542)
+
     def test_rice_zero_b(self):
         # rice distribution should work with b=0, cf gh-2164
         x = [0.2, 1., 5.]
@@ -7252,8 +7255,8 @@ class TestRice:
 
     def test_rice_rvs(self):
         rvs = stats.rice.rvs
-        assert_equal(rvs(b=3.).size, 1)
-        assert_equal(rvs(b=3., size=(3, 5)).shape, (3, 5))
+        assert_equal(rvs(b=3., random_state=self.rng).size, 1)
+        assert_equal(rvs(b=3., size=(3, 5), random_state=self.rng).shape, (3, 5))
 
     def test_rice_gh9836(self):
         # test that gh-9836 is resolved; previously jumped to 1 at the end
@@ -7299,7 +7302,7 @@ class TestRice:
 
 class TestErlang:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(2792245532)
 
     def test_erlang_runtimewarning(self):
         # erlang should generate a RuntimeWarning if a non-integer
@@ -7309,8 +7312,8 @@ class TestErlang:
 
             # The non-integer shape parameter 1.3 should trigger a
             # RuntimeWarning
-            assert_raises(RuntimeWarning,
-                          stats.erlang.rvs, 1.3, loc=0, scale=1, size=4)
+            assert_raises(RuntimeWarning, stats.erlang.rvs, 1.3, loc=0,
+                          scale=1, size=4, random_state=self.rng)
 
             # Calling the fit method with `f0` set to an integer should
             # *not* trigger a RuntimeWarning.  It should return the same
@@ -7327,7 +7330,7 @@ class TestErlang:
 
 class TestRayleigh:
     def setup_method(self):
-        np.random.seed(987654321)
+        self.rng = np.random.default_rng(7186715712)
 
     # gh-6227
     def test_logpdf(self):
@@ -7341,7 +7344,8 @@ class TestRayleigh:
     @pytest.mark.parametrize("rvs_loc,rvs_scale", [(0.85373171, 0.86932204),
                                                    (0.20558821, 0.61621008)])
     def test_fit(self, rvs_loc, rvs_scale):
-        data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
+        data = stats.rayleigh.rvs(size=250, loc=rvs_loc,
+                                  scale=rvs_scale, random_state=self.rng)
 
         def scale_mle(data, floc):
             return (np.sum((data - floc) ** 2) / (2 * len(data))) ** .5
@@ -7368,7 +7372,8 @@ class TestRayleigh:
     def test_fit_comparison_super_method(self, rvs_loc, rvs_scale):
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
-        data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
+        data = stats.rayleigh.rvs(size=250, loc=rvs_loc,
+                                  scale=rvs_scale, random_state=self.rng)
         _assert_less_or_close_loglike(stats.rayleigh, data)
 
     def test_fit_warnings(self):
@@ -8812,8 +8817,7 @@ def test_hypergeom_interval_1802():
 
 
 def test_distribution_too_many_args():
-    np.random.seed(1234)
-
+    rng = np.random.default_rng(5976604568)
     # Check that a TypeError is raised when too many args are given to a method
     # Regression test for ticket 1815.
     x = np.linspace(0.1, 0.7, num=5)
@@ -8821,7 +8825,8 @@ def test_distribution_too_many_args():
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, loc=1.0)
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, 4, 5)
     assert_raises(TypeError, stats.gamma.pdf, x, 2, 3, loc=1.0, scale=0.5)
-    assert_raises(TypeError, stats.gamma.rvs, 2., 3, loc=1.0, scale=0.5)
+    assert_raises(TypeError, stats.gamma.rvs, 2., 3, loc=1.0, scale=0.5,
+                  random_state=rng)
     assert_raises(TypeError, stats.gamma.cdf, x, 2., 3, loc=1.0, scale=0.5)
     assert_raises(TypeError, stats.gamma.ppf, x, 2., 3, loc=1.0, scale=0.5)
     assert_raises(TypeError, stats.gamma.stats, 2., 3, loc=1.0, scale=0.5)
@@ -8834,8 +8839,8 @@ def test_distribution_too_many_args():
     stats.gamma.stats(2., 3)
     stats.gamma.stats(2., 3, 4)
     stats.gamma.stats(2., 3, 4, 'mv')
-    stats.gamma.rvs(2., 3, 4, 5)
-    stats.gamma.fit(stats.gamma.rvs(2., size=7), 2.)
+    stats.gamma.rvs(2., 3, 4, 5, random_state=rng)
+    stats.gamma.fit(stats.gamma.rvs(2., size=7, random_state=rng), 2.)
 
     # Also for a discrete distribution
     stats.geom.pmf(x, 2, loc=3)  # no error, loc=3
@@ -9521,7 +9526,7 @@ def test_ncf_ppf_issue_17026():
 
 class TestHistogram:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(6561174822)
 
         # We have 8 bins
         # [1,2), [2,3), [3,4), [4,5), [5,6), [6,7), [7,8), [8,9)
@@ -9532,7 +9537,7 @@ class TestHistogram:
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
 
-        data = stats.norm.rvs(loc=1.0, scale=2.5, size=10000, random_state=123)
+        data = stats.norm.rvs(loc=1.0, scale=2.5, size=10000, random_state=self.rng)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
 
@@ -9586,7 +9591,7 @@ class TestHistogram:
 
     def test_rvs(self):
         N = 10000
-        sample = self.template.rvs(size=N, random_state=123)
+        sample = self.template.rvs(size=N, random_state=self.rng)
         assert_equal(np.sum(sample < 1.0), 0.0)
         assert_allclose(np.sum(sample <= 2.0), 1.0/25.0 * N, rtol=0.2)
         assert_allclose(np.sum(sample <= 2.5), 2.0/25.0 * N, rtol=0.2)
@@ -9680,7 +9685,7 @@ class TestLogUniform:
         # test roundtrip error
         cdf = rng.uniform(0, 1, size=1000)
         assert_allclose(dist.cdf(dist.ppf(cdf)), cdf)
-        rvs = dist.rvs(size=1000)
+        rvs = dist.rvs(size=1000, random_state=rng)
         assert_allclose(dist.ppf(dist.cdf(rvs)), rvs)
 
         # test a property of the pdf (and that there is no overflow)
@@ -9826,6 +9831,8 @@ class TestArgus:
 
 
 class TestNakagami:
+    def setup_method(self):
+        self.rng = np.random.default_rng(9626839526)
 
     def test_logpdf(self):
         # Test nakagami logpdf for an input where the PDF is smaller
@@ -9929,7 +9936,7 @@ class TestNakagami:
         # The first tuple of the parameters' values is discussed in gh-10908
         N = 100
         samples = stats.nakagami.rvs(size=N, nu=nu, loc=loc,
-                                     scale=scale, random_state=1337)
+                                     scale=scale, random_state=self.rng)
         nu_est, loc_est, scale_est = stats.nakagami.fit(samples)
         assert_allclose(nu_est, nu, rtol=0.2)
         assert_allclose(loc_est, loc, rtol=0.2)
@@ -9960,7 +9967,7 @@ class TestNakagami:
         nu = 0.5
         n = 100
         samples = stats.nakagami.rvs(size=n, nu=nu, loc=loc,
-                                     scale=scale, random_state=1337)
+                                     scale=scale, random_state=self.rng)
         nu_est, loc_est, scale_est = stats.nakagami.fit(samples, f0=nu)
 
         # Analytical values
@@ -9973,6 +9980,8 @@ class TestNakagami:
 
 
 class TestWrapCauchy:
+    def setup_method(self):
+        self.rng = np.random.default_rng(2439107123)
 
     def test_cdf_shape_broadcasting(self):
         # Regression test for gh-13791.
@@ -10004,7 +10013,8 @@ class TestWrapCauchy:
     @pytest.mark.parametrize('scale', [1e-10, 1, 1e10])
     def test_rvs_lie_on_circle(self, c, loc, scale):
         # Check that the random variates lie in range [0, 2*pi]
-        x = stats.wrapcauchy.rvs(c=c, loc=loc, scale=scale, size=1000)
+        x = stats.wrapcauchy.rvs(c=c, loc=loc, scale=scale,
+                                 size=1000, random_state=self.rng)
         assert np.all(x >= 0)
         assert np.all(x <= 2 * np.pi)
 
@@ -10016,9 +10026,9 @@ def test_rvs_no_size_error():
             return 1
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
-
+    rng = np.random.default_rng(1334886239)
     with assert_raises(TypeError, match=r"_rvs\(\) got (an|\d) unexpected"):
-        rvs_no_size.rvs()
+        rvs_no_size.rvs(random_state=rng)
 
 
 @pytest.mark.parametrize('distname, args', invdistdiscrete + invdistcont)

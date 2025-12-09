@@ -12,8 +12,8 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
-                       multilinear, exponential, unilinear, quadratic,
-                       polynomial)
+                       OdrError, multilinear, exponential, unilinear,
+                       quadratic, polynomial)
 
 
 class TestODR:
@@ -604,3 +604,18 @@ class TestODR:
         obj_pickle = pickle.dumps(output)
         del output
         pickle.loads(obj_pickle)
+
+    def test_explicit_model_with_implicit_job(self):
+        """
+        Verify fix for gh-23763 that ODR doesn't segfault
+        """
+        x = np.linspace(0, 10, 10)
+        y = 2.0 + 3.0 * x
+
+        data = Data(x, y)
+        model = unilinear  # this is an explicit model
+
+        # job=1 is implicit, should raise on explicit model
+        with assert_raises(OdrError):
+            odr = ODR(data, model, job=1)
+            odr.run()
