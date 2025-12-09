@@ -1530,6 +1530,8 @@ def assoc_laguerre(x, n, k=0.0):
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
 
     """
+    n = _nonneg_int_or_fail(n, 'n')
+    k = _nonneg_int_or_fail(k, 'k')
     return _ufuncs.eval_genlaguerre(n, k, x)
 
 
@@ -1865,10 +1867,26 @@ def euler(n):
 
 
 def lqn(n, z):
-    """Legendre function of the second kind.
+    """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, Qn(z) and
-    derivatives for all degrees from 0 to n (inclusive).
+    Compute sequence of Legendre functions of the second kind, :math:`Q_n(z)` and
+    derivatives for all degrees from :math:`0` to :math:`n` (inclusive).
+    Returns two arrays of size :math:`(n+1,)` containing :math:`Q_n(z)` and
+    :math:`Q_n'(z)`.
+
+    Parameters
+    ----------
+    n : int
+        Maximum degree of the Legendre functions.
+    z : array_like, complex
+        Real or complex input values.
+
+    Returns
+    -------
+    Qn_z : ndarray, shape (n+1,) + shape(z)
+        Values for all degrees 0..n
+    Qn_d_z : ndarray, shape (n+1,) + shape(z)
+        Derivatives for all degrees 0..n
 
     References
     ----------
@@ -1876,6 +1894,37 @@ def lqn(n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute :math:`Q_n(x)` and its derivatives on an interval.
+
+    >>> import numpy as np
+    >>> from scipy.special import lqn
+    >>> import matplotlib.pyplot as plt
+
+    >>> xs = np.linspace(-2, 2, 200)
+    >>> n_max = 3
+    >>> Qn, dQn = lqn(n_max, xs)
+
+    Plot the Legendre functions of the second kind :math:`Q_n(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(n_max + 1):
+    ...     ax.plot(xs, Qn[n], "-", label=rf"$n={n}$")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n(x)$")
+    >>> ax.legend()
+    >>> plt.show()
+
+    Plot the derivatives :math:`Q_n'(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> for n in range(n_max + 1):
+    ...     ax.plot(xs, dQn[n], "-", label=rf"$n={n}$")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n'(x)$")
+    >>> ax.legend()
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
