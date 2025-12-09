@@ -244,8 +244,6 @@ implementations, such as the [xsf
 project](https://github.com/scipy/xsf/issues/1) to establish a library of
 mathematical special function implementations which support both CPU and GPU.
 
-.. _dev-arrayapi_adding_tests:
-
 Documenting array API standard support
 --------------------------------------
 
@@ -501,13 +499,82 @@ best demonstrated with an example::
 
     """
 
+.. _dev-arrayapi_adding_tests:
+
+
 Adding tests
 ------------
 
-To run a test on multiple array backends, you should add the ``xp`` fixture to it,
-which is valued to the currently tested array namespace.
+To run a test on multiple array backends, you should add the ``xp`` fixture to it.
+It is similar to parameters created with `pytest.mark.parametrize`, and will take values
+over all currently tested array namespaces. ``scipy._lib._array_api`` provides the
+``make_xp_test_case`` decorator and``make_xp_pytest_param`` and ``make_xp_pytest_marks``
+functions to declare which functions are being tested by a test. These draw on the
+``xp_capabilities`` entries for a function (or in some cases those
+for a list of functions) to insert the relevant backend specific skip and xfail markers.
 
-The following pytest markers are available:
+``make_xp_test_case`` is applied as a decorator to a test function, test method, or
+entire test class, to declare what parts of the public API are being tested. Applying it
+to a test class is equivalent to applying it to each method separately. The decorator
+can be applied at both the class and method level as below::
+
+  @make_xp_test_case(my_function)
+  class TestMyFunction:
+      def test1(self, xp):
+          ...
+
+      @make_xp_test_case(other_function)
+      def test_integration_with_other_function(self, xp)
+          ...
+
+The result is that ``TestMyFunction.test1`` will have only the skips and xfails
+associated to ``my_function``, while ``TestMyFunction.test_integration_with_other_function``
+will have the combined skips and xfails of ``my_function`` and ``other_function``, with
+skips naturally taking precedence over xfails.
+
+``make_xp_pytest_param`` is provided for situations in which a common test body is
+parametrized over a list of functions using ``pytest.mark.parametrize::
+
+  @pytest.mark.parametrize("func", [make_xp_pytest_param(func) for func in tested_funcs])
+  def test_foo(func, xp):
+      ...
+
+ Unlike ``make_xp_test_case``, only a single function can be passed to any given call to
+ ``make_xp_pytest_param``. Additional arguments specify additional parameters for
+ ``pytest.mark.parametrize``, such as in the contrived example below::
+
+   @pytest.mark.parametrize(
+       "func,norm",
+       [
+           make_xp_pytest_param(func, norm)
+	   for func, norm in it.product(tested_functions, [True, False])
+       ]
+   )
+   def test_normed_foo(func, norm, xp):
+       ...
+
+ Given a function or list of functions, ``make_xp_pytest_marks`` directly returns
+ a list of associated pytest marks which can be used with the module-level
+ ``pytestmark = ...`` variable.
+
+The ``xp`` fixture enforces that all tests using it must draw from ``xp_capabilities``
+by using one or more of ``make_xp_pytest_param``, ``make_xp_test_case``, or
+``make_xp_pytest_marks``. This strict check can be circumvented by explicitly marking
+a test with ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string
+can be passed to this mark. For tests of private functionality for which there are no
+relevant ``xp_capabilities`` entries, one should use
+``pytest.mark.uses_xp_capabilities(False, reason="private")``. Grepping for instances of
+``pytest.mark.uses_xp_capabilities`` with reasons other than `"private"` or
+`"not applicable"` is a good way of finding work that needs to be done.
+
+Manually adding markers
+```````````````````````
+
+In addition to using ``make_xp_test_case``, ``make_xp_pytest_param``, order
+``make_xp_pytest_marks``, the following ``pytest`` markers are available and
+be added directly (What ``make_xp_test_case`` and friends actually do is give a
+process for adding ``skip_xp_backends`` and ``xfail_xp_backends`` markers in
+a declarative way).
 
 * ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
@@ -533,6 +600,13 @@ The following pytest markers are available:
   all tests that use it. This is useful e.g. to select all and only such tests::
 
     spin test -b all -m array_api_backends
+* ``uses_xp_capabilities(status, funcs=None, reason=None)``: discussed above, this
+  marker is for explicitly declaring tests as not drawing on ``xp_capabilities``
+  through ``make_xp_test_case`` or one of its equivalents. ``funcs`` is used to declare
+  a list of public functions which a test is testing.
+
+Array-agnostic assertions
+`````````````````````````
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
@@ -542,6 +616,13 @@ enforce that the namespaces of both the actual and desired arrays match the name
 which was set by the fixture. Tests without the ``xp`` fixture infer the namespace from
 the desired array. This machinery can be overridden by explicitly passing the ``xp=``
 parameter to the assertion functions.
+
+Test specific skips and xfails
+``````````````````````````````
+
+
+Examples
+````````
 
 The following examples demonstrate how to use the markers::
 
