@@ -712,7 +712,13 @@ After applying these markers, either through `make_xp_test_case` and friends, or
 
   spin test -b numpy -b torch -s cluster
 
-This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
+This automatically sets ``SCIPY_ARRAY_API`` appropriately and will cause
+only tests with the ``xp`` fixture and for the selected backends to be
+collected. Valid backends are ``numpy``, ``array_api_strict``, ``cupy``,
+``dask.array``, ``jax.numpy``, and ``torch``. One may also use ``-b all``
+to collect all tests using the ``xp`` fixture.
+
+To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
@@ -721,6 +727,25 @@ backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
+
+``torch`` has a concept of default dtype. By default, arrays of floating point
+numbers will have dtype ``torch.float32`` when no explicit dtype is specified.
+The default ``dtype`` can be changed in ``torch`` with ``torch.set_default_dtype``.
+A third environment variable (``SCIPY_DEFAULT_DTYPE``, again only used in the
+test suite) can be used to control ``torch``'s default dtype in tests. Valid
+values are ``"float64"`` and ``"float32"``. If ``SCIPY_DEFAULT_DTYPE`` is unset,
+the default for the default dtype is ``float64``. In general, the intention behind
+testing with different values of ``SCIPY_DEFAULT_DTYPE`` is not to test that
+functions work well and are accurate with both ``float32`` and ``float64`` inputs,
+this should instead be done mindfully by specifying specific dtypes for inputs
+provided in tests. The intention is instead to catch subtle bugs that can arise
+with the ``torch`` backend due to internal array creation that does explicitly
+specify a dtype. At the time of writing, there are many tests in the test suite
+which have test inputs generated through ``xp.asarray`` without specifying an
+explicit dtype, but this is not recommended practice for future tests. Identifying
+such calls to ``xp.asarray`` and other array creation functions within the test suite
+that do not specify the dtype and adding explicit dtypes could make for good first
+issues.
 
 Testing Practice
 ````````````````
