@@ -126,9 +126,9 @@ solve-group = "accelerate-ilp64"
 features = ["run-deps", "test-deps", "accelerate", "accelerate-ilp64"]
 solve-group = "accelerate-ilp64"
 
-[environments.py311-system-libs-osx]
+[environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-sparse", "system-libs"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "umfpack", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
@@ -554,8 +554,8 @@ libboost-headers = "==1.89.0"
 qhull = "==2020.2"
 
 [feature.system-libs.activation.env]
-BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/include/boost"
-BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/lib"
+BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/include/boost"
+BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py312-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
 cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
@@ -570,8 +570,8 @@ description = "Test SciPy with system libs"
 
 ### Alternative python versions ###
 
-[feature.py311]
+[feature.py312]
 platforms = ["linux-64", "osx-arm64", "win-64"]
 
-[feature.py311.dependencies]
-python = "3.11.*"
+[feature.py312.dependencies]
+python = "3.12.*"
