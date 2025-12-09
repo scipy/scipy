@@ -108,6 +108,7 @@ class TestVsNumpyNorm:
             [
                 [1, 0, 3],
                 [-1, 1, 4j]],
+            np.array([[-128, 127], [127, -128]], dtype=np.int8),
             )
 
     def test_sparse_matrix_norms(self):
@@ -144,6 +145,6 @@ class TestVsNumpyNorm:
                 S = sparse_type(M)
                 for axis in (0, 1, -1, -2, (0, ), (1, ), (-1, ), (-2, )):
                     assert_allclose(spnorm(S, axis=axis), npnorm(M, axis=axis))
-                    for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42:
+                    for ord in None, 2, np.inf, -np.inf, 1, 0.5, 0.42, 0:
                         assert_allclose(spnorm(S, ord, axis=axis),
                                         npnorm(M, ord, axis=axis))

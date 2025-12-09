@@ -96,9 +96,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over an axis is not implemented for DOK format."
-            )
+            return self.tocoo().count_nonzero(axis=axis)
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__

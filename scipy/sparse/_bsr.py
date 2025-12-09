@@ -225,9 +225,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     def count_nonzero(self, axis=None):
         if axis is not None:
-            raise NotImplementedError(
-                "count_nonzero over axis is not implemented for BSR format."
-            )
+            return self.tocsr().count_nonzero(axis=axis)
         return np.count_nonzero(self._deduped_data())
 
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
