@@ -925,8 +925,8 @@ class TestSolve:
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
                                           'pos', 'positive definite',
-                                          'symmetric', 'hermitian', 'banded',
-                                          'general', 'sym', 'her', 'gen'])
+                                          'symmetric', 'hermitian', 'general',
+                                          'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
     @pytest.mark.parametrize('overwrite', [True, False])
@@ -1184,6 +1184,34 @@ class TestSolve:
         a[1, 0, 0] = a[1, 0, 1] = 0
         with pytest.raises(LinAlgError):
             solve(a, b, assume_a="tridiagonal")
+
+    def test_banded(self):
+        rng = np.random.default_rng(982345982439826)
+
+        n = 20
+        A = rng.random((n, n))
+        b = rng.random(n)
+
+        # test if even for full matrix solver gives correct results
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # restrict to banded
+        A = np.triu(np.tril(A, k=5), k=-7)
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res, atol=1e-14)
+
+        # ill-conditioned inputs warn
+        A[0, 0] = 1e40
+        with pytest.warns(LinAlgWarning):
+            solve(A, b, assume_a="banded")
+
+        # singular inputs raise
+        A[-1, :] = 0
+        with pytest.raises(LinAlgError):
+            solve(A, b, assume_a="banded")
 
 
 class TestSolveTriangular:
