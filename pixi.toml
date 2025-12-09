@@ -128,7 +128,7 @@ solve-group = "accelerate-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"] #, "umfpack"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"]
 
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
@@ -528,15 +528,6 @@ marray-python = "*"
 
 
 ### Optional dependencies ###
-
-[feature.umfpack]
-platforms = ["osx-arm64", "linux-64"]
-
-[feature.umfpack.dependencies]
-# scikit-umfpack is pinned because 0.4.2 packages seem broken, see gh-23564
-scikit-umfpack = "==0.3.3"
-setuptools = "<67"
-
 
 [feature.scikit-sparse]
 platforms = ["linux-64", "osx-arm64", "win-64"]
