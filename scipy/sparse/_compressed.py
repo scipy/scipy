@@ -585,7 +585,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+        self_indptr = self.indptr.astype(idx_dtype, copy=False)
+        self_indices = self.indices.astype(idx_dtype, copy=False)
+
+        row_nnz = self_indptr[indices + 1] - self_indptr[indices]
         res_indptr = np.zeros(M + 1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
@@ -595,8 +598,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_row_index(
             M,
             indices,
-            self.indptr.astype(idx_dtype, copy=False),
-            self.indices.astype(idx_dtype, copy=False),
+            self_indptr,
+            self_indices,
             self.data,
             res_indices,
             res_data
@@ -804,23 +807,29 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data[offsets] = x
             return
 
-        mask = (offsets >= 0)
+        is_existing = (offsets >= 0)
+        N_new = len(is_existing) - np.count_nonzero(is_existing)
+
         # Boundary between csc and convert to coo
         # The value 0.001 is justified in gh-19962#issuecomment-1920499678
-        if self.nnz - mask.sum() < self.nnz * 0.001:
+        if N_new < self.nnz * 0.001:
             # replace existing entries
-            self.data[offsets[mask]] = x[mask]
+            self.data[offsets[is_existing]] = x[is_existing]
             # create new entries
-            mask = ~mask
-            i = i[mask]
-            j = j[mask]
-            self._insert_many(i, j, x[mask])
+            is_new = np.logical_not(is_existing, out=is_existing)
+            del is_existing
+            self._insert_many(i[is_new], j[is_new], x[is_new])
         else:
             # convert to coo for _set_diag
+            do_sort = self.has_sorted_indices
             coo = self.tocoo()
             coo._setdiag(values, k)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, _ = arrays
+            # Sort the indices (like in _insert_many)
+            if do_sort:
+                self.has_sorted_indices = False  # force a sort
+                self.sort_indices()
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self._shape_as_2d)

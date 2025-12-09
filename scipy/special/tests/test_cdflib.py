@@ -251,7 +251,7 @@ class TestCDFlib:
             0,
             [ProbArg(), Arg(0, 1e3, inclusive_a=False),
              Arg(0, 1e4, inclusive_a=False)],
-            rtol=1e-7,
+            rtol=1e-12,
             endpt_atol=[None, 1e-7, 1e-10])
 
     def test_gdtrib(self):
@@ -876,3 +876,29 @@ class TestPdtrik:
         # Reference values for p were computed with mpmath using
         # mp.gammainc(k+1, a=m, regularized=True)
         assert_allclose(sp.pdtrik(p, m), k, rtol=1e-15)
+
+@pytest.mark.parametrize("a, b, p, ref", [
+    (0, 0, 0, np.nan),
+    (0, 0, 1, np.nan),
+    (0, np.inf, 0, np.nan),
+    (0, np.inf, 1, np.nan),
+    (np.inf, 0, 0, np.nan),
+    (np.inf, 0, 1, np.nan),
+    (np.inf, np.inf, 0, np.nan),
+    (np.inf, np.inf, 1, np.nan)
+])
+def test_gdtrix_edge_cases(a, b, p, ref):
+    assert_equal(sp.gdtrix(a, b, p), ref)
+
+@pytest.mark.parametrize("p, b, x, ref", [
+    (0, 0, 0, np.nan),
+    (0, 0, np.inf, np.nan),
+    (0, 1, 0, np.nan),
+    (0, 1, np.inf, 0),
+    (np.inf, 0, 0, np.nan),
+    (np.inf, 0, np.inf, np.nan),
+    (np.inf, 1, 0, np.nan),
+    (np.inf, 1, np.inf, np.nan)
+])
+def test_gdtria_edge_cases(p, b, x, ref):
+    assert_equal(sp.gdtria(p, b, x), ref)

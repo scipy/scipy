@@ -40,8 +40,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._util import (_get_nan, _rename_parameter, _contains_nan,
-                              normalize_axis_index, np_vecdot,)
+from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan, np_vecdot
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -72,9 +71,11 @@ from scipy._lib._array_api import (
     is_dask,
     is_numpy,
     is_cupy,
+    is_marray,
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_result_type,
     xp_capabilities,
     xp_ravel,
     _length_nonmasked,
@@ -2394,7 +2395,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     Calculate space of values for x
 
     >>> x = res.lowerlimit + np.linspace(0, res.binsize*res.cumcount.size,
-    ...                                  res.cumcount.size)
+    ...                                  res.cumcount.size + 1)
 
     Plot histogram and cumulative histogram
 
@@ -2403,7 +2404,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     >>> ax2 = fig.add_subplot(1, 2, 2)
     >>> ax1.hist(samples, bins=25)
     >>> ax1.set_title('Histogram')
-    >>> ax2.bar(x, res.cumcount, width=res.binsize)
+    >>> ax2.bar(x[:-1], res.cumcount, width=res.binsize, align='edge')
     >>> ax2.set_title('Cumulative histogram')
     >>> ax2.set_xlim([x.min(), x.max()])
 
@@ -3057,10 +3058,11 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {'normal': float(special.erfinv(0.5) * 2.0 * math.sqrt(2.0))}
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', 'no quantile (take_along_axis)'),
+                                ('jax.numpy', 'lazy -> no _axis_nan_policy)')])
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
@@ -3172,6 +3174,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
            [ 1.]])
 
     """
+    xp = array_namespace(x)
+
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
@@ -3183,7 +3187,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if len(rng) != 2:
         raise TypeError("`rng` must be a two element sequence.")
 
-    if np.isnan(rng).any():
+    if np.isnan(rng).any():  # OK to use NumPy; this shouldn't be an array
         raise ValueError("`rng` must not contain NaNs.")
 
     rng = (rng[0]/100, rng[1]/100) if rng[0] < rng[1] else (rng[1]/100, rng[0]/100)
@@ -3194,13 +3198,15 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     if interpolation in {'lower', 'midpoint', 'higher', 'nearest'}:
         interpolation = '_' + interpolation
 
+    rng = xp.asarray(rng, dtype=xp_result_type(x, force_floating=True, xp=xp))
     pct = stats.quantile(x, rng, axis=-1, method=interpolation, keepdims=True)
     out = pct[..., 1:2] - pct[..., 0:1]
 
     if scale != 1.0:
         out /= scale
 
-    return out[()] if keepdims else np.squeeze(out, axis=axis)[()]
+    out = out if keepdims else xp.squeeze(out, axis=-1)
+    return out[()] if out.ndim == 0 else out
 
 
 def _mad_1d(x, center, nan_policy):
@@ -3628,7 +3634,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities()
 @_axis_nan_policy_factory(lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1)
 def trim_mean(a, proportiontocut, axis=0):
     """Return mean of array after trimming a specified fraction of extreme values
@@ -3692,13 +3698,15 @@ def trim_mean(a, proportiontocut, axis=0):
     array([ 2.5, 25. ])
 
     """
-    a = np.asarray(a)
+    xp = array_namespace(a)
 
-    if a.size == 0:
-        return _get_nan(a)
+    a = xp.asarray(a)
+
+    if xp_size(a) == 0:
+        return _get_nan(a, xp=xp)
 
     if axis is None:
-        a = a.ravel()
+        a = xp_ravel(a)
         axis = 0
 
     nobs = a.shape[axis]
@@ -3707,32 +3715,16 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
+    atmp = (np.partition(a, (lowercut, uppercut - 1), axis) if is_numpy(xp)
+            else xp.sort(a, axis=axis))
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return np.mean(atmp[tuple(sl)], axis=axis)
+    trimmed = xp_promote(atmp[tuple(sl)], force_floating=True, xp=xp)
+    return xp.mean(trimmed, axis=axis)
 
 
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
-
-
-def _create_f_oneway_nan_result(shape, axis, samples):
-    """
-    This is a helper function for f_oneway for creating the return values
-    in certain degenerate conditions.  It creates return values that are
-    all nan with the appropriate shape for the given `shape` and `axis`.
-    """
-    axis = normalize_axis_index(axis, len(shape))
-    shp = shape[:axis] + shape[axis+1:]
-    f = np.full(shp, fill_value=_get_nan(*samples))
-    prob = f.copy()
-    return F_onewayResult(f[()], prob[()])
-
-
-def _first(arr, axis):
-    """Return arr[..., 0:1, ...] where 0:1 is in the `axis` position."""
-    return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
 def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
@@ -3755,7 +3747,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
     return False
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(jax_jit=False, cpu_only=True, exceptions=['cupy'])
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0, equal_var=True):
@@ -3900,6 +3892,9 @@ def f_oneway(*samples, axis=0, equal_var=True):
     Welch ANOVA will be performed if `equal_var` is False.
 
     """
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
@@ -3907,16 +3902,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
 
-    # We haven't explicitly validated axis, but if it is bad, this call of
-    # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis
-    # dimension, are not the same.
-    alldata = np.concatenate(samples, axis=axis)
-    bign = alldata.shape[axis]
+    # axis is guaranteed to be -1 by the _axis_nan_policy decorator
+    alldata = xp.concat(samples, axis=-1)
+    bign = _length_nonmasked(alldata, axis=-1, xp=xp)
 
-    # Check if the inputs are too small
+    # Check if the inputs are too small (for testing _axis_nan_policy decorator)
     if _f_oneway_is_too_small(samples):
-        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
+        NaN = _get_nan(*samples, xp=xp)
+        return F_onewayResult(NaN, NaN)
 
     # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
@@ -3927,25 +3920,17 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # It is True if the values within the groups along the axis slice are
     # identical. In the typical case where each input array is 1-d, is_const is
     # a 1-d array with length num_groups.
-    is_const = np.concatenate(
-        [(_first(sample, axis) == sample).all(axis=axis,
-                                              keepdims=True)
-         for sample in samples],
-        axis=axis
-    )
+    is_const = xp.concat([xp.all(xp.diff(sample, axis=-1) == 0, axis=-1, keepdims=True)
+                          for sample in samples], axis=-1)
 
     # all_const is a boolean array with shape (...) (see previous comment).
     # It is True if the values within each group along the axis slice are
     # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
-    all_const = is_const.all(axis=axis)
-    if all_const.any():
-        msg = ("Each of the input arrays is constant; "
-               "the F statistic is not defined or infinite")
-        warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
+    all_const = xp.all(is_const, axis=-1)
 
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
-    all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
+    all_same_const = xp.all(xp.diff(alldata, axis=-1) == 0, axis=-1)
 
     if not isinstance(equal_var, bool):
         raise TypeError("Expected a boolean value for 'equal_var'")
@@ -3955,17 +3940,17 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
         # to a shift in location, and centering all data around zero vastly
         # improves numerical stability.
-        offset = alldata.mean(axis=axis, keepdims=True)
+        offset = xp.mean(alldata, axis=-1, keepdims=True)
         alldata = alldata - offset
 
-        normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+        normalized_ss = xp.sum(alldata, axis=-1)**2. / bign
 
-        sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+        sstot = xp.vecdot(alldata, alldata, axis=-1) - normalized_ss
 
         ssbn = 0
         for sample in samples:
-            smo_ss = _square_of_sums(sample - offset, axis=axis)
-            ssbn = ssbn + smo_ss / sample.shape[axis]
+            smo_ss = xp.sum(sample - offset, axis=-1)**2.
+            ssbn = ssbn + smo_ss / _length_nonmasked(sample, axis=-1, xp=xp)
 
         # Naming: variables ending in bn/b are for "between treatments", wn/w are
         # for "within treatments"
@@ -3977,38 +3962,43 @@ def f_oneway(*samples, axis=0, equal_var=True):
         msw = sswn / dfwn
         with np.errstate(divide='ignore', invalid='ignore'):
             f = msb / msw
-
-        prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+        dfn, dfd = dfbn, dfwn
 
     else:
         # calculate basic statistics for each sample
         # Beginning of second paragraph [4] page 1:
         # "As a particular case $y_t$ may be the means ... of samples
-        y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
+        y_t = xp.stack([xp.mean(sample, axis=-1) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = np.asarray([sample.shape[axis] for sample in samples])
-        n_t = np.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
+        if is_marray(xp):
+            n_t = xp.stack([_length_nonmasked(sample, axis=-1, xp=xp)
+                            for sample in samples])
+            n_t = xp.asarray(n_t, dtype=n_t.dtype)
+        else:
+            n_t = xp.asarray([sample.shape[-1] for sample in samples], dtype=y_t.dtype)
+            n_t = xp.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
-        s_t2= np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
+        s_t2 = xp.stack([xp.var(sample, axis=-1, correction=1) for sample in samples])
 
         # calculate weight by number of data and variance
         # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
         w_t = n_t / s_t2
         # sum of w_t
-        s_w_t = np.sum(w_t, axis=0)
+        s_w_t = xp.sum(w_t, axis=0)
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
-        y_hat = np_vecdot(w_t, y_t, axis=0) / np.sum(w_t, axis=0)
+        axis_zero = -w_t.ndim
+        y_hat = xp.vecdot(w_t, y_t, axis=axis_zero) / xp.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator =  np_vecdot(w_t, (y_t - y_hat)**2, axis=0) / (k - 1)
+        numerator =  xp.vecdot(w_t, (y_t - y_hat)**2, axis=axis_zero) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0)
+                xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero)
         )
         f = numerator / denominator
 
@@ -4020,28 +4010,22 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # ref.[4] p.334 eq.30
         hat_f2 = (
                 (k**2 - 1) /
-                (3 * np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0))
+                (3 * xp.vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=axis_zero))
         )
 
-        # calculate p value
-        # ref.[4] p.334 eq.28
-        prob = stats.f.sf(f, hat_f1, hat_f2)
+        dfn, dfd = hat_f1, hat_f2
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
-    if np.isscalar(f):
-        if all_same_const:
-            f = np.nan
-            prob = np.nan
-        elif all_const:
-            f = np.inf
-            prob = 0.0
-    else:
-        f[all_const] = np.inf
-        prob[all_const] = 0.0
-        f[all_same_const] = np.nan
-        prob[all_same_const] = np.nan
+    f = xpx.at(f)[all_const].set(xp.inf)
+    f = xpx.at(f)[all_same_const].set(xp.nan)
 
+    # calculate p value
+    # ref.[4] p.334 eq.28
+    prob = special.fdtrc(dfn, dfd, f)
+    prob = xp.asarray(prob, dtype=f.dtype)
+
+    f, prob = (f[()], prob[()]) if f.ndim == 0 else (f, prob)
     return F_onewayResult(f, prob)
 
 
@@ -4741,7 +4725,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`method` must be `None` if arguments are not NumPy arrays.'
         raise ValueError(message)
     elif method is not None:
-        message = ('`method` must be an instance of `PermutationMethod`,'
+        message = ('`method` must be an instance of `PermutationMethod`, '
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
@@ -7388,8 +7372,10 @@ KstestResult = _make_tuple_bunch('KstestResult', ['statistic', 'pvalue'],
                                  ['statistic_location', 'statistic_sign'])
 
 
-def _compute_dplus(cdfvals, x):
-    """Computes D+ as used in the Kolmogorov-Smirnov test.
+def _compute_d(cdfvals, x, sign, xp=None):
+    """Computes D+/D- as used in the Kolmogorov-Smirnov test.
+
+    Vectorized along the last axis.
 
     Parameters
     ----------
@@ -7397,42 +7383,24 @@ def _compute_dplus(cdfvals, x):
         Sorted array of CDF values between 0 and 1
     x: array_like
         Sorted array of the stochastic variable itself
+    sign: int
+        Indicates whether to compute D+ (+1) or D- (-1).
 
     Returns
     -------
     res: Pair with the following elements:
-        - The maximum distance of the CDF values below Uniform(0, 1).
+        - The maximum distance of the CDF values below/above (D+/D-) Uniform(0, 1).
         - The location at which the maximum is reached.
 
     """
-    n = len(cdfvals)
-    dplus = (np.arange(1.0, n + 1) / n - cdfvals)
-    amax = dplus.argmax()
-    loc_max = x[amax]
-    return (dplus[amax], loc_max)
-
-
-def _compute_dminus(cdfvals, x):
-    """Computes D- as used in the Kolmogorov-Smirnov test.
-
-    Parameters
-    ----------
-    cdfvals : array_like
-        Sorted array of CDF values between 0 and 1
-    x: array_like
-        Sorted array of the stochastic variable itself
-
-    Returns
-    -------
-    res: Pair with the following elements:
-        - Maximum distance of the CDF values above Uniform(0, 1)
-        - The location at which the maximum is reached.
-    """
-    n = len(cdfvals)
-    dminus = (cdfvals - np.arange(0.0, n)/n)
-    amax = dminus.argmax()
-    loc_max = x[amax]
-    return (dminus[amax], loc_max)
+    xp = array_namespace(cdfvals, x) if xp is None else xp
+    n = cdfvals.shape[-1]
+    D = (xp.arange(1.0, n + 1, dtype=x.dtype) / n - cdfvals if sign == +1
+         else (cdfvals - xp.arange(0.0, n, dtype=x.dtype)/n))
+    amax = xp.argmax(D, axis=-1, keepdims=True)
+    loc_max = xp.squeeze(xp.take_along_axis(x, amax, axis=-1), axis=-1)
+    D = xp.squeeze(xp.take_along_axis(D, amax, axis=-1), axis=-1)
+    return D[()] if D.ndim == 0 else D, loc_max[()] if loc_max.ndim == 0 else loc_max
 
 
 def _tuple_to_KstestResult(statistic, pvalue,
@@ -7446,11 +7414,12 @@ def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, jax_jit=False,
+                 skip_backends=[('dask.array', 'needs take_along_axis')])
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=1, n_outputs=4,
                           result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
-def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto', *, axis=0):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7478,6 +7447,11 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
           * 'approx' : approximates the two-sided probability with twice
             the one-sided probability
           * 'asymp': uses asymptotic distribution of test statistic
+    axis : int or tuple of ints, default: 0
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -7578,6 +7552,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     hypothesis in favor of the alternative.
 
     """
+    # `_axis_nan_policy` decorator ensures `axis=-1`
+    xp = array_namespace(x)
     mode = method
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7585,45 +7561,49 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError(f"Unexpected value {alternative=}")
 
-    N = len(x)
-    x = np.sort(x)
+    N = x.shape[-1]
+    x = xp.sort(x, axis=-1)
+    x = xp_promote(x, force_floating=True, xp=xp)
     cdfvals = cdf(x, *args)
-    np_one = np.int8(1)
+    ones = xp.ones(x.shape[:-1], dtype=xp.int8)
+    ones = ones[()] if ones.ndim == 0 else ones
 
     if alternative == 'greater':
-        Dplus, d_location = _compute_dplus(cdfvals, x)
-        return KstestResult(Dplus, distributions.ksone.sf(Dplus, N),
+        Dplus, d_location = _compute_d(cdfvals, x, +1)
+        pvalue = xp.asarray(distributions.ksone.sf(Dplus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dplus, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=np_one)
+                            statistic_sign=ones)
 
     if alternative == 'less':
-        Dminus, d_location = _compute_dminus(cdfvals, x)
-        return KstestResult(Dminus, distributions.ksone.sf(Dminus, N),
+        Dminus, d_location = _compute_d(cdfvals, x, -1)
+        pvalue = xp.asarray(distributions.ksone.sf(Dminus, N), dtype=x.dtype)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        return KstestResult(Dminus, pvalue,
                             statistic_location=d_location,
-                            statistic_sign=-np_one)
+                            statistic_sign=-ones)
 
     # alternative == 'two-sided':
-    Dplus, dplus_location = _compute_dplus(cdfvals, x)
-    Dminus, dminus_location = _compute_dminus(cdfvals, x)
-    if Dplus > Dminus:
-        D = Dplus
-        d_location = dplus_location
-        d_sign = np_one
-    else:
-        D = Dminus
-        d_location = dminus_location
-        d_sign = -np_one
+    Dplus, dplus_location = _compute_d(cdfvals, x, +1)
+    Dminus, dminus_location = _compute_d(cdfvals, x, -1)
+    i_plus = Dplus > Dminus
+    D = xp.where(i_plus, Dplus, Dminus)
+    d_location = xp.where(i_plus, dplus_location, dminus_location)
+    d_sign = xp.where(i_plus, ones, -ones)
+    if D.ndim == 0:
+        D, d_location, d_sign = D[()], d_location[()], d_sign[()]
 
     if mode == 'auto':  # Always select exact
         mode = 'exact'
     if mode == 'exact':
         prob = distributions.kstwo.sf(D, N)
     elif mode == 'asymp':
-        prob = distributions.kstwobign.sf(D * np.sqrt(N))
+        prob = distributions.kstwobign.sf(D * math.sqrt(N))
     else:
         # mode == 'approx'
         prob = 2 * distributions.ksone.sf(D, N)
-    prob = np.clip(prob, 0, 1)
+    prob = xp.clip(xp.asarray(prob, dtype=x.dtype), 0., 1.)
     return KstestResult(D, prob,
                         statistic_location=d_location,
                         statistic_sign=d_sign)
@@ -8067,7 +8047,8 @@ def _parse_kstest_args(data1, data2, args, N):
         cdf = data2
         data2 = None
 
-    data1 = np.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
+    xp = array_namespace(data1, data2, *args)
+    data1 = xp.sort(rvsfunc(*args, size=N) if rvsfunc else data1)
     return data1, data2, cdf
 
 
@@ -8519,7 +8500,8 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[("cupy", "no rankdata"), ("dask.array", "no rankdata")],
+                 jax_jit=False)
 @_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples, axis=0):
     """Compute the Friedman test for repeated samples.
@@ -8584,8 +8566,12 @@ def friedmanchisquare(*samples, axis=0):
     """
     k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of samples must be given '
+        raise ValueError('At least 3 samples must be given '
                          f'for Friedman test, got {k}.')
+
+    xp = array_namespace(*samples)
+    samples = xp_promote(*samples, force_floating=True, xp=xp)
+    dtype = samples[0].dtype
 
     n = samples[0].shape[-1]
     if n == 0:  # only for `test_axis_nan_policy`; user doesn't see this
@@ -8594,22 +8580,20 @@ def friedmanchisquare(*samples, axis=0):
     # Rank data
     # axis-slices are aligned with axis -1 by decorator; stack puts samples along axis 0
     # The transpose flips this so we can work with axis-slices along -1. This is a
-    # reducing statistic, so both axes 0 and -1 are consumed, but what's left has to be
-    # transposed back at the end.
-    data = np.stack(samples).T
-    data = data.astype(float)
+    # reducing statistic, so both axes 0 and -1 are consumed.
+    data = xp_swapaxes(xp.stack(samples), 0, -1)
     data, t = _rankdata(data, method='average', return_ties=True)
+    data, t = xp.asarray(data, dtype=dtype), xp.asarray(t, dtype=dtype)
 
     # Handle ties
-    ties = np.sum(t * (t*t - 1), axis=(0, -1))
+    ties = xp.sum(t * (t*t - 1), axis=(0, -1))
     c = 1 - ties / (k*(k*k - 1)*n)
 
-    ssbn = np.sum(data.sum(axis=0)**2, axis=-1)
+    ssbn = xp.sum(xp.sum(data, axis=0)**2, axis=-1)
     statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    statistic = statistic.T
-    chi2 = _SimpleChi2(k - 1)
-    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    chi2 = _SimpleChi2(xp.asarray(k - 1, dtype=dtype))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
     return FriedmanchisquareResult(statistic, pvalue)
 
 
@@ -8617,10 +8601,13 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(cpu_only=True, # torch GPU can't use `stdtr`
+                 skip_backends=[('dask.array', 'needs rankdata'),
+                                ('cupy', 'needs rankdata'),
+                                ('jax.numpy', 'needs _axis_nan_policy decorator')])
 @_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
-                  nan_policy='propagate'):
+                  nan_policy='propagate', *, axis=0):
     """Compute the Brunner-Munzel test on samples x and y.
 
     The Brunner-Munzel test is a nonparametric test of the null hypothesis that
@@ -8655,6 +8642,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    axis : int or None, default=0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If None, the input will be
+        raveled before computing the statistic.
 
     Returns
     -------
@@ -8695,36 +8687,40 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    nx = len(x)
-    ny = len(y)
+    xp = array_namespace(x, y)
+    nx = x.shape[-1]
+    ny = y.shape[-1]
 
-    rankc = rankdata(np.concatenate((x, y)))
-    rankcx = rankc[0:nx]
-    rankcy = rankc[nx:nx+ny]
-    rankcx_mean = np.mean(rankcx)
-    rankcy_mean = np.mean(rankcy)
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    rankx_mean = np.mean(rankx)
-    ranky_mean = np.mean(ranky)
+    # _axis_nan_policy decorator ensures we can work along the last axis
+    rankc = rankdata(xp.concat((x, y), axis=axis), axis=-1)
+    rankcx = rankc[..., 0:nx]
+    rankcy = rankc[..., nx:nx+ny]
+    rankcx_mean = xp.mean(rankcx, axis=-1, keepdims=True)
+    rankcy_mean = xp.mean(rankcy, axis=-1, keepdims=True)
+    rankx = rankdata(x, axis=-1)
+    ranky = rankdata(y, axis=-1)
+    rankx_mean = xp.mean(rankx, axis=-1, keepdims=True)
+    ranky_mean = xp.mean(ranky, axis=-1, keepdims=True)
 
     temp_x = rankcx - rankx - rankcx_mean + rankx_mean
-    Sx = np_vecdot(temp_x, temp_x)
+    Sx = xp.vecdot(temp_x, temp_x, axis=-1)
     Sx /= nx - 1
     temp_y = rankcy - ranky - rankcy_mean + ranky_mean
-    Sy = np_vecdot(temp_y, temp_y)
+    Sy = xp.vecdot(temp_y, temp_y, axis=-1)
     Sy /= ny - 1
 
+    rankcx_mean = xp.squeeze(rankcx_mean, axis=-1)
+    rankcy_mean = xp.squeeze(rankcy_mean, axis=-1)
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
-    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+    wbfn /= (nx + ny) * xp.sqrt(nx * Sx + ny * Sy)
 
     if distribution == "t":
-        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
-        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
-        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df_numer = xp.pow(nx * Sx + ny * Sy, 2.0)
+        df_denom = xp.pow(nx * Sx, 2.0) / (nx - 1)
+        df_denom += xp.pow(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
 
-        if (df_numer == 0) and (df_denom == 0):
+        if xp.any(df_numer == 0) and xp.any(df_denom == 0):
             message = ("p-value cannot be estimated with `distribution='t' "
                        "because degrees of freedom parameter is undefined "
                        "(0/0). Try using `distribution='normal'")
@@ -8737,7 +8733,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=xp)
 
     return BrunnerMunzelResult(wbfn, p)
 
@@ -9902,66 +9898,6 @@ def _validate_distribution(values, weights):
         return values, weights
 
     return values, None
-
-
-#####################################
-#         SUPPORT FUNCTIONS         #
-#####################################
-
-
-def _sum_of_squares(a, axis=0):
-    """Square each element of the input array, and return the sum(s) of that.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate. Default is 0. If None, compute over
-        the whole array `a`.
-
-    Returns
-    -------
-    sum_of_squares : ndarray
-        The sum along the given axis for (a**2).
-
-    See Also
-    --------
-    _square_of_sums : The square(s) of the sum(s) (the opposite of
-        `_sum_of_squares`).
-
-    """
-    a, axis = _chk_asarray(a, axis)
-    return np_vecdot(a, a, axis=axis)
-
-
-def _square_of_sums(a, axis=0):
-    """Sum elements of the input array, and return the square(s) of that sum.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate. Default is 0. If None, compute over
-        the whole array `a`.
-
-    Returns
-    -------
-    square_of_sums : float or ndarray
-        The square of the sum over `axis`.
-
-    See Also
-    --------
-    _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
-
-    """
-    a, axis = _chk_asarray(a, axis)
-    s = np.sum(a, axis)
-    if not np.isscalar(s):
-        return s.astype(float) * s
-    else:
-        return float(s) * s
 
 
 @xp_capabilities(skip_backends=[("cupy", "`repeat` can't handle array second arg"),

@@ -8,14 +8,17 @@ from pytest import raises as assert_raises
 
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
-from scipy.signal.windows._windows import _WIN_FUNC_DATA
+from scipy.signal.windows._windows import _WIN_FUNC_DATA, _WIN_FUNCS
 from scipy._lib._array_api import (
-     xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
-     assert_array_almost_equal, SCIPY_DEVICE, is_numpy
+    xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
+    assert_array_almost_equal, SCIPY_DEVICE, is_numpy, make_xp_test_case,
+    make_xp_pytest_param, _xp_copy_to_numpy
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
+
+lazy_xp_modules = [windows]
 
 
 window_funcs = [
@@ -44,6 +47,7 @@ window_funcs = [
     ]
 
 
+@make_xp_test_case(windows.barthann)
 class TestBartHann:
 
     def test_basic(self, xp):
@@ -60,6 +64,7 @@ class TestBartHann:
                         rtol=1e-15, atol=1e-15)
 
 
+@make_xp_test_case(windows.bartlett)
 class TestBartlett:
 
     def test_basic(self, xp):
@@ -71,6 +76,7 @@ class TestBartlett:
                         xp.asarray([0, 1/3, 2/3, 1.0, 2/3, 1/3], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.blackman)
 class TestBlackman:
 
     def test_basic(self, xp):
@@ -93,6 +99,7 @@ class TestBlackman:
                         dtype=xp.float64), atol=1e-14)
 
 
+@make_xp_test_case(windows.blackmanharris)
 class TestBlackmanHarris:
 
     def test_basic(self, xp):
@@ -113,7 +120,7 @@ class TestBlackmanHarris:
                                     0.055645, 6.0e-05], dtype=xp.float64))
 
 
-@skip_xp_backends('jax.numpy', reason='item assignment')
+@make_xp_test_case(windows.taylor)
 class TestTaylor:
 
     def test_normalized(self, xp):
@@ -154,7 +161,6 @@ class TestTaylor:
             ], dtype=xp.float64)
         )
 
-    @skip_xp_backends(cpu_only=True)
     def test_correctness(self, xp):
         """This test ensures the correctness of the implemented Taylor
         Windowing function. A Taylor Window of 1024 points is created, its FFT
@@ -176,9 +182,8 @@ class TestTaylor:
         # scientific publication do not normalize the values. Normalizing
         # changes the sidelobe level from the desired value.
         w = windows.taylor(M_win, nbar=4, sll=35, norm=False, sym=False, xp=xp)
-        f = fft(w, N_fft)
+        f_np = fft(_xp_copy_to_numpy(w), N_fft)
 
-        f_np = np.asarray(f)
         spec = 20 * np.log10(np.abs(f_np / np.max(f_np)))
 
         first_zero = np.argmax(np.diff(spec) > 0)
@@ -193,6 +198,7 @@ class TestTaylor:
         assert math.isclose(BW_18dB, 2.6112, abs_tol=0.1)
 
 
+@make_xp_test_case(windows.bohman)
 class TestBohman:
 
     def test_basic(self, xp):
@@ -210,6 +216,7 @@ class TestBohman:
                                     dtype=xp.float64))
 
 
+@make_xp_test_case(windows.boxcar)
 class TestBoxcar:
 
     def test_basic(self, xp):
@@ -256,8 +263,7 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
                   0.133904, 0.107279, 0.203894]
 
 
-@skip_xp_backends('jax.numpy', reason='item assignment')
-@skip_xp_backends('dask.array', reason='data-dependent output shapes')
+@make_xp_test_case(windows.chebwin)
 class TestChebWin:
 
     def test_basic(self, xp):
@@ -353,6 +359,7 @@ exponential_data = {
 }
 
 
+@make_xp_test_case(windows.exponential)
 def test_exponential(xp):
     for k, v in exponential_data.items():
         if v is None:
@@ -362,6 +369,7 @@ def test_exponential(xp):
             xp_assert_close(win, xp.asarray(v), rtol=1e-14)
 
 
+@make_xp_test_case(windows.flattop)
 class TestFlatTop:
 
     def test_basic(self, xp):
@@ -384,6 +392,7 @@ class TestFlatTop:
                                      dtype=xp.float64))
 
 
+@make_xp_test_case(windows.gaussian)
 class TestGaussian:
 
     def test_basic(self, xp):
@@ -408,6 +417,7 @@ class TestGaussian:
                                     0.8007374029168081], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.general_cosine)
 class TestGeneralCosine:
 
     def test_basic(self, xp):
@@ -420,6 +430,7 @@ class TestGeneralCosine:
                         xp.asarray([0.4, 0.3, 1, 0.3], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.general_hamming)
 class TestGeneralHamming:
 
     def test_basic(self, xp):
@@ -433,6 +444,7 @@ class TestGeneralHamming:
                                     0.9522542486, 0.6727457514, 0.5], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.hamming)
 class TestHamming:
 
     def test_basic(self, xp):
@@ -453,6 +465,7 @@ class TestHamming:
                                    dtype=xp.float64))
 
 
+@make_xp_test_case(windows.hann)
 class TestHann:
 
     def test_basic(self, xp):
@@ -476,6 +489,7 @@ class TestHann:
                         rtol=1e-15, atol=1e-15)
 
 
+@make_xp_test_case(windows.kaiser)
 class TestKaiser:
 
     def test_basic(self, xp):
@@ -505,6 +519,7 @@ class TestKaiser:
                                     0.5985765418119844], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.kaiser_bessel_derived)
 class TestKaiserBesselDerived:
 
     def test_basic(self, xp):
@@ -574,6 +589,7 @@ class TestNuttall:
                                     0.5292298, 0.0613345, 0.0003628], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.parzen)
 class TestParzen:
 
     def test_basic(self, xp):
@@ -592,6 +608,7 @@ class TestParzen:
                                     0.1574344023323616], dtype=xp.float64))
 
 
+@make_xp_test_case(windows.triang)
 class TestTriang:
 
     def test_basic(self, xp):
@@ -633,6 +650,7 @@ tukey_data = {
 }
 
 
+@make_xp_test_case(windows.tukey)
 class TestTukey:
 
     def test_basic(self, xp):
@@ -672,7 +690,7 @@ dpss_data = {
 }
 
 
-@skip_xp_backends(np_only=True, reason='banded linear algebra is numpy-only')
+@make_xp_test_case(windows.dpss)
 class TestDPSS:
 
     def test_basic(self, xp):
@@ -744,6 +762,7 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3, xp=xp)  # negative M
 
 
+@make_xp_test_case(windows.lanczos)
 class TestLanczos:
 
     def test_basic(self, xp):
@@ -777,6 +796,7 @@ class TestLanczos:
             assert windows.lanczos(n, sym=True, xp=xp).shape[0] == n
 
 
+@make_xp_test_case(windows.get_window)
 class TestGetWindow:
     """Unit test for `scipy.signal.get_windows`. """
 
@@ -800,6 +820,7 @@ class TestGetWindow:
             assert func_name in nn_, msg
             assert v_[1] in (True, False, 'OPTIONAL')
 
+    @make_xp_test_case(windows.boxcar)
     def test_boxcar(self, xp):
         w = windows.get_window('boxcar', 12, xp=xp)
         xp_assert_equal(w, xp.ones_like(w))
@@ -808,8 +829,7 @@ class TestGetWindow:
         w = windows.get_window(('boxcar',), 16, xp=xp)
         xp_assert_equal(w, xp.ones_like(w))
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
-    @skip_xp_backends('dask.array', reason='data-dependent output shapes')
+    @make_xp_test_case(windows.chebwin)
     def test_cheb_odd(self, xp):
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -819,8 +839,7 @@ class TestGetWindow:
             w, xp.asarray(cheb_odd_true, dtype=xp.float64), decimal=4
         )
 
-    @skip_xp_backends('jax.numpy', reason='item assignment')
-    @skip_xp_backends('dask.array', reason='data-dependent output shapes')
+    @make_xp_test_case(windows.chebwin)
     def test_cheb_even(self, xp):
         with warnings.catch_warnings():
             warnings.filterwarnings(
@@ -828,18 +847,25 @@ class TestGetWindow:
             w = windows.get_window(('chebwin', 40), 54, fftbins=False, xp=xp)
         assert_array_almost_equal(w, xp.asarray(cheb_even_true), decimal=4)
 
-    @skip_xp_backends(cpu_only=True, reason='eigh_tridiagonal is CPU-only')
+    @make_xp_test_case(windows.dpss)
     def test_dpss(self, xp):
         win1 = windows.get_window(('dpss', 3), 64, fftbins=False, xp=xp)
         win2 = windows.dpss(64, 3, xp=xp)
         xp_assert_equal(win1, win2)
 
+    @make_xp_test_case(windows.kaiser)
     def test_kaiser_float(self, xp):
         win1 = windows.get_window(7.2, 64, xp=xp)
         win2 = windows.kaiser(64, 7.2, False, xp=xp)
-        xp_assert_equal(win1, win2)
+        if is_jax(xp):
+            # On JAX with jit enabled, there is a very small discrepancy
+            # in the results.
+            xp_assert_close(win1, win2, rtol=xp.finfo(win1.dtype).eps)
+        else:
+            xp_assert_equal(win1, win2)
 
     @pytest.mark.parametrize('Nx', [-1, 3.0, np.float64(3)])
+    @make_xp_test_case(windows.hann)
     def test_invalid_parameter_NX(self, Nx, xp):
         with pytest.raises(ValueError, match="^Parameter Nx=.*"):
             windows.get_window('hann', Nx, xp=xp)
@@ -865,6 +891,7 @@ class TestGetWindow:
             xp_ = xp or np  # ensure parameter xp_ is not None
             windows.get_window(('general cosine', [1, 2]), 5, xp=xp_)
 
+    @make_xp_test_case(windows.bartlett)
     def test_symmetric_periodic(self, xp):
         """Ensure that suffixes `_periodic` and `_symmetric` work for window names. """
         w_sym = windows.bartlett(5, sym=True, xp=xp)
@@ -881,16 +908,18 @@ class TestGetWindow:
         xp_assert_close(get_window('bartlett_periodic', 5, fftbins=False, xp=xp),
                         w_per)
 
-    @xfail_xp_backends(np_only=True, reason='TODO: make resample array API ready')
+    @make_xp_test_case(windows.kaiser)
     def test_array_as_window(self, xp):
         # github issue 3603
         osfactor = 128
         sig = xp.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2, xp=xp)
-        with assert_raises(ValueError, match='^window.shape='):
-            resample(sig, len(sig) * osfactor, window=win)
+        mesg = "^window must" if is_cupy(xp) else "^window.shape="
+        with assert_raises(ValueError, match=mesg):
+            resample(sig, sig.shape[0] * osfactor, window=win)
 
+    @make_xp_test_case(windows.general_cosine)
     def test_general_cosine(self, xp):
         xp_assert_close(get_window(('general_cosine', xp.asarray([0.5, 0.3, 0.2])), 4),
                         xp.asarray([0.4, 0.3, 1, 0.3], dtype=xp.float64))
@@ -901,6 +930,7 @@ class TestGetWindow:
         with pytest.raises(ValueError):
             get_window(('general_cosine', [0.5, 0.3, 0.2]), 4, xp=xp)
 
+    @make_xp_test_case(windows.general_hamming)
     def test_general_hamming(self, xp):
         xp_assert_close(get_window(('general_hamming', 0.7), 5, xp=xp),
                         xp.asarray([0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949],
@@ -908,6 +938,7 @@ class TestGetWindow:
         xp_assert_close(get_window(('general_hamming', 0.7), 5, fftbins=False, xp=xp),
                         xp.asarray([0.4, 0.7, 1.0, 0.7, 0.4], dtype=xp.float64))
 
+    @make_xp_test_case(windows.lanczos)
     def test_lanczos(self, xp):
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         xp.asarray([0., 0.413496672, 0.826993343, 1., 0.826993343,
@@ -929,73 +960,80 @@ class TestGetWindow:
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
-def test_windowfunc_basics(xp):
-    for window_name, params in window_funcs:
-        window = getattr(windows, window_name)
-        if is_jax(xp) and window_name in ['taylor', 'chebwin']:
-            pytest.skip(reason=f'{window_name = }: item assignment')
-        if window_name in ['dpss']:
-            if is_cupy(xp):
-                pytest.skip(reason='dpss window is not implemented for cupy')
-            if is_torch(xp) and SCIPY_DEVICE != 'cpu':
-                pytest.skip(reason='needs eight_tridiagonal which is CPU only')
+@pytest.mark.parametrize(
+    "window,window_name,params",
+    [
+        make_xp_pytest_param(getattr(windows, window_name), window_name, params)
+        for window_name, params in window_funcs
+    ]
+)
+def test_windowfunc_basics(window, window_name, params, xp):
+    window = getattr(windows, window_name)
+    if is_jax(xp) and window_name in ['taylor', 'chebwin']:
+        pytest.skip(reason=f'{window_name = }: item assignment')
+    if window_name in ['dpss']:
+        if is_cupy(xp):
+            pytest.skip(reason='dpss window is not implemented for cupy')
+        if is_torch(xp) and SCIPY_DEVICE != 'cpu':
+            pytest.skip(reason='needs eight_tridiagonal which is CPU only')
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "This window is not suitable", UserWarning)
-            # Check symmetry for odd and even lengths
-            w1 = window(8, *params, sym=True, xp=xp)
-            w2 = window(7, *params, sym=False, xp=xp)
-            xp_assert_close(w1[:-1], w2)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "This window is not suitable", UserWarning)
+        # Check symmetry for odd and even lengths
+        w1 = window(8, *params, sym=True, xp=xp)
+        w2 = window(7, *params, sym=False, xp=xp)
+        xp_assert_close(w1[:-1], w2)
 
-            w1 = window(9, *params, sym=True, xp=xp)
-            w2 = window(8, *params, sym=False, xp=xp)
-            xp_assert_close(w1[:-1], w2)
+        w1 = window(9, *params, sym=True, xp=xp)
+        w2 = window(8, *params, sym=False, xp=xp)
+        xp_assert_close(w1[:-1], w2)
 
-            # Check that functions run and output lengths are correct
-            assert window(6, *params, sym=True, xp=xp).shape[0] == 6
-            assert window(6, *params, sym=False, xp=xp).shape[0] == 6
-            assert window(7, *params, sym=True, xp=xp).shape[0] == 7
-            assert window(7, *params, sym=False, xp=xp).shape[0] == 7
+        # Check that functions run and output lengths are correct
+        assert window(6, *params, sym=True, xp=xp).shape[0] == 6
+        assert window(6, *params, sym=False, xp=xp).shape[0] == 6
+        assert window(7, *params, sym=True, xp=xp).shape[0] == 7
+        assert window(7, *params, sym=False, xp=xp).shape[0] == 7
 
-            # Check invalid lengths
-            assert_raises(ValueError, window, 5.5, *params, xp=xp)
-            assert_raises(ValueError, window, -7, *params, xp=xp)
+        # Check invalid lengths
+        assert_raises(ValueError, window, 5.5, *params, xp=xp)
+        assert_raises(ValueError, window, -7, *params, xp=xp)
 
-            # Check degenerate cases
-            xp_assert_equal(window(0, *params, sym=True, xp=xp),
-                            xp.asarray([], dtype=xp.float64))
-            xp_assert_equal(window(0, *params, sym=False, xp=xp),
-                            xp.asarray([], dtype=xp.float64))
-            xp_assert_equal(window(1, *params, sym=True, xp=xp),
-                            xp.asarray([1.], dtype=xp.float64))
-            xp_assert_equal(window(1, *params, sym=False, xp=xp),
-                            xp.asarray([1.], dtype=xp.float64))
+        # Check degenerate cases
+        xp_assert_equal(window(0, *params, sym=True, xp=xp),
+                        xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(window(0, *params, sym=False, xp=xp),
+                        xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(window(1, *params, sym=True, xp=xp),
+                        xp.asarray([1.], dtype=xp.float64))
+        xp_assert_equal(window(1, *params, sym=False, xp=xp),
+                        xp.asarray([1.], dtype=xp.float64))
 
-            # Check dtype
-            assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
-            assert window(0, *params, sym=False, xp=xp).dtype == xp.float64
-            assert window(1, *params, sym=True, xp=xp).dtype == xp.float64
-            assert window(1, *params, sym=False, xp=xp).dtype == xp.float64
-            assert window(6, *params, sym=True, xp=xp).dtype == xp.float64
-            assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
+        # Check dtype
+        assert window(0, *params, sym=True, xp=xp).dtype == xp.float64
+        assert window(0, *params, sym=False, xp=xp).dtype == xp.float64
+        assert window(1, *params, sym=True, xp=xp).dtype == xp.float64
+        assert window(1, *params, sym=False, xp=xp).dtype == xp.float64
+        assert window(6, *params, sym=True, xp=xp).dtype == xp.float64
+        assert window(6, *params, sym=False, xp=xp).dtype == xp.float64
 
-            # Check normalization
-            assert xp.all(window(10, *params, sym=True, xp=xp) < 1.01)
-            assert xp.all(window(10, *params, sym=False, xp=xp) < 1.01)
-            assert xp.all(window(9, *params, sym=True, xp=xp) < 1.01)
-            assert xp.all(window(9, *params, sym=False, xp=xp) < 1.01)
+        # Check normalization
+        assert xp.all(window(10, *params, sym=True, xp=xp) < 1.01)
+        assert xp.all(window(10, *params, sym=False, xp=xp) < 1.01)
+        assert xp.all(window(9, *params, sym=True, xp=xp) < 1.01)
+        assert xp.all(window(9, *params, sym=False, xp=xp) < 1.01)
 
-            # Check that DFT-even spectrum is purely real for odd and even
-            res = fft(window(10, *params, sym=False, xp=xp))
-            res = xp.imag(res)
-            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
+        # Check that DFT-even spectrum is purely real for odd and even
+        res = fft(window(10, *params, sym=False, xp=xp))
+        res = xp.imag(res)
+        xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
-            res = fft(window(11, *params, sym=False, xp=xp))
-            res = xp.imag(res)
-            xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
+        res = fft(window(11, *params, sym=False, xp=xp))
+        res = xp.imag(res)
+        xp_assert_close(res, xp.zeros_like(res), atol=1e-14)
 
 
+@make_xp_test_case(get_window)
 def test_needs_params(xp):
     for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
                    'gaussian', 'gauss', 'gss',
@@ -1029,14 +1067,22 @@ _winstr = ['barthann',
 ]
 
 
-@pytest.mark.parametrize('winstr', _winstr)
-def test_not_needs_params(xp, winstr):
+@pytest.mark.parametrize(
+    'window,winstr',
+    [
+        make_xp_pytest_param(_WIN_FUNCS[winstr][0], winstr)
+        for winstr in _winstr
+    ]
+)
+@make_xp_test_case(get_window)
+def test_not_needs_params(xp, window, winstr):
     if is_jax(xp) and winstr in ['taylor']:
         pytest.skip(reason=f'{winstr}: item assignment')
     win = get_window(winstr, 7, xp=xp)
     assert win.shape[0] == 7
 
 
+@make_xp_test_case(windows.lanczos)
 def test_symmetric(xp):
 
     for win in [windows.lanczos]:

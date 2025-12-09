@@ -50,6 +50,12 @@
 // https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/Missing-cspr-64-symbol-in-ILP64-MKL/td-p/1703471
 #ifdef FIX_MKL_2025_ILP64_MISSING_SYMBOL
 #define cspr_64_ cspr_64
+#define sgetc2_64_ sgetc2_64
+#define dgetc2_64_ dgetc2_64
+#define cgetc2_64_ cgetc2_64
+#define zgetc2_64_ zgetc2_64
+#define slasd4_64_ slasd4_64
+#define dlasd4_64_ dlasd4_64
 #endif
 
 #define F_INT npy_int64

@@ -223,6 +223,8 @@ def test_issue_5503():
     (30010000, 100000000, 3/10, 0.98545384016570790717),
     (29990000, 100000000, 3/10, 0.01455017177985268670),
     (29950000, 100000000, 3/10, 5.02250963487432024943e-28),
+    (300_000_000, 1_000_000_000, 3/10, 0.50001560012523938),
+    (3_000_000_000, 10_000_000_000, 3/10, 0.50000493319275)
 ])
 def test_issue_5503pt2(x, n, p, cdf_desired):
     assert_allclose(binom.cdf(x, n, p), cdf_desired)
@@ -395,6 +397,13 @@ class TestZipfian:
     def test_mean_against_mpmath(self, a, n, ref):
         m = zipfian.mean(a, n)
         assert_allclose(m, ref, rtol=8e-15)
+
+    def test_ridiculously_large_n(self):
+        # This should return nan with no errors or warnings.
+        a = 2.5
+        n = 1e100
+        p = zipfian.pmf(10, a, n)
+        assert_equal(p, np.nan)
 
 
 class TestNCH:

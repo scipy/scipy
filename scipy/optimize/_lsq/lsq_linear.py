@@ -39,7 +39,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                verbose=0, *, lsmr_maxiter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
-    Given a m-by-n design matrix A and a target vector b with m elements,
+    Given an m-by-n design matrix A and a target vector b with m elements,
     `lsq_linear` solves the following optimization problem::
 
         minimize 0.5 * ||A x - b||**2
