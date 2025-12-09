@@ -128,7 +128,7 @@ solve-group = "accelerate-ilp64"
 
 [environments.py312-system-libs-osx]
 # tasks: build-system-libs, test-system-libs
-features = ["build-deps", "run-deps", "test-deps", "py312", "umfpack", "scikit-sparse", "system-libs"]
+features = ["build-deps", "run-deps", "test-deps", "py312", "scikit-sparse", "system-libs"] #, "umfpack"]
 
 [environments.scipy-openblas]
 # tasks: build-scipy-openblas, test-scipy-openblas
