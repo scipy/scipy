@@ -221,22 +221,28 @@ You would convert this like so::
 
 Going through compiled code requires going back to a NumPy array, because
 SciPy's extension modules only work with NumPy arrays (or memoryviews in the
-case of Cython). For arrays on CPU, the
-conversions should be zero-copy, while on GPU and other devices the attempt at
-conversion will raise an exception. The reason for that is that silent data
-transfer between devices is considered bad practice, as it is likely to be a
-large and hard-to-detect performance bottleneck.
+case of Cython). For arrays on CPU, the conversions should be zero-copy, while
+on GPU and other devices the attempt at conversion will raise an exception. The
+reason for that is that silent data transfer between devices is considered bad
+practice, as it is likely to be a large and hard-to-detect performance
+bottleneck.
 
 In some cases, compiled code can be supported through dispatch to native
 implementations. Such dispatch has currently been set up in `fft`, `ndimage`,
 `signal`, and `special`, though there is not yet a standard approach and support
 in each module has mostly evolved separately. When adding array API standard
 support for an existing function, it is useful to check which backends have
-native implementations for the function and/or its compiled dependencies. There
-is also some effort being put into expanding access to native implementations,
-such as the [xsf project](https://github.com/scipy/xsf/issues/1) to establish
-a library of mathematical special function implementations which support both CPU and
-GPU.
+native implementations. Support for a function can be established through either
+dispatch to a native implementation, or by adding array API support in the
+standard way with dispatch to native implementations of compiled
+dependencies. For the sake of brevity, in the remainder of this document we
+speak only of dispatch to a native implementation of a function itself, with the
+understanding that the reader should fill in the general picture.
+
+There is also some effort being put into expanding access to native
+implementations, such as the [xsf
+project](https://github.com/scipy/xsf/issues/1) to establish a library of
+mathematical special function implementations which support both CPU and GPU.
 
 .. _dev-arrayapi_adding_tests:
 
@@ -296,8 +302,7 @@ functions which are written mostly in terms of the array API standard, but
 include calls to compiled code sandwiched between conversions to and from NumPy,
 ``xp_capabilities`` should be given the ``cpu_only=True`` option. Backends
 which are supported on GPU by such a function ``f`` through dispatch to a
-native implementation (either for the function itself or for its compiled
-dependencies) can be specified with the ``exceptions`` kwarg, which
+native implementation can be specified with the ``exceptions`` kwarg, which
 takes a list of strings specifying GPU-capable backends. The currently
 supported string values are ``"cupy"``, ``"torch"``, and ``"jax.numpy"``.
 
@@ -305,8 +310,7 @@ It is recommended to reserve ``cpu_only=False`` (the default) for array API
 agnostic functions which are expected to work on all array API compliant
 backends, including ones not tested in SciPy and ones that do not yet exist.
 If a function is supported on GPU on all tested backends through dispatch to
-respective native implementations (either for the function itself or its
-compiled dependencies) it is recommended to use ``cpu_only=True`` while listing
+respective native implementations one should use ``cpu_only=True`` while listing
 each backend in the list of ``exceptions``.
 
 When setting ``cpu_only=True``, one may list a reason by passing a string with
@@ -360,13 +364,37 @@ array array API agnostic, then it will typically be the case that
 Unsupported functions
 `````````````````````
 
-Functions which do not support the array API standard through the means described
-earlier in this document should either receive the ``np_only=True`` option or the
-``out_of_scope=True`` option. The former should be used for functions which are not
-currently supported but which are considered in-scope for future support. There is not
-yet a formal policy for which functions should be considered out-of-scope for
-alternative backend support. Some general rules of thumb that are being followed
-are to exclude:
+Functions which do not support the array API standard through the means
+described earlier in this document should either receive the ``np_only=True``
+option or the ``out_of_scope=True`` option. The former should be used for
+functions which are not currently supported but which are considered in-scope
+for future support.
+
+Functions for which array API support has *not* been added following the
+procedures described earlier in this document, but for which dispatch to a
+native implementation has been set up for one or more array API backends should
+also still have ``xp_capabilities`` entries with ``np_only=True``. Just as for
+``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg. Valid
+strings to pass in the exceptions list are ``"cupy"``, ``"dask.array"``,
+``"jax.numpy"``, and ``"torch"``. A caveat: if ``np_only=True`` and one or both
+of ``"torch"`` or ``"jax.numpy"`` are added to the lists of exceptions, these
+will be declared as supported on both CPU and GPU. However, it's possible for a
+function to be natively available in JAX, support the jit, but not be supported
+on GPU. Because ``exceptions`` does double duty declaring exceptions to
+``cpu_only=True`` and ``np_only=True``, it is not possible to express this
+situation using ``xp_capabilities`` in the way described above. This is not too
+serious of an issue because the intention is that ``np_only=True`` is only a
+temporary state. Through the means described above in the section "Adding array
+API standard support to a SciPy function", it is feasible for all functions in
+SciPy's public API to at least reach the state ``cpu_only=True``. For functions
+still waiting in the ``np_only=True`` state, ``xp_capabilities``'s ``skip_backends``
+kwarg can be used as an escape hatch to allow more fine grained declaration of
+capabilities. This will be described further along in this document.
+
+``out_of_scope=True`` signals that there is no intention to ever provide array
+API support for a given function. There is not yet a formal policy for which
+functions should be considered out-of-scope. Some general rules of thumb that are
+being followed are to exclude:
 
 * functions which do not operate on arrays such as :doc:`scipy.constants.value <../../reference/generated/scipy.constants.value>`
 * functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
@@ -380,7 +408,7 @@ accelerated implementation of nonlinear weighted orthogonal distance regression
 would benefit from not having to support an API so tightly coupled to ODRPACK
 but is also a challenging problem in its own right.
 
-(Since the  previous paragraph was first written `scipy.odr` has been declared as a
+(Since the  previous paragraph was written `scipy.odr` has been declared as a
 legacy module, meaning it will not be removed, but will also not receive additional
 maintenance. Legacy modules are inherently considered out-of-scope).
 
