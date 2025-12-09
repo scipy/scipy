@@ -659,35 +659,39 @@ the desired array. This machinery can be overridden by explicitly passing the ``
 parameter to the assertion functions.
 
 
-
 Examples
 ````````
 
-The following examples demonstrate how to use the markers::
+The following examples demonstrate how to use direct markers together with
+`make_xp_test_case`::
 
   from scipy.conftest import skip_xp_invalid_arg
-  from scipy._lib._array_api import xp_assert_close
+  from scipy._lib._array_api import xp_assert_close, make_xp_test_case
+
   ...
-  @pytest.mark.skip_xp_backends(np_only=True, reason='skip reason')
+  @pytest.mark.skip_xp_backends(np_only=True, reason='object arrays')
+  @make_xp_test_case(toto)
   def test_toto1(self, xp):
-      a = xp.asarray([1, 2, 3])
-      b = xp.asarray([0, 2, 5])
+      a = xp.asarray([1, 2, 3], dtype=object)
+      b = xp.asarray([0, 2, 5], dtype=object)
       xp_assert_close(toto(a, b), a)
   ...
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
+  @make_xp_test_case(toto)
   def test_toto2(self, xp):
       ...
   ...
   # Do not run when SCIPY_ARRAY_API is used
   @skip_xp_invalid_arg
+  @make_xp_test_case(toto)
   def test_toto_masked_array(self):
       ...
 
-Passing names of backends into ``exceptions`` means that they will not be skipped
-by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
-is implemented for some, but not all, non-CPU backends, and the CPU code path
-requires conversion to NumPy for compiled code::
+Like ``xp_capabilities``, ``skip_xp_backends`` has a ``cpu_only`` option and allows
+passing a list of backends into ``exceptions``. This is useful when testing
+private functionality where delegation is implemented for some, but not all,
+non-CPU backends, and the CPU code path requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
@@ -695,11 +699,16 @@ requires conversion to NumPy for compiled code::
   @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['jax.numpy'])
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
-  def test_toto(self, xp):
+  @pytest.mark.uses_xp_capabilities(False, reason="private")
+  def test_private_toto_helper(self, xp):
       ...
 
-After applying these markers, ``spin test`` can be used with the new option
-``-b`` or ``--array-api-backend``::
+
+Running tests
+`````````````
+
+After applying these markers, either through `make_xp_test_case` and friends, or directly,
+``spin test`` can be used with the new option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
 
