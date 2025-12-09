@@ -14,7 +14,8 @@ from pytest import raises as assert_raises, warns as assert_warns
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (dia_array, SparseEfficiencyWarning, csc_array,
-        csr_array, eye_array, issparse, dok_array, lil_array, bsr_array, kron)
+        csr_array, eye_array, issparse, dok_array, lil_array, bsr_array,
+        coo_array, random_array, kron)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, splu, spilu,
         _superlu, spsolve_triangular, factorized,
@@ -413,6 +414,40 @@ class TestLinsolve:
         A, b = setup_bug_8278()
         x = self.spsolve(A, b, use_umfpack=True)
         assert_array_almost_equal(A @ x, b)
+
+    @pytest.mark.parametrize("trans", ["N", "T", "H"])
+    @pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+    @pytest.mark.parametrize("is_sparse", [False, True], ids=["dense", "sparse"])
+    @pytest.mark.parametrize(
+        "use_umfpack", [False, True], ids=["no_umfpack", "with_umfpack"]
+    )
+    def test_solve_trans(self, trans, dtype, is_sparse, use_umfpack):
+        N = 10
+        A = random_array((N, N), density=0.6, dtype=dtype)
+        A.setdiag(A.diagonal() + N)  # make A well-conditioned
+        A = A.tocsc()
+
+        expect_x = np.arange(1, N + 1, dtype=dtype)
+
+        if is_sparse:
+            expect_x = coo_array(expect_x)
+
+        # Solve the system
+        if trans == "N":
+            b = A @ expect_x
+        elif trans == "T":
+            b = A.T @ expect_x
+        else:  # trans == "H"
+            b = A.conj().T @ expect_x
+
+        x = spsolve(A, b, trans=trans, use_umfpack=use_umfpack)
+
+        # Compare
+        atol = 1e-10
+        if is_sparse:
+            assert_allclose(x.toarray(), expect_x.toarray(), atol=atol)
+        else:
+            assert_allclose(x, expect_x, atol=atol)
 
 
 class TestSplu:
