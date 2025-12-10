@@ -437,6 +437,63 @@ class TestDotTests:
             check_operators=True, check_dot=True
         )
 
+    def test_subclass_matmat(self):
+        """
+        Simple rotation operator defined by `matmat` and `adjoint`,
+        subclassing `LinearOperator`.
+        """
+        def rmatmat(X):
+            theta = np.pi / 2
+            R_inv = np.array([
+                [np.cos(theta),  np.sin(theta)],
+                [-np.sin(theta), np.cos(theta)]
+            ])
+            return R_inv @ X
+
+        class RotOp(interface.LinearOperator):
+            
+            def __init__(self, dtype, shape, theta):
+                self._theta = theta
+                super().__init__(dtype, shape)
+            
+            def _matmat(self, X):
+                theta = self._theta
+                R = np.array([
+                    [np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta),  np.cos(theta)]
+                ])
+                return R @ X
+
+            def _adjoint(self):
+                negative_theta = -self._theta
+                return RotOp(self.dtype, self.shape, negative_theta)
+            
+        theta = np.pi / 2
+        dtype = "float64"
+        op = RotOp(shape=(2, 2), dtype=dtype, theta=theta)
+
+        self.check_matvec(
+            op, data_dtype=dtype, complex_data=False,
+            check_operators=True, check_dot=True
+        )
+        self.check_matmat(
+            op, data_dtype=dtype, complex_data=False,
+            check_operators=True, check_dot=True
+        )
+    
+    @pytest.mark.parametrize(
+        "matrix", [
+            np.asarray([[1, 2j, 3j], [4j, 5j, 6]]),
+            sparse.random_array((5, 5))
+        ]
+    )
+    def test_aslinearop(self, matrix):
+        op = interface.aslinearoperator(matrix)
+        data_dtype = "float64"
+        self.check_matvec(op, data_dtype=data_dtype, complex_data=True)
+        self.check_matmat(op, data_dtype=data_dtype, complex_data=True)
+
+
 class TestAsLinearOperator:
     def setup_method(self):
         self.cases = []
