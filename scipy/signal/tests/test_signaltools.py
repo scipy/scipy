@@ -3062,10 +3062,8 @@ def test_choose_conv_method_2(xp):
                 assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
-@pytest.mark.uses_xp_capabilities(False, reason="private")
-def test_filtfilt_gust(xp):
+def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
@@ -3774,9 +3772,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(p[rows], p_true[cols], decimal=decimal)
         assert_almost_equal(r[rows], r_true[cols], decimal=decimal)
 
-    @skip_xp_backends(np_only=True)
-    @pytest.mark.uses_xp_capabilities(False, reason="private")
-    def test_compute_factors(self, xp):
+    def test_compute_factors(self):
         factors, poly = _compute_factors([1, 2, 3], [3, 2, 1])
         assert len(factors) == 3
         assert_almost_equal(factors[0], np.poly([2, 2, 3]))
@@ -3795,9 +3791,7 @@ class TestPartialFractionExpansion:
         assert_almost_equal(factors[5], np.poly([1, 1, 1, 2, 2]))
         assert_almost_equal(poly, np.poly([1, 1, 1, 2, 2, 3]))
 
-    @skip_xp_backends(np_only=True)
-    @pytest.mark.uses_xp_capabilities(False, reason="private")
-    def test_group_poles(self, xp):
+    def test_group_poles(self):
         unique, multiplicity = _group_poles(
             [1.0, 1.001, 1.003, 2.0, 2.003, 3.0], 0.1, 'min')
         xp_assert_close(unique, [1.0, 2.0, 3.0])

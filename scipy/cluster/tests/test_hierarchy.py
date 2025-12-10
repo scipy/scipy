@@ -1223,10 +1223,8 @@ def test_optimal_leaf_ordering(xp):
     xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
-@skip_xp_backends(np_only=True, reason='`Heap` only supports NumPy backend')
-@pytest.mark.uses_xp_capabilities(False, reason="private")
-def test_Heap(xp):
-    values = xp.asarray([2, -1, 0, -1.5, 3])
+def test_Heap():  # `Heap` only supports NumPy backend
+    values = np.asarray([2, -1, 0, -1.5, 3])
     heap = Heap(values)
 
     pair = heap.get_min()
