@@ -342,10 +342,9 @@ when the SciPy test suite is run with ``pytest`` in verbose mode
 JAX JIT
 ```````
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False``. If a function is neither array API agnostic nor supported
-on JAX through dispatch to a native JAX implementation (again either dispatch to
-a native implementation of the function itself or dispatch for its compiled
-dependencies) then it is virtually certain that the JIT is not supported and
+``jax_jit=False``. If a function is neither array-agnostic nor supported
+on JAX through delegation to a native JAX implementation
+then it is virtually certain that the JIT is not supported and
 one should set ``jax_jit=False``. The following ``xp_capabilities`` call is almost
 certainly incorrect::
 
