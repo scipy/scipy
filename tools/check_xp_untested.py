@@ -16,7 +16,6 @@ accounted for by explicitly adding the marker
 """
 
 import contextlib
-import io
 import importlib
 import os
 import pytest

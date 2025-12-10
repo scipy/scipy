@@ -24,7 +24,6 @@ from scipy._lib._array_api import (
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
 from scipy._lib import _pep440
-from scipy._lib._public_api import PUBLIC_MODULES
 
 try:
     from scipy_doctest.conftest import dt_config
@@ -327,7 +326,9 @@ def xp(request):
         warnings.warn(
             "test uses `xp` fixture without drawing from `xp_capabilities` "
             " but is not explicitly marked with"
-            " ``pytest.mark.uses_xp_capabilities(False)``")
+            " ``pytest.mark.uses_xp_capabilities(False)``",
+            stacklevel=0,
+        )
 
     xp = request.param
     # Potentially wrap namespace with array_api_compat
