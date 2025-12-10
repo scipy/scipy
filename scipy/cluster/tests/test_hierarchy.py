@@ -187,7 +187,7 @@ class TestLinkage:
         ]
     )
     def test_wrappers(self, func, xp):
-        # This test is required because it enforced that all functions advertised as
+        # This test is required because all functions advertised as
         # supporting alt-backends must be tested with the xp fixture.
         X = xp.asarray([[-1, -1], [0, 0], [1, 1]])
         expected = xp.asarray(

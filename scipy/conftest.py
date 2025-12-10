@@ -318,7 +318,7 @@ def xp(request):
 
     # Check if ``uses_xp_capabilities`` mark is present.
     # ``scipy._lib._array_api.make_xp_pytest_marks``, which draws from
-    # ``xp_capabilities`` will set ``pytest.mark.uses_xp_capabilities(True)``.
+    # ``xp_capabilities``, will set ``pytest.mark.uses_xp_capabilities(True)``.
     # Tests which are unconverted or which are for private functions without
     # ``xp_capabilities`` entries should have
     # ``pytest.mark.uses_xp_capabilities(False)`` explicitly set.
