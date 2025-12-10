@@ -195,6 +195,13 @@ jobs:
           command: |
             spin smoke-tutorials
 
+      - run:
+          name: check-xp-untested
+          no_output_timeout: 5m
+          command: |
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            spin check-xp-untested
+
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/

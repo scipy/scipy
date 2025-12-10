@@ -50,7 +50,3 @@ jobs:
       - name: Check external dependencies
         working-directory: .github/workflows
         run: pixi run tach-check-external
-
-      - name: Check no advertised alt-backend support that is untested
-        working-directory: .github/workflows
-        run: pixi run check-xp-untested
