@@ -732,20 +732,20 @@ PyTorch, and JAX on CPU.
 numbers will have dtype ``torch.float32`` when no explicit dtype is specified.
 The default ``dtype`` can be changed in ``torch`` with ``torch.set_default_dtype``.
 A third environment variable (``SCIPY_DEFAULT_DTYPE``, again only used in the
-test suite) can be used to control ``torch``'s default dtype in tests. Valid
-values are ``"float64"`` and ``"float32"``. If ``SCIPY_DEFAULT_DTYPE`` is unset,
-the default for the default dtype is ``float64``. In general, the intention behind
-testing with different values of ``SCIPY_DEFAULT_DTYPE`` is not to test that
-functions work well and are accurate with both ``float32`` and ``float64`` inputs,
-this should instead be done mindfully by specifying specific dtypes for inputs
-provided in tests. The intention is instead to catch subtle bugs that can arise
-with the ``torch`` backend due to internal array creation that does explicitly
-specify a dtype. At the time of writing, there are many tests in the test suite
-which have test inputs generated through ``xp.asarray`` without specifying an
-explicit dtype, but this is not recommended practice for future tests. Identifying
-such calls to ``xp.asarray`` and other array creation functions within the test suite
-that do not specify the dtype and adding explicit dtypes could make for good first
-issues.
+test suite) can be used to control the default dtype used by ``torch`` in tests.
+Valid values are ``"float64"`` and ``"float32"``. If ``SCIPY_DEFAULT_DTYPE`` is unset,
+then ``torch``'s default dtype will be ``float64``.
+
+The intention behind testing with different default dtypes is primarily to catch
+subtle bugs that can arise with the ``torch`` backend due to internal array creation
+that does not explicitly specify a dtype. The intention is not to implicitly test
+that functions are numerically accurate with both ``float32`` and ``float64`` inputs,
+or that input dtype controls output dtype. These tasks should instead be accomplished
+mindfully by explicitly setting dtypes within tests. For the sake of consistency,
+tests intended to be run with the ``torch`` backend should not use array creation
+functions without explicitly setting the dtype. At the time of writing, there are many
+tests in the test suite which do not follow this practice, and this could be a good source
+of first issues for new contributors.
 
 Testing Practice
 ````````````````
