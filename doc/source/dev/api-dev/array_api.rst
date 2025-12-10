@@ -914,32 +914,6 @@ excluded because it's API contains no functions, but may be included in the futu
 when the scope expands to include classes. `scipy.odr` and `scipy.datasets` are excluded
 because their contents are considered out-of-scope.
 
-There is not yet a formal policy for which functions should be considered
-out-of-scope for alternative backend support. Some general rules of thumb
-that are being followed are to exclude:
-
-* functions which do not operate on arrays such as :doc:`scipy.constants.value <../../reference/generated/scipy.constants.value>`
-* functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
-* functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
-
-As an example. The contents of `scipy.odr` are considered out-of-scope for a
-combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
-wrapper of the monolithic ODRPACK Fortran library, and it's API is tied to the
-structure of this monolithic library. Creation of an efficient GPU accelerated
-implementation of nonlinear weighted orthogonal distance regression is also a
-challenging problem in its own right. Nevertheless, considerations of what to
-consider in-scope are evolving, and something which is now considered out-of-scope
-may be decided to be in-scope in the future if sufficient user interest and
-feasability are demonstrated.
-
-.. note::
-    The coverage percentages shown below may be below the
-    true values due to alternative backend support being added for some functions
-    before the infrastructure for registering this support was developed. This
-    situation is denoted by placing asterisks next to the percentages.
-    Documentation of alternative backend support is currently a work in progress.
-
-
 .. toctree::
    :hidden:
 
