@@ -551,7 +551,7 @@ class VonMises(ContinuousDistribution, CircularDistribution):
     _x_support = _RealInterval(endpoints=(0, 2*np.pi), inclusive=(True, True))
 
     _mu_param = _RealParameter('mu', domain=_mu_domain, symbol=r'\mu',
-                               typical=(-np.pi, np.pi))
+                               typical=(0, 2*np.pi))
     _kappa_param = _RealParameter('kappa', domain=_kappa_domain, symbol=r'\kappa',
                                   typical=(0.5, 5))
     _x_param = _RealParameter('x', domain=_x_support, typical=(0, 2*np.pi))
@@ -636,10 +636,10 @@ class _TestCircular(ContinuousDistribution, CircularDistribution):
         return 0.5 - 0.75*x + 0.25*x**3
 
     def _icdf_formula(self, p, **kwargs):
-        return 2*np.cos(1/3 * np.acos(1 - 2*p) + 4*np.pi/3)
+        return 2*np.cos(1/3 * np.arccos(1 - 2*p) + 4*np.pi/3)
 
     def _iccdf_formula(self, p, **kwargs):
-        return 2*np.cos(1/3 * np.acos(2*p - 1) + 4*np.pi/3)
+        return 2*np.cos(1/3 * np.arccos(2*p - 1) + 4*np.pi/3)
 
     def _moment_raw_formula(self, order, **kwargs):
         if order == 0:
