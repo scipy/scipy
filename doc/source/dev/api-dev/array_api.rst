@@ -632,7 +632,8 @@ related to ``f`` but are instead due to bugs exposed in other parts of the test
 body. To avoid such situations, we recommend as a general practice to attempt to
 isolate use of the alternative backend only to the function ``f`` being tested
 with a caveat that there are situations where or it is necessary or desired to
-do otherwise: see the section on testing practice below for more information.
+do otherwise: see the section on :ref:`backend isolation <dev-arrayapi_backend_isolation>`
+below for more information.
 
 Note that in one case `xp_capabilities`, offers more granularity than
 `skip_xp_backends` and `xfail_xp_backends`. `xp_capabilities` allows developers
@@ -747,6 +748,8 @@ functions without explicitly setting the dtype. At the time of writing, there ar
 tests in the test suite which do not follow this practice, and this could be a good source
 of first issues for new contributors.
 
+.. _dev-arrayapi_backend_isolation:
+
 Backend isolation in tests
 ``````````````````````````
 
@@ -776,16 +779,16 @@ as round trip tests that a function composed with its inverse gives the identity
 function), should all be done with NumPy (using the ``_xp_copy_to_numpy``
 function if necessary).
 
-Such backend isolation should not be applied blindly. Consider for example
-a vectorized root finding function like ``scipy.optimize.elementwise.find_root``.
-When testing such a function on alternative backends, isolating use of the alternative
-backend only to ``find_root`` by using an input callable ``f`` (the function for which
-roots are sought) that converts to and from NumPy would not be desirable since since
-``find_root`` and ``f`` are so tightly coupled in this case. In other cases, a function
-``h`` used in the tests of a function ``g`` may be known to be so simple and rock solid
-that there is no point in going through the trouble of backend isolation. Developers
-are free to use their discretion to decide whether backend isolation is necessary
-or desirable.
+Such backend isolation should not be applied blindly. Consider for example a
+vectorized root finding function like ``scipy.optimize.elementwise.find_root``.
+When testing such a function on alternative backends, isolating use of the
+alternative backend only to ``find_root`` by using an input callable ``f`` (the
+function for which roots are sought) that converts to and from NumPy would not
+be desirable since since ``find_root`` and ``f`` are so tightly coupled in this
+case. In other cases, a function ``h`` used in the tests of a function ``g`` may
+be known to be so simple and rock solid that there is no point in going through
+the trouble of backend isolation. Developers are free to use their discretion to
+decide whether backend isolation is necessary or desirable.
 
 Testing the JAX JIT compiler
 ----------------------------
