@@ -222,11 +222,11 @@ You would convert this like so::
 
 Going through compiled code requires going back to a NumPy array, because
 SciPy's extension modules only work with NumPy arrays (or memoryviews in the
-case of Cython). For arrays on CPU, the conversions should be zero-copy, while
-on GPU and other devices the attempt at conversion will raise an exception. The
-reason for that is that silent data transfer between devices is considered bad
-practice, as it is likely to be a large and hard-to-detect performance
-bottleneck.
+case of Cython). For arrays on CPU, the
+conversions should be zero-copy, while on GPU and other devices the attempt at
+conversion will raise an exception. The reason for that is that silent data
+transfer between devices is considered bad practice, as it is likely to be a
+large and hard-to-detect performance bottleneck.
 
 In some cases, compiled code can be supported through delegation to native
 implementations. Such delegation has currently been set up in `scipy.fft`,
