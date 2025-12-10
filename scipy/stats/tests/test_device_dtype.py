@@ -35,7 +35,7 @@ def get_arrays(n_arrays, *, dtype=np.float64, xp=np, shape=(30,), device=None,
                                          (_xp_mean, {}),
                                          ])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_xmean(fun, kwargs, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -49,7 +49,7 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
                   reason="special functions don't work with 'device1'")
 @pytest.mark.parametrize('nargs', [1, 2])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_entropy(nargs, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -60,7 +60,7 @@ def test_entropy(nargs, dtype, xp, devices):
 
 
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_directional_stats(dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -86,7 +86,7 @@ def test_directional_stats(dtype, xp, devices):
     "auto",
 ])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_differential_entropy(method, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -102,7 +102,7 @@ def test_differential_entropy(method, dtype, xp, devices):
                                     'hazen', 'weibull', 'linear', 'median_unbiased',
                                     'normal_unbiased', 'harrell-davis'])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_quantile(method, dtype, xp, devices):
     if (is_array_api_strict(xp) or is_torch(xp)) and method == 'harrell-davis':
         pytest.skip("'harrell-davis' not currently supported on GPU.")
@@ -116,7 +116,7 @@ def test_quantile(method, dtype, xp, devices):
 
 
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_boxcox_llf(dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -153,7 +153,7 @@ def test_boxcox_llf(dtype, xp, devices):
      (stats.tsem, {'limits': (0.1, 0.9)}),
      ])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_one_in_one_out(fun, kwargs, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -164,7 +164,7 @@ def test_one_in_one_out(fun, kwargs, dtype, xp, devices):
 
 
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_describe(dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -187,7 +187,7 @@ def test_describe(dtype, xp, devices):
 
 @pytest.mark.parametrize('fun', [stats.zscore, stats.gzscore, stats.zmap])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_zscore(fun, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -205,7 +205,7 @@ def test_zscore(fun, dtype, xp, devices):
                                     'bartlett', 'pearsonr', 'chisquare',
                                     'power_divergence'])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_hypothesis_tests(f_name, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
@@ -240,7 +240,7 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'tippett', 'stouffer',
                                     'mudholkar_george'])
 @pytest.mark.parametrize('dtype', dtypes)
-@pytest.mark.uses_xp_capabilities(False, reason="maybe not applicable?")
+@pytest.mark.uses_xp_capabilities(False, reason="not used in this test yet")
 def test_combine_pvalues(method, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:

@@ -5041,10 +5041,12 @@ class TestKSTwoSamples:
 
 @make_xp_test_case(stats.ttest_rel)
 def test_ttest_rel_xp(xp):
-    # stats.ttest_rel had no tests using the xp fixture, which causes a failure
-    # in tools/check_xp_untested.py. A portion of the below test has been
-    # converted as a temporarily measure. TODO: Convert all of test_ttest_rel
-    # and refactor it into separate tests.
+    # stats.ttest_rel had no tests using the xp fixture. As a temporary
+    # measure to get tools/check_xp_untested.py to pass, a portion of
+    # test_ttest_rel has been converted. It might seem unnecessary to
+    # require tests for a trivial wrapper of a well-tested function, but
+    # this seems simpler than having a way to carve out exceptions to
+    # check_xp_untested.
     tr, pr = xp.asarray(0.81248591389165692), xp.asarray(0.41846234511362157)
 
     rvs1 = xp.linspace(1,100,100)
