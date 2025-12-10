@@ -790,8 +790,8 @@ be known to be so simple and rock solid that there is no point in going through
 the trouble of backend isolation. Developers are free to use their discretion to
 decide whether backend isolation is necessary or desirable.
 
-Testing the JAX JIT compiler
-----------------------------
+Testing the JAX JIT compiler (and lazy evaluation with Dask)
+------------------------------------------------------------
 The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
 introduces special restrictions to all code wrapped by `@jax.jit`, which are not
 present when running JAX in eager mode. Notably, boolean masks in `__getitem__`
@@ -853,6 +853,17 @@ the testing framework should look for functions tagged with ``lazy_xp_function``
      # so long as the xp_capabilities entry for toto has
      # jax_jit=True.
      xp_assert_close(toto(a), b)
+
+This can be slightly annoying to remember at first, but in practice isn't too bad
+once one gets in the habit of checking for this. The essential complexity of
+``lazy_xp_function`` is actually quite high, and the current design trades off on
+developer ergonomics to allow for a simpler implementation.
+
+Testing lazy evaluation with Dask works similarly, except ``lazy_xp_function`` wraps
+functions with a decorator that disables ``compute()`` and ``persist()`` and ensures
+that exceptions and warnings are raised eagerly. Similarly as for the JAX jit,
+``make_xp_test_case`` and friends will automatically do this when the associated
+``xp_capabilities`` entry has ``allow_dask_compute=False``.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
