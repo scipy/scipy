@@ -5120,7 +5120,7 @@ class TestFindFreqs:
         N = 30
         w = findfreqs(xp.asarray([1.2]), xp.asarray([3.6, 9.8]), N=N, kind=kind)
         ratio = xp.diff(xp.log10(w))
-        xp_assert_close(ratio, xp.full(N - 1, ratio[0]))
+        xp_assert_close(ratio, ratio[0]*xp.ones(N - 1, dtype=xp_default_dtype(xp)))
 
     def test_findfreqs_ba_zp_equiv(self, xp):
         num, den = [1.4, 2], [1, 3.8, 2]
