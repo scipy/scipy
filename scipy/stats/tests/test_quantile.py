@@ -297,8 +297,6 @@ class TestQuantile:
 
     @pytest.mark.parametrize('zero_weights', [False, True])
     def test_weights_against_numpy(self, zero_weights, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0":
-            pytest.skip('`weights` not supported by NumPy < 2.0.')
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(85468924398205602)
         method = 'inverted_cdf'
