@@ -228,16 +228,16 @@ reason for that is that silent data transfer between devices is considered bad
 practice, as it is likely to be a large and hard-to-detect performance
 bottleneck.
 
-In some cases, compiled code can be supported through dispatch to native
-implementations. Such dispatch has currently been set up in `fft`, `ndimage`,
+In some cases, compiled code can be supported through delegation to native
+implementations. Such delegation has currently been set up in `fft`, `ndimage`,
 `signal`, and `special`, though there is not yet a standard approach, and support
 in each module has mostly evolved separately. When adding array API standard
 support for an existing function, it is useful to check which backends have
 native implementations. Support for a function can be established through either
-dispatch to a native implementation, or by adding array API support in the
-standard way with dispatch to native implementations of any compiled
+delegation to a native implementation, or by adding array API support in the
+standard way with delegation to native implementations of any compiled
 dependencies. For the sake of brevity, in the remainder of this document we
-speak only of dispatch to a native implementation of a function itself, with the
+speak only of delegation to a native implementation of a function itself, with the
 understanding that the reader should mentally fill in the general picture.
 
 There is also some effort being put into expanding access to native
@@ -285,7 +285,7 @@ as if ``xp_capabilities`` only applies to functions.
 The ``xp_capabilities`` decorator is what inserts the capabilities table into
 docstrings. It also allows developers to tag tests with ``@make_xp_test_case``
 or ``make_xp_pytest_param`` to automatically generate backend specific
-SKIP/XFAIL markers, and setting up testing that functions work with the JAX jit
+SKIP/XFAIL markers, and setting up testing that functions work with the JAX JIT
 or work in Dask lazily (i.e. without materializing arrays with
 ``dask.compute`` or otherwise triggering computation with ``dask.persist``).
 
@@ -312,14 +312,14 @@ Using ``xp_capabilities``  with no arguments, like this::
   def my_function(x):
       ...
 
-declares that a function works on all supported backends, on JAX with the jit
+declares that a function works on all supported backends, on JAX with the JIT
 and lazily in Dask. This is most likely to occur if a function is written
 entirely in terms of the array API standard as described earlier in this
-document. Such functions are commonly referred to as array API agnostic. For
+document. Such functions are commonly referred to as array-agnostic. For
 functions which are written mostly in terms of the array API standard, but
 include calls to compiled code sandwiched between conversions to and from NumPy,
 ``xp_capabilities`` should be given the ``cpu_only=True`` option. Backends
-which are supported on GPU by such a function ``f`` through dispatch to a
+which are supported on GPU by such a function ``f`` through delegation to a
 native implementation can be specified with the ``exceptions`` kwarg, which
 in this case takes a list of strings specifying GPU-capable backends. The
 currently supported string values when using ``cpu_only=True`` are
@@ -328,8 +328,8 @@ currently supported string values when using ``cpu_only=True`` are
 It is recommended to reserve ``cpu_only=False`` (the default) for array API
 agnostic functions which are expected to work on all array API compliant
 backends, including ones not tested in SciPy and ones that do not yet exist.
-If a function is supported on GPU on all tested backends through dispatch to
-respective native implementations one should use ``cpu_only=True`` while listing
+If a function is supported on GPU on all tested backends through delegation to
+respective native implementations, one should use ``cpu_only=True`` while listing
 each backend in the list of ``exceptions``.
 
 When setting ``cpu_only=True``, one may list a reason by passing a string with
@@ -381,7 +381,7 @@ otherwise initiate computation with ``dask.persist``. Use
 ``allow_dask_compute=True`` to declare that a function supports Dask arrays but
 not lazily. Developers can also pass an integer to give a cap for the number of
 combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
-is not array array API agnostic, then it will typically be the case that
+is not array array-agnostic, then it will typically be the case that
 ``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
 
 Unsupported functions
@@ -394,9 +394,9 @@ functions which are not currently supported but which are considered in-scope
 for future support.
 
 Functions for which array API support has *not* been added following the
-procedures described earlier in this document, but for which dispatch to a
-native implementation has been set up for one or more array API backends should
-still use ``np_only=True` in their ``xp_capabilities`` entries. Just as for
+procedures described earlier in this document, but for which delegation to a
+native implementation has been set up for one or more array API backends, should
+still use ``np_only=True`` in their ``xp_capabilities`` entries. Just as for
 ``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg (and
 also just as for ``cpu_only=True`` one can pass a reason with the ``reason``
 kwarg).
@@ -427,9 +427,9 @@ being followed are to exclude:
 * functions which are too implementation specific such as those in `scipy.linalg.blas` which give direct wrappers to low-level BLAS routines.
 * functions which would inherently be very difficult or even impossible to compute efficiently on accelerated computing devices.
 
-As an example. The contents of `scipy.odr` are considered out-of-scope for a
+As an example, the contents of `scipy.odr` are considered out-of-scope for a
 combination of reasons 2 and 3 above. `scipy.odr` essentially provides a direct
-wrapper of the monolithic ODRPACK Fortran library, and it's API is tied
+wrapper of the monolithic ODRPACK Fortran library, and its API is tied
 to the structure of this monolithic library. An efficient GPU
 accelerated implementation of nonlinear weighted orthogonal distance regression
 would benefit from not having to support an API so tightly coupled to ODRPACK
@@ -476,7 +476,7 @@ supported, but due to something like numerical troubles, the results returned ar
 not accurate.
 
 Earlier we discussed the edge-case of a function which has not been given array
-API standard support in the usual way but is available on JAX through dispatch to
+API standard support in the usual way but is available on JAX through delegation to
 a native implementation which supports ``jax.jit`` but does not work on the GPU.
 For now, such situations can in principle be handled by using ``cpu_only=True``
 and passing in any backends which are not even supported on CPU to ``skip_backends``::
@@ -507,12 +507,13 @@ implementation of ``extra_note`` simply inserts a string directly into the Notes
 of the docstring, and one must be careful about whitespace. This is perhaps
 best demonstrated with an example::
 
-  uses_choose_conv_extra_note = \
+  uses_choose_conv_extra_note = (
     """CuPy does not support inputs with ``ndim>1`` when ``method="auto"``
     but does support higher dimensional arrays for ``method="direct"``
     and ``method="fft"``.
 
     """
+)
 
 .. _dev-arrayapi_adding_tests:
 
@@ -593,7 +594,7 @@ Directly adding pytest markers
 
 In addition to using ``make_xp_test_case``, ``make_xp_pytest_param``, order
 ``make_xp_pytest_marks``, the following ``pytest`` markers are available and
-be added directly (What ``make_xp_test_case`` and friends actually do is give a
+be added directly (what ``make_xp_test_case`` and friends actually do is give a
 declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends`` markers).
 
 
@@ -656,13 +657,13 @@ with a caveat that there are situations where or it is necessary or desired to
 do otherwise: see the section on :ref:`backend isolation <dev-arrayapi_backend_isolation>`
 below for more information.
 
-Note that in one case ``xp_capabilities``, offers more granularity than
+Note that, in one case, ``xp_capabilities`` offers more granularity than
 ``skip_xp_backends`` and ``xfail_xp_backends``. ``xp_capabilities`` allows developers
-to separately declare support for the JAX jit and support for lazy computation
+to separately declare support for the JAX JIT and support for lazy computation
 with Dask with the respective ``jax_jit`` and ``allow_dask_compute`` kwargs.
 ``skip_xp_backends`` (``xfail_xp_backends``) offers only an ``eager_only`` kwarg which
-can only adds skips (xfails) for both the JAX jit and lazy Dask together. The
-current state is that one cannot add test specific skips (xfails) for the JAX jit
+can only add skips (/xfails) for both the JAX JIT and lazy Dask together. The
+current state is that one cannot add test specific skips (/xfails) for the JAX JIT
 without also adding them for lazy Dask and vice versa. This is a known limitation
 and a consequence of the process through which ``xp_capabilities``, ``skip_xp_backends``,
 and ``xfail_xp_backends`` have evolved naturally to meet developer needs.
@@ -730,12 +731,12 @@ Running tests
 `````````````
 
 After applying these markers, either through ``make_xp_test_case`` and friends, or directly,
-``spin test`` can be used with the new option ``-b`` or ``--array-api-backend``::
+``spin test`` can be used with the option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately and will cause
-only tests with the ``xp`` fixture and for the selected backends to be
+only tests with the ``xp`` fixture for the selected backends to be
 collected. Valid backends are ``numpy``, ``array_api_strict``, ``cupy``,
 ``dask.array``, ``jax.numpy``, and ``torch``. One may also use ``-b all``
 to have pytest collect all tests using the ``xp`` fixture.
