@@ -2099,6 +2099,120 @@ class TestLstsq:
         assert x.dtype == dt_nonempty
 
 
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_less_than_n(self, driver):
+        # if m < n, LAPACK needs a copy of b:
+        # B is (LDB, NRHS)-shaped, with LDB = max(1, M, N)
+        # https://www.netlib.org/lapack/explore-html/d6/d4b/dgelsy_8f.html
+        a = np.arange(3*4).reshape(3, 4) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(3) + 1, 1 + 4*np.arange(3))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05  ,  0.7   ],
+                                     [ 0.025 ,  0.4   ],
+                                     [ 0.1   ,  0.1   ],
+                                     [ 0.175 , -0.2   ]],
+
+                                    [[-0.025 ,  0.35  ],
+                                     [ 0.0125,  0.2   ],
+                                     [ 0.05  ,  0.05  ],
+                                     [ 0.0875, -0.1   ]]]), atol=1e-15
+        )
+
+        # TODO: add a batched dim of `a` 
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_m_larger_than_n(self, driver):
+        # similar to test_m_less_than_n: test copying with LDB=max(1, M, N)
+        a = np.arange(3*4).reshape(4, 3) + 1
+        aa = np.stack((a, 2*a))
+        bb = np.stack((np.arange(4) + 1, 1 + 4*np.arange(4))).T
+
+        x, residues, rank, s = lstsq(aa, bb, lapack_driver=driver)
+        assert_allclose(x,
+                        np.asarray([[[-0.05555556,  1.27777778],
+                                     [ 0.11111111,  0.44444444],
+                                     [ 0.27777778, -0.38888889]],
+
+                                    [[-0.02777778,  0.63888889],
+                                     [ 0.05555556,  0.22222222],
+                                     [ 0.13888889, -0.19444444]]]), atol=1e-15
+        )
+
+    @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
+    def test_residuals(self, driver):
+        # assert the (quirky) behavior of the `residuals` return
+        # this is the backwards-compat part
+
+        if driver == 'gelsy':
+            pytest.xfail('driver="gelsy" does not return residuals')
+
+        a = np.array([[1, 2], [4, 5], [3, 4]], dtype=float)
+        b = np.array([1, 2, 3], dtype=float)
+
+        m, n = a.shape
+        assert m > n    # backcompat: residuals are non-empty iff m > n and rank == n
+
+        # 1. b.shape == (n,)
+        x, resid, rank, s = lstsq(a, b, lapack_driver=driver)
+
+        assert rank == n
+        assert resid.ndim == 0   # it's numpy scalar, in fact
+
+        delta = b - a @ x
+        manual_residuals = np.sum(delta * delta.conj(), axis=0)
+        assert math.isclose(resid, manual_residuals, abs_tol=1e-14)
+
+        # 2. b.shape == (n, nrhs)
+        b2 = np.stack((b, 2*b, 3*b, 4*b), axis=1)   # b1.shape=(3, 4), nrhs=4
+        nrhs = b2.shape[-1]
+        x2, resid2, rank2, s2 = lstsq(a, b2, lapack_driver=driver)
+
+        assert rank2 == n
+        assert resid2.shape == (nrhs,)
+        delta2 = b2 - a @ x2
+        manual_residuals2 = np.sum( delta2 * delta2.conj(), axis=0 )
+        assert_allclose(resid2, manual_residuals2, atol=1e-14)
+
+        # 3. b.shape == (n,), and a has batch shape (2,)
+        a3 = np.stack((a, 2*a))
+        b3 = b.copy()
+        batch_shape = a3.shape[:-2]
+
+        x3, resid3, ranks3, s3 = lstsq(a3, b3, lapack_driver=driver)
+        assert_equal(ranks3, np.asarray([n, n]))
+        assert resid3.shape == (n,)
+        assert_allclose(resid3, [resid]*n, atol=1e-14)
+
+        # 4. b.shape == (n, nhrs) and a has batch shape = (2,)
+        a4 = np.stack((a, 2*a))
+        batch_shape = a4.shape[:-2]
+        b4 = b2.copy()
+        x4, resid4, rank4, s4 = lstsq(a4, b4, lapack_driver=driver)
+
+        assert_equal(rank4, np.asarray([n, n]))
+        assert resid4.shape == (2, nrhs)   # batch_shape + (nrhs,)
+
+        delta4 = b4 - a4 @ x4
+        manual_residual4 = np.sum( delta4 * delta4.conj(), axis=len(batch_shape) )
+        assert_allclose(resid4, manual_residual4, atol=1e-14)
+
+    def test_errors(self):
+        a = np.ones((3, 4))
+        b = np.ones(4)
+
+        with pytest.raises(ValueError, match="LAPACK driver"):
+            lstsq(a, b, lapack_driver='krampus')
+
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            lstsq(a, b)
+
+        with pytest.raises(ValueError, match="Input array"):
+            lstsq(np.ones(3), np.ones(3))
+
+
 class TestPinv:
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)

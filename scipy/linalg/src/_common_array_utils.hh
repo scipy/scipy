@@ -216,7 +216,14 @@ void BLAS_FUNC(zgelss)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex1
 void BLAS_FUNC(sgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(dgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
 void BLAS_FUNC(cgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
-void BLAS_FUNC(zgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, int *iwork, int *info);
+void BLAS_FUNC(zgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, double *s, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *iwork, CBLAS_INT *info);
+
+
+/* ?GELSY*/
+void BLAS_FUNC(sgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(dgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, double *rcond, CBLAS_INT *rank, double *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void BLAS_FUNC(cgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex64 *a, CBLAS_INT *lda, npy_complex64 *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, float *rcond, CBLAS_INT *rank, npy_complex64 *work, CBLAS_INT *lwork, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(zgelsy)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, npy_complex128 *a, CBLAS_INT *lda, npy_complex128 *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, double *rcond, CBLAS_INT *rank, npy_complex128 *work, CBLAS_INT *lwork, double *rwork, CBLAS_INT *info);
 
 
 } // extern "C"
@@ -683,8 +690,6 @@ GEN_GELSS_CZ(c, npy_complex64, float)
 GEN_GELSS_CZ(z, npy_complex128, double)
 
 
-//void BLAS_FUNC(sgelsd)(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, float *s, float *rcond, CBLAS_INT *rank, float *work, CBLAS_INT *lwork, CBLAS_INT *iwork, CBLAS_INT *info);
-
 // NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
 #define GEN_GELSD_SD(PREFIX, TYPE, RTYPE) \
 inline void \
@@ -706,6 +711,39 @@ gelsd(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE
 
 GEN_GELSD_CZ(c, npy_complex64, float)
 GEN_GELSD_CZ(z, npy_complex128, double)
+
+
+/*
+void sgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, s *a, CBLAS_INT *lda, s *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, s *rcond, CBLAS_INT *rank, s *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void dgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, d *a, CBLAS_INT *lda, d *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, d *rcond, CBLAS_INT *rank, d *work, CBLAS_INT *lwork, CBLAS_INT *info);
+void cgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, c *a, CBLAS_INT *lda, c *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, s *rcond, CBLAS_INT *rank, c *work, CBLAS_INT *lwork, s *rwork, CBLAS_IT *info);
+void zgelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, z *a, CBLAS_INT *lda, z *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, d *rcond, CBLAS_INT *rank, z *work, CBLAS_INT *lwork, d *rwork, CBLAS_INT *info);
+*/
+
+// NB: s- and d- variants ignore the rwork argument (because LAPACK routines do not have it
+#define GEN_GELSY_SD(PREFIX, TYPE, RTYPE) \
+inline void \
+gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, info); \
+};
+
+GEN_GELSY_SD(s, float, float)
+GEN_GELSY_SD(d, double, double)
+
+
+#define GEN_GELSY_CZ(PREFIX, TYPE, RTYPE) \
+inline void \
+gelsy(CBLAS_INT *m, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *jpvt, RTYPE *rcond, CBLAS_INT *rank, TYPE *work, CBLAS_INT *lwork, RTYPE *rwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## gelsy)(m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, rwork, info); \
+};
+
+GEN_GELSY_CZ(c, npy_complex64, float)
+GEN_GELSY_CZ(z, npy_complex128, double)
+
+
+
 
 
 // Structure tags; python side maps assume_a strings to these values
@@ -787,7 +825,7 @@ CBLAS_INT _calc_lwork(T _lwrk, double fudge_factor=1.0) {
         lwork = -1;
     }
     else {
-        lwork = (CBLAS_INT)value;
+        lwork = value > 0 ? (CBLAS_INT)value : 1;
     }
     return lwork;
 }
@@ -825,26 +863,40 @@ void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, 
 
 /*
  * Copy n-by-m C-order slice from slice_ptr to dst in F-order.
+ *
+ * `src` is n-by-m, strided
+ * `dst` is ldb-by-m, F-ordered.
+ *
+ * The default is to have src and dst of the same size (ldb=-1 means ldb=n).
  */
 template<typename T>
-void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1) {
+void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1, npy_intp ldb=-1) {
+
+    if (ldb == -1) {ldb = n;}
 
     for (npy_intp i = 0; i < n; i++) {
         for (npy_intp j = 0; j < m; j++) {
-            dst[i + j*n] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
+            dst[i + j*ldb] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
         }
     }
 }
 
 /*
  * Copy n-by-m F-ordered `src` to C-ordered `dst`.
+ *
+ * `src` is ldb-by-m, F-ordered
+ * `dst` is n-by-m, C-ordered
+ *
+ * The default is to have src and dst of the same size (ldb=-1 means ldb=n)
  */
 template<typename T>
-void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m) {
+void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m, npy_intp ldb=-1) {
+
+    if (ldb == -1) {ldb = n;}
 
     for (npy_intp i = 0; i < n; i++) {
         for (npy_intp j = 0; j < m; j++) {
-            dst[i*m + j] = src[i + j*n];
+            dst[i*m + j] = src[i + j*ldb];
         }
     }
 }
