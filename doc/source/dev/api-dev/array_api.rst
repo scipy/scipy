@@ -143,6 +143,7 @@ be the standard-compatible namespace matching the input array type to a
 function (e.g., if the input to `cluster.vq.kmeans` is a PyTorch tensor, then
 ``xp`` is ``array_api_compat.torch``).
 
+.. _dev-arrayapi_adding_support:
 
 Adding array API standard support to a SciPy function
 -----------------------------------------------------
@@ -229,26 +230,27 @@ bottleneck.
 
 In some cases, compiled code can be supported through dispatch to native
 implementations. Such dispatch has currently been set up in `fft`, `ndimage`,
-`signal`, and `special`, though there is not yet a standard approach and support
+`signal`, and `special`, though there is not yet a standard approach, and support
 in each module has mostly evolved separately. When adding array API standard
 support for an existing function, it is useful to check which backends have
 native implementations. Support for a function can be established through either
 dispatch to a native implementation, or by adding array API support in the
-standard way with dispatch to native implementations of compiled
+standard way with dispatch to native implementations of any compiled
 dependencies. For the sake of brevity, in the remainder of this document we
 speak only of dispatch to a native implementation of a function itself, with the
-understanding that the reader should fill in the general picture.
+understanding that the reader should mentally fill in the general picture.
 
 There is also some effort being put into expanding access to native
-implementations, such as the [xsf
-project](https://github.com/scipy/xsf/issues/1) to establish a library of
-mathematical special function implementations which support both CPU and GPU.
+implementations, such as the `xsf project <https://github.com/scipy/xsf/issues/1>`
+to establish a library of mathematical special function implementations which support
+both CPU and GPU.
 
 Documenting array API standard support
 --------------------------------------
 
 Support for alternative array API standard backends can be registered and
-documented using the `xp_capabilities` decorator::
+documented using the ``xp_capabilities`` decorator which has the following
+signature::
 
   def xp_capabilities(
       *,
@@ -270,13 +272,17 @@ documented using the `xp_capabilities` decorator::
       extra_note=None,
   ):
 
-This is available in `scipy._lib._array_api` and can be applied to functions,
+This is available in ``scipy._lib._array_api`` and can be applied to functions,
 methods, and classes to declare the current extent of their array API standard
 support. For the sake of brevity, in the remainder of this document, we write
-as if ``xp_capabilities`` only applies to functions unless describing aspects
-particular to applying it to classes or methods.
+as if ``xp_capabilities`` only applies to functions.
+.. I plan to submit a future PR adding classes to the array API docs tables
+.. also adding some caveats about the use of ``xp_capabilities`` applied to
+.. classes. Reminder to modify the above to say "we write as if ``xp_capabilities``
+.. only applies to functions, except when describing behavior particular to
+.. its application to classes or methods." when the later PR goes in.
 
-The `xp_capabilities` decorator is what inserts the capabilities table into
+The ``xp_capabilities`` decorator is what inserts the capabilities table into
 docstrings. It also allows developers to tag tests with ``@make_xp_test_case``
 or ``make_xp_pytest_param`` to automatically generate backend specific
 SKIP/XFAIL markers, and setting up testing that functions work with the JAX jit
@@ -288,8 +294,8 @@ or work in Dask lazily (i.e. without materializing arrays with
    The modification of docstrings by ``xp_capabilities`` can potentially break
    intersphinx references because it currently has the side effect of replacing
    implicit roles with ``:func:``. This can be avoided by explicitly
-   setting the role for references to classes and methods outside of SciPy.
-
+   setting the role for references to classes and methods that are
+   outside of SciPy.
 
    .. code-block:: rst
 
@@ -315,8 +321,9 @@ include calls to compiled code sandwiched between conversions to and from NumPy,
 ``xp_capabilities`` should be given the ``cpu_only=True`` option. Backends
 which are supported on GPU by such a function ``f`` through dispatch to a
 native implementation can be specified with the ``exceptions`` kwarg, which
-takes a list of strings specifying GPU-capable backends. The currently
-supported string values are ``"cupy"``, ``"torch"``, and ``"jax.numpy"``.
+in this case takes a list of strings specifying GPU-capable backends. The
+currently supported string values when using ``cpu_only=True`` are
+``"cupy"``, ``"torch"``, and ``"jax.numpy"``.
 
 It is recommended to reserve ``cpu_only=False`` (the default) for array API
 agnostic functions which are expected to work on all array API compliant
@@ -335,11 +342,11 @@ when the SciPy test suite is run with ``pytest`` in verbose mode
 JAX JIT
 ```````
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False`. If a function is neither array API agnostic nor supported
+``jax_jit=False``. If a function is neither array API agnostic nor supported
 on JAX through dispatch to a native JAX implementation (again either dispatch to
 a native implementation of the function itself or dispatch for its compiled
 dependencies) then it is virtually certain that the JIT is not supported and
-one should set ``jax_jit=False``. The following ``xp_capabilities` call is almost
+one should set ``jax_jit=False``. The following ``xp_capabilities`` call is almost
 certainly incorrect::
 
   @xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"])
@@ -348,7 +355,9 @@ certainly incorrect::
 
 It must be the case here that ``jax_jit=False``::
 
-  @xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"], jax_jit=False)
+  @xp_capabilities(
+      cpu_only=True, exceptions=["cupy", "torch"], jax_jit=False
+  )
   def my_other_function(x):
       ...
 
@@ -356,7 +365,9 @@ However, it is possible for a function to be supported on GPU with JAX natively
 without working in JIT mode. This can occur for instance for functions with
 data-dependent output shapes. Thus the following situation can occur::
 
-  @xp_capabilities(cpu_only=True, exceptions=["jax.numpy"]], jax_jit=False)
+  @xp_capabilities(
+      cpu_only=True, exceptions=["jax.numpy"]], jax_jit=False
+  )
   def yet_another_function(x):
       ...
 
@@ -369,8 +380,8 @@ in Dask and will not materialize any Dask arrays with ``dask.compute`` or
 otherwise initiate computation with ``dask.persist``. Use
 ``allow_dask_compute=True`` to declare that a function supports Dask arrays but
 not lazily. Developers can also pass an integer to give a cap for the number of
-allowed combined calls to ``dask.compute`` and ``dask.persist``. If a function is not
-array array API agnostic, then it will typically be the case that
+combined calls to ``dask.compute`` and ``dask.persist`` that are allowed. If a function
+is not array array API agnostic, then it will typically be the case that
 ``allow_dask_compute=True`` should be set, unless Dask specific codepaths have been added.
 
 Unsupported functions
@@ -385,7 +396,7 @@ for future support.
 Functions for which array API support has *not* been added following the
 procedures described earlier in this document, but for which dispatch to a
 native implementation has been set up for one or more array API backends should
-also still have ``xp_capabilities`` entries with ``np_only=True``. Just as for
+still use ``np_only=True` in their ``xp_capabilities`` entries. Just as for
 ``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg (and
 also just as for ``cpu_only=True`` one can pass a reason with the ``reason``
 kwarg).
@@ -395,17 +406,17 @@ Valid strings to pass in the exceptions list are ``"array_api_strict"``,
 ``np_only=True`` and one or both of ``"torch"`` or ``"jax.numpy"`` are added to
 the lists of exceptions, these will be declared as supported on both CPU and
 GPU. However, it's possible for a function to be natively available in JAX,
-support the jit, but not be supported on GPU. Because ``exceptions`` does double
+support ``jax.jit``, but not be supported on GPU. Because ``exceptions`` does double
 duty declaring exceptions to ``cpu_only=True`` and ``np_only=True``, it is not
 possible to express this situation using ``xp_capabilities`` in the way
 described above. This is not too serious of an issue because the intention is
 that ``np_only=True`` is only a temporary state. Through the means described
-above in the section "Adding array API standard support to a SciPy function", it
-is feasible for all functions in SciPy's public API to at least reach the state
-``cpu_only=True``. For functions still waiting in the ``np_only=True`` state,
+above in the section on :ref:`adding array API support <dev-arrayapi_adding_support>`,
+it is a reasonable goal for all functions in SciPy's public API to at least reach
+the state ``cpu_only=True``. For functions still waiting in the ``np_only=True`` state,
 ``xp_capabilities``'s ``skip_backends`` kwarg can be used as an escape hatch to
-allow more fine grained declaration of capabilities. This will be described
-further along in this document.
+allow more fine grained declaration of capabilities. See the section on
+:ref:`skip_backends and xfail_backends <dev-arrayapi_skip_xfail_backends>`.
 
 ``out_of_scope=True`` signals that there is no intention to ever provide array
 API support for a given function. There is not yet a formal policy for which
@@ -432,6 +443,8 @@ Considerations of what to consider in-scope are evolving, and something which is
 considered out-of-scope may be decided to be in-scope in the future if sufficient user
 interest and feasability are demonstrated.
 
+.. _dev-arrayapi_skip_xfail_backends:
+
 ``skip_backends`` and ``xfail_backends``
 ````````````````````````````````````````
 One may pass lists of tuples of backend string, reason pairs to ``xp_capabilities``
@@ -442,7 +455,7 @@ CPU and GPU. The difference between ``skip_backends`` and ``xfail_backends`` is 
 tests using the ``xp`` fixture, ``skip_backends`` adds ``pytest.skip`` markers for
 backends and the corresponding tests are skipped entirely. With ``xfail_backends``,
 ``pytest.xfail`` markers are added, and tests are still run but expected to fail.
-When using ``cpu_only`` or ``np_only`` along with ``exceptions``, what happens under the
+When using ``cpu_only`` or ``np_only``, along with ``exceptions``, what happens under the
 hood is that ``skip_backends`` and ``xfail_backends`` lists are populated internally.
 The ``skip_backends`` and ``xfail_backends`` kwargs allow passing additional tuples
 to be appended to these lists. One example in which it is pertinent to use
@@ -452,7 +465,9 @@ arrays through item assignment, which is not supported in JAX. For instance the 
 can be used to signify a function which is otherwise array API agnostic, but uses
 in-place item-assignment::
 
-  @xp_capabilities(skip_backends=[("jax.numpy", "in-place item assignment")])
+  @xp_capabilities(
+      skip_backends=[("jax.numpy", "in-place item assignment")]
+  )
   def function_with_internal_mutation(x):
       ...
 
@@ -505,18 +520,21 @@ best demonstrated with an example::
 Adding tests
 ------------
 
-To run a test on multiple array backends, you should add the ``xp`` fixture to it.
-It is similar to parameters created with `pytest.mark.parametrize`, and will take values
-over all currently tested array namespaces. ``scipy._lib._array_api`` provides the
-``make_xp_test_case`` decorator and``make_xp_pytest_param`` and ``make_xp_pytest_marks``
-functions to declare which functions are being tested by a test. These draw on the
-``xp_capabilities`` entries for a function (or in some cases those
-for a list of functions) to insert the relevant backend specific skip and xfail markers.
+To run a test on multiple array backends, you should add the ``xp`` fixture to
+it.  It is similar to parameters created with ``pytest.mark.parametrize``, and
+will take values over all currently tested array
+namespaces. ``scipy._lib._array_api`` provides the ``make_xp_test_case``
+decorator, and the ``make_xp_pytest_param`` and ``make_xp_pytest_marks``
+functions to declare which functions are being tested by a test.  These draw on
+the ``xp_capabilities`` entries for a function (or in some cases those for a
+list of functions) to insert the relevant backend specific skip and xfail
+markers.
 
-``make_xp_test_case`` is applied as a decorator to a test function, test method, or
-entire test class, to declare what parts of the public API are being tested. Applying it
-to a test class is equivalent to applying it to each method separately. The decorator
-can be applied at both the class and method level as below::
+``make_xp_test_case`` is applied as a decorator to a test function, test method,
+or entire test class, to declare what parts of the public API are being
+tested. Applying it to a test class is equivalent to applying it to each method
+separately. The decorator can be applied at both the class and method level as
+below::
 
   @make_xp_test_case(my_function)
   class TestMyFunction:
@@ -533,29 +551,32 @@ will have the combined skips and xfails of ``my_function`` and ``other_function`
 skips naturally taking precedence over xfails.
 
 ``make_xp_pytest_param`` is provided for situations in which a common test body is
-parametrized over a list of functions using ``pytest.mark.parametrize::
+parametrized over a list of functions using ``pytest.mark.parametrize``::
 
-  @pytest.mark.parametrize("func", [make_xp_pytest_param(func) for func in tested_funcs])
+  @pytest.mark.parametrize(
+      "func",
+      [make_xp_pytest_param(func) for func in tested_funcs]
+  )
   def test_foo(func, xp):
       ...
 
- Unlike ``make_xp_test_case``, only a single function can be passed to any given call to
- ``make_xp_pytest_param``. Additional arguments specify additional parameters for
- ``pytest.mark.parametrize``, such as in the contrived example below::
+Unlike ``make_xp_test_case``, only a single function can be passed to any given call to
+``make_xp_pytest_param``. Additional arguments specify additional parameters for
+``pytest.mark.parametrize``, such as in the contrived example below::
 
-   @pytest.mark.parametrize(
-       "func,norm",
-       [
-           make_xp_pytest_param(func, norm)
-	   for func, norm in it.product(tested_functions, [True, False])
-       ]
+  @pytest.mark.parametrize(
+      "func,norm",
+      [
+          make_xp_pytest_param(func, norm)
+	  for func, norm in it.product(tested_functions, [True, False])
+      ]
    )
    def test_normed_foo(func, norm, xp):
        ...
 
- Given a function or list of functions, ``make_xp_pytest_marks`` directly returns
- a list of associated pytest marks which can be used with the module-level
- ``pytestmark = ...`` variable.
+Given a function or list of functions, ``make_xp_pytest_marks`` directly returns
+a list of associated pytest marks which can be used with the module-level
+``pytestmark = ...`` variable.
 
 The ``xp`` fixture enforces that all tests using it must draw from ``xp_capabilities``
 by using one or more of ``make_xp_pytest_param``, ``make_xp_test_case``, or
@@ -564,8 +585,8 @@ a test with ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason``
 can be passed to this mark. For tests of private functionality for which there are no
 relevant ``xp_capabilities`` entries, one should use
 ``pytest.mark.uses_xp_capabilities(False, reason="private")``. Grepping for instances of
-``pytest.mark.uses_xp_capabilities`` with reasons other than `"private"` or
-`"not applicable"` is a good way of finding work that needs to be done.
+``pytest.mark.uses_xp_capabilities`` with reasons other than ``"private"`` or
+``"not applicable"`` could be a good way of finding work that needs to be done.
 
 Directly adding pytest markers
 ``````````````````````````````
@@ -608,25 +629,25 @@ declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends`` marke
 Test specific skips and xfails
 ``````````````````````````````
 
-For a public function ``f``, `skip_xp_backends` and `xfail_xp_backends` should
+For a public function ``f``, ``skip_xp_backends`` and ``xfail_xp_backends`` should
 only be used directly for backend related skips and xfails which are needed for
 the specific test but which do not reflect the general capabilities of
-``f``. Reasons to directly use `skip_xp_backends` include when:
+``f``. Reasons to directly use ``skip_xp_backends`` include when:
 
-   1. the test body itself contains unsupported functionality (though one should
-      try to avoid this whenever possible, see the subsection on testing
-      practice below).
-   2. ``f`` is only partially supported on a backend and the test relies on
+1. the test body itself contains unsupported functionality (though one should
+   try to avoid this whenever possible, see the subsection on testing
+   practice below).
+2. ``f`` is only partially supported on a backend and the test relies on
    cases which are not supported, e.g. tests involving complex values for
    functions which only support real values on a given backend, tests involving
    higher dimensional arrays for functions which only support arrays of size 2d
    or less on a given backend.
-   3. the test exposes a bug in ``f`` on a given backend which crashes test
-      execution.
+3. the test exposes a bug in ``f`` on a given backend which crashes test
+   execution.
 
-Direct uses of `xfail_xp_backends` should be reserved for tests which expose a
+Direct uses of ``xfail_xp_backends`` should be reserved for tests which expose a
 bug in ``f`` on a given backend which causes incorrect results or an exception
-to be raised, but still allows all other tests to run normally. `xfail_xp_backends`
+to be raised, but still allows all other tests to run normally. ``xfail_xp_backends``
 should not be used for test failures for an alternative backend which are not
 related to ``f`` but are instead due to bugs exposed in other parts of the test
 body. To avoid such situations, we recommend as a general practice to attempt to
@@ -635,16 +656,16 @@ with a caveat that there are situations where or it is necessary or desired to
 do otherwise: see the section on :ref:`backend isolation <dev-arrayapi_backend_isolation>`
 below for more information.
 
-Note that in one case `xp_capabilities`, offers more granularity than
-`skip_xp_backends` and `xfail_xp_backends`. `xp_capabilities` allows developers
+Note that in one case ``xp_capabilities``, offers more granularity than
+``skip_xp_backends`` and ``xfail_xp_backends``. ``xp_capabilities`` allows developers
 to separately declare support for the JAX jit and support for lazy computation
-with Dask with the respective `jax_jit` and `allow_dask_compute` kwargs.
-`skip_xp_backends` (`xfail_xp_backends`) offers only an `eager_only` kwarg which
+with Dask with the respective ``jax_jit`` and ``allow_dask_compute`` kwargs.
+``skip_xp_backends`` (``xfail_xp_backends``) offers only an ``eager_only`` kwarg which
 can only adds skips (xfails) for both the JAX jit and lazy Dask together. The
 current state is that one cannot add test specific skips (xfails) for the JAX jit
 without also adding them for lazy Dask and vice versa. This is a known limitation
-and a consequence of the process through which `xp_capabilities`, `skip_xp_backends`,
-and `xfail_xp_backends` have evolved naturally to meet developer needs.
+and a consequence of the process through which ``xp_capabilities``, ``skip_xp_backends``,
+and ``xfail_xp_backends`` have evolved naturally to meet developer needs.
 
 
 Array-agnostic assertions
@@ -664,7 +685,7 @@ Examples
 ````````
 
 The following examples demonstrate how to use direct markers together with
-`make_xp_test_case`::
+``make_xp_test_case``::
 
   from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close, make_xp_test_case
@@ -708,7 +729,7 @@ non-CPU backends, and the CPU code path requires conversion to NumPy for compile
 Running tests
 `````````````
 
-After applying these markers, either through `make_xp_test_case` and friends, or directly,
+After applying these markers, either through ``make_xp_test_case`` and friends, or directly,
 ``spin test`` can be used with the new option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
@@ -717,7 +738,7 @@ This automatically sets ``SCIPY_ARRAY_API`` appropriately and will cause
 only tests with the ``xp`` fixture and for the selected backends to be
 collected. Valid backends are ``numpy``, ``array_api_strict``, ``cupy``,
 ``dask.array``, ``jax.numpy``, and ``torch``. One may also use ``-b all``
-to collect all tests using the ``xp`` fixture.
+to have pytest collect all tests using the ``xp`` fixture.
 
 To test a library
 that has multiple devices with a non-default device, a second environment
@@ -778,8 +799,8 @@ the need to skip backends due to lack of support for functions other than
 using the same alternative backend across different functions can also have
 value, giving a window into the general health of backend support for a module,
 but in order to ensure the test suite actually reflects the state of backend
-support for each function, it's vital to have tests which isolate use of the
-alternative backend only to the function being tested.
+support for each function, it's usually vital to have tests which isolate use
+of the alternative backend only to the function being tested.
 
 To help facilitate such backend isolation, there is a function
 ``_xp_copy_to_numpy`` in ``scipy._lib._array_api`` which can copy an arbitrary
@@ -801,7 +822,7 @@ function for which roots are sought) that converts to and from NumPy would not
 be desirable since since ``find_root`` and ``f`` are so tightly coupled in this
 case. In other cases, a function ``h`` used in the tests of a function ``g`` may
 be known to be so simple and rock solid that there is no point in going through
-the trouble of backend isolation. Developers are free to use their discretion to
+the trouble of backend isolation. Maintainers are free to use their discretion to
 decide whether backend isolation is necessary or desirable.
 
 Testing the JAX JIT compiler (and lazy evaluation with Dask)
@@ -845,39 +866,43 @@ you should tag them as follows in your test module::
       # When xp==jax.numpy, _private_toto_helper is wrapped with @jax.jit
       xp_assert_close(_private_toto_helper(a, b), a)
 
-If instead importing the functions from ``scipy.mymodule`` the above example
-imported ``mymodule`` and called ``toto`` through ``mymodule.toto``,
-``@jax.jit`` would not have applied to ``toto``.  This is due to an
-implementation specific quirk which limits the application of ``@jax.jit`` only
-to functions in the globals of the module that defines the current test.
-If one wishes to use a pattern like ``mymodule.toto`` in a test, one must define a
-variable ``lazy_xp_modules`` at the top of the test file to specify additional places
-the testing framework should look for functions tagged with ``lazy_xp_function``::
+.. warning::
 
-  import scipy.mymodule as mymodule
-  from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+   If instead of importing the functions from ``scipy.mymodule``, the above example
+   imported ``mymodule`` and called ``toto`` through the qualified name
+   ``mymodule.toto``, ``@jax.jit`` would not be applied to ``toto``.  This is due to an
+   implementation specific quirk which limits the application of ``@jax.jit`` only
+   to functions in the globals of the module that defines the current test.
+   If one wishes to use a pattern like ``mymodule.toto`` in a test, one must define a
+   variable ``lazy_xp_modules`` at the top of the test file to specify additional places
+   the testing framework should look for functions tagged with ``lazy_xp_function``::
 
-  lazy_xp_modules = [mymodule]
+     import scipy.mymodule as mymodule
+     from scipy._lib._array_api import make_xp_test_case, xp_assert_close
 
-  @make_xp_test_case(mymodule.toto)
-  def test_toto(xp):
-     a = xp.asarray([3, 10, 5, 16, 8, 4, 2, 1, ])
-     b = xp.asarray([3, 5, 8, 4, 2, 1])
-     # When xp==jax.numpy, toto is wrapped with @jax.jit
-     # so long as the xp_capabilities entry for toto has
-     # jax_jit=True.
-     xp_assert_close(toto(a), b)
+     lazy_xp_modules = [mymodule]
 
-This can be slightly annoying to remember at first, but in practice isn't too bad
-once one gets in the habit of checking for this. The essential complexity of
-``lazy_xp_function`` is actually quite high, and the current design trades off on
-developer ergonomics to allow for a simpler implementation.
+     @make_xp_test_case(mymodule.toto)
+     def test_toto(xp):
+         a = xp.asarray([3, 10, 5, 16, 8, 4, 2, 1, ])
+         b = xp.asarray([3, 5, 8, 4, 2, 1])
+         # When xp==jax.numpy, toto is wrapped with @jax.jit
+         # so long as the xp_capabilities entry for toto has
+         # jax_jit=True.
+         xp_assert_close(toto(a), b)
+
+   This can be slightly annoying to remember at first, but in practice isn't too bad
+   once one gets in the habit of checking for this. The essential complexity of
+   ``lazy_xp_function`` is actually quite high, and the current design trades off on
+   developer ergonomics to allow for a simpler implementation.
 
 Testing lazy evaluation with Dask works similarly, except ``lazy_xp_function`` wraps
 functions with a decorator that disables ``compute()`` and ``persist()`` and ensures
-that exceptions and warnings are raised eagerly. Similarly as for the JAX jit,
+that exceptions and warnings are raised eagerly. Similarly as for the JAX JIT,
 ``make_xp_test_case`` and friends will automatically do this when the associated
-``xp_capabilities`` entry has ``allow_dask_compute=False``.
+``xp_capabilities`` entry has ``allow_dask_compute=False``. The same warning about
+requiring ``lazy_xp_modules`` applies for tests Dask works with lazy evaluation just
+as it does for tests of the JAX JIT.
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
 
