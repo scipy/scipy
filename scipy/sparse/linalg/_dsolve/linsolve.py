@@ -114,10 +114,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
     A = convert_pydata_sparse_to_scipy(A)
     b = convert_pydata_sparse_to_scipy(b)
 
-    if not (issparse(A) and A.format in ("csc", "csr")):
-        A = csc_array(A)
-        warn('spsolve requires A be CSC or CSR matrix format',
+    if not (issparse(A) and A.format == "csc"):
+        warn(f"spsolve requires A be CSC format. Got {type(A)}.",
              SparseEfficiencyWarning, stacklevel=2)
+        A = csc_array(A)
 
     # b is a vector only if b have shape (n,)
     b_is_sparse = issparse(b)
@@ -150,75 +150,50 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
             x = umfpack.umf_solve(A, b, rhs_batch_size=rhs_batch_size)
         except umfpack.UMFPACKSingularMatrixError as e:
             raise LinAlgError("A is singular.") from e
-
-        # Convert back to consistent sparse class
-        if b_is_sparse and not b_is_vector:
-            x = A.__class__(x)
-
-        # Return the same type as b
-        if is_pydata_sparse:
-            x = pydata_sparse_cls.from_scipy_sparse(x)
-    elif not b_is_sparse:
-        # Dense SuperLU solver
-        if A.format == "csc":
-            flag = 1  # CSC format
-        else:
-            flag = 0  # CSR format
-
-        indices = A.indices.astype(np.intc, copy=False)
-        indptr = A.indptr.astype(np.intc, copy=False)
-        options = dict(ColPerm=permc_spec)
-        x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
-                                b, flag, options=options)
-        if info != 0:
-            raise LinAlgError("A is singular.")
     else:
-        # Sparse SuperLU solver
+        # Use SuperLU solver
         try:
-            Afactsolve = splu(A, permc_spec=permc_spec).solve
+            factor = splu(A, permc_spec=permc_spec)
         except RuntimeError as e:
             raise LinAlgError("A is singular.") from e
 
-        if b_is_vector:
-            # convert to 2D sparse matrix with one column
-            b = b[:, np.newaxis]
+        if not b_is_sparse:
+            x = factor.solve(b)
+        else:
+            if b_is_vector:
+                # convert to 2D sparse matrix with one column
+                b = b[:, np.newaxis].tocsc()
 
-        if not (b.format == "csc" or is_pydata_spmatrix(b)):
-            warn('spsolve is more efficient when sparse b '
-                    'is in the CSC matrix format',
-                    SparseEfficiencyWarning, stacklevel=2)
-            b = csc_array(b)
+            if b.format != "csc":
+                warn('spsolve is more efficient when sparse b '
+                        'is in the CSC matrix format',
+                        SparseEfficiencyWarning, stacklevel=2)
+                b = csc_array(b)
 
-        if use_umfpack and rhs_batch_size > 1:
-            rhs_batch_size = 1
+            # Solve in batches to reduce memory consumption
+            K = b.shape[1]
+            x_blocks = []
 
-        # Solve in batches to reduce memory consumption
-        K = b.shape[1]
-        x_blocks = []
+            # Pre-allocate arrays to avoid repeated allocations
+            b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
 
-        # Pre-allocate arrays to avoid repeated allocations
-        b_batch = np.empty((N, min(rhs_batch_size, K)), dtype=b.dtype, order="F")
+            for k in range(0, K, rhs_batch_size):
+                batch_end = min(k + rhs_batch_size, K)
+                width = batch_end - k
+                # Convert sparse to dense in the buffer
+                b_view = b_batch[:, :width]
+                b[:, k:batch_end].toarray(out=b_view)
+                # Solve the linear systems
+                x_dense = factor.solve(b_view)
+                x_blocks.append(csc_array(x_dense, dtype=b.dtype))
 
-        for k in range(0, K, rhs_batch_size):
-            batch_end = min(k + rhs_batch_size, K)
-            width = batch_end - k
-            # Convert sparse to dense in the buffer
-            b_view = b_batch[:, :width]
-            b[:, k:batch_end].toarray(out=b_view)
-            # Solve the linear systems
-            x_dense = Afactsolve(b_view)
-            x_blocks.append(csc_array(x_dense, dtype=b.dtype))
+            x = hstack(x_blocks)
 
-        x = hstack(x_blocks)
+            if b_is_vector:
+                x = x[:, 0]  # convert back to 1D sparse array
 
-        # Convert back to consistent sparse class
-        x = A.__class__(x)
-
-        if b_is_vector:
-            x = x[:, 0]  # convert back to 1D sparse array
-
-        if is_pydata_sparse:
-            x = pydata_sparse_cls.from_scipy_sparse(x)
+    if is_pydata_sparse:
+        x = pydata_sparse_cls.from_scipy_sparse(x)
 
     return x
 
