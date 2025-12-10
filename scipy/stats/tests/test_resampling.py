@@ -1166,7 +1166,12 @@ class TestPower:
         with pytest.raises(TypeError, match=message):
             power(test, rvs, n_observations, kwargs=(1, 2, 3))
 
-        message = "not be broadcast|Chunks do not add|Incompatible shapes"
+        message = (
+            "not be broadcast"
+            "|Chunks do not add"
+            "|Incompatible shapes"
+            "|Attempting to broadcast"
+        )
         with pytest.raises((ValueError, RuntimeError), match=message):
             power(test, rvs, (xp.asarray([10, 11]), xp.asarray([12, 13, 14])))
         with pytest.raises((ValueError, RuntimeError), match=message):
