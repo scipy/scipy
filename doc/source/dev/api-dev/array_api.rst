@@ -748,6 +748,20 @@ functions without explicitly setting the dtype. At the time of writing, there ar
 tests in the test suite which do not follow this practice, and this could be a good source
 of first issues for new contributors.
 
+Tests are not optional
+``````````````````````
+If there are no tests for a function ``f`` in the test suite using the ``xp``
+fixture along with ``make_xp_test_case(f)`` or something equivalent to it,
+then it is not permitted for the ``xp_capabilities`` entry for ``f`` to say
+something other than ``np_only=True`` with no exceptions, or ``out_of_scope=True``.
+Untested functionality cannot be documented as supported and the command::
+
+  spin test check-xp-untested
+
+can be used to check that there are no functions that advertise alternative
+backend support without tests to confirm. This check is enforced in CI and run
+with the ``lint`` jobs.
+
 .. _dev-arrayapi_backend_isolation:
 
 Backend isolation in tests
