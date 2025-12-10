@@ -77,7 +77,8 @@ if __name__ == "__main__":
 
     incorrectly_decorated = [
         func for func, data in xp_capabilities_table.items()
-        if not data["np_only"]  and func not in tested_functions
+        if not (data["np_only"] and not data["exceptions"])
+        and func not in tested_functions
     ]
     if incorrectly_decorated:
         print(
