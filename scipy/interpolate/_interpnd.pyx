@@ -355,7 +355,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
         start = 0
         eps = 100 * DBL_EPSILON * simplex_tolerance
-        eps_broad = sqrt(DBL_EPSILON) * simplex_tolerance
+        eps_broad = sqrt(DBL_EPSILON)
 
         # NOTE: a nogil block segfaults here with Python 3.10
         # and 3.11 on x86_64 Ubuntu Linux with gcc 9.x and 11.x
@@ -1004,7 +1004,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
         start = 0
         eps = 100 * DBL_EPSILON * simplex_tolerance
-        eps_broad = sqrt(eps) * simplex_tolerance
+        eps_broad = sqrt(eps)
 
         with nogil:
             for i in range(xi.shape[0]):
