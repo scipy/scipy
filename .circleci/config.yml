@@ -263,6 +263,9 @@ workflows:
       - refguide_check:
           requires:
             - build_scipy
+      - check_xp_untested:
+          requires:
+            - build_scipy
       - deploy:
           requires:
             - build_docs
