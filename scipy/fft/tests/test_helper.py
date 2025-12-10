@@ -51,7 +51,6 @@ def _assert_n_smooth(x, n):
            f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
-@pytest.mark.uses_xp_capabilities(False, reason="private")
 class TestNextFastLen:
 
     def test_next_fast_len(self):
@@ -121,7 +120,7 @@ class TestNextFastLen:
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
-    def test_keyword_args(self, xp):
+    def test_keyword_args(self):
         assert next_fast_len(11, real=True) == 12
         assert next_fast_len(target=7, real=False) == 7
 

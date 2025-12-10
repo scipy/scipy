@@ -94,6 +94,7 @@ doc = [
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
     "sphinx-design>=0.4.0",
+    "spinx-togglebutton",
     "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
