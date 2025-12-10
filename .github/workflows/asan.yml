@@ -15,10 +15,6 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: false
-
 jobs:
   get_commit_message:
     name: Get commit message
@@ -28,6 +24,7 @@ jobs:
     name: Test under AddressSanitizer
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         runs-on: [ubuntu-latest, macos-15]
     needs: get_commit_message
