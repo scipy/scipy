@@ -749,8 +749,9 @@ values depend on the array library under test, e.g. for PyTorch, valid values ar
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
 backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
-Note that there is a GitHub Actions workflow which tests with array-api-strict,
-PyTorch, and JAX on CPU.
+Note that there between SciPy's GitHub Actions workflows, there are tests
+with array-api-strict, Dask, PyTorch, and JAX on CPU, and tests with
+CuPy, PyTorch, and JAX on GPU.
 
 ``torch`` has a concept of default dtype. By default, arrays of floating point
 numbers will have dtype ``torch.float32`` when no explicit dtype is specified.
