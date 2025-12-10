@@ -798,23 +798,63 @@ present when running JAX in eager mode. Notably, boolean masks in `__getitem__`
 and `.at` aren't supported, and you can't materialize the arrays by applying
 `bool()`, `float()`, `np.asarray()` etc. to them.
 
-To properly test scipy with JAX, you need to wrap the tested scipy functions
-with `@jax.jit` before they are called by the unit tests.
-To achieve this, you should tag them as follows in your test module::
+To properly test scipy with JAX, the tested scipy functions must be wrapped
+with `@jax.jit` before they are called by the unit tests. This is done
+automatically when using ``make_xp_test_case`` and its friends when the
+associated ``xp_capabilities`` entry (or entries) have ``jax_jit=True``::
 
-  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy._lib._array_api import make_xp_test_case, xp_assert_close
   from scipy.mymodule import toto
 
-  lazy_xp_function(toto)
-
+  @make_xp_test_case(toto)
   def test_toto(xp):
+     a = xp.asarray([3, 10, 5, 16, 8, 4, 2, 1, ])
+     b = xp.asarray([3, 5, 8, 4, 2, 1])
+     # When xp==jax.numpy, toto is wrapped with @jax.jit
+     # so long as the xp_capabilities entry for toto has
+     # jax_jit=True.
+     xp_assert_close(toto(a), b)
+
+To achieve this for private functions without ``xp_capabilities`` entries,
+you should tag them as follows in your test module::
+
+  from scipy._lib._array_api import xp_assert_close
+  from scipy._lib.array_api_extra.testing import lazy_xp_function
+  from scipy.mymodule import _private_toto_helper
+
+  lazy_xp_function(_private_toto_helper)
+
+  @pytest.mark.uses_xp_capabilities(False, reason="private")
+  def test_private_toto_helper(xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
-      # When xp==jax.numpy, toto is wrapped with @jax.jit
-      xp_assert_close(toto(a, b), a)
+      # When xp==jax.numpy, _private_toto_helper is wrapped with @jax.jit
+      xp_assert_close(_private_toto_helper(a, b), a)
+
+If instead importing the functions from ``scipy.mymodule`` the above example
+imported ``mymodule`` and called ``toto`` through ``mymodule.toto``,
+``@jax.jit`` would not have applied to ``toto``.  This is due to an
+implementation specific quirk which limits the application of ``@jax.jit`` only
+to functions in the globals of the module that defines the current test.
+If one wishes to use a pattern like ``mymodule.toto`` in a test, one must define a
+variable ``lazy_xp_modules`` at the top of the test file to specify additional places
+the testing framework should look for functions tagged with ``lazy_xp_function``::
+
+  import scipy.mymodule as mymodule
+  from scipy._lib._array_api import make_xp_test_case, xp_assert_close
+
+  lazy_xp_modules = [mymodule]
+
+  @make_xp_test_case(mymodule.toto)
+  def test_toto(xp):
+     a = xp.asarray([3, 10, 5, 16, 8, 4, 2, 1, ])
+     b = xp.asarray([3, 5, 8, 4, 2, 1])
+     # When xp==jax.numpy, toto is wrapped with @jax.jit
+     # so long as the xp_capabilities entry for toto has
+     # jax_jit=True.
+     xp_assert_close(toto(a), b)
 
 See full documentation `here <https://data-apis.org/array-api-extra/generated/array_api_extra.testing.lazy_xp_function.html>`_.
-
 
 Additional information
 ----------------------
