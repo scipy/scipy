@@ -1907,7 +1907,7 @@ def lqn(n, z):
     Plot the Legendre functions of the second kind :math:`Q_n(x)`.
 
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(xs, Qn.T, "-", label=rf"$n={n}$")
+    >>> ax.plot(xs, Qn.T, "-")
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$Q_n(x)$")
     >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
@@ -1916,7 +1916,7 @@ def lqn(n, z):
     Plot the derivatives :math:`Q_n'(x)`.
 
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(xs, dQn.T, "-", label=rf"$n={n}$")
+    >>> ax.plot(xs, dQn.T, "-")
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$Q_n'(x)$")
     >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
