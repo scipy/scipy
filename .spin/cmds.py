@@ -118,17 +118,17 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                                         "Please also check CXXFLAGS and FFLAGS.")
 
     if asan:
-        build_dir = os.path.abspath(kwargs['build_dir'])
-        root = Path(build_dir).parent
+        root = Path(__file__).parent.parent
         compiler_args = f'-fsanitize=address -fno-omit-frame-pointer'
         if sys.platform == "darwin":
-            asan_ignore_file = os.path.join(root, 'tools', 'asan-ignore.txt')
+            asan_ignore_file = root.absolute() / 'tools' / 'asan-ignore.txt'
             compiler_args += f' -fsanitize-ignorelist={asan_ignore_file}'
         elif sys.platform == "linux":
+            asan_ignore_file = root.absolute() / 'tools' / 'asan.supp'
             if asan_opts := os.environ.get('ASAN_OPTIONS'):
-                os.environ['ASAN_OPTIONS'] = asan_opts + f":suppressions={os.path.join(root, 'tools', 'asan.supp')}"
+                os.environ['ASAN_OPTIONS'] = asan_opts + f":suppressions={asan_ignore_file}"
             else:
-                os.environ['ASAN_OPTIONS'] = f":suppressions={os.path.join(root, 'tools', 'asan.supp')}"
+                os.environ['ASAN_OPTIONS'] = f":suppressions={asan_ignore_file}"
         meson_args += (f'-Dc_args={compiler_args}', )
         meson_args += (f'-Dcpp_args={compiler_args}', )
         meson_args += ('-Dc_link_args=-fsanitize=address', )
@@ -407,7 +407,7 @@ def mypy(ctx, build_dir=None):
         ) from e
 
     build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
+    root = Path(__file__).parent.parent
     config = os.path.join(root, "mypy.ini")
     check_path = PROJECT_MODULE
     install_dir = meson._get_site_packages(build_dir)
@@ -502,7 +502,7 @@ def refguide_check(ctx, build_dir=None, *args, **kwargs):
     ctx.invoke(build)
 
     build_dir = os.path.abspath(build_dir)
-    root = Path(build_dir).parent
+    root = Path(__file__).parent.parent
     install_dir = meson._get_site_packages(build_dir)
 
     cmd = [f'{sys.executable}',

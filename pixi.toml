@@ -578,18 +578,18 @@ platforms = ["osx-arm64", "linux-64"]
 [feature.asan.dependencies]
 python.git = "https://github.com/lucascolley/cpython"
 python.subdirectory = "Tools/pixi-packages/asan"
-python.rev = "54274f2c4e017ef58b5cd73ce45f9277ee5c52f5"
+python.rev = "453e9eebd5e74ab58f3a0c43232e57d5e5e1020c"
 
 numpy.git = "https://github.com/lucascolley/numpy"
 numpy.subdirectory = "pixi-packages/asan"
-numpy.rev = "aa50cf47999591b0594785a7476763ee34769eb6"
+numpy.rev = "80c4ac1ee1b8a8f8fd1c45d952dc79a95702d3c9"
 
 [feature.asan.tasks.build-asan]
 cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env.CC = "ccache $CC"
 env.CXX = "ccache $CXX"
 env.FC = "ccache $FC"
-env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
+env.ASAN_OPTIONS = "strict_init_order=true"
 description = "Build SciPy, NumPy, and CPython with address sanitizer"
 
 [feature.asan.tasks.test-asan]
