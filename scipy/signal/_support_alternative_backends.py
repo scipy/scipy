@@ -201,7 +201,7 @@ capabilities_overrides = {
                                       jax_jit=False, allow_dask_compute=True),
     "cspline2d": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                  jax_jit=False, allow_dask_compute=True),
-    "czt": xp_capabilities(np_only=True, exceptions=["cupy"]),
+    "czt": xp_capabilities(np_only=True),
     "deconvolve": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                   allow_dask_compute=True,
                                   skip_backends=[("jax.numpy", "item assignment")]),
