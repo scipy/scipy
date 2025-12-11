@@ -30,7 +30,7 @@ Highlights of this release
 - In `scipy.sparse`, ``coo_array`` now supports indexing. This includes integers,
   slices, arrays, np.newaxis, Ellipsis, in 1D, 2D and the relatively new nD.
   In `scipy.sparse.linalg`, ARPACK and PROPACK rewrites from Fortran77 to C now
-  empower the use of external pseudorandom number generators.
+  empower the use of external pseudorandom number generators, e.g. from numpy.
 - In `scipy.spatial`, ``transform.Rotation`` and ``transform.RigidTransform``
   have been extended to support N-D arrays. ``geometric_slerp`` now has support
   for extrapolation.
