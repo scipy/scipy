@@ -4793,7 +4793,7 @@ add_newdoc("lpmv",
     -0.1292299
 
     Plot the associated Legendre functions for orders ``m = 1`` and
-    ``m = 2`` and degrees ``v = 0, \dots, 5``:
+    ``m = 2`` and degrees ``v = 0, ..., 5``:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -4803,7 +4803,7 @@ add_newdoc("lpmv",
     Order 1.
 
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(xs, np.array([lpmv(1, nu, xs) for nu in nus]).T, "-")
+    >>> ax.plot(xs, lpmv(1, nus, xs[:, np.newaxis]), "-")
     >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$P_\nu^1(x)$")
@@ -4812,7 +4812,7 @@ add_newdoc("lpmv",
     Order 2.
 
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(xs, np.array([lpmv(2, nu, xs) for nu in nus]).T, "-")
+    >>> ax.plot(xs, lpmv(2, nus, xs[:, np.newaxis]), "-")
     >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
     >>> ax.set_xlabel(r"$x$")
     >>> ax.set_ylabel(r"$P_\nu^2(x)$")
