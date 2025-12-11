@@ -5124,9 +5124,10 @@ class TestFindFreqs:
 
     def test_findfreqs_ba_zp_equiv(self, xp):
         num, den = [1.4, 2], [1, 3.8, 2]
-        zeros, poles = np.roots(num), np.roots(den)
+        zeros = xp.asarray(np.roots(num), dtype=xp_default_dtype(xp))
+        poles = xp.asarray(np.roots(den), dtype=xp_default_dtype(xp))
 
         ba = findfreqs(xp.asarray(num), xp.asarray(den), N=30, kind="ba")
-        zp = findfreqs(xp.asarray(zeros), xp.asarray(poles), N=30, kind="zp")
+        zp = findfreqs(zeros, poles, N=30, kind="zp")
 
         xp_assert_close(ba, zp)
