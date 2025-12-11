@@ -920,6 +920,7 @@ void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m
     }
 }
 
+
 /*
  * Copy n-by-m F-ordered `src` to C-ordered `dst`.
  *
@@ -939,26 +940,6 @@ void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m,
         }
     }
 }
-
-/*
- * Compute the transpose of an m x n F-ordered array `src` inplace using scratch memory
- */
- template<typename T>
- void transpose(T* src, T *scratch, CBLAS_INT m, CBLAS_INT n) {
-     npy_intp i, j;
-     for (i = 0; i < m; i++) {
-         for (j = 0; j < n; j++) {
-             scratch[i * n + j] = src[j * m + i];
-         }
-     }
-
-     for (i = 0; i < m*n; i++) {
-         src[i] = scratch[i];
-     }
- }
-
-
-
 
 
 /*
@@ -1149,6 +1130,25 @@ bandwidth(T* data, npy_intp n, npy_intp m, npy_intp* lower_band, npy_intp* upper
     *upper_band = ub;
 }
 
+template<typename T>
+void
+detect_bandwidths(T* data, npy_intp ndim, npy_intp outer_size, npy_intp *shape, npy_intp *strides, npy_intp *kl, npy_intp *ku, npy_intp *kl_max, npy_intp *ku_max) {
+    // Looping mechanism copied from `_solve`
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+
+        T* slice_ptr = (T *)(data + offset/sizeof(T));
+
+        bandwidth(slice_ptr, shape[ndim-2], shape[ndim-1], &kl[idx], &ku[idx]);
+        if (kl[idx] > *kl_max) {*kl_max = kl[idx];}
+        if (ku[idx] > *ku_max) {*ku_max = ku[idx];}
+    }
+}
 
 template<typename T>
 std::tuple<bool, bool>

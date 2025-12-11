@@ -8,7 +8,6 @@ import warnings
 from warnings import warn
 from itertools import product
 import numpy as np
-from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
 from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
@@ -245,7 +244,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         a1 = a1.copy()
 
     if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
-        overwrite_a = True
+        overwrite_b = True
         b1 = b1.copy()
 
     # align the shape of b with a: 1. make b1 at least 2D
