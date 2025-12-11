@@ -453,7 +453,7 @@ Authors
 * Lucas Roberts (4)
 * Bernard Roesler (1) +
 * Mikhail Ryazanov (27)
-* Jaro Schmidt (1) +
+* Jan Möseritz-Schmidt (1) +
 * Daniel Schmitz (25)
 * Martin Schuck (25)
 * Dan Schult (29)
