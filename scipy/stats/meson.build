@@ -113,6 +113,7 @@ py3.install_sources([
     '_binomtest.py',
     '_bws_test.py',
     '_censored_data.py',
+    '_circstats.py',
     '_common.py',
     '_constants.py',
     '_continued_fraction.py',
