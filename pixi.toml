@@ -68,7 +68,7 @@ solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
 # tasks: test-dask
-  features = ["run-deps", "test-deps", "dask", "dask-tasks"]
+features = ["run-deps", "test-deps", "dask", "dask-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.jax-cpu]
