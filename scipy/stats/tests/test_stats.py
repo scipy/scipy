@@ -5047,12 +5047,23 @@ def test_ttest_rel_xp(xp):
     # require tests for a trivial wrapper of a well-tested function, but
     # this seems simpler than having a way to carve out exceptions to
     # check_xp_untested.
-    tr, pr = xp.asarray(0.81248591389165692), xp.asarray(0.41846234511362157)
+    tr = xp.asarray(0.81248591389165692, dtype=xp.float64)
+    pr = xp.asarray(0.41846234511362157, dtype=xp.float64)
 
-    rvs1 = xp.linspace(1,100,100)
-    rvs2 = xp.linspace(1.01,99.989,100)
-    rvs1_2D = xp.stack([xp.linspace(1,100,100), xp.linspace(1.01,99.989,100)])
-    rvs2_2D = xp.stack([xp.linspace(1.01,99.989,100), xp.linspace(1,100,100)])
+    rvs1 = xp.linspace(1, 100, 100, dtype=xp.float64)
+    rvs2 = xp.linspace(1.01, 99.989, 100, dtype=xp.float64)
+    rvs1_2D = xp.stack(
+        [
+            xp.linspace(1,100, 100, dtype=xp.float64),
+            xp.linspace(1.01, 99.989, 100, dtype=xp.float64)
+        ]
+    )
+    rvs2_2D = xp.stack(
+        [
+            xp.linspace(1.01, 99.989, 100, dtype=xp.float64),
+            xp.linspace(1, 100, 100, dtype=xp.float64)
+        ]
+    )
 
     t, p = stats.ttest_rel(rvs1, rvs2, axis=0)
     xp_assert_close(t, tr)
