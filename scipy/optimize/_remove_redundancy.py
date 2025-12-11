@@ -319,7 +319,7 @@ def _remove_redundancy_pivot_sparse(A, rhs):
         if i > 0:
             e[i-1] = 0
 
-        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+        pi = scipy.sparse.linalg.splu(B).solve(e, trans='T').reshape(-1, 1)
 
         js = list(k-set(b))  # not efficient, but this is not the time sink...
 
