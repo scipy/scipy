@@ -59,9 +59,9 @@ def spsolve(A, b, permc_spec=None, trans='N', use_umfpack=True, rhs_batch_size=1
         If ``b`` is a 2D sparse array, this parameter controls the number of
         columns to be solved simultaneously. A larger number will increase
         memory consumption by converting more columns at a time to dense
-        arrays, but may improve runtime. This option only applies when
-        ``use_umfpack=False``, since the low-level scikit-umfpack routines do
-        not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
+        arrays, but may improve runtime.
+
+        .. versionadded:: 1.18.0
 
     Returns
     -------
