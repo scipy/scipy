@@ -48,7 +48,7 @@ py3.install_sources([
 
 py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
-  cpp_args: [cython_cpp_args, _cpp_Wno_unused_function],
+  cpp_args: cython_cpp_args,
   dependencies: [np_dep, thread_dep],
   link_args: version_link_args,
   install: true,
@@ -78,7 +78,11 @@ if use_pythran
   py3.extension_module('_stats_pythran',
     pythran_gen.process('_stats_pythran.py'),
     # `_cpp_Wno_unused_local_typedefs` can be removed when we require pythran >= 0.19.0
-    cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
+    cpp_args: [
+      cpp_args_pythran,
+      _cpp_Wno_unused_local_typedefs,
+      _cpp_Wno_maybe_uninitialized,
+    ],
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,

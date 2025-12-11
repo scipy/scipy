@@ -40,6 +40,9 @@ jobs:
         with:
           pixi-version: v0.56.0
           cache: false
+          environments: >-
+            build
+            test
 
       - name: Build
         run: pixi run build
@@ -129,13 +132,12 @@ jobs:
 
       - name: pip-packages
         run: |
-          python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
-          python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+          python -m pip install build delvewheel numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
 
       - name: Build
         shell: bash
         run: |
-          python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
+          python -m build -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel
           # Ignore `libsf_error_state.dll` for special function error handling;

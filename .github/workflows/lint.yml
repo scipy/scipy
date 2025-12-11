@@ -32,6 +32,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: lint
 
       - name: Spin Lint
         run: |

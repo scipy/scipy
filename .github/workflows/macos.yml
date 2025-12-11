@@ -41,6 +41,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: py311-system-libs-osx
 
       - name: Set up ccache
         uses: ./.github/ccache
@@ -79,6 +80,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: scipy-openblas
 
       - name: Test with scipy-openblas32
         run: pixi run test-scipy-openblas
@@ -102,6 +104,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
+          environments: ${{ matrix.environment }}
 
       - name: Test SciPy
         # mpmath tests are too slow for CI
@@ -135,3 +138,75 @@ jobs:
           spin build --with-accelerate
           pip install -r requirements/test.txt
           spin test
+
+
+  clang_ASAN:
+    name: Test under AddressSanitizer
+    runs-on: macos-15
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+        fetch-tags: true
+        persist-credentials: false
+
+    - name: Set up pyenv
+      run: |
+        git clone https://github.com/pyenv/pyenv.git "$HOME/.pyenv"
+        PYENV_ROOT="$HOME/.pyenv"
+        PYENV_BIN="$PYENV_ROOT/bin"
+        PYENV_SHIMS="$PYENV_ROOT/shims"
+        echo "$PYENV_BIN" >> $GITHUB_PATH
+        echo "$PYENV_SHIMS" >> $GITHUB_PATH
+        echo "PYENV_ROOT=$PYENV_ROOT" >> $GITHUB_ENV
+
+    - name: Set up LLVM
+      run: |
+        brew install llvm@19
+        LLVM_PREFIX=$(brew --prefix llvm@19)
+        echo CC="$LLVM_PREFIX/bin/clang" >> $GITHUB_ENV
+        echo CXX="$LLVM_PREFIX/bin/clang++" >> $GITHUB_ENV
+        echo LDFLAGS="-L$LLVM_PREFIX/lib" >> $GITHUB_ENV
+        echo CPPFLAGS="-I$LLVM_PREFIX/include" >> $GITHUB_ENV
+
+    - name: Build Python with AddressSanitizer
+      run: |
+        CONFIGURE_OPTS="--with-address-sanitizer" pyenv install 3.14t
+        pyenv global 3.14t
+
+    - name: Install NumPy dependencies from PyPI
+      run: |
+        pip install meson-python ninja cython
+
+    - name: Build NumPy with ASan
+      run:
+        pip install numpy --no-binary numpy --no-build-isolation -Csetup-args="-Db_sanitize=address" -v
+
+    - name: Install SciPy dependencies from PyPI
+      run: |
+        pip install pybind11 pythran spin pooch hypothesis pytest pytest-timeout
+
+    - name: Make gfortran-13 on runner image usable
+      run: |
+        # Ensure we use gfortran-13 and that its runtime is on the library search path
+        FC=$(which gfortran-13)
+        GFORTRAN_LIB=$(dirname `$FC --print-file-name libgfortran.dylib`)
+        echo DYLD_LIBRARY_PATH=$GFORTRAN_LIB >> "$GITHUB_ENV"
+        echo FC=$FC >> "$GITHUB_ENV"
+
+    - name: Build SciPy with ASan
+      run: |
+        # Can't use Meson's `-Db_sanitize=address` because gfortran-13 will choke on it
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        export CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer -fsanitize-ignorelist=$(pwd)/tools/asan-ignore.txt -Wno-deprecated-declarations"
+        spin build -S-Dblas=accelerate
+
+    - name: Test
+      run: |
+        # pass -s to pytest to see ASAN errors and warnings, otherwise pytest captures them
+        ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0 \
+        spin test -- -v -s --timeout=600 --durations=10 -m 'not fail_asan'
