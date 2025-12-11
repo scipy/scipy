@@ -5118,16 +5118,18 @@ class TestFindFreqs:
     @pytest.mark.parametrize("kind", ["ba", "zp"])
     def test_findfreqs_log_spacing(self, xp, kind):
         N = 30
-        w = findfreqs(xp.asarray([1.2]), xp.asarray([3.6, 9.8]), N=N, kind=kind)
+        w = findfreqs(xp.asarray([1.2], dtype=xp.float64),
+                      xp.asarray([3.6, 9.8], dtype=xp.float64), N=N, kind=kind)
         ratio = xp.diff(xp.log10(w))
-        xp_assert_close(ratio, ratio[0]*xp.ones(N - 1, dtype=xp_default_dtype(xp)))
+        xp_assert_close(ratio, ratio[0]*xp.ones(N - 1, dtype=xp.float64))
 
     def test_findfreqs_ba_zp_equiv(self, xp):
         num, den = [1.4, 2], [1, 3.8, 2]
-        zeros = xp.asarray(np.roots(num), dtype=xp_default_dtype(xp))
-        poles = xp.asarray(np.roots(den), dtype=xp_default_dtype(xp))
+        zeros = xp.asarray(np.roots(num))
+        poles = xp.asarray(np.roots(den))
 
-        ba = findfreqs(xp.asarray(num), xp.asarray(den), N=30, kind="ba")
+        ba = findfreqs(xp.asarray(num, dtype=xp.float64),
+                       xp.asarray(den, dtype=xp.float64), N=30, kind="ba")
         zp = findfreqs(zeros, poles, N=30, kind="zp")
 
         xp_assert_close(ba, zp)
