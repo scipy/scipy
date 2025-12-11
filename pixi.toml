@@ -15,7 +15,7 @@ features = ["build-deps", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
-# tasks: test, test-coverage, test-xslow, check-xp-untested
+# tasks: test, test-coverage, test-xslow
 features = ["run-deps", "test-deps", "test-tasks", "win-openblas"]
 solve-group = "default"
 
@@ -68,7 +68,7 @@ solve-group = "array-api-cpu"
 
 [environments.dask-cpu]
 # tasks: test-dask
-features = ["run-deps", "test-deps", "dask", "dask-tasks"]
+  features = ["run-deps", "test-deps", "dask", "dask-tasks"]
 solve-group = "array-api-cpu"
 
 [environments.jax-cpu]
@@ -210,12 +210,6 @@ cmd = "spin test --no-build -m full"
 depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
-
-[feature.test-tasks.tasks.check-xp-untested]
-cmd = "spin check-xp-untested"
-env.SCIPY_ARRAY_API = "1"
-description = "Check for advertised alt-backend support that is untested."
-
 
 ### Documentation ###
 
