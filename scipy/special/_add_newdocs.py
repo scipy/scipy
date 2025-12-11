@@ -4244,8 +4244,7 @@ add_newdoc("hyp1f1",
     .. [DLMF] NIST Digital Library of Mathematical Functions
               https://dlmf.nist.gov/13.2#E2
     .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
-    .. [3] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [3] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
     Examples
     --------
@@ -4748,13 +4747,13 @@ add_newdoc("lpmv",
 
     .. math::
 
-        P_v^m = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} P_v(x)
+        P_v^m(x) = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} (P_v(x))
 
     where
 
     .. math::
 
-        P_v = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
+        P_v(x) = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
                 \left(\frac{1 - x}{2}\right)^k
 
     is the Legendre function of the first kind. Here :math:`(\cdot)_k`
@@ -4770,7 +4769,7 @@ add_newdoc("lpmv",
     x : array_like
         Argument (float). Must have ``|x| <= 1``.
     out : ndarray, optional
-        Optional output array for the function results
+        Optional output array for the function results.
 
     Returns
     -------
@@ -4783,9 +4782,41 @@ add_newdoc("lpmv",
 
     References
     ----------
-    .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
-           and Sons, Inc, 1996.
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996.
 
+    Examples
+    --------
+    Compute a single associated Legendre function value:
+
+    >>> from scipy.special import lpmv
+    >>> lpmv(1, 2.5, 0.3)
+    -0.1292299
+
+    Plot the associated Legendre functions for orders ``m = 1`` and
+    ``m = 2`` and degrees ``v = 0, ..., 5``:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> nus = np.arange(0, 6)
+    >>> xs = np.linspace(-1+1e-5, 1-1e-5, 101)
+
+    Order 1.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(1, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^1(x)$")
+    >>> plt.show()
+
+    Order 2.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, lpmv(2, nus, xs[:, np.newaxis]), "-")
+    >>> ax.legend([rf"$\nu={nu}$" for nu in nus])
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$P_\nu^2(x)$")
+    >>> plt.show()
     """)
 
 add_newdoc("nbdtr",
