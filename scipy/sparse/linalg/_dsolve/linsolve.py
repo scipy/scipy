@@ -163,6 +163,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
         ``use_umfpack=False``, since the low-level scikit-umfpack routines do
         not support multiple right-hand sides. In that case, ``rhs_batch_size=1``.
 
+        .. versionadded:: 1.18.0
+
     Returns
     -------
     x : ndarray or sparse array or matrix
