@@ -211,6 +211,11 @@ depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
 
+[feature.test-tasks.tasks.check-xp-untested]
+cmd = "spin check-xp-untested"
+env.SCIPY_ARRAY_API = "1"
+description = "Check for advertised alt-backend support that is untested."
+
 
 ### Documentation ###
 
@@ -307,10 +312,6 @@ tach = "*"
 [feature.lint.tasks.lint]
 cmd = "spin lint"
 description = "Run main lint checks"
-
-[feature.lint.tasks.check-xp-untested]
-cmd = "spin check-xp-untested"
-description = "Check for advertised alt-backend support that is untested."
 
 [feature.lint.tasks.check-python-h]
 cmd = "python check_python_h_first.py"
