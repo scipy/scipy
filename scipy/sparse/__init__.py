@@ -245,9 +245,9 @@ Construct a 1000x1000 `lil_array` and add some values to it:
 >>> A[0, :100] = rand(100)
 >>> A.setdiag(rand(1000))
 
-Now convert it to CSR format and solve A x = b for x:
+Now convert it to CSC format and solve A x = b for x:
 
->>> A = A.tocsr()
+>>> A = A.tocsc()
 >>> b = rand(1000)
 >>> x = spsolve(A, b)
 
