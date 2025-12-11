@@ -15,7 +15,7 @@ features = ["build-deps", "build-task", "win-openblas"]
 solve-group = "default"
 
 [environments.test]
-# tasks: test, test-coverage, test-xslow
+# tasks: test, test-coverage, test-xslow, check-xp-untested
 features = ["run-deps", "test-deps", "test-tasks", "win-openblas"]
 solve-group = "default"
 
@@ -50,7 +50,7 @@ features = ["run-deps", "test-deps", "gdb"]
 solve-group = "debug"
 
 [environments.lint]
-# tasks: lint, check-python-h, tach-check, tach-check-external, check-xp-untested
+# tasks: lint, check-python-h, tach-check, tach-check-external
 features = ["lint"]
 
 # TODO(lucascolley): merge the `default` and `array-api-cpu` solve groups,
