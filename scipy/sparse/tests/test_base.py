@@ -1265,7 +1265,12 @@ class _TestCommon:
             )
             warnings.filterwarnings(
                 "ignore",
-                "spsolve requires A be CSC or CSR matrix format",
+                "spsolve requires A be CSC format",
+                SparseEfficiencyWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                r"Input.*not in CSC format",
                 SparseEfficiencyWarning,
             )
             sMexp = expm(sM).toarray()
@@ -1280,7 +1285,7 @@ class _TestCommon:
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
-                    "spsolve requires A be CSC or CSR matrix format",
+                    "spsolve requires A be CSC format",
                     SparseEfficiencyWarning,
                 )
                 warnings.filterwarnings(
@@ -1292,6 +1297,11 @@ class _TestCommon:
                 warnings.filterwarnings(
                     "ignore",
                     "splu converted its input to CSC format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    r"Input.*not in CSC format",
                     SparseEfficiencyWarning,
                 )
                 sM = self.spcreator(M, shape=(3,3), dtype=dtype)

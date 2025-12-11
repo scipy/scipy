@@ -202,11 +202,10 @@ class TestLinsolve:
         except RuntimeError:
             pass
 
-    @pytest.mark.parametrize('format', ['csc', 'csr'])
     @pytest.mark.parametrize('idx_dtype', [np.int32, np.int64])
-    def test_twodiags(self, format: str, idx_dtype: np.dtype):
+    def test_twodiags(self, idx_dtype: np.dtype):
         A = dia_array(([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1]),
-                        shape=(5, 5)).asformat(format)
+                        shape=(5, 5)).tocsc()
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
@@ -390,10 +389,10 @@ class TestLinsolve:
         assert_allclose(x.toarray(), b.toarray(), atol=1e-12, rtol=1e-12)
 
     def test_dtype_cast(self):
-        A_real = scipy.sparse.csr_array([[1, 2, 0],
+        A_real = scipy.sparse.csc_array([[1, 2, 0],
                                           [0, 0, 3],
                                           [4, 0, 5]])
-        A_complex = scipy.sparse.csr_array([[1, 2, 0],
+        A_complex = scipy.sparse.csc_array([[1, 2, 0],
                                              [0, 0, 3],
                                              [4, 0, 5 + 1j]])
         b_real = np.array([1,1,1])
@@ -708,7 +707,7 @@ class TestSplu:
     def test_singular_matrix(self):
         # Test that SuperLU does not print to stdout when a singular matrix is
         # passed. See gh-20993.
-        A = eye_array(10, format='csr')
+        A = eye_array(10, format='csc')
         A[-1, -1] = 0
         b = np.zeros(10)
         with assert_raises(scipy.linalg.LinAlgError, match="A is singular"):
