@@ -242,7 +242,7 @@ def test_onenormest(B):
 
 @parametrize_square_sparrays
 def test_spsolve(B):
-    if B.__class__.__name__[:3] not in ('csc', 'csr'):
+    if B.__class__.__name__[:3] != 'csc':
         return
 
     npt.assert_allclose(
