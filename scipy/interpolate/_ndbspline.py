@@ -507,7 +507,9 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
     vals = values.reshape(vals_shape)
 
-    if solver != ssl.spsolve:
+    if solver == ssl.spsolve:
+        matr = matr.tocsc()  # spsolve requires CSC format
+    else:
         solver = functools.partial(_iter_solve, solver=solver)
         if "atol" not in solver_args:
             # avoid a DeprecationWarning, grumble grumble
