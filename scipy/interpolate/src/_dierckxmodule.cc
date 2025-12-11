@@ -1045,15 +1045,26 @@ py_evaluate_all_bspl(PyObject* self, PyObject* args)
     // allocate temp storage
     std::vector<double> wrk(2*k + 2);
 
-    // compute non-zero bsplines
-    fitpack::_deBoor_D(
-        static_cast<const double*>(PyArray_DATA(a_t)),
-        xval,
-        k,
-        m,
-        nu,
-        wrk.data()
-    );
+    /*
+     * If nu > k+1, the B-spline derivative is identically zero.
+     * Avoid the de Boor recursion (which assumes m <= k+1) and
+     * return a zero-filled result directly.
+     */
+    if( nu > k + 1 ) {
+        for( size_t i = 0; i < wrk.size(); i++ ) {
+            wrk[i] = 0.0;
+        }
+    } else {
+        // compute non-zero bsplines
+        fitpack::_deBoor_D(
+            static_cast<const double*>(PyArray_DATA(a_t)),
+            xval,
+            k,
+            m,
+            nu,
+            wrk.data()
+        );
+    }
 
     // allocate and fill the output
     npy_intp dims[1] = {k+1};

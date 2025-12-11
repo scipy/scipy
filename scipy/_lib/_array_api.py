@@ -157,7 +157,7 @@ def _xp_copy_to_numpy(x: Array) -> np.ndarray:
     for the specific purpose mentioned above. In production code, attempts
     to copy device arrays to NumPy arrays should fail, or else functions
     may appear to be working on the GPU when they actually aren't.
-    
+
     Parameters
     ----------
     x : array
@@ -488,8 +488,11 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
         args_not_none.append(1.0)
@@ -539,8 +542,11 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     if not args:
         return args
 
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
-            for arg in args]  # solely to prevent double conversion of iterable to array
+    # prevent double conversion of iterable to array
+    # avoid `np.iterable` for torch arrays due to pytorch/pytorch#143334
+    # don't use `array_api_compat.is_array_api_obj` as it returns True for NumPy scalars
+    args = [(_asarray(arg, subok=True, xp=xp) if is_torch_array(arg) or np.iterable(arg)
+            else arg) for arg in args]
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
