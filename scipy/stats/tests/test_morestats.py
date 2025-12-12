@@ -480,6 +480,7 @@ class TestAndersonMethod:
         assert res.pvalue == pvalue_min
 
 
+@pytest.mark.filterwarnings("ignore:Parameter `variant`...:UserWarning")
 class TestAndersonKSamp:
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
@@ -685,6 +686,63 @@ class TestAndersonKSamp:
         check_named_results(res, attributes)
 
         assert_equal(res.significance_level, res.pvalue)
+
+
+class TestAndersonKSampVariant:
+    def test_variant_values(self):
+        x = [1, 2, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 4, 5, 6, 6, 6, 7]
+        message = "Parameter `variant` has been introduced..."
+        with pytest.warns(UserWarning, match=message):
+            ref = stats.anderson_ksamp((x, y))
+        assert len(ref) == 3 and hasattr(ref, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=True)
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert len(res) == 3 and hasattr(res, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=False, variant='midrank')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        res = stats.anderson_ksamp((x, y), variant='midrank')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            ref = stats.anderson_ksamp((x, y), midrank=False)
+        assert len(ref) == 3 and hasattr(ref, 'critical_values')
+
+        with pytest.warns(UserWarning, match=message):
+            res = stats.anderson_ksamp((x, y), midrank=True, variant='right')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+        res = stats.anderson_ksamp((x, y), variant='right')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+        assert not hasattr(res, 'critical_values')
+
+    def test_variant_input_validation(self):
+        x = np.arange(10)
+        message = "`variant` must be one of 'midrank', 'right', or 'continuous'."
+        with pytest.raises(ValueError, match=message):
+            stats.anderson_ksamp((x, x), variant='Camelot')
+
+    @pytest.mark.parametrize('n_samples', [2, 3])
+    def test_variant_continuous(self, n_samples):
+        rng = np.random.default_rng(20182053007)
+        samples = rng.random((n_samples, 15)) + 0.1*np.arange(n_samples)[:, np.newaxis]
+        ref = stats.anderson_ksamp(samples, variant='right')
+        res = stats.anderson_ksamp(samples, variant='continuous')
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue)
 
 
 @make_xp_test_case(stats.ansari)
