@@ -25,7 +25,7 @@ version = "*"
 compilers = ["c", "cxx"]
 
 [workspace.target.win.build-variants]
-c_compiler = ["clang-cl"] 
+c_compiler = ["clang-cl"]
 cxx_compiler = ["clang-cl"]
 
 [package.host-dependencies]
@@ -82,6 +82,10 @@ solve-group = "default"
 # tasks: bench
 features = ["run-deps", "bench-common", "bench", "default-platforms"]
 solve-group = "default"
+
+[environments.profile]
+# tasks: flamegraph
+features = ["build-deps", "run-deps", "profile"]
 
 [environments.build-debug]
 # tasks: build-debug
@@ -877,6 +881,28 @@ cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 
+
+### Profiling ###
+
+[feature.profile]
+platforms = ["linux-64", "linux-aarch64"]
+channels = [
+  "https://prefix.dev/conda-forge",
+  "https://conda.anaconda.org/conda-forge/label/python_rc"
+]
+
+[feature.profile.dependencies]
+python = "3.15.*"
+
+[feature.profile.tasks.build-profile]
+cmd = "spin build --build-dir=build-profile --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+description = "Build SciPy (for profiling)"
+
+[feature.profile.tasks.flamegraph]
+cmd = "spin run --build-dir=build-profile 'cd tools/profiling && python -m profiling.sampling run --native --flamegraph -o {{ output_name }}.html {{ script_name }}.py'"
+args = ["script_name", "output_name"]
+depends-on = "build-profile"
+description = "Generate a flamegraph (`{{ output_name }}.html`) from `tools/profiling/{{ script_name }}.py`"
 
 ### Alternative python versions ###
 
