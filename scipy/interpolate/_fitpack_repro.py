@@ -15,7 +15,7 @@
     .. [3] P. Dierckx, "An algorithm for smoothing, differentiation and integration
          of experimental data using spline functions",
          Journal of Computational and Applied Mathematics, vol. I, no 3, p. 165 (1975).
-         https://doi.org/10.1016/0771-050X(75)90034-0
+         :doi:`10.1016/0771-050X(75)90034-0`.
 """
 import warnings
 import operator
@@ -531,7 +531,7 @@ class F:
     ----------
     [1] P. Dierckx, Algorithms for Smoothing Data with Periodic and Parametric Splines,
         COMPUTER GRAPHICS AND IMAGE PROCESSING vol. 20, pp 171-184 (1982.)
-        https://doi.org/10.1016/0146-664X(82)90043-0
+        :doi:`10.1016/0146-664X(82)90043-0`.
 
     """
     def __init__(self, x, y, t, k, s, w=None, *, R=None, Y=None):

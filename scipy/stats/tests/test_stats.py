@@ -8979,7 +8979,7 @@ class TestExpectile:
         # expectile should minimize `fun` defined below; see
         # F. Sobotka and T. Kneib, "Geoadditive expectile regression",
         # Computational Statistics and Data Analysis 56 (2012) 755-767
-        # :doi:`10.1016/j.csda.2010.11.015`
+        # https://doi.org/10.1016/j.csda.2010.11.015
         rng = np.random.default_rng(1856392524598679138)
 
         def fun(u, a, alpha, weights):
