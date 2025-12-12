@@ -38,7 +38,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   msvc_ifx_blas:
-    name: py3.11, spin
+    name: py3.12, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -78,7 +78,7 @@ jobs:
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
         with:
-          python-version: 3.11
+          python-version: 3.12
           channels: conda-forge
           channel-priority: strict
           use-only-tar-bz2: false
