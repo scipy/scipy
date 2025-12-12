@@ -4,6 +4,7 @@ description = "Fundamental algorithms for scientific computing in Python."
 authors = ["SciPy Developers <scipy-dev@python.org>"]
 channels = ["https://prefix.dev/conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
 
 
 ### Environments ###
@@ -134,6 +135,9 @@ features = ["build-deps", "run-deps", "test-deps", "py311", "umfpack", "scikit-s
 # tasks: build-scipy-openblas, test-scipy-openblas
 features = ["build-deps", "run-deps", "test-deps", "scipy-openblas"]
 
+[environments.asan]
+features = ["build-deps", "run-deps", "test-deps", "asan"]
+
 
 ### Default dependencies (included in all environments) ###
 
@@ -192,7 +196,7 @@ pytest-xdist = "*"
 threadpoolctl = "*"
 pooch = "*"
 mpmath = "*"
-gmpy2 = "*"
+# gmpy2 = "*"
 
 # XXX: when updating this task, remember to update other test tasks if appropriate
 [feature.test-tasks.tasks.test]
@@ -558,15 +562,41 @@ BOOST_INCLUDEDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/include/
 BOOST_LIBRARYDIR = "$PIXI_PROJECT_ROOT/.pixi/envs/py311-system-libs-osx/lib"
 
 [feature.system-libs.tasks.build-system-libs]
-cmd = "spin build --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+cmd = "spin build --build-dir=build-system-libs --use-system-libraries --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
 env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" }
 description = "Build SciPy with system libs (e.g. boost, qhull)"
 
 [feature.system-libs.tasks.test-system-libs]
-cmd = "spin test --no-build"
+cmd = "spin test --no-build --build-dir=build-system-libs"
 depends-on = "build-system-libs"
 description = "Test SciPy with system libs"
 
+
+[feature.asan]
+platforms = ["osx-arm64", "linux-64"]
+
+[feature.asan.dependencies]
+python.git = "https://github.com/lucascolley/cpython"
+python.subdirectory = "Tools/pixi-packages/asan"
+python.rev = "9c811e98b9d0ab8f49c1938475ae3dac3aec3120"
+
+numpy.git = "https://github.com/lucascolley/numpy"
+numpy.subdirectory = "pixi-packages/asan"
+numpy.rev = "f9f7b0ae60239dcb7c99c46812a3680deab3a0ba"
+
+[feature.asan.tasks.build-asan]
+cmd = "spin build --asan --build-dir=build-asan --setup-args=-Dblas=blas --setup-args=-Dlapack=lapack --setup-args=-Duse-g77-abi=true"
+env.CC = "ccache $CC"
+env.CXX = "ccache $CXX"
+env.FC = "ccache $FC"
+env.ASAN_OPTIONS = "detect_leaks=0:strict_init_order=true:use_sigaltstack=0"
+description = "Build SciPy, NumPy, and CPython with address sanitizer"
+
+[feature.asan.tasks.test-asan]
+cmd = "spin test --no-build --build-dir=build-asan --no-capture -m 'not fail_asan'"
+depends-on = "build-asan"
+env.ASAN_OPTIONS = "detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:use_sigaltstack=0"
+description = "Test SciPy with address sanitizer"
 
 ### Alternative python versions ###
 
