@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from scipy import stats
-from scipy.special import _ufuncs
+from scipy.special import bdtrik
 from .common_tests import (check_normalization, check_moment,
                            check_mean_expect,
                            check_var_expect, check_skew_expect,
@@ -597,7 +597,7 @@ def test_gh18919_ppf_array_args():
 
     p = 0.5
 
-    ref = _ufuncs._binom_ppf(q, n, p)
+    ref = np.ceil(bdtrik(q, n, p))
     res = stats.binom.ppf(q, n, p)
     np.testing.assert_allclose(res, ref)
 
