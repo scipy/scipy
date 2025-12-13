@@ -5,7 +5,9 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 import pytest
 from scipy.linalg import block_diag
-from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
+from scipy.sparse import (
+    coo_array, random_array, SparseEfficiencyWarning, matrix_transpose
+)
 from scipy.sparse._csr import csr_array
 from .._coo import _block_diag, _extract_block_diag
 
@@ -190,9 +192,12 @@ def test_transpose():
     assert arr1d.shape == (3,)
     assert_equal(arr1d.toarray(), np.array([1, 0, 3]))
 
-    arr2d = coo_array([[1, 2, 0], [0, 0, 3]]).T
-    assert arr2d.shape == (3, 2)
-    assert_equal(arr2d.toarray(), np.array([[1, 0], [2, 0], [0, 3]]))
+    arr2d = coo_array([[1, 2, 0], [0, 0, 3]])
+    assert arr2d.T.shape == (3, 2)
+    desired = np.array([[1, 0], [2, 0], [0, 3]])
+    assert_equal(arr2d.T.toarray(), desired)
+    assert_equal(arr2d.mT.toarray(), desired)
+    assert_equal(matrix_transpose(arr2d).toarray(), desired)
 
 
 def test_transpose_with_axis():
@@ -465,7 +470,17 @@ def test_nd_transpose(shape):
     exp_arr = arr.toarray().T
     trans_arr = arr.transpose()
     assert trans_arr.shape == shape[::-1]
-    assert_equal(exp_arr, trans_arr.toarray())
+    assert_equal(trans_arr.toarray(), exp_arr)
+
+    if len(shape) >= 2:
+        exp_arr = arr.toarray().mT
+        trans_arr = arr.mT
+        assert trans_arr.shape == exp_arr.shape
+        assert_equal(trans_arr.toarray(), exp_arr)
+    
+        trans_arr = matrix_transpose(arr)
+        assert trans_arr.shape == exp_arr.shape
+        assert_equal(trans_arr.toarray(), exp_arr)
 
 
 @pytest.mark.parametrize(('shape', 'axis_perm'), [((3,), (0,)),

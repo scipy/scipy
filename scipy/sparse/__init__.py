@@ -96,6 +96,7 @@ Combining arrays
    hstack - Stack sparse arrays horizontally (column wise)
    vstack - Stack sparse arrays vertically (row wise)
    swapaxes - swap two axes of a sparse array
+   matrix_transpose - Transpose a matrix (or a batch of matrices)
    expand_dims - add a new (trivial) axis to a sparse array
    permute_dims - reorder the axes of a sparse array
 

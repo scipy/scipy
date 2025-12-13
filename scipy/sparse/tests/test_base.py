@@ -40,7 +40,8 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         csc_array, csr_array, dok_array,
         coo_array, lil_array, dia_array, bsr_array,
-        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix)
+        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix,
+        matrix_transpose,)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
@@ -2112,6 +2113,8 @@ class _TestCommon:
         assert_array_equal(np.transpose(empty).toarray(),
                            np.transpose(zeros((3, 4))))
         assert_array_equal(empty.T.toarray(), zeros((4, 3)))
+        assert_array_equal(empty.mT.toarray(), empty.T.toarray())
+        assert_array_equal(matrix_transpose(empty).toarray(), empty.T.toarray())
         assert_raises(ValueError, empty.transpose, axes=0)
 
         for dtype in self.checked_dtypes:
