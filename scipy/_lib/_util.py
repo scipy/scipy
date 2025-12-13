@@ -11,7 +11,7 @@ import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeAlias, TypeVar
+from typing import Literal, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
@@ -79,8 +79,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: TypeAlias = np.random.Generator | np.random.RandomState
-SeedType: TypeAlias = IntNumber | _RNG | None
+_RNG: type = np.random.Generator | np.random.RandomState
+SeedType: type = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
