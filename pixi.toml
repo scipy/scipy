@@ -16,7 +16,7 @@ solve-group = "default"
 
 [environments.test]
 # tasks: test, test-coverage, test-xslow
-features = ["run-deps", "test-deps", "test-tasks", "win-openblas"]
+features = ["run-deps", "test-deps", "test-tasks", "win-openblas", "type-stubs"]
 solve-group = "default"
 
 [environments.docs]
@@ -210,6 +210,12 @@ cmd = "spin test --no-build -m full"
 depends-on = "build"
 env.SCIPY_XSLOW = "1"
 description = "Test SciPy (full and x-slow)"
+
+
+### Type Stubs ###
+
+[feature.type-stubs.dependencies]
+scipy-stubs = "*"
 
 
 ### Documentation ###
