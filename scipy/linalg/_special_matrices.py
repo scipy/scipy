@@ -80,7 +80,7 @@ def toeplitz(c, r=None):
     return _toeplitz(c, r)
 
 
-@_apply_over_batch(("c", 1), ("r", 1))
+@_apply_over_batch(("c", 1), ("r", 1), signature="(i),(j)->(i,j)")
 def _toeplitz(c, r):
     # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
@@ -284,7 +284,7 @@ def hadamard(n, dtype=int):
     return H
 
 
-@_apply_over_batch(("f", 1), ("s", 1))
+@_apply_over_batch(("f", 1), ("s", 1), signature="(i),(j)->(i,i)")
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -292,11 +292,6 @@ def leslie(f, s):
     Given the length n array of fecundity coefficients `f` and the length
     n-1 array of survival coefficients `s`, return the associated Leslie
     matrix.
-
-    The documentation is written assuming array arguments are of specified
-    "core" shapes. However, array argument(s) of this function may have additional
-    "batch" dimensions prepended to the core shape. In this case, the array is treated
-    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------

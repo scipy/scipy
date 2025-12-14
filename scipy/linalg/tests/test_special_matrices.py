@@ -589,16 +589,19 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.fail_slow(5)  # `leslie` has an import in the function
-@pytest.mark.parametrize('f, args', [(circulant, ()),
-                                     (companion, ()),
-                                     (convolution_matrix, (5, 'same')),
-                                     (fiedler, ()),
-                                     (fiedler_companion, ()),
-                                     (hankel, (np.arange(9),)),
-                                     (leslie, (np.arange(9),)),
-                                     (toeplitz, (np.arange(9),)),
-                                     ])
+_xfail_strict = pytest.mark.xfail(strict=True)
+
+
+@pytest.mark.parametrize('f, args', [
+    (circulant, ()),
+    (companion, ()),
+    pytest.param(convolution_matrix, (5, 'same'), marks=_xfail_strict),
+    pytest.param(fiedler, (), marks=_xfail_strict),
+    pytest.param(fiedler_companion, (), marks=_xfail_strict),
+    (hankel, (np.arange(9),)),
+    (leslie, (np.arange(9),)),
+    (toeplitz, (np.arange(9),)),
+])
 def test_batch(f, args):
     rng = np.random.default_rng(283592436523456)
     batch_shape = (2, 3)
@@ -614,4 +617,11 @@ def test_batch(f, args):
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
     ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)
+
+    # test zero-size batch
+    batch_shape = (0,)
+    A = rng.random(batch_shape + (m,))
+    res = f(A, *args)
+    ref = np.empty(batch_shape + ref.shape[-2:])
     assert_allclose(res, ref)

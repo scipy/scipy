@@ -1111,11 +1111,38 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
-Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
-def _apply_over_batch(*argdefs):
+def output_from_signature(arrays, batch_shape, core_shapes, signature):
+    dtype = np.result_type(*arrays)
+
+    # parse more efficiently with regex?
+    inputs, outputs = signature.split("->")
+    inputs, outputs = inputs[1:-1].split("),("), outputs[1:-1].split("),(")
+    input_dim_to_letter = {}
+    for i, input in enumerate(inputs):
+        for j, l in enumerate(input.split(",")):
+            input_dim_to_letter[(i, j)] = l
+
+    letter_to_length = {}
+    for i, core_shape in enumerate(core_shapes):
+        for j, length in enumerate(core_shape):
+            l = input_dim_to_letter[(i, j)]
+            if hasattr(letter_to_length, l):
+                assert letter_to_length[l] == length
+            else:
+                letter_to_length[l] = length
+
+    # `eval` output shape specifications?
+    results = []
+    for output in outputs:
+        out_core_shape = tuple([letter_to_length[l] for l in output.split(',')])
+        results.append(np.empty(batch_shape + out_core_shape, dtype=dtype))
+    return results[0] if len(results) == 1 else results
+
+
+def _apply_over_batch(*argdefs, signature=None):
     """
     Factory for decorator that applies a function over batched arguments.
 
@@ -1187,6 +1214,9 @@ def _apply_over_batch(*argdefs):
             # which to call the function, the decorator doesn't even know the *number*
             # of outputs, let alone their core shapes or dtypes.
             if math.prod(batch_shape) == 0:
+                if signature is not None:
+                    return output_from_signature(arrays, batch_shape,
+                                                 core_shapes, signature)
                 message = f'`{f.__name__}` does not support zero-size batches.'
                 raise ValueError(message)
 
@@ -1220,7 +1250,13 @@ def _apply_over_batch(*argdefs):
             return results[0] if len(results) == 1 else results
 
         doc = FunctionDoc(wrapper)
-        doc['Extended Summary'].append(_batch_note.rstrip())
+        batch_note = _batch_note.rstrip()
+        if signature is None:
+            batch_note += ("\n Note that calls with zero-size batches are unsupported "
+                           "and will raise a ``ValueError``.")
+        else:
+            batch_note += f"\n The NEP 5 signature of this function is {signature}."
+        doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 
         return wrapper
