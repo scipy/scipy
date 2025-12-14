@@ -91,7 +91,7 @@ def pytest_configure(config):
             "iterations(n): run the given test function `n` times in each thread",
         )
 
-    if os.name == 'posix' and sys.version_info < (3, 14):
+    if os.name == 'posix' and sys.version_info < (3, 14) and sys.platform != "cygwin":
         # On POSIX, Python 3.13 and older uses the 'fork' context by
         # default. Calling fork() from multiple threads leads to
         # deadlocks. This has been changed in 3.14 to 'forkserver'.
