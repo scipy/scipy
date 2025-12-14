@@ -246,6 +246,61 @@ implementations, such as the `xsf project <https://github.com/scipy/xsf/issues/1
 to establish a library of mathematical special function implementations which support
 both CPU and GPU.
 
+
+A note on JAX support
+`````````````````````
+
+JAX is meant to be run with a JIT, which offers powerful benefits but also
+requires constraints.
+
+
+There are special concerns that go into enabling JAX support. First, JAX does not
+allow for mutation of arrays. Instead use ``at``
+https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html,
+which can be fast and in-place when run with `jax.jit`.
+``array_api_extra` supplies an implementation of ``at`` which works for all
+array API compatible backends, and delegates to JAX's ``at`` for JAX arrays,
+and uses ``__setitem__`` for other types of arrays.
+
+
+Note that if a function ``f`` depends on a compiled function ``g``
+which is not supported on JAX through delegation to a native JAX implementation,
+then it may still be possible for ``f`` to support the JAX JIT through JAX's
+`pure_callback <https://docs.jax.dev/en/latest/_autosummary/jax.pure_callback.html>`_
+mechanism. SciPy developers need not concern themselves with such JAX details
+directly, and can instead use
+`array_api_extra.lazy_apply <https://data-apis.org/array-api-extra/generated/array_api_extra.lazy_apply.html>`_
+
+This can be used so long as ``g``:
+
+* is a pure function, meaning without side-effects and with output value depending purely on input value.
+* has output shape(s) determined purely by input shape(s). 
+
+Using ``lazy_apply``, the  example function ``toto`` might be made compatible
+with the JAX JIT like this::
+
+
+  def toto(a, b):
+      xp = array_namespace(a, b)
+      a = xp.asarray(a)
+      b = xp_copy(b, xp=xp)  # our custom helper is needed for copy
+
+      c = xp.sum(a) - xp.prod(b)
+
+      # this is some C or Cython call
+      # as_numpy=True tells lazy_apply to convert to and from NumPy.
+      d = xpx.lazy_apply(cdist, c, as_numpy=True)
+
+      return d
+
+There are additional pitfalls when trying to support the JAX JIT, such as needing to
+avoid data-dependent branching at the Python level. For ``f`` to support the JIT,
+any code-block containing essential use of ``if`` statements needs to be encapsulated
+into a pure function and evaluated with ``lazy_apply``. For more info, see the page on
+`Lazy vs. eager execution <https://data-apis.org/array-api/latest/design_topics/lazy_eager.html>`_
+in the array API standard docs.
+
+
 Documenting array API standard support
 --------------------------------------
 
@@ -338,34 +393,13 @@ when the SciPy test suite is run with ``pytest`` in verbose mode
 
 JAX JIT
 ```````
+
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False``. If a function is neither array-agnostic nor supported
-on JAX through delegation to a native JAX implementation
-then it is virtually certain that the JIT is not supported and
-one should set ``jax_jit=False``. The following ``xp_capabilities`` call is almost
-certainly incorrect::
-
-  @xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"])
-  def my_other_function(x):
-      ...
-
-It must be the case here that ``jax_jit=False``::
-
-  @xp_capabilities(
-      cpu_only=True, exceptions=["cupy", "torch"], jax_jit=False
-  )
-  def my_other_function(x):
-      ...
-
-However, it is possible for a function to be supported on GPU with JAX natively
-without working in JIT mode. This can occur for instance for functions with
-data-dependent output shapes. Thus the following situation can occur::
-
-  @xp_capabilities(
-      cpu_only=True, exceptions=["jax.numpy"]], jax_jit=False
-  )
-  def yet_another_function(x):
-      ...
+``jax_jit=False``. Note that JAX's JIT-free eager mode is generally meant to be
+used for debugging purposes for functions which are intended to be to run with
+the JIT. Work to enable eager-only JAX support for SciPy functions that goes
+beyond the typical work involved in supporting the array API is generally
+not considered a good use of developer time. 
 
 
 Dask Compute
