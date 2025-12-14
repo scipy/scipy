@@ -37,7 +37,6 @@ def select_backend(xp: ModuleType, cython_compatible: bool):
     return backend_registry.get(xp, xp_backend)
 
 
-@xp_capabilities()
 def _promote(*args: tuple[ArrayLike, ...], xp: ModuleType) -> Array:
     """Promote arrays to float64 for numpy, else according to the Array API spec.
 

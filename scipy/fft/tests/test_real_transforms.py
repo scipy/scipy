@@ -44,7 +44,8 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
 
 @skip_xp_backends(np_only=True,
                   reason='`overwrite_x` only supported for NumPy backend.')
-@pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
+@pytest.mark.parametrize("forward, backward", [
+    make_xp_pytest_param(dct, idct), make_xp_pytest_param(dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
                                    np.complex64, np.complex128])
@@ -117,7 +118,8 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
 
 @skip_xp_backends(np_only=True,
                   reason='`overwrite_x` only supported for NumPy backend.')
-@pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
+@pytest.mark.parametrize("forward, backward", [
+    make_xp_pytest_param(dctn, idctn), make_xp_pytest_param(dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
                          [
@@ -241,7 +243,16 @@ def test_orthogonalize_dcst3(func, norm, xp):
 
 @skip_xp_backends(np_only=True,
                   reason='array-likes only supported for NumPy backend')
-@pytest.mark.parametrize("func", [dct, idct, dctn, idctn, dst, idst, dstn, idstn])
+@pytest.mark.parametrize("func", [
+    make_xp_pytest_param(dct),
+    make_xp_pytest_param(idct),
+    make_xp_pytest_param(dctn),
+    make_xp_pytest_param(idctn),
+    make_xp_pytest_param(dst),
+    make_xp_pytest_param(idst),
+    make_xp_pytest_param(dstn),
+    make_xp_pytest_param(idstn),
+])
 def test_array_like(xp, func):
     x = [[[1.0, 1.0], [1.0, 1.0]],
          [[1.0, 1.0], [1.0, 1.0]],
