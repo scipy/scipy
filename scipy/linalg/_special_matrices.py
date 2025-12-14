@@ -1019,13 +1019,15 @@ def fiedler(a):
     a = xpx.atleast_nd(xp.asarray(a), ndim=1)
 
     if xp_size(a) == 0:
-        return xp.asarray([], dtype=xp.float64)
+        batch_shape, n = a.shape[:-1], a.shape[-1]
+        return xp.empty(batch_shape + (n, n), dtype=a.dtype)
     elif xp_size(a) == 1:
         return xp.asarray([[0.]])
     else:
         return xp.abs(a[..., :, xp.newaxis] - a[..., xp.newaxis, :])
 
 
+@_apply_over_batch(("a", 1), signature="(i)->(i-1,i-1)")
 def fiedler_companion(a):
     """ Returns a Fiedler companion matrix
 
@@ -1088,9 +1090,6 @@ def fiedler_companion(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim > 1:
-        return np.apply_along_axis(fiedler_companion, -1, a)
-
     if a.size <= 2:
         if a.size == 2:
             return np.array([[-(a/a[0])[-1]]])
@@ -1113,6 +1112,18 @@ def fiedler_companion(a):
     return c
 
 
+def _convolution_matrix_signature(a, n, mode='full'):
+    if mode == 'full':
+        return f"(m)->(m+{n}-1,{n})"
+    elif mode == 'same':  # avoid commas in max(m, n), etc..., due to signature parsing
+        return f"(m)->(m if m > {n} else {n},{n})"
+    elif mode == 'valid':
+        return f"(m)->(m-{n}+1 if m > {n} else {n}-m+1,{n})"
+    else:
+        raise ValueError("'mode' argument must be one of ('full', 'valid', 'same')")
+
+
+@_apply_over_batch(("a", 1), signature=_convolution_matrix_signature)
 def convolution_matrix(a, n, mode='full'):
     """
     Construct a convolution matrix.
@@ -1281,9 +1292,6 @@ def convolution_matrix(a, n, mode='full'):
     if mode not in ('full', 'valid', 'same'):
         raise ValueError(
             "'mode' argument must be one of ('full', 'valid', 'same')")
-
-    if a.ndim > 1:
-        return np.apply_along_axis(lambda a: convolution_matrix(a, n, mode), -1, a)
 
     # create zero padded versions of the array
     az = np.pad(a, (0, n-1), 'constant')
