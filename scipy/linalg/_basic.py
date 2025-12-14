@@ -1794,7 +1794,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-@_apply_over_batch(('a', 2), signature="(i,i)->(i,i)")
+def _pinv_signature(*args, **kwargs):
+    return "(i,i)->(i,i),()" if kwargs.get('return_rank') else "(i,i)->(i,i)"
+
+
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1918,7 +1922,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
         return B
 
 
-@_apply_over_batch(('a', 2), signature="(i,i)->(i,i)")
+@_apply_over_batch(('a', 2), signature=_pinv_signature)
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True):
     """

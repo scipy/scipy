@@ -1125,7 +1125,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
         for j, l in enumerate(input.split(",")):
             input_dim_to_letter[(i, j)] = l
 
-    letter_to_length = {}
+    letter_to_length = {'': ()}
     for i, core_shape in enumerate(core_shapes):
         for j, length in enumerate(core_shape):
             l = input_dim_to_letter[(i, j)]
@@ -1137,7 +1137,7 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     # `eval` output shape specifications?
     results = []
     for output in outputs:
-        out_core_shape = tuple([letter_to_length[l] for l in output.split(',')])
+        out_core_shape = tuple([letter_to_length[l] for l in output.split(',') if l])
         results.append(np.empty(batch_shape + out_core_shape, dtype=dtype))
     return results[0] if len(results) == 1 else results
 
@@ -1214,9 +1214,9 @@ def _apply_over_batch(*argdefs, signature=None):
             # which to call the function, the decorator doesn't even know the *number*
             # of outputs, let alone their core shapes or dtypes.
             if math.prod(batch_shape) == 0:
+                sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
-                    return output_from_signature(arrays, batch_shape,
-                                                 core_shapes, signature)
+                    return output_from_signature(arrays, batch_shape, core_shapes, sig)
                 message = f'`{f.__name__}` does not support zero-size batches.'
                 raise ValueError(message)
 
@@ -1252,10 +1252,10 @@ def _apply_over_batch(*argdefs, signature=None):
         doc = FunctionDoc(wrapper)
         batch_note = _batch_note.rstrip()
         if signature is None:
-            batch_note += ("\n Note that calls with zero-size batches are unsupported "
+            batch_note += ("\nNote that calls with zero-size batches are unsupported "
                            "and will raise a ``ValueError``.")
-        else:
-            batch_note += f"\n The NEP 5 signature of this function is {signature}."
+        elif isinstance(signature, str):
+            batch_note += f"\nThe NEP 5 signature of this function is {signature}."
         doc['Extended Summary'].append(batch_note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1].lstrip(" \n")  # remove signature
 

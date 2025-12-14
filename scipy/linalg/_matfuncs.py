@@ -804,6 +804,10 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
+def _funm_signature(*args, **kwargs):
+    return "(i,i)->(i,i),()" if kwargs.get('return_rank') else "(i,i)->(i,i)"
+
+
 @_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def funm(A, func, disp=True):
     """
