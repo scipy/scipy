@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import scipy.special._ufuncs as scu
+import scipy.special as sc
 from scipy.integrate import tanhsinh
 
 
@@ -73,7 +74,7 @@ def test_extreme_inputs_for_binomial_probabilities(func, dtype):
     p = 0.3
     func(dtype(k), dtype(n), dtype(p))
 
-@pytest.mark.parametrize("func", [scu._binom_ppf, scu._binom_isf])
+@pytest.mark.parametrize("func", [sc.bdtrik, scu._binom_isf])
 @pytest.mark.parametrize("dtype", [np.float32, np.float64])
 def test_extreme_inputs_for_binomial_quantiles(func, dtype):
     # certain inputs caused C++ exceptions in boost
