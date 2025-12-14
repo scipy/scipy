@@ -30,7 +30,7 @@ class TestBatch:
     # Test batch support for most linalg functions
 
     def batch_test(self, fun, arrays, *, core_dim=2, n_out=1, kwargs=None, dtype=None,
-                   broadcast=True, check_kwargs=True):
+                   broadcast=True, check_kwargs=True, test_zero_size=False):
         # Check that all outputs of batched call `fun(A, **kwargs)` are the same
         # as if we loop over the separate vectors/matrices in `A`. Also check
         # that `fun` accepts `A` by position or keyword and that results are
@@ -71,6 +71,17 @@ class TestBatch:
         for k in range(len(ref)):
             out_dtype = ref[k].dtype if dtype is None else dtype
             assert res[k].dtype == out_dtype
+
+        if test_zero_size:
+            n_batch = len(batch_shape)
+            zero_size_in = [np.empty((0,) + array.shape[n_batch:], dtype=array.dtype)
+                            for array in arrays]
+            zero_size_out = fun(*zero_size_in, **kwargs)
+            zero_size_out = (zero_size_out,) if n_out == 1 else zero_size_out
+            for res_k, ref_k in zip(zero_size_out, ref):
+                ref_k = np.empty((0,) + ref_k.shape, dtype=ref_k.dtype)
+                np.testing.assert_equal(res_k, ref_k)
+                assert res_k.dtype == ref_k.dtype
 
         return res2  # return original, non-tuplized result
 
@@ -119,7 +130,7 @@ class TestBatch:
         if fun == linalg.sqrtm:
             A = A + 3*np.eye(4, dtype=dtype)
 
-        self.batch_test(fun, A)
+        self.batch_test(fun, A, test_zero_size=True)
 
     @pytest.mark.parametrize('dtype', floating)
     def test_null_space(self, dtype):

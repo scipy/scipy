@@ -309,7 +309,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD

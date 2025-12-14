@@ -562,7 +562,7 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
         return res
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def cosm(A):
     """
     Compute the matrix cosine.
@@ -603,7 +603,7 @@ def cosm(A):
         return expm(1j*A).real
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinm(A):
     """
     Compute the matrix sine.
@@ -644,7 +644,7 @@ def sinm(A):
         return expm(1j*A).imag
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanm(A):
     """
     Compute the matrix tangent.
@@ -684,7 +684,7 @@ def tanm(A):
     return _maybe_real(A, solve(cosm(A), sinm(A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def coshm(A):
     """
     Compute the hyperbolic matrix cosine.
@@ -724,7 +724,7 @@ def coshm(A):
     return _maybe_real(A, 0.5 * (expm(A) + expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def sinhm(A):
     """
     Compute the hyperbolic matrix sine.
@@ -764,7 +764,7 @@ def sinhm(A):
     return _maybe_real(A, 0.5 * (expm(A) - expm(-A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def tanhm(A):
     """
     Compute the hyperbolic matrix tangent.
@@ -804,7 +804,7 @@ def tanhm(A):
     return _maybe_real(A, solve(coshm(A), sinhm(A)))
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def funm(A, func, disp=True):
     """
     Evaluate a matrix function specified by a callable.
@@ -899,7 +899,7 @@ def funm(A, func, disp=True):
         return F, err
 
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,i)->(i,i)")
 def signm(A, disp=_NoValue):
     """
     Matrix sign function.
