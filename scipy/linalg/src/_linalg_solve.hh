@@ -4,6 +4,7 @@
 #include "Python.h"
 #include <iostream>
 #include "numpy/arrayobject.h"
+#include "numpy/ndarraytypes.h"
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
 #include "_npymath.hh"
@@ -202,6 +203,43 @@ void solve_slice_tridiag(
     }
 }
 
+// Banded array solve
+template<typename T>
+inline void solve_slice_banded(
+    char trans, CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, T *work, T *work2, void *irwork,
+    CBLAS_INT kl, CBLAS_INT ku, SliceStatus &status
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    char norm = '1';
+
+    // use `work` for storage, but first used as scratch memory
+    T *scratch = &work[0];
+    T *ab = &work[N * N];
+
+    // gbsv does not provide a direct means to work with transposes, so do it manually
+    if (trans == 'T') {
+        std::swap(kl, ku);
+        transpose(data, scratch, N, N);
+    }
+
+    CBLAS_INT ldab = 2 * kl + ku + 1;
+
+    // get bands in correct structure, reuse `work` for storage
+    to_banded(data, N, kl, ku, ldab, ab);
+
+    gbsv(&N, &kl, &ku, &NRHS, ab, &ldab, ipiv, b_data, &N, &info);
+    status.is_singular = (info > 0);
+
+    real_type rcond;
+    real_type anorm = norm1_banded(data, kl, ku, work2, N);
+    gbcon(&norm, &N, &kl, &ku, ab, &ldab, ipiv, &anorm, &rcond, work2, irwork, &info);
+
+    status.rcond = (double)rcond;
+    status.is_ill_conditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+}
+
 
 // Diagonal array solve
 template<typename T>
@@ -247,7 +285,7 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
-    char trans = transposed ? 'T' : 'N'; 
+    char trans = transposed ? 'T' : 'N';
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm_or_herm = false, is_symm_not_herm = false;
     char uplo = lower ? 'L' : 'U';
@@ -275,6 +313,11 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     npy_intp *shape_b = PyArray_SHAPE(ap_b);
     npy_intp *strides_b = PyArray_STRIDES(ap_b);
     npy_intp nrhs = PyArray_DIM(ap_b, ndim_b -1); // Number of right-hand-sides
+
+    // Only used for `banded`
+    npy_intp *kls = NULL;
+    npy_intp *kus = NULL;
+    T *ab = NULL;
 
     // --------------------------------------------------------------------
     // Workspace computation and allocation
@@ -344,6 +387,40 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
     }
     else if (structure == St::UPPER_TRIANGULAR) {
         uplo = 'U';
+    }
+    if (structure == St::BANDED) {
+        // Banded structure detection per slice
+        npy_intp kl_max = 0;
+        npy_intp ku_max = 0;
+        kls = (npy_intp *)malloc(outer_size * sizeof(T));
+        kus = (npy_intp *)malloc(outer_size * sizeof(T));
+
+        if (kls == NULL || kus == NULL) {
+            free(buffer);
+            free(ipiv);
+            free(kls);
+            free(kus);
+            info = -102;
+            return (int)info;
+        }
+
+        // If not F-ordered, the lower and upper bands will be flipped.
+        if (PyArray_IS_F_CONTIGUOUS(ap_Am)) {
+            detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kls, kus, &kl_max, &ku_max);
+        } else {
+            detect_bandwidths(Am_data, ndim, outer_size, shape, strides, kus, kls, &ku_max, &kl_max);
+        }
+
+        ab = (T *)malloc(((n + 2 * kl_max + ku_max + 1) * n + lwork) * sizeof(T));
+        if (ab == NULL) {
+            free(buffer);
+            free(ipiv);
+            free(kls);
+            free(kus);
+            free(ab);
+            info = -102;
+            return int(info);
+        }
     }
 
     // Main loop to traverse the slices
@@ -449,6 +526,21 @@ _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int
                 zero_other_triangle(uplo, data, intn);
                 break;
             }
+            case St::BANDED:
+            {
+                // Bands were detected earlier on already
+                solve_slice_banded(trans, intn, int_nrhs, data, ipiv, data_b, ab, work2, irwork, kls[idx], kus[idx], slice_status);
+
+                if ((slice_status.lapack_info < 0) || (slice_status.is_singular)) {
+                    vec_status.push_back(slice_status);
+                    goto free_exit;
+                }
+                else if (slice_status.is_ill_conditioned) {
+                    vec_status.push_back(slice_status);
+                }
+
+                break;
+            }
             case St::POS_DEF:
             {
                 solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, slice_status);
@@ -524,5 +616,10 @@ free_exit:
     free(buffer);
     free(irwork);
     free(ipiv);
+    if (kls != NULL) {
+        free(kls);
+        free(kus);
+        free(ab);
+    }
     return 1;
 }

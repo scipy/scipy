@@ -1147,6 +1147,34 @@ class TestSolve:
         with pytest.raises(LinAlgError):
             solve(a, b, assume_a="tridiagonal")
 
+    def test_banded(self):
+        rng = np.random.default_rng(982345982439826)
+
+        n = 20
+        A = rng.random((n, n))
+        b = rng.random(n)
+
+        # test if even for full matrix solver gives correct results
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res)
+
+        # restrict to banded
+        A = np.triu(np.tril(A, k=5), k=-7)
+        ref = np.linalg.solve(A, b)
+        res = solve(A, b, assume_a="banded")
+        assert_allclose(ref, res)
+
+        # ill-conditioned inputs warn
+        A[0, 0] = 1e40
+        with pytest.warns(LinAlgWarning):
+            solve(A, b, assume_a="banded")
+
+        # singular inputs raise
+        A[-1, :] = 0
+        with pytest.raises(LinAlgError):
+            solve(A, b, assume_a="banded")
+
 
 class TestSolveTriangular:
 
@@ -1293,7 +1321,7 @@ class TestInv:
         assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
         assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
 
-        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace
         a = a.astype(float).copy(order='F')
         a_inv = inv(a, overwrite_a=True)
         assert np.shares_memory(a, a_inv)
