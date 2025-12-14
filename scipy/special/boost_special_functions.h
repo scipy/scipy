@@ -1761,6 +1761,51 @@ binom_isf_double(double x, double n, double p)
 
 template<typename Real>
 Real
+bdtrin_wrap(const Real k, const Real y, const Real p)
+{
+    if (std::isnan(p) || std::isnan(k) || std::isnan(y)) {
+        return NAN;
+    }
+    if (k < 0 || y < 0 || y > 1 || p < 0 || p > 1) {
+        sf_error("bdtrin", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real n;
+    try {
+        n = boost::math::binomial_distribution<Real, SpecialPolicy>::find_minimum_number_of_trials(
+            k, p, y);
+    } catch (const std::domain_error& e) {
+        sf_error("bdtrin", SF_ERROR_DOMAIN, NULL);
+        n = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("bdtrin", SF_ERROR_OVERFLOW, NULL);
+        n = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("bdtrin", SF_ERROR_UNDERFLOW, NULL);
+        n = 0;
+    } catch (...) {
+        sf_error("bdtrin", SF_ERROR_OTHER, NULL);
+        n = NAN;
+    }
+    if (n < 0) {
+        sf_error("bdtrin", SF_ERROR_NO_RESULT, NULL);
+        n = NAN;
+    }
+    return n;
+}
+
+double bdtrin_double(double k, double y, double p)
+{
+    return bdtrin_wrap(k, y, p);
+}
+
+float bdtrin_float(float k, float y, float p)
+{
+    return bdtrin_wrap(k, y, p);
+}
+
+template<typename Real>
+Real
 nbinom_pmf_wrap(const Real x, const Real r, const Real p)
 {
     if (std::isfinite(x)) {
