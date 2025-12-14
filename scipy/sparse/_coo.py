@@ -15,6 +15,7 @@ from ._sparsetools import (coo_tocsr, coo_todense, coo_todense_nd,
                            coo_matvec, coo_matvec_nd, coo_matmat_dense,
                            coo_matmat_dense_nd)
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
+from ._construct import matrix_transpose
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
@@ -245,6 +246,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
                               shape=permuted_shape, copy=copy)
 
     transpose.__doc__ = _spbase.transpose.__doc__
+    
+    @property
+    def mT(self):
+        """Matrix transpose.
+        
+        See Also
+        --------
+        sparse.matrix_transpose : equivalent function
+        """
+        return matrix_transpose(self)
 
     def resize(self, *shape) -> None:
         shape = check_shape(shape, allow_nd=self._allow_nd)
