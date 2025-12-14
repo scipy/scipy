@@ -463,7 +463,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.tr_radius < xtol:
-                state.status = 2
+                # Prevent premature termination when only initial point evaluated
+                # See gh-24109: trust-constr with feasible x0 and keep_feasible=True
+                # can loop without function evals if starting on constraint boundary
+                if state.nfev > 1 or state.optimality < gtol:
+                    state.status = 2
             elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
@@ -509,7 +513,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 1
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):
-                state.status = 2
+                # Prevent premature termination when only initial point evaluated
+                # See gh-24109: trust-constr with feasible x0 and keep_feasible=True
+                # can loop without function evals if starting on constraint boundary
+                if state.nfev > 1 or state.optimality < gtol:
+                    state.status = 2
             elif state.nit >= maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)

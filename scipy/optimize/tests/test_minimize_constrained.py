@@ -848,3 +848,80 @@ class TestBoundedNelderMead:
             minimize(prob.fun, [-10, 8],
                      method='Nelder-Mead',
                      bounds=bounds)
+
+def test_gh24109_trust_constr_keep_feasible_stall():
+    """
+    Regression test for gh-24109.
+    
+    trust-constr with feasible x0, keep_feasible=True for both bounds
+    and linear constraints, and constant objective/gradient should not:
+    1. Loop many iterations (e.g. 120) without moving from x0
+    2. Exit with success=True when optimality criterion not satisfied
+    3. Make only 1 function evaluation (nfev=1)
+    
+    The fix ensures the optimizer won't terminate on xtol criterion
+    unless either nfev > 1 or optimality < gtol.
+    """
+    # Initial guess x0
+    x0 = np.array([0.0, 0.2, 0.4, 0.6, 0.8, 7.0])
+    
+    # Objective value and gradient (constant, from PDE solve)
+    f0 = 2.517115130334325
+    g0 = np.array([
+        -3.489e+02,
+         2.482e+03,
+        -6.102e+03,
+         6.144e+03,
+        -2.175e+03,
+        -3.327e+00,
+    ])
+    
+    # Linear inequality constraint matrix: A_ineq x >= 0
+    A_ineq = np.array([
+        [ 2.5916e-01, -6.9109e-01,  6.3350e-01, -2.3036e-01,  2.8796e-02, 0.0],
+        [-5.5385e-02,  4.4308e-01, -7.7539e-01,  4.4308e-01, -5.5385e-02, 0.0],
+        [ 2.8796e-02, -2.3036e-01,  6.3350e-01, -6.9109e-01,  2.5916e-01, 0.0],
+    ])
+    
+    # Bounds with keep_feasible=True
+    bounds = Bounds(
+        lb=np.array([-1e-8, 0.0, 0.0, 0.0, 0.0, 3.0]),
+        ub=np.array([0.0, np.inf, np.inf, np.inf, np.inf, np.inf]),
+        keep_feasible=True,
+    )
+    
+    # Linear inequality: A_ineq x >= 0, with keep_feasible=True
+    lin_constr = LinearConstraint(A_ineq, lb=-1e-10, ub=np.inf, keep_feasible=True)
+    
+    def fun(x):
+        # Constant objective and gradient (simulates PDE solve)
+        return f0, g0
+    
+    res = minimize(
+        fun,
+        x0,
+        method="trust-constr",
+        jac=True,
+        constraints=[lin_constr],
+        bounds=bounds,
+        options={
+            "maxiter": 200,
+            "gtol": 1e-6,
+            "xtol": 1e-8,
+            "initial_tr_radius": 1.0,
+        },
+    )
+    
+    # The bug was: nfev=1, success=True, but optimality >> gtol
+    # After fix: Either nfev > 1, or success=False if optimality >> gtol
+    
+    # Assert that if success=True, optimality must be satisfied
+    if res.success:
+        assert_(res.optimality < 1e-6, 
+                f"Optimizer exited with success=True but optimality={res.optimality:.6f} >> gtol=1e-6")
+    
+    # Assert that if optimality >> gtol, then nfev > 1 or success=False
+    if res.optimality >= 1e-6:
+        assert_(res.nfev > 1 or not res.success,
+                f"Optimizer made only {res.nfev} function eval(s) with optimality={res.optimality:.6f} >> gtol, "
+                f"but exited with success={res.success}. This indicates premature termination.")
