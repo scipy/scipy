@@ -42,7 +42,7 @@ from scipy.cluster.hierarchy import (
     is_isomorphic, single, ward, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    set_link_color_palette, cut_tree, optimal_leaf_ordering, _reorder_leaves,
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
@@ -1077,6 +1077,44 @@ class TestDendrogram:
 
             # reset color palette (global list)
             set_link_color_palette(None)
+
+    @pytest.mark.parametrize("order", [
+        [0, 1, 2, 3, 4, 5, 6, 7],  # wrong size of the list
+        [0, 1, 2, 3, 8, 5, 6],     # not a permutation
+        [0, 1, 2, 1, 2, 5, 6],     # contains duplicates
+        [],  # empty reordering list
+    ])
+    def test_dendrogram_leaves_reorder_simple_mistakes(self, order, xp):
+        order = xp.asarray(order)
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
+        Z = linkage(X, method='single')
+        with pytest.raises(ValueError):
+            _reorder_leaves(Z, order, xp=xp)
+
+    @pytest.mark.parametrize("order", [
+        [0, 3, 1, 2, 4, 5, 6],  # results in a crossing
+        [0, 1, 5, 4, 2, 3, 6],  # results in a crossing
+        [6, 0, 1, 2, 3, 5, 4],   # crossing at highest level
+    ])
+    def test_dendrogram_leaves_reorder_crossings(self, order, xp):
+        order = xp.asarray(order)
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
+        Z = linkage(X, method='single')
+        with pytest.raises(ValueError):
+            _reorder_leaves(Z, leaves_order=order, xp=xp)
+
+    @pytest.mark.parametrize("order", [
+        [4, 5, 6, 0, 1, 2, 3],  # no re-ordering
+        [5, 4, 6, 0, 1, 2, 3],  # swap one pair of leaves
+        [5, 4, 6, 1, 0, 3, 2],  # swap one pair of leaves and two small trees
+        [1, 0, 2, 3, 6, 4, 5],
+    ])
+    def test_dendrogram_leaves_reorder_ok(self, order, xp):
+        order = xp.asarray(order)
+        X = xp.asarray([[0, 0], [0, 1], [0, 4], [2, 4], [6, 3], [7, 3], [8, 3]])
+        Z = linkage(X, method='single')
+        new_Z = _reorder_leaves(Z, order, xp=xp)
+        xp_assert_equal(leaves_list(new_Z), xp.asarray(order, dtype=xp.int32))
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
         # tests that the colors of leafs are correct for tree
