@@ -1893,7 +1893,7 @@ def normalize(b, a):
     `b` is 0.  In the following example, the result is as expected:
 
     >>> import warnings
-    >>> with warnings.catch_warnings(record=True) as w:
+    >>> with warnings.catch_warnings(record=True, action='always') as w:
     ...     num, den = normalize([0, 3, 6], [2, -5, 4])
 
     >>> num
@@ -5105,12 +5105,14 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
-    >>> from scipy.signal._filter_design import _bessel_poly
-    >>> i = 0
-    >>> for n in range(51):
-    ...     for x in _bessel_poly(n, reverse=True):
-    ...         print(i, x)
-    ...         i += 1
+    .. code_block:: python
+
+        from scipy.signal._filter_design import _bessel_poly
+        i = 0
+        for n in range(51):
+            for x in _bessel_poly(n, reverse=True):
+                print(i, x)
+                i += 1
 
     """
     if abs(int(n)) != n:

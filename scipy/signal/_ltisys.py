@@ -791,8 +791,8 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
@@ -871,8 +871,8 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
 
     >>> signal.TransferFunction(num, den, dt=0.5)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.5
     )
 
@@ -1682,12 +1682,12 @@ class StateSpaceContinuous(StateSpace, lti):
     >>> sys = signal.StateSpace(a, b, c, d)
     >>> print(sys)
     StateSpaceContinuous(
-    array([[0, 1],
-           [0, 0]]),
-    array([[0],
-           [1]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[0., 1.],
+           [0., 0.]]),
+    array([[0.],
+           [1.]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: None
     )
 
@@ -1759,12 +1759,12 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
-    array([[1, 0]]),
-    array([[0]]),
+    array([[1. ,  0.1],
+           [0. ,  1. ]]),
+    array([[0.005],
+           [0.1  ]]),
+    array([[1., 0.]]),
+    array([[0.]]),
     dt: 0.1
     )
 
