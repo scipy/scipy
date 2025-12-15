@@ -2544,7 +2544,7 @@ fpgrre(int ifsx, int ifsy, int ifbx, int ifby, const double *x, const int mx, co
             }
 
             // calculate the squared residual at the current grid point.
-            term = pow(z[iz] - term, 2);
+            term = pow(z[iz - 1] - term, 2);
 
             // adjust the different parameters.
             *fp = *fp + term;
