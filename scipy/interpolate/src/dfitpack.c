@@ -2580,7 +2580,7 @@ fpgrsp(int ifsu, int ifsv, int ifbu, int ifbv, int iback, const double *u, const
     (void)nc;    // Unused
     (void)mm;    // Unused
     (void)mvnu;  // Unused
-    double arg, co, dr01, dr02, dr03, dr11, dr12, dr13, fac, fac0, fac1, pinv, piv;
+    double arg, co, dr01, dr02, dr03, dr11, dr12, dr13, fac, fac0, fac1, pinv=0.0, piv;
     double si, term, one, three, half;
     int i, ic, ii, ij, ik, iq, irot, it, ir, i0, i1, i2, i3, j, jj, jk, jper;
     int j0, j1, k, k1, k2, l, l0, l1, l2, mvv, ncof, nrold, nroldu, nroldv, number;
@@ -5883,10 +5883,10 @@ fpsphe(const int iopt, const int m, const double *teta, const double *phi, const
     (void)intest; // Unused
     (void)nrest;  // Unused
     double aa, acc=0.0, arg, cn, co, c1, dmax, d1, d2, eps, facc=0.0, facs=0.0, fac1, fac2, fn;
-    double fpmax, fpms, f1, f2, f3, hti, htj, p, pinv, piv, pi2, p1, p2, p3, ri, si;
+    double fpmax, fpms=0.0, f1, f2, f3, hti, htj, p, pinv=0.0, piv, pi2, p1, p2, p3, ri, si;
     double sigma, sq, store, wi, rn, one, con1, con9, con4, half, ten;
-    int i, iband, iband1, ii, irot, j, jlt, jrot, j1, j2, l, la, lf, lh, ll, lp, lt, lwest, l1, l2, l3, l4;
-    int ncof, ncoff, npp, np4, nreg, nrint, nrr, ntt, nt4, num, num1, rank, in, iter, i1, i2, i3;
+    int i, iband=0, iband1=0, ii, irot, j, jlt, jrot, j1, j2, l, la, lf, lh, ll, lp, lt, lwest, l1, l2, l3, l4;
+    int ncof=0, ncoff=0, npp=0, np4=0, nreg=0, nrint, nrr, ntt=0, nt4=0, num, num1, rank, in, iter, i1, i2, i3;
     double ht[4], hp[4];
 
     // set constants
@@ -6689,7 +6689,7 @@ fpspgr(const int* iopt, const int* ider, const double* u, const int mu, const do
        int* lastu0, int* lastu1, int* nru, int* nrv, int* nrdatu, int* nrdatv, double* wrk,
        const int lwrk,int* ier)
 {
-    double acc=0.0, fpms, f1, f2, f3, p, per, p1, p2, p3, vb, ve, rmax, rmin, rn, one;
+    double acc=0.0, fpms=0.0, f1, f2, f3, p, per, p1, p2, p3, vb, ve, rmax, rmin, rn, one;
     double con1, con4, con9;
     int i, ich1, ich3, ifbu, ifbv, ifsu, ifsv, istart, iter, i1, i2, j, ju;
     int ktu, l, l1, l2, l3, l4, mpm, mumin, mu0, mu1, nn, nplu=0, nplv, npl1, nrintu;
