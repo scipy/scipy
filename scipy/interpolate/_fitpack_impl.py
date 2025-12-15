@@ -27,8 +27,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 import warnings
 import numpy as np
 from . import _fitpack
-from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
-                   empty, iinfo, asarray)
+from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, empty, iinfo, asarray)
 
 from scipy._lib._array_api import array_namespace, concat_1d, xp_capabilities
 
@@ -171,7 +170,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     t = _parcur_cache['t']
     wrk = _parcur_cache['wrk']
     iwrk = _parcur_cache['iwrk']
-    t, c, o = _fitpack.parcur(ravel(x, 'F'), w, u, ub, ue, k, task, ipar, s, t, nest, wrk, iwrk, per)
+    t, c, o = _fitpack.parcur(ravel(x, 'F'), w, u, ub, ue, k, task, ipar, s,
+                              t, nest, wrk, iwrk, per)
     _parcur_cache['u'] = o['u']
     _parcur_cache['ub'] = o['ub']
     _parcur_cache['ue'] = o['ue']
