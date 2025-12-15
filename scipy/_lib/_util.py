@@ -11,7 +11,7 @@ import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeAlias, TypeVar
+from typing import Literal, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
@@ -79,8 +79,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: TypeAlias = np.random.Generator | np.random.RandomState
-SeedType: TypeAlias = IntNumber | _RNG | None
+_RNG: type = np.random.Generator | np.random.RandomState
+SeedType: type = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
@@ -1111,6 +1111,7 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
@@ -1182,6 +1183,13 @@ def _apply_over_batch(*argdefs):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
+            # We can't support zero-size batches right now because without data with
+            # which to call the function, the decorator doesn't even know the *number*
+            # of outputs, let alone their core shapes or dtypes.
+            if math.prod(batch_shape) == 0:
+                message = f'`{f.__name__}` does not support zero-size batches.'
+                raise ValueError(message)
+
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
@@ -1228,7 +1236,7 @@ def np_vecdot(x1, x2, /, *, axis=-1):
     else:
         # of course there are other fancy ways of doing this (e.g. `einsum`)
         # but let's keep it simple since it's temporary
-        return np.sum(x1 * x2, axis=axis)
+        return np.sum(x1.conj() * x2, axis=axis)
 
 
 def _dedent_for_py313(s):

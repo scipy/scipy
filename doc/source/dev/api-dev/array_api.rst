@@ -443,6 +443,7 @@ helped during the development phase:
 .. _RFC: https://github.com/scipy/scipy/issues/18286
 .. _the tracker issue: https://github.com/scipy/scipy/issues/18867
 
+.. _dev-arrayapi_coverage:
 
 API Coverage
 ------------

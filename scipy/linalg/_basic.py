@@ -1337,7 +1337,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None, lower=False):
+def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 
@@ -1857,7 +1857,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     ----------
     .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
            equations. Mathematical Proceedings of the Cambridge Philosophical
-           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+           Society, 52(1), 17-19. :doi:`10.1017/S0305004100030929`.
 
     Examples
     --------

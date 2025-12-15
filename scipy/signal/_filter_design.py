@@ -5332,7 +5332,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           :DOI:`10.1145/363067.363115`
+           :doi:`10.1145/363067.363115`.
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html

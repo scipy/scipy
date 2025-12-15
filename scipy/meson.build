@@ -31,12 +31,9 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
-# our minimum supported version). Using this now to be able to detect the
-# version easily for >=2.0.
-_numpy_dep = dependency('numpy', required: false)
+_numpy_dep = dependency('numpy')
 f2py_freethreading_arg = []
-if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+if _numpy_dep.version().version_compare('>=2.1.0')
   f2py_freethreading_arg = ['--free-threading']
   message('f2py free-threading enabled')
 else

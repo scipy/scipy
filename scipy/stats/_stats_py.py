@@ -3831,12 +3831,18 @@ def f_oneway(*samples, axis=0, equal_var=True):
            integrated introduction for psychology", Houghton, Mifflin and
            Company, 2001.
 
-    .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
+    .. [3] J.H. McDonald, "Handbook of Biological Statistics",
+           One-way ANOVA, 2014.
            http://www.biostathandbook.com/onewayanova.html
 
     .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
            An Alternative Approach", Biometrika, vol. 38, no. 3/4,
-           pp. 330-336, 1951, doi: 10.2307/2332579.
+           pp. 330-336, 1951. :doi:`10.2307/2332579`.
+
+    .. [5] J.H. McDonald, R. Seed and R.K. Koehn, "Allozymes and
+           morphometric characters of three species of Mytilus in
+           the Northern and Southern Hemispheres",
+           Marine Biology, vol. 111, pp. 323-333, 1991.
 
     Examples
     --------
@@ -3847,7 +3853,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     adductor muscle scar, standardized by dividing by length) in the mussel
     Mytilus trossulus from five locations: Tillamook, Oregon; Newport, Oregon;
     Petersburg, Alaska; Magadan, Russia; and Tvarminne, Finland, taken from a
-    much larger data set used in McDonald et al. (1991).
+    much larger data set used in [5]_.
 
     >>> tillamook = [0.0571, 0.0813, 0.0831, 0.0976, 0.0817, 0.0859, 0.0735,
     ...              0.0659, 0.0923, 0.0836]
@@ -4098,7 +4104,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     .. [1] Alexander, Ralph A., and Diane M. Govern. "A New and Simpler
            Approximation for ANOVA under Variance Heterogeneity." Journal
            of Educational Statistics, vol. 19, no. 2, 1994, pp. 91-101.
-           JSTOR, www.jstor.org/stable/1165140. Accessed 12 Sept. 2020.
+           https://www.jstor.org/stable/1165140
 
     Examples
     --------
@@ -6623,16 +6629,17 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] B. Efron and T. Hastie. Computer Age Statistical Inference. (2016).
+    .. [3] B. Efron and T. Hastie.
+           Computer Age Statistical Inference. (2016).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
-           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
-           www.jstor.org/stable/2334299. Accessed 30 Mar. 2021.
+           Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170.
+           https://www.jstor.org/stable/2334299
 
     .. [5] Yuen, Karen K., and W. J. Dixon. "The Approximate Behaviour and
            Performance of the Two-Sample Trimmed t." Biometrika, vol. 60,
-           no. 2, 1973, pp. 369-374. JSTOR, www.jstor.org/stable/2334550.
-           Accessed 30 Mar. 2021.
+           no. 2, 1973, pp. 369-374.
+           https://www.jstor.org/stable/2334550
 
     Examples
     --------
@@ -9214,8 +9221,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
        https://www.jstor.org/stable/2957563.
     .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
        Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
-       159-170. Available:
-       https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7.
+       159-170. :doi:`10.1002/0471722162.ch7`.
     .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
        Confidence Intervals for Quantiles," R package,
        https://cran.r-project.org/package=QuantileNPCI

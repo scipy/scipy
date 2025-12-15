@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.11) & dev deps (py3.14), fast, spin
+    name: mypy (py3.12) & dev deps (py3.14), fast, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.11', '3.14-dev'] # this run will use python dev versions when available
+        python-version: ['3.12', '3.14-dev'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -61,7 +61,7 @@ jobs:
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.12'
       run: |
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin "click<8.3.0"
 
@@ -94,7 +94,7 @@ jobs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.11-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # This evaluates to `Linux Tests-3.12-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
         # need to be updated to be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
@@ -127,7 +127,7 @@ jobs:
       run: ninja -C build -t missingdeps
 
     - name: Mypy
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.12'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install mypy==1.10.0 types-psutil typing_extensions
@@ -232,7 +232,7 @@ jobs:
   #################################################################################
   gcc9:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
-    name: Oldest GCC & pydata/sparse, full, py3.11/npMin, pip+pytest
+    name: Oldest GCC & pydata/sparse, full, py3.12/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -246,7 +246,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Setup system dependencies
         run: |
@@ -271,7 +271,7 @@ jobs:
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.26.4"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==2.0.0"
 
       - name: Run tests
         run: |
@@ -284,7 +284,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps & coverage report, full, py3.11/npMin & py3.11/npPre, spin, SCIPY_ARRAY_API=1
+    name: Prerelease deps & coverage report, full, py3.12/npMin & py3.13/npPre, spin, SCIPY_ARRAY_API=1
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -292,9 +292,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Both use numpy 2.x-dev at build time; 3.11 job then downgrades to
-        # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.11', '3.13']
+        python-version: ['3.12']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -316,7 +314,6 @@ jobs:
         python -m pip install cython pythran ninja meson-python pybind11 spin "click<8.3.0"
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
-        # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
     - name:  Prepare compiler cache
@@ -346,10 +343,9 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
-    - name: Downgrade NumPy from 2.0-dev to lowest supported
-      if: matrix.python-version == '3.11'
+    - name: Downgrade NumPy to lowest supported
       run: |
-        python -m pip install "numpy==1.26.4"
+        python -m pip install "numpy==2.0.0"
 
     - name: Test SciPy
       run: |
@@ -359,7 +355,7 @@ jobs:
 
   #################################################################################
   linux_32bit:
-    name: 32-bit, fast, py3.11/npMin, spin
+    name: 32-bit, fast, py3.12/npMin, spin
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -379,7 +375,7 @@ jobs:
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
-        python3.11 -m venv test && \
+        python3.12 -m venv test && \
         source test/bin/activate && \
         python -m pip install spin 'click<8.3.0' meson ninja && \
         python -m pip install -r requirements/openblas.txt && \
@@ -392,7 +388,7 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==1.26.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==2.0.0 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
@@ -402,7 +398,7 @@ jobs:
     # Purpose is to build for a non-default Python interpreter in a Linux distro
     # For such a build config, `python`/`python3` executables may not have
     # build dependencies like Cython or NumPy installed.
-    name: non-default Python interpreter, fast, py3.11/npMin, pip+pytest
+    name: non-default Python interpreter, fast, py3.12/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -419,29 +415,28 @@ jobs:
           sudo apt install software-properties-common
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt update -y
-          sudo apt install -y python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+          sudo apt install -y python3.12-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
 
       - name: Setup Python build deps
         run: |
-          python3.11 -m pip install build pythran pybind11 cython numpy meson-python
+          python3.12 -m pip install build pythran pybind11 cython numpy meson-python
 
       - name: Build wheel and install
         run: |
-          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
-          python3.11 -m pip install dist/*.whl
+          python3.12 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
+          python3.12 -m pip install dist/*.whl
 
       - name: Install test dependencies
         run: |
-          python3.11 -m pip install pytest hypothesis
-          python3.12 -m pip install meson  # ensure compile test work with this
+          python3.12 -m pip install pytest hypothesis
 
       - name: Run tests
         run: |
           # Just a small subset of tests; this will be fine if the build
           # succeeds (that's the real purpose of this job)
           pushd $RUNNER_TEMP
-          python3.11 -m pytest --pyargs scipy.cluster
-          python3.11 -m pytest --pyargs scipy.linalg
+          python3.12 -m pytest --pyargs scipy.cluster
+          python3.12 -m pytest --pyargs scipy.linalg
           popd
 
   free-threaded:

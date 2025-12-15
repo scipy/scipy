@@ -1429,7 +1429,7 @@ def toms748(f, a, b, args=(), k=1,
        Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
        *Algorithm 748: Enclosing Zeros of Continuous Functions*,
        ACM Trans. Math. Softw. Volume 221(1995)
-       doi = {10.1145/210089.210111}
+       https://doi.org/10.1145/210089.210111
 
     Examples
     --------

@@ -15,7 +15,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 from collections.abc import Iterable
 
 import numpy as np
@@ -62,8 +62,8 @@ __all__ = [
 ]
 
 
-Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: TypeAlias = Array | npt.ArrayLike
+Array: type = Any  # To be changed to a Protocol later (see array-api#589)
+ArrayLike: type = Array | npt.ArrayLike
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:

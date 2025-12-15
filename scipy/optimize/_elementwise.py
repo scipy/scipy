@@ -144,7 +144,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         "A new hybrid quadratic/bisection algorithm for finding the zero of a
         nonlinear function without using derivatives".
         Advances in Engineering Software, 28(3), 145-149.
-        https://doi.org/10.1016/s0965-9978(96)00051-8
+        :doi:`10.1016/s0965-9978(96)00051-8`.
 
     See Also
     --------
@@ -365,7 +365,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         "An efficient quadratic fit-sectioning algorithm for minimization
         without derivatives".
         Computer Methods in Applied Mechanics and Engineering, 152 (1-2),
-        211-217. https://doi.org/10.1016/S0045-7825(97)00190-4
+        211-217. :doi:`10.1016/S0045-7825(97)00190-4`.
 
     See Also
     --------

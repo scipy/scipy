@@ -442,28 +442,29 @@ const char *airy_doc = R"(
 
     Notes
     -----
-    The Airy functions Ai and Bi are two independent solutions of
+    The Airy functions :math:`\operatorname{Ai}` and :math:`\operatorname{Bi}` are two 
+    independent solutions of
 
-    .. math:: y''(x) = x y(x).
+    .. math:: y''(z) = z y(z).
 
-    For real `z` in [-10, 10], the computation is carried out by calling
+    For real :math:`z` in :math:`[-10, 10]`, the computation is carried out by calling
     the Cephes [1]_ `airy` routine, which uses power series summation
-    for small `z` and rational minimax approximations for large `z`.
+    for small :math:`z` and rational minimax approximations for large :math:`z`.
 
     Outside this range, the AMOS [2]_ `zairy` and `zbiry` routines are
     employed.  They are computed using power series for :math:`|z| < 1` and
-    the following relations to modified Bessel functions for larger `z`
+    the following relations to modified Bessel functions for larger :math:`z`
     (where :math:`t \equiv 2 z^{3/2}/3`):
 
     .. math::
 
-        Ai(z) = \frac{1}{\pi \sqrt{3}} K_{1/3}(t)
-
-        Ai'(z) = -\frac{z}{\pi \sqrt{3}} K_{2/3}(t)
-
-        Bi(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t) \right)
-
-        Bi'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
+        \operatorname{Ai}(z) = \frac{1}{\pi}\sqrt{\frac{z}{3}} \, K_{1/3}(t)
+        
+        \operatorname{Ai}'(z) = -\frac{z}{\pi \sqrt{3}} \, K_{2/3}(t)
+        
+        \operatorname{Bi}(z) = \sqrt{\frac{z}{3}} \left(I_{-1/3}(t) + I_{1/3}(t)\right)
+        
+        \operatorname{Bi}'(z) = \frac{z}{\sqrt{3}} \left(I_{-2/3}(t) + I_{2/3}(t)\right)
 
     References
     ----------
@@ -475,14 +476,14 @@ const char *airy_doc = R"(
 
     Examples
     --------
-    Compute the Airy functions on the interval [-15, 5].
+    Compute the Airy functions on the interval :math:`[-15, 5]`.
 
     >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
 
-    Plot Ai(x) and Bi(x).
+    Plot :math:`\operatorname{Ai}(x)` and :math:`\operatorname{Bi}(x)`.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, ai, 'r', label='Ai(x)')
