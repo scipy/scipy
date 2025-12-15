@@ -1131,6 +1131,17 @@ class TestCorrSpearmanr:
                for j in range(m)]
         assert_allclose(corr, res)
 
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_constant_input_gh22816(self, axis):
+        X = np.zeros((10, 4))
+        X[:,0] = np.arange(0, 10)
+        X[:,1] = np.arange(0, 10)
+        if axis == 1:
+            X = X.T
+        with pytest.warns(stats._warnings_errors.ConstantInputWarning):
+            res = stats.spearmanr(X, axis=axis)
+        assert_(np.isnan(res.statistic))
+
     def test_sXX(self):
         y = stats.spearmanr(X,X)
         r = y[0]

@@ -5370,7 +5370,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
     if axisout == 0:
-        if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
+        constant_columns = np.all(a == a[0,:], axis = 0)
+        constant_axis = np.any(constant_columns)
+        if constant_axis:
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
@@ -5378,7 +5380,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             res.correlation = np.nan
             return res
     else:  # case when axisout == 1 b/c a is 2 dim only
-        if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
+        constant_rows = np.all(a.T == a.T[0, :], axis=0)
+        constant_axis = np.any(constant_rows)
+        if constant_axis:
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
