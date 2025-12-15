@@ -2479,6 +2479,10 @@ static int fitpack_module_exec(PyObject *module) {
 
 static struct PyModuleDef_Slot fitpack_module_slots[] = {
     {Py_mod_exec, fitpack_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 
