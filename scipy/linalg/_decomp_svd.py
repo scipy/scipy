@@ -256,7 +256,11 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
-@_apply_over_batch(('s', 1))
+def _diagsvd_signature(s, M, N):
+    return f"(i)->({M}, {N})"
+
+
+@_apply_over_batch(('s', 1), signature=_diagsvd_signature)
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.

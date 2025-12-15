@@ -1137,7 +1137,8 @@ def output_from_signature(arrays, batch_shape, core_shapes, signature):
     # `eval` output shape specifications?
     results = []
     for output in outputs:
-        out_core_shape = tuple([eval(l, letter_to_length) for l in output.split(',') if l])
+        out_core_shape = tuple([eval(l, letter_to_length)
+                                for l in output.split(',') if l])
         results.append(np.empty(batch_shape + out_core_shape, dtype=dtype))
     return results[0] if len(results) == 1 else results
 
@@ -1217,7 +1218,8 @@ def _apply_over_batch(*argdefs, signature=None):
                 sig = signature(*args, **kwargs) if callable(signature) else signature
                 if signature is not None:
                     return output_from_signature(arrays, batch_shape, core_shapes, sig)
-                message = f'`{f.__name__}` does not support zero-size batches.'
+                f_name = f.__name__.lstrip('_')
+                message = f'`{f_name}` does not support zero-size batches.'
                 raise ValueError(message)
 
             # Broadcast arrays to appropriate shape

@@ -405,37 +405,6 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
-    @pytest.mark.parametrize("include_B", [False, True])
-    @pytest.mark.parametrize("left", [False, True])
-    @pytest.mark.parametrize("right", [False, True])
-    @pytest.mark.parametrize("homogeneous_eigvals", [False, True])
-    @pytest.mark.parametrize("dtype", [np.float32, np.complex128])
-    def test_nd_input(self, include_B, left, right, homogeneous_eigvals, dtype):
-        batch_shape = (3, 2)
-        core_shape = (4, 4)
-        rng = np.random.default_rng(3249823598235)
-        A = rng.random(batch_shape + core_shape).astype(dtype)
-        B = rng.random(batch_shape + core_shape).astype(dtype)
-        kwargs = dict(right=right, homogeneous_eigvals=homogeneous_eigvals)
-
-        if include_B:
-            res = eig(A, b=B, left=left, **kwargs)
-        else:
-            res = eig(A, left=left, **kwargs)
-
-        for i in range(batch_shape[0]):
-            for j in range(batch_shape[1]):
-                if include_B:
-                    ref = eig(A[i, j], b=B[i, j], left=left, **kwargs)
-                else:
-                    ref = eig(A[i, j], left=left, **kwargs)
-
-                if left or right:
-                    for k in range(len(ref)):
-                        assert_allclose(res[k][i, j], ref[k])
-                else:
-                    assert_allclose(res[i, j], ref)
-
 
 class TestEigBanded:
     def setup_method(self):

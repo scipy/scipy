@@ -188,10 +188,11 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
 
     S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
     # Despite argument order (required by decorator), this is  S @ input_matrix
-    # Can avoid _batch_dot when gh-22153 is resolved.
-    return S @ input_matrix if input_matrix.ndim <= 2 else _batch_dot(input_matrix, S)
+    # Can avoid _clarkson_woodruff_transform when gh-22153 is resolved.
+    return (S @ input_matrix if input_matrix.ndim <= 2
+            else _clarkson_woodruff_transform(input_matrix, S))
 
 
 @_apply_over_batch(('input_matrix', 2))
-def _batch_dot(input_matrix, S):
+def _clarkson_woodruff_transform(input_matrix, S):
     return S @ input_matrix
