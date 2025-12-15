@@ -93,7 +93,6 @@ def _curfit(x, y, k, w=None, xb=None, xe=None, s=None, nest=None, iopt=0,
         t = np.asarray(t, dtype=float, copy=True)
         nest = len(t)
         n = nest
-        c_work = np.zeros(nest, dtype=float)
     else:
         # Smoothing mode (iopt=0 or iopt=1)
         if nest is None:
@@ -102,13 +101,11 @@ def _curfit(x, y, k, w=None, xb=None, xe=None, s=None, nest=None, iopt=0,
         if iopt == 0:
             # Initial call: allocate new arrays
             t = np.zeros(nest, dtype=float)
-            c_work = np.zeros(nest, dtype=float)
         else:
             # Continuation (iopt=1): use existing arrays
             if t is None or c is None:
                 raise ValueError("t and c must be provided for iopt=1")
             t = np.asarray(t, dtype=float, copy=True)
-            c_work = np.asarray(c, dtype=float, copy=True)
             if n is None:
                 n = nest
 
@@ -118,9 +115,11 @@ def _curfit(x, y, k, w=None, xb=None, xe=None, s=None, nest=None, iopt=0,
     iwrk = np.zeros(nest, dtype=np.int32)
 
     # Call curfit (nest is inferred from len(t) in C code)
-    n_out, t_out, c_out, fp, ier = _fitpack.curfit(iopt, x, y, w, xb, xe, k, s, t, wrk, iwrk)
+    n_out, t_out, c_out, fp, ier = _fitpack.curfit(iopt, x, y, w, xb, xe, k, s,
+                                                   t, wrk, iwrk)
 
-    # Return in old format for compatibility: x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
+    # Return in old format for compatibility:
+    # x, y, w, xb, xe, k, s, n, t, c, fp, fpint, nrdata, ier
     return x, y, w, xb, xe, k, s, n_out, t_out, c_out, fp, fpint, nrdata, ier
 
 
@@ -228,7 +227,11 @@ def _regrid_smth(x, y, z, xb, xe, yb, ye, kx, ky, s, maxit):
     nyest = my + ky + 1
 
     # Workspace
-    lwrk = 4 + mx + my + nxest * (my + 2 * kx + 5) + nyest * (2 * ky + 5) + mx * (kx + 1) + my * (ky + 1) + max((nxest - kx - 1) * (nyest - ky - 1), my)
+    lwrk = 4 + mx + my + nxest * (my + 2 * kx + 5) \
+           + nyest * (2 * ky + 5) + mx * (kx + 1) \
+           + my * (ky + 1) + \
+           max((nxest - kx - 1) * (nyest - ky - 1), my)
+
     wrk = np.zeros(lwrk, dtype=np.float64)
     kwrk = 3 + mx + my + nxest + nyest
     iwrk = np.zeros(kwrk, dtype=np.int32)
@@ -322,7 +325,8 @@ def _regrid_smth_spher(iopt, ider, u, v, r, r0, r1, s, nuest, nvest, eps):
     Wrapper for spgrid (smoothing on spherical grid).
     Returns: nu, tu, nv, tv, c, fp, ier
 
-    Note: eps parameter is not used by the C implementation but kept for API compatibility.
+    Note: eps parameter is not used by the C implementation but kept for
+    legacy API compatibility.
     """
     u = np.ascontiguousarray(u, dtype=np.float64)
     v = np.ascontiguousarray(v, dtype=np.float64)
@@ -679,7 +683,7 @@ class UnivariateSpline:
                           'LSQ spline with fixed knots',
                           stacklevel=2)
             return
-        args = data[:6] + (s,) + data[7:]
+
         # data = x, y, w, xb, xe, k, s, n, t, c, fp, fpint, nrdata, ier
         data = _curfit(
             data[0],
