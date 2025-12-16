@@ -132,7 +132,7 @@ def _get_umf_family(A):
 
     return family, A_new
 
-def spsolve(A, b, permc_spec=None, use_umfpack=True, rhs_batch_size=10):
+def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
     Parameters
