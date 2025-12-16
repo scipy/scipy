@@ -1,6 +1,5 @@
 from warnings import warn, catch_warnings, simplefilter
 
-from numbers import Integral
 import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
@@ -8,6 +7,7 @@ from scipy.sparse import (issparse, SparseEfficiencyWarning,
 from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
                                    safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
+from scipy._lib._util import _validate_int
 import copy
 import threading
 
@@ -261,8 +261,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True, *, rhs_batch_size=10):
 
     use_umfpack = use_umfpack and useUmfpack.u
 
-    if not isinstance(rhs_batch_size, Integral) or rhs_batch_size <= 0:
-        raise ValueError("rhs_batch_size must be a positive integer")
+    _validate_int(rhs_batch_size, "rhs_batch_size", minimum=1)
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
