@@ -479,7 +479,7 @@ class TestLinsolve:
         x = spsolve(A, b, rhs_batch_size=rhs_batch_size, use_umfpack=False)
         if K == 1:
             x_true = x_true.ravel()
-        assert_array_almost_equal(x, x_true)
+        assert_allclose(x, x_true)
 
 
 class TestSplu:
