@@ -1822,15 +1822,55 @@ def yeojohnson_llf(lmb, data, *, axis=0, nan_policy='propagate', keepdims=False)
                           result_to_tuple=lambda x, _: (x,))
 def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
-    y = _yeojohnson_transform(data, lmb, xp=xp)
-    sigma = xp.var(y, axis=axis)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
+    eps = xp.finfo(dtype).eps
+    pos = data >= 0  # binary mask
 
-    # Suppress RuntimeWarning raised by np.log when the variance is too low
-    finite_variance = sigma >= xp.finfo(sigma.dtype).smallest_normal
-    log_sigma = xpx.apply_where(finite_variance, (sigma,), xp.log, fill_value=-xp.inf)
+    if xp.all(pos):
+        if abs(lmb) < eps:
+            logvar = xp.log(xp.var(xp.log1p(data), axis=axis))
+        else:
+            logvar = _log_var(lmb * xp.log1p(data), xp, axis) - 2 * math.log(abs(lmb))
+
+    elif xp.all(~pos):
+        if abs(lmb - 2) < eps:
+            logvar = xp.log(xp.var(xp.log1p(-data), axis=axis))
+        else:
+            logvar = _log_var((2 - lmb) * xp.log1p(-data), xp, axis) - 2 * math.log(
+                abs(2 - lmb)
+            )
+
+    else:  # mixed positive and negative data
+        dtypemix = xp.result_type(dtype, 1j)
+        logyj = xp.zeros_like(data, dtype=dtypemix)
+
+        # x >= 0
+        if abs(lmb) < eps:
+            logyj = xpx.at(logyj)[pos].set(xp.log(xp.log1p(data[pos]) + 0j))
+        else:  # lmbda != 0
+            logm1_pos = xp.full_like(data[pos], pi * 1j, dtype=dtypemix)
+            logyj = xpx.at(logyj)[pos].set(
+                special.logsumexp([lmb * xp.log1p(data[pos]), logm1_pos], axis=0)
+                - xp.log(lmb + 0j)
+            )
+
+        # x < 0
+        if abs(lmb - 2) < eps:
+            logyj = xpx.at(logyj)[~pos].set(xp.log(-xp.log1p(-data[~pos]) + 0j))
+        else:  # lmbda != 2
+            logm1_neg = xp.full_like(data[~pos], pi * 1j, dtype=dtypemix)
+            logyj = xpx.at(logyj)[~pos].set(
+                special.logsumexp(
+                    [(2 - lmb) * xp.log1p(-data[~pos]), logm1_neg], axis=0
+                )
+                - xp.log(lmb - 2 + 0j)
+            )
+
+        logvar = _log_var(logyj, xp, axis)
 
     n = data.shape[axis]
-    loglike = (-n / 2 * log_sigma
+    loglike = (-n / 2 * logvar
                + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
 
     return loglike

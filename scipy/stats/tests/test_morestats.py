@@ -2663,6 +2663,21 @@ class TestYeojohnson_llf:
         message = "One or more sample arguments is too small..."
         with eager_warns(SmallSampleWarning, match=message, xp=xp):
             assert xp.isnan(stats.yeojohnson_llf(1, xp.asarray([])))
+    
+    def test_gh24172(self, xp):
+        # Test all negative and all positive data
+        data = xp.asarray([10, 10, 10, 9.9], dtype=xp.float64)
+        # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        # 1. Test precision loss
+        xp_assert_close(stats.yeojohnson_llf(-14, data),
+                        xp.asarray(12.418595783381280, dtype=xp.float64), rtol=1e-7)
+        xp_assert_close(stats.yeojohnson_llf(16, -data),
+                        xp.asarray(12.418595783381280, dtype=xp.float64), rtol=1e-7)
+        # 2. Test overflow
+        xp_assert_close(stats.yeojohnson_llf(-20, data),
+                        xp.asarray(12.360966379200528, dtype=xp.float64), rtol=1e-7)
+        xp_assert_close(stats.yeojohnson_llf(20, -data),
+                        xp.asarray(12.380287243698629, dtype=xp.float64), rtol=1e-7)
 
 
 class TestYeojohnson:
