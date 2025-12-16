@@ -463,8 +463,8 @@ def _split_subregion(a, b, xp, split_at=None):
     if split_at is None:
         split_at = (a + b) / 2
 
-    left = [xp.asarray([a[i], split_at[i]]) for i in range(a.shape[0])]
-    right = [xp.asarray([split_at[i], b[i]]) for i in range(b.shape[0])]
+    left = [xp.stack((a[i], split_at[i])) for i in range(a.shape[0])]
+    right = [xp.stack((split_at[i], b[i])) for i in range(b.shape[0])]
 
     a_sub = _cartesian_product(left)
     b_sub = _cartesian_product(right)

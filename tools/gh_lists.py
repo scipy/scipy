@@ -53,6 +53,11 @@ def main():
             else:
                 post = matchobj.group(2)
             return '``' + matchobj.group(1) + '``' + post
+        
+        def asterisk_repl(matchobj):
+            """repl to un-escape asterisks in code blocks"""
+            code = matchobj.group(1).replace("\\*", "*")
+            return '``' + code + '``'
 
         for issue in items:
             msg = "* `#{0} <{1}>`__: {2}"
@@ -69,6 +74,8 @@ def main():
 
             # sanitize asterisks
             title = title.replace('*', '\\*')
+            # except those in code blocks
+            title = re.sub("``(.*?)``", asterisk_repl, title)
 
             if len(title) > 60:
                 remainder = re.sub("\\s.*$", "...", title[60:])

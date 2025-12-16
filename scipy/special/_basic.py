@@ -19,8 +19,6 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all,
-                           legendre_p_all)
 
 
 __all__ = [
@@ -32,7 +30,6 @@ __all__ = [
     'bernoulli',
     'berp_zeros',
     'bi_zeros',
-    'clpmn',
     'comb',
     'digamma',
     'diric',
@@ -59,8 +56,6 @@ __all__ = [
     'kerp_zeros',
     'kvp',
     'lmbda',
-    'lpmn',
-    'lpn',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -96,9 +91,9 @@ _FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
 
 
 def diric(x, n):
-    """Periodic sinc function, also called the Dirichlet function.
+    """Periodic sinc function, also called the Dirichlet kernel.
 
-    The Dirichlet function is defined as::
+    The Dirichlet kernel is defined as::
 
         diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
@@ -1152,7 +1147,7 @@ def h1vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h1v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel1` itself.
 
     Returns
     -------
@@ -1221,7 +1216,7 @@ def h2vp(v, z, n=1):
         Argument at which to evaluate the derivative. Can be real or
         complex.
     n : int, default 1
-        Order of derivative. For 0 returns the Hankel function `h2v` itself.
+        Order of derivative. For 0 returns the Hankel function `hankel2` itself.
 
     Returns
     -------
@@ -1280,14 +1275,14 @@ def h2vp(v, z, n=1):
 
 
 def riccati_jn(n, x):
-    r"""Compute Ricatti-Bessel function of the first kind and its derivative.
+    r"""Compute Riccati-Bessel function of the first kind and its derivative.
 
-    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    The Riccati-Bessel function of the first kind is defined as :math:`x
     j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
     kind of order :math:`n`.
 
     This function computes the value and first derivative of the
-    Ricatti-Bessel function for all orders up to and including `n`.
+    Riccati-Bessel function for all orders up to and including `n`.
 
     Parameters
     ----------
@@ -1336,9 +1331,9 @@ def riccati_jn(n, x):
 
 
 def riccati_yn(n, x):
-    """Compute Ricatti-Bessel function of the second kind and its derivative.
+    """Compute Riccati-Bessel function of the second kind and its derivative.
 
-    The Ricatti-Bessel function of the second kind is defined here as :math:`+x
+    The Riccati-Bessel function of the second kind is defined here as :math:`+x
     y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
     kind of order :math:`n`. *Note that this is in contrast to a common convention
     that includes a minus sign in the definition.*
@@ -1645,7 +1640,7 @@ def mathieu_even_coef(m, q):
 
 
 def mathieu_odd_coef(m, q):
-    r"""Fourier coefficients for even Mathieu and modified Mathieu functions.
+    r"""Fourier coefficients for odd Mathieu and modified Mathieu functions.
 
     The Fourier series of the odd solutions of the Mathieu differential
     equation are of the form
@@ -1701,170 +1696,6 @@ def mathieu_odd_coef(m, q):
     b = mathieu_b(m, q)
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
-
-
-def lpmn(m, n, z):
-    """Sequence of associated Legendre functions of the first kind.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    This function takes a real argument ``z``. For complex arguments ``z``
-    use clpmn instead.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like
-        Input value.
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders 0..m and degrees 0..n
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n
-
-    See Also
-    --------
-    clpmn: associated Legendre functions of the first kind for complex z
-
-    Notes
-    -----
-    In the interval (-1, 1), Ferrer's function of the first kind is
-    returned. The phase convention used for the intervals (1, inf)
-    and (-inf, -1) is such that the result is always real.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.3
-
-    """
-
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if np.iscomplexobj(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    branch_cut = np.where(np.abs(z) <= 1, 2, 3)
-
-    p, pd = assoc_legendre_p_all(n, abs(m), z, branch_cut=branch_cut, diff_n=1)
-    p = np.swapaxes(p, 0, 1)
-    pd = np.swapaxes(pd, 0, 1)
-
-    if (m >= 0):
-        p = p[:(m + 1)]
-        pd = pd[:(m + 1)]
-    else:
-        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
-        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
-
-    return p, pd
-
-
-def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind for complex arguments.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like, float or complex
-        Input value.
-    type : int, optional
-       takes values 2 or 3
-       2: cut on the real axis ``|x| > 1``
-       3: cut on the real axis ``-1 < x < 1`` (default)
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders ``0..m`` and degrees ``0..n``
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders ``0..m`` and degrees ``0..n``
-
-    See Also
-    --------
-    lpmn: associated Legendre functions of the first kind for real z
-
-    Notes
-    -----
-    By default, i.e. for ``type=3``, phase conventions are chosen according
-    to [1]_ such that the function is analytic. The cut lies on the interval
-    (-1, 1). Approaching the cut from above or below in general yields a phase
-    factor with respect to Ferrer's function of the first kind
-    (cf. `lpmn`).
-
-    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
-    on the interval (-1, 1) in the complex plane yields Ferrer's function
-    of the first kind.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.21
-
-    """
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if not (type == 2 or type == 3):
-        raise ValueError("type must be either 2 or 3.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    if not np.iscomplexobj(z):
-        z = np.asarray(z, dtype=complex)
-
-    out, out_jac = assoc_legendre_p_all(n, abs(m), z, branch_cut=type, diff_n=1)
-    out = np.swapaxes(out, 0, 1)
-    out_jac = np.swapaxes(out_jac, 0, 1)
-
-    if (m >= 0):
-        out = out[:(m + 1)]
-        out_jac = out_jac[:(m + 1)]
-    else:
-        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
-        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
-
-    return out, out_jac
 
 
 def lqmn(m, n, z):
@@ -2033,33 +1864,27 @@ def euler(n):
     return _specfun.eulerb(n1)[:(n+1)]
 
 
-def lpn(n, z):
-    """Legendre function of the first kind.
-
-    Compute sequence of Legendre functions of the first kind (polynomials),
-    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
-
-    See also special.legendre for polynomial class.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in a future version.
-        Use `scipy.special.legendre_p_all` instead.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    """
-
-    return legendre_p_all(n, z, diff_n=1)
-
-
 def lqn(n, z):
-    """Legendre function of the second kind.
+    """Legendre functions of the second kind.
 
-    Compute sequence of Legendre functions of the second kind, Qn(z) and
-    derivatives for all degrees from 0 to n (inclusive).
+    Compute sequence of Legendre functions of the second kind, ``Qn(z)`` and
+    derivatives for all degrees from 0 to `n` (inclusive).
+    Returns two arrays of size ``(n+1,) + z.shape`` containing ``Qn(z)`` and
+    ``Qn'(z)``.
+
+    Parameters
+    ----------
+    n : int
+        Maximum degree of the Legendre functions.
+    z : array_like, complex
+        Real or complex input values.
+
+    Returns
+    -------
+    Qn_z : ndarray, shape (n+1,) + shape(z)
+        Values for all degrees ``0..n``
+    Qn_d_z : ndarray, shape (n+1,) + shape(z)
+        Derivatives for all degrees ``0..n``
 
     References
     ----------
@@ -2067,6 +1892,35 @@ def lqn(n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Examples
+    --------
+    Compute :math:`Q_n(x)` and its derivatives on an interval.
+
+    >>> import numpy as np
+    >>> from scipy.special import lqn
+    >>> import matplotlib.pyplot as plt
+
+    >>> xs = np.linspace(-2, 2, 200)
+    >>> n_max = 3
+    >>> Qn, dQn = lqn(n_max, xs)
+
+    Plot the Legendre functions of the second kind :math:`Q_n(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, Qn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
+
+    Plot the derivatives :math:`Q_n'(x)`.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xs, dQn.T, "-")
+    >>> ax.set_xlabel(r"$x$")
+    >>> ax.set_ylabel(r"$Q_n'(x)$")
+    >>> ax.legend([fr"$n={n}$" for n in range(n_max + 1)])
+    >>> plt.show()
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
@@ -2684,10 +2538,6 @@ def comb(N, k, *, exact=False, repetition=False):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly.
-
-        .. deprecated:: 1.14.0
-            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
-            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
@@ -2723,17 +2573,29 @@ def comb(N, k, *, exact=False, repetition=False):
 
     """
     if repetition:
+        # Special case: C(n, 0) with repetition = 1 for n >= 0
+        # Without this check, comb(0, 0, repetition=True) would compute
+        # comb(-1, 0) which incorrectly returns 0
+        if exact:
+            if k == 0 and int(N) == N and N >= 0:
+                return 1
+        else:
+            k, N = asarray(k), asarray(N)
+            cond = (k == 0) & (N >= 0)
+            vals = binom(N + k - 1, k)
+            if isinstance(vals, np.ndarray):
+                vals[cond] = 1.0
+            elif cond:
+                vals = np.float64(1.0)
+            return vals
         return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here
             return _comb_int(N, k)
-        # otherwise, we disregard `exact=True`; it makes no sense for
-        # non-integral arguments
-        msg = ("`exact=True` is deprecated for non-integer `N` and `k` and will raise "
-               "an error in SciPy 1.16.0")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        return comb(N, k)
+        else:
+            raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
+                             "supported.")
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -2787,19 +2649,17 @@ def perm(N, k, exact=False):
         N = np.squeeze(N)[()]  # for backward compatibility (accepted size 1 arrays)
         k = np.squeeze(k)[()]
         if not (isscalar(N) and isscalar(k)):
-            raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
+            raise ValueError("`N` and `k` must be scalar integers with `exact=True`.")
 
         floor_N, floor_k = int(N), int(k)
         non_integral = not (floor_N == N and floor_k == k)
-        if (k > N) or (N < 0) or (k < 0):
-            if non_integral:
-                msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and "
-                       "will raise an error in SciPy 1.16.0.")
-                warnings.warn(msg, DeprecationWarning, stacklevel=2)
-            return 0
         if non_integral:
             raise ValueError("Non-integer `N` and `k` with `exact=True` is not "
                              "supported.")
+
+        if (k > N) or (N < 0) or (k < 0):
+            return 0
+
         val = 1
         for i in range(floor_N - floor_k + 1, floor_N + 1):
             val *= i
@@ -2859,15 +2719,9 @@ def _factorialx_array_exact(n, k=1):
     k > 1 corresponds to the multifactorial.
     """
     un = np.unique(n)
-    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
-    # to unify the behaviour, we remove the nan's here; the respective
-    # values will be set separately at the end
-    un = un[~np.isnan(un)]
 
     # Convert to object array if np.int64 can't handle size
-    if np.isnan(n).any():
-        dt = float
-    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+    if k in _FACTORIALK_LIMITS_64BITS.keys():
         if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
             # e.g. k=1: 21! > np.iinfo(np.int64).max
             dt = object
@@ -2908,9 +2762,6 @@ def _factorialx_array_exact(n, k=1):
                 val *= _range_prod(int(prev + 1), int(current), k=k)
                 out[n == current] = val
 
-    if np.isnan(n).any():
-        out = out.astype(np.float64)
-        out[np.isnan(n)] = np.nan
     return out
 
 
@@ -2968,8 +2819,9 @@ def _factorialx_approx_core(n, k, extend):
         with warnings.catch_warnings():
             # do not warn about 0 * inf, nan / nan etc.; the results are correct
             warnings.simplefilter("ignore", RuntimeWarning)
-            result = np.power(k, (n - 1) / k, dtype=p_dtype) * _gamma1p(n / k)
-            result *= rgamma(1 / k + 1)
+            # don't use `(n-1)/k` in np.power; underflows if 0 is of a uintX type
+            result = np.power(k, n / k, dtype=p_dtype) * _gamma1p(n / k)
+            result *= rgamma(1 / k + 1) / np.power(k, 1 / k, dtype=p_dtype)
         if isinstance(n, np.ndarray):
             # ensure we keep array-ness for 0-dim inputs; already n/k above loses it
             result = np.array(result)
@@ -2980,14 +2832,20 @@ def _factorialx_approx_core(n, k, extend):
     # scalar case separately, unified handling would be inefficient for arrays;
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if not isinstance(n, np.ndarray):
-        return (
-            np.power(k, (n - n_mod_k) / k)
-            * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
-            * max(n_mod_k, 1)
-        )
+        with warnings.catch_warnings():
+            # large n cause overflow warnings, but infinity is fine
+            warnings.simplefilter("ignore", RuntimeWarning)
+            return (
+                np.power(k, (n - n_mod_k) / k)
+                * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
+                * max(n_mod_k, 1)
+            )
 
     # factor that's independent of the residue class (see factorialk docstring)
-    result = np.power(k, n / k) * gamma(n / k + 1)
+    with warnings.catch_warnings():
+        # large n cause overflow warnings, but infinity is fine
+        warnings.simplefilter("ignore", RuntimeWarning)
+        result = np.power(k, n / k) * gamma(n / k + 1)
     # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
     # below and thus also avoid evaluating `max(r, 1)`)
     def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
@@ -3094,8 +2952,8 @@ def _factorialx_wrapper(fname, n, k, exact, extend):
         elif n in {0, 1}:
             return 1 if exact else np.float64(1)
         elif exact and _is_subdtype(type(n), "i"):
-            # calculate with integers
-            return _range_prod(1, n, k=k)
+            # calculate with integers; cast away other int types (like unsigned)
+            return _range_prod(1, int(n), k=k)
         elif exact:
             # only relevant for factorial
             raise ValueError(msg_exact_not_possible.format(dtype=type(n)))
@@ -3224,7 +3082,7 @@ def factorial2(n, exact=False, extend="zero"):
     --------
     >>> from scipy.special import factorial2
     >>> factorial2(7, exact=False)
-    array(105.00000000000001)
+    np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
 
@@ -3254,7 +3112,7 @@ def factorialk(n, k, exact=False, extend="zero"):
     n : int or float or complex (or array_like thereof)
         Input values for multifactorial. Non-integer values require
         ``extend='complex'``. By default, the return value for ``n < 0`` is 0.
-    n : int or float or complex (or array_like thereof)
+    k : int or float or complex (or array_like thereof)
         Order of multifactorial. Non-integer values require ``extend='complex'``.
     exact : bool, optional
         If ``exact`` is set to True, calculate the answer exactly using
@@ -3469,7 +3327,7 @@ def zeta(x, q=None, out=None):
         ``None``, complex inputs `x` are supported. If `q` is not ``None``,
         then currently only real inputs `x` with ``x >= 1`` are supported,
         even when ``q = 1.0`` (corresponding to the Riemann zeta function).
-        
+
     out : ndarray, optional
         Output array for the computed values.
 
@@ -3535,7 +3393,7 @@ def zeta(x, q=None, out=None):
     else:
         return _ufuncs._zeta(x, q, out)
 
-      
+
 def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
@@ -3559,7 +3417,7 @@ def softplus(x, **kwargs):
     Examples
     --------
     >>> from scipy import special
-    
+
     >>> special.softplus(0)
     0.6931471805599453
 

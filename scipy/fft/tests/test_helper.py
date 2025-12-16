@@ -10,13 +10,9 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (
-    xp_assert_close, get_xp_devices, xp_device, array_namespace
-)
+from scipy._lib._array_api import xp_assert_close, xp_device
 from scipy import fft
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [
@@ -25,6 +21,7 @@ _5_smooth_numbers = [
     2**3 * 3**5,
     2**3 * 3**3 * 5**2,
 ]
+
 
 def test_next_fast_len():
     for n in _5_smooth_numbers:
@@ -53,7 +50,6 @@ def _assert_n_smooth(x, n):
            f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
-@skip_xp_backends(np_only=True)
 class TestNextFastLen:
 
     def test_next_fast_len(self):
@@ -123,11 +119,11 @@ class TestNextFastLen:
         for x, y in hams.items():
             assert_equal(next_fast_len(x, True), y)
 
-    def test_keyword_args(self):
+    def test_keyword_args(self, xp):
         assert next_fast_len(11, real=True) == 12
         assert next_fast_len(target=7, real=False) == 7
 
-@skip_xp_backends(np_only=True)
+
 class TestPrevFastLen:
 
     def test_prev_fast_len(self):
@@ -146,7 +142,7 @@ class TestPrevFastLen:
             _assert_n_smooth(m, 5)
 
     def test_np_integers(self):
-        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, 
+        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32,
                     np.uint64]
         for ityp in ITYPES:
             x = ityp(12345)
@@ -449,7 +445,6 @@ class TestFFTShift:
             x = xp.asarray(np.random.random((n,)))
             xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
@@ -460,8 +455,7 @@ class TestFFTShift:
                         fft.ifftshift(shifted, axes=(0,)))
         xp_assert_close(fft.fftshift(freqs), shifted)
         xp_assert_close(fft.ifftshift(shifted), freqs)
-    
-    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
+
     def test_uneven_dims(self, xp):
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([
@@ -508,12 +502,7 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestFFTFreq:
-
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
         x2 = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float64)
@@ -532,19 +521,13 @@ class TestFFTFreq:
         y = 10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-    def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
-        devices = get_xp_devices(xp)
+    def test_device(self, xp, devices):
         for d in devices:
             y = fft.fftfreq(9, xp=xp, device=d)
-            x = xp_test.empty(0, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestRFFTFreq:
 
     def test_definition(self, xp):
@@ -552,7 +535,7 @@ class TestRFFTFreq:
         x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
 
         # default dtype varies across backends
-        
+
         y = 9 * fft.rfftfreq(9, xp=xp)
         xp_assert_close(y, x, check_dtype=False, check_namespace=True)
 
@@ -565,10 +548,8 @@ class TestRFFTFreq:
         y = 10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
-    def test_device(self, xp):
-        xp_test = array_namespace(xp.empty(0))
-        devices = get_xp_devices(xp)
+    def test_device(self, xp, devices):
         for d in devices:
             y = fft.rfftfreq(9, xp=xp, device=d)
-            x = xp_test.empty(0, device=d)
+            x = xp.empty(0, device=d)
             assert xp_device(y) == xp_device(x)

@@ -380,7 +380,7 @@ cdef class Method:
       method. As it uses MessageStream, the call must be protected under
       the module-level lock.
     * `_check_errorcode` must be called after calling a UNU.RAN function
-      that returns a error code. It raises an error if an error has
+      that returns an error code. It raises an error if an error has
       occurred in UNU.RAN.
     * It implements the `rvs` public method for sampling. No child class
       should override this method.

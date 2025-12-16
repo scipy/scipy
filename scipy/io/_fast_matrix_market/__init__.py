@@ -194,6 +194,8 @@ def _get_read_cursor(source, parallelism=None):
             source = bz2.BZ2File(path, 'rb')
             ret_stream_to_close = source
         else:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"The source file does not exist: {path}")
             return _fmm_core.open_read_file(path, parallelism), ret_stream_to_close
 
     # Stream object.
@@ -303,7 +305,7 @@ def mmread(source, *, spmatrix=True):
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
     spmatrix : bool, optional (default: True)
-        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
+        If ``True``, return sparse matrix. Otherwise return sparse array.
 
     Returns
     -------

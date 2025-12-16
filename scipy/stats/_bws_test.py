@@ -1,6 +1,7 @@
 import numpy as np
 from functools import partial
 from scipy import stats
+from scipy._lib._array_api import xp_capabilities
 
 
 def _bws_input_validation(x, y, alternative, method):
@@ -59,6 +60,7 @@ def _bws_statistic(x, y, alternative, axis):
     return B
 
 
+@xp_capabilities(np_only=True)
 def bws_test(x, y, *, alternative="two-sided", method=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 

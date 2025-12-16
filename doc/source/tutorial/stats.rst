@@ -21,10 +21,12 @@ Note: This documentation is work in progress.
    :maxdepth: 2
 
    stats/probability_distributions
+   stats/rv_infrastructure
    stats/sampling
    stats/kernel_density_estimation
    stats/multiscale_graphcorr
    stats/quasi_monte_carlo
+   stats/outliers
 
 .. toctree::
     :caption: Sample statistics and hypothesis tests

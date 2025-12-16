@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import glob
 import os
 import sys
 import subprocess
@@ -80,6 +81,18 @@ def run_ruff(files, fix):
     return res.returncode, res.stdout
 
 
+def run_ruff_all(fix):
+    args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
+    submodule_paths = get_submodule_paths()
+    args += [f'--extend-exclude={p}' for p in submodule_paths]
+    res = subprocess.run(
+        ['ruff', 'check', f'--config={CONFIG}'] + args,
+        stdout=subprocess.PIPE,
+        encoding='utf-8'
+    )
+    return res.returncode, res.stdout
+
+
 def run_cython_lint(files):
     if not files:
         return 0, ""
@@ -91,8 +104,22 @@ def run_cython_lint(files):
     return res.returncode, res.stdout
 
 
+def run_cython_lint_all():
+    pyx_files = glob.glob("scipy/**/*.pyx", recursive=True)
+    pxd_files = glob.glob("scipy/**/*.pxd", recursive=True)
+    pxi_files = glob.glob("scipy/**/*.pxi", recursive=True)
+    files = pyx_files + pxd_files + pxi_files
+
+    res = subprocess.run(
+        ['cython-lint', '--no-pycodestyle'] + files,
+        stdout=subprocess.PIPE,
+        encoding='utf-8'
+    )
+    return res.returncode, res.stdout
+
+
 def check_ruff_version():
-    min_version = packaging.version.parse('0.0.292')
+    min_version = packaging.version.parse('0.12.0')
     res = subprocess.run(
         ['ruff', '--version'],
         stdout=subprocess.PIPE,
@@ -100,7 +127,7 @@ def check_ruff_version():
     )
     version = res.stdout.replace('ruff ', '')
     if packaging.version.parse(version) < min_version:
-        raise RuntimeError("Linting requires `ruff>=0.0.292`. Please upgrade `ruff`.")
+        raise RuntimeError("Linting requires `ruff>=0.12.0`. Please upgrade `ruff`.")
 
 
 def main():
@@ -118,8 +145,29 @@ def main():
     parser.add_argument("--files", nargs='*',
                         help="Lint these files or directories; "
                              "use **/*.py to lint all files")
+    parser.add_argument("--all", action='store_true',
+                        help="This overrides `--diff-against` and `--files` "
+                             "to lint all local files (excluding subprojects).")
+    parser.add_argument("--no-cython", dest='cython', action='store_false',
+                       help="Do not run cython-lint.")
 
     args = parser.parse_args()
+
+    if args.all:
+        if args.cython:
+            rc_cy, errors = run_cython_lint_all()
+            if errors:
+                print(errors)
+        else:
+            rc_cy = 0
+
+        rc, errors = run_ruff_all(fix=args.fix)
+        if errors:
+            print(errors)
+
+        if rc == 0 and rc_cy != 0:
+            rc = rc_cy
+        sys.exit(rc)
 
     if not ((args.files is None) ^ (args.branch is None)):
         print('Specify either `--diff-against` or `--files`. Aborting.')
@@ -141,16 +189,18 @@ def main():
     cython_files = {f for f in files if any(f.endswith(ext) for ext in cython_exts)}
     other_files = set(files) - cython_files
 
-    rc_cy, errors = run_cython_lint(cython_files)
-    if errors:
-        print(errors)
+    if args.cython:
+        rc_cy, errors = run_cython_lint(cython_files)
+        if errors:
+            print(errors)
 
     rc, errors = run_ruff(other_files, fix=args.fix)
     if errors:
         print(errors)
 
-    if rc == 0 and rc_cy != 0:
-        rc = rc_cy
+    if args.cython:
+        if rc == 0 and rc_cy != 0:
+            rc = rc_cy
 
     sys.exit(rc)
 

@@ -1,4 +1,5 @@
 from functools import cached_property
+from types import GenericAlias
 
 import numpy as np
 from scipy import linalg
@@ -56,6 +57,10 @@ class Covariance:
     4.9595685102808205e-08
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self):
         message = ("The `Covariance` class cannot be instantiated directly. "
                    "Please use one of the factory methods "
@@ -462,6 +467,8 @@ class Covariance:
 
 class CovViaPrecision(Covariance):
 
+    __class_getitem__ = None
+
     def __init__(self, precision, covariance=None):
         precision = self._validate_matrix(precision, 'precision')
         if covariance is not None:
@@ -488,7 +495,9 @@ class CovViaPrecision(Covariance):
                 if self._cov_matrix is None else self._cov_matrix)
 
     def _colorize(self, x):
-        return linalg.solve_triangular(self._chol_P.T, x.T, lower=False).T
+        m = x.T.shape[0]
+        res = linalg.solve_triangular(self._chol_P.T, x.T.reshape(m, -1), lower=False)
+        return res.reshape(x.T.shape).T
 
 
 def _dot_diag(x, d):
@@ -535,6 +544,8 @@ class CovViaDiagonal(Covariance):
 
 class CovViaCholesky(Covariance):
 
+    __class_getitem__ = None
+
     def __init__(self, cholesky):
         L = self._validate_matrix(cholesky, 'cholesky')
 
@@ -549,14 +560,17 @@ class CovViaCholesky(Covariance):
         return self._factor @ self._factor.T
 
     def _whiten(self, x):
-        res = linalg.solve_triangular(self._factor, x.T, lower=True).T
-        return res
+        m = x.T.shape[0]
+        res = linalg.solve_triangular(self._factor, x.T.reshape(m, -1), lower=True)
+        return res.reshape(x.T.shape).T
 
     def _colorize(self, x):
         return x @ self._factor.T
 
 
 class CovViaEigendecomposition(Covariance):
+
+    __class_getitem__ = None
 
     def __init__(self, eigendecomposition):
         eigenvalues, eigenvectors = eigendecomposition
@@ -616,6 +630,8 @@ class CovViaPSD(Covariance):
     """
     Representation of a covariance provided via an instance of _PSD
     """
+
+    __class_getitem__ = None
 
     def __init__(self, psd):
         self._LP = psd.U

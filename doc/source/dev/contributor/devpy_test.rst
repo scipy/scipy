@@ -7,24 +7,24 @@ Running SciPy Tests Locally
 Basic test writing and execution from within the Python interpreter is
 documented in the
 :doc:`NumPy/SciPy testing guidelines <numpy:reference/testing>`. This page
-includes information about running tests from the command line using SciPy's
-``dev.py`` command line tool. *Note: Before beginning, ensure that* |pytest|_
+includes information about running tests from the command line using the
+``spin`` command line tool. *Note: Before beginning, ensure that* |pytest|_
 *is installed.*
 
 .. note::
 
-   The ``dev.py`` interface is self-documenting, in the sense that everything on
+   The ``spin`` interface is self-documenting, in the sense that everything on
    this page and more (including usage examples for each command) can be
-   accessed with ``python dev.py --help`` and for individual commands like
-   ``python dev.py <command-name> --help``. In this case, you can check
-   ``python dev.py test --help``.
+   accessed with ``spin --help`` and for individual commands like
+   ``spin <command-name> --help``. In this case, you can check
+   ``spin test --help``.
 
 To run all tests, navigate to the root SciPy directory at the command
 line and execute
 
 ::
 
-   python dev.py test
+   spin test
 
 This builds SciPy (or updates an existing build) and runs the tests.
 
@@ -33,60 +33,60 @@ To run tests on a particular submodule, such as ``optimize``, use the
 
 ::
 
-   python dev.py test -s optimize
+   spin test -s optimize
 
 To run a particular test module, use the Pytest syntax of ``--test`` (or
 ``-t``)::
 
-   python dev.py test -t scipy.<module>.tests.<test_file>
+   spin test -t scipy.<module>.tests.<test_file>
 
 Example for |test-linprog|_ file tests, run:
 
 ::
 
-   python dev.py test -t scipy.optimize.tests.test_linprog
+   spin test -t scipy.optimize.tests.test_linprog
 
 To run a test class:
 
 ::
 
-   python dev.py test -t scipy.<module>.tests.<test_file>::<TestClass>
+   spin test -t scipy.<module>.tests.<test_file>::<TestClass>
 
 Example for ``TestLinprogRSCommon`` class from ``test_linprog.py``:
 
 ::
 
-   python dev.py test -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
+   spin test -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon
 
 To run a particular test:
 
 ::
 
-   python dev.py test -t scipy.<module>.tests.<test_file>::<test_name>
+   spin test -t scipy.<module>.tests.<test_file>::<test_name>
 
 Example for ``test_unknown_solvers_and_options`` from ``test_linprog.py``:
 
 ::
 
-   python dev.py test -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
+   spin test -t scipy.optimize.tests.test_linprog::test_unknown_solvers_and_options
 
 For tests within a class, you need to specify the class name and the test name:
 
 ::
 
-   python dev.py test -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
+   spin test -t scipy.<module>.tests.<test_file>::<TestClass>::<test_name>
 
 Example:
 
 ::
 
-   python dev.py test -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
+   spin test -t scipy.optimize.tests.test_linprog::TestLinprogRSCommon::test_nontrivial_problem_with_guess
 
 
 Other useful options include:
 
 -  ``-v`` or ``--verbose``, which activates the verbose option for more
-   detailed output. 
+   detailed output.
 -  ``-b`` or ``--array-api-backend`` *backend* to include alternative
    array backends in array-api-compatible tests. See :ref:`dev-arrayapi`
    for details.
@@ -96,15 +96,15 @@ Other useful options include:
 -  ``-n`` or ``--no-build`` to prevent SciPy from updating the build
    before testing
 -  ``-j`` or ``--parallel`` *n* to engage *n* cores when building SciPy;
-   e.g. \ ``python dev.py test -j 4`` engages four cores. As of `#10172`_
+   e.g. \ ``spin test -j 4`` engages four cores. As of `#10172`_
    this also runs the tests on four cores if |pytest-xdist|_ is installed.
 -  ``-m full`` or ``--mode full`` to run the "full" test suite, including
    tests marked ``slow`` (e.g. with ``@pytest.mark.slow``). Note that this
    does not *run* tests marked ``xslow``; see Tips below.
 -  ``--`` to send remaining command line arguments to ``pytest`` instead of
-   ``dev.py test``. For instance, while ``-n`` sent to ``pytest.py`` activates
+   ``spin test``. For instance, while ``-n`` sent to ``pytest.py`` activates
    the ``--no-build`` option, ``-n`` sent to ``pytest`` runs the tests on
-   multiple cores; e.g. \ ``python dev.py test -- -n 4`` runs tests using
+   multiple cores; e.g. \ ``spin test -- -n 4`` runs tests using
    four cores. *Note:* |pytest-xdist|_ *must be installed for testing on
    multiple cores.* Common command line arguments for ``pytest`` include:
 
@@ -124,11 +124,11 @@ Tips:
 
 If you built SciPy from source but are having trouble running tests
 after a change to the codebase, try deleting the ``scipy/build``
-directory. This forces ``dev.py`` to completely rebuild SciPy before
+directory. This forces ``spin`` to completely rebuild SciPy before
 performing tests.
 
 There is an additional level of very slow tests (several minutes),
-which are disabled even when calling ``python dev.py test -m full``.
+which are disabled even when calling ``spin test -m full``.
 They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 

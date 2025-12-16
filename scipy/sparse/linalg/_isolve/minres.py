@@ -10,7 +10,7 @@ __all__ = ['minres']
 def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
-    Use MINimum RESidual iteration to solve Ax=b
+    Solve ``Ax = b`` with the MINimum RESidual method, for a symmetric `A`.
 
     MINRES minimizes norm(Ax - b) for a real symmetric matrix A.  Unlike
     the Conjugate Gradient method, A can be indefinite or singular.
@@ -89,7 +89,7 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
         https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 
     """
-    A, M, x, b, postprocess = make_system(A, M, x0, b)
+    A, M, x, b = make_system(A, M, x0, b)
 
     matvec = A.matvec
     psolve = M.matvec
@@ -146,12 +146,12 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     if beta1 < 0:
         raise ValueError('indefinite preconditioner')
     elif beta1 == 0:
-        return (postprocess(x), 0)
+        return (x, 0)
 
     bnorm = norm(b)
     if bnorm == 0:
         x = b
-        return (postprocess(x), 0)
+        return (x, 0)
 
     beta1 = sqrt(beta1)
 
@@ -369,4 +369,4 @@ def minres(A, b, x0=None, *, rtol=1e-5, shift=0.0, maxiter=None,
     else:
         info = 0
 
-    return (postprocess(x),info)
+    return (x,info)

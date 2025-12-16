@@ -24,15 +24,11 @@
         goto done;                                                                          \
     }                                                                                       \
                                                                                             \
-    arg1 = PyTuple_New(2);                                                                  \
+    arg1 = PyTuple_Pack(2, argobj, funcname);                                               \
     if (arg1 == NULL) {                                                                     \
         error = 1;                                                                          \
         goto done;                                                                          \
     }                                                                                       \
-                                                                                            \
-    PyTuple_SET_ITEM(arg1, 0, argobj);                                                      \
-    PyTuple_SET_ITEM(arg1, 1, funcname);                                                    \
-    argobj = NULL; funcname = NULL;                                                         \
                                                                                             \
     res = PyObject_CallObject(callback->py_function, arg1);                                 \
     if (res == NULL) {                                                                      \

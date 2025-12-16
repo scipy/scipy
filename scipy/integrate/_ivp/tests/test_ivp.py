@@ -1,6 +1,9 @@
+import warnings
+
 from itertools import product
+
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
-                           assert_equal, assert_no_warnings, suppress_warnings)
+                           assert_equal, assert_no_warnings)
 import pytest
 from pytest import raises as assert_raises
 import numpy as np
@@ -151,8 +154,28 @@ def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
     return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
+def test_duplicate_timestamps():
+    def upward_cannon(t, y):
+        return [y[1], -9.80665]
 
-@pytest.mark.thread_unsafe
+    def hit_ground(t, y):
+        return y[0]
+
+    hit_ground.terminal = True
+    hit_ground.direction = -1
+
+    sol = solve_ivp(upward_cannon, [0, np.inf], [0, 0.01],
+                    max_step=0.05 * 0.001 / 9.80665,
+                    events=hit_ground, dense_output=True)
+    assert_allclose(sol.sol(0.01), np.asarray([-0.00039033, -0.08806632]),
+                    rtol=1e-5, atol=1e-8)
+    assert_allclose(sol.t_events, np.asarray([[0.00203943]]), rtol=1e-5, atol=1e-8)
+    assert_allclose(sol.y_events, [np.asarray([[ 0.0, -0.01 ]])], atol=1e-9)
+    assert sol.success
+    assert_equal(sol.status, 1)
+
+
+@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -169,10 +192,12 @@ def test_integration():
         else:
             fun = fun_rational
 
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun, t_span, y0, rtol=rtol,
                             atol=atol, method=method, dense_output=True,
                             jac=jac, vectorized=vectorized)
@@ -217,7 +242,6 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
-@pytest.mark.thread_unsafe
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -226,10 +250,12 @@ def test_integration_complex():
     tc = np.linspace(t_span[0], t_span[1])
     for method, jac in product(['RK23', 'RK45', 'DOP853', 'BDF'],
                                [None, jac_complex, jac_complex_sparse]):
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_complex, t_span, y0, method=method,
                             dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
@@ -745,7 +771,7 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
-@pytest.mark.thread_unsafe
+@pytest.mark.thread_unsafe(reason="lsoda solver is not thread-safe")
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
@@ -758,10 +784,12 @@ def test_t_eval_early_event():
     t_span = [5, 9]
     t_eval = np.linspace(7.5, 9, 16)
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "The following arguments have no effect for a chosen "
-                       "solver: `jac`")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The following arguments have no effect for a chosen solver: `jac`",
+                UserWarning,
+            )
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
                             method=method, t_eval=t_eval, events=early_event,
                             jac=jac_rational)
@@ -1110,7 +1138,6 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
-@pytest.mark.thread_unsafe
 def test_array_rtol():
     # solve_ivp had a bug with array_like `rtol`; see gh-15482
     # check that it's fixed

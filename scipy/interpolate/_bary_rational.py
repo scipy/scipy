@@ -25,6 +25,7 @@
 
 import warnings
 import operator
+from types import GenericAlias
 
 import numpy as np
 import scipy
@@ -34,13 +35,21 @@ __all__ = ["AAA", "FloaterHormannInterpolator"]
 
 
 class _BarycentricRational:
-    """Base class for Barycentric representation of a rational function."""
-    def __init__(self, x, y, **kwargs):
+    """Base class for barycentric representation of a rational function."""
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
+    def __init__(self, x, y, axis=0, **kwargs):
+        self._axis = axis
+
         # input validation
         z = np.asarray(x)
         f = np.asarray(y)
 
         self._input_validation(z, f, **kwargs)
+
+        f = np.moveaxis(f, self._axis, 0)
 
         # Remove infinite or NaN function values and repeated entries
         to_keep = np.logical_and.reduce(
@@ -69,8 +78,9 @@ class _BarycentricRational:
         if not y.ndim >= 1:
             raise ValueError("`y` must be at least 1-D.")
 
-        if x.size != y.shape[0]:
-            raise ValueError("`x` be the same size as the first dimension of `y`.")
+        if x.size != y.shape[self._axis]:
+            msg = f"`x` be of size {y.shape[self._axis]} but got size {x.size}."
+            raise ValueError(msg)
 
         if not np.all(np.isfinite(x)):
             raise ValueError("`x` must be finite.")
@@ -119,7 +129,8 @@ class _BarycentricRational:
                 # Find the corresponding node and set entry to correct value:
                 r[jj] = support_values[zv[jj] == self._support_points].squeeze()
 
-        return np.reshape(r, z.shape + self._shape)
+        res = np.reshape(r, z.shape + self._shape)
+        return np.moveaxis(res, 0, self._axis) if z.ndim > 0 else res
 
     def poles(self):
         """Compute the poles of the rational approximation.
@@ -127,7 +138,7 @@ class _BarycentricRational:
         Returns
         -------
         poles : array
-            Poles of the AAA approximation, repeated according to their multiplicity
+            Poles of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
         if self._poles is None:
@@ -154,6 +165,9 @@ class _BarycentricRational:
         residues : array
             Residues associated with the `poles` of the approximation
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Residues not implemented for multi-dimensional"
+                                      " data.")
         if self._residues is None:
             # Compute residues via formula for res of quotient of analytic functions
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -168,14 +182,17 @@ class _BarycentricRational:
         return self._residues
 
     def roots(self):
-        """Compute the zeros of the rational approximation.
+        """Compute the roots of the rational approximation.
 
         Returns
         -------
         zeros : array
-            Zeros of the AAA approximation, repeated according to their multiplicity
+            Zeros of the approximation, repeated according to their multiplicity
             but not in any specific order.
         """
+        if self._support_values.ndim > 1:
+            raise NotImplementedError("Roots not implemented for multi-dimensional"
+                                      " data.")
         if self._roots is None:
             # Compute zeros via generalized eigenvalue problem
             m = self.weights.size
@@ -399,7 +416,7 @@ class AAA(_BarycentricRational):
     >>> with warnings.catch_warnings():
     ...     warnings.simplefilter('ignore', RuntimeWarning)
     ...     r.clean_up()
-    4
+    4  # may vary
     >>> mask = np.abs(r.residues()) < 1e-13
     >>> axs[1].plot(r.poles().real[~mask], r.poles().imag[~mask], '.')
     >>> axs[1].plot(r.poles().real[mask], r.poles().imag[mask], 'r.')
@@ -451,6 +468,8 @@ class AAA(_BarycentricRational):
         A = np.empty((M, max_terms), dtype=dtype)
         errors = np.empty(max_terms, dtype=A.real.dtype)
         R = np.repeat(np.mean(f), M)
+        ill_conditioned = False
+        ill_conditioned_tol = 1/(3*np.finfo(dtype).eps)
 
         # AAA iteration
         for m in range(max_terms):
@@ -476,13 +495,25 @@ class AAA(_BarycentricRational):
             rows = mask.sum()
             if rows >= m + 1:
                 # The usual tall-skinny case
-                _, s, V = scipy.linalg.svd(
-                    A[mask, : m + 1], full_matrices=False, check_finite=False,
-                )
+                if not ill_conditioned:
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1], full_matrices=False, check_finite=False,
+                    )
+                    with np.errstate(invalid="ignore", divide="ignore"):
+                        if s[0]/s[-1] > ill_conditioned_tol:
+                            ill_conditioned = True
+                if ill_conditioned:
+                    col_norm = np.linalg.norm(A[mask, : m + 1], axis=0)
+                    _, s, V = scipy.linalg.svd(
+                        A[mask, : m + 1]/col_norm, full_matrices=False,
+                        check_finite=False,
+                    )
                 # Treat case of multiple min singular values
                 mm = s == np.min(s)
                 # Aim for non-sparse weight vector
                 wj = (V.conj()[mm, :].sum(axis=0) / np.sqrt(mm.sum())).astype(dtype)
+                if ill_conditioned:
+                    wj /= col_norm
             else:
                 # Fewer rows than columns
                 V = scipy.linalg.null_space(A[mask, : m + 1], check_finite=False)
@@ -597,11 +628,10 @@ class AAA(_BarycentricRational):
 
 
 class FloaterHormannInterpolator(_BarycentricRational):
-    r"""
-    Floater-Hormann barycentric rational interpolation.
+    r"""Floater-Hormann barycentric rational interpolator (C∞ smooth on real axis).
 
     As described in [1]_, the method of Floater and Hormann computes weights for a
-    Barycentric rational interpolant with no poles on the real axis.
+    barycentric rational interpolant with no poles on the real axis.
 
     Parameters
     ----------
@@ -610,11 +640,13 @@ class FloaterHormannInterpolator(_BarycentricRational):
         complex but must be finite.
     y : array_like, shape (n, ...)
         Array containing values of the dependent variable. Infinite and NaN values
-        of `values` and corresponding values of `x` will be discarded.
-    d : int, optional
-        Blends ``n - d`` degree `d` polynomials together. For ``d = n - 1`` it is
-        equivalent to polynomial interpolation. Must satisfy ``0 <= d < n``,
-        defaults to 3.
+        of `y` and corresponding values of `x` will be discarded.
+    d : int, default: 3
+        Integer satisfying ``0 <= d < n``. Floater-Hormann interpolation blends
+        ``n - d`` polynomials of degree `d` together; for ``d = n - 1``, this is
+        equivalent to polynomial interpolation.
+    axis : int, default: 0
+        Axis of `y` corresponding to `x`.
 
     Attributes
     ----------
@@ -639,8 +671,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
         r(x) = \frac{\sum_{i=0}^{n-d} \lambda_i(x) p_i(x)}
         {\sum_{i=0}^{n-d} \lambda_i(x)},
 
-    where :math:`p_i(x)` is an interpolating polynomials of at most degree `d` through
-    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d}), and :math:`\lambda_i(z)` are
+    where :math:`p_i(x)` is an interpolating polynomial of at most degree `d` through
+    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d})`, and :math:`\lambda_i(z)` are
     blending functions defined by
 
     .. math::
@@ -649,8 +681,8 @@ class FloaterHormannInterpolator(_BarycentricRational):
 
     When ``d = n - 1`` this reduces to polynomial interpolation.
 
-    Due to its stability following barycentric representation of the above equation
-    is used instead for computation
+    Due to its stability, the following barycentric representation of the above equation
+    is used for computation
 
     .. math::
 
@@ -680,21 +712,22 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> import numpy as np
     >>> from scipy.interpolate import (FloaterHormannInterpolator,
     ...                                BarycentricInterpolator)
-    >>> def f(z):
-    ...     return 1/(1 + z**2)
-    >>> z = np.linspace(-5, 5, num=15)
-    >>> r = FloaterHormannInterpolator(z, f(z))
-    >>> p = BarycentricInterpolator(z, f(z))
-    >>> zz = np.linspace(-5, 5, num=1000)
+    >>> def f(x):
+    ...     return 1/(1 + x**2)
+    >>> x = np.linspace(-5, 5, num=15)
+    >>> r = FloaterHormannInterpolator(x, f(x))
+    >>> p = BarycentricInterpolator(x, f(x))
+    >>> xx = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(zz, r(zz), label="Floater=Hormann")
-    >>> ax.plot(zz, p(zz), label="Polynomial")
+    >>> ax.plot(xx, f(xx), label="f(x)")
+    >>> ax.plot(xx, r(xx), "--", label="Floater-Hormann")
+    >>> ax.plot(xx, p(xx), "--", label="Polynomial")
     >>> ax.legend()
     >>> plt.show()
     """
-    def __init__(self, points, values, *, d=3):
-        super().__init__(points, values, d=d)
+    def __init__(self, points, values, *, d=3, axis=0):
+        super().__init__(points, values, d=d, axis=axis)
 
     def _input_validation(self, x, y, d):
         d = operator.index(d)

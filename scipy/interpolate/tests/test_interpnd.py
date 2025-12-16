@@ -1,8 +1,8 @@
 import os
 import sys
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
 import pytest
 from scipy._lib._array_api import xp_assert_close, assert_almost_equal
@@ -174,7 +174,6 @@ class TestLinearNDInterpolation:
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
     @pytest.mark.slow
-    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
     def test_threading(self):
         # This test was taken from issue 8856
@@ -238,8 +237,10 @@ class TestEstimateGradients2DGlobal:
             dz = interpnd.estimate_gradients_2d_global(tri, z, tol=1e-6)
 
             assert dz.shape == (6, 2)
-            xp_assert_close(dz, np.array(grad)[None,:] + 0*dz,
-                            rtol=1e-5, atol=1e-5, err_msg="item %d" % j)
+            xp_assert_close(
+                dz, np.array(grad)[None, :] + 0*dz, rtol=1e-5, atol=1e-5, 
+                err_msg=f"item {j}"
+            )
 
     def test_regression_2359(self):
         # Check regression --- for certain point sets, gradient
@@ -249,9 +250,12 @@ class TestEstimateGradients2DGlobal:
         tri = qhull.Delaunay(points)
 
         # This should not hang
-        with suppress_warnings() as sup:
-            sup.filter(interpnd.GradientEstimationWarning,
-                       "Gradient estimation did not converge")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "Gradient estimation did not converge",
+                interpnd.GradientEstimationWarning
+            )
             interpnd.estimate_gradients_2d_global(tri, values, maxiter=1)
 
 
@@ -300,17 +304,22 @@ class TestCloughTocher2DInterpolator:
         ]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 alternate=True,
-                                 err_msg="Function (alternate) %d" % j)
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, 
+                err_msg=f"Function (alternate) {j}"
+            )
             # check rescaling
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 err_msg="Function (rescaled) %d" % j, rescale=True)
-            self._check_accuracy(func, tol=1e-13, atol=1e-7, rtol=1e-7,
-                                 alternate=True, rescale=True,
-                                 err_msg="Function (alternate, rescaled) %d" % j)
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, 
+                err_msg=f"Function (rescaled) {j}", rescale=True
+            )
+            self._check_accuracy(
+                func, tol=1e-13, atol=1e-7, rtol=1e-7, alternate=True, rescale=True, 
+                err_msg=f"Function (alternate, rescaled) {j}"
+            )
 
     def test_quadratic_smoketest(self):
         # Should be reasonably accurate for quadratic functions
@@ -322,10 +331,12 @@ class TestCloughTocher2DInterpolator:
         ]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, tol=1e-9, atol=0.22, rtol=0,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, tol=1e-9, atol=0.22, rtol=0,
-                                 err_msg="Function %d" % j, rescale=True)
+            self._check_accuracy(
+                func, tol=1e-9, atol=0.22, rtol=0, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, tol=1e-9, atol=0.22, rtol=0, err_msg=f"Function {j}", rescale=True
+            )
 
     def test_tri_input(self):
         # Test at single points
@@ -379,10 +390,13 @@ class TestCloughTocher2DInterpolator:
                      rng.rand(30*30, 2)]
 
         for j, func in enumerate(funcs):
-            self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
-                                 err_msg="Function %d" % j)
-            self._check_accuracy(func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2,
-                                 err_msg="Function %d" % j, rescale=True)
+            self._check_accuracy(
+                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, err_msg=f"Function {j}"
+            )
+            self._check_accuracy(
+                func, x=grid, tol=1e-9, atol=5e-3, rtol=1e-2, 
+                err_msg=f"Function {j}", rescale=True
+            )
 
     def test_wrong_ndim(self):
         x = np.random.randn(30, 3)

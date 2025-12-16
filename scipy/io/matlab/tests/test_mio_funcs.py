@@ -18,7 +18,7 @@ def read_minimat_vars(rdr):
         hdr, next_position = rdr.read_var_header()
         name = 'None' if hdr.name is None else hdr.name.decode('latin1')
         if name == '':
-            name = 'var_%d' % i
+            name = f'var_{i}'
             i += 1
         res = rdr.read_var_array(hdr, process=False)
         rdr.mat_stream.seek(next_position)

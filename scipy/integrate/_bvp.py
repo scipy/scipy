@@ -7,6 +7,7 @@ from numpy.linalg import pinv
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
+from scipy._lib._array_api import xp_capabilities
 
 
 EPS = np.finfo(float).eps
@@ -402,7 +403,9 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
     References
     ----------
     .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-       Boundary Value Problems for Ordinary Differential Equations"
+       Boundary Value Problems for Ordinary Differential Equations",
+       Philidelphia, PA: Society for Industrial and Applied Mathematics,
+       1995.
     """
     # We know that the solution residuals at the middle points of the mesh
     # are connected with collocation residuals  r_middle = 1.5 * col_res / h.
@@ -706,6 +709,7 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
     return fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped
 
 
+@xp_capabilities(np_only=True)
 def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
               tol=1e-3, max_nodes=1000, verbose=0, bc_tol=None):
     """Solve a boundary value problem for a system of ODEs.
@@ -872,9 +876,13 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
            Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
            Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
-           Solver".
+           Solver", J. Numer. Anal., Ind. Appl. Math. (JNAIAM), Vol. 1, 
+           Number 2, pp. 201-217, 2006.
     .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-           Boundary Value Problems for Ordinary Differential Equations".
+           Boundary Value Problems for Ordinary Differential Equations",
+           Philidelphia, PA: Society for Industrial and Applied Mathematics,
+           1995.
+           :doi:`10.1137/1.9781611971231`
     .. [4] `Cauchy-Riemann equations
             <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
             Wikipedia.

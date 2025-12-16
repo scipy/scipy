@@ -1,14 +1,20 @@
 # pylint: disable=missing-docstring
+import math
 import numpy as np
 
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_close, xp_assert_equal
+    assert_almost_equal, xp_assert_close, xp_assert_equal, make_xp_test_case,
+    xp_default_dtype, array_namespace, _xp_copy_to_numpy
 )
 import pytest
 from pytest import raises
 
-import scipy.signal._spline_filters as bsp
 from scipy import signal
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+
+lazy_xp_modules = [signal]
 
 
 class TestBSplines:
@@ -17,15 +23,17 @@ class TestBSplines:
     purposes. Others (at integer points) are compared to theoretical
     expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
-    def test_spline_filter(self):
+    @make_xp_test_case(signal.spline_filter)
+    def test_spline_filter(self, xp):
         rng = np.random.RandomState(12457)
         # Test the type-error branch
-        raises(TypeError, bsp.spline_filter, np.asarray([0]), 0)
+        raises(TypeError, signal.spline_filter, xp.asarray([0]), 0)
         # Test the real branch
         data_array_real = rng.rand(12, 12)
         # make the magnitude exceed 1, and make some negative
         data_array_real = 10*(1-2*data_array_real)
-        result_array_real = np.asarray(
+        data_array_real = xp.asarray(data_array_real)
+        result_array_real = xp.asarray(
             [[-.463312621, 8.33391222, .697290949, 5.28390836,
               5.92066474, 6.59452137, 9.84406950, -8.78324188,
               7.20675750, -8.17222994, -4.38633345, 9.89917069],
@@ -61,16 +69,19 @@ class TestBSplines:
               -3.77114594, -1.11903194, -5.39151466, 3.06620093],
              [9.86326886, 1.05134482, -7.75950607, -3.64429655,
               7.81848957, -9.02270373, 3.73399754, -4.71962549,
-              -7.71144306, 3.78263161, 6.46034818, -4.43444731]])
-        xp_assert_close(bsp.spline_filter(data_array_real, 0),
+              -7.71144306, 3.78263161, 6.46034818, -4.43444731]], dtype=xp.float64)
+        xp_assert_close(signal.spline_filter(data_array_real, 0),
                         result_array_real)
 
-    def test_spline_filter_complex(self):
+    @make_xp_test_case(signal.spline_filter)
+    def test_spline_filter_complex(self, xp):
         rng = np.random.RandomState(12457)
         data_array_complex = rng.rand(7, 7) + rng.rand(7, 7)*1j
         # make the magnitude exceed 1, and make some negative
         data_array_complex = 10*(1+1j-2*data_array_complex)
-        result_array_complex = np.asarray(
+        data_array_complex = xp.asarray(data_array_complex)
+
+        result_array_complex = xp.asarray(
             [[-4.61489230e-01-1.92994022j, 8.33332443+6.25519943j,
               6.96300745e-01-9.05576038j, 5.28294849+3.97541356j,
               5.92165565+7.68240595j, 6.59493160-1.04542804j,
@@ -98,99 +109,136 @@ class TestBSplines:
              [7.13875294+2.91851187j, -5.35737514+9.64132309j,
               -9.66586399+0.70250005j, -9.87717438-2.0262239j,
               9.93160629+1.5630846j, 4.71948051-2.22050714j,
-              9.49550819+7.8995142j]])
+              9.49550819+7.8995142j]], dtype=xp.complex128)
         # FIXME: for complex types, the computations are done in
         # single precision (reason unclear). When this is changed,
         # this test needs updating.
-        xp_assert_close(bsp.spline_filter(data_array_complex, 0),
+        xp_assert_close(signal.spline_filter(data_array_complex, 0),
                         result_array_complex, rtol=1e-6)
 
-    def test_gauss_spline(self):
-        np.random.seed(12459)
-        assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
-        xp_assert_close(bsp.gauss_spline(np.asarray([1.]), 1),
-                        np.asarray([0.04865217]), atol=1e-9
+    @make_xp_test_case(signal.gauss_spline)
+    def test_gauss_spline(self, xp):
+        assert math.isclose(signal.gauss_spline(0, 0), 1.381976597885342)
+
+        xp_assert_close(signal.gauss_spline(xp.asarray([1.]), 1),
+                        xp.asarray([0.04865217]), atol=1e-9
         )
 
-    def test_gauss_spline_list(self):
+    @skip_xp_backends(np_only=True, reason="deliberate: array-likes are accepted")
+    @make_xp_test_case(signal.gauss_spline)
+    def test_gauss_spline_list(self, xp):
         # regression test for gh-12152 (accept array_like)
         knots = [-1.0, 0.0, -1.0]
-        assert_almost_equal(bsp.gauss_spline(knots, 3),
+        assert_almost_equal(signal.gauss_spline(knots, 3),
                             np.asarray([0.15418033, 0.6909883, 0.15418033])
         )
 
-    def test_cspline1d(self):
-        np.random.seed(12462)
-        xp_assert_equal(bsp.cspline1d(np.asarray([0])), [0.])
-        c1d = np.asarray([1.21037185, 1.86293902, 2.98834059, 4.11660378,
-                          4.78893826])
+    @make_xp_test_case(signal.cspline1d)
+    def test_cspline1d(self, xp):
+        xp_assert_equal(signal.cspline1d(xp.asarray([0])),
+                        xp.asarray([0.], dtype=xp.float64))
+        c1d = xp.asarray([1.21037185, 1.86293902, 2.98834059, 4.11660378,
+                          4.78893826], dtype=xp.float64)
         # test lamda != 0
-        xp_assert_close(bsp.cspline1d(np.asarray([1., 2, 3, 4, 5]), 1), c1d)
-        c1d0 = np.asarray([0.78683946, 2.05333735, 2.99981113, 3.94741812,
-                           5.21051638])
-        xp_assert_close(bsp.cspline1d(np.asarray([1., 2, 3, 4, 5])), c1d0)
+        xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5]), 1), c1d)
+        c1d0 = xp.asarray([0.78683946, 2.05333735, 2.99981113, 3.94741812,
+                           5.21051638], dtype=xp.float64)
+        xp_assert_close(signal.cspline1d(xp.asarray([1., 2, 3, 4, 5])), c1d0)
 
-    def test_qspline1d(self):
-        np.random.seed(12463)
-        xp_assert_equal(bsp.qspline1d(np.asarray([0])), [0.])
+    @make_xp_test_case(signal.qspline1d)
+    def test_qspline1d(self, xp):
+        xp_assert_equal(signal.qspline1d(xp.asarray([0])),
+                        xp.asarray([0.], dtype=xp.float64))
         # test lamda != 0
-        raises(ValueError, bsp.qspline1d, np.asarray([1., 2, 3, 4, 5]), 1.)
-        raises(ValueError, bsp.qspline1d, np.asarray([1., 2, 3, 4, 5]), -1.)
-        q1d0 = np.asarray([0.85350007, 2.02441743, 2.99999534, 3.97561055,
-                           5.14634135])
-        xp_assert_close(bsp.qspline1d(np.asarray([1., 2, 3, 4, 5])), q1d0)
+        raises(ValueError, signal.qspline1d, xp.asarray([1., 2, 3, 4, 5]), 1.)
+        raises(ValueError, signal.qspline1d, xp.asarray([1., 2, 3, 4, 5]), -1.)
+        q1d0 = xp.asarray([0.85350007, 2.02441743, 2.99999534, 3.97561055,
+                           5.14634135], dtype=xp.float64)
+        xp_assert_close(
+            signal.qspline1d(xp.asarray([1., 2, 3, 4, 5], dtype=xp.float64)), q1d0
+        )
 
-    def test_cspline1d_eval(self):
-        np.random.seed(12464)
-        xp_assert_close(bsp.cspline1d_eval(np.asarray([0., 0]), [0.]),
-                        np.asarray([0.])
-        )
-        xp_assert_equal(bsp.cspline1d_eval(np.asarray([1., 0, 1]), []),
-                        np.asarray([])
-        )
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
+    @make_xp_test_case(signal.cspline1d_eval)
+    def test_cspline1d_eval(self, xp):
+        r = signal.cspline1d_eval(xp.asarray([0., 0], dtype=xp.float64),
+                               xp.asarray([0.], dtype=xp.float64))
+        xp_assert_close(r, xp.asarray([0.], dtype=xp.float64))
+
+        r = signal.cspline1d_eval(xp.asarray([1., 0, 1], dtype=xp.float64),
+                               xp.asarray([], dtype=xp.float64))
+        xp_assert_equal(r, xp.asarray([], dtype=xp.float64))
+        
+        # Test case for newx that gets filtered down to empty
+        r = signal.cspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+                                  xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_close(r, xp.asarray([0.33333333], dtype=xp.float64))
+
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
                 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
                 12.5]
-        y = np.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
+        y = xp.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                         1.396, 4.094])
-        cj = bsp.cspline1d(y)
-        newy = np.asarray([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
+        cj = xp.asarray(signal.cspline1d(_xp_copy_to_numpy(y)))
+        newy = xp.asarray([6.203, 4.41570658, 3.514, 5.16924703, 6.864, 6.04643068,
                            4.21600281, 6.04643068, 6.864, 5.16924703, 3.514,
                            4.41570658, 6.203, 6.80717667, 6.759, 6.98971173, 7.433,
                            7.79560142, 7.874, 7.41525761, 5.879, 3.18686814, 1.396,
                            2.24889482, 4.094, 2.24889482, 1.396, 3.18686814, 5.879,
                            7.41525761, 7.874, 7.79560142, 7.433, 6.98971173, 6.759,
-                           6.80717667, 6.203, 4.41570658])
-        xp_assert_close(bsp.cspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+                           6.80717667, 6.203, 4.41570658], dtype=xp.float64)
+        xp_assert_close(
+            signal.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy
+        )
 
-    def test_qspline1d_eval(self):
-        np.random.seed(12465)
-        xp_assert_close(bsp.qspline1d_eval(np.asarray([0., 0]), [0.]),
-                        np.asarray([0.])
+        with pytest.raises(ValueError,
+                            match="Spline coefficients 'cj' must not be empty."):
+            signal.cspline1d_eval(xp.asarray([], dtype=xp.float64), 
+                                  xp.asarray([0.0], dtype=xp.float64))
+
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9484")
+    @make_xp_test_case(signal.qspline1d_eval)
+    def test_qspline1d_eval(self, xp):
+        xp_assert_close(signal.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
+                        xp.asarray([0.])
         )
-        xp_assert_equal(bsp.qspline1d_eval(np.asarray([1., 0, 1]), []),
-                        np.asarray([])
+        xp_assert_equal(signal.qspline1d_eval(xp.asarray([1., 0, 1]), xp.asarray([])),
+                        xp.asarray([])
         )
+
+        # Test case for newx that gets filtered down to empty
+        r = signal.qspline1d_eval(xp.asarray([1.0, 0, 1], dtype=xp.float64), 
+                                  xp.asarray([-1.0], dtype=xp.float64))
+        xp_assert_equal(r, xp.asarray([0.25], dtype=xp.float64))
+        
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
-        dx = x[1]-x[0]
+        dx = x[1] - x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
                 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
                 12.5]
-        y = np.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
+        y = xp.asarray([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                         1.396, 4.094])
-        cj = bsp.qspline1d(y)
-        newy = np.asarray([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
+        cj = signal.qspline1d(y)
+        newy = xp.asarray([6.203, 4.49418159, 3.514, 5.18390821, 6.864, 5.91436915,
                            4.21600002, 5.91436915, 6.864, 5.18390821, 3.514,
                            4.49418159, 6.203, 6.71900226, 6.759, 7.03980488, 7.433,
                            7.81016848, 7.874, 7.32718426, 5.879, 3.23872593, 1.396,
                            2.34046013, 4.094, 2.34046013, 1.396, 3.23872593, 5.879,
                            7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
-                           6.71900226, 6.203, 4.49418159])
-        xp_assert_close(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+                           6.71900226, 6.203, 4.49418159], dtype=xp.float64)
+        r = signal.qspline1d_eval(
+            cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0]
+        )
+        xp_assert_close(r, newy)
+
+        with pytest.raises(ValueError, 
+                           match="Spline coefficients 'cj' must not be empty."):
+            signal.qspline1d_eval(xp.asarray([], dtype=xp.float64), 
+                                  xp.asarray([0.0], dtype=xp.float64))
 
 
 # i/o dtypes with scipy 1.9.1, likely fixed by backwards compat
@@ -198,10 +246,13 @@ sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
                     np.float32: np.float32, float: float,
                     np.complex64: np.complex64, complex: complex}
 
+
+@skip_xp_backends(np_only=True)
 class TestSepfir2d:
-    def test_sepfir2d_invalid_filter(self):
-        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+    def test_sepfir2d_invalid_filter(self, xp):
+        filt = xp.asarray([1.0, 2.0, 4.0, 2.0, 1.0])
         image = np.random.rand(7, 9)
+        image = xp.asarray(image)
         # No error for odd lengths
         signal.sepfir2d(image, filt, filt[2:])
 
@@ -213,25 +264,26 @@ class TestSepfir2d:
 
         # Filters must be 1-dimensional
         with pytest.raises(ValueError, match="object too deep"):
-            signal.sepfir2d(image, filt.reshape(1, -1), filt)
+            signal.sepfir2d(image, xp.reshape(filt, (1, -1)), filt)
         with pytest.raises(ValueError, match="object too deep"):
-            signal.sepfir2d(image, filt, filt.reshape(1, -1))
+            signal.sepfir2d(image, filt, xp.reshape(filt, (1, -1)))
 
-    def test_sepfir2d_invalid_image(self):
-        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+    def test_sepfir2d_invalid_image(self, xp):
+        filt = xp.asarray([1.0, 2.0, 4.0, 2.0, 1.0])
         image = np.random.rand(8, 8)
+        image = xp.asarray(image)
 
         # Image must be 2 dimensional
         with pytest.raises(ValueError, match="object too deep"):
-            signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
+            signal.sepfir2d(xp.reshape(image, (4, 4, 4)), filt, filt)
 
         with pytest.raises(ValueError, match="object of too small depth"):
-            signal.sepfir2d(image[0], filt, filt)
+            signal.sepfir2d(image[0, :], filt, filt)
 
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
-    def test_simple(self, dtyp):
+    def test_simple(self, dtyp, xp):
         # test values on a paper-and-pencil example
         a = np.array([[1, 2, 3, 3, 2, 1],
                       [1, 2, 3, 3, 2, 1],
@@ -254,10 +306,11 @@ class TestSepfir2d:
                                [2., 4., 6., 6., 4., 2.]], dtype=dt)
         xp_assert_close(result, expected, atol=1e-16)
 
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
-    def test_strided(self, dtyp):
+    def test_strided(self, dtyp, xp):
         a = np.array([[1, 2, 3, 3, 2, 1, 1, 2, 3],
                      [1, 2, 3, 3, 2, 1, 1, 2, 3],
                      [1, 2, 3, 3, 2, 1, 1, 2, 3],
@@ -268,11 +321,11 @@ class TestSepfir2d:
         xp_assert_close(result_strided, result_contig, atol=1e-15)
         assert result_strided.dtype == result_contig.dtype
 
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.xfail(reason="XXX: filt.size > image.shape: flaky")
-    def test_sepfir2d_strided_2(self):
+    def test_sepfir2d_strided_2(self, xp):
         # XXX: this test is flaky: fails on some reruns, with
         # result[0, 1] and result[1, 1] being ~1e+224.
-        np.random.seed(1234)
         filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
         image = np.random.rand(4, 4)
 
@@ -282,11 +335,13 @@ class TestSepfir2d:
                                 [49.120928, 39.681844, 43.596067, 45.085854]])
         xp_assert_close(signal.sepfir2d(image, filt, filt[::3]), expected)
 
+    @skip_xp_backends(np_only=True, reason="TODO: convert this test")
     @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
+    @pytest.mark.fail_asan
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
-    def test_sepfir2d_strided_3(self, dtyp):
+    def test_sepfir2d_strided_3(self, dtyp, xp):
         # NB: 'image' and 'filt' dtypes match here. Otherwise we can run into
         # unsafe casting errors for many combinations. Historically, dtype handling
         # in `sepfir2d` is a tad baroque; fixing it is an enhancement.
@@ -318,13 +373,19 @@ class TestSepfir2d:
         assert result.dtype == sepfir_dtype_map[dtyp]
 
 
-def test_cspline2d():
-    np.random.seed(181819142)
-    image = np.random.rand(71, 73)
-    signal.cspline2d(image, 8.0)
+@make_xp_test_case(signal.cspline2d)
+def test_cspline2d(xp):
+    rng = np.random.RandomState(181819142)
+    image = rng.rand(71, 73)
+    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    result = signal.cspline2d(image, 8.0)
+    assert array_namespace(result) == xp
 
 
-def test_qspline2d():
-    np.random.seed(181819143)
-    image = np.random.rand(71, 73)
-    signal.qspline2d(image)
+@make_xp_test_case(signal.qspline2d)
+def test_qspline2d(xp):
+    rng = np.random.RandomState(181819143)
+    image = rng.rand(71, 73)
+    image = xp.asarray(image, dtype=xp_default_dtype(xp))
+    result = signal.qspline2d(image)
+    assert array_namespace(result) == xp

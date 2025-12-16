@@ -6,8 +6,7 @@
 import numpy as np
 
 from scipy._lib._util import (check_random_state, rng_integers,
-                              _transition_to_rng)
-from scipy.sparse import csc_matrix
+                              _transition_to_rng, _apply_over_batch)
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -45,6 +44,8 @@ def cwt_matrix(n_rows, n_columns, rng=None):
     .. math:: \|SA\| = (1 \pm \epsilon)\|A\|
     Where the error epsilon is related to the size of S.
     """
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import csc_matrix
     rng = check_random_state(rng)
     rows = rng_integers(rng, 0, n_rows, n_columns)
     cols = np.arange(n_columns+1)
@@ -66,10 +67,15 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     with high probability via the Clarkson-Woodruff Transform, otherwise
     known as the CountSketch matrix.
 
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     Parameters
     ----------
-    input_matrix : array_like
-        Input matrix, of shape ``(n, d)``.
+    input_matrix : array_like, shape (..., n, d)
+        Input matrix.
     sketch_size : int
         Number of rows for the sketch.
     rng : `numpy.random.Generator`, optional
@@ -174,5 +180,18 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, rng=None):
     166.58473879945151
 
     """
-    S = cwt_matrix(sketch_size, input_matrix.shape[0], rng=rng)
-    return S.dot(input_matrix)
+    # lazy import to prevent to prevent sparse dependency for whole module (gh-23420)
+    from scipy.sparse import issparse
+    if issparse(input_matrix) and input_matrix.ndim > 2:
+        message = "Batch support for sparse arrays is not available."
+        raise NotImplementedError(message)
+
+    S = cwt_matrix(sketch_size, input_matrix.shape[-2], rng=rng)
+    # Despite argument order (required by decorator), this is  S @ input_matrix
+    # Can avoid _batch_dot when gh-22153 is resolved.
+    return S @ input_matrix if input_matrix.ndim <= 2 else _batch_dot(input_matrix, S)
+
+
+@_apply_over_batch(('input_matrix', 2))
+def _batch_dot(input_matrix, S):
+    return S @ input_matrix

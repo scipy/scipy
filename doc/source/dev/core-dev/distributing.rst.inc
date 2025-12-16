@@ -100,7 +100,7 @@ Building binary installers
 
    This section is only about building SciPy binary installers to *distribute*.
    For info on building SciPy on the same machine as where it will be used, see
-   `this scipy.org page <https://scipy.github.io/devdocs/dev/contributor/building.html>`_.
+   :ref:`building-from-source`.
 
 There are a number of things to take into consideration when building binaries
 and distributing them on PyPI or elsewhere.

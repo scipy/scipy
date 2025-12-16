@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_dunnett.ipynb
+.. notebooklite:: hypothesis_dunnett.md
    :new_tab: True
 ```
 
 (hypothesis_dunnett)=
+
++++
+
 # Dunnett's test
 
 Dunnett's test compares the means of multiple experimental groups against a

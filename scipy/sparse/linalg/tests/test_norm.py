@@ -1,7 +1,6 @@
 """Test functions for the sparse.linalg.norm module
 """
 
-import pytest
 import numpy as np
 from numpy.linalg import norm as npnorm
 from numpy.testing import assert_allclose, assert_equal
@@ -23,7 +22,9 @@ def test_sparray_norm():
         for ax in [0, 1, None, (0, 1), (1, 0)]:
             for A in (test_arr, test_mat):
                 expected = npnorm(A.toarray(), ord=ord, axis=ax)
-                assert_equal(spnorm(A, ord=ord, axis=ax), expected)
+                actual = spnorm(A, ord=ord, axis=ax)
+                assert hasattr(actual, "dtype")
+                assert_equal(actual, expected)
     # test 1d array and 1d-like (column) matrix
     test_arr_1d = scipy.sparse.coo_array((data, (col,)), shape=(4,))
     test_mat_col = scipy.sparse.coo_matrix((data, (col, [0, 0, 0, 0])), shape=(4, 1))
@@ -40,7 +41,6 @@ class TestNorm:
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_array(b)
 
-    @pytest.mark.thread_unsafe
     def test_matrix_norm(self):
 
         # Frobenius norm is the default
@@ -51,10 +51,7 @@ class TestNorm:
         assert_allclose(spnorm(self.b, -np.inf), 2)
         assert_allclose(spnorm(self.b, 1), 7)
         assert_allclose(spnorm(self.b, -1), 6)
-        # Only floating or complex floating dtype supported by svds.
-        with pytest.warns(UserWarning, match="The problem size"):
-            assert_allclose(spnorm(self.b.astype(np.float64), 2),
-                            7.348469228349534)
+        assert_allclose(spnorm(self.b.astype(np.float64), 2), 7.348469228349534)
 
         # _multi_svd_norm is not implemented for sparse array
         assert_raises(NotImplementedError, spnorm, self.b, -2)

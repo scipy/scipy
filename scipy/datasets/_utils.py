@@ -2,6 +2,8 @@ import os
 import shutil
 from ._registry import method_files_map
 
+from scipy._lib._array_api import xp_capabilities
+
 try:
     import platformdirs
 except ImportError:
@@ -29,7 +31,7 @@ def _clear_cache(datasets, cache_dir=None, method_map=None):
         print(f"Cleaning the cache directory {cache_dir}!")
         shutil.rmtree(cache_dir)
     else:
-        if not isinstance(datasets, (list, tuple)):
+        if not isinstance(datasets, list | tuple):
             # single dataset method passed should be converted to list
             datasets = [datasets, ]
         for dataset in datasets:
@@ -55,6 +57,7 @@ def _clear_cache(datasets, cache_dir=None, method_map=None):
                           "Nothing to clear.")
 
 
+@xp_capabilities(out_of_scope=True)
 def clear_cache(datasets=None):
     """
     Cleans the scipy datasets cache directory.

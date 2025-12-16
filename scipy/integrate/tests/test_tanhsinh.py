@@ -6,19 +6,20 @@ import math
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.conftest import array_api_compatible
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-from scipy._lib._array_api import array_namespace, xp_size, xp_ravel, xp_copy, is_numpy
+from scipy._lib._array_api import (array_namespace, xp_size, xp_ravel, xp_copy,
+                                   is_numpy, make_xp_test_case)
 from scipy import special, stats
 from scipy.integrate import quad_vec, nsum, tanhsinh as _tanhsinh
 from scipy.integrate._tanhsinh import _pair_cache
-from scipy.stats._discrete_distns import _gen_harmonic_gt1
+from scipy.special._ufuncs import _gen_harmonic
 
 
 def norm_pdf(x, xp=None):
     xp = array_namespace(x) if xp is None else xp
     return 1/(2*xp.pi)**0.5 * xp.exp(-x**2/2)
+
 
 def norm_logpdf(x, xp=None):
     xp = array_namespace(x) if xp is None else xp
@@ -43,14 +44,7 @@ def _vectorize(xp):
     return decorator
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(
-    'array_api_strict', reason='Currently uses fancy indexing assignment.'
-)
-@pytest.mark.skip_xp_backends(
-    'jax.numpy', reason='JAX arrays do not support item assignment.'
-)
+@make_xp_test_case(_tanhsinh)
 class TestTanhSinh:
 
     # Test problems from [1] Section 6
@@ -233,11 +227,11 @@ class TestTanhSinh:
         logres = _tanhsinh(norm_logpdf, *limits, log=True)
         xp_assert_close(xp.exp(logres.integral), ref, check_dtype=False)
         # Transformation should not make the result complex unnecessarily
-        xp_test = array_namespace(*limits)  # we need xp.isdtype
-        assert (xp_test.isdtype(logres.integral.dtype, "real floating") if ref > 0
-                else xp_test.isdtype(logres.integral.dtype, "complex floating"))
+        assert (xp.isdtype(logres.integral.dtype, "real floating") if ref > 0
+                else xp.isdtype(logres.integral.dtype, "complex floating"))
 
-        xp_assert_close(xp.exp(logres.error), res.error, atol=1e-16, check_dtype=False)
+        atol = 2 * xp.finfo(res.error.dtype).eps
+        xp_assert_close(xp.exp(logres.error), res.error, atol=atol, check_dtype=False)
 
     # 15 skipped intentionally; it's very difficult numerically
     @pytest.mark.skip_xp_backends(np_only=True,
@@ -248,7 +242,7 @@ class TestTanhSinh:
         rtol = 2e-8
         res = _tanhsinh(f, 0, f.b, rtol=rtol)
         assert_allclose(res.integral, f.ref, rtol=rtol)
-        if f_number not in {14}:  # mildly underestimates error here
+        if f_number not in {7, 12, 14}:  # mildly underestimates error here
             true_error = abs(self.error(res.integral, f.ref)/res.integral)
             assert true_error < res.error
 
@@ -299,18 +293,17 @@ class TestTanhSinh:
         res = _tanhsinh(f, a, b, args=(p,))
         refs = _tanhsinh_single(a, b, p)
 
-        xp_test = array_namespace(a)  # need xp.stack, isdtype
         attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
         for attr in attrs:
-            ref_attr = xp_test.stack([getattr(ref, attr) for ref in refs])
+            ref_attr = xp.stack([getattr(ref, attr) for ref in refs])
             res_attr = xp_ravel(getattr(res, attr))
             xp_assert_close(res_attr, ref_attr, rtol=1e-15)
             assert getattr(res, attr).shape == shape
 
-        assert xp_test.isdtype(res.success.dtype, 'bool')
-        assert xp_test.isdtype(res.status.dtype, 'integral')
-        assert xp_test.isdtype(res.nfev.dtype, 'integral')
-        assert xp_test.isdtype(res.maxlevel.dtype, 'integral')
+        assert xp.isdtype(res.success.dtype, 'bool')
+        assert xp.isdtype(res.status.dtype, 'integral')
+        assert xp.isdtype(res.nfev.dtype, 'integral')
+        assert xp.isdtype(res.maxlevel.dtype, 'integral')
         assert xp.max(res.nfev) == f.feval
         # maxlevel = 2 -> 3 function calls (2 initialization, 1 work)
         assert xp.max(res.maxlevel) >= 2
@@ -383,12 +376,10 @@ class TestTanhSinh:
     def test_options_and_result_attributes(self, xp):
         # demonstrate that options are behaving as advertised and status
         # messages are as intended
-        xp_test = array_namespace(xp.asarray(1.))  # need xp.atan
-
         def f(x):
             f.calls += 1
             f.feval += xp_size(xp.asarray(x))
-            return x**2 * xp_test.atan(x)
+            return x**2 * xp.atan(x)
 
         f.ref = xp.asarray((math.pi - 2 + 2 * math.log(2)) / 12, dtype=xp.float64)
 
@@ -560,21 +551,18 @@ class TestTanhSinh:
         # integrand is evaluated or the integral/error estimates, only the
         # number of function calls
 
-        # need `xp.concat`, `xp.atan`, and `xp.sort`
-        xp_test = array_namespace(xp.asarray(1.))
-
         def f(x):
             f.calls += 1
             f.feval += xp_size(xp.asarray(x))
-            f.x = xp_test.concat((f.x, xp_ravel(x)))
-            return x**2 * xp_test.atan(x)
+            f.x = xp.concat((f.x, xp_ravel(x)))
+            return x**2 * xp.atan(x)
 
         f.feval, f.calls, f.x = 0, 0, xp.asarray([])
 
         a = xp.asarray(0, dtype=xp.float64)
         b = xp.asarray(1, dtype=xp.float64)
         ref = _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel)
-        ref_x = xp_test.sort(f.x)
+        ref_x = xp.sort(f.x)
 
         for minlevel in range(0, maxlevel + 1):
             f.feval, f.calls, f.x = 0, 0, xp.asarray([])
@@ -587,7 +575,7 @@ class TestTanhSinh:
             assert res.nfev == f.feval == f.x.shape[0]
             assert f.calls == maxlevel - minlevel + 1 + 1  # 1 validation call
             assert res.status == ref.status
-            xp_assert_equal(ref_x, xp_test.sort(f.x))
+            xp_assert_equal(ref_x, xp.sort(f.x))
 
     def test_improper_integrals(self, xp):
         # Test handling of infinite limits of integration (mixed with finite limits)
@@ -679,10 +667,9 @@ class TestTanhSinh:
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
         a, b = xp.asarray(0), xp.asarray(1)
-        xp_test = array_namespace(a, b)  # need `xp.isdtype`
 
         def f(x):
-            assert xp_test.isdtype(x.dtype, "real floating")
+            assert xp.isdtype(x.dtype, "real floating")
             return x
 
         res = _tanhsinh(f, a, b)
@@ -743,11 +730,34 @@ class TestTanhSinh:
         for attr in attrs:
             assert res[attr].shape == shape
 
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_compress_nodes_weights_gh21496(self, xp):
+        # See discussion in:
+        # https://github.com/scipy/scipy/pull/21496#discussion_r1878681049
+        # This would cause "ValueError: attempt to get argmax of an empty sequence"
+        # Check that this has been resolved.
+        x = np.full(65, 3)
+        x[-1] = 1000
+        _tanhsinh(np.sin, 1, x)
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing.')
-@pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
+    def test_gh_22681_finite_error(self, xp):
+        # gh-22681 noted a case in which the error was NaN on some platforms;
+        # check that this does in fact fail in CI.
+        c1 = complex(12, -10)
+        c2 = complex(12, 39)
+        def f(t):
+            return xp.sin(c1 * (1 - t) + c2 * t)
+        a, b = xp.asarray(0., dtype=xp.float64), xp.asarray(1., dtype=xp.float64)
+        ref = _tanhsinh(f, a, b, atol=0, rtol=0, maxlevel=10)
+        assert xp.isfinite(ref.error)
+        # Previously, tanhsinh would not detect convergence
+        res = _tanhsinh(f, a, b, rtol=1e-14)
+        assert res.success
+        assert res.maxlevel < 5
+        xp_assert_close(res.integral, ref.integral, rtol=1e-15)
+
+
+@make_xp_test_case(nsum)
 class TestNSum:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10).tolist()
@@ -775,7 +785,7 @@ class TestNSum:
 
     f3.a = 1
     f3.b = rng.integers(5, 15, size=(3, 1))
-    f3.ref = _gen_harmonic_gt1(f3.b, p)
+    f3.ref = _gen_harmonic(f3.b, p)
     f3.args = (p,)
 
     def test_input_validation(self, xp):
@@ -802,13 +812,21 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             nsum(f, a, b, tolerances=dict(rtol=pytest))
 
-        with np.errstate(all='ignore'):
+        with (np.errstate(all='ignore')):
             res = nsum(f, xp.asarray([np.nan, np.inf]), xp.asarray(1.))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(10.), xp.asarray([np.nan, 1]))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(1.), xp.asarray(10.),
                        step=xp.asarray([xp.nan, -xp.inf, xp.inf, -1, 0]))
             assert xp.all((res.status == -1) & xp.isnan(res.sum)
@@ -842,8 +860,7 @@ class TestNSum:
         res = nsum(f, a, b, args=args)
         xp_assert_close(res.sum, ref)
         xp_assert_equal(res.status, xp.zeros(ref.shape, dtype=xp.int32))
-        xp_test = array_namespace(a)  # CuPy doesn't have `bool`
-        xp_assert_equal(res.success, xp.ones(ref.shape, dtype=xp_test.bool))
+        xp_assert_equal(res.success, xp.ones(ref.shape, dtype=xp.bool))
 
         with np.errstate(divide='ignore'):
             logres = nsum(lambda *args: xp.log(f(*args)),
@@ -881,8 +898,7 @@ class TestNSum:
         ref_err = (high - low)/2  # error (assuming perfect quadrature)
 
         # correct reference values where number of terms < maxterms
-        xp_test = array_namespace(a)  # torch needs broadcast_arrays
-        a, b, step = xp_test.broadcast_arrays(a, b, step)
+        a, b, step = xp.broadcast_arrays(a, b, step)
         for i in np.ndindex(a.shape):
             ai, bi, stepi = float(a[i]), float(b[i]), float(step[i])
             if (bi - ai)/stepi + 1 <= maxterms:
@@ -939,10 +955,9 @@ class TestNSum:
             xp_assert_close(xp_ravel(res_attr), xp.asarray(ref_attr), rtol=1e-15)
             assert res_attr.shape == shape
 
-        xp_test = array_namespace(xp.asarray(1.))
-        assert xp_test.isdtype(res.success.dtype, 'bool')
-        assert xp_test.isdtype(res.status.dtype, 'integral')
-        assert xp_test.isdtype(res.nfev.dtype, 'integral')
+        assert xp.isdtype(res.success.dtype, 'bool')
+        assert xp.isdtype(res.status.dtype, 'integral')
+        assert xp.isdtype(res.nfev.dtype, 'integral')
         if is_numpy(xp):  # other libraries might have different number
             assert int(xp.max(res.nfev)) == f.feval
 
@@ -1064,8 +1079,8 @@ class TestNSum:
                 return 1 / x
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=0)
-        assert xp.isnan(res.sum)
-        assert xp.isnan(res.error)
+        assert xp.isinf(res.sum)
+        assert xp.isinf(res.error)
         assert res.status == -2
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=1)
@@ -1101,7 +1116,7 @@ class TestNSum:
         assert res.error.dtype == dtype
 
         rtol = 1e-12 if dtype == xp.float64 else 1e-6
-        ref = _gen_harmonic_gt1(np.asarray([10, xp.inf]), 2)
+        ref = [_gen_harmonic(10, 2), special.zeta(2, 1)]
         xp_assert_close(res.sum, xp.asarray(ref, dtype=dtype), rtol=rtol)
 
     @pytest.mark.parametrize('case', [(10, 100), (100, 10)])

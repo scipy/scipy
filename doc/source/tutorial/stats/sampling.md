@@ -11,11 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/sampling.ipynb
+.. notebooklite:: sampling.md
    :new_tab: True
 ```
+
 (non-uniform-random-number-sampling)=
+
++++
+
 # Universal Non-Uniform Random Number Sampling in SciPy
 
 SciPy provides an interface to many universal non-uniform random number

@@ -1,12 +1,15 @@
-import numpy as np
-from scipy.linalg import lstsq
 from scipy._lib._util import float_factorial
+from scipy._lib.array_api_compat import numpy as np_compat
+from scipy._lib._array_api import array_namespace, xp_swapaxes, xp_device
+import scipy._lib.array_api_extra as xpx
+
 from scipy.ndimage import convolve1d  # type: ignore[attr-defined]
+from scipy.signal import _polyutils as _pu
 from ._arraytools import axis_slice
 
 
 def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
-                  use="conv"):
+                  use="conv", *, xp=None, device=None):
     """Compute the coefficients for a 1-D Savitzky-Golay FIR filter.
 
     Parameters
@@ -115,36 +118,41 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     if use not in ['conv', 'dot']:
         raise ValueError("`use` must be 'conv' or 'dot'")
 
+    # cf windows/_windows.py
+    xp = np_compat if xp is None else array_namespace(xp.empty(0))
+
     if deriv > polyorder:
-        coeffs = np.zeros(window_length)
+        coeffs = xp.zeros(window_length, dtype=xp.float64, device=device)
         return coeffs
 
     # Form the design matrix A. The columns of A are powers of the integers
     # from -pos to window_length - pos - 1. The powers (i.e., rows) range
     # from 0 to polyorder. (That is, A is a vandermonde matrix, but not
     # necessarily square.)
-    x = np.arange(-pos, window_length - pos, dtype=float)
+    x = xp.arange(-pos, window_length - pos, dtype=xp.float64, device=device)
 
     if use == "conv":
         # Reverse so that result can be used in a convolution.
-        x = x[::-1]
+        x = xp.flip(x)
 
-    order = np.arange(polyorder + 1).reshape(-1, 1)
+    order = xp.reshape(
+        xp.arange(polyorder + 1, dtype=xp.float64, device=device), (-1, 1)
+    )
     A = x ** order
 
     # y determines which order derivative is returned.
-    y = np.zeros(polyorder + 1)
+    y = xp.zeros(polyorder + 1, dtype=xp.float64, device=device)
     # The coefficient assigned to y[deriv] scales the result to take into
     # account the order of the derivative and the sample spacing.
-    y[deriv] = float_factorial(deriv) / (delta ** deriv)
+    y = xpx.at(y, deriv).set(float_factorial(deriv) / (delta ** deriv))
 
     # Find the least-squares solution of A*c = y
-    coeffs, _, _, _ = lstsq(A, y)
+    coeffs, _, _, _ = _pu._lstsq(A, y, xp=xp)
 
     return coeffs
 
 
-def _polyder(p, m):
+def _polyder(p, m, *, xp):
     """Differentiate polynomials represented with coefficients.
 
     p must be a 1-D or 2-D array.  In the 2-D case, each column gives
@@ -156,14 +164,16 @@ def _polyder(p, m):
     if m == 0:
         result = p
     else:
-        n = len(p)
+        n = p.shape[0]
         if n <= m:
-            result = np.zeros_like(p[:1, ...])
+            result = xp.zeros_like(p[:1, ...])
         else:
-            dp = p[:-m].copy()
+            dp = xp.asarray(p[:-m, ...], copy=True)
             for k in range(m):
-                rng = np.arange(n - k - 1, m - k - 1, -1)
-                dp *= rng.reshape((n - m,) + (1,) * (p.ndim - 1))
+                rng = xp.arange(
+                    n - k - 1, m - k - 1, -1, dtype=p.dtype, device=xp_device(p)
+                )
+                dp *= xp.reshape(rng, (n - m,) + (1,) * (p.ndim - 1))
             result = dp
     return result
 
@@ -177,6 +187,7 @@ def _fit_edge(x, window_start, window_stop, interp_start, interp_stop,
     from `interp_start` to `interp_stop`. Put the result into the
     corresponding slice of `y`.
     """
+    xp = array_namespace(x)
 
     # Get the edge into a (window_length, -1) array.
     x_edge = axis_slice(x, start=window_start, stop=window_stop, axis=axis)
@@ -184,32 +195,42 @@ def _fit_edge(x, window_start, window_stop, interp_start, interp_stop,
         xx_edge = x_edge
         swapped = False
     else:
-        xx_edge = x_edge.swapaxes(axis, 0)
+        xx_edge = xp_swapaxes(x_edge, axis, 0, xp)
         swapped = True
-    xx_edge = xx_edge.reshape(xx_edge.shape[0], -1)
+    xx_edge = xp.reshape(xx_edge, (xx_edge.shape[0], -1))
 
     # Fit the edges.  poly_coeffs has shape (polyorder + 1, -1),
     # where '-1' is the same as in xx_edge.
-    poly_coeffs = np.polyfit(np.arange(0, window_stop - window_start),
-                             xx_edge, polyorder)
+    poly_coeffs = _pu.polyfit(
+        xp.arange(
+            0, window_stop - window_start, dtype=x.dtype, device=xp_device(x)
+        ), xx_edge, polyorder, xp=xp
+    )
 
     if deriv > 0:
-        poly_coeffs = _polyder(poly_coeffs, deriv)
+        poly_coeffs = _polyder(poly_coeffs, deriv, xp=xp)
 
     # Compute the interpolated values for the edge.
-    i = np.arange(interp_start - window_start, interp_stop - window_start)
-    values = np.polyval(poly_coeffs, i.reshape(-1, 1)) / (delta ** deriv)
+    i = xp.arange(
+        interp_start - window_start, interp_stop - window_start,
+        dtype=poly_coeffs.dtype, device=xp_device(poly_coeffs)
+    )
+    values = _pu.polyval(poly_coeffs, xp.reshape(i, (-1, 1)), xp=xp) / (delta ** deriv)
 
     # Now put the values into the appropriate slice of y.
     # First reshape values to match y.
     shp = list(y.shape)
     shp[0], shp[axis] = shp[axis], shp[0]
-    values = values.reshape(interp_stop - interp_start, *shp[1:])
+    values = xp.reshape(values, (interp_stop - interp_start, *shp[1:]))
     if swapped:
-        values = values.swapaxes(0, axis)
+        values = xp_swapaxes(values, 0, axis, xp)
     # Get a view of the data to be replaced by values.
-    y_edge = axis_slice(y, start=interp_start, stop=interp_stop, axis=axis)
-    y_edge[...] = values
+    y_slice = [slice(None)] * y.ndim
+    y_slice[axis] = slice(interp_start, interp_stop)
+    y = xpx.at(y, tuple(y_slice)).set(values)
+
+    return y
+
 
 
 def _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y):
@@ -220,11 +241,13 @@ def _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y):
     This function just calls _fit_edge twice, once for each end of the axis.
     """
     halflen = window_length // 2
-    _fit_edge(x, 0, window_length, 0, halflen, axis,
+    y = _fit_edge(x, 0, window_length, 0, halflen, axis,
               polyorder, deriv, delta, y)
     n = x.shape[axis]
-    _fit_edge(x, n - window_length, n, n - halflen, n, axis,
+    y = _fit_edge(x, n - window_length, n, n - halflen, n, axis,
               polyorder, deriv, delta, y)
+
+    return y
 
 
 def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
@@ -333,12 +356,15 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         raise ValueError("mode must be 'mirror', 'constant', 'nearest' "
                          "'wrap' or 'interp'.")
 
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     # Ensure that x is either single or double precision floating point.
-    if x.dtype != np.float64 and x.dtype != np.float32:
-        x = x.astype(np.float64)
+    if x.dtype != xp.float64 and x.dtype != xp.float32:
+        x = xp.astype(x, xp.float64)
 
-    coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
+    coeffs = savgol_coeffs(
+        window_length, polyorder, deriv=deriv, delta=delta, xp=xp, device=xp_device(x)
+    )
 
     if mode == "interp":
         if window_length > x.shape[axis]:
@@ -349,7 +375,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         # of the ends of the sequence, use the polynomial that is fitted to
         # the last `window_length` elements.
         y = convolve1d(x, coeffs, axis=axis, mode="constant")
-        _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y)
+        y = _fit_edges_polyfit(x, window_length, polyorder, deriv, delta, axis, y)
     else:
         # Any mode other than 'interp' is passed on to ndimage.convolve1d.
         y = convolve1d(x, coeffs, axis=axis, mode=mode, cval=cval)

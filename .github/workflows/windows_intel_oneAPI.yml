@@ -9,6 +9,14 @@ on:
     branches:
       - main
       - maintenance/**
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │  ┌───────────── day of the month (1 - 31)
+  #        │  │  │  ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │  │  │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │  │  │ │
+  - cron: "9  9 2/2 * *"
 
 permissions:
    contents: read  # to fetch code (actions/checkout)
@@ -17,8 +25,8 @@ permissions:
 # store the URL for downloading Intel oneAPI.
 # Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
 env:
-  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/7dff44ba-e3af-4448-841c-0d616c8da6e7/w_BaseKit_p_2024.1.0.595_offline.exe
-  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/c95a3b26-fc45-496c-833b-df08b10297b9/w_HPCKit_p_2024.1.0.561_offline.exe
+  WINDOWS_BASEKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/0a91e6dc-9c09-4e0f-9113-1f28bf7e8be2/intel-fortran-essentials-2025.0.1.28_offline.exe
+  WINDOWS_HPC_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/a37c30c3-a846-4371-a85d-603e9a9eb94c/intel-oneapi-hpc-toolkit-2025.0.1.48_offline.exe
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -30,7 +38,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   msvc_ifx_blas:
-    name: py3.11, dev.py
+    name: py3.12, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -47,29 +55,9 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
-        with:
-          python-version: 3.11
-          channels: conda-forge
-          channel-priority: strict
-          use-only-tar-bz2: false
-          miniforge-variant: Miniforge3
-          miniforge-version: latest
-          auto-activate-base: true
-          activate-environment: true
-
-      - run: conda --version
-      - run: which python
-
-      - name: Install packages from conda
-        shell: cmd /C call {0}
-        run: |
-          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
-
       - name: cache install
         id: cache-install
-        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: |
               C:\Program Files (x86)\Intel\oneAPI\compiler
@@ -87,6 +75,26 @@ jobs:
           echo %WINDOWS_HPC_URL%
           tools/install_intel_oneAPI_windows.bat %WINDOWS_HPC_URL%
 
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        with:
+          python-version: 3.12
+          channels: conda-forge
+          channel-priority: strict
+          use-only-tar-bz2: false
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          auto-activate-base: true
+          activate-environment: true
+
+      - run: conda --version
+      - run: which python
+
+      - name: Install packages from conda
+        shell: cmd /C call {0}
+        run: |
+          conda install -c conda-forge pkg-config meson meson-python ninja openblas libblas=*=*openblas numpy==2.0 cython pybind11 pytest pytest-xdist pytest-timeout pooch spin hypothesis "click<8.3.0"
+
       # MSVC is unable to compile Pythran code, therefore we need to use
       # -C-Duse-pythran=false while building SciPy.
       # Reference - https://github.com/serge-sans-paille/pythran/issues/2215
@@ -96,7 +104,7 @@ jobs:
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          python dev.py build -C-Duse-pythran=false -C--vsenv
+          spin build -S-Duse-pythran=false -S--vsenv
 
       # "import scipy; scipy.test();" fails because
       # scipy/sparse/linalg/_eigen/arpack crashes.
@@ -104,4 +112,4 @@ jobs:
       - name: Test scipy.datasets
         shell: cmd /C call {0}
         run: |
-          python dev.py test -s datasets
+          spin test -s datasets

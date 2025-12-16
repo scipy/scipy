@@ -1,12 +1,14 @@
 """Test functions for the sparse.linalg._expm_multiply module."""
+import warnings
+
 from functools import partial
 from itertools import product
 
 import numpy as np
 import pytest
-from numpy.testing import (assert_allclose, assert_, assert_equal,
-                           suppress_warnings)
+from numpy.testing import (assert_allclose, assert_, assert_equal)
 from scipy.sparse import SparseEfficiencyWarning
+import scipy.sparse
 from scipy.sparse.linalg import aslinearoperator
 import scipy.linalg
 from scipy.sparse.linalg import expm as sp_expm
@@ -23,18 +25,13 @@ COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
-def estimated(func):
+def estimated_warns():
     """If trace is estimated, it should warn.
 
     We warn that estimation of trace might impact performance.
     All result have to be correct nevertheless!
-
     """
-    def wrapped(*args, **kwds):
-        with pytest.warns(UserWarning,
-                          match="Trace of LinearOperator not available"):
-            return func(*args, **kwds)
-    return wrapped
+    return pytest.warns(UserWarning, match="Trace of LinearOperator not available")
 
 
 def less_than_or_close(a, b):
@@ -80,73 +77,68 @@ class TestExpmActionSimple:
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
 
-    @pytest.mark.thread_unsafe
     def test_expm_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            B = np.random.randn(n, k)
+            A = scipy.linalg.inv(rng.standard_normal((n, n)))
+            B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             expected = np.dot(sp_expm(A), B)
             assert_allclose(observed, expected)
-            observed = estimated(expm_multiply)(aslinearoperator(A), B)
+            with estimated_warns():
+                observed = expm_multiply(aslinearoperator(A), B)
             assert_allclose(observed, expected)
             traceA = np.trace(A)
             observed = expm_multiply(aslinearoperator(A), B, traceA=traceA)
             assert_allclose(observed, expected)
 
-    @pytest.mark.thread_unsafe
     def test_matrix_vector_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            v = np.random.randn(n)
+            A = scipy.linalg.inv(rng.standard_normal((n, n)))
+            v = rng.standard_normal(n)
             observed = expm_multiply(A, v)
             expected = np.dot(sp_expm(A), v)
             assert_allclose(observed, expected)
-            observed = estimated(expm_multiply)(aslinearoperator(A), v)
+            with estimated_warns():
+                observed = expm_multiply(aslinearoperator(A), v)
             assert_allclose(observed, expected)
 
-    @pytest.mark.thread_unsafe
     def test_scaled_expm_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         k = 3
         nsamples = 10
         for i, t in product(range(nsamples), [0.2, 1.0, 1.5]):
             with np.errstate(invalid='ignore'):
-                A = scipy.linalg.inv(np.random.randn(n, n))
-                B = np.random.randn(n, k)
+                A = scipy.linalg.inv(rng.standard_normal((n, n)))
+                B = rng.standard_normal((n, k))
                 observed = _expm_multiply_simple(A, B, t=t)
                 expected = np.dot(sp_expm(t*A), B)
                 assert_allclose(observed, expected)
-                observed = estimated(_expm_multiply_simple)(
-                    aslinearoperator(A), B, t=t
-                )
+                with estimated_warns():
+                    observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
                 assert_allclose(observed, expected)
 
-    @pytest.mark.thread_unsafe
     def test_scaled_expm_multiply_single_timepoint(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         t = 0.1
         n = 5
         k = 2
-        A = np.random.randn(n, n)
-        B = np.random.randn(n, k)
+        A = rng.standard_normal((n, n))
+        B = rng.standard_normal((n, k))
         observed = _expm_multiply_simple(A, B, t=t)
         expected = sp_expm(t*A).dot(B)
         assert_allclose(observed, expected)
-        observed = estimated(_expm_multiply_simple)(
-            aslinearoperator(A), B, t=t
-        )
+        with estimated_warns():
+            observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
         assert_allclose(observed, expected)
 
-    @pytest.mark.thread_unsafe
     def test_sparse_expm_multiply(self):
         rng = np.random.default_rng(1234)
         n = 40
@@ -156,18 +148,24 @@ class TestExpmActionSimple:
             A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "splu converted its input to CSC format")
-                sup.filter(SparseEfficiencyWarning,
-                           "spsolve is more efficient when sparse b is in the"
-                           " CSC matrix format")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "splu converted its input to CSC format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    "spsolve is more efficient when sparse b is in the "
+                    "CSC matrix format",
+                    SparseEfficiencyWarning,
+                )
                 expected = sp_expm(A).dot(B)
             assert_allclose(observed, expected)
-            observed = estimated(expm_multiply)(aslinearoperator(A), B)
+            with estimated_warns():
+                observed = expm_multiply(aslinearoperator(A), B)
             assert_allclose(observed, expected)
 
-    @pytest.mark.thread_unsafe
     def test_complex(self):
         A = np.array([
             [1j, 1j],
@@ -178,7 +176,8 @@ class TestExpmActionSimple:
             1j * np.exp(1j) + 1j * (1j*np.cos(1) - np.sin(1)),
             1j * np.exp(1j)], dtype=complex)
         assert_allclose(observed, expected)
-        observed = estimated(expm_multiply)(aslinearoperator(A), B)
+        with estimated_warns():
+            observed = expm_multiply(aslinearoperator(A), B)
         assert_allclose(observed, expected)
 
 
@@ -201,30 +200,35 @@ class TestExpmActionInterval:
                                   num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                                       num=num, endpoint=endpoint)
-                with suppress_warnings() as sup:
-                    sup.filter(SparseEfficiencyWarning,
-                               "splu converted its input to CSC format")
-                    sup.filter(SparseEfficiencyWarning,
-                               "spsolve is more efficient when sparse b is in"
-                               " the CSC matrix format")
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore",
+                        "splu converted its input to CSC format",
+                        SparseEfficiencyWarning,
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        "spsolve is more efficient when sparse b is in"
+                        " the CSC matrix format",
+                        SparseEfficiencyWarning,
+                    )
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, sp_expm(t*A).dot(target))
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_vector(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
         for num, n in product([14, 13, 2], [1, 2, 5, 20, 40]):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            v = np.random.randn(n)
+            A = scipy.linalg.inv(rng.standard_normal((n, n)))
+            v = rng.standard_normal(n)
             samples = np.linspace(num=num, **interval)
             X = expm_multiply(A, v, num=num, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(v))
             # test for linear operator with unknown trace -> estimate trace
-            Xguess = estimated(expm_multiply)(aslinearoperator(A), v,
-                                              num=num, **interval)
+            with estimated_warns():
+                Xguess = expm_multiply(aslinearoperator(A), v, num=num, **interval)
             # test for linear operator with given trace
             Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
                                    traceA=np.trace(A))
@@ -238,20 +242,19 @@ class TestExpmActionInterval:
                 assert_allclose(sol_given, correct)
                 assert_allclose(sol_wrong, correct)
 
-    @pytest.mark.thread_unsafe
     @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_matrix(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
         for num, n, k in product([14, 13, 2], [1, 2, 5, 20, 40], [1, 2]):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            B = np.random.randn(n, k)
+            A = scipy.linalg.inv(rng.standard_normal((n, n)))
+            B = rng.standard_normal((n, k))
             samples = np.linspace(num=num, **interval)
             X = expm_multiply(A, B, num=num, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(B))
-            X = estimated(expm_multiply)(aslinearoperator(A), B, num=num,
-                                         **interval)
+            with estimated_warns():
+                X = expm_multiply(aslinearoperator(A), B, num=num, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(B))
 
@@ -260,19 +263,28 @@ class TestExpmActionInterval:
         A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
+        BI = np.identity(5, dtype=int)
+        BI_sparse = scipy.sparse.csr_array(BI)
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A complex, B int
         A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags_array(np.exp(-1j*np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A int, B complex
         A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
         Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        BI = np.identity(5, dtype=complex)*1j
+        assert_allclose(
+            np.diag(expm_multiply(A, scipy.sparse.csr_array(BI), 0, 1)[-1]),
+            Aexpm.dot(B)
+        )
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
@@ -314,7 +326,6 @@ class TestExpmActionInterval:
             raise Exception(msg)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("dtype_a", DTYPES)
 @pytest.mark.parametrize("dtype_b", DTYPES)
 @pytest.mark.parametrize("b_is_matrix", [False, True])
@@ -339,7 +350,8 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
 
     # single application
     sol_mat = expm_multiply(A, B)
-    sol_op = estimated(expm_multiply)(aslinearoperator(A), B)
+    with estimated_warns():
+        sol_op = expm_multiply(aslinearoperator(A), B)
     direct_sol = np.dot(sp_expm(A), B)
     assert_allclose_(sol_mat, direct_sol)
     assert_allclose_(sol_op, direct_sol)
@@ -350,7 +362,8 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     interval = {'start': 0.1, 'stop': 3.2, 'num': 13, 'endpoint': True}
     samples = np.linspace(**interval)
     X_mat = expm_multiply(A, B, **interval)
-    X_op = estimated(expm_multiply)(aslinearoperator(A), B, **interval)
+    with estimated_warns():
+        X_op = expm_multiply(aslinearoperator(A), B, **interval)
     for sol_mat, sol_op, t in zip(X_mat, X_op, samples):
         direct_sol = sp_expm(t*A).dot(B)
         assert_allclose_(sol_mat, direct_sol)

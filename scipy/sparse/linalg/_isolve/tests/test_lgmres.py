@@ -1,9 +1,9 @@
 """Tests for the linalg._isolve.lgmres module
 """
-
 import threading
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+import warnings
+
+from numpy.testing import (assert_, assert_allclose, assert_equal)
 
 import pytest
 from platform import python_implementation
@@ -51,8 +51,9 @@ def do_solve(**kw):
     if not hasattr(count, 'c'):
         count.c = [0]
     count.c[0] = 0
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", ".*called without specifying.*", DeprecationWarning)
         x0, flag = lgmres(A, b, x0=zeros(A.shape[0]),
                           inner_m=6, rtol=1e-14, **kw)
     count_0 = count.c[0]
@@ -113,8 +114,9 @@ class TestLGMRES:
         b = rng.random(2000)
 
         # The inner arnoldi should be equivalent to gmres
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=10, maxiter=1)
             x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=10, maxiter=1)
 
@@ -134,8 +136,9 @@ class TestLGMRES:
         for n in [3, 5, 10, 100]:
             A = 2*eye_array(n)
 
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", ".*called without specifying.*", DeprecationWarning)
 
                 b = np.ones(n)
                 x, info = lgmres(A, b, maxiter=10)
@@ -160,8 +163,9 @@ class TestLGMRES:
         A[1, 1] = np.nan
         b = np.ones(3)
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             x, info = lgmres(A, b, rtol=0, maxiter=10)
             assert_equal(info, 1)
 
@@ -174,8 +178,9 @@ class TestLGMRES:
 
         # The inner iteration should converge to the correct solution,
         # since it's in the outer vector list
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             xp, info = lgmres(A, b, outer_v=[(v0, None), (x, None)], maxiter=1)
 
         assert_allclose(xp, x, atol=1e-12)
@@ -196,8 +201,9 @@ class TestLGMRES:
         ]
 
         for b in bs:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", ".*called without specifying.*", DeprecationWarning)
                 xp, info = lgmres(A, b, maxiter=1)
             resp = np.linalg.norm(A.dot(xp) - b)
 
@@ -217,8 +223,9 @@ class TestLGMRES:
 
         b = np.array([1, 1])
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*called without specifying.*", DeprecationWarning)
             xp, info = lgmres(A, b)
 
         if info == 0:

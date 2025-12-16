@@ -1,7 +1,6 @@
 from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, NAN, fabs, isinf
 cimport numpy as np
 
-from ._xlogy cimport xlogy
 from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
@@ -21,6 +20,7 @@ cdef extern from "xsf_wrappers.h":
     np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
     np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
     double xsf_sinpi(double x) nogil
+    double xsf_xlogy(double x, double y) nogil
 
 cdef extern from "numpy/npy_math.h":
     double npy_creal(np.npy_cdouble z) nogil
@@ -43,7 +43,7 @@ cdef inline double _hyp0f1_real(double v, double z) noexcept nogil:
 
     if z > 0:
         arg = sqrt(z)
-        arg_exp = xlogy(1.0-v, arg) + xsf_gammaln(v)
+        arg_exp = xsf_xlogy(1.0-v, arg) + xsf_gammaln(v)
         bess_val = xsf_iv(v-1, 2.0*arg)
 
         if (arg_exp > log(DBL_MAX) or bess_val == 0 or   # overflow
@@ -91,11 +91,11 @@ cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     u3 = (30375.0 - 369603.0*p2 + 765765.0*p4 - 425425.0*p6) * pp * p2 / 414720.0
     u_corr_i = 1.0 + u1/v1 + u2/(v1*v1) + u3/(v1*v1*v1)
 
-    result = exp(arg_exp_i - xlogy(v1, arg)) * gs * u_corr_i
+    result = exp(arg_exp_i - xsf_xlogy(v1, arg)) * gs * u_corr_i
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * xsf_sinpi(v1) * u_corr_k
+        result += exp(arg_exp_k + xsf_xlogy(v1, arg)) * gs * 2.0 * xsf_sinpi(v1) * u_corr_k
 
     return result
 

@@ -2,9 +2,8 @@
 # versions of SciPy. Use the `scipy.signal` namespace for importing the
 # functions included below.
 
-import warnings
+from scipy._lib.deprecation import _sub_module_deprecation
 
-from . import _spline
 
 __all__ = ['sepfir2d']  # noqa: F822
 
@@ -14,12 +13,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            f"scipy.signal.spline is deprecated and has no attribute {name}. "
-            "Try looking in scipy.signal instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.signal` namespace, "
-                  "the `scipy.signal.spline` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-    return getattr(_spline, name)
+    return _sub_module_deprecation(sub_package="signal", module="spline",
+                                   private_modules=["_spline"], all=__all__,
+                                   attribute=name)

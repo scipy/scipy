@@ -20,7 +20,7 @@ from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    
+
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
@@ -76,9 +76,9 @@ def check_random_state(seed=None):
         Random number generator.
 
     """
-    if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
+    if seed is None or isinstance(seed, numbers.Integral | np.integer):
         return np.random.default_rng(seed)
-    elif isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    elif isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
     else:
         raise ValueError(f'{seed!r} cannot be used to seed a'
@@ -266,7 +266,10 @@ def discrepancy(
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
 
-    See [2]_ for precise definitions of each method.
+    Methods ``CD``, ``WD``, and ``MD`` implement the right hand side of equations
+    9, 10, and 18 of [2]_, respectively; the square root is not taken. On the
+    other hand, ``L2-star`` computes the quantity given by equation 10 of
+    [3]_ as implemented by subsequent equations; the square root is taken.
 
     Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
@@ -1117,14 +1120,16 @@ class Halton(QMCEngine):
     Pseudo-random number generator that generalize the Van der Corput sequence
     for multiple dimensions. The Halton sequence uses the base-two Van der
     Corput sequence for the first dimension, base-three for its second and
-    base-:math:`n` for its n-dimension.
+    base-:math:`p` for its :math:`n`-dimension, with :math:`p` the
+    :math:`n`'th prime.
 
     Parameters
     ----------
     d : int
         Dimension of the parameter space.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use random scrambling from [2]_. Otherwise no scrambling
+        is done.
         Default is True.
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
@@ -1584,7 +1589,7 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-        
+
         oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
@@ -1858,7 +1863,7 @@ class Sobol(QMCEngine):
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.", stacklevel=2)
+                              " n to be a power of 2.", stacklevel=3)
 
             if n == 1:
                 sample = self._first_point
@@ -2121,7 +2126,7 @@ class PoissonDisk(QMCEngine):
 
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
-        
+
         if u_bounds is None:
             u_bounds = np.ones(d)
         if l_bounds is None:

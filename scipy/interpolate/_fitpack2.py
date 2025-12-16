@@ -27,6 +27,7 @@ import numpy as np
 
 from . import _fitpack_impl
 from . import _dfitpack as dfitpack
+from scipy._lib._array_api import xp_capabilities
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -70,6 +71,7 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
                  3: 3, 'const': 3}
 
 
+@xp_capabilities(out_of_scope=True)
 class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
@@ -655,6 +657,7 @@ class UnivariateSpline:
         return UnivariateSpline._from_tck(tck, self.ext)
 
 
+@xp_capabilities(out_of_scope=True)
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     1-D interpolating spline for a given set of data points.
@@ -777,6 +780,7 @@ This means that at least one of the following conditions is violated:
 """
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
@@ -1131,8 +1135,7 @@ class _BivariateSplineBase:
                 newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
             if ier != 0:
                 # This should not happen under normal conditions.
-                raise ValueError("Unexpected error code returned by"
-                                 " pardtc: %d" % ier)
+                raise ValueError(f"Unexpected error code returned by pardtc: {ier}")
             nx = len(tx)
             ny = len(ty)
             newtx = tx[dx:nx - dx]
@@ -1158,7 +1161,8 @@ Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
 the maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached:
 s too small.
-Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
+Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.
+Try increasing maxit by passing it as a keyword argument.""",
                     4: """
 No more knots can be added because the number of b-spline coefficients
 (nx-kx-1)*(ny-ky-1) already exceeds the number of data points m:
@@ -1186,6 +1190,7 @@ inaccurate. Deficiency may strongly depend on the value of eps."""
                     }
 
 
+@xp_capabilities(out_of_scope=True)
 class BivariateSpline(_BivariateSplineBase):
     """
     Base class for bivariate splines.
@@ -1352,6 +1357,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
         raise AttributeError(f"method \"get_residual\" {self._invalid_why}")
 
 
+@xp_capabilities(out_of_scope=True)
 class SmoothBivariateSpline(BivariateSpline):
     """
     Smooth bivariate spline approximation.
@@ -1416,9 +1422,8 @@ class SmoothBivariateSpline(BivariateSpline):
     and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
     of `bisplrep`.
 
-    For linear interpolation, prefer `LinearNDInterpolator`.
-    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
-    for discussion.
+    For linear interpolation, `LinearNDInterpolator` is preferred.
+    Consult the :ref:`interp-transition-guide` for discussion.
 
     """
 
@@ -1451,6 +1456,7 @@ class SmoothBivariateSpline(BivariateSpline):
         self.degrees = kx, ky
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQBivariateSpline(BivariateSpline):
     """
     Weighted least-squares bivariate spline approximation.
@@ -1551,6 +1557,7 @@ class LSQBivariateSpline(BivariateSpline):
         self.degrees = kx, ky
 
 
+@xp_capabilities(out_of_scope=True)
 class RectBivariateSpline(BivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh.
@@ -1575,6 +1582,9 @@ class RectBivariateSpline(BivariateSpline):
         Positive smoothing factor defined for estimation condition:
         ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
         function. Default is ``s=0``, which is for interpolation.
+    maxit : int, optional
+        The maximal number of iterations maxit allowed for finding a
+        smoothing spline with fp=s. Default is ``maxit=20``.
 
     See Also
     --------
@@ -1607,7 +1617,7 @@ class RectBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0, maxit=20):
         x, y, bbox = ravel(x), ravel(y), ravel(bbox)
         z = np.asarray(z)
         if not np.all(diff(x) > 0.0):
@@ -1629,7 +1639,7 @@ class RectBivariateSpline(BivariateSpline):
         xb, xe, yb, ye = bbox
         with FITPACK_LOCK:
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
-                                                            ye, kx, ky, s)
+                                                            ye, kx, ky, s, maxit)
 
         if ier not in [0, -1, -2]:
             msg = _surfit_messages.get(ier, f'ier={ier}')
@@ -1664,6 +1674,7 @@ WARNING. The coefficients of the spline returned have been computed as the
          the value of eps."""
 
 
+@xp_capabilities(out_of_scope=True)
 class SphereBivariateSpline(_BivariateSplineBase):
     """
     Bivariate spline s(x,y) of degrees 3 on a sphere, calculated from a
@@ -1831,6 +1842,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
 
+@xp_capabilities(out_of_scope=True)
 class SmoothSphereBivariateSpline(SphereBivariateSpline):
     """
     Smooth bivariate spline approximation in spherical coordinates.
@@ -1973,6 +1985,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
                                               dphi=dphi, grid=grid)
 
 
+@xp_capabilities(out_of_scope=True)
 class LSQSphereBivariateSpline(SphereBivariateSpline):
     """
     Weighted least-squares bivariate spline approximation in spherical
@@ -2157,6 +2170,7 @@ ERROR: on entry, the input data are controlled on validity
        approximation returned."""
 
 
+@xp_capabilities(out_of_scope=True)
 class RectSphereBivariateSpline(SphereBivariateSpline):
     """
     Bivariate spline approximation over a rectangular mesh on a sphere.
@@ -2313,7 +2327,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
-        elif isinstance(pole_values, (float, np.float32, np.float64)):
+        elif isinstance(pole_values, float | np.float32 | np.float64):
             pole_values = (pole_values, pole_values)
         if isinstance(pole_continuity, bool):
             pole_continuity = (pole_continuity, pole_continuity)

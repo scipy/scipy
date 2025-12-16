@@ -5,6 +5,10 @@ from ._pocketfft import helper as _helper
 
 import numpy as np
 from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import xp_capabilities
+
+
+_init_nd_shape_and_axes = _helper._init_nd_shape_and_axes
 
 
 def next_fast_len(target, real=False):
@@ -70,6 +74,7 @@ def next_fast_len(target, real=False):
 # next_fast_len function above
 _sig = inspect.signature(next_fast_len)
 next_fast_len = update_wrapper(lru_cache(_helper.good_size), next_fast_len)
+next_fast_len = xp_capabilities(out_of_scope=True)(next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 next_fast_len.__signature__ = _sig
 
@@ -136,44 +141,12 @@ def prev_fast_len(target, real=False):
 # from the prev_fast_len function above
 _sig_prev_fast_len = inspect.signature(prev_fast_len)
 prev_fast_len = update_wrapper(lru_cache()(_helper.prev_good_size), prev_fast_len)
+prev_fast_len = xp_capabilities(out_of_scope=True)(prev_fast_len)
 prev_fast_len.__wrapped__ = _helper.prev_good_size
 prev_fast_len.__signature__ = _sig_prev_fast_len
 
 
-def _init_nd_shape_and_axes(x, shape, axes):
-    """Handle shape and axes arguments for N-D transforms.
-
-    Returns the shape and axes in a standard form, taking into account negative
-    values and checking for various potential errors.
-
-    Parameters
-    ----------
-    x : array_like
-        The input array.
-    shape : int or array_like of ints or None
-        The shape of the result. If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``numpy.take(x.shape, axes, axis=0)``.
-        If `shape` is -1, the size of the corresponding dimension of `x` is
-        used.
-    axes : int or array_like of ints or None
-        Axes along which the calculation is computed.
-        The default is over all axes.
-        Negative indices are automatically converted to their positive
-        counterparts.
-
-    Returns
-    -------
-    shape : tuple
-        The shape of the result as a tuple of integers.
-    axes : list
-        Axes along which the calculation is computed, as a list of integers.
-
-    """
-    x = np.asarray(x)
-    return _helper._init_nd_shape_and_axes(x, shape, axes)
-
-
+@xp_capabilities()
 def fftfreq(n, d=1.0, *, xp=None, device=None):
     """Return the Discrete Fourier Transform sample frequencies.
 
@@ -197,7 +170,7 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     device : device, optional
         The device for the return array.
         Only valid when `xp.fft.fftfreq` implements the device parameter.
-     
+
     Returns
     -------
     f : ndarray
@@ -226,6 +199,7 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     return np.fft.fftfreq(n, d=d)
 
 
+@xp_capabilities()
 def rfftfreq(n, d=1.0, *, xp=None, device=None):
     """Return the Discrete Fourier Transform sample frequencies
     (for usage with rfft, irfft).
@@ -285,6 +259,7 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     return np.fft.rfftfreq(n, d=d)
 
 
+@xp_capabilities()
 def fftshift(x, axes=None):
     """Shift the zero-frequency component to the center of the spectrum.
 
@@ -337,6 +312,7 @@ def fftshift(x, axes=None):
     return xp.asarray(y)
 
 
+@xp_capabilities()
 def ifftshift(x, axes=None):
     """The inverse of `fftshift`. Although identical for even-length `x`, the
     functions differ by one sample for odd-length `x`.
