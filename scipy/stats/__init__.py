@@ -567,6 +567,7 @@ Directional statistical functions
    circmean
    circvar
    circstd
+   circmedian
 
 Sensitivity Analysis
 --------------------

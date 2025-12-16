@@ -38,6 +38,8 @@ from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+# Required to pass test_private_but_present_deprecation
+from scipy.stats._circstats import circmean, circstd, circvar  # noqa: F401
 
 
 __all__ = ['mvsdist',
