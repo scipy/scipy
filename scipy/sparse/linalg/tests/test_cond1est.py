@@ -10,8 +10,8 @@ from scipy.sparse.linalg import cond1est
 
 rng = np.random.default_rng(565656)
 
-DTYPE_PARAMS = [np.single, np.double, np.csingle, np.cdouble]
-DTYPE_IDS = ['single', 'double', 'csingle', 'cdouble']
+DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
+DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
 
 N = 5  # arbitrary size for the matrices in tests
 
@@ -36,7 +36,7 @@ def dtype(request):
 @pytest.fixture
 def return_dtype(dtype):
     """Fixture to return the appropriate data type for output."""
-    return (np.single if (dtype in {np.single, np.csingle}) else np.double)
+    return (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
 
 
 @pytest.fixture
@@ -108,7 +108,7 @@ def generate_matrix(N, dtype, singular=None, density=0.5):
         Size of the matrix (N x N).
     dtype : data-type, optional
         Data type of the matrix elements (default is None, which uses
-        double).
+        float64).
     singular : None or str in {'exactly', 'nearly'}, optional
         If 'exactly', the matrix will be exactly singular (infinite
         condition number). If 'nearly', the matrix will be invertible, but
@@ -227,7 +227,7 @@ class TestCond1Est:
         # NOTE in numpy<2.3 there is a bug in np.linalg.cond that returns
         # np.complex when the matrix input is complex, so take the real part
         # for comparison.
-        rtol = 1e-6 if dtype in {np.single, np.csingle} else 1e-12
+        rtol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
         test_val = cond1est(A)
         expect_val = cond_A.real
         assert test_val.dtype == expect_val.dtype
@@ -258,7 +258,7 @@ class TestCond1Est:
         # NOTE in numpy<2.3 there is a bug in np.linalg.cond that returns
         # np.complex when the matrix input is complex, so take the real part
         # for comparison.
-        rtol = 1e-6 if A.dtype.type in {np.single, np.csingle} else 1e-12
+        rtol = 1e-6 if A.dtype.type in {np.float32, np.complex64} else 1e-12
         test_val = cond1est(A)
         expect_val = cond_A.real
         assert test_val.dtype == expect_val.dtype
