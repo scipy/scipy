@@ -1,6 +1,5 @@
 """SVD decomposition functions."""
 import numpy as np
-from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 from scipy._lib._util import _apply_over_batch
 from . import _batched_linalg
@@ -15,7 +14,7 @@ from ._decomp import _asarray_validated
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
-def _format_errors(err_lst, lapack_driver):
+def _format_emit_errors_warnings(err_lst, lapack_driver):
     """Format/emit errors/warnings from a lowlevel batched routine.
     """
     # NB the low-level routine currently stops processing a batch at the first error
@@ -109,7 +108,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> sigma = np.zeros((m, n))
     >>> for i in range(min(m, n)):
     ...     sigma[i, i] = s[i]
-    >>> a1 = np.dot(U, np.dot(sigma, Vh))
+    >>> a1 = U @ sigma @ Vh
     >>> np.allclose(a, a1)
     True
 
@@ -120,7 +119,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> U.shape, s.shape, Vh.shape
     ((9, 6), (6,), (6, 6))
     >>> S = np.diag(s)
-    >>> np.allclose(a, np.dot(U, np.dot(S, Vh)))
+    >>> np.allclose(a, U @ S @ Vh)
     True
 
     >>> s2 = linalg.svd(a, compute_uv=False)
@@ -187,10 +186,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     res = _batched_linalg._svd(a1, lapack_driver, compute_uv, full_matrices)
 
-    # emit helpful errors/warnings
     err_lst = res[-1]
     if err_lst:
-        _format_errors(err_lst, lapack_driver)
+        _format_emit_errors_warnings(err_lst, lapack_driver)
 
     if compute_uv:
         return res[:-1]    # u, s, v
@@ -242,17 +240,17 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 4.28091555,  1.63516424])
 
     We can verify the maximum singular value of `m` by computing the maximum
-    length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
+    length of `m @ u` over all the unit vectors `u` in the (x,y) plane.
     We approximate "all" the unit vectors with a large sample. Because
-    of linearity, we only need the unit vectors with angles in [0, pi].
+    of linearity, we only need the unit vectors with angles in ``[0, pi]``.
 
     >>> t = np.linspace(0, np.pi, 2000)
     >>> u = np.array([np.cos(t), np.sin(t)])
-    >>> np.linalg.norm(m.dot(u), axis=0).max()
+    >>> np.linalg.norm(m @ u, axis=0).max()
     4.2809152422538475
 
     `p` is a projection matrix with rank 1. With exact arithmetic,
-    its singular values would be [1, 0, 0, 0].
+    its singular values would be ``[1, 0, 0, 0]``.
 
     >>> v = np.array([0.1, 0.3, 0.9, 0.3])
     >>> p = np.outer(v, v)
@@ -261,7 +259,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
              8.15115104e-34])
 
     The singular values of an orthogonal matrix are all 1. Here, we
-    create a random orthogonal matrix by using the `rvs()` method of
+    create a random orthogonal matrix by using the ``rvs()`` method of
     `scipy.stats.ortho_group`.
 
     >>> from scipy.stats import ortho_group
@@ -314,13 +312,13 @@ def diagsvd(s, M, N):
            [0, 0, 0]])
 
     """
-    part = diag(s)
+    part = np.diag(s)
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return np.hstack((part, zeros((M, N - M), dtype=typ)))
+        return np.hstack((part, np.zeros((M, N - M), dtype=typ)))
     elif MorN == N:
-        return r_[part, zeros((M - N, N), dtype=typ)]
+        return np.r_[part, np.zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
@@ -539,25 +537,25 @@ def subspace_angles(A, B):
     del B
 
     # 2. Compute SVD for cosine
-    QA_H_QB = dot(QA.T.conj(), QB)
+    QA_H_QB = np.dot(QA.T.conj(), QB)
     sigma = svdvals(QA_H_QB)
 
     # 3. Compute matrix B
     if QA.shape[1] >= QB.shape[1]:
-        B = QB - dot(QA, QA_H_QB)
+        B = QB - np.dot(QA, QA_H_QB)
     else:
-        B = QA - dot(QB, QA_H_QB.T.conj())
+        B = QA - np.dot(QB, QA_H_QB.T.conj())
     del QA, QB, QA_H_QB
 
     # 4. Compute SVD for sine
     mask = sigma ** 2 >= 0.5
     if mask.any():
-        mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1., 1.))
+        mu_arcsin = np.arcsin(np.clip(svdvals(B, overwrite_a=True), -1., 1.))
     else:
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
     # with reverse ordering of sigma because smallest sigma belongs to largest
     # angle theta
-    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
+    theta = np.where(mask, mu_arcsin, np.arccos(np.clip(sigma[::-1], -1., 1.)))
     return theta
