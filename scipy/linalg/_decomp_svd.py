@@ -256,7 +256,11 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
-@_apply_over_batch(('s', 1))
+def _diagsvd_signature(s, M, N):
+    return f"(i)->({M}, {N})"
+
+
+@_apply_over_batch(('s', 1), signature=_diagsvd_signature)
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -309,7 +313,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-@_apply_over_batch(('A', 2))
+@_apply_over_batch(('A', 2), signature="(i,j)->(i,j)")
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD

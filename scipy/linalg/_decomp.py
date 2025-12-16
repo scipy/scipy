@@ -111,7 +111,16 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     return w, vr
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+def _eig_signature(a, b=None, left=False, right=True, overwrite_a=False,
+                   overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
+    inputs = "(i,i),(i,i)"
+    outputs = "(2,i)" if homogeneous_eigvals else "(i)"
+    outputs = outputs + ",(i,i)" if left else outputs
+    outputs = outputs + ",(i,i)" if right else outputs
+    return f"{inputs}->{outputs}"
+
+
+@_apply_over_batch(('a', 2), ('b', 2), signature=_eig_signature)
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     """
@@ -281,7 +290,11 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+def _eigh_signature(a, b=None, *, eigvals_only=False, **kwargs):
+    return "(i,i),(i,i)->(i)" if eigvals_only else "(i,i),(i,i)->(i),(i,i)"
+
+
+@_apply_over_batch(('a', 2), ('b', 2), signature=_eigh_signature)
 def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
          subset_by_value=None, driver=None):
@@ -838,7 +851,12 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+def _eigvals_signature(a, b=None, overwrite_a=False, check_finite=True,
+                       homogeneous_eigvals=False):
+    return "(i,i),(i,i)->(2,i)" if homogeneous_eigvals else "(i,i),(i,i)->(i)"
+
+
+@_apply_over_batch(('a', 2), ('b', 2), signature=_eigvals_signature)
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
     """
@@ -914,7 +932,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-@_apply_over_batch(('a', 2), ('b', 2))
+@_apply_over_batch(('a', 2), ('b', 2), signature="(i,i),(i,i)->(i)")
 def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
              overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
              subset_by_value=None, driver=None):
