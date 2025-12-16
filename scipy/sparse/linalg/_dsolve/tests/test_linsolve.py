@@ -451,13 +451,20 @@ class TestLinsolve:
         x = spsolve(A, b)
         assert_array_almost_equal(A @ x, b)
 
-    @pytest.mark.parametrize("bad_rhs_batch_size", [0, -1, 'foo', None])
-    def test_bad_rhs_batch_size(self, bad_rhs_batch_size):
+    @pytest.mark.parametrize("bad_rhs_batch_size", ['foo', None])
+    def test_bad_rhs_batch_size_type(self, bad_rhs_batch_size):
         N = 5
         A = eye_array(N, dtype=float, format='csc')
         b = np.arange(N)
+        with assert_raises(TypeError, match="must be an integer"):
+            spsolve(A, b, rhs_batch_size=bad_rhs_batch_size)
 
-        with assert_raises(ValueError, match="must be a positive integer"):
+    @pytest.mark.parametrize("bad_rhs_batch_size", [0, -1])
+    def test_bad_rhs_batch_size_value(self, bad_rhs_batch_size):
+        N = 5
+        A = eye_array(N, dtype=float, format='csc')
+        b = np.arange(N)
+        with assert_raises(ValueError, match="must be an integer not less than 1"):
             spsolve(A, b, rhs_batch_size=bad_rhs_batch_size)
 
     @pytest.mark.parametrize("K", [0, 1, 10])
