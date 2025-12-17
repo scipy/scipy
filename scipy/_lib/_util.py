@@ -1211,13 +1211,6 @@ def _apply_over_batch(*argdefs):
     return decorator
 
 
-def np_vecdot(x1, x2, /, *, axis=-1):
-    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
-    # available. As functions are translated to Array API, `np_vecdot` can be
-    # replaced with `xp.vecdot`.
-    return np.vecdot(x1, x2, axis=axis)
-
-
 def _dedent_for_py313(s):
     """Apply textwrap.dedent to s for Python versions 3.13 or later."""
     return s if sys.version_info < (3, 13) else textwrap.dedent(s)

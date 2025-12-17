@@ -40,7 +40,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan, np_vecdot
+from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -9856,10 +9856,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     # If p = 1 or p = 2, we avoid using np.power, which introduces an overhead
     # of about 15%.
     if p == 1:
-        return np_vecdot(np.abs(u_cdf - v_cdf), deltas)
+        return np.vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
-        return np.sqrt(np_vecdot(np.square(u_cdf - v_cdf), deltas))
-    return np.power(np_vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
+        return np.sqrt(np.vecdot(np.square(u_cdf - v_cdf), deltas))
+    return np.power(np.vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
 
 def _validate_distribution(values, weights):
