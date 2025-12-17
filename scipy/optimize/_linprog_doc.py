@@ -280,7 +280,7 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
             Mathematical programming 5.1 (1973): 1-28.
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
@@ -521,7 +521,7 @@ def _linprog_highs_ds_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     .. [15] Harris, Paula MJ. "Pivot selection methods of the Devex LP code."
             Mathematical programming 5.1 (1973): 1-28.
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
@@ -753,7 +753,7 @@ def _linprog_highs_ipm_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
            simplex method." Mathematical Programming Computation, 10 (1),
-           119-142, 2018. DOI: 10.1007/s12532-017-0130-5
+           119-142, 2018. :doi:`10.1007/s12532-017-0130-5`.
     """
     pass
 

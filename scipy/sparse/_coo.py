@@ -1877,5 +1877,5 @@ class coo_matrix(spmatrix, _coo_base):
     def __getitem__(self, key):
         raise TypeError("'coo_matrix' object is not subscriptable")
 
-    def __setitem__(self, key):
+    def __setitem__(self, key, x):
         raise TypeError("'coo_matrix' object does not support item assignment")

@@ -418,6 +418,24 @@ def test_from_matrix_normalize(xp):
                            [  0,  0, 1]])
     xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
 
+    # Test a mix of normalized and non-normalized matrices
+    mat = xp.stack([mat, xp.eye(3)])
+    expected = xp.stack([expected, xp.eye(3)])
+    xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+
+@make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
+def test_from_matrix_assume_valid(xp):
+    rng = np.random.default_rng(0)
+    dtype = xpx.default_dtype(xp)
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
+    # Test that normal matrices remain unchanged
+    rot = rotation_to_xp(Rotation.from_quat(rng.normal(size=(10, 4))), xp)
+    rot_no_norm = Rotation.from_matrix(rot.as_matrix(), assume_valid=True)
+    assert xp.all(rot.approx_equal(rot_no_norm, atol=atol))
+    # We make no guarantees about matrices that are not orthogonal or do not
+    # have unit norm
+
 
 @make_xp_test_case(Rotation.from_matrix, Rotation.as_matrix)
 def test_from_matrix_non_positive_determinant(xp):
@@ -1328,16 +1346,20 @@ def test_mean_axis(xp, ndim: int):
     axes = xp.tile(xp.concat((-xp.eye(3), xp.eye(3))), (3,) * (ndim - 1) + (1, 1))
     theta = xp.pi / 4
     r = Rotation.from_rotvec(theta * axes)
+
+    # Test mean over last axis
     desired = xp.full(axes.shape[:-2], 0.0)
     if ndim == 1:
         desired = desired[()]
     atol = 1e-6 if xp_default_dtype(xp) is xp.float32 else 1e-10
     xp_assert_close(r.mean(axis=-1).magnitude(), desired, atol=atol)
+
     # Test tuple axes
     desired = xp.full(axes.shape[1:-2], 0.0)
     if ndim < 3:
         desired = desired[()]
     xp_assert_close(r.mean(axis=(0, -1)).magnitude(), desired, atol=atol)
+
     # Empty axis tuple should return Rotation unchanged
     r_mean = r.mean(axis=())
     xp_assert_close(r_mean.as_quat(canonical=True), r.as_quat(canonical=True),
@@ -1352,6 +1374,7 @@ def test_mean_compare_axis(xp):
     rng = np.random.default_rng(0)
     q = xp.asarray(rng.normal(size=(4, 5, 6, 4)), dtype=xpx.default_dtype(xp))
     r = Rotation.from_quat(q)
+
     mean_0 = r.mean(axis=0)
     for i in range(q.shape[1]):
         for j in range(q.shape[2]):

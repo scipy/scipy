@@ -46,7 +46,7 @@ from scipy.interpolate import _dierckx
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BSpline)
 class TestBSpline:
 
     def test_ctor(self, xp):
@@ -130,22 +130,17 @@ class TestBSpline:
         splev_result = splev(x_np, (t_np, c_np, k))
         xp_assert_close(b(x), xp.asarray(splev_result), atol=1e-14)
 
-    @skip_xp_backends(np_only=True, reason="TODO convert BPoly")
     def test_bernstein(self, xp):
         # a special knot vector: Bernstein polynomials
         k = 3
         t = xp.asarray([0]*(k+1) + [1]*(k+1))
         c = xp.asarray([1., 2., 3., 4.])
-        bp = BPoly(c.reshape(-1, 1), [0, 1])
+        bp = BPoly(xp.reshape(c, (-1, 1)), xp.asarray([0, 1]))
         bspl = BSpline(t, c, k)
 
-        xx = np.linspace(-1., 2., 10)
+        xx = xp.linspace(-1., 2., 10)
         xp_assert_close(bp(xx, extrapolate=True),
                         bspl(xx, extrapolate=True), atol=1e-14)
-
-        t, c = map(np.asarray, (t, c))
-        xp_assert_close(splev(xx, (t, c, k)),
-                        bspl(xx), atol=1e-14)
 
     @skip_xp_backends("dask.array", reason="_naive_eval is not dask-compatible")
     @skip_xp_backends("jax.numpy", reason="too slow; XXX a slow-if marker?")
@@ -726,7 +721,7 @@ class TestBSpline:
         xp_assert_close(b(xx), expected)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(BSpline)
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
@@ -2177,6 +2172,16 @@ class TestGivensQR:
 
         xp_assert_close(cc, c, atol=1e-14)
 
+    def test_evaluate_all_bspl(self):
+        n = 10
+        x, _, t, k = self._get_xyt(n)
+        zero_array = np.zeros((k + 1,), dtype=float)
+        for xval in x:
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, k + 2), zero_array)
+            xp_assert_equal(
+                _dierckx.evaluate_all_bspl(t, k, xval, n, 2*k), zero_array)
+
 
 def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -2619,6 +2624,11 @@ class TestNdBSpline:
             (1, 0): lambda x, y: 3 * x**2 * (y**2 + 2*y),
             (1, 1): lambda x, y: 3 * x**2 * (2*y + 2),
             (0, 0): lambda x, y: x**3 * (y**2 + 2*y),
+            (2*kx, 1): lambda x, y: 0,
+            (2*kx, 0): lambda x, y: 0,
+            (1, 3*ky): lambda x, y: 0,
+            (0, 3*ky): lambda x, y: 0,
+            (3*kx, 2*ky): lambda x, y: 0,
         }
 
         for nu, expected_fn in test_cases.items():
@@ -3698,6 +3708,54 @@ class _TestMakeSplrepBase:
         xp_assert_close(spl.t, tck[0])
         xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                         tck[1], atol=1e-8)
+
+
+    @pytest.mark.parametrize("bc_type", ["periodic", None])
+    def test_make_splrep_with_non_c_contiguous_input(self, bc_type):
+          # regression test for https://github.com/scipy/scipy/issues/23371
+
+        def check(spl, tck):
+            xp_assert_close(spl.t, tck[0])
+            xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
+                            tck[1], atol=1e-8)
+
+        # Sample data
+        x = np.linspace(0, 2*np.pi, 10)
+        y = np.sin(x)
+
+        x1, y1 = np.c_[x, y].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert x1.flags.c_contiguous is False
+        assert y1.flags.c_contiguous is False
+
+        w = np.linspace(1, 5, len(x))
+        w1, _ = np.c_[w, w].T
+
+        # Safety check to make sure inputs
+        # are actually not C contiguous
+        assert w1.flags.c_contiguous is False
+
+        tck = splrep(x, y, w=w, k=3, s=1e-8, per=(bc_type == 'periodic'))
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x1, y, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only x.flags.c_contiguous is False
+        spl = make_splrep(x, y1, w=w, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # only w.flags.c_contiguous is False
+        spl = make_splrep(x, y, w=w1, s=1e-8, k=3, bc_type=bc_type)
+        check(spl, tck)
+
+        # x, y, z all have c_contiguous False
+        spl = make_splrep(x1, y1, w=w1, s=1e-8, k=3,
+                          bc_type=bc_type)
+        check(spl, tck)
+
 
     @pytest.mark.parametrize("bc_type", ["periodic", None])
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5])

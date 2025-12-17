@@ -7,6 +7,7 @@ import contextlib
 import numpy as np
 
 from scipy._lib._util import copy_if_needed
+from scipy._lib._array_api import xp_capabilities
 
 # good_size is exposed (and used) from this import
 from .pypocketfft import good_size, prev_good_size
@@ -207,6 +208,7 @@ def _workers(workers):
     return workers
 
 
+@xp_capabilities(out_of_scope=True)
 @contextlib.contextmanager
 def set_workers(workers):
     """Context manager for the default number of workers used in `scipy.fft`
@@ -234,6 +236,7 @@ def set_workers(workers):
         _config.default_workers = old_workers
 
 
+@xp_capabilities(out_of_scope=True)
 def get_workers():
     """Returns the default number of workers within the current context
 

@@ -67,7 +67,7 @@ _dask_reason = 'boolean indexing assignment'
 def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                order=8, initial_step=0.5, step_factor=2.0,
                step_direction=0, preserve_shape=False, callback=None):
-    """Evaluate the derivative of a elementwise, real scalar function numerically.
+    """Evaluate the derivative of an elementwise, real scalar function numerically.
 
     For each element of the output of `f`, `derivative` approximates the first
     derivative of `f` at the corresponding element of `x` using finite difference

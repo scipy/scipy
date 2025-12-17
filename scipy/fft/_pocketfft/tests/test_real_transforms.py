@@ -16,6 +16,7 @@ fftpack_test_dir = join(dirname(__file__), '..', '..', '..', 'fftpack', 'tests')
 MDATA_COUNT = 8
 FFTWDATA_COUNT = 14
 
+
 def is_longdouble_binary_compatible():
     try:
         one = np.frombuffer(

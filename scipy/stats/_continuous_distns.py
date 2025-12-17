@@ -4866,7 +4866,7 @@ class gausshyper_gen(rv_continuous):
     ----------
     .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
            Queues." *Journal of the Royal Statistical Society*. Series D (The
-           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+           Statistician) 43, no. 1 (1994): 139-53. :doi:`10.2307/2348939`.
 
     %(example)s
 
@@ -11449,7 +11449,7 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
 
 class gennorm_gen(rv_continuous):
-    r"""A generalized normal continuous random variable.
+    r"""A (symmetric) generalized normal continuous random variable.
 
     %(before_notes)s
 
@@ -11460,6 +11460,10 @@ class gennorm_gen(rv_continuous):
 
     Notes
     -----
+    The (symmetric) generalized normal distribution is also known as the
+    Subbotin distribution, exponential power distribution, and generalized
+    error distribution [1]_.
+    
     The probability density function for `gennorm` is [1]_:
 
     .. math::
@@ -12223,7 +12227,7 @@ class studentized_range_gen(rv_continuous):
            https://en.wikipedia.org/wiki/Studentized_range_distribution
     .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
            Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
-           378-389., doi:10.1590/1413-70542017414047716.
+           378-389., :doi:`10.1590/1413-70542017414047716`.
     .. [3] Harter, H. Leon. "Tables of Range and Studentized Range." The Annals
            of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122-1147.
            JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.
