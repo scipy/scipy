@@ -620,11 +620,6 @@ _special_funcs = (
         alt_names_map={"torch": "bessel_j1"}, test_large_ints=False,
     ),
     _FuncInfo(
-        _ufuncs.js_div, 2,
-        xp_capabilities(cpu_only=True, exceptions=[]),
-        torch_native=False,
-    ),
-    _FuncInfo(
         _ufuncs.k0, 1,
         xp_capabilities(
             cpu_only=True, exceptions=["cupy", "torch"],
