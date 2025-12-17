@@ -229,8 +229,9 @@ transfer between devices is considered bad practice, as it is likely to be a
 large and hard-to-detect performance bottleneck.
 
 In some cases, compiled code can be supported through delegation to native
-implementations. Such delegation has currently been set up in `scipy.fft`,
-`scipy.ndimage`, `scipy.signal`, and `scipy.special`, though there is not yet a
+implementations. Such delegation has currently been set up in `~scipy.fft`,
+`~scipy.ndimage`, `~scipy.signal` (see :ref:`array_api_support_signal_caveats`),
+and `~scipy.special`, though there is not yet a
 standard approach, and support in each module has mostly evolved separately.
 When adding array API standard support for an existing function, it is useful to
 check which backends have native implementations. Support for a function can be
@@ -250,28 +251,29 @@ both CPU and GPU.
 A note on JAX support
 `````````````````````
 
-JAX makes deliberate restrictions to make code easier to reason and exploits this
-to better support features like JIT-compilation and autodifferentiation. The most
-relevant for SciPy developers are the following.
+JAX was designed with deliberate restrictions to make code easier to reason and exploits
+this to better support features like JIT-compilation and autodifferentiation. The most
+relevant restrictions for SciPy developers are:
 
 * JAX arrays are immutable. Rather than performing in-place updates of arrays, one
-can use the `at <https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html>`_
-property to transform an array in an equivalent array. Inside a JIT compiled function,
-an expression like ``x = x.at[idx].set(y)`` will be applied in-place under the hood.
-Developers adding JAX support to functions in SciPy which make in-place updates can use
-`array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
-which works for all array API compatible backends, delagating to JAX's ``at`` for JAX arrays
-and performing regular in-place operations for other kinds of arrays.
+  can use the `at <https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html>`_
+  property to transform an array in an equivalent way. Inside a JIT compiled function,
+  an expression like ``x = x.at[idx].set(y)`` will be applied in-place under the hood.
+  Developers adding JAX support to functions in SciPy which make in-place updates can use
+  `array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
+  which works for all array API compatible backends, delagating to JAX's ``at`` for JAX arrays
+  and performing regular in-place operations for other kinds of arrays.
 
 * Functions using the JAX JIT must be functionally pure. They cannot have side
-effects, cannot mutate data, and their outputs must be determined completely by their
-inputs. Raising a Python exception is a side-effect that is not permitted within a JITed
-function.
+  effects, cannot mutate data, and their outputs must be determined completely by their
+  inputs. Raising a Python exception is a side-effect that is not permitted within a JITed
+  function.
 
 * Within the JIT, value based control flow with Python ``if`` statements is not permitted.
   Only static properties of arrays such as their ``shape`` and ``dtype`` are permitted to be
-  used with ``if``. `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_ and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
-  available for basic control flow.
+  used with ``if``. `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
+  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
+  provide some basic control flow that works with the JIT.
 
 * Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input
   arrays.
@@ -288,7 +290,7 @@ This can be used so long as ``g`` is a pure function and its output shape(s) are
 input shape(s) and not values.
 
 Using ``lazy_apply``, the  example function ``toto`` might be made compatible
-with the JAX JIT like this::
+with the JAX JIT in the following way::
 
 
   def toto(a, b):
@@ -351,7 +353,9 @@ computation with ``dask.persist``).
    intersphinx references because it currently has the side effect of replacing
    implicit roles with ``:func:``. This can be avoided by explicitly
    setting the role for references to classes and methods that are
-   outside of SciPy.
+   outside of SciPy. The following snippet is taken from the docstring for
+   `~scipy.signal.detrend` where the role ``:meth:`` for a class method is
+   needed.
 
    .. code-block:: rst
 
