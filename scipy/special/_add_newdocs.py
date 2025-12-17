@@ -4343,7 +4343,7 @@ add_newdoc("_igam_fac",
     """)
 
 add_newdoc("js_div",
-    """
+    r"""
     js_div(x, y, out=None)
 
     Compute the Jensen Shannon divergence of `x` and `y`.

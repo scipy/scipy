@@ -13,7 +13,7 @@ cdef inline double entr(double x) noexcept nogil:
         return -INFINITY
 
 cdef inline double js_div(double a, double b) noexcept nogil:
-     if isnan(a) or isnan(b):
+    if isnan(a) or isnan(b):
         return NAN
     elif not (0 <= a < INFINITY and 0 <= b < INFINITY):
         return INFINITY
@@ -24,7 +24,7 @@ cdef inline double js_div(double a, double b) noexcept nogil:
         t = 0.5 * (a - b) / c if a + b == INFINITY else (a - b) / (a + b)
         if abs(t) <= 0.5:
             return c * (t * atanh(t) + 0.5 * log1p(-t * t))
-        else
+        else:
             return 0.5 * (a * log(a / c) + b * log(b / c))
 
 cdef inline double kl_div(double x, double y) noexcept nogil:
