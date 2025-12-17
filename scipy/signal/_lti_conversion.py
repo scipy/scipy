@@ -115,7 +115,7 @@ def tf2ss(num, den):
 
 
 @xp_capabilities()
-def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, device=None):
+def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     First, the input matrices are converted into two-dimensional arrays with
@@ -144,10 +144,6 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, device=None):
 
             With this new parameter, all return values have identical dtypes.
             In previous versions the dtype of the input was preserved.
-
-    device : device, optional
-        Optional device specification for returened matrices.
-        Only applicabe when using an alterantive backend.
 
     Returns
     -------
@@ -223,9 +219,8 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, device=None):
     xp = array_namespace(A, B, C, D)
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
-    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_, device=device), ndim=2, xp=xp)
-                  if M_ is not None else xp.zeros((0, 0), device=device)
-                  for M_ in (A, B, C, D))
+    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
+                  if M_ is not None else xp.zeros((0, 0)) for M_ in (A, B, C, D))
 
     if dtype is None:
         to_comp = any(xp.isdtype(M_.dtype, 'complex floating') for M_ in (A, B, C, D))
@@ -244,13 +239,12 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, device=None):
     q = C.shape[0] or D.shape[0]
 
     # Create zero matrices as needed:
-    A = xp.zeros((n, n), device=device) if xp_size(A) == 0 else A
-    B = xp.zeros((n, p), device=device) if xp_size(B) == 0 else B
-    C = xp.zeros((q, n), device=device) if xp_size(C) == 0 else C
-    D = xp.zeros((q, p), device=device) if xp_size(D) == 0 else D
+    A = xp.zeros((n, n)) if xp_size(A) == 0 else A
+    B = xp.zeros((n, p)) if xp_size(B) == 0 else B
+    C = xp.zeros((q, n)) if xp_size(C) == 0 else C
+    D = xp.zeros((q, p)) if xp_size(D) == 0 else D
 
-    A, B, C, D = (xp.astype(M_, dtype, copy=False, device=device)
-                  for M_ in (A, B, C, D))
+    A, B, C, D = (xp.astype(M_, dtype, copy=False) for M_ in (A, B, C, D))
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")

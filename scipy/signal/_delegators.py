@@ -58,8 +58,7 @@ def _skip_if_poly1d(arg):
 
 ###################
 
-def abcd_normalize_signature(A=None, B=None, C=None, D=None, *, dtype=None,
-                             device=None):
+def abcd_normalize_signature(A=None, B=None, C=None, D=None, *, dtype=None):
     return array_namespace(A, B, C, D)
 
 def argrelextrema_signature(data, *args, **kwds):
