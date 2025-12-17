@@ -931,25 +931,25 @@ class Test_abcd_normalize:
     def test_no_matrix_fails(self):
         assert_raises(ValueError, abcd_normalize)
 
-    def test_A_nosquare_fails(self, xp):
+    def test_A_nosquare_fails(self):
         assert_raises(ValueError, abcd_normalize,
-                      [1, -1], self.B, self.C, self.D, xp=xp)
+                      [1, -1], self.B, self.C, self.D)
 
-    def test_AB_mismatch_fails(self, xp):
+    def test_AB_mismatch_fails(self):
         assert_raises(ValueError, abcd_normalize,
-                      self.A, [-1, 5], self.C, self.D, xp=xp)
+                      self.A, [-1, 5], self.C, self.D)
 
-    def test_AC_mismatch_fails(self, xp):
+    def test_AC_mismatch_fails(self):
         assert_raises(ValueError, abcd_normalize,
-                      self.A, self.B, [[4.0], [5.0]], self.D, xp=xp)
+                      self.A, self.B, [[4.0], [5.0]], self.D)
 
-    def test_CD_mismatch_fails(self, xp):
+    def test_CD_mismatch_fails(self):
         assert_raises(ValueError, abcd_normalize,
-                      self.A, self.B, self.C, [2.5, 0], xp=xp)
+                      self.A, self.B, self.C, [2.5, 0])
 
     def test_BD_mismatch_fails(self, xp):
         assert_raises(ValueError, abcd_normalize,
-                      self.A, [-1, 5], self.C, self.D, xp=xp)
+                      self.A, [-1, 5], self.C, self.D)
 
     def test_normalized_matrices_unchanged(self, xp):
         A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
@@ -960,8 +960,8 @@ class Test_abcd_normalize:
         xp_assert_equal(C, C_)
         xp_assert_equal(D, D_)
 
-    def test_shapes(self, xp):
-        A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0, xp=xp)
+    def test_shapes(self):
+        A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
         assert A.shape[0] == C.shape[1]
@@ -1076,17 +1076,18 @@ class Test_abcd_normalize:
         with pytest.raises(ValueError, match="^Parameter dtype=<class 'str'>"):
             abcd_normalize(self.A, self.B, self.C, self.D, dtype=str)
         with pytest.raises(ValueError, match="^Parameter dtype="):
-            abcd_normalize(self.A, self.B, self.C, self.D, dtype=np.datetime64, xp=np)
+            abcd_normalize(self.A, self.B, self.C, self.D, dtype=np.datetime64)
 
     def test_param_dtype(self, xp):
-        AA, BB, CC, DD = abcd_normalize(A=self.A, D=self.D, xp=xp)
+        A, D = xp.asarray(self.A), xp.asarray(self.D)
+        AA, BB, CC, DD = abcd_normalize(A=A, D=D)
         assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.float64
 
-        AA, BB, CC, DD = abcd_normalize(A=self.A, D=self.D, dtype=xp.int64, xp=xp)
+        AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=xp.int64)
         assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.int64
 
         DD_ = 1 + 2j  # converts to complex128
-        AA, BB, CC, DD = abcd_normalize(A=self.A, D=DD_, xp=xp)
+        AA, BB, CC, DD = abcd_normalize(A=A, D=DD_)
         assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.complex128
 
 

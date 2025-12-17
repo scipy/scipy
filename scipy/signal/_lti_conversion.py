@@ -115,8 +115,7 @@ def tf2ss(num, den):
 
 
 @xp_capabilities()
-def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, xp=None,
-                   device=None):
+def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, device=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
     First, the input matrices are converted into two-dimensional arrays with
@@ -146,14 +145,9 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, xp=None,
             With this new parameter, all return values have identical dtypes.
             In previous versions the dtype of the input was preserved.
 
-    xp : array_namespace, optional
-        The namespace for the return array. When ``None`` (default), then it is derived
-        from the parameters `A`, `B`, `C`, `D`. It should be compatible with the array
-        API standard or supported by array-api-compat. ``numpy`` is used by if
-        ``None`` and the parameters are not arrays.
-    device : any
-        Optional device specification for created matrices. Should match one of the
-        supported device specifications in ``xp``.
+    device : device, optional
+        Optional device specification for returened matrices.
+        Only applicabe when using an alterantive backend.
 
     Returns
     -------
@@ -226,7 +220,7 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, xp=None,
     if C is None and D is None:
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
-    xp = xp or array_namespace(A, B, C, D)
+    xp = array_namespace(A, B, C, D)
 
     # convert inputs into 2d arrays (zero-size 2d array if None):
     A, B, C, D = (xpx.atleast_nd(xp.asarray(M_, device=device), ndim=2, xp=xp)
