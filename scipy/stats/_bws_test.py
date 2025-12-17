@@ -99,7 +99,7 @@ def bws_test(x, y, *, alternative="two-sided", axis=0, method=None):
     Parameters
     ----------
     x, y : array-like
-        1-d arrays of samples.
+        Arrays of samples. Shapes must be broadcastable except along `axis`.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         Let *F(u)* and *G(u)* be the cumulative distribution functions of the

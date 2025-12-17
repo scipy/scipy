@@ -2080,8 +2080,6 @@ class TestBWSTest:
     def test_against_published_reference(self, dtype, xp):
         # Test against Example 2 in bws_test Reference [1], pg 9
         # https://link.springer.com/content/pdf/10.1007/BF02762032.pdf
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([1, 2, 3, 4, 6, 7, 8], dtype=dtype)
         y = xp.asarray([5, 9, 10, 11, 12, 13, 14], dtype=dtype)
