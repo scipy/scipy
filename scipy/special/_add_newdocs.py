@@ -4383,8 +4383,8 @@ add_newdoc("js_div",
     -----
     .. versionadded:: 1.18.0
 
-    Reference
-    ---------
+    References
+    ----------
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
            :doi:`10.1017/CBO9780511804441`.
