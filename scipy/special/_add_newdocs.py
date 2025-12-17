@@ -4346,7 +4346,7 @@ add_newdoc("js_div",
     r"""
     js_div(x, y, out=None)
 
-    Compute the Jensen-Shannon divergence of `x` and `y`.
+    Elementwise function for computing Jensen-Shannon divergence.
 
     Given non-negative real numbers `x` and `y`, their Jensen-Shannon
     divergence is defined as
@@ -4371,9 +4371,9 @@ add_newdoc("js_div",
 
         If `x` and/or `y` is `nan`, return `nan`.
 
-        If `x` and `y` are not `nan` but at least one of them is negative
-        or infinite, return `+inf`.  This "extended-value extension" makes
-        the function convenient for use in convex optimization [1].
+        If `x` and/or `y` is negative and neither is `nan`, return `+inf`.
+        This "extended-value extension" makes the function convenient for
+        use in convex optimization [1].
 
     See Also
     --------
