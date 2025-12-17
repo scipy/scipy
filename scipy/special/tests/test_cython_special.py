@@ -174,6 +174,7 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.ive, cython_special.ive, ('dd', 'dD'), None),
     (special.j0, cython_special.j0, ('d',), None),
     (special.j1, cython_special.j1, ('d',), None),
+    (special.js_div, cython_special.js_div, ('dd',), None),
     (special.jv, cython_special.jv, ('dd', 'dD'), None),
     (special.jve, cython_special.jve, ('dd', 'dD'), None),
     (special.k0, cython_special.k0, ('d',), None),
