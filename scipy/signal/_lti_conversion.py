@@ -214,10 +214,10 @@ def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None, xp=None,
     >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
      AA: float64, BB: float64
      CC: float64, DD: float64
-    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=np.int32)  # Explicit dtype
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=np.float32)  # Explicit dtype
     >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
-     AA: int32, BB: int32
-     CC: int32, DD: int32
+     AA: float32, BB: float32
+     CC: float32, DD: float32
     """
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")

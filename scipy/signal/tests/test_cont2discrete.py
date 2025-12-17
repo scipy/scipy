@@ -359,29 +359,31 @@ class TestC2dLti:
     def test_c2d_ss(self, xp):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])
-        B = np.array([[0.], [1.]])
-        C = np.array([[1., 0.]])
+        B = np.array([[0], [1]])
+        C = np.array([[1, 0]])
         D = 0
         dt = 0.05
 
         A_res = np.array([[0.985136404135682, 0.004876671474795],
                           [0.009753342949590, 0.965629718236502]])
         B_res = np.array([[0.000122937599964], [0.049135527547844]])
+        # Resulting A, B, C, D are arrays of the same dtype due to abcd_normalize() use:
+        C_res = np.astype(C, A_res.dtype)
 
         sys_ssc = lti(A, B, C, D)
         sys_ssd = sys_ssc.to_discrete(dt=dt)
 
         xp_assert_close(sys_ssd.A, A_res)
         xp_assert_close(sys_ssd.B, B_res)
-        xp_assert_close(sys_ssd.C, C)
+        xp_assert_close(sys_ssd.C, C_res)
         xp_assert_close(sys_ssd.D, np.zeros_like(sys_ssd.D))
 
         sys_ssd2 = c2d(sys_ssc, dt=dt)
 
         xp_assert_close(sys_ssd2.A, A_res)
         xp_assert_close(sys_ssd2.B, B_res)
-        xp_assert_close(sys_ssd2.C, C)
-        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd2.D))
+        xp_assert_close(sys_ssd2.C, C_res)
+        xp_assert_close(sys_ssd2.D, np.zeros_like(sys_ssd.D))
 
     def test_c2d_tf(self, xp):
 
