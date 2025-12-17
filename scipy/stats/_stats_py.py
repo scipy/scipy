@@ -1173,8 +1173,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
 
     n = _length_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
-        # Old NumPy doesn't accept `device` arg
-        device = {} if xp is np and np.__version__ < '2.0' else {'device': xp_device(a)}
+        device = {'device': xp_device(a)}
         precision_loss = xp.any(xp.asarray(rel_diff < eps, **device)
                                 & xp.asarray(n > 1, **device))
 

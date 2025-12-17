@@ -7891,8 +7891,6 @@ class TestKruskal:
 
     @pytest.mark.parametrize("dtype", ['float32', 'float64', None])
     def test_basic(self, xp, dtype):
-        if dtype == 'float32' and np.__version__ < "2":
-            pytest.skip("Scalar dtypes only respected after NEP 50.")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.asarray([1, 3, 5, 7, 9], dtype=dtype)
         y = xp.asarray([2, 4, 6, 8, 10], dtype=dtype)
