@@ -399,11 +399,12 @@ JAX JIT
 ```````
 
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False``. Note that JAX's JIT-free eager mode is generally meant to be
-used for debugging purposes for functions which are intended to be to run with
-the JIT. Work to enable eager-only JAX support for SciPy functions that goes
-beyond the typical work involved in supporting the array API is generally
-not considered a good use of developer time. 
+``jax_jit=False``. Though JAX can run without the JIT, this comes with
+serious performance limitations, and one typically does this only to debug
+functions which are ultimately intended to be run with the JIT. JAX support with the
+caveat that ``jax_jit=False`` is thus not a high value goal for SciPy, but
+this situation often arises naturally when enabling array API standard
+support without giving specific consideration to JAX.
 
 
 Dask Compute
