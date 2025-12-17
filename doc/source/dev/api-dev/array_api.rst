@@ -250,18 +250,31 @@ both CPU and GPU.
 A note on JAX support
 `````````````````````
 
-JAX is meant to be run with a JIT, which offers powerful benefits but also
-requires constraints.
+JAX makes deliberate restrictions to make code easier to reason and exploits this
+to better support features like JIT-compilation and autodifferentiation. The most
+relevant for SciPy developers are the following.
 
+* JAX arrays are immutable. Rather than performing in-place updates of arrays, one
+can use the `at <https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html>`_
+property to transform an array in an equivalent array. Inside a JIT compiled function,
+an expression like ``x = x.at[idx].set(y)`` will be applied in-place under the hood.
+Developers adding JAX support to functions in SciPy which make in-place updates can use
+`array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
+which works for all array API compatible backends, delagating to JAX's ``at`` for JAX arrays
+and performing regular in-place operations for other kinds of arrays.
 
-There are special concerns that go into enabling JAX support. First, JAX does not
-allow for mutation of arrays. Instead use ``at``
-https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html,
-which can be fast and in-place when run with `jax.jit`.
-``array_api_extra` supplies an implementation of ``at`` which works for all
-array API compatible backends, and delegates to JAX's ``at`` for JAX arrays,
-and uses ``__setitem__`` for other types of arrays.
+* Functions using the JAX JIT must be functionally pure. They cannot have side
+effects, cannot mutate data, and their outputs must be determined completely by their
+inputs. Raising a Python exception is a side-effect that is not permitted within a JITed
+function.
 
+* Within the JIT, value based control flow with Python ``if`` statements is not permitted.
+  Only static properties of arrays such as their ``shape`` and ``dtype`` are permitted to be
+  used with ``if``. `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_ and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
+  available for basic control flow.
+
+* Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input
+  arrays.
 
 Note that if a function ``f`` depends on a compiled function ``g``
 which is not supported on JAX through delegation to a native JAX implementation,
@@ -271,10 +284,8 @@ mechanism. SciPy developers need not concern themselves with such JAX details
 directly, and can instead use
 `array_api_extra.lazy_apply <https://data-apis.org/array-api-extra/generated/array_api_extra.lazy_apply.html>`_
 
-This can be used so long as ``g``:
-
-* is a pure function, meaning without side-effects and with output value depending purely on input value.
-* has output shape(s) determined purely by input shape(s). 
+This can be used so long as ``g`` is a pure function and its output shape(s) are determined purely by
+input shape(s) and not values.
 
 Using ``lazy_apply``, the  example function ``toto`` might be made compatible
 with the JAX JIT like this::
@@ -292,13 +303,6 @@ with the JAX JIT like this::
       d = xpx.lazy_apply(cdist, c, as_numpy=True)
 
       return d
-
-There are additional pitfalls when trying to support the JAX JIT, such as needing to
-avoid data-dependent branching at the Python level. For ``f`` to support the JIT,
-any code-block containing essential use of ``if`` statements needs to be encapsulated
-into a pure function and evaluated with ``lazy_apply``. For more info, see the page on
-`Lazy vs. eager execution <https://data-apis.org/array-api/latest/design_topics/lazy_eager.html>`_
-in the array API standard docs.
 
 
 Documenting array API standard support
