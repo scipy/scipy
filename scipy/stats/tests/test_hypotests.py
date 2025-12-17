@@ -16,9 +16,11 @@ from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from scipy._lib._testutils import _TestPythranFunc
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api import (make_xp_test_case, xp_default_dtype, is_numpy,
-                                   eager_warns)
+                                   eager_warns, xp_ravel)
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
+
+lazy_xp_modules = [stats]
 
 
 @make_xp_test_case(epps_singleton_2samp)
@@ -2045,24 +2047,26 @@ class TestPoissonMeansTest:
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
 
 
+@make_xp_test_case(stats.bws_test)
 class TestBWSTest:
 
-    def test_bws_input_validation(self):
+    def test_bws_input_validation(self, xp):
         rng = np.random.default_rng(4571775098104213308)
 
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x), xp.asarray(y)
 
-        message = '`x` and `y` must be exactly one-dimensional.'
+        message = '`axis` must be an integer or None.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([x, x], [y, y])
+            stats.bws_test(x, y, axis=1.5)
 
-        message = '`x` and `y` must not contain NaNs.'
+        message = '`axis` is not compatible with the shapes of the inputs.'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test([np.nan], y)
+            stats.bws_test(x, y, axis=3)
 
-        message = '`x` and `y` must be of nonzero size.'
+        message = '`x` and `y` must contain...'
         with pytest.raises(ValueError, match=message):
-            stats.bws_test(x, [])
+            stats.bws_test(x, xp.asarray([], dtype=x.dtype))
 
         message = 'alternative` must be one of...'
         with pytest.raises(ValueError, match=message):
@@ -2072,22 +2076,22 @@ class TestBWSTest:
         with pytest.raises(ValueError, match=message):
             stats.bws_test(x, y, method=42)
 
-
-    def test_against_published_reference(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_against_published_reference(self, dtype, xp):
         # Test against Example 2 in bws_test Reference [1], pg 9
         # https://link.springer.com/content/pdf/10.1007/BF02762032.pdf
-        x = [1, 2, 3, 4, 6, 7, 8]
-        y = [5, 9, 10, 11, 12, 13, 14]
+        dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
+        x = xp.asarray([1, 2, 3, 4, 6, 7, 8], dtype=dtype)
+        y = xp.asarray([5, 9, 10, 11, 12, 13, 14], dtype=dtype)
         res = stats.bws_test(x, y, alternative='two-sided')
-        assert_allclose(res.statistic, 5.132, atol=1e-3)
-        assert_equal(res.pvalue, 10/3432)
-
+        xp_assert_close(res.statistic, xp.asarray(5.132, dtype=dtype), atol=1e-3)
+        xp_assert_close(res.pvalue, xp.asarray(10/3432, dtype=dtype))
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.7510204081633, 0.1264422777777),
                               ('less', -1.7510204081633, 0.05754662004662),
                               ('greater', -1.7510204081633, 0.9424533799534)])
-    def test_against_R(self, alternative, statistic, pvalue):
+    def test_against_R(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2096,15 +2100,18 @@ class TestBWSTest:
         # bws_test(x, y, alternative='two.sided')
         rng = np.random.default_rng(4571775098104213308)
         x, y = rng.random(size=(2, 7))
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
     @pytest.mark.parametrize(('alternative', 'statistic', 'pvalue'),
                              [('two-sided', 1.142629265891, 0.2903950180801),
                               ('less', 0.99629665877411, 0.8545660222131),
                               ('greater', 0.99629665877411, 0.1454339777869)])
-    def test_against_R_imbalanced(self, alternative, statistic, pvalue):
+    def test_against_R_imbalanced(self, alternative, statistic, pvalue, xp):
         # Test against R library BWStest function bws_test
         # library(BWStest)
         # options(digits=16)
@@ -2114,51 +2121,88 @@ class TestBWSTest:
         rng = np.random.default_rng(5429015622386364034)
         x = rng.random(size=9)
         y = rng.random(size=8)
+        x, y = xp.asarray(x), xp.asarray(y)
         res = stats.bws_test(x, y, alternative=alternative)
-        assert_allclose(res.statistic, statistic, rtol=1e-13)
-        assert_allclose(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
+        x, y = xp.asarray(x, dtype=xp.float64), xp.asarray(y, dtype=xp.float64)
+        res = stats.bws_test(x, y, alternative=alternative)
+        statistic = xp.asarray(statistic, dtype=xp.float64)
+        pvalue = xp.asarray(pvalue, dtype=xp.float64)
+        xp_assert_close(res.statistic, statistic, rtol=1e-13)
+        xp_assert_close(res.pvalue, pvalue, atol=1e-2, rtol=1e-1)
 
-    def test_method(self):
+    def test_method(self, xp):
         # Test that `method` parameter has the desired effect
         rng = np.random.default_rng(1520514347193347862)
         x, y = rng.random(size=(2, 10))
+        x, y = xp.asarray(x), xp.asarray(y)
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
-        assert len(res1.null_distribution) == 10
+        assert res1.null_distribution.shape[0] == 10
 
         rng = np.random.default_rng(1520514347193347862)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
-        assert_allclose(res1.null_distribution, res2.null_distribution)
+        xp_assert_close(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
         method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
-        assert not np.allclose(res3.null_distribution, res1.null_distribution)
+        assert xp.all(xp.abs(res3.null_distribution - res1.null_distribution) > 0.1)
 
-    def test_directions(self):
+    def test_directions(self, xp):
         # Sanity check of the sign of the one-sided statistic
         rng = np.random.default_rng(1520514347193347862)
-        x = rng.random(size=5)
-        y = x - 1
+        x = xp.asarray(rng.random(size=5))
+        y = x - 1.
+
+        pmin = xp.asarray(1 / 252, dtype=xp.float64)
+        pmax = xp.asarray(1, dtype=xp.float64)
 
         res = stats.bws_test(x, y, alternative='greater')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(x, y, alternative='less')
         assert res.statistic > 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
 
         res = stats.bws_test(y, x, alternative='less')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1 / len(res.null_distribution))
+        xp_assert_equal(res.pvalue, pmin)
 
         res = stats.bws_test(y, x, alternative='greater')
         assert res.statistic < 0
-        assert_equal(res.pvalue, 1)
+        xp_assert_equal(res.pvalue, pmax)
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_nd(self, axis, xp):
+        rng = np.random.default_rng(1520514347193347862)
+        z = rng.random(size=(2, 3, 5))
+
+        x, y = z
+        res = stats.bws_test(xp.asarray(x), xp.asarray(y), axis=axis)
+
+        x, y = np.moveaxis(z, axis+1, -1)
+        ref_statistic, ref_pvalue = [], []
+        for x_, y_ in zip(x, y):
+            ref = stats.bws_test(xp.asarray(x_), xp.asarray(y_))
+            ref_statistic.append(ref.statistic)
+            ref_pvalue.append(ref.pvalue)
+        ref_statistic, ref_pvalue = xp.stack(ref_statistic), xp.stack(ref_pvalue)
+
+        xp_assert_close(res.statistic, ref_statistic)
+        xp_assert_close(res.pvalue, ref_pvalue)
+
+    def test_axis_None(self, xp):
+        rng = np.random.default_rng(5205143471933478621)
+        x, y = rng.random(size=(2, 2, 3))
+        x, y = xp.asarray(x), xp.asarray(y)
+        res = stats.bws_test(x, y, axis=None)
+        ref = stats.bws_test(xp_ravel(x), xp_ravel(y))
+        xp_assert_close(res.statistic, ref.statistic)
+        xp_assert_close(res.pvalue, ref.pvalue)

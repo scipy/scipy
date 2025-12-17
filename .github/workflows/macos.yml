@@ -41,7 +41,7 @@ jobs:
         with:
           pixi-version: v0.55.0
           cache: false
-          environments: py311-system-libs-osx
+          environments: py312-system-libs-osx
 
       - name: Set up ccache
         uses: ./.github/ccache

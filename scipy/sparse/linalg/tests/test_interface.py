@@ -4,9 +4,10 @@
 from functools import partial
 from itertools import product
 import operator
+from typing import NamedTuple
 import pytest
 from pytest import raises as assert_raises, warns
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, assert_allclose
 
 import numpy as np
 import scipy.sparse as sparse
@@ -14,6 +15,7 @@ import scipy.sparse as sparse
 import scipy.sparse.linalg._interface as interface
 from scipy.sparse._sputils import matrix
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._util import np_vecdot
 
 
 class TestLinearOperator:
@@ -212,6 +214,284 @@ class TestLinearOperator:
         assert_equal(operator.matmul(B, A.adjoint()), B @ A.adjoint())
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
+
+
+class TestDotTests:
+    """
+    This class aims to help ensure correctness of the LinearOperator
+    interface, by verifying correctness properties based on equivalent
+    computations using 'forward' and 'adjoint' modes.
+    """
+    class OperatorArgs(NamedTuple):
+        """
+        shape: shape of the operator
+        op_dtype: dtype of the operator
+        data_dtype: real dtype corresponding to op_dtype for data generation
+        complex: the operator has a complex dtype
+        """
+        shape: tuple[int, ...]
+        op_dtype: str
+        data_dtype: str
+        complex: bool
+
+    real_square_args: OperatorArgs = OperatorArgs(
+        (12, 12), "float64", "float64", False
+    )
+    integer_square_args: OperatorArgs = OperatorArgs(
+        (9, 9), "int32", "float32", False
+    )
+    complex_square_args: OperatorArgs = OperatorArgs(
+        (13, 13), "complex64", "float32", True
+    )
+    real_overdetermined_args: OperatorArgs = OperatorArgs(
+        (17, 11), "float64", "float64", False
+    )
+    complex_overdetermined_args: OperatorArgs = OperatorArgs(
+        (17, 11), "complex128", "float64", True
+    )
+    real_underdetermined_args: OperatorArgs = OperatorArgs(
+        (5, 9), "float64", "float64", False
+    )
+
+    square_args_list: list[OperatorArgs] = [
+        real_square_args, integer_square_args, complex_square_args
+    ]
+    all_args_list: list[OperatorArgs]  = square_args_list + [
+        real_overdetermined_args, complex_overdetermined_args, real_underdetermined_args
+    ]
+
+    def check_matvec(
+        self, op: interface.LinearOperator, data_dtype: str, complex_data: bool = False,
+        check_operators: bool = False, check_dot: bool = False
+    ):
+        """
+        This check verifies the equivalence of the forward and adjoint computation,
+        using `matvec` and `rmatvec` respectively, on randomised data.
+
+        Data is generated with the real dtype `data_dtype` and operated on by the
+        linear operator `op`.
+
+        If `complex_data` is set to `True`, complex data is instead generated
+        by combining randomised real and imaginary components, each generated
+        with `data_dtype`.
+
+        If `check_operators` is set to `True`, equivalence is checked between
+        `matvec` and `*` and `@`,
+        and between `rmatvec` and the composition of `.H` and `*`.
+
+        If `check_dot` is set to `True`, equivalence is checked between
+        `matvec` and `.dot`,
+        and between `rmatvec` and the composition of `.H` and `.dot`.
+        """
+        rng = np.random.default_rng(42)
+
+        u = rng.standard_normal(op.shape[-1], dtype=data_dtype)
+        v = rng.standard_normal(op.shape[-2], dtype=data_dtype)
+        if complex_data:
+            u = u + (1j * rng.standard_normal(op.shape[-1], dtype=data_dtype))
+            v = v + (1j * rng.standard_normal(op.shape[-2], dtype=data_dtype))
+
+        op_u = op.matvec(u)
+        opH_v = op.rmatvec(v)
+
+        if check_operators:
+            assert_allclose(op_u, op * u)
+            assert_allclose(op_u, op @ u)
+            assert_allclose(opH_v, op.H * v)
+            assert_allclose(opH_v, op.H @ v)
+
+        if check_dot:
+            assert_allclose(op_u, op.dot(u))
+            assert_allclose(opH_v, op.H.dot(v))
+
+        op_u_H_v = np_vecdot(op_u, v, axis=-1)
+        uH_opH_v = np_vecdot(u, opH_v, axis=-1)
+
+        rtol = 1e-12 if np.finfo(data_dtype).eps < 1e-8 else 1e-5
+        assert_allclose(op_u_H_v, uH_opH_v, rtol=rtol)
+
+    def check_matmat(
+        self, op: interface.LinearOperator, data_dtype: str, complex_data: bool = False,
+        check_operators: bool = False, check_dot: bool = False
+    ):
+        """
+        This check verifies the equivalence of the forward and adjoint computation,
+        using `matmat` and `rmatmat` respectively, on randomised data.
+
+        Data is generated with the real dtype `data_dtype` and operated on by the
+        linear operator `op`.
+
+        If `complex_data` is set to `True`, complex data is instead generated
+        by combining randomised real and imaginary components, each generated
+        with `data_dtype`.
+
+        If `check_operators` is set to `True`, equivalence is checked between
+        `matmat` and `*` and `@`,
+        and between `rmatvec` and the composition of `.H` and `@`.
+
+        If `check_dot` is set to `True`, equivalence is checked between
+        `matmat` and `.dot`,
+        and between `rmatmat` and the composition of `.H` and `.dot`.
+        """
+        rng = np.random.default_rng(42)
+        k = rng.integers(2, 100)
+
+        U = rng.standard_normal(size=(op.shape[-1], k), dtype=data_dtype)
+        V = rng.standard_normal(size=(op.shape[-2], k), dtype=data_dtype)
+        if complex_data:
+            U = U + (1j * rng.standard_normal(size=(op.shape[-1], k), dtype=data_dtype))
+            V = V + (1j * rng.standard_normal(size=(op.shape[-2], k), dtype=data_dtype))
+
+        op_U = op.matmat(U)
+        opH_V = op.rmatmat(V)
+
+        if check_operators:
+            assert_allclose(op_U, op * U)
+            assert_allclose(op_U, op @ U)
+            assert_allclose(opH_V, op.H * V)
+            assert_allclose(opH_V, op.H @ V)
+
+        if check_dot:
+            assert_allclose(op_U, op.dot(U))
+            assert_allclose(opH_V, op.H.dot(V))
+
+        op_U_H = np.conj(op_U).T
+        UH = np.conj(U).T
+
+        op_U_H_V = np.matmul(op_U_H, V)
+        UH_opH_V = np.matmul(UH, opH_V)
+
+        rtol = 3e-12 if np.finfo(data_dtype).eps < 1e-8 else 6e-4
+        assert_allclose(op_U_H_V, UH_opH_V, rtol=rtol)
+
+    @pytest.mark.parametrize("args", square_args_list)
+    def test_identity_square(self, args):
+        """Simple identity operator on square matrices"""
+        def identity(x):
+            return x
+
+        op = interface.LinearOperator(
+            shape=args.shape, dtype=args.op_dtype,
+            matvec=identity, rmatvec=identity
+        )
+
+        self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
+        self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
+    
+    @pytest.mark.parametrize("args", all_args_list)
+    def test_identity_nonsquare(self, args):
+        """Identity operator with zero-padding on non-square matrices"""
+        def mv(x):
+            # handle column vectors too
+            # (`LinearOperator` handles reshape in post-processing)
+            x = x.flatten()
+
+            match np.sign(x.shape[0] - args.shape[-2]):
+                case 0:  # square
+                    return x
+                case 1:  # crop x to size
+                    return x[:args.shape[-2]]
+                case -1:  # pad with zeros
+                    pad_width = (0, args.shape[-2] - x.shape[0])
+                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+
+        def rmv(x):
+            # handle column vectors too
+            # (`LinearOperator` handles reshape in post-processing)
+            x = x.flatten()
+            
+            match np.sign(args.shape[-1] - x.shape[0]):
+                case 0:  # square
+                    return x
+                case 1:  # pad with zeros
+                    pad_width = (0, args.shape[-1] - x.shape[0])
+                    return np.pad(x, pad_width, mode='constant', constant_values=0)
+                case -1:  # crop x to size
+                    return x[:args.shape[-1]]
+
+        op = interface.LinearOperator(
+            shape=args.shape, dtype=args.op_dtype, matvec=mv, rmatvec=rmv
+        )
+        
+        self.check_matvec(op, data_dtype=args.data_dtype, complex_data=args.complex)
+        self.check_matmat(op, data_dtype=args.data_dtype, complex_data=args.complex)
+        
+    @pytest.mark.parametrize("args", square_args_list)
+    def test_scaling_square(self, args):
+        """Simple (complex) scaling operator on square matrices"""
+        def scale(x):
+            return (3 + 2j) * x
+
+        def r_scale(x):
+            return (3 - 2j) * x
+
+        op = interface.LinearOperator(
+            shape=args.shape, dtype=args.op_dtype, matvec=scale, rmatvec=r_scale
+        )
+        self.check_matvec(
+            op, data_dtype=args.data_dtype, complex_data=args.complex,
+            check_operators=True, check_dot=True
+        )
+        self.check_matmat(
+            op, data_dtype=args.data_dtype, complex_data=args.complex,
+            check_operators=True, check_dot=True
+        )
+
+    def test_subclass_matmat(self):
+        """
+        Simple rotation operator defined by `matmat` and `adjoint`,
+        subclassing `LinearOperator`.
+        """
+        def rmatmat(X):
+            theta = np.pi / 2
+            R_inv = np.array([
+                [np.cos(theta),  np.sin(theta)],
+                [-np.sin(theta), np.cos(theta)]
+            ])
+            return R_inv @ X
+
+        class RotOp(interface.LinearOperator):
+            
+            def __init__(self, dtype, shape, theta):
+                self._theta = theta
+                super().__init__(dtype, shape)
+            
+            def _matmat(self, X):
+                theta = self._theta
+                R = np.array([
+                    [np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta),  np.cos(theta)]
+                ])
+                return R @ X
+
+            def _adjoint(self):
+                negative_theta = -self._theta
+                return RotOp(self.dtype, self.shape, negative_theta)
+            
+        theta = np.pi / 2
+        dtype = "float64"
+        op = RotOp(shape=(2, 2), dtype=dtype, theta=theta)
+
+        self.check_matvec(
+            op, data_dtype=dtype, complex_data=False,
+            check_operators=True, check_dot=True
+        )
+        self.check_matmat(
+            op, data_dtype=dtype, complex_data=False,
+            check_operators=True, check_dot=True
+        )
+    
+    @pytest.mark.parametrize(
+        "matrix", [
+            np.asarray([[1, 2j, 3j], [4j, 5j, 6]]),
+            sparse.random_array((5, 5))
+        ]
+    )
+    def test_aslinearop(self, matrix):
+        op = interface.aslinearoperator(matrix)
+        data_dtype = "float64"
+        self.check_matvec(op, data_dtype=data_dtype, complex_data=True)
+        self.check_matmat(op, data_dtype=data_dtype, complex_data=True)
 
 
 class TestAsLinearOperator:
