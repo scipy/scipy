@@ -4342,6 +4342,55 @@ add_newdoc("_igam_fac",
     Internal function, do not use.
     """)
 
+add_newdoc("js_div",
+    """
+    js_div(x, y, out=None)
+
+    Compute the Jensen Shannon divergence of `x` and `y`.
+
+    Given non-negative real numbers `x` and `y`, their Jensen Shannon
+    divergence is defined as
+
+    .. math::
+
+       \mathrm{JSD}(x, y):=\frac{1}{2}[f(x)+f(y)]-f\left(\frac{x+y}{2}\right)
+
+    where :math:`f(x) = 0` if :math:`x=0` and :math:`f(x)=x \ln x` if
+    :math:`x > 0`.
+
+    Parameters
+    ----------
+    x, y : array_like of float
+        Real numbers.
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Jensen Shannon divergence of `x` and `y` if `x` and `y`
+        are both finite and non-negative.
+
+        If `x` and/or `y` is `nan`, return `nan`.
+
+        If `x` and `y` are not `nan` but at least one of them is negative
+        or infinite, return `+inf`.  This "extended-value extension" makes
+        the function convenient for use in convex optimization [1].
+
+    See Also
+    --------
+    entr, rel_entr, kl_div
+
+    Notes
+    -----
+    .. versionadded:: 1.18.0
+
+    Reference
+    ---------
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`10.1017/CBO9780511804441`.
+
+    """)
+
 add_newdoc("kl_div",
     r"""
     kl_div(x, y, out=None)

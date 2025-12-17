@@ -113,8 +113,7 @@ from scipy._lib._array_api import _asarray
 from scipy._lib._util import _asarray_validated, _transition_to_rng
 from scipy._lib import array_api_extra as xpx
 from scipy.linalg import norm
-from scipy.special import rel_entr
-from scipy.special._ufuncs import _js_div
+from scipy.special import js_div
 from . import _hausdorff, _distance_pybind, _distance_wrap
 
 
@@ -1280,7 +1279,7 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     q = np.asarray(q)
     p = p / np.sum(p, axis=axis, keepdims=True)
     q = q / np.sum(q, axis=axis, keepdims=True)
-    js = np.sum(_js_div(p, q), axis=axis, keepdims=keepdims)
+    js = np.sum(js_div(p, q), axis=axis, keepdims=keepdims)
     if base is not None:
         js /= np.log(base)
     return np.sqrt(js)

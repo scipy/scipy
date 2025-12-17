@@ -115,7 +115,6 @@ extern const char *iv_ratio_c_doc;
 extern const char *ive_doc;
 extern const char *j0_doc;
 extern const char *j1_doc;
-extern const char *js_div_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
 extern const char *kei_doc;
@@ -612,11 +611,6 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         {static_cast<xsf::numpy::d_d>(xsf::cyl_bessel_j1), static_cast<xsf::numpy::f_f>(xsf::cyl_bessel_j1)}, "j1",
         j1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "j1", j1);
-
-    PyObject *js_div = xsf::numpy::ufunc(
-        {static_cast<xsf::numpy::dd_d>(xsf::js_div), static_cast<xsf::numpy::ff_f>(xsf::js_div)}, "js_div",
-        js_div_doc);
-    PyModule_AddObjectRef(_special_ufuncs, "js_div", js_div);
 
     PyObject *jv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::cyl_bessel_j), static_cast<xsf::numpy::dd_d>(xsf::cyl_bessel_j),

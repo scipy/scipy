@@ -1,4 +1,4 @@
-from libc.math cimport log, fabs, expm1, log1p, isnan, NAN, INFINITY
+from libc.math cimport atanh, log, fabs, expm1, log1p, isnan, NAN, INFINITY
 from libc.float cimport DBL_MIN
 import cython
 
@@ -11,6 +11,21 @@ cdef inline double entr(double x) noexcept nogil:
         return 0
     else:
         return -INFINITY
+
+cdef inline double js_div(double a, double b) noexcept nogil:
+     if isnan(a) or isnan(b):
+        return NAN
+    elif not (0 <= a < INFINITY and 0 <= b < INFINITY):
+        return INFINITY
+    elif a == 0 or b == 0:
+        return (a + b) * (0.5 * log(2.0)) + 0.0  # avoid -0.0
+    else:
+        c = 0.5 * a + 0.5 * b if a + b == INFINITY else 0.5 * (a + b)
+        t = 0.5 * (a - b) / c if a + b == INFINITY else (a - b) / (a + b)
+        if abs(t) <= 0.5:
+            return c * (t * atanh(t) + 0.5 * log1p(-t * t))
+        else
+            return 0.5 * (a * log(a / c) + b * log(b / c))
 
 cdef inline double kl_div(double x, double y) noexcept nogil:
     if isnan(x) or isnan(y):
