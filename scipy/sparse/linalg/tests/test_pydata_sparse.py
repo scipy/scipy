@@ -22,12 +22,12 @@ sparse_params = (pytest.param("COO"),
                  pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
 
 scipy_sparse_classes = [
-    sp.bsr_matrix,
-    sp.csr_matrix,
-    sp.coo_matrix,
-    sp.csc_matrix,
-    sp.dia_matrix,
-    sp.dok_matrix
+    sp.bsr_array,
+    sp.csr_array,
+    sp.coo_array,
+    sp.csc_array,
+    sp.dia_array,
+    sp.dok_array
 ]
 
 
@@ -140,23 +140,23 @@ def test_spsolve(matrices):
     A_dense, A_sparse, b = matrices
     b2 = np.random.rand(len(b), 3)
 
-    x0 = splin.spsolve(sp.csc_matrix(A_dense), b)
+    x0 = splin.spsolve(sp.csc_array(A_dense), b)
     x = splin.spsolve(A_sparse, b)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
-    x0 = splin.spsolve(sp.csc_matrix(A_dense), b)
+    x0 = splin.spsolve(sp.csc_array(A_dense), b)
     x = splin.spsolve(A_sparse, b, use_umfpack=True)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
-    x0 = splin.spsolve(sp.csc_matrix(A_dense), b2)
+    x0 = splin.spsolve(sp.csc_array(A_dense), b2)
     x = splin.spsolve(A_sparse, b2)
     assert isinstance(x, np.ndarray)
     assert_allclose(x, x0)
 
-    x0 = splin.spsolve(sp.csc_matrix(A_dense),
-                       sp.csc_matrix(A_dense))
+    x0 = splin.spsolve(sp.csc_array(A_dense),
+                       sp.csc_array(A_dense))
     x = splin.spsolve(A_sparse, A_sparse)
     assert isinstance(x, type(A_sparse))
     assert_allclose(x.todense(), x0.todense())
@@ -172,8 +172,8 @@ def test_splu(matrices):
     assert isinstance(lu.L, sparse_cls)
     assert isinstance(lu.U, sparse_cls)
 
-    _Pr_scipy = sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n))))
-    _Pc_scipy = sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c)))
+    _Pr_scipy = sp.csc_array((np.ones(n), (lu.perm_r, np.arange(n))))
+    _Pc_scipy = sp.csc_array((np.ones(n), (np.arange(n), lu.perm_c)))
     Pr = sparse_cls.from_scipy_sparse(_Pr_scipy)
     Pc = sparse_cls.from_scipy_sparse(_Pc_scipy)
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
@@ -212,16 +212,23 @@ def test_onenormest(matrices):
     assert_allclose(est, est0)
 
 
+def test_norm(matrices):
+    A_dense, A_sparse, b = matrices
+    norm0 = splin.norm(sp.csr_array(A_dense))
+    norm = splin.norm(A_sparse)
+    assert_allclose(norm, norm0)
+
+
 def test_inv(matrices):
     A_dense, A_sparse, b = matrices
-    x0 = splin.inv(sp.csc_matrix(A_dense))
+    x0 = splin.inv(sp.csc_array(A_dense))
     x = splin.inv(A_sparse)
     assert_allclose(x.todense(), x0.todense())
 
 
 def test_expm(matrices):
     A_dense, A_sparse, b = matrices
-    x0 = splin.expm(sp.csc_matrix(A_dense))
+    x0 = splin.expm(sp.csc_array(A_dense))
     x = splin.expm(A_sparse)
     assert_allclose(x.todense(), x0.todense())
 
@@ -232,12 +239,34 @@ def test_expm_multiply(matrices):
     x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
 
+    x0 = splin.expm_multiply(A_dense, A_dense)
+    x = splin.expm_multiply(A_sparse, A_sparse)
+    assert_allclose(x.todense(), x0)
+
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
     assert (sp_sparse == pd_sparse).all()
 
 
 def test_ne(same_matrix):
     sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
     assert not (sp_sparse != pd_sparse).any()
+
+
+def test_ge(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    assert (sp_sparse >= pd_sparse).all()
+
+
+def test_gt(same_matrix):
+    sp_sparse, pd_sparse = same_matrix
+    # temporary splint until pydata sparse support sparray equality
+    sp_sparse = sp.coo_matrix(sp_sparse).asformat(sp_sparse.format)
+    assert not (sp_sparse > pd_sparse).any()

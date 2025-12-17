@@ -4,6 +4,7 @@ import numpy as np
 from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
+from scipy._lib._util import _apply_over_batch
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
@@ -35,14 +36,18 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
-        raise LinAlgError("%d-th leading minor of the array is not positive "
-                          "definite" % info)
+        raise LinAlgError(
+            f"{info}-th leading minor of the array is not positive definite"
+        )
     if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument'
-                         'on entry to "POTRF".')
+        raise ValueError(
+            f'LAPACK reported an illegal value in {-info}-th argument '
+            f'on entry to "POTRF".'
+        )
     return c, lower
 
 
+@_apply_over_batch(('a', 2))
 def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix.
@@ -56,11 +61,12 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         Matrix to be decomposed
     lower : bool, optional
         Whether to compute the upper- or lower-triangular Cholesky
-        factorization.  Default is upper-triangular.
+        factorization. During decomposition, only the selected half of the
+        matrix is referenced. Default is upper-triangular.
     overwrite_a : bool, optional
         Whether to overwrite data in `a` (may improve performance).
     check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
+        Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
@@ -72,6 +78,16 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     Raises
     ------
     LinAlgError : if decomposition fails.
+
+    Notes
+    -----
+    During the finiteness check (if selected), the entire matrix `a` is
+    checked. During decomposition, `a` is assumed to be symmetric or Hermitian
+    (as applicable), and only the half selected by option `lower` is referenced.
+    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
+    succeed if the symmetric/Hermitian matrix represented by the selected half
+    is positive definite, yet it may fail if an element in the other half is
+    non-finite.
 
     Examples
     --------
@@ -92,6 +108,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     return c
 
 
+@_apply_over_batch(("a", 2))
 def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     """
     Compute the Cholesky decomposition of a matrix, to use in cho_solve
@@ -110,12 +127,13 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     a : (M, M) array_like
         Matrix to be decomposed
     lower : bool, optional
-        Whether to compute the upper or lower triangular Cholesky factorization
+        Whether to compute the upper or lower triangular Cholesky factorization.
+        During decomposition, only the selected half of the matrix is referenced.
         (Default: upper-triangular)
     overwrite_a : bool, optional
         Whether to overwrite data in a (may improve performance)
     check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
+        Whether to check that the entire input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
@@ -136,6 +154,16 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     --------
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
+
+    Notes
+    -----
+    During the finiteness check (if selected), the entire matrix `a` is
+    checked. During decomposition, `a` is assumed to be symmetric or Hermitian
+    (as applicable), and only the half selected by option `lower` is referenced.
+    Consequently, if `a` is asymmetric/non-Hermitian, `cholesky` may still
+    succeed if the symmetric/Hermitian matrix represented by the selected half
+    is positive definite, yet it may fail if an element in the other half is
+    non-finite.
 
     Examples
     --------
@@ -159,6 +187,11 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
 def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     """Solve the linear equations A x = b, given the Cholesky factorization of A.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -193,7 +226,12 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     True
 
     """
-    (c, lower) = c_and_lower
+    c, lower = c_and_lower
+    return _cho_solve(c, b, lower, overwrite_b=overwrite_b, check_finite=check_finite)
+
+
+@_apply_over_batch(('c', 2), ('b', '1|2'))
+def _cho_solve(c, b, lower, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
         c = asarray_chkfinite(c)
@@ -217,11 +255,11 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError('illegal value in %dth argument of internal potrs'
-                         % -info)
+        raise ValueError(f'illegal value in {-info}th argument of internal potrs')
     return x
 
 
+@_apply_over_batch(("ab", 2))
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     """
     Cholesky decompose a banded Hermitian positive-definite matrix
@@ -295,10 +333,9 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
     if info > 0:
-        raise LinAlgError("%d-th leading minor not positive definite" % info)
+        raise LinAlgError(f"{info}-th leading minor not positive definite")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbtrf'
-                         % -info)
+        raise ValueError(f'illegal value in {info}-th argument of internal pbtrf')
     return c
 
 
@@ -306,6 +343,11 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     """
     Solve the linear equations ``A x = b``, given the Cholesky factorization of
     the banded Hermitian ``A``.
+
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
 
     Parameters
     ----------
@@ -349,6 +391,12 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     """
     (cb, lower) = cb_and_lower
+    return _cho_solve_banded(cb, b, lower, overwrite_b=overwrite_b,
+                             check_finite=check_finite)
+
+
+@_apply_over_batch(('cb', 2), ('b', '1|2'))
+def _cho_solve_banded(cb, b, lower, overwrite_b, check_finite):
     if check_finite:
         cb = asarray_chkfinite(cb)
         b = asarray_chkfinite(b)
@@ -369,8 +417,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
-        raise LinAlgError("%dth leading minor not positive definite" % info)
+        raise LinAlgError(f"{info}th leading minor not positive definite")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal pbtrs'
-                         % -info)
+        raise ValueError(f'illegal value in {-info}th argument of internal pbtrs')
     return x

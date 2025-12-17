@@ -52,8 +52,7 @@ def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
-        aux = np.asarray(ar)
-        aux.shape = (ar.shape[0], 1)
+        aux = np.asarray(ar).reshape((ar.shape[0], 1))
         return aux
 
 
@@ -307,7 +306,7 @@ def lobpcg(
     ``A x = lambda x`` without constraints or preconditioning.
 
     >>> import numpy as np
-    >>> from scipy.sparse import spdiags
+    >>> from scipy.sparse import diags_array
     >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
     >>> from scipy.sparse.linalg import lobpcg
 
@@ -323,8 +322,7 @@ def lobpcg(
     the sparse diagonal matrix `A`
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
-    >>> A = spdiags(vals, 0, n, n)
-    >>> A = A.astype(np.int16)
+    >>> A = diags_array(vals, offsets=0, shape=(n, n), dtype=None)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
            [  0,   2,   0, ...,   0,   0,   0],
@@ -332,7 +330,7 @@ def lobpcg(
            ...,
            [  0,   0,   0, ...,  98,   0,   0],
            [  0,   0,   0, ...,   0,  99,   0],
-           [  0,   0,   0, ...,   0,   0, 100]], dtype=int16)
+           [  0,   0,   0, ...,   0,   0, 100]], shape=(100, 100), dtype=int16)
 
     The second mandatory input parameter `X` is a 2D array with the
     row dimension determining the number of requested eigenvalues.
@@ -352,9 +350,7 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
-    >>> eigenvalues.dtype
-    dtype('float32')
+    array([100.], dtype=float32)
 
     `lobpcg` needs only access the matrix product with `A` rather
     then the matrix itself. Since the matrix `A` is diagonal in
@@ -373,10 +369,10 @@ def lobpcg(
 
     >>> eigenvalues, _ = lobpcg(A_lambda, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
     >>> eigenvalues, _ = lobpcg(A_matmat, X, maxiter=60)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The traditional callable `LinearOperator` is no longer
     necessary but still supported as the input to `lobpcg`.
@@ -385,13 +381,13 @@ def lobpcg(
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     The least efficient callable option is `aslinearoperator`:
 
     >>> eigenvalues, _ = lobpcg(aslinearoperator(A), X, maxiter=80)
     >>> eigenvalues
-    array([100.])
+    array([100.], dtype=float32)
 
     We now switch to computing the three smallest eigenvalues specifying
 
@@ -509,15 +505,15 @@ def lobpcg(
         if M is None:
             aux += "out"
         aux += " preconditioning\n\n"
-        aux += "matrix size %d\n" % n
-        aux += "block size %d\n\n" % sizeX
+        aux += f"matrix size {n}\n"
+        aux += f"block size {sizeX}\n\n"
         if blockVectorY is None:
             aux += "No constraints\n\n"
         else:
             if sizeY > 1:
-                aux += "%d constraints\n\n" % sizeY
+                aux += f"{sizeY} constraints\n\n"
             else:
-                aux += "%d constraint\n\n" % sizeY
+                aux += f"{sizeY} constraint\n\n"
         print(aux)
 
     if (n - sizeY) < (5 * sizeX):

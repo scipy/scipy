@@ -34,7 +34,7 @@ Collections of test cases suitable for testing 1-D root-finders
 #  [1] Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
 #      "Algorithm 748: Enclosing Zeros of Continuous Functions",
 #      ACM Trans. Math. Softw. Volume 221(1995)
-#       doi = {10.1145/210089.210111},
+#      https://dl.acm.org/doi/10.1145/210089.210111
 #  [2] Chandrupatla, Tirupathi R. "A new hybrid quadratic/bisection algorithm
 #      for finding the zero of a nonlinear function without using derivatives."
 #      Advances in Engineering Software 28.3 (1997): 145-149.

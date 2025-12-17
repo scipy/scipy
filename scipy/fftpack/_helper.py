@@ -45,8 +45,8 @@ def rfftfreq(n, d=1.0):
     """
     n = operator.index(n)
     if n < 0:
-        raise ValueError("n = %s is not valid. "
-                         "n must be a nonnegative integer." % n)
+        raise ValueError(f"n = {n} is not valid. "
+                         "n must be a nonnegative integer.")
 
     return (np.arange(1, n + 1, dtype=int) // 2) / float(n * d)
 

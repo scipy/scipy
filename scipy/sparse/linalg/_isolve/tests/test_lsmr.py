@@ -20,7 +20,7 @@ from numpy import array, arange, eye, zeros, ones, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import assert_allclose
 import pytest
-from scipy.sparse import coo_matrix
+from scipy.sparse import coo_array
 from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
 from .test_lsqr import G, b
@@ -174,7 +174,7 @@ def lowerBidiagonalMatrix(m, n):
                       arange(m-1, dtype=int)))
         data = hstack((arange(1, m+1, dtype=float),
                        arange(1,m, dtype=float)))
-        return coo_matrix((data, (row, col)), shape=(m,n))
+        return coo_array((data, (row, col)), shape=(m,n))
     else:
         row = hstack((arange(n, dtype=int),
                       arange(1, n+1, dtype=int)))
@@ -182,4 +182,15 @@ def lowerBidiagonalMatrix(m, n):
                       arange(n, dtype=int)))
         data = hstack((arange(1, n+1, dtype=float),
                        arange(1,n+1, dtype=float)))
-        return coo_matrix((data,(row, col)), shape=(m,n))
+        return coo_array((data,(row, col)), shape=(m,n))
+
+def test_lsmr_maxiter_zero_with_show():
+    # Test that lsmr does not crash when maxiter=0 and show=True
+    # Regression test for gh-23748 (str4 undefined variable bug)
+    A = eye(3)
+    b = ones(3)
+    result = lsmr(A, b, maxiter=0, show=True)
+    # Check that we get a valid result with zero iterations
+    assert result[0] is not None  # x should exist
+    assert result[1] == 0  # istop should be 0
+    assert result[2] == 0  # itn should be 0

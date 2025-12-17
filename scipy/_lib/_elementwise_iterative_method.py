@@ -9,12 +9,14 @@
 # `scipy.optimize._differentiate._differentiate for numerical differentiation,
 # `scipy.optimize._bracket._bracket_root for finding rootfinding brackets,
 # `scipy.optimize._bracket._bracket_minimize for finding minimization brackets,
-# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
+# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature,
+# `scipy.differentiate.derivative` for finite difference based differentiation.
 
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, size as xp_size
+from ._array_api import array_namespace, xp_size, xp_result_type
+import scipy._lib.array_api_extra as xpx
 
 _ESIGNERR = -1
 _ECONVERR = -2
@@ -24,7 +26,7 @@ _EINPUTERR = -5
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
+def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -47,6 +49,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
         to reshape and compress arguments at will. When
         ``preserve_shape=False``, arguments passed to `func` must have shape
         `shape` or ``shape + (n,)``, where ``n`` is any integer.
+    xp : namespace
+        Namespace of array arguments in `xs`.
 
     Returns
     -------
@@ -72,16 +76,15 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     `scipy.optimize._chandrupatla`.
     """
     nx = len(xs)
-    xp = array_namespace(*xs)
+    xp = array_namespace(*xs) if xp is None else xp
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function; integers can overflow
     # and cause failure.
     # There might be benefit to combining the `xs` into a single array and
     # calling `func` once on the combined array. For now, keep them separate.
+    xat = xp_result_type(*xs, force_floating=True, xp=xp)
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
-    xat = xp.result_type(*[xa.dtype for xa in xas])
-    xat = xp.asarray(1.).dtype if xp.isdtype(xat, "integral") else xat
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
     fs = [xp.asarray(func(x, *args)) for x in xs]
@@ -131,7 +134,10 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     ----------
     work : _RichResult
         All variables that need to be retained between iterations. Must
-        contain attributes `nit`, `nfev`, and `success`
+        contain attributes `nit`, `nfev`, and `success`. All arrays are
+        subject to being "compressed" if `preserve_shape is False`; nest
+        arrays that should not be compressed inside another object (e.g.
+        `dict` or `_RichResult`).
     callback : callable
         User-specified callback function
     shape : tuple of ints
@@ -172,6 +178,9 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         copied to the appropriate indices of `res` when appropriate. The order
         determines the order in which _RichResult attributes will be
         pretty-printed.
+    preserve_shape : bool, default: False
+        Whether to compress the attributes of `work` (to avoid unnecessary
+        computation on elements that have already converged).
 
     Returns
     -------
@@ -199,7 +208,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     active = xp.arange(n_elements)  # in-progress element indices
     res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32)
+    res_dict['status'] = xp.full(n_elements, xp.asarray(_EINPROGRESS), dtype=xp.int32)
     res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
     res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
     res = _RichResult(res_dict)
@@ -255,7 +264,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
 
         post_termination_check(work)
 
-    work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
+    work.status = xpx.at(work.status)[:].set(_ECALLBACK if cb_terminate else _ECONVERR)
     return _prepare_result(work, res, res_work_pairs, active, shape,
                            customize_result, preserve_shape, xp)
 
@@ -281,14 +290,10 @@ def _check_termination(work, res, res_work_pairs, active, check_termination,
         if not preserve_shape:
             # compress the arrays to avoid unnecessary computation
             for key, val in work.items():
-                # Need to find a better way than these try/excepts
-                # Somehow need to keep compressible numerical args separate
-                if key == 'args':
+                # `continued_fraction` hacks `n`; improve if this becomes a problem
+                if key in {'args', 'n'}:
                     continue
-                try:
-                    work[key] = val[proceed]
-                except (IndexError, TypeError, KeyError):  # not a compressible array
-                    work[key] = val
+                work[key] = val[proceed] if getattr(val, 'ndim', 0) > 0 else val
             work.args = [arg[proceed] for arg in work.args]
 
     return active
@@ -305,28 +310,21 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
     if mask is not None:
         if preserve_shape:
             active_mask = xp.zeros_like(mask)
-            active_mask[active] = 1
+            active_mask = xpx.at(active_mask)[active].set(True)
             active_mask = active_mask & mask
             for key, val in update_dict.items():
-                try:
-                    res[key][active_mask] = val[active_mask]
-                except (IndexError, TypeError, KeyError):
-                    res[key][active_mask] = val
+                val = val[active_mask] if getattr(val, 'ndim', 0) > 0 else val
+                res[key] = xpx.at(res[key])[active_mask].set(val)
         else:
             active_mask = active[mask]
             for key, val in update_dict.items():
-                try:
-                    res[key][active_mask] = val[mask]
-                except (IndexError, TypeError, KeyError):
-                    res[key][active_mask] = val
+                val = val[mask] if getattr(val, 'ndim', 0) > 0 else val
+                res[key] = xpx.at(res[key])[active_mask].set(val)
     else:
         for key, val in update_dict.items():
-            if preserve_shape:
-                try:
-                    val = val[active]
-                except (IndexError, TypeError, KeyError):
-                    pass
-            res[key][active] = val
+            if preserve_shape and getattr(val, 'ndim', 0) > 0:
+                val = val[active]
+            res[key] = xpx.at(res[key])[active].set(val)
 
 
 def _prepare_result(work, res, res_work_pairs, active, shape, customize_result,

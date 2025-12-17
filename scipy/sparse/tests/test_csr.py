@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_
+from numpy.testing import assert_array_almost_equal, assert_, assert_array_equal
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
 import pytest
@@ -188,3 +188,27 @@ def test_mixed_index_dtype_int_indexing(cls):
             mtx[:, [1, 2]].toarray(),
             base_mtx[:, [1, 2]].toarray()
         )
+
+def test_broadcast_to():
+    a = np.array([1, 0, 2])
+    b = np.array([3])
+    e = np.zeros((0,))
+    res_a = csr_array(a)._broadcast_to((2,3))
+    res_b = csr_array(b)._broadcast_to((4,))
+    res_c = csr_array(b)._broadcast_to((2,4))
+    res_d = csr_array(b)._broadcast_to((1,))
+    res_e = csr_array(e)._broadcast_to((4,0))
+    assert_array_equal(res_a.toarray(), np.broadcast_to(a, (2,3)))
+    assert_array_equal(res_b.toarray(), np.broadcast_to(b, (4,)))
+    assert_array_equal(res_c.toarray(), np.broadcast_to(b, (2,4)))
+    assert_array_equal(res_d.toarray(), np.broadcast_to(b, (1,)))
+    assert_array_equal(res_e.toarray(), np.broadcast_to(e, (4,0)))
+
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        csr_matrix([[1, 2, 0], [3, 0, 1]])._broadcast_to(shape=(2, 1))
+
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        csr_matrix([[0, 1, 2]])._broadcast_to(shape=(3, 2))
+
+    with pytest.raises(ValueError, match="cannot be broadcast"):
+        csr_array([0, 1, 2])._broadcast_to(shape=(3, 2))

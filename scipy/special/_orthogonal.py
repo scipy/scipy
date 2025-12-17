@@ -78,7 +78,6 @@ References
 import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
-from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
@@ -172,6 +171,8 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     mu ( = h_0 )        is the integral of the weight over the orthogonal
                         interval
     """
+    # lazy import to prevent to prevent linalg dependency for whole module (gh-23420)
+    from scipy import linalg
     k = np.arange(n, dtype='d')
     c = np.zeros((2, n))
     c[0,1:] = bn_func(k[1:])
@@ -220,26 +221,25 @@ def roots_jacobi(n, alpha, beta, mu=False):
     Parameters
     ----------
     n : int
-        quadrature order
+        Quadrature order.
     alpha : float
         alpha must be > -1
     beta : float
         beta must be > -1
     mu : bool, optional
-        If True, return the sum of the weights, optional.
+        If True, return the sum of the weights in addition to sample points and weights.
 
     Returns
     -------
     x : ndarray
-        Sample points
+        Sample points.
     w : ndarray
-        Weights
-    mu : float
-        Sum of the weights
+        Weights.
+    mu : float, optional
+        Sum of the weights, only returned if `mu=True`.
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -248,7 +248,20 @@ def roots_jacobi(n, alpha, beta, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    >>> from scipy.special import roots_jacobi
+    >>> x, w = roots_jacobi(3, 0.5, 0.5)
+    >>> x
+    array([-0.70710678,  0.        ,  0.70710678])
+    >>> w
+    array([0.39269908, 0.78539816, 0.39269908])
+
+    >>> x, w, mu = roots_jacobi(3, 0.5, 0.5, mu=True)
+    >>> mu
+    1.5707963267948966  # Sum of weights, equals pi/2 for alpha = beta = 0.5
     """
+
     m = int(n)
     if n < 1 or n != m:
         raise ValueError("n must be a positive integer.")
@@ -422,7 +435,6 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -534,7 +546,6 @@ def roots_genlaguerre(n, alpha, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -704,7 +715,6 @@ def roots_laguerre(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.laguerre.laggauss
 
@@ -843,7 +853,6 @@ def roots_hermite(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.hermite.hermgauss
     roots_hermitenorm
@@ -1375,7 +1384,6 @@ def roots_hermitenorm(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.hermite_e.hermegauss
 
@@ -1508,7 +1516,6 @@ def roots_gegenbauer(n, alpha, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -1623,8 +1630,10 @@ def gegenbauer(n, alpha, monic=False):
     >>> plt.show()
 
     """
+    if not np.isfinite(alpha) or alpha <= -0.5 :
+        raise ValueError("`alpha` must be a finite number greater than -1/2")
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
-    if monic:
+    if monic or n == 0:
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
@@ -1668,7 +1677,6 @@ def roots_chebyt(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.chebyshev.chebgauss
 
@@ -1829,7 +1837,6 @@ def roots_chebyu(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -1979,7 +1986,6 @@ def roots_chebyc(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -2085,7 +2091,6 @@ def roots_chebys(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -2192,7 +2197,6 @@ def roots_sh_chebyt(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -2272,7 +2276,6 @@ def roots_sh_chebyu(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References
@@ -2355,7 +2358,6 @@ def roots_legendre(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.legendre.leggauss
 
@@ -2411,7 +2413,7 @@ def roots_legendre(n, mu=False):
 
     with inverse::
 
-        t = (b - a)/2 * x + (a + 2)/2
+        t = (b - a)/2 * x + (a + b)/2
 
     Then::
 
@@ -2538,7 +2540,6 @@ def roots_sh_legendre(n, mu=False):
 
     See Also
     --------
-    scipy.integrate.quadrature
     scipy.integrate.fixed_quad
 
     References

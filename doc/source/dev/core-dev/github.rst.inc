@@ -43,7 +43,7 @@ Dealing with pull requests
 - When merging contributions, a committer is responsible for ensuring that
   those meet the requirements outlined in :ref:`Contributing to SciPy <hacking>`.
   Also check that new features and backwards compatibility breaks were discussed
-  on the scipy-dev mailing list.
+  on the scipy-dev forum.
 - New code goes in via a pull request (PR).
 - Merge new code with the green button.  In case of merge conflicts, ask the PR
   submitter to rebase (this may require providing some ``git`` instructions).

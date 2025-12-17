@@ -403,5 +403,17 @@ static struct PyModuleDef test_ccallback_module = {
 PyMODINIT_FUNC
 PyInit__test_ccallback(void)
 {
-    return PyModule_Create(&test_ccallback_module);
+    PyObject *module;
+
+    module = PyModule_Create(&test_ccallback_module);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
+
 }

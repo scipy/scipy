@@ -1,5 +1,6 @@
 python_sources = [
   '__init__.py',
+  'test_64bit.py',
   'test_arithmetic1d.py',
   'test_array_api.py',
   'test_base.py',
@@ -10,6 +11,7 @@ python_sources = [
   'test_csr.py',
   'test_dok.py',
   'test_extract.py',
+  'test_indexing1d.py',
   'test_matrix_io.py',
   'test_minmax1d.py',
   'test_sparsetools.py',

@@ -13,6 +13,7 @@ __all__ = ['minimize', 'minimize_scalar']
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import wrapped_inspect_signature
 
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
@@ -46,7 +47,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla', 'slsqp']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -58,13 +59,20 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Parameters
     ----------
     fun : callable
-        The objective function to be minimized.
+        The objective function to be minimized::
 
-            ``fun(x, *args) -> float``
+            fun(x, *args) -> float
 
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
@@ -74,22 +82,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     method : str or callable, optional
         Type of solver.  Should be one of
 
-            - 'Nelder-Mead' :ref:`(see here) <optimize.minimize-neldermead>`
-            - 'Powell'      :ref:`(see here) <optimize.minimize-powell>`
-            - 'CG'          :ref:`(see here) <optimize.minimize-cg>`
-            - 'BFGS'        :ref:`(see here) <optimize.minimize-bfgs>`
-            - 'Newton-CG'   :ref:`(see here) <optimize.minimize-newtoncg>`
-            - 'L-BFGS-B'    :ref:`(see here) <optimize.minimize-lbfgsb>`
-            - 'TNC'         :ref:`(see here) <optimize.minimize-tnc>`
-            - 'COBYLA'      :ref:`(see here) <optimize.minimize-cobyla>`
-            - 'COBYQA'      :ref:`(see here) <optimize.minimize-cobyqa>`
-            - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
-            - 'trust-constr':ref:`(see here) <optimize.minimize-trustconstr>`
-            - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
-            - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
-            - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
-            - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
-            - custom - a callable object, see below for description.
+        - 'Nelder-Mead' :ref:`(see here) <optimize.minimize-neldermead>`
+        - 'Powell'      :ref:`(see here) <optimize.minimize-powell>`
+        - 'CG'          :ref:`(see here) <optimize.minimize-cg>`
+        - 'BFGS'        :ref:`(see here) <optimize.minimize-bfgs>`
+        - 'Newton-CG'   :ref:`(see here) <optimize.minimize-newtoncg>`
+        - 'L-BFGS-B'    :ref:`(see here) <optimize.minimize-lbfgsb>`
+        - 'TNC'         :ref:`(see here) <optimize.minimize-tnc>`
+        - 'COBYLA'      :ref:`(see here) <optimize.minimize-cobyla>`
+        - 'COBYQA'      :ref:`(see here) <optimize.minimize-cobyqa>`
+        - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
+        - 'trust-constr':ref:`(see here) <optimize.minimize-trustconstr>`
+        - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
+        - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
+        - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
+        - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
+        - custom - a callable object, see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
@@ -98,9 +106,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
         trust-exact and trust-constr.
         If it is a callable, it should be a function that returns the gradient
-        vector:
+        vector::
 
-            ``jac(x, *args) -> array_like, shape (n,)``
+            jac(x, *args) -> array_like, shape (n,)
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
         the fixed parameters. If `jac` is a Boolean and is True, `fun` is
@@ -118,9 +126,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg, trust-krylov, trust-exact and trust-constr.
-        If it is callable, it should return the Hessian matrix:
+        If it is callable, it should return the Hessian matrix::
 
-            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+            hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)
 
         where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
         parameters.
@@ -130,8 +138,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         interface can be used to approximate the Hessian. Available
         quasi-Newton methods implementing this interface are:
 
-            - `BFGS`;
-            - `SR1`.
+        - `BFGS`
+        - `SR1`
 
         Not all of the options are available for each of the methods; for
         availability refer to the notes.
@@ -140,9 +148,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
         Only one of `hessp` or `hess` needs to be given. If `hess` is
         provided, then `hessp` will be ignored. `hessp` must compute the
-        Hessian times an arbitrary vector:
+        Hessian times an arbitrary vector::
 
-            ``hessp(x, p, *args) ->  ndarray shape (n,)``
+            hessp(x, p, *args) ->  ndarray shape (n,)
 
         where ``x`` is a (n,) ndarray, ``p`` is an arbitrary vector with
         dimension (n,) and ``args`` is a tuple with the fixed
@@ -152,37 +160,35 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         trust-constr, COBYLA, and COBYQA methods. There are two ways to specify
         the bounds:
 
-            1. Instance of `Bounds` class.
-            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
-               is used to specify no bound.
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+           is used to specify no bound.
 
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' are defined as a single object or a
-        list of objects specifying constraints to the optimization problem.
+        Constraints for 'trust-constr', 'cobyqa', and 'cobyla' are defined as a single
+        object or a list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
-            - `LinearConstraint`
-            - `NonlinearConstraint`
+        - `LinearConstraint`
+        - `NonlinearConstraint`
 
         Constraints for COBYLA, SLSQP are defined as a list of dictionaries.
         Each dictionary with fields:
 
-            type : str
-                Constraint type: 'eq' for equality, 'ineq' for inequality.
-            fun : callable
-                The function defining the constraint.
-            jac : callable, optional
-                The Jacobian of `fun` (only for SLSQP).
-            args : sequence, optional
-                Extra arguments to be passed to the function and Jacobian.
+        type : str
+            Constraint type: 'eq' for equality, 'ineq' for inequality.
+        fun : callable
+            The function defining the constraint.
+        jac : callable, optional
+            The Jacobian of `fun` (only for SLSQP).
+        args : sequence, optional
+            Extra arguments to be passed to the function and Jacobian.
 
         Equality constraint means that the constraint function result is to
         be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
 
-        Constraints for COBYQA are defined as any of the above.
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected
         minimization algorithm sets some relevant solver-specific tolerance(s)
@@ -192,33 +198,33 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         A dictionary of solver options. All methods except `TNC` accept the
         following generic options:
 
-            maxiter : int
-                Maximum number of iterations to perform. Depending on the
-                method each iteration may use several function evaluations.
+        maxiter : int
+            Maximum number of iterations to perform. Depending on the
+            method each iteration may use several function evaluations.
 
-                For `TNC` use `maxfun` instead of `maxiter`.
-            disp : bool
-                Set to True to print convergence messages.
+            For `TNC` use `maxfun` instead of `maxiter`.
+        disp : bool
+            Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC, SLSQP, and COBYLA support a callable with
-        the signature:
+        All methods except TNC support a callable with
+        the signature::
 
-            ``callback(intermediate_result: OptimizeResult)``
+            callback(intermediate_result: OptimizeResult)
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function. Note that the name
-        of the parameter must be ``intermediate_result`` for the callback
-        to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises ``StopIteration``.
+        of the parameter vector and objective function. Not all attributes of
+        `OptimizeResult` may be present. The name of the parameter must be
+        ``intermediate_result`` for the callback to be passed an `OptimizeResult`.
+        These methods will also terminate if the callback raises ``StopIteration``.
 
-        All methods except trust-constr (also) support a signature like:
+        All methods except trust-constr (also) support a signature like::
 
-            ``callback(xk)``
+            callback(xk)
 
         where ``xk`` is the current parameter vector.
 
@@ -332,13 +338,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Constrained Minimization**
 
-    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
+    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the PRIMA
+    implementation [19]_ of the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
-    approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
-    constraints functions 'fun' may return either a single number
-    or an array or list of numbers.
+    approximations to the objective function and each constraint.
 
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
@@ -475,13 +479,18 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
         An interior point algorithm for large-scale nonlinear  programming.
         SIAM Journal on Optimization 9.4: 877-900.
-    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. 1998. On the
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
     .. [18] Ragonneau, T. M. *Model-Based Derivative-Free Optimization Methods
         and Software*. PhD thesis, Department of Applied Mathematics, The Hong
         Kong Polytechnic University, Hong Kong, China, 2022. URL:
         https://theses.lib.polyu.edu.hk/handle/200/12294.
+    .. [19] Zhang, Z. "PRIMA: Reference Implementation for Powell's Methods with
+        Modernization and Amelioration", https://www.libprima.net,
+        :doi:`10.5281/zenodo.8052654`
+    .. [20] Karush-Kuhn-Tucker conditions,
+        https://en.wikipedia.org/wiki/Karush%E2%80%93Kuhn%E2%80%93Tucker_conditions
 
     Examples
     --------
@@ -521,7 +530,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         [ 0.09495377,  0.18996269,  0.38165151,  0.7664427,   1.53713523]
     ])
 
-
     Next, consider a minimization problem with several constraints (namely
     Example 16.4 from [5]_). The objective function is:
 
@@ -539,10 +547,42 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     The optimization problem is solved using the SLSQP method as:
 
-    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                constraints=cons)
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
 
-    It should converge to the theoretical solution (1.4 ,1.7).
+    It should converge to the theoretical solution ``[1.4 ,1.7]``. *SLSQP* also
+    returns the multipliers that are used in the solution of the problem. These
+    multipliers, when the problem constraints are linear, can be thought of as the
+    Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
+    of Lagrange multipliers to inequality-constrained optimization problems ([20]_).
+
+    Notice that at the solution, the first constraint is active. Let's evaluate the
+    function at solution:
+
+    >>> cons[0]['fun'](res.x)
+    np.float64(1.4901224698604665e-09)
+
+    Also, notice that at optimality there is a non-zero multiplier:
+
+    >>> res.multipliers
+    array([0.8, 0. , 0. ])
+
+    This can be understood as the local sensitivity of the optimal value of the
+    objective function with respect to changes in the first constraint. If we
+    tighten the constraint by a small amount ``eps``:
+
+    >>> eps = 0.01
+    >>> cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+
+    we expect the optimal value of the objective function to increase by
+    approximately ``eps * res.multipliers[0]``:
+
+    >>> eps * res.multipliers[0]  # Expected change in f0
+    np.float64(0.008000000027153205)
+    >>> f0 = res.fun  # Keep track of the previous optimal value
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
+    >>> f1 = res.fun  # New optimal value
+    >>> f1 - f0
+    np.float64(0.008019998807885509)
 
     """
     x0 = np.atleast_1d(np.asarray(x0))
@@ -575,34 +615,34 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     # check if optional parameters are supported by the selected method
     # - jac
     if meth in ('nelder-mead', 'powell', 'cobyla', 'cobyqa') and bool(jac):
-        warn('Method %s does not use gradient information (jac).' % method,
+        warn(f'Method {method} does not use gradient information (jac).',
              RuntimeWarning, stacklevel=2)
     # - hess
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', 'trust-exact', '_custom') and hess is not None:
-        warn('Method %s does not use Hessian information (hess).' % method,
+        warn(f'Method {method} does not use Hessian information (hess).',
              RuntimeWarning, stacklevel=2)
     # - hessp
     if meth not in ('newton-cg', 'trust-ncg', 'trust-constr',
                     'trust-krylov', '_custom') \
        and hessp is not None:
-        warn('Method %s does not use Hessian-vector product '
-             'information (hessp).' % method,
+        warn(f'Method {method} does not use Hessian-vector product'
+             ' information (hessp).',
              RuntimeWarning, stacklevel=2)
     # - constraints or bounds
     if (meth not in ('cobyla', 'cobyqa', 'slsqp', 'trust-constr', '_custom') and
             np.any(constraints)):
-        warn('Method %s cannot handle constraints.' % method,
+        warn(f'Method {method} cannot handle constraints.',
              RuntimeWarning, stacklevel=2)
     if meth not in (
             'nelder-mead', 'powell', 'l-bfgs-b', 'cobyla', 'cobyqa', 'slsqp',
             'tnc', 'trust-constr', '_custom') and bounds is not None:
-        warn('Method %s cannot handle bounds.' % method,
+        warn(f'Method {method} cannot handle bounds.',
              RuntimeWarning, stacklevel=2)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'cobyqa', 'slsqp') and
             options.get('return_all', False)):
-        warn('Method %s does not support the return_all option.' % method,
+        warn(f'Method {method} does not support the return_all option.',
              RuntimeWarning, stacklevel=2)
 
     # check gradient vector
@@ -695,25 +735,37 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 x_fixed = (bounds.lb)[i_fixed]
                 x0 = x0[~i_fixed]
                 bounds = _remove_from_bounds(bounds, i_fixed)
-                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                fun = _Remove_From_Func(fun, i_fixed, x_fixed)
+
                 if callable(callback):
-                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                    sig = wrapped_inspect_signature(callback)
+                    if set(sig.parameters) == {'intermediate_result'}:
+                        # callback(intermediate_result)
+                        print(callback)
+                        callback = _Patch_Callback_Equal_Variables(
+                            callback, i_fixed, x_fixed
+                        )
+                    else:
+                        # callback(x)
+                        callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+
                 if callable(jac):
-                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                    jac = _Remove_From_Func(jac, i_fixed, x_fixed, remove=1)
 
                 # make a copy of the constraints so the user's version doesn't
                 # get changed. (Shallow copy is ok)
                 constraints = [con.copy() for con in constraints]
                 for con in constraints:  # yes, guaranteed to be a list
-                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                    con['fun'] = _Remove_From_Func(con['fun'], i_fixed,
                                                    x_fixed, min_dim=1,
                                                    remove=0)
                     if callable(con.get('jac', None)):
-                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                        con['jac'] = _Remove_From_Func(con['jac'], i_fixed,
                                                        x_fixed, min_dim=2,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    # selects whether to use callback(x) or callback(intermediate_result)
     callback = _wrap_callback(callback, meth)
 
     if meth == 'nelder-mead':
@@ -760,7 +812,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                           callback=callback, **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
@@ -785,6 +837,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     fun : callable
         Objective function.
         Scalar function, must return a scalar.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
+
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
         interval and is required.
@@ -802,10 +862,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     method : str or callable, optional
         Type of solver.  Should be one of:
 
-            - :ref:`Brent <optimize.minimize_scalar-brent>`
-            - :ref:`Bounded <optimize.minimize_scalar-bounded>`
-            - :ref:`Golden <optimize.minimize_scalar-golden>`
-            - custom - a callable object (added in version 0.14.0), see below
+        - :ref:`Brent <optimize.minimize_scalar-brent>`
+        - :ref:`Bounded <optimize.minimize_scalar-bounded>`
+        - :ref:`Golden <optimize.minimize_scalar-golden>`
+        - custom - a callable object (added in version 0.14.0), see below
 
         Default is "Bounded" if bounds are provided and "Brent" otherwise.
         See the 'Notes' section for details of each solver.
@@ -816,10 +876,10 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     options : dict, optional
         A dictionary of solver options.
 
-            maxiter : int
-                Maximum number of iterations to perform.
-            disp : bool
-                Set to True to print convergence messages.
+        maxiter : int
+            Maximum number of iterations to perform.
+        disp : bool
+            Set to True to print convergence messages.
 
         See :func:`show_options()` for solver-specific options.
 
@@ -969,7 +1029,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         res = _recover_from_bracket_error(_minimize_scalar_golden,
                                           fun, bracket, args, **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     # gh-16196 reported inconsistencies in the output shape of `res.x`. While
     # fixing this, future-proof it for when the function is vectorized:
@@ -986,27 +1046,49 @@ def _remove_from_bounds(bounds, i_fixed):
     return Bounds(lb, ub)  # don't mutate original Bounds object
 
 
-def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+class _Patch_Callback_Equal_Variables:
+    # Patches a callback that accepts an intermediate_result
+    def __init__(self, callback, i_fixed, x_fixed):
+        self.callback = callback
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+
+    def __call__(self, intermediate_result):
+        x_in = intermediate_result.x
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        intermediate_result.x = x_out
+        return self.callback(intermediate_result)
+
+
+class _Remove_From_Func:
     """Wraps a function such that fixed variables need not be passed in"""
-    def fun_out(x_in, *args, **kwargs):
-        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
-        x_out[i_fixed] = x_fixed
-        x_out[~i_fixed] = x_in
-        y_out = fun_in(x_out, *args, **kwargs)
+    def __init__(self, fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+        self.fun_in = fun_in
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+        self.min_dim = min_dim
+        self.remove = remove
+
+    def __call__(self, x_in, *args, **kwargs):
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        y_out = self.fun_in(x_out, *args, **kwargs)
         y_out = np.array(y_out)
 
-        if min_dim == 1:
+        if self.min_dim == 1:
             y_out = np.atleast_1d(y_out)
-        elif min_dim == 2:
+        elif self.min_dim == 2:
             y_out = np.atleast_2d(y_out)
 
-        if remove == 1:
-            y_out = y_out[..., ~i_fixed]
-        elif remove == 2:
-            y_out = y_out[~i_fixed, ~i_fixed]
+        if self.remove == 1:
+            y_out = y_out[..., ~self.i_fixed]
+        elif self.remove == 2:
+            y_out = y_out[~self.i_fixed, ~self.i_fixed]
 
         return y_out
-    return fun_out
 
 
 def _add_to_array(x_in, i_fixed, x_fixed):
@@ -1060,7 +1142,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new', 'cobyla']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

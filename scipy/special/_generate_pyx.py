@@ -8,8 +8,8 @@ files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 This will generate both calls to PyUFunc_FromFuncAndData and the
 required ufunc inner loops.
 
-The functions signatures are contained in 'functions.json', the syntax
-for a function signature is
+The functions' signatures are contained in 'functions.json'.
+The syntax for a function signature is
 
     <function>:       <name> ':' <input> '*' <output>
                         '->' <retval> '*' <ignored_retval>
@@ -30,6 +30,7 @@ codes, according to
    'G': 'long double complex'
    'i': 'int'
    'l': 'long'
+   'p': 'npy_intp', 'Py_ssize_t'
    'v': 'void'
 
 If multiple kernel functions are given for a single ufunc, the one
@@ -77,20 +78,29 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_lambertw', '_scaled_exp1', '_sinpi', '_spherical_jn', '_spherical_jn_d',
-    '_spherical_yn', '_spherical_yn_d', '_spherical_in', '_spherical_in_d',
-    '_spherical_kn', '_spherical_kn_d', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp',
-    'binom', 'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
+    '_cospi', '_gen_harmonic', '_lambertw', '_normalized_gen_harmonic',
+    '_scaled_exp1', '_sinpi',
+    '_spherical_jn', '_spherical_jn_d', '_spherical_yn', '_spherical_yn_d',
+    '_spherical_in', '_spherical_in_d', '_spherical_kn', '_spherical_kn_d',
+    'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom',
+    'exp1', 'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1',
     'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0',
     'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0',
-    'iv', '_iv_ratio', 'ive', '_js_div', 'jv',
+    'iv', '_iv_ratio', '_iv_ratio_c', 'ive', 'jv',
     'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',
     'log_wright_bessel', 'loggamma', 'logit', 'mathieu_a', 'mathieu_b', 'mathieu_cem',
     'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2',
     'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa',
     'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv', 'pro_rad2',
-    'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm', 'wright_bessel', 'yv', 'yve', '_zeta'
+    'pro_rad2_cv', 'psi', 'rgamma', 'wright_bessel', 'yv', 'yve', 'zetac',
+    '_zeta', 'sindg', 'cosdg', 'tandg', 'cotdg', 'i0', 'i0e', 'i1', 'i1e',
+    'k0', 'k0e', 'k1', 'k1e', 'y0', 'y1', 'j0', 'j1', 'struve', 'modstruve',
+    'beta', 'betaln', 'besselpoly', 'gammaln', 'gammasgn', 'cbrt', 'radian', 'cosm1',
+    'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
+    'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta', 'erf',
+    'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr',
+    'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx', '_log1mexp'
 ]
 
 # -----------------------------------------------------------------------------
@@ -170,6 +180,7 @@ CY_TYPES = {
     'G': 'long double complex',
     'i': 'int',
     'l': 'long',
+    'p': 'Py_ssize_t',
     'v': 'void',
 }
 
@@ -182,6 +193,7 @@ C_TYPES = {
     'G': 'npy_clongdouble',
     'i': 'npy_int',
     'l': 'npy_long',
+    'p': 'npy_intp',
     'v': 'void',
 }
 
@@ -194,6 +206,7 @@ TYPE_NAMES = {
     'G': 'NPY_CLONGDOUBLE',
     'i': 'NPY_INT',
     'l': 'NPY_LONG',
+    'p': 'NPY_INTP',
 }
 
 
@@ -202,18 +215,19 @@ def underscore(arg):
 
 
 def cast_order(c):
-    return ['ilfdgFDG'.index(x) for x in c]
+    return ['ilpfdgFDG'.index(x) for x in c]
 
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
 DANGEROUS_DOWNCAST = {
-    ('F', 'i'), ('F', 'l'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
-    ('D', 'i'), ('D', 'l'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
-    ('G', 'i'), ('G', 'l'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
-    ('f', 'i'), ('f', 'l'),
-    ('d', 'i'), ('d', 'l'),
-    ('g', 'i'), ('g', 'l'),
+    ('F', 'i'), ('F', 'l'), ('F', 'p'), ('F', 'f'), ('F', 'd'), ('F', 'g'),
+    ('D', 'i'), ('D', 'l'), ('D', 'p'), ('D', 'f'), ('D', 'd'), ('D', 'g'),
+    ('G', 'i'), ('G', 'l'), ('G', 'p'), ('G', 'f'), ('G', 'd'), ('G', 'g'),
+    ('f', 'i'), ('f', 'l'), ('f', 'p'),
+    ('d', 'i'), ('d', 'l'), ('d', 'p'),
+    ('g', 'i'), ('g', 'l'), ('g', 'p'),
+    ('p', 'l'), ('p', 'i'),
     ('l', 'i'),
 }
 
@@ -226,6 +240,7 @@ NAN_VALUE = {
     'G': 'NAN',
     'i': '0xbad0bad0',
     'l': '0xbad0bad0',
+    'p': '0xbad0bad0',
 }
 
 
@@ -284,18 +299,16 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
     for j in range(len(ufunc_inputs)):
-        body += "    cdef char *ip%d = args[%d]\n" % (j, j)
+        body += f"    cdef char *ip{j} = args[{j}]\n"
     for j in range(len(ufunc_outputs)):
-        body += "    cdef char *op%d = args[%d]\n" % (j, j + len(ufunc_inputs))
+        body += f"    cdef char *op{j} = args[{j + len(ufunc_inputs)}]\n"
 
     ftypes = []
     fvars = []
     outtypecodes = []
     for j in range(len(func_inputs)):
         ftypes.append(CY_TYPES[func_inputs[j]])
-        fvars.append("<%s>(<%s*>ip%d)[0]" % (
-            CY_TYPES[func_inputs[j]],
-            CY_TYPES[ufunc_inputs[j]], j))
+        fvars.append(f"<{CY_TYPES[func_inputs[j]]}>(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
 
     if len(func_outputs)+1 == len(ufunc_outputs):
         func_joff = 1
@@ -305,9 +318,9 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         func_joff = 0
 
     for j, outtype in enumerate(func_outputs):
-        body += "    cdef %s ov%d\n" % (CY_TYPES[outtype], j+func_joff)
-        ftypes.append("%s *" % CY_TYPES[outtype])
-        fvars.append("&ov%d" % (j+func_joff))
+        body += f"    cdef {CY_TYPES[outtype]} ov{j+func_joff}\n"
+        ftypes.append(f"{CY_TYPES[outtype]} *")
+        fvars.append(f"&ov{j+func_joff}")
         outtypecodes.append(outtype)
 
     body += "    for i in range(n):\n"
@@ -316,48 +329,49 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     else:
         rv = ""
 
-    funcall = "        {}(<{}(*)({}) noexcept nogil>func)({})\n".format(
-        rv, CY_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
+    funcall = (
+    f"        {rv}(<{CY_TYPES[func_retval]}(*)({', '.join(ftypes)}) "
+    f"noexcept nogil>func)({', '.join(fvars)})\n"
+    )
 
     # Cast-check inputs and call function
     input_checks = []
     for j in range(len(func_inputs)):
         if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
-            chk = "<%s>(<%s*>ip%d)[0] == (<%s*>ip%d)[0]" % (
-                CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j,
-                CY_TYPES[ufunc_inputs[j]], j)
+            chk = (f"<{CY_TYPES[func_inputs[j]]}>"
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] == "
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
             input_checks.append(chk)
 
     if input_checks:
-        body += "        if %s:\n" % (" and ".join(input_checks))
+        body += f"        if {' and '.join(input_checks)}:\n"
         body += "    " + funcall
         body += "        else:\n"
         body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
                  "\"invalid input argument\")\n")
         for j, outtype in enumerate(outtypecodes):
-            body += "            ov%d = <%s>%s\n" % (
-                j, CY_TYPES[outtype], NAN_VALUE[outtype])
+            body += f"            ov{j} = <{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n"
     else:
         body += funcall
 
     # Assign and cast-check output values
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
         if (fouttype, outtype) in DANGEROUS_DOWNCAST:
-            body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
-            body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += f"        if ov{j} == <{CY_TYPES[outtype]}>ov{j}:\n"
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
             body += "        else:\n"
             body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
                      "\"invalid output\")\n")
-            body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n")
         else:
-            body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += (f"        (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
     for j in range(len(ufunc_inputs)):
-        body += "        ip%d += steps[%d]\n" % (j, j)
+        body += f"        ip{j} += steps[{j}]\n"
     for j in range(len(ufunc_outputs)):
-        body += "        op%d += steps[%d]\n" % (j, j + len(ufunc_inputs))
+        body += f"        op{j} += steps[{j + len(ufunc_inputs)}]\n"
 
     body += "    sf_error.check_fpe(func_name)\n"
 
@@ -391,11 +405,11 @@ def iter_variants(inputs, outputs):
     ]
 
     # float32-preserving signatures
-    if not ('i' in inputs or 'l' in inputs):
+    if not ('i' in inputs or 'l' in inputs or 'q' in inputs
+             or 'p' in inputs):
         # Don't add float32 versions of ufuncs with integer arguments, as this
         # can lead to incorrect dtype selection if the integer arguments are
         # arrays, but float arguments are scalars.
-        # For instance sph_harm(0,[0],0,0).dtype == complex64
         # This may be a NumPy bug, but we need to work around it.
         # cf. gh-4895, https://github.com/numpy/numpy/issues/5895
         maps = maps + [(a + 'dD', b + 'fF') for a, b in maps]
@@ -426,14 +440,15 @@ class Func:
                 self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$",
+        T = 'fdgFDGilp'
+        m = re.match(rf"\s*([{T}]*)\s*\*\s*([{T}]*)\s*->\s*([*{T}]*)\s*$",
                      sig)
         if m:
             inarg, outarg, ret = (x.strip() for x in m.groups())
             if ret.count('*') > 1:
                 raise ValueError(f"{self.name}: Invalid signature: {sig}")
             return inarg, outarg, ret
-        m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        m = re.match(rf"\s*([{T}]*)\s*->\s*([{T}]?)\s*$", sig)
         if m:
             inarg, ret = (x.strip() for x in m.groups())
             return inarg, "", ret
@@ -447,12 +462,11 @@ class Func:
                       + [C_TYPES[x] + ' *' for x in outarg])
             cy_args = ([CY_TYPES[x] for x in inarg]
                        + [CY_TYPES[x] + ' *' for x in outarg])
-            c_proto = "{} (*)({})".format(C_TYPES[ret], ", ".join(c_args))
+            c_proto = f"{C_TYPES[ret]} (*)({', '.join(c_args)})"
             if header.endswith("h") and nptypes_for_h:
                 cy_proto = c_proto + "nogil"
             else:
-                cy_proto = ("{} (*)({}) noexcept nogil"
-                            .format(CY_TYPES[ret], ", ".join(cy_args)))
+                cy_proto = f"{CY_TYPES[ret]} (*)({', '.join(cy_args)}) noexcept nogil"
             prototypes.append((func_name, c_proto, cy_proto, header))
         return prototypes
 
@@ -470,7 +484,7 @@ class Func:
         else:
             c_base_name, fused_part = c_name, ""
         if specialized:
-            return "{}{}{}".format(prefix, c_base_name, fused_part.replace(' ', '_'))
+            return f"{prefix}{c_base_name}{fused_part.replace(' ', '_')}"
         else:
             return f"{prefix}{c_base_name}"
 
@@ -507,7 +521,7 @@ class Ufunc(Func):
         super().__init__(name, signatures)
         self.doc = add_newdocs.get(name)
         if self.doc is None:
-            raise ValueError("No docstring for ufunc %r" % name)
+            raise ValueError(f"No docstring for ufunc {name!r}")
         self.doc = textwrap.dedent(self.doc).strip()
 
     def _get_signatures_and_loops(self, all_loops):
@@ -526,11 +540,8 @@ class Ufunc(Func):
             if "v" in outp:
                 raise ValueError(f"{self.name}: void signature {sig!r}")
             if len(inp) != inarg_num or len(outp) != outarg_num:
-                raise ValueError(
-                    "%s: signature %r does not have %d/%d input/output args" % (
-                        self.name, sig, inarg_num, outarg_num
-                    )
-                )
+                raise ValueError(f"{self.name}: signature {sig!r} does "
+                                 f"not have {inarg_num}/{outarg_num} input/output args")
 
             loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
             all_loops[loop_name] = loop
@@ -579,11 +590,12 @@ class Ufunc(Func):
             loops.append(loop_name)
             funcs.append(func_name)
 
-        toplevel += ("cdef np.PyUFuncGenericFunction ufunc_%s_loops[%d]\n" %
-                     (self.name, len(loops)))
-        toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2*len(funcs))
-        toplevel += "cdef void *ufunc_%s_data[%d]\n" % (self.name, len(funcs))
-        toplevel += "cdef char ufunc_%s_types[%d]\n" % (self.name, len(types))
+        toplevel += (
+        f"cdef np.PyUFuncGenericFunction ufunc_{self.name}_loops[{len(loops)}]\n"
+        )
+        toplevel += f"cdef void *ufunc_{self.name}_ptr[{2 * len(funcs)}]\n"
+        toplevel += f"cdef void *ufunc_{self.name}_data[{len(funcs)}]\n"
+        toplevel += f"cdef char ufunc_{self.name}_types[{len(types)}]\n"
         toplevel += 'cdef char *ufunc_{}_doc = (\n    "{}")\n'.format(
             self.name,
             self.doc.replace("\\", "\\\\").replace('"', '\\"')
@@ -591,26 +603,22 @@ class Ufunc(Func):
         )
 
         for j, function in enumerate(loops):
-            toplevel += ("ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" %
-                         (self.name, j, function))
+            toplevel += (f"ufunc_{self.name}_loops[{j}] = "
+                        f"<np.PyUFuncGenericFunction>{function}\n")
         for j, type in enumerate(types):
-            toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
+            toplevel += f"ufunc_{self.name}_types[{j}] = <char>{type}\n"
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (
-                self.name, j, self.cython_func_name(func, specialized=True)
-            )
-            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (
-                self.name, j, self.name
-            )
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}] = <void*>"
+                        f"{self.cython_func_name(func, specialized=True)}\n")
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>"
+                        f"(<char*>\"{self.name}\")\n")
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_data[%d] = &ufunc_%s_ptr[2*%d]\n" % (
-                self.name, j, self.name, j)
+            toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
 
-        toplevel += ('@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, '
-                     'ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, '
-                     '"@", ufunc_@_doc, 0)\n' % (len(types)/(inarg_num+outarg_num),
-                                                 inarg_num, outarg_num)
-                     ).replace('@', self.name)
+        toplevel += (f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, "
+                    f"ufunc_@_types, {int(len(types)/(inarg_num + outarg_num))}, "
+                    f"{inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)"
+                    f"\n").replace('@', self.name)
 
         return toplevel
 
@@ -629,13 +637,13 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
     var_name = c_name.replace('[', '_').replace(']', '_').replace(' ', '_')
 
     if header.endswith('.pxd'):
-        defs.append("from .{} cimport {} as {}".format(
-            header[:-4], ufunc.cython_func_name(c_name, prefix=""),
-            ufunc.cython_func_name(c_name)))
+        defs.append(
+            f"from .{header[:-4]} cimport {ufunc.cython_func_name(c_name, prefix='')}"
+            f" as {ufunc.cython_func_name(c_name)}")
 
         # check function signature at compile time
-        proto_name = '_proto_%s_t' % var_name
-        defs.append("ctypedef %s" % (cy_proto.replace('(*)', proto_name)))
+        proto_name = f'_proto_{var_name}_t'
+        defs.append(f"ctypedef {cy_proto.replace('(*)', proto_name)}")
         defs.append(f"cdef {proto_name} *{proto_name}_var = "
                     f"&{ufunc.cython_func_name(c_name, specialized=True)}")
     else:
@@ -644,9 +652,9 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
         new_name = f"{ufunc.cython_func_name(c_name)} \"{c_name}\""
         proto_h_filename = os.path.basename(proto_h_filename)
         defs.append(f'cdef extern from r"{proto_h_filename}":')
-        defs.append("    cdef %s" % (cy_proto.replace('(*)', new_name)))
+        defs.append(f"    cdef {cy_proto.replace('(*)', new_name)}")
         defs_h.append(f'#include "{header}"')
-        defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
+        defs_h.append(f"{c_proto.replace('(*)', c_name)};")
 
     return defs, defs_h, var_name
 
@@ -727,7 +735,7 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
             for name in special_ufuncs if not name.startswith('_')
         ]
     )
-    module_all = '__all__ = [{}]'.format(', '.join(all_ufuncs))
+    module_all = f"__all__ = [{', '.join(all_ufuncs)}]"
 
     with open(filename, 'w') as f:
         f.write(UFUNCS_EXTRA_CODE_COMMON)
@@ -780,7 +788,7 @@ def newer(source, target):
     both exist and 'target' is the same age or younger than 'source'.
     """
     if not os.path.exists(source):
-        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+        raise ValueError(f"file '{os.path.abspath(source)}' does not exist")
     if not os.path.exists(target):
         return 1
 

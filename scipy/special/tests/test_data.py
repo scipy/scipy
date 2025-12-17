@@ -1,11 +1,11 @@
 import importlib.resources
+import warnings
 
 import numpy as np
-from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (
-    lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,
+    lpmv, lqn, lqmn, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
@@ -13,7 +13,7 @@ from scipy.special import (
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
-    bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
+    bdtrik, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
@@ -83,14 +83,8 @@ def assoc_legendre_p_boost_(nu, mu, x):
 def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
-def lpn_(n, x):
-    return lpn(n.astype('l'), x)[0][-1]
-
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
-
-def legendre_p_via_lpmn(n, x):
-    return lpmn(0, n, x)[0][0,-1]
 
 def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
@@ -144,9 +138,6 @@ def eval_genlaguerre_ddd(n, a, x):
 def bdtrik_comp(y, n, p):
     return bdtrik(1-y, n, p)
 
-def btdtri_comp(a, b, p):
-    return btdtri(a, b, 1-p)
-
 def btdtria_comp(p, b, x):
     return btdtria(1-p, b, x)
 
@@ -189,10 +180,6 @@ def spherical_jn_(n, x):
 def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
 
-def sph_harm_(m, n, theta, phi):
-    y = sph_harm(m, n, theta, phi)
-    return (y.real, y.imag)
-
 def cexpm1(x, y):
     z = expm1(x + 1j*y)
     return z.real, z.imag
@@ -210,14 +197,6 @@ BOOST_TESTS = [
              (0,1), 2, rtol=1e-11),
         data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large',
              (0,1), 2, rtol=9.6e-14),
-        data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
-             (0,1), 2, rtol=5e-14, vectorized=False),
-        data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=9.6e-14, vectorized=False),
-        data(lpn_, 'legendre_p_ipp-legendre_p',
-             (0,1), 2, rtol=5e-14, vectorized=False),
-        data(lpn_, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=3e-13, vectorized=False),
         data(eval_legendre_ld, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=6e-14),
         data(eval_legendre_ld, 'legendre_p_large_ipp-legendre_p_large',
@@ -255,20 +234,6 @@ BOOST_TESTS = [
         data(betaincinv, 'ibeta_inv_data_ipp-ibeta_inv_data',
              (0,1,2), 3, rtol=1e-5),
 
-        data(btdtr, 'ibeta_small_data_ipp-ibeta_small_data',
-             (0,1,2), 5, rtol=6e-15),
-        data(btdtr, 'ibeta_data_ipp-ibeta_data',
-             (0,1,2), 5, rtol=4e-13),
-        data(btdtr, 'ibeta_int_data_ipp-ibeta_int_data',
-             (0,1,2), 5, rtol=2e-14),
-        data(btdtr, 'ibeta_large_data_ipp-ibeta_large_data',
-             (0,1,2), 5, rtol=4e-10),
-
-        data(btdtri, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 3, rtol=1e-5),
-        data(btdtri_comp, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 4, rtol=8e-7),
-
         data(btdtria, 'ibeta_inva_data_ipp-ibeta_inva_data',
              (2,0,1), 3, rtol=5e-9),
         data(btdtria_comp, 'ibeta_inva_data_ipp-ibeta_inva_data',
@@ -297,7 +262,7 @@ BOOST_TESTS = [
 
         data(pdtrik, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 2, rtol=3e-9),
-        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data', 
+        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 3, rtol=4e-9),
 
         data(cbrt, 'cbrt_data_ipp-cbrt_data', 1, 0),
@@ -515,13 +480,6 @@ BOOST_TESTS = [
         data(chndtr, 'nccs_big_ipp-nccs_big',
              (2,0,1), 3, rtol=5e-4, knownfailure='chndtr inaccurate some points'),
 
-        data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic',
-             (1,0,3,2), (4,5), rtol=5e-11,
-             param_filter=(lambda p: np.ones(p.shape, '?'),
-                           lambda p: np.ones(p.shape, '?'),
-                           lambda p: np.logical_and(p < 2*np.pi, p >= 0),
-                           lambda p: np.logical_and(p < np.pi, p >= 0))),
-
         data(spherical_jn_, 'sph_bessel_data_ipp-sph_bessel_data',
              (0,1), 2, rtol=1e-13),
         data(spherical_yn_, 'sph_neumann_data_ipp-sph_neumann_data',
@@ -665,12 +623,7 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    # Filter deprecation warnings of any deprecated functions.
-    if test.func in [btdtr, btdtri, btdtri_comp]:
-        with pytest.deprecated_call():
-            _test_factory(test)
-    else:
-        _test_factory(test)
+     _test_factory(test)
 
 
 GSL_TESTS = [
@@ -719,7 +672,8 @@ def test_local(test):
 
 def _test_factory(test, dtype=np.float64):
     """Boost test"""
-    with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
+    with warnings.catch_warnings():
+        msg = "The occurrence of roundoff error is detected"
+        warnings.filterwarnings("ignore", msg, IntegrationWarning)
         with np.errstate(all='ignore'):
             test.check(dtype=dtype)

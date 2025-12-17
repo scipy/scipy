@@ -1028,7 +1028,7 @@ class FastGeneratorInversion:
         4.507068014335139e-07  # may vary
 
         """
-        if not isinstance(size, (numbers.Integral, np.integer)):
+        if not isinstance(size, numbers.Integral | np.integer):
             raise ValueError("size must be an integer.")
         # urng will be used to draw the samples for testing the error
         # it must not interfere with self.random_state. therefore, do not

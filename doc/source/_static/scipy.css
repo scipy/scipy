@@ -8,6 +8,12 @@
   opacity: 0.9;
 }
 
+.version-switcher__button[data-active-version-name*="stable"] {
+  background-color: var(--pst-color-success);
+  border-color: var(--pst-color-success);
+  opacity: 0.9;
+}
+
 .version-switcher__button:not([data-active-version-name*="stable"]):not([data-active-version-name*="dev"]):not([data-active-version-name*="pull"]) {
   background-color: var(--pst-color-danger);
   border-color: var(--pst-color-danger);
@@ -77,4 +83,23 @@ div.admonition>.admonition-title {
     justify-content: flex-end;
     gap: 10px;
     margin-bottom: 20px;
+}
+
+/* Wrap long titles in pages */
+h1 {
+  word-wrap: break-word;
+}
+
+/* Monospace titles for API docs */
+div.empty + section>h1 {
+  font-family: var(--pst-font-family-monospace);
+}
+
+.prename {
+  font-family: var(--pst-font-family-monospace);
+  font-size: var(--pst-font-size-h4);
+}
+
+.sig-prename {
+  display: none;
 }

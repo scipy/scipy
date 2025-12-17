@@ -21,7 +21,7 @@ These contributions cannot be accepted for inclusion in SciPy unless the
 original code author is willing to (re)license their code under the
 modified BSD (or compatible) license.  If the original author agrees,
 add a comment saying so to the source files and forward the relevant
-communication to the scipy-dev mailing list.
+communication to the scipy-dev forum.
 
 Another common occurrence is for code to be translated or derived from code in
 R, Octave (both GPL-licensed) or a commercial application.  Such code also

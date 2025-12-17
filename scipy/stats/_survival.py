@@ -1,16 +1,14 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import warnings
 
 import numpy as np
 from scipy import special, interpolate, stats
+from scipy._lib._array_api import xp_capabilities
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
 if TYPE_CHECKING:
-    from typing import Literal
     import numpy.typing as npt
 
 
@@ -240,7 +238,7 @@ class ECDFResult:
 
 
 def _iv_CensoredData(
-    sample: npt.ArrayLike | CensoredData, param_name: str = 'sample'
+    sample: "npt.ArrayLike | CensoredData", param_name: str = "sample"
 ) -> CensoredData:
     """Attempt to convert `sample` to `CensoredData`."""
     if not isinstance(sample, CensoredData):
@@ -252,7 +250,8 @@ def _iv_CensoredData(
     return sample
 
 
-def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
+@xp_capabilities(np_only=True)
+def ecdf(sample: "npt.ArrayLike | CensoredData") -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
@@ -391,7 +390,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> res.cdf.plot(ax)
+    >>> res.sf.plot(ax)
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
@@ -486,9 +485,10 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
+@xp_capabilities(np_only=True)
 def logrank(
-    x: npt.ArrayLike | CensoredData,
-    y: npt.ArrayLike | CensoredData,
+    x: "npt.ArrayLike | CensoredData",
+    y: "npt.ArrayLike | CensoredData",
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
     r"""Compare the survival distributions of two samples via the logrank test.

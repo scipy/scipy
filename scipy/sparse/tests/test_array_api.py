@@ -87,26 +87,21 @@ def test_indexing(A):
     if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr'):
         return
 
-    with pytest.raises(NotImplementedError):
-        A[1, :]
+    all_res = (
+        A[1, :],
+        A[:, 1],
+        A[1, [1, 2]],
+        A[[1, 2], 1],
+        A[[0]],
+        A[:, [1, 2]],
+        A[[1, 2], :],
+        A[1, [[1, 2]]],
+        A[[[1, 2]], 1],
+    )
 
-    with pytest.raises(NotImplementedError):
-        A[:, 1]
-
-    with pytest.raises(NotImplementedError):
-        A[1, [1, 2]]
-
-    with pytest.raises(NotImplementedError):
-        A[[1, 2], 1]
-
-    assert isinstance(A[[0]], scipy.sparse.sparray), \
-           "Expected sparse array, got sparse matrix"
-    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), \
-           "Expected ndarray, got sparse array"
-    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), \
-           "Expected ndarray, got sparse array"
-    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), \
-           "Expected sparse array, got something else"
+    for res in all_res:
+        assert isinstance(res, scipy.sparse.sparray), \
+            f"Expected sparse array, got {res._class__.__name__}"
 
 
 @parametrize_sparrays
@@ -256,13 +251,18 @@ def test_spsolve(B):
     )
 
 
-def test_spsolve_triangular():
-    X = scipy.sparse.csr_array([
+@pytest.mark.parametrize("fmt",["csr","csc"])
+def test_spsolve_triangular(fmt):
+    arr = [
         [1, 0, 0, 0],
         [2, 1, 0, 0],
         [3, 2, 1, 0],
         [4, 3, 2, 1],
-    ])
+    ]
+    if fmt == "csr":
+      X = scipy.sparse.csr_array(arr)
+    else:
+      X = scipy.sparse.csc_array(arr)
     spla.spsolve_triangular(X, [1, 2, 3, 4])
 
 
@@ -417,7 +417,7 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
 
 
 def test_default_is_matrix_diags():
-    m = scipy.sparse.diags([0, 1, 2])
+    m = scipy.sparse.diags([0.0, 1.0, 2.0])
     assert not isinstance(m, scipy.sparse.sparray)
 
 
@@ -427,7 +427,7 @@ def test_default_is_matrix_eye():
 
 
 def test_default_is_matrix_spdiags():
-    m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
+    m = scipy.sparse.spdiags([1.0, 2.0, 3.0], 0, 3, 3)
     assert not isinstance(m, scipy.sparse.sparray)
 
 

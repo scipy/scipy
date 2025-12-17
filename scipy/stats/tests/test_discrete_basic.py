@@ -1,3 +1,5 @@
+import warnings
+
 import numpy.testing as npt
 from numpy.testing import assert_allclose
 
@@ -5,6 +7,7 @@ import numpy as np
 import pytest
 
 from scipy import stats
+from scipy.special import _ufuncs
 from .common_tests import (check_normalization, check_moment,
                            check_mean_expect,
                            check_var_expect, check_skew_expect,
@@ -20,8 +23,10 @@ vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
-distslow = {'zipfian', 'nhypergeom'}
+distslow = {'nhypergeom'}
 
+# Override number of ULPs adjustment for `check_cdf_ppf`
+roundtrip_cdf_ppf_exceptions = {'nbinom': 30}
 
 def cases_test_discrete_basic():
     seen = set()
@@ -34,14 +39,18 @@ def cases_test_discrete_basic():
 
 
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
-def test_discrete_basic(distname, arg, first_case):
+def test_discrete_basic(distname, arg, first_case, num_parallel_threads):
+    if (isinstance(distname, str) and distname.startswith('nchypergeom')
+            and num_parallel_threads > 1):
+        pytest.skip(reason='nchypergeom has a global random generator')
+
     try:
         distfn = getattr(stats, distname)
     except TypeError:
         distfn = distname
         distname = 'sample distribution'
-    np.random.seed(9765456)
-    rvs = distfn.rvs(size=2000, *arg)
+    rng = np.random.RandomState(9765456)
+    rvs = distfn.rvs(*arg, size=2000, random_state=rng)
     supp = np.unique(rvs)
     m, v = distfn.stats(*arg)
     check_cdf_ppf(distfn, arg, supp, distname + ' cdf_ppf')
@@ -66,8 +75,10 @@ def test_discrete_basic(distname, arg, first_case):
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
             check_scale_docstring(distfn)
-        check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
+        if num_parallel_threads == 1:
+            check_random_state_property(distfn, arg)
+            if distname not in {'poisson_binom'}:  # can't be pickled
+                check_pickling(distfn, arg)
         check_freezing(distfn, arg)
 
         # Entropy
@@ -91,9 +102,9 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         if distname in ['zipf', 'betanbinom']:
-            sup.filter(RuntimeWarning)
+            warnings.simplefilter("ignore", RuntimeWarning)
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -115,8 +126,7 @@ def test_rvs_broadcast(dist, shape_args):
     # test might also have to be changed.
     shape_only = dist in ['betabinom', 'betanbinom', 'skellam', 'yulesimon',
                           'dlaplace', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius']
-
+                          'nchypergeom_wallenius', 'poisson_binom']
     try:
         distfunc = getattr(stats, dist)
     except TypeError:
@@ -126,6 +136,16 @@ def test_rvs_broadcast(dist, shape_args):
     nargs = distfunc.numargs
     allargs = []
     bshape = []
+
+    if dist == 'poisson_binom':
+        # normal rules apply except the last axis of `p` is ignored
+        p = np.full((3, 1, 10), 0.5)
+        allargs = (p, loc)
+        bshape = (3, 2)
+        check_rvs_broadcast(distfunc, dist, allargs,
+                            bshape, shape_only, [np.dtype(int)])
+        return
+
     # Generate shape parameter arguments...
     for k in range(nargs):
         shp = (k + 3,) + (1,)*(k + 1)
@@ -148,8 +168,9 @@ def test_ppf_with_loc(dist, args):
     except TypeError:
         distfn = dist
     #check with a negative, no and positive relocation.
-    np.random.seed(1942349)
-    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    rng = np.random.default_rng(5108587887)
+
+    re_locs = [rng.integers(-10, -1), 0, rng.integers(1, 10)]
     _a, _b = distfn.support(*args)
     for loc in re_locs:
         npt.assert_array_equal(
@@ -165,17 +186,17 @@ def test_isf_with_loc(dist, args):
     except TypeError:
         distfn = dist
     # check with a negative, no and positive relocation.
-    np.random.seed(1942349)
-    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    rng = np.random.default_rng(4030503535)
+    re_locs = [rng.integers(-10, -1), 0, rng.integers(1, 10)]
     _a, _b = distfn.support(*args)
     for loc in re_locs:
         expected = _b + loc, _a - 1 + loc
         res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
         npt.assert_array_equal(expected, res)
     # test broadcasting behaviour
-    re_locs = [np.random.randint(-10, -1, size=(5, 3)),
+    re_locs = [rng.integers(-10, -1, size=(5, 3)),
                np.zeros((5, 3)),
-               np.random.randint(1, 10, size=(5, 3))]
+               rng.integers(1, 10, size=(5, 3))]
     _a, _b = distfn.support(*args)
     for loc in re_locs:
         expected = _b + loc, _a - 1 + loc
@@ -193,8 +214,9 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     cdf_supp = distfn.cdf(supp, *arg)
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
-    # CDF values down by 15 ULPs help to avoid this.
-    cdf_supp0 = cdf_supp - 15*np.spacing(cdf_supp)
+    # CDF values down by a few ULPs help to avoid this.
+    n_ulps = roundtrip_cdf_ppf_exceptions.get(distfn.name, 15)
+    cdf_supp0 = cdf_supp - n_ulps*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
     # Repeat the same calculation, but with the CDF values decreased by 1e-8.
@@ -327,15 +349,16 @@ def test_methods_with_lists(method, distname, args):
         dist = getattr(stats, distname)
     except TypeError:
         return
+    dist_method = getattr(dist, method)
     if method in ['ppf', 'isf']:
         z = [0.1, 0.2]
     else:
         z = [0, 1]
     p2 = [[p]*2 for p in args]
     loc = [0, 1]
-    result = dist.pmf(z, *p2, loc=loc)
+    result = dist_method(z, *p2, loc=loc)
     npt.assert_allclose(result,
-                        [dist.pmf(*v) for v in zip(z, *p2, loc)],
+                        [dist_method(*v) for v in zip(z, *p2, loc)],
                         rtol=1e-15, atol=1e-15)
 
 
@@ -399,7 +422,7 @@ def test_integer_shapes(distname, shapename, shapes):
     assert not np.any(np.isnan(pmf[2, :]))
 
 
-def test_frozen_attributes():
+def test_frozen_attributes(monkeypatch):
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
     message = "'rv_discrete_frozen' object has no attribute"
@@ -407,10 +430,10 @@ def test_frozen_attributes():
         stats.binom(10, 0.5).pdf
     with pytest.raises(AttributeError, match=message):
         stats.binom(10, 0.5).logpdf
-    stats.binom.pdf = "herring"
+    monkeypatch.setattr(stats.binom, "pdf", "herring", raising=False)
     frozen_binom = stats.binom(10, 0.5)
     assert isinstance(frozen_binom, rv_discrete_frozen)
-    delattr(stats.binom, 'pdf')
+    assert not hasattr(frozen_binom, "pdf")
 
 
 @pytest.mark.parametrize('distname, shapes', distdiscrete)
@@ -546,3 +569,57 @@ def test_rv_sample():
     rng = np.random.default_rng(98430143469)
     rvs0 = dist.ppf(rng.random(size=100))
     assert_allclose(rvs, rvs0)
+
+def test__pmf_float_input():
+    # gh-21272
+    # test that `rvs()` can be computed when `_pmf` requires float input
+
+    class rv_exponential(stats.rv_discrete):
+        def _pmf(self, i):
+            return (2/3)*3**(1 - i)
+
+    rv = rv_exponential(a=0.0, b=float('inf'))
+    rvs = rv.rvs(random_state=42)  # should not crash due to integer input to `_pmf`
+    assert_allclose(rvs, 0)
+
+
+def test_gh18919_ppf_array_args():
+    # gh-18919 reported incorrect results for ppf and isf of discrete distributions when
+    # arguments were arrays and first argument (`q`) had elements at the boundaries of
+    # the support.
+    q = [[0.5, 1.0, 0.5],
+         [1.0, 0.5, 1.0],
+         [0.5, 1.0, 0.5]]
+
+    n = [[45, 46, 47],
+         [48, 49, 50],
+         [51, 52, 53]]
+
+    p = 0.5
+
+    ref = _ufuncs._binom_ppf(q, n, p)
+    res = stats.binom.ppf(q, n, p)
+    np.testing.assert_allclose(res, ref)
+
+@pytest.mark.parametrize("dist", [stats.binom, stats.boltzmann])
+def test_gh18919_ppf_isf_array_args2(dist):
+    # a more general version of the test above. Requires that arguments are broadcasted
+    # by the infrastructure.
+    rng = np.random.default_rng(34873457824358729823)
+    q = rng.random(size=(30, 1, 1, 1))
+    n = rng.integers(10, 30, size=(10, 1, 1))
+    p = rng.random(size=(4, 1))
+    loc = rng.integers(5, size=(3,))
+
+    q[rng.random(size=30) > 0.7] = 0
+    q[rng.random(size=30) > 0.7] = 1
+
+    args = (q, n, p) if dist == stats.binom else (q, p, n)
+
+    res = dist.ppf(*args, loc=loc)
+    ref = np.vectorize(dist.ppf)(*args) + loc
+    np.testing.assert_allclose(res, ref)
+
+    res = dist.isf(*args, loc=loc)
+    ref = np.vectorize(dist.isf)(*args) + loc
+    np.testing.assert_allclose(res, ref)

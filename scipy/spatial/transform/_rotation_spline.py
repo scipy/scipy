@@ -367,6 +367,11 @@ class RotationSpline:
         if rotations.single:
             raise ValueError("`rotations` must be a sequence of rotations.")
 
+        if rotations.as_quat().ndim > 2:
+            raise ValueError(
+                "Rotations with more than 1 leading dimension are not supported."
+            )
+
         if len(rotations) == 1:
             raise ValueError("`rotations` must contain at least 2 rotations.")
 
@@ -376,9 +381,9 @@ class RotationSpline:
 
         if len(times) != len(rotations):
             raise ValueError("Expected number of rotations to be equal to "
-                             "number of timestamps given, got {} rotations "
-                             "and {} timestamps."
-                             .format(len(rotations), len(times)))
+                             "number of timestamps given, "
+                             f"got {len(rotations)} rotations "
+                             f"and {len(times)} timestamps.")
 
         dt = np.diff(times)
         if np.any(dt <= 0):

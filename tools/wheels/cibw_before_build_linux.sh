@@ -13,13 +13,17 @@ else
     exit 1
 fi
 
-PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
-
 printenv
 # Update license
 cat $PROJECT_DIR/tools/wheels/LICENSE_linux.txt >> $PROJECT_DIR/LICENSE.txt
 
-# Install Openblas
-basedir=$(python tools/openblas_support.py $NIGHTLY_FLAG)
-cp -r $basedir/lib/* /usr/local/lib
-cp $basedir/include/* /usr/local/include
+# Not needed anymore, but leave commented out in case we need to start pulling
+# in a dev version of some dependency again.
+#FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_config_var('Py_GIL_DISABLED')))")"
+#if [[ $FREE_THREADED_BUILD == "True" ]]; then
+#    # Workarounds here
+#fi
+
+# Install OpenBLAS
+python -m pip install -r requirements/openblas.txt
+python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > $PROJECT_DIR/scipy-openblas.pc

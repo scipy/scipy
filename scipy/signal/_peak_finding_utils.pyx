@@ -88,8 +88,8 @@ def _local_maxima_1d(const np.float64_t[::1] x not None):
     return midpoints.base, left_edges.base, right_edges.base
 
 
-def _select_by_peak_distance(np.intp_t[::1] peaks not None,
-                             np.float64_t[::1] priority not None,
+def _select_by_peak_distance(const np.intp_t[::1] peaks not None,
+                             const np.float64_t[::1] priority not None,
                              np.float64_t distance):
     """
     Evaluate which peaks fulfill the distance condition.
@@ -164,7 +164,7 @@ class PeakPropertyWarning(RuntimeWarning):
 
 
 def _peak_prominences(const np.float64_t[::1] x not None,
-                      np.intp_t[::1] peaks not None,
+                      const np.intp_t[::1] peaks not None,
                       np.intp_t wlen):
     """
     Calculate the prominence of each peak in a signal.
@@ -262,11 +262,11 @@ def _peak_prominences(const np.float64_t[::1] x not None,
 
 
 def _peak_widths(const np.float64_t[::1] x not None,
-                 np.intp_t[::1] peaks not None,
+                 const np.intp_t[::1] peaks not None,
                  np.float64_t rel_height,
-                 np.float64_t[::1] prominences not None,
-                 np.intp_t[::1] left_bases not None,
-                 np.intp_t[::1] right_bases not None):
+                 const np.float64_t[::1] prominences not None,
+                 const np.intp_t[::1] left_bases not None,
+                 const np.intp_t[::1] right_bases not None):
     """
     Calculate the width of each each peak in a signal.
 

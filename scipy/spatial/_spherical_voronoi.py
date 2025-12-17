@@ -14,7 +14,7 @@ Spherical Voronoi Code
 import numpy as np
 import scipy
 from . import _voronoi
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree  # type: ignore[attr-defined]
 
 __all__ = ['SphericalVoronoi']
 
@@ -70,9 +70,9 @@ class SphericalVoronoi:
     -------
     calculate_areas
         Calculates the areas of the Voronoi regions. For 2D point sets, the
-        regions are circular arcs. The sum of the areas is `2 * pi * radius`.
+        regions are circular arcs. The sum of the areas is ``2 * pi * radius``.
         For 3D point sets, the regions are spherical polygons. The sum of the
-        areas is `4 * pi * radius**2`.
+        areas is ``4 * pi * radius**2``.
 
     Raises
     ------
@@ -311,9 +311,8 @@ class SphericalVoronoi:
         areas = self.radius * theta
 
         # Correct arcs which go the wrong way (single-hemisphere inputs)
-        signs = np.sign(np.einsum('ij,ij->i', arcs[:, 0],
-                                              self.vertices - self.center))
-        indices = np.where(signs < 0)
+        indices = np.einsum('ij,ij->i', arcs[:, 0],
+                            self.vertices - self.center) < 0
         areas[indices] = 2 * np.pi * self.radius - areas[indices]
         return areas
 
@@ -321,10 +320,10 @@ class SphericalVoronoi:
         """Calculates the areas of the Voronoi regions.
 
         For 2D point sets, the regions are circular arcs. The sum of the areas
-        is `2 * pi * radius`.
+        is ``2 * pi * radius``.
 
         For 3D point sets, the regions are spherical polygons. The sum of the
-        areas is `4 * pi * radius**2`.
+        areas is ``4 * pi * radius**2``.
 
         .. versionadded:: 1.5.0
 

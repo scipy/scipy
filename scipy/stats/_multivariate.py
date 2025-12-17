@@ -2,17 +2,22 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import warnings
+import threading
+import types
 import numpy as np
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
-from scipy._lib._util import check_random_state, _lazywhere
+from scipy import special
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot, get_blas_funcs
-from ._continuous_distns import norm
+from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
-from . import _mvn, _covariance, _rcont
-from ._qmvnt import _qmvt
+from . import _covariance, _rcont
+from ._qmvnt import _qmvt, _qmvn, _qauto
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
 
@@ -31,11 +36,14 @@ __all__ = ['multivariate_normal',
            'multivariate_hypergeom',
            'random_table',
            'uniform_direction',
-           'vonmises_fisher']
+           'vonmises_fisher',
+           'normal_inverse_gamma',
+           'matrix_t']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
+MVN_LOCK = threading.Lock()
 
 
 _doc_random_state = """\
@@ -112,6 +120,50 @@ def _pinv_1d(v, eps=1e-5):
 
     """
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
+
+
+def _validate_marginal_input(dimensions, multivariate_dims):
+    """Determine if input dimensions can be marginalized.
+
+    Parameters
+    ----------
+    dimensions : float, ndarray
+        Input dimensions to be marginalized
+    multivariate_dims : int
+        Number of dimensions of multivariate distribution.
+
+    Returns
+    -------
+    dims : ndarray
+        Array of indices to marginalize
+    """
+    dims = np.copy(dimensions)
+    dims = np.atleast_1d(dims)
+
+    if len(dims) == 0:
+        msg = "Cannot marginalize all dimensions."
+        raise ValueError(msg)
+
+    if not np.issubdtype(dims.dtype, np.integer):
+        msg = ("Elements of `dimensions` must be integers - the indices "
+               "of the marginal variables being retained.")
+        raise ValueError(msg)
+
+    original_dims = np.copy(dims)
+
+    dims[dims < 0] += multivariate_dims
+
+    if len(np.unique(dims)) != len(dims):
+        msg = "All elements of `dimensions` must be unique."
+        raise ValueError(msg)
+
+    i_invalid = (dims < 0) | (dims >= multivariate_dims)
+    if np.any(i_invalid):
+        msg = (f"Dimensions {original_dims[i_invalid]} are invalid "
+               f"for a distribution in {multivariate_dims} dimensions.")
+        raise ValueError(msg)
+
+    return dims
 
 
 class _PSD:
@@ -207,6 +259,7 @@ class multi_rv_generic:
     Class which encapsulates common functionality between all multivariate
     distributions.
     """
+
     def __init__(self, seed=None):
         super().__init__()
         self._random_state = check_random_state(seed)
@@ -241,6 +294,10 @@ class multi_rv_frozen:
     Class which encapsulates common functionality between all frozen
     multivariate distributions.
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     @property
     def random_state(self):
         return self._dist._random_state
@@ -306,6 +363,8 @@ class multivariate_normal_gen(multi_rv_generic):
         Draw random samples from a multivariate normal distribution.
     entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    marginal(dimensions, mean=None, cov=1, allow_singular=False)
+        Return a marginal multivariate normal distribution.
     fit(x, fix_mean=None, fix_cov=None)
         Fit a multivariate normal distribution to data.
 
@@ -389,14 +448,14 @@ class multivariate_normal_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
-    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None, **kwds):
         """Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
         """
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
-                                          seed=seed)
+                                          seed=seed, **kwds)
 
     def _process_parameters(self, mean, cov, allow_singular=True):
         """
@@ -468,8 +527,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = cov.reshape(1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
-            raise ValueError("Array 'mean' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'mean' must be a vector of length {dim}.")
         if cov.ndim == 0:
             cov = cov * np.eye(dim)
         elif cov.ndim == 1:
@@ -478,15 +536,14 @@ class multivariate_normal_gen(multi_rv_generic):
             rows, cols = cov.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(cov.shape))
+                       f" but cov.shape = {str(cov.shape)}.")
             else:
-                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'mean' is a vector of length %d.")
-                msg = msg % (str(cov.shape), len(mean))
+                msg = (f"Dimension mismatch: array 'cov' is of shape {cov.shape}, "
+                       f"but 'mean' is a vector of length {len(mean)}.")
             raise ValueError(msg)
         elif cov.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % cov.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {cov.ndim}")
 
         return dim, mean, cov
 
@@ -590,7 +647,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit, rng):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -610,6 +667,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Notes
         -----
@@ -627,6 +687,7 @@ class multivariate_normal_gen(multi_rv_generic):
         # ensuring that lower bounds are indeed lower when passed, then
         # set signs of resulting CDF manually.
         b, a = np.broadcast_arrays(x, lower)
+        b, a = b - mean, a - mean  # _qmvn only accepts zero mean
         i_swap = b < a
         signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
         a, b = a.copy(), b.copy()
@@ -634,16 +695,19 @@ class multivariate_normal_gen(multi_rv_generic):
         n = x.shape[-1]
         limits = np.concatenate((a, b), axis=-1)
 
-        # mvnun expects 1-d arguments, so process points sequentially
+        # qmvn expects 1-d arguments, so process points sequentially
+        # XXX: if cov.ndim == 2 and limits.ndim == 1, can avoid apply_along_axis
         def func1d(limits):
-            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                              maxpts, abseps, releps)[0]
+            # res0 = _qmvn(maxpts, cov, limits[:n], limits[n:], rng)[0]
+            res = _qauto(_qmvn, cov, limits[:n], limits[n:],
+                         rng, error=abseps, limit=maxpts, n_batches=10)
+            return np.squeeze(res[0])
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5, *, lower_limit=None):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -653,7 +717,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -661,6 +725,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -680,7 +747,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+
+        rng = self._get_random_state(rng)
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
@@ -688,7 +757,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5, *, lower_limit=None):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -698,7 +767,7 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_default_callparams)s
         maxpts : integer, optional
             The maximum number of points to use for integration
-            (default `1000000*dim`)
+            (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance (default 1e-5)
         releps : float, optional
@@ -706,6 +775,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -725,7 +797,8 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        rng = self._get_random_state(rng)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -798,7 +871,7 @@ class multivariate_normal_gen(multi_rv_generic):
         fix_mean : ndarray(n, )
             Fixed mean vector. Must have length `n`.
         fix_cov: ndarray (n, n)
-            Fixed covariance matrix. Must have shape `(n, n)`.
+            Fixed covariance matrix. Must have shape ``(n, n)``.
 
         Returns
         -------
@@ -850,11 +923,41 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
+    def marginal(self, dimensions, mean=None, cov=1, allow_singular=False):
+        """Return a marginal multivariate normal distribution.
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate distribution corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+        %(_mvn_doc_default_callparams)s
+
+        Returns
+        -------
+        marginal_multivariate_normal : multivariate_normal_frozen
+            An object representing the marginal distribution.
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+        """
+        params = self._process_parameters(mean, cov, allow_singular)
+        n, mean, cov_object = params
+        dims = _validate_marginal_input(dimensions, n)
+
+        mean = mean[dims]
+        cov = cov_object.covariance[np.ix_(dims, dims)]
+
+        return multivariate_normal_frozen(mean, cov, allow_singular)
 
 multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
                  maxpts=None, abseps=1e-5, releps=1e-5):
         """Create a frozen multivariate normal distribution.
@@ -877,7 +980,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             then that instance is used.
         maxpts : integer, optional
             The maximum number of points to use for integration of the
-            cumulative distribution function (default `1000000*dim`)
+            cumulative distribution function (default ``1000000*dim``)
         abseps : float, optional
             Absolute error tolerance for the cumulative distribution function
             (default 1e-5)
@@ -923,19 +1026,20 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x, *, lower_limit=None):
-        cdf = self.cdf(x, lower_limit=lower_limit)
+    def logcdf(self, x, *, lower_limit=None, rng=None):
+        cdf = self.cdf(x, lower_limit=lower_limit, rng=rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
         out = np.log(cdf)
         return out
 
-    def cdf(self, x, *, lower_limit=None):
+    def cdf(self, x, *, lower_limit=None, rng=None):
         x = self._dist._process_quantiles(x, self.dim)
+        rng = self._dist._get_random_state(rng)
         out = self._dist._cdf(x, self.mean, self.cov_object.covariance,
                               self.maxpts, self.abseps, self.releps,
-                              lower_limit)
+                              lower_limit, rng)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
@@ -954,6 +1058,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
         rank = self.cov_object.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
+    def marginal(self, dimensions):
+        return self._dist.marginal(dimensions, self.mean,
+                                   self.cov_object, self.allow_singular)
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
@@ -968,15 +1075,15 @@ _matnorm_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
 rowcov : array_like, optional
-    Among-row covariance matrix of the distribution (default: `1`)
+    Among-row covariance matrix of the distribution (default: ``1``)
 colcov : array_like, optional
-    Among-column covariance matrix of the distribution (default: `1`)
+    Among-column covariance matrix of the distribution (default: ``1``)
 """
 
 _matnorm_doc_callparams_note = """\
 If `mean` is set to `None` then a matrix of zeros is used for the mean.
 The dimensions of this matrix are inferred from the shape of `rowcov` and
-`colcov`, if these are provided, or set to `1` if ambiguous.
+`colcov`, if these are provided, or set to ``1`` if ambiguous.
 
 `rowcov` and `colcov` can be two-dimensional array_likes specifying the
 covariance matrices directly. Alternatively, a one-dimensional array will
@@ -1329,9 +1436,9 @@ class matrix_normal_gen(multi_rv_generic):
         Parameters
         ----------
         rowcov : array_like, optional
-            Among-row covariance matrix of the distribution (default: `1`)
+            Among-row covariance matrix of the distribution (default: ``1``)
         colcov : array_like, optional
-            Among-column covariance matrix of the distribution (default: `1`)
+            Among-column covariance matrix of the distribution (default: ``1``)
 
         Returns
         -------
@@ -1391,6 +1498,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     >>> distn.logpdf(X)
     -10.590229595124615
     """
+    __class_getitem__ = None
 
     def __init__(self, mean=None, rowcov=1, colcov=1, seed=None):
         self._dist = matrix_normal_gen(seed)
@@ -1417,7 +1525,6 @@ class matrix_normal_frozen(multi_rv_frozen):
         return self._dist._entropy(self.dims, self.rowpsd.log_pdet,
                                    self.colpsd.log_pdet)
 
-
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_normal_gen and fill in default strings in class docstrings
 for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
@@ -1426,6 +1533,633 @@ for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
                                              matnorm_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, matnorm_docdict_params)
+
+
+_matt_doc_default_callparams = """\
+mean : array_like, optional
+    Mean of the distribution (default: `None`)
+row_spread : array_like, optional
+    Row-wise 2nd order raw central moment matrix (default: ``1``)
+col_spread : array_like, optional
+    Column-wise 2nd order raw central moment matrix (default: ``1``)
+df : scalar, optional
+    Degrees of freedom (default: ``1``)
+"""
+
+_matt_doc_callparams_note = """\
+If `mean` is set to `None` then a matrix of zeros is used for the mean.
+The dimensions of this matrix are inferred from the shape of `row_spread` and
+`col_spread`, if these are provided, or set to ``1`` if ambiguous.
+
+`row_spread` and `col_spread` can be two-dimensional array_likes specifying the
+spread matrices directly. Alternatively, a one-dimensional array will
+be be interpreted as the entries of a diagonal matrix, and a scalar or
+zero-dimensional array will be interpreted as this value times the
+identity matrix.
+"""
+
+_matt_doc_frozen_callparams = ""
+
+_matt_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+matrix_t_docdict_params = {
+    "_matt_doc_default_callparams": _matt_doc_default_callparams,
+    "_matt_doc_callparams_note": _matt_doc_callparams_note,
+    "_doc_random_state": _doc_random_state,
+}
+
+matrix_t_docdict_noparams = {
+    "_matt_doc_default_callparams": _matt_doc_frozen_callparams,
+    "_matt_doc_callparams_note": _matt_doc_frozen_callparams_note,
+    "_doc_random_state": _doc_random_state,
+}
+
+
+class matrix_t_gen(multi_rv_generic):
+    r"""A matrix t-random variable.
+
+    The `mean` keyword specifies the mean.
+    The `row_spread` keyword specifies the row-wise spread matrix.
+    The `col_spread` keyword specifies the column-wise spread matrix.
+
+    Methods
+    -------
+    pdf(x, mean=None, row_spread=None, col_spread=None)
+        Probability density function.
+    logpdf(x, mean=None, row_spread=None, col_spread=None)
+        Log of the probability density function.
+    rvs(mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None)
+        Draw random samples.
+
+    Parameters
+    ----------
+    %(_matt_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_matt_doc_callparams_note)s
+
+    The spread matrices specified by `row_spread` and `col_spread` must be
+    (symmetric) positive definite. If the samples in `X` have shape `(m,n)`
+    then `row_spread` must have shape `(m,m)` and `col_spread` must have shape `(n,n)`.
+    Spread matrices must be full rank.
+
+    The probability density function for `matrix_t` is
+
+    .. math::
+
+        f(X \vert \mathrm{M}, \Sigma, \Omega, \mathrm{df}) =
+        \frac{
+            \Gamma_n \left(
+                \frac{\mathrm{df} + m + n - 1}{2}
+            \right)
+            \left(
+            \det \left(
+                I_n + (X - \mathrm{M})^T \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1}
+            \right)
+        \right)^{ -\frac{\mathrm{df} + m + n - 1}{2} }
+        }{
+            \Gamma_n \left(
+                \frac{\mathrm{df} + n - 1}{2}
+            \right)
+            \pi^{mn / 2}
+            \left( \det \Sigma \right)^{n/2}
+            \left( \det \Omega \right)^{m/2}
+        }
+
+    or, alternatively,
+
+    .. math::
+
+        f(X \vert \mathrm{M}, \Sigma, \Omega, \mathrm{df}) =
+        \frac{
+            \Gamma_m \left(
+                \frac{\mathrm{df} + m + n - 1}{2}
+            \right)
+            \left(
+                \det \left(
+                    I_m + \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1} (X - \mathrm{M})^T
+                    \right)
+            \right)^{ -\frac{\mathrm{df} + m + n - 1}{2} }
+        }{
+            \Gamma_m \left(
+                \frac{\mathrm{df} + n - 1}{2}
+            \right)
+            \pi^{mn / 2}
+            \left( \det \Sigma \right)^{n/2}
+            \left( \det \Omega \right)^{m/2}
+        }
+
+    where :math:`\mathrm{M}` is the mean,
+    :math:`\Sigma` is the row-wise spread matrix,
+    :math:`\Omega` is the column-wise matrix,
+    :math:`\mathrm{df}` is the degrees of freedom,
+    and :math:`\Gamma_n` is the multivariate gamma function.
+
+    These equivalent formulations come from the identity
+
+    .. math::
+
+        \det\left( I_m + A B \right) = \det\left( I_n + B A \right)
+
+    for :math:`m \times n` arrays :math:`A` and :math:`B^T`
+    and the fact that
+    :math:`\gamma_n(\mathrm{df} + m) / \gamma_n(\mathrm{df})`
+    is equal to
+    :math:`\gamma_m(\mathrm{df} + n) / \gamma_m(\mathrm{df})`,
+    where
+
+    .. math::
+
+        \gamma_m(\mathrm{df}) = 2^{m(m-1)/2}
+        \Gamma_m\left( (\mathrm{df} + m - 1) / 2 \right)
+
+    denotes a normalized multivariate gamma function.
+
+    When :math:`\mathrm{df} = 1` this distribution is known as the matrix
+    variate Cauchy.
+
+    .. versionadded:: 1.17.0
+
+    References
+    ----------
+    .. [1] Gupta, A.K., & Nagar, D.K. (2000). Matrix Variate Distributions (1st ed.).
+           Chapman and Hall/CRC.
+
+    Examples
+    --------
+
+    >>> import numpy as np
+    >>> from scipy.stats import matrix_t
+    >>> M = np.arange(6).reshape(3,2)
+    >>> M
+    array([[0, 1],
+           [2, 3],
+           [4, 5]])
+    >>> Sigma = np.diag([1,2,3])
+    >>> Sigma
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3]])
+    >>> Omega = 0.3*np.identity(2)
+    >>> Omega
+    array([[ 0.3,  0. ],
+           [ 0. ,  0.3]])
+    >>> X = M + 0.1
+    >>> X
+    array([[ 0.1,  1.1],
+           [ 2.1,  3.1],
+           [ 4.1,  5.1]])
+    >>> df = 3
+    >>> matrix_t.pdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
+    0.9972880280135796
+
+    Alternatively, the object may be called (as a function) to fix the mean
+    and spread parameters, returning a "frozen" matrix t
+    random variable:
+
+    >>> rv = matrix_t(mean=None, row_spread=1, col_spread=1, df=1)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # mean and spreads and degrees of freedom fixed.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = scipy._lib.doccer.docformat(
+            self.__doc__, matrix_t_docdict_params
+        )
+
+    def __call__(self, mean=None, row_spread=1, col_spread=1, df=None, seed=None):
+        """Create a frozen matrix t distribution.
+
+        See `matrix_t_frozen` for more information.
+        """
+        return matrix_t_frozen(mean, row_spread, col_spread, df, seed)
+
+    def _process_parameters(self, mean, row_spread, col_spread, df):
+        """
+        Infer dimensionality from mean or covariance matrices.
+        Handle defaults. Ensure conformality.
+
+        Parameters
+        ----------
+        mean : ndarray, shape (m,n)
+            Mean of the distribution
+        row_spread : ndarray, shape (m,m)
+            Row-wise spread matrix
+        col_spread : ndarray, shape (n,n)
+            Column-wise spread matrix
+        df : float
+            Degrees of freedom
+        """
+
+        # Process mean
+        if mean is not None:
+            mean = np.asarray(mean, dtype=float)
+            meanshape = mean.shape
+            if 0 in meanshape:
+                raise ValueError("Array `mean` has invalid shape.")
+            if len(meanshape) != 2:
+                raise ValueError("Array `mean` must be 2D.")
+
+        # Process row-wise spread
+        row_spread = np.asarray(row_spread, dtype=float)
+        if row_spread.ndim == 0:
+            if mean is not None:
+                row_spread = row_spread * np.identity(meanshape[0])
+            else:
+                row_spread = row_spread * np.identity(1)
+        elif row_spread.ndim == 1:
+            row_spread = np.diag(row_spread)
+        rowshape = row_spread.shape
+        if 0 in rowshape:
+            raise ValueError("Array `row_spread` has invalid shape.")
+        if len(rowshape) != 2:
+            raise ValueError("Array `row_spread` must be a scalar or a 2D array.")
+        if rowshape[0] != rowshape[1]:
+            raise ValueError("Array `row_spread` must be square.")
+        numrows = rowshape[0]
+
+        # Process column-wise spread
+        col_spread = np.asarray(col_spread, dtype=float)
+        if col_spread.ndim == 0:
+            if mean is not None:
+                col_spread = col_spread * np.identity(meanshape[1])
+            else:
+                col_spread = col_spread * np.identity(1)
+        elif col_spread.ndim == 1:
+            col_spread = np.diag(col_spread)
+        colshape = col_spread.shape
+        if 0 in colshape:
+            raise ValueError("Array `col_spread` has invalid shape.")
+        if len(colshape) != 2:
+            raise ValueError("Array `col_spread` must be a scalar or a 2D array.")
+        if colshape[0] != colshape[1]:
+            raise ValueError("Array `col_spread` must be square.")
+        numcols = colshape[0]
+
+        # Ensure mean and spreads are conformal
+        if mean is not None:
+            if meanshape[0] != numrows:
+                raise ValueError(
+                    "Arrays `mean` and `row_spread` must have the same number of rows."
+                )
+            if meanshape[1] != numcols:
+                raise ValueError(
+                    "Arrays `mean` and `col_spread` must have the same number "
+                    "of columns."
+                )
+        else:
+            mean = np.zeros((numrows, numcols))
+
+        dims = (numrows, numcols)
+
+        if df is None:
+            df = 1  # default to matrix variate Cauchy
+        elif not np.isscalar(df):
+            raise ValueError("Degrees of freedom must be a scalar.")
+        elif df <= 0:
+            raise ValueError("Degrees of freedom must be positive.")
+
+        return dims, mean, row_spread, col_spread, df
+
+    def _process_quantiles(self, X, dims):
+        """
+        Adjust quantiles array so that last two axes labels the component of
+        each data point.
+        """
+        X = np.asarray(X, dtype=float)
+        if X.ndim == 2:
+            X = X[np.newaxis, :]
+        if X.shape[-2:] != dims:
+            raise ValueError(
+                "The shape of array `X` is not conformal with "
+                "the distribution parameters."
+            )
+        return X
+
+    def _logpdf(
+        self,
+        dims,
+        X,
+        mean,
+        df,
+        invrow_spread,
+        invcol_spread,
+        logdetrow_spread,
+        logdetcol_spread,
+    ):
+        """
+        Log of the matrix t probability density function.
+
+        Parameters
+        ----------
+        dims : tuple
+            Dimensions of the matrix variates
+        X : ndarray, shape (m,n) (equal to `dims`)
+            Points at which to evaluate the log of the probability density function
+        mean : ndarray, shape (m,n)
+            Mean of the distribution
+        df : float
+            Degrees-of-freedom parameter
+        invrow_spread : ndarray, shape (m,m)
+            Inverse of the row-wise spread matrix
+        invcol_spread : ndarray, shape (n,n)
+            Inverse of the column-wise spread matrix
+        logdetrow_spread : float
+            Log-determinant of the row-wise spread matrix
+        detcol_spread : float
+            Log-determinant of the column-wise spread matrix
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use `logpdf` instead.
+        """
+        m, n = dims
+        X_shape = X.shape
+        if X.ndim > 3:
+            X = X.reshape(-1, m, n)
+        X_centered = X - mean[np.newaxis, ...]
+        det_arg = np.identity(n) + np.einsum(
+            "nij,njk,nkl,nlp->nip",
+            X_centered.transpose(0, 2, 1),
+            invrow_spread[np.newaxis, ...],
+            X_centered,
+            invcol_spread[np.newaxis, ...],
+            optimize=True,
+        )
+        _, logdet = np.linalg.slogdet(det_arg)
+        log_d_mn = -((df + m + n - 1) / 2) * logdet
+        log_f_mn = (
+            scipy.special.multigammaln((df + m + n - 1) / 2, n)
+            - scipy.special.multigammaln((df + n - 1) / 2, n)
+            - (m * n / 2) * _LOG_PI
+            - (n / 2) * logdetrow_spread
+            - (m / 2) * logdetcol_spread
+        )
+        retval = log_d_mn + log_f_mn
+        if len(X_shape) > 3:
+            retval = retval.reshape(X_shape[:-2])
+        return retval
+
+    def logpdf(self, X, mean=None, row_spread=1, col_spread=1, df=1):
+        """Log of the matrix normal probability density function.
+
+        Parameters
+        ----------
+        X : array_like
+            Quantiles, with the last two axes of `X` denoting the components.
+        %(_matt_doc_default_callparams)s
+
+        Returns
+        -------
+        logpdf : ndarray
+            Log of the probability density function evaluated at `X`
+
+        Notes
+        -----
+        %(_matt_doc_callparams_note)s
+
+        Examples
+        -------
+
+        >>> import numpy as np
+        >>> from scipy.stats import matrix_t
+        >>> M = np.arange(6).reshape(3,2); M
+        array([[0, 1],
+            [2, 3],
+            [4, 5]])
+        >>> Sigma = np.diag([1,2,3]); Sigma
+        array([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]])
+        >>> Omega = 0.3*np.identity(2); Omega
+        array([[ 0.3,  0. ],
+            [ 0. ,  0.3]])
+        >>> X = M + 0.1; X
+        array([[ 0.1,  1.1],
+            [ 2.1,  3.1],
+            [ 4.1,  5.1]])
+        >>> df = 3; df
+        3
+        >>> matrix_t.logpdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
+        -0.002715656044664061
+        """
+        dims, mean, row_spread, col_spread, df = self._process_parameters(
+            mean, row_spread, col_spread, df
+        )
+        X = self._process_quantiles(X, dims)
+        rowpsd = _PSD(row_spread, allow_singular=False)
+        colpsd = _PSD(col_spread, allow_singular=False)
+        invrow_spread = rowpsd.pinv
+        invcol_spread = colpsd.pinv
+        logdetrow_spread = rowpsd.log_pdet
+        logdetcol_spread = colpsd.log_pdet
+        out = self._logpdf(
+            dims,
+            X,
+            mean,
+            df,
+            invrow_spread,
+            invcol_spread,
+            logdetrow_spread,
+            logdetcol_spread,
+        )
+        return _squeeze_output(out)
+
+    def pdf(self, X, mean=None, row_spread=1, col_spread=1, df=1):
+        """Matrix t probability density function.
+
+        Parameters
+        ----------
+        X : array_like
+            Quantiles, with the last two axes of `X` denoting the components.
+        %(_matt_doc_default_callparams)s
+
+        Returns
+        -------
+        pdf : ndarray
+            Probability density function evaluated at `X`
+
+        Notes
+        -----
+        %(_matt_doc_callparams_note)s
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from scipy.stats import matrix_t
+        >>> M = np.arange(6).reshape(3,2); M
+        array([[0, 1],
+            [2, 3],
+            [4, 5]])
+        >>> Sigma = np.diag([1,2,3]); Sigma
+        array([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]])
+        >>> Omega = 0.3*np.identity(2); Omega
+        array([[ 0.3,  0. ],
+            [ 0. ,  0.3]])
+        >>> X = M + 0.1; X
+        array([[ 0.1,  1.1],
+            [ 2.1,  3.1],
+            [ 4.1,  5.1]])
+        >>> df = 3; df
+        3
+        >>> matrix_t.logpdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
+        0.9972880280135796
+        """
+        return np.exp(self.logpdf(X, mean, row_spread, col_spread, df))
+
+    def rvs(
+        self, mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None
+    ) -> np.ndarray:
+        """Draw random samples from a matrix t distribution.
+
+        Parameters
+        ----------
+        %(_matt_doc_default_callparams)s
+        size : integer, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `dims`), where `dims` is the
+            dimension of the random matrices.
+
+        Notes
+        -----
+        %(_matt_doc_callparams_note)s
+
+        This method takes advantage of the two equivalent expressions of the
+        probability density function. It samples a Cholesky factor of a
+        random variate of the appropriate inverse Wishart distribution using
+        the smaller of the row/column dimensions.
+        """
+        size = int(size)
+        dims, mean, row_spread, col_spread, df = self._process_parameters(
+            mean, row_spread, col_spread, df
+        )
+        random_state = self._get_random_state(random_state)
+        # see scipy.stats.matrix_normal.rvs
+        std_norm = random_state.standard_normal(
+            size=(dims[1], size, dims[0])
+        ).transpose(1, 2, 0)
+        if dims[0] <= dims[1]:
+            rowchol = _cholesky_invwishart_rvs(df, row_spread, size, random_state)
+            colchol = scipy.linalg.cholesky(col_spread, lower=True)[np.newaxis, ...]
+        else:
+            rowchol = scipy.linalg.cholesky(row_spread, lower=True)[np.newaxis, ...]
+            colchol = _cholesky_invwishart_rvs(df, col_spread, size, random_state)
+        t_raw = np.einsum("ijp,ipq,ikq->ijk", rowchol, std_norm, colchol, optimize=True)
+        t_centered = mean[np.newaxis, ...] + t_raw
+        if size == 1:
+            t_centered = t_centered.reshape(mean.shape)
+        return t_centered
+
+
+matrix_t = matrix_t_gen()
+
+
+class matrix_t_frozen:
+    def __init__(self, mean, row_spread, col_spread, df, seed=None):
+        self._dist = matrix_t_gen(seed)
+        self.dims, self.mean, self.row_spread, self.col_spread, self.df = (
+            self._dist._process_parameters(mean, row_spread, col_spread, df)
+        )
+        self._random_state = np.random.RandomState(seed)
+        self.rowpsd = _PSD(self.row_spread, allow_singular=False)
+        self.colpsd = _PSD(self.col_spread, allow_singular=False)
+
+    def logpdf(self, X):
+        X = self._dist._process_quantiles(X, self.dims)
+        rowpsd = _PSD(self.row_spread, allow_singular=False)
+        colpsd = _PSD(self.col_spread, allow_singular=False)
+        invrow_spread = rowpsd.pinv
+        invcol_spread = colpsd.pinv
+        logdetrow_spread = rowpsd.log_pdet
+        logdetcol_spread = colpsd.log_pdet
+        out = self._dist._logpdf(
+            self.dims,
+            X,
+            self.mean,
+            self.df,
+            invrow_spread,
+            invcol_spread,
+            logdetrow_spread,
+            logdetcol_spread,
+        )
+        return _squeeze_output(out)
+
+    def pdf(self, X):
+        return np.exp(self.logpdf(X))
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(
+            self.mean, self.row_spread, self.col_spread, self.df, size, random_state
+        )
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# matrix_t_gen and fill in default strings in class docstrings
+for name in ["logpdf", "pdf", "rvs"]:
+    method = matrix_t_gen.__dict__[name]
+    method_frozen = matrix_t_frozen.__dict__[name]
+    method_frozen.__doc__ = scipy._lib.doccer.docformat(
+        method.__doc__, matrix_t_docdict_noparams
+    )
+    method.__doc__ = scipy._lib.doccer.docformat(
+        method.__doc__, matrix_t_docdict_params
+    )
+
+
+
+def _cholesky_invwishart_rvs(
+    df: float, scale: np.ndarray, size: int, random_state: np.random.Generator
+) -> np.ndarray:
+    r"""Samples the lower Cholesky factor of a matrix following an inverse
+    Wishart distribution.
+
+    Notes
+    -----
+    Intended to be used *as a step in the process* for computing random variates
+    of a matrix t distribution :math:`\mathcal{T}_{m,n}` by appealing to its
+    alternative form as a matrix mixture
+    .. math::
+        \mathcal{T}_{m,n}( \mathrm{df}, \mathrm{M}, \Sigma, \Omega )
+        = \mathcal{N}_{m,n}(
+            \mathrm{M},
+            \mathcal{W}^{-1}_m(\mathrm{df} + m - 1, \Sigma),
+            \Omega
+            )
+        = \mathcal{N}_{m,n}(
+            \mathrm{M},
+            \Sigma,
+            \mathcal{W}^{-1}_n(\mathrm{df} - n + 1, \Omega)
+            )
+    where :math:`\mathcal{N}_{m,n}` is a matrix normal distribution
+    and :math:`\mathcal{W}^{-1}_d` is an inverse Wishart distribution.
+    Accordingly, the degrees of freedom adjustment
+    :math:`\mathrm{df} \to \mathrm{df} + d - 1`
+    occurrs in the scope of this function.
+    """
+    df_iw = df + scale.shape[0] - 1
+    iw_samples = scipy.stats.invwishart.rvs(df_iw, scale, size, random_state)
+    if size == 1:
+        iw_samples = iw_samples[np.newaxis, ...]
+    chol_samples = np.empty_like(iw_samples)
+    for idx in range(size):
+        chol_samples[idx] = scipy.linalg.cholesky(
+            iw_samples[idx], lower=True, check_finite=False
+        ).reshape(iw_samples.shape[1:])
+    return chol_samples.reshape((size, *scale.shape))
+
 
 _dirichlet_doc_default_callparams = """\
 alpha : array_like
@@ -1497,7 +2231,7 @@ def _dirichlet_check_input(alpha, x):
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal "
-                         "simplex. but np.sum(x, 0) = %s." % np.sum(x, 0))
+                         f"simplex. but np.sum(x, 0) = {np.sum(x, 0)}.")
 
     return x
 
@@ -1809,6 +2543,8 @@ dirichlet = dirichlet_gen()
 
 
 class dirichlet_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = dirichlet_gen(seed)
@@ -2006,12 +2742,11 @@ class wishart_gen(multi_rv_generic):
         elif scale.ndim == 1:
             scale = np.diag(scale)
         elif scale.ndim == 2 and not scale.shape[0] == scale.shape[1]:
-            raise ValueError("Array 'scale' must be square if it is two"
-                             " dimensional, but scale.scale = %s."
-                             % str(scale.shape))
+            raise ValueError("Array 'scale' must be square if it is two dimensional,"
+                             f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
-            raise ValueError("Array 'scale' must be at most two-dimensional,"
-                             " but scale.ndim = %d" % scale.ndim)
+            raise ValueError(f"Array 'scale' must be at most two-dimensional, "
+                             f"but scale.ndim = {scale.ndim}")
 
         dim = scale.shape[0]
 
@@ -2041,19 +2776,19 @@ class wishart_gen(multi_rv_generic):
                 x = np.diag(x)[:, :, np.newaxis]
         elif x.ndim == 2:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square if they are two"
-                                 " dimensional, but x.shape = %s."
-                                 % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square if they are two dimensional,"
+                    f" but x.shape = {str(x.shape)}.")
             x = x[:, :, np.newaxis]
         elif x.ndim == 3:
             if not x.shape[0] == x.shape[1]:
-                raise ValueError("Quantiles must be square in the first two"
-                                 " dimensions if they are three dimensional"
-                                 ", but x.shape = %s." % str(x.shape))
+                raise ValueError(
+                    "Quantiles must be square in the first two dimensions "
+                    f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
-            raise ValueError("Quantiles must be at most two-dimensional with"
-                             " an additional dimension for multiple"
-                             "components, but x.ndim = %d" % x.ndim)
+            raise ValueError(f"Quantiles must be at most two-dimensional with an "
+                             f"additional dimension for multiple components, "
+                             f"but x.ndim = {x.ndim}")
 
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
@@ -2069,8 +2804,8 @@ class wishart_gen(multi_rv_generic):
             size = size[np.newaxis]
         elif size.ndim > 1:
             raise ValueError('Size must be an integer or tuple of integers;'
-                             ' thus must have dimension <= 1.'
-                             ' Got size.ndim = %s' % str(tuple(size)))
+                 ' thus must have dimension <= 1.'
+                 f' Got size.ndim = {str(tuple(size))}')
         n = size.prod()
         shape = tuple(size)
 
@@ -2093,7 +2828,7 @@ class wishart_gen(multi_rv_generic):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2507,6 +3242,8 @@ class wishart_frozen(multi_rv_frozen):
         that instance is used.
 
     """
+    __class_getitem__ = None
+
     def __init__(self, df, scale, seed=None):
         self._dist = wishart_gen(seed)
         self.dim, self.df, self.scale = self._dist._process_parameters(
@@ -2698,7 +3435,7 @@ class invwishart_gen(wishart_gen):
         log_det_scale : float
             Logarithm of the determinant of the scale matrix
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
 
         Notes
         -----
@@ -2960,7 +3697,7 @@ class invwishart_gen(wishart_gen):
         df : int
             Degrees of freedom
         C : ndarray
-            Cholesky factorization of the scale matrix, lower triagular.
+            Cholesky factorization of the scale matrix, lower triangular.
         %(_doc_random_state)s
 
         Notes
@@ -2986,7 +3723,7 @@ class invwishart_gen(wishart_gen):
                 A[index] = trmm(1., CA, CA, side=1, lower=True, trans_a=True)
             else:
                 A[index][0, 0] = (C[0, 0] / A[index][0, 0])**2
-                
+
         return A
 
     def rvs(self, df, scale, size=1, random_state=None):
@@ -3039,6 +3776,8 @@ invwishart = invwishart_gen()
 
 
 class invwishart_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, df, scale, seed=None):
         """Create a frozen inverse Wishart distribution.
 
@@ -3256,16 +3995,26 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p, eps=1e-15):
+    def _process_parameters(self, n, p):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
+        eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
         p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        i_adjusted = np.abs(p_adjusted) > eps
+        # only make adjustment when it's significant
+        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
         p[i_adjusted, -1] = p_adjusted[i_adjusted]
+
+        if np.any(i_adjusted):
+            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
+                       f"{eps=}. Currently, the last element of these rows is adjusted "
+                       "to compensate, but this condition will produce NaNs "
+                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
+                       "to 1.0 to avoid futher disruption.")
+            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
@@ -3290,9 +4039,9 @@ class multinomial_gen(multi_rv_generic):
             raise ValueError("x must be an array.")
 
         if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
-            raise ValueError("Size of each quantile should be size of p: "
-                             "received %d, but expected %d." %
-                             (xx.shape[-1], p.shape[-1]))
+            raise ValueError(f"Size of each quantile should be size of p: "
+                             f"received {xx.shape[-1]}, but expected "
+                             f"{p.shape[-1]}.")
 
         # true for x out of the domain
         cond = np.any(xx != x, axis=-1)
@@ -3438,7 +4187,8 @@ class multinomial_gen(multi_rv_generic):
 
         n = n[..., np.newaxis]
         new_axes_needed = max(p.ndim, n.ndim) - x.ndim + 1
-        x.shape += (1,)*new_axes_needed
+        new_shape = x.shape + (1,)*new_axes_needed
+        x = x.reshape(new_shape)
 
         term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
                        axis=(-1, -1-new_axes_needed))
@@ -3557,20 +4307,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    This class is wrapping the random_rot code from the MDP Toolkit,
-    https://github.com/mdp-toolkit/mdp-toolkit
+    The ``rvs`` method returns a random rotation matrix drawn from the Haar
+    distribution, the only uniform distribution on SO(N). The algorithm generates
+    a Haar-distributed orthogonal matrix in O(N) using the ``rvs`` method of
+    `ortho_group`, then adjusts the matrix to ensure that the determinant is +1.
 
-    Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(N)).
-    The algorithm is described in the paper
-    Stewart, G.W., "The efficient generation of random orthogonal
-    matrices with an application to condition estimators", SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
-
-    See also the similar `ortho_group`. For a random rotation in three
-    dimensions, see `scipy.spatial.transform.Rotation.random`.
+    For a random rotation in three dimensions, see
+    `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
@@ -3616,9 +4359,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+                                and must be a scalar nonnegative integer.""")
 
         return dim
 
@@ -3640,60 +4383,18 @@ class special_ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        size = int(size)
-        size = (size,) if size > 1 else ()
-
-        dim = self._process_parameters(dim)
-
-        # H represents a (dim, dim) matrix, while D represents the diagonal of
-        # a (dim, dim) diagonal matrix. The algorithm that follows is
-        # broadcasted on the leading shape in `size` to vectorize along
-        # samples.
-        H = np.empty(size + (dim, dim))
-        H[..., :, :] = np.eye(dim)
-        D = np.empty(size + (dim,))
-
-        for n in range(dim-1):
-
-            # x is a vector with length dim-n, xrow and xcol are views of it as
-            # a row vector and column vector respectively. It's important they
-            # are views and not copies because we are going to modify x
-            # in-place.
-            x = random_state.normal(size=size + (dim-n,))
-            xrow = x[..., None, :]
-            xcol = x[..., :, None]
-
-            # This is the squared norm of x, without vectorization it would be
-            # dot(x, x), to have proper broadcasting we use matmul and squeeze
-            # out (convert to scalar) the resulting 1x1 matrix
-            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
-
-            x0 = x[..., 0].copy()
-            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
-            x[..., 0] += D[..., n]*np.sqrt(norm2)
-
-            # In renormalizing x we have to append an additional axis with
-            # [..., None] to broadcast the scalar against the vector x
-            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
-
-            # Householder transformation, without vectorization the RHS can be
-            # written as outer(H @ x, x) (apart from the slicing)
-            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
-
-        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
-
-        # Without vectorization this could be written as H = diag(D) @ H,
-        # left-multiplication by a diagonal matrix amounts to multiplying each
-        # row of H by an element of the diagonal, so we add a dummy axis for
-        # the column index
-        H *= D[..., :, None]
-        return H
-
+        q = ortho_group.rvs(dim, size, random_state)
+        dets = np.linalg.det(q)
+        if dim:
+            q[..., 0, :] /= dets[..., np.newaxis]
+        return q
 
 special_ortho_group = special_ortho_group_gen()
 
 
 class special_ortho_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen SO(N) distribution.
 
@@ -3803,9 +4504,9 @@ class ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -3847,6 +4548,8 @@ ortho_group = ortho_group_gen()
 
 
 class ortho_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
 
@@ -3880,6 +4583,7 @@ class random_correlation_gen(multi_rv_generic):
     r"""A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
+    The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
@@ -3892,7 +4596,8 @@ class random_correlation_gen(multi_rv_generic):
     Parameters
     ----------
     eigs : 1d ndarray
-        Eigenvalues of correlation matrix
+        Eigenvalues of correlation matrix. All eigenvalues need to be non-negative and
+        need to sum to the number of eigenvalues.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -4100,6 +4805,8 @@ random_correlation = random_correlation_gen()
 
 
 class random_correlation_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
         """Create a frozen random correlation matrix distribution.
 
@@ -4158,7 +4865,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices, must be greater than 1.
+        Dimension of matrices.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4186,7 +4893,7 @@ class unitary_group_gen(multi_rv_generic):
     >>> np.dot(x, x.conj().T)
     array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
            [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
-           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])  # may vary
 
     This generates one random matrix from U(3). The dot product confirms that
     it is unitary up to machine precision.
@@ -4215,9 +4922,9 @@ class unitary_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4260,6 +4967,8 @@ unitary_group = unitary_group_gen()
 
 
 class unitary_group_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, dim=None, seed=None):
         """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
 
@@ -4348,6 +5057,8 @@ class multivariate_t_gen(multi_rv_generic):
         Draw random samples from a multivariate t-distribution.
     entropy(loc=None, shape=1, df=1)
         Differential entropy of a multivariate t-distribution.
+    marginal(dimensions, loc=None, shape=1, df=1, allow_singular=False)
+        Return a marginal multivariate t-distribution.
 
     Parameters
     ----------
@@ -4495,10 +5206,12 @@ class multivariate_t_gen(multi_rv_generic):
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
         shape_info = _PSD(shape)
-        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
-                            shape_info.rank)
+        cov_object = _covariance.CovViaPSD(shape_info)
 
-    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank):
+        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
+                            shape_info.rank, cov_object)
+
+    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank, cov_object=None):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -4527,7 +5240,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         """
         if df == np.inf:
-            return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
+            return multivariate_normal._logpdf(x, loc, cov_object)
 
         dev = x - loc
         maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
@@ -4651,7 +5364,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
-        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
+        return xpx.apply_where(df >= threshold, (dim, df), asymptotic, regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
@@ -4762,8 +5475,7 @@ class multivariate_t_gen(multi_rv_generic):
             shape = shape.reshape(1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
-            raise ValueError("Array 'loc' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'loc' must be a vector of length {dim}.")
         if shape.ndim == 0:
             shape = shape * np.eye(dim)
         elif shape.ndim == 1:
@@ -4772,15 +5484,15 @@ class multivariate_t_gen(multi_rv_generic):
             rows, cols = shape.shape
             if rows != cols:
                 msg = ("Array 'cov' must be square if it is two dimensional,"
-                       " but cov.shape = %s." % str(shape.shape))
+                       f" but cov.shape = {str(shape.shape)}.")
             else:
                 msg = ("Dimension mismatch: array 'cov' is of shape %s,"
                        " but 'loc' is a vector of length %d.")
                 msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % shape.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {shape.ndim}")
 
         # Process degrees of freedom.
         if df is None:
@@ -4792,8 +5504,38 @@ class multivariate_t_gen(multi_rv_generic):
 
         return dim, loc, shape, df
 
+    def marginal(self, dimensions, loc=None, shape=1, df=1, allow_singular=False):
+        """Return a marginal multivariate t-distribution.
+
+        Parameters
+        ----------
+        dimensions : int or 1-d array_like
+            The dimensions of the multivariate t corresponding
+            with the marginal variables, that is, the indices of the dimensions
+            that are being retained. The other dimensions are marginalized out.
+        %(_mvt_doc_default_callparams)s
+
+        Returns
+        -------
+        marginal_multivariate_t : multivariate_t_frozen
+            An object representing the marginal t-distribution.
+
+        Notes
+        -----
+        %(_mvt_doc_frozen_callparams_note)s
+        """
+        params = self._process_parameters(loc, shape, df)
+        n, loc, shape, df = params
+        dims = _validate_marginal_input(dimensions, n)
+
+        loc = loc[dims]
+        shape = shape[np.ix_(dims, dims)]
+
+        return multivariate_t_frozen(loc, shape, df, allow_singular)
+
 
 class multivariate_t_frozen(multi_rv_frozen):
+    __class_getitem__ = None
 
     def __init__(self, loc=None, shape=1, df=1, allow_singular=False,
                  seed=None):
@@ -4821,6 +5563,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
         self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
         self.shape_info = _PSD(shape, allow_singular=allow_singular)
+        self.allow_singular = allow_singular
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
@@ -4847,6 +5590,9 @@ class multivariate_t_frozen(multi_rv_frozen):
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.shape)
 
+    def marginal(self, dimensions):
+        return self._dist.marginal(dimensions, self.loc,
+                                   self.shape, self.df, self.allow_singular)
 
 multivariate_t = multivariate_t_gen()
 
@@ -5409,8 +6155,8 @@ class random_table_gen(multi_rv_generic):
 
     >>> dist = random_table(row, col)
     >>> dist.rvs(random_state=123)
-    array([[1., 0., 0.],
-           [1., 3., 1.]])
+    array([[1, 0, 0],
+           [1, 3, 1]])
 
     References
     ----------
@@ -5707,6 +6453,8 @@ random_table = random_table_gen()
 
 
 class random_table_frozen(multi_rv_frozen):
+    __class_getitem__ = None
+
     def __init__(self, row, col, *, seed=None):
         self._dist = random_table_gen(seed)
         self._params = self._dist._process_parameters(row, col)
@@ -5966,7 +6714,7 @@ alpha : array_like
     determines the dimensionality of the distribution. Each entry must be
     strictly positive.
 n : int or array_like
-    The number of trials. Each element must be a strictly positive integer.
+    The number of trials. Each element must be a non-negative integer.
 """
 
 _dirichlet_mn_doc_frozen_callparams = ""
@@ -6008,8 +6756,8 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
         raise ValueError("`alpha` must contain only positive values.")
 
     n_int = np.floor(n)
-    if np.any(n <= 0) or np.any(n != n_int):
-        raise ValueError("`n` must be a positive integer.")
+    if np.any(n < 0) or np.any(n != n_int):
+        raise ValueError("`n` must be a non-negative integer.")
     n = n_int
 
     sum_alpha = np.sum(alpha, axis=-1)
@@ -6364,7 +7112,7 @@ class vonmises_fisher_gen(multi_rv_generic):
            https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
     .. [4] Wood, A. Simulation of the von mises fisher distribution.
            Communications in statistics-simulation and computation 23,
-           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+           1 (1994), 157-164. :doi:`10.1080/03610919408813161`.
     .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
            https://github.com/geomstats/geomstats
     .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
@@ -6648,10 +7396,10 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _rejection_sampling(self, dim, kappa, size, random_state):
         """
-        Generate samples from a n-dimensional von Mises-Fisher distribution
+        Generate samples from an n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
-        Reference: https://doi.org/10.1080/03610919408813161
+        Reference: :doi:`10.1080/03610919408813161`.
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
@@ -6979,3 +7727,323 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         """
         return self._dist._entropy(self.dim, self.kappa)
+
+
+class normal_inverse_gamma_gen(multi_rv_generic):
+    r"""Normal-inverse-gamma distribution.
+
+    The normal-inverse-gamma distribution is the conjugate prior of a normal
+    distribution with unknown mean and variance.
+
+    Methods
+    -------
+    pdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Probability density function.
+    logpdf(x, s2, mu=0, lmbda=1, a=1, b=1)
+        Log of the probability density function.
+    mean(mu=0, lmbda=1, a=1, b=1)
+        Distribution mean.
+    var(mu=0, lmbda=1, a=1, b=1)
+        Distribution variance.
+    rvs(mu=0, lmbda=1, a=1, b=1, size=None, random_state=None)
+        Draw random samples.
+
+    Parameters
+    ----------
+    mu, lmbda, a, b  : array_like
+        Shape parameters of the distribution. See notes.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    See Also
+    --------
+    norm
+    invgamma
+
+    Notes
+    -----
+
+    The probability density function of `normal_inverse_gamma` is:
+
+    .. math::
+
+        f(x, \sigma^2; \mu, \lambda, \alpha, \beta) =
+            \frac{\sqrt{\lambda}}{\sqrt{2 \pi \sigma^2}}
+            \frac{\beta^\alpha}{\Gamma(\alpha)}
+            \left( \frac{1}{\sigma^2} \right)^{\alpha + 1}
+            \exp \left(- \frac{2 \beta + \lambda (x - \mu)^2} {2 \sigma^2} \right)
+
+    where all parameters are real and finite, and :math:`\sigma^2 > 0`,
+    :math:`\lambda > 0`, :math:`\alpha > 0`, and :math:`\beta > 0`.
+
+    Methods ``normal_inverse_gamma.pdf`` and ``normal_inverse_gamma.logpdf``
+    accept `x` and `s2` for arguments :math:`x` and :math:`\sigma^2`.
+    All methods accept `mu`, `lmbda`, `a`, and `b` for shape parameters
+    :math:`\mu`, :math:`\lambda`, :math:`\alpha`, and :math:`\beta`,
+    respectively.
+
+    .. versionadded:: 1.15
+
+    References
+    ----------
+    .. [1] Normal-inverse-gamma distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Normal-inverse-gamma_distribution
+
+    Examples
+    --------
+    Suppose we wish to investigate the relationship between the
+    normal-inverse-gamma distribution and the inverse gamma distribution.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng(527484872345)
+    >>> mu, lmbda, a, b = 0, 1, 20, 20
+    >>> norm_inv_gamma = stats.normal_inverse_gamma(mu, lmbda, a, b)
+    >>> inv_gamma = stats.invgamma(a, scale=b)
+
+    One approach is to compare the distribution of the `s2` elements of
+    random variates against the PDF of an inverse gamma distribution.
+
+    >>> _, s2 = norm_inv_gamma.rvs(size=10000, random_state=rng)
+    >>> bins = np.linspace(s2.min(), s2.max(), 50)
+    >>> plt.hist(s2, bins=bins, density=True, label='Frequency density')
+    >>> s2 = np.linspace(s2.min(), s2.max(), 300)
+    >>> plt.plot(s2, inv_gamma.pdf(s2), label='PDF')
+    >>> plt.xlabel(r'$\sigma^2$')
+    >>> plt.ylabel('Frequency density / PMF')
+    >>> plt.show()
+
+    Similarly, we can compare the marginal distribution of `s2` against
+    an inverse gamma distribution.
+
+    >>> from scipy.integrate import quad_vec
+    >>> from scipy import integrate
+    >>> s2 = np.linspace(0.5, 3, 6)
+    >>> res = quad_vec(lambda x: norm_inv_gamma.pdf(x, s2), -np.inf, np.inf)[0]
+    >>> np.allclose(res, inv_gamma.pdf(s2))
+    True
+
+    The sample mean is comparable to the mean of the distribution.
+
+    >>> x, s2 = norm_inv_gamma.rvs(size=10000, random_state=rng)
+    >>> x.mean(), s2.mean()
+    (np.float64(-0.005254750127304425), np.float64(1.050438111436508))
+    >>> norm_inv_gamma.mean()
+    (np.float64(0.0), np.float64(1.0526315789473684))
+
+    Similarly, for the variance:
+
+    >>> x.var(ddof=1), s2.var(ddof=1)
+    (np.float64(1.0546150578185023), np.float64(0.061829865266330754))
+    >>> norm_inv_gamma.var()
+    (np.float64(1.0526315789473684), np.float64(0.061557402277623886))
+
+    """
+    def rvs(self, mu=0, lmbda=1, a=1, b=1, size=None, random_state=None):
+        """Draw random samples from the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+        size : int or tuple of ints, optional
+            Shape of samples to draw.
+        random_state : {None, int, np.random.RandomState, np.random.Generator}, optional
+            Used for drawing random variates.
+            If `random_state` is `None`, the `~np.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is used, seeded
+            with `random_state`.
+            If `random_state` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is `None`.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            Random variates.
+
+        """
+        random_state = self._get_random_state(random_state)
+        s2 = invgamma(a, scale=b).rvs(size=size, random_state=random_state)
+        scale = (s2 / lmbda)**0.5
+        x = norm(loc=mu, scale=scale).rvs(size=size, random_state=random_state)
+        dtype = np.result_type(1.0, mu, lmbda, a, b)
+        return x.astype(dtype), s2.astype(dtype)
+
+    def _logpdf(self, x, s2, mu, lmbda, a, b):
+        t1 = 0.5 * (np.log(lmbda) - np.log(2 * np.pi * s2))
+        t2 = a*np.log(b) - special.gammaln(a).astype(a.dtype)
+        t3 = -(a + 1) * np.log(s2)
+        t4 = -(2*b + lmbda*(x - mu)**2) / (2*s2)
+        return t1 + t2 + t3 + t4
+
+    def logpdf(self, x, s2, mu=0, lmbda=1, a=1, b=1):
+        """Log of the probability density function.
+
+        Parameters
+        ----------
+        x, s2 : array_like
+            Arguments. `s2` must be greater than zero.
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            Log of the probability density function.
+
+        """
+        invalid, args = self._process_parameters_pdf(x, s2, mu, lmbda, a, b)
+        s2 = args[1]
+        # Keep it simple for now; lazyselect later, perhaps.
+        with np.errstate(all='ignore'):
+            logpdf = np.asarray(self._logpdf(*args))
+        logpdf[s2 <= 0] = -np.inf
+        logpdf[invalid] = np.nan
+        return logpdf[()]
+
+    def _pdf(self, x, s2, mu, lmbda, a, b):
+        t1 = np.sqrt(lmbda / (2 * np.pi * s2))
+        t2 = b**a / special.gamma(a).astype(a.dtype)
+        t3 = (1 / s2)**(a + 1)
+        t4 = np.exp(-(2*b + lmbda*(x - mu)**2) / (2*s2))
+        return t1 * t2 * t3 * t4
+
+    def pdf(self, x, s2, mu=0, lmbda=1, a=1, b=1):
+        """The probability density function.
+
+        Parameters
+        ----------
+        x, s2 : array_like
+            Arguments. `s2` must be greater than zero.
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda`, `a`, and `b` must be greater
+            than zero.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            The probability density function.
+
+        """
+        invalid, args = self._process_parameters_pdf(x, s2, mu, lmbda, a, b)
+        s2 = args[1]
+        # Keep it simple for now; lazyselect later, perhaps.
+        with np.errstate(all='ignore'):
+            pdf = np.asarray(self._pdf(*args))
+        pdf[s2 <= 0] = 0
+        pdf[invalid] = np.nan
+        return pdf[()]
+
+    def mean(self, mu=0, lmbda=1, a=1, b=1):
+        """The mean of the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda` and `b` must be greater
+            than zero, and `a` must be greater than one.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            The mean of the distribution.
+
+        """
+        invalid, args = self._process_shapes(mu, lmbda, a, b)
+        mu, lmbda, a, b = args
+        invalid |= ~(a > 1)
+        mean_x = np.asarray(mu).copy()
+        mean_s2 = np.asarray(b / (a - 1))
+        mean_x[invalid] = np.nan
+        mean_s2[invalid] = np.nan
+        return mean_x[()], mean_s2[()]
+
+    def var(self, mu=0, lmbda=1, a=1, b=1):
+        """The variance of the distribution.
+
+        Parameters
+        ----------
+        mu, lmbda, a, b : array_like, optional
+            Shape parameters. `lmbda` and `b` must be greater
+            than zero, and `a` must be greater than two.
+
+        Returns
+        -------
+        x, s2 : ndarray
+            The variance of the distribution.
+
+        """
+        invalid, args = self._process_shapes(mu, lmbda, a, b)
+        mu, lmbda, a, b = args
+        invalid_x = invalid | ~(a > 1)
+        invalid_s2 = invalid | ~(a > 2)
+        var_x = b / ((a - 1) * lmbda)
+        var_s2 = b**2 / ((a - 1)**2 * (a - 2))
+        var_x, var_s2 = np.asarray(var_x), np.asarray(var_s2)
+        var_x[invalid_x] = np.nan
+        var_s2[invalid_s2] = np.nan
+        return var_x[()], var_s2[()]
+
+    def _process_parameters_pdf(self, x, s2, mu, lmbda, a, b):
+        args = np.broadcast_arrays(x, s2, mu, lmbda, a, b)
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
+        x, s2, mu, lmbda, a, b = args
+        invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
+        return invalid, args
+
+    def _process_shapes(self, mu, lmbda, a, b):
+        args = np.broadcast_arrays(mu, lmbda, a, b)
+        dtype = np.result_type(1.0, *(arg.dtype for arg in args))
+        args = [arg.astype(dtype, copy=False) for arg in args]
+        mu, lmbda, a, b = args
+        invalid = ~((lmbda > 0) & (a > 0) & (b > 0))
+        return invalid, args
+
+    def __call__(self, mu=0, lmbda=1, a=1, b=1, seed=None):
+        return normal_inverse_gamma_frozen(mu, lmbda, a, b, seed=seed)
+
+
+normal_inverse_gamma = normal_inverse_gamma_gen()
+
+
+class normal_inverse_gamma_frozen(multi_rv_frozen):
+
+    def __init__(self, mu=0, lmbda=1, a=1, b=1, seed=None):
+        self._dist = normal_inverse_gamma_gen(seed)
+        self._shapes = mu, lmbda, a, b
+
+    def logpdf(self, x, s2):
+        return self._dist.logpdf(x, s2, *self._shapes)
+
+    def pdf(self, x, s2):
+        return self._dist.pdf(x, s2, *self._shapes)
+
+    def mean(self):
+        return self._dist.mean(*self._shapes)
+
+    def var(self):
+        return self._dist.var(*self._shapes)
+
+    def rvs(self, size=None, random_state=None):
+        return self._dist.rvs(*self._shapes, size=size, random_state=random_state)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# normal_inverse_gamma_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'mean', 'var', 'rvs']:
+    method = normal_inverse_gamma_gen.__dict__[name]
+    method_frozen = normal_inverse_gamma_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(method.__doc__,
+                                             mvn_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_params)

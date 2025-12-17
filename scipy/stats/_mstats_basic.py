@@ -41,15 +41,14 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _dedent_for_py313
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
+import scipy.stats._stats_py as _stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
-        linregress as stats_linregress,
-        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -93,11 +92,11 @@ def _ttest_finish(df, t, alternative):
     # We use ``stdtr`` directly here to preserve masked arrays
 
     if alternative == 'less':
-        pval = special.stdtr(df, t)
+        pval = special._ufuncs.stdtr(df, t)
     elif alternative == 'greater':
-        pval = special.stdtr(df, -t)
+        pval = special._ufuncs.stdtr(df, -t)
     elif alternative == 'two-sided':
-        pval = special.stdtr(df, -np.abs(t))*2
+        pval = special._ufuncs.stdtr(df, -np.abs(t))*2
     else:
         raise ValueError("alternative must be "
                          "'less', 'greater' or 'two-sided'")
@@ -1174,15 +1173,15 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            result = stats_linregress(x.data[~m], y.data[~m])
+            result = _stats_py.linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            result = stats_LinregressResult(slope=None, intercept=None,
-                                            rvalue=None, pvalue=None,
-                                            stderr=None,
-                                            intercept_stderr=None)
+            result = _stats_py.LinregressResult(slope=None, intercept=None,
+                                                rvalue=None, pvalue=None,
+                                                stderr=None,
+                                                intercept_stderr=None)
     else:
-        result = stats_linregress(x.data, y.data)
+        result = _stats_py.linregress(x.data, y.data)
 
     return result
 
@@ -1345,7 +1344,7 @@ def sen_seasonal_slopes(x):
             For each season, the Theil-Sen slope estimator: the median of
             within-season slopes.
         inter_slope : float
-            The seasonal Kendall slope estimateor: the median of within-season
+            The seasonal Kendall slope estimator: the median of within-season
             slopes *across all* seasons.
 
     See Also
@@ -1974,10 +1973,10 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -1988,7 +1987,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
 
 
-trimdoc = """
+trimdoc = _dedent_for_py313("""
     Parameters
     ----------
     a : sequence
@@ -2018,8 +2017,7 @@ trimdoc = """
         Whether to consider the limits as absolute values (False) or proportions
         to cut (True).
     axis : int, optional
-        Axis along which to trim.
-"""
+        Axis along which to trim.""")
 
 
 def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
@@ -2254,18 +2252,18 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
     if (axis is None):
         return _trimmed_stde_1D(a.ravel(),lolim,uplim,loinc,upinc)
     else:
         if a.ndim > 2:
-            raise ValueError("Array 'a' must be at most two dimensional, "
-                             "but got a.ndim = %d" % a.ndim)
+            raise ValueError(f"Array 'a' must be at most two dimensional, "
+                             f"but got a.ndim = {a.ndim}")
         return ma.apply_along_axis(_trimmed_stde_1D, axis, a,
                                    lolim,uplim,loinc,upinc)
 
@@ -2608,8 +2606,8 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
 
     >>> a = np.array([10, 4, 9, 8, 5, 3, 7, 2, 1, 6])
 
-    The 10% of the lowest value (i.e., `1`) and the 20% of the highest
-    values (i.e., `9` and `10`) are replaced.
+    The 10% of the lowest value (i.e., ``1``) and the 20% of the highest
+    values (i.e., ``9`` and ``10``) are replaced.
 
     >>> winsorize(a, limits=[0.1, 0.2])
     masked_array(data=[8, 4, 8, 8, 5, 3, 7, 2, 2, 6],
@@ -2642,7 +2640,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2656,10 +2654,10 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
     errmsg = "The proportion to cut from the %s should be between 0. and 1."
     if lolim is not None:
         if lolim > 1. or lolim < 0:
-            raise ValueError(errmsg % 'beginning' + "(got %s)" % lolim)
+            raise ValueError(errmsg % 'beginning' + f"(got {lolim})")
     if uplim is not None:
         if uplim > 1. or uplim < 0:
-            raise ValueError(errmsg % 'end' + "(got %s)" % uplim)
+            raise ValueError(errmsg % 'end' + f"(got {uplim})")
 
     (loinc, upinc) = inclusive
 
@@ -3017,8 +3015,8 @@ def stde_median(data, axis=None):
         return _stdemed_1D(data)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         return ma.apply_along_axis(_stdemed_1D, axis, data)
 
 
@@ -3068,9 +3066,8 @@ def skewtest(a, axis=0, alternative='two-sided'):
     b2 = skew(a,axis)
     n = a.count(axis)
     if np.min(n) < 8:
-        raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % np.min(n))
+        raise ValueError(f"skewtest is not valid with less than 8 samples; "
+                         f"{np.min(n)} samples were given.")
 
     y = b2 * ma.sqrt(((n+1)*(n+3)) / (6.0*(n-2)))
     beta2 = (3.0*(n*n+27*n-70)*(n+1)*(n+3)) / ((n-2.0)*(n+5)*(n+7)*(n+9))
@@ -3126,14 +3123,11 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
     a, axis = _chk_asarray(a, axis)
     n = a.count(axis=axis)
     if np.min(n) < 5:
-        raise ValueError(
-            "kurtosistest requires at least 5 observations; %i observations"
-            " were given." % np.min(n))
+        raise ValueError(f"kurtosistest requires at least 5 observations; "
+                         f"{np.min(n)} observations were given.")
     if np.min(n) < 20:
-        warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
-            stacklevel=2,
-        )
+        warnings.warn(f"kurtosistest only valid for n>=20 ... continuing "
+                      f"anyway, n={np.min(n)}", stacklevel=2)
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
@@ -3194,7 +3188,7 @@ def normaltest(a, axis=0):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
+def mquantiles(a, prob=(.25, .5, .75), alphap=.4, betap=.4, axis=None,
                limit=()):
     """
     Computes empirical quantiles for a data array.
@@ -3331,8 +3325,7 @@ def scoreatpercentile(data, per, limit=(), alphap=.4, betap=.4):
 
     """
     if (per < 0) or (per > 100.):
-        raise ValueError("The percentile should be between 0. and 100. !"
-                         " (got %s)" % per)
+        raise ValueError(f"The percentile should be between 0. and 100. ! (got {per})")
 
     return mquantiles(data, prob=[per/100.], alphap=alphap, betap=betap,
                       limit=limit, axis=0).squeeze()
@@ -3537,8 +3530,8 @@ def friedmanchisquare(*args):
     data = argstoarray(*args).astype(float)
     k = len(data)
     if k < 3:
-        raise ValueError("Less than 3 groups (%i): " % k +
-                         "the Friedman test is NOT appropriate.")
+        raise ValueError(f"Less than 3 groups ({k}): the Friedman test "
+                         f"is NOT appropriate.")
 
     ranked = ma.masked_values(rankdata(data, axis=0), 0)
     if ranked._mask is not nomask:

@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -8,16 +8,17 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file get_perm_c.c
- * \brief Matrix permutation operations
- *
- * <pre>
+/*
  * -- SuperLU routine (version 3.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
  * August 1, 2008
  * March 25, 2023  add METIS option
- * </pre>
+ */
+/*! \file
+ * \brief Matrix permutation operations
+ *
+ * \ingroup Common
  */
 #include "slu_ddefs.h"
 #include "colamd.h"
@@ -28,15 +29,18 @@ extern int genmmd_(int *neqns, int_t *xadj, int_t *adjncy,
 		   int_t *qsize, int_t *llist, int_t *marker, int_t *maxint, 
 		   int_t *nofsub);
 
-void
-get_colamd(
-	   const int m,  /* number of rows in matrix A. */
-	   const int n,  /* number of columns in matrix A. */
-	   const int_t nnz,/* number of nonzeros in matrix A. */
-	   int_t *colptr,  /* column pointer of size n+1 for matrix A. */
-	   int_t *rowind,  /* row indices of size nz for matrix A. */
-	   int *perm_c   /* out - the column permutation vector. */
-	   )
+/*!
+ * \brief Get COLAMD's permutation for matrix A
+ *
+ * \param[in]  m Number of rows in matrix A.
+ * \param[in]  n Number of columns in matrix A.
+ * \param[in]  nnz Number of nonzeros in matrix A.
+ * \param[in]  colptr Column pointer of size n+1 for matrix A.
+ * \param[in]  rowind Row indices of size nnz for matrix A.
+ * \param[out] perm_c Column permutation vector.
+ */
+void get_colamd(const int m, const int n, const int_t nnz,
+                int_t *colptr, int_t *rowind, int *perm_c)
 {
     size_t Alen;
     int_t *A, i, *p;
@@ -62,16 +66,19 @@ get_colamd(
 
     SUPERLU_FREE(A);
     SUPERLU_FREE(p);
-} /* end get_colamd */
+}
 
-void
-get_metis(
-	  int n,           /* dimension of matrix B */
-	  int_t bnz,       /* number of nonzeros in matrix A. */
-	  int_t *b_colptr, /* column pointer of size n+1 for matrix B. */
-	  int_t *b_rowind, /* row indices of size bnz for matrix B. */
-	  int *perm_c      /* out - the column permutation vector. */
-	  )
+/*!
+ * \brief Get METIS' permutation for matrix B
+ *
+ * \param[in]  n Number of columns in matrix B.
+ * \param[in]  bnz Number of nonzeros in matrix B.
+ * \param[in]  b_colptr Column pointer of size n+1 for matrix B.
+ * \param[in]  b_rowind Row indices of size bnz for matrix B.
+ * \param[out] perm_c Column permutation vector.
+ */
+void get_metis(int n, int_t bnz, int_t *b_colptr,
+               int_t *b_rowind, int *perm_c)
 {
 #ifdef HAVE_METIS
     /*#define METISOPTIONS 8*/
@@ -117,13 +124,10 @@ get_metis(
 #endif /* HAVE_METIS */
 }
 
-/*! \brief
+/*!
+ * \brief Form the structure of A'*A.
  *
- * <pre>
- * Purpose
- * =======
- *
- * Form the structure of A'*A. A is an m-by-n matrix in column oriented
+ * A is an m-by-n matrix in column oriented
  * format represented by (colptr, rowind). The output A'*A is in column
  * oriented format (symmetrically, also row oriented), represented by
  * (ata_colptr, ata_rowind).
@@ -132,24 +136,23 @@ get_metis(
  * The complexity of this algorithm is: SUM_{i=1,m} r(i)^2,
  * i.e., the sum of the square of the row counts.
  *
- * Questions
- * =========
- *     o  Do I need to withhold the *dense* rows?
- *     o  How do I know the number of nonzeros in A'*A?
- * </pre>
+ * Questions<br>
+ * <ul>
+ *     <li>Do I need to withhold the *dense* rows?
+ *     <li>How do I know the number of nonzeros in A'*A?
+ * </ul>
+ *
+ * \param[in]  m number of rows in matrix A.
+ * \param[in]  n number of columns in matrix A.
+ * \param[in]  nz number of nonzeros in matrix A
+ * \param[in]  colptr column pointer of size n+1 for matrix A.
+ * \param[in]  rowind row indices of size nz for matrix A.
+ * \param[out] atanz on exit, returns the actual number of nonzeros in matrix A'*A.
+ * \param[out] ata_colptr column pointer of size n+1 for matrix A'*A.
+ * \param[out] ata_rowind row indices of size atanz for matrix A'*A.
  */
-void
-getata(
-       const int m,      /* number of rows in matrix A. */
-       const int n,      /* number of columns in matrix A. */
-       const int_t nz,     /* number of nonzeros in matrix A */
-       int_t *colptr,      /* column pointer of size n+1 for matrix A. */
-       int_t *rowind,      /* row indices of size nz for matrix A. */
-       int_t *atanz,       /* out - on exit, returns the actual number of
-                            nonzeros in matrix A'*A. */
-       int_t **ata_colptr, /* out - size n+1 */
-       int_t **ata_rowind  /* out - size *atanz */
-       )
+void getata(const int m, const int n, const int_t nz, int_t *colptr, int_t *rowind,
+            int_t *atanz, int_t **ata_colptr, int_t **ata_rowind)
 {
     register int_t i, j, k, col, num_nz, ti, trow;
     int_t *marker, *b_colptr, *b_rowind;
@@ -258,32 +261,27 @@ getata(
     SUPERLU_FREE(marker);
     SUPERLU_FREE(t_colptr);
     SUPERLU_FREE(t_rowind);
-} /* end getata */
+}
 
 
-/*! \brief
+/*!
+ * \brief Form the structure of A'+A.
  *
- * <pre>
- * Purpose
- * =======
- *
- * Form the structure of A'+A. A is an n-by-n matrix in column oriented
+ * A is an n-by-n matrix in column oriented
  * format represented by (colptr, rowind). The output A'+A is in column
  * oriented format (symmetrically, also row oriented), represented by
  * (b_colptr, b_rowind).
- * </pre>
+ *
+ * \param[in]  n number of columns in matrix A.
+ * \param[in]  nz number of nonzeros in matrix A
+ * \param[in]  colptr column pointer of size n+1 for matrix A.
+ * \param[in]  rowind row indices of size nz for matrix A.
+ * \param[out] bnz on exit, returns the actual number of nonzeros in matrix A'*A.
+ * \param[out] b_colptr column pointer of size n+1 for matrix A'+A.
+ * \param[out] b_rowind row indices of size bnz for matrix A'+A.
  */
-void
-at_plus_a(
-	  const int n,      /* number of columns in matrix A. */
-	  const int_t nz,   /* number of nonzeros in matrix A */
-	  int_t *colptr,      /* column pointer of size n+1 for matrix A. */
-	  int_t *rowind,      /* row indices of size nz for matrix A. */
-	  int_t *bnz,         /* out - on exit, returns the actual number of
-                               nonzeros in matrix A'*A. */
-	  int_t **b_colptr,   /* out - size n+1 */
-	  int_t **b_rowind    /* out - size *bnz */
-	  )
+void at_plus_a(const int n, const int_t nz, int_t *colptr, int_t *rowind,
+               int_t *bnz, int_t **b_colptr, int_t **b_rowind)
 {
     register int_t i, j, k, col, num_nz;
     int_t *t_colptr, *t_rowind; /* a column oriented form of T = A' */
@@ -397,41 +395,33 @@ at_plus_a(
     SUPERLU_FREE(marker);
     SUPERLU_FREE(t_colptr);
     SUPERLU_FREE(t_rowind);
-} /* end at_plus_a */
+}
 
-/*! \brief
+/*!
+ * \brief Obtains a permutation matrix by applying the multiple
+ * minimum degree ordering code
  *
- * <pre>
- * Purpose
- * =======
- *
- * GET_PERM_C obtains a permutation matrix Pc, by applying the multiple
- * minimum degree ordering code by Joseph Liu to matrix A'*A or A+A'.
+ * Obtains a permutation matrix Pc by applying the multiple
+ * minimum degree ordering code by Joseph Liu to matrix A'*A or A+A'
  * or using approximate minimum degree column ordering by Davis et. al.
  * The LU factorization of A*Pc tends to have less fill than the LU 
  * factorization of A.
  *
- * Arguments
- * =========
- *
- * ispec   (input) int
- *         Specifies the type of column ordering to reduce fill:
- *         = 1: minimum degree on the structure of A^T * A
- *         = 2: minimum degree on the structure of A^T + A
- *         = 3: approximate minimum degree for unsymmetric matrices
+ * \param[in] ispec
+ *         Specifies the type of column ordering to reduce fill:<br>
+ *         = 1: minimum degree on the structure of A^T * A<br>
+ *         = 2: minimum degree on the structure of A^T + A<br>
+ *         = 3: approximate minimum degree for unsymmetric matrices<br>
  *         If ispec == 0, the natural ordering (i.e., Pc = I) is returned.
- * 
- * A       (input) SuperMatrix*
+ * \param[in] A
  *         Matrix A in A*X=B, of dimension (A->nrow, A->ncol). The number
  *         of the linear equations is A->nrow. Currently, the type of A 
  *         can be: Stype = NC; Dtype = _D; Mtype = GE. In the future,
  *         more general A can be handled.
- *
- * perm_c  (output) int*
- *	   Column permutation vector of size A->ncol, which defines the 
+ * \param[out] perm_c
+ *         Column permutation vector of size A->ncol, which defines the
  *         permutation matrix Pc; perm_c[i] = j means column i of A is 
  *         in position j in A*Pc.
- * </pre>
  */
 void
 get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
@@ -481,7 +471,7 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 #endif
 	return;
 #ifdef HAVE_METIS
-        case METIS_ATA: /* METIS ordering on A'*A */
+    case METIS_ATA: /* METIS ordering on A'*A */
 	    getata(m, n, Astore->nnz, Astore->colptr, Astore->rowind,
 		     &bnz, &b_colptr, &b_rowind);
 
@@ -497,6 +487,23 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	    printf(".. Use METIS ordering on A'*A\n");
 #endif
 	    return;
+    case METIS_AT_PLUS_A: /* METIS ordering on A'*A */
+	if ( m != n ) ABORT("Matrix is not square");
+	at_plus_a(n, Astore->nnz, Astore->colptr, Astore->rowind,
+		  &bnz, &b_colptr, &b_rowind);
+
+        if ( bnz ) { /* non-empty adjacency structure */
+	    get_metis(n, bnz, b_colptr, b_rowind, perm_c);
+        } else { /* e.g., diagonal matrix */
+	    for (i = 0; i < n; ++i) perm_c[i] = i;
+		SUPERLU_FREE(b_colptr);
+	    /* b_rowind is not allocated in this case */
+	}
+
+#if ( PRNTlevel>=1 )
+	printf(".. Use METIS ordering on A'+A\n");
+#endif
+	return;
 #endif
 	
     default:

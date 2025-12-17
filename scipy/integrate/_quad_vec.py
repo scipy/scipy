@@ -3,11 +3,11 @@ import copy
 import heapq
 import collections
 import functools
-import warnings
 
 import numpy as np
 
 from scipy._lib._util import MapWrapper, _FunctionWrapper
+from scipy._lib._array_api import xp_capabilities
 
 
 class LRUDict(collections.OrderedDict):
@@ -98,10 +98,13 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join(f"{k}={repr(self.__dict__[k])}"
-                                             for k in self.__keys))
+        key_value_pairs = ', '.join(
+            f'{k}={repr(self.__dict__[k])}' for k in self.__keys
+        )
+        return f"_Bunch({key_value_pairs})"
 
 
+@xp_capabilities(np_only=True)
 def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
              limit=10000, workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):
@@ -142,9 +145,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'gk15' (Gauss-Kronrod 15-point rule),
         'trapezoid' (composite trapezoid rule).
-        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
+        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite.
     full_output : bool, optional
-        Return an additional ``info`` dictionary.
+        Return an additional ``info`` object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
@@ -156,25 +159,25 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Estimate for the result
     err : float
         Error estimate for the result in the given norm
-    info : dict
+    info : object
         Returned only when ``full_output=True``.
-        Info dictionary. Is an object with the attributes:
+        Result object with the attributes:
 
-            success : bool
-                Whether integration reached target precision.
-            status : int
-                Indicator for convergence, success (0),
-                failure (1), and failure due to rounding error (2).
-            neval : int
-                Number of function evaluations.
-            intervals : ndarray, shape (num_intervals, 2)
-                Start and end points of subdivision intervals.
-            integrals : ndarray, shape (num_intervals, ...)
-                Integral for each interval.
-                Note that at most ``cache_size`` values are recorded,
-                and the array may contains *nan* for missing items.
-            errors : ndarray, shape (num_intervals,)
-                Estimated integration error for each interval.
+        success : bool
+            Whether integration reached target precision.
+        status : int
+            Indicator for convergence, success (0),
+            failure (1), and failure due to rounding error (2).
+        neval : int
+            Number of function evaluations.
+        intervals : ndarray, shape (num_intervals, 2)
+            Start and end points of subdivision intervals.
+        integrals : ndarray, shape (num_intervals, ...)
+            Integral for each interval.
+            Note that at most ``cache_size`` values are recorded,
+            and the array may contains *nan* for missing items.
+        errors : ndarray, shape (num_intervals,)
+            Estimated integration error for each interval.
 
     Notes
     -----
@@ -221,6 +224,23 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
     >>> plt.ylabel(r"$\int_{0}^{2} x^\alpha dx$")
     >>> plt.show()
 
+    When using the argument `workers`, one should ensure
+    that the main module is import-safe, for instance
+    by rewriting the example above as:
+
+    .. code-block:: python
+
+        from scipy.integrate import quad_vec
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        alpha = np.linspace(0.0, 2.0, num=30)
+        x0, x1 = 0, 2
+        def f(x):
+            return x**alpha
+
+        if __name__ == "__main__":
+            y, err = quad_vec(f, x0, x1, workers=2)
     """
     a = float(a)
     b = float(b)
@@ -291,16 +311,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         _quadrature = {None: _quadrature_gk21,
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
-                       'trapz': _quadrature_trapezoid,  # alias for backcompat
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
         raise ValueError(f"unknown quadrature {quadrature!r}") from e
-
-    if quadrature == "trapz":
-        msg = ("`quadrature='trapz'` is deprecated in favour of "
-               "`quadrature='trapezoid' and will raise an error from SciPy 1.16.0 "
-               "onwards.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     # Initial interval set
     if points is None:
@@ -328,7 +341,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         neval += _quadrature.num_eval
 
         if global_integral is None:
-            if isinstance(ig, (float, complex)):
+            if isinstance(ig, float | complex):
                 # Specialize for scalars
                 if norm_func in (_max_norm, np.linalg.norm):
                     norm_func = abs

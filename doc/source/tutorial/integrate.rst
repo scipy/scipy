@@ -6,10 +6,7 @@ Integration (:mod:`scipy.integrate`)
 .. currentmodule:: scipy.integrate
 
 The :mod:`scipy.integrate` sub-package provides several integration
-techniques including an ordinary differential equation integrator. An
-overview of the module is provided by the help command:
-
-.. literalinclude:: examples/4-1
+techniques including an ordinary differential equation integrator.
 
 
 General integration (:func:`quad`)
@@ -417,9 +414,9 @@ vector differential equation:
 
     \frac{d\mathbf{y}}{dt}=\mathbf{f}\left(\mathbf{y},t\right),
 
-given initial conditions :math:`\mathbf{y}\left(0\right)=y_{0}`, where
+given initial conditions :math:`\mathbf{y}\left(0\right)=\mathbf{y}_{0}`, where
 :math:`\mathbf{y}` is a length :math:`N` vector and :math:`\mathbf{f}`
-is a mapping from :math:`\mathcal{R}^{N}` to :math:`\mathcal{R}^{N}.`
+is a mapping from :math:`\mathbb{R}^{N}` to :math:`\mathbb{R}^{N}.`
 A higher-order ordinary differential equation can always be reduced to
 a differential equation of this type by introducing intermediate
 derivatives into the :math:`\mathbf{y}` vector.
@@ -466,7 +463,7 @@ has an exact solution using the matrix exponential:
 However, in this case, :math:`\mathbf{A}\left(t\right)` and its integral do not commute.
 
 This differential equation can be solved using the function :obj:`solve_ivp`.
-It requires the derivative, *fprime*, the time span `[t_start, t_end]`
+It requires the derivative, *fprime*, the time span ``[t_start, t_end]``
 and the initial conditions vector, *y0*, as input arguments and returns
 an object whose *y* field is an array with consecutive solution values as
 columns. The initial conditions are therefore given in the first output column.

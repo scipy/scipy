@@ -172,6 +172,7 @@ class Penalty01(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -181,7 +182,6 @@ class Penalty01(Benchmark):
 
         self.global_optimum = [[-1.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -234,6 +234,7 @@ class Penalty02(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -243,7 +244,6 @@ class Penalty02(Benchmark):
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -326,6 +326,7 @@ class PermFunction01(Benchmark):
 
     TODO: line 560
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -335,7 +336,6 @@ class PermFunction01(Benchmark):
 
         self.global_optimum = [list(range(1, self.N + 1))]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -374,6 +374,7 @@ class PermFunction02(Benchmark):
 
     TODO: line 582
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -384,7 +385,6 @@ class PermFunction02(Benchmark):
 
         self.global_optimum = [1. / arange(1, self.N + 1)]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -431,6 +431,7 @@ class Pinter(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -439,7 +440,6 @@ class Pinter(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -477,6 +477,7 @@ class Plateau(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -485,7 +486,6 @@ class Plateau(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 30.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

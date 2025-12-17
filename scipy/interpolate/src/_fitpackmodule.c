@@ -4,9 +4,8 @@
 #define PyInt_AsLong PyLong_AsLong
 
 static PyObject *fitpack_error;
-#include "__fitpack.h"
 
-#ifdef HAVE_ILP64
+#ifdef HAVE_BLAS_ILP64
 
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64
@@ -616,6 +615,10 @@ PyInit__fitpack(void)
     if (PyDict_SetItemString(mdict, "error", fitpack_error)) {
         return NULL;
     }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
     return module;
 }

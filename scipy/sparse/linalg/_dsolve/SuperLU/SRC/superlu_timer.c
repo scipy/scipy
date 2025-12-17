@@ -1,4 +1,4 @@
-/*! \file
+/*
 Copyright (c) 2003, The Regents of the University of California, through
 Lawrence Berkeley National Laboratory (subject to receipt of any required 
 approvals from U.S. Dept. of Energy) 
@@ -9,18 +9,15 @@ The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 
-/*! @file superlu_timer.c
- * \brief Returns the time used
+/*! \file
+ * \brief Timer functions to record the time used
  *
- * <pre>
- * Purpose
- * ======= 
- * 
  * Returns the time in seconds used by the process.
  *
- * Note: the timer function call is machine dependent. Use conditional
+ * \note the timer function call is machine dependent. Use conditional
  *       compilation to choose the appropriate function.
- * </pre>
+ *
+ * \ingroup Common
  */
 
 #undef USE_TIMES
@@ -58,6 +55,8 @@ double SuperLU_timer_()
 #endif
 
 /*! \brief Timer function
+ *
+ * \return The time in seconds used by the process.
  */ 
 double SuperLU_timer_()
 {
@@ -83,6 +82,8 @@ double SuperLU_timer_()
 #include <stdlib.h>
 
 /*! \brief Timer function
+ *
+ * \return The time in seconds used by the process.
  */ 
 double SuperLU_timer_(void)
 {
@@ -94,4 +95,3 @@ double SuperLU_timer_(void)
 }
 
 #endif
-

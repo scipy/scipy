@@ -22,7 +22,7 @@ class MemoizeDer:
     time it is called.
 
     This is a simplistic memoizer that calls and caches a single value
-    of `f(x, *args)`.
+    of ``f(x, *args)``.
     It assumes that `args` does not change between invocations.
     It supports the use case of a root-finder where `args` is fixed,
     `x` changes, and only rarely, if at all, does x assume the same value
@@ -71,22 +71,29 @@ def root_scalar(f, args=(), method=None, bracket=None,
     ----------
     f : callable
         A function to find a root of.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     args : tuple, optional
         Extra arguments passed to the objective function and its derivative(s).
     method : str, optional
         Type of solver.  Should be one of
 
-            - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
-            - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
-            - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
-            - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
-            - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
-            - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
-            - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
-            - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
+        - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
+        - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
+        - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
+        - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
+        - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
+        - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
+        - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
+        - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
 
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     x0 : float, optional
         Initial guess.
@@ -246,7 +253,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     # Pick a method if not specified.
     # Use the "best" method available for the situation.
     if not method:
-        if bracket:
+        if bracket is not None:
             method = 'brentq'
         elif x0 is not None:
             if fprime:
@@ -268,11 +275,11 @@ def root_scalar(f, args=(), method=None, bracket=None,
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
     except AttributeError as e:
-        raise ValueError('Unknown solver %s' % meth) from e
+        raise ValueError(f'Unknown solver {meth}') from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
-        if not isinstance(bracket, (list, tuple, np.ndarray)):
-            raise ValueError('Bracket needed for %s' % method)
+        if not isinstance(bracket, list | tuple | np.ndarray):
+            raise ValueError(f'Bracket needed for {method}')
 
         a, b = bracket[:2]
         try:
@@ -292,14 +299,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     elif meth in ['secant']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None,
                          x1=x1, **kwargs)
     elif meth in ['newton']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if not fprime:
             # approximate fprime with finite differences
 
@@ -308,7 +315,12 @@ def root_scalar(f, args=(), method=None, bracket=None,
                 # use of `newton`. In that case, `approx_derivative` will
                 # always get scalar input. Nonetheless, it always returns an
                 # array, so we extract the element to produce scalar output.
-                return approx_derivative(f, x, method='2-point', args=args)[0]
+                # Similarly, `approx_derivative` always passes array input, so
+                # we extract the element to ensure the user's function gets
+                # scalar input.
+                def f_wrapped(x, *args):
+                    return f(x[0], *args)
+                return approx_derivative(f_wrapped, x, method='2-point', args=args)[0]
 
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
@@ -316,16 +328,16 @@ def root_scalar(f, args=(), method=None, bracket=None,
                          **kwargs)
     elif meth in ['halley']:
         if x0 is None:
-            raise ValueError('x0 must not be None for %s' % method)
+            raise ValueError(f'x0 must not be None for {method}')
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
+            raise ValueError(f'fprime must be specified for {method}')
         if not fprime2:
-            raise ValueError('fprime2 must be specified for %s' % method)
+            raise ValueError(f'fprime2 must be specified for {method}')
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2, **kwargs)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     if is_memoized:
         # Replace the function_calls count with the memoized count.
@@ -343,7 +355,7 @@ def _root_scalar_brentq_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -365,7 +377,7 @@ def _root_scalar_brenth_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -386,7 +398,7 @@ def _root_scalar_toms748_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -415,8 +427,9 @@ def _root_scalar_secant_doc():
         Maximum number of iterations.
     x0 : float, required
         Initial guess.
-    x1 : float, required
-        A second guess.
+    x1 : float, optional
+        A second guess. Must be different from `x0`. If not specified,
+        a value near `x0` will be chosen.
     options: dict, optional
         Specifies any method-specific options not covered above.
 
@@ -488,7 +501,7 @@ def _root_scalar_ridder_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
@@ -510,7 +523,7 @@ def _root_scalar_bisect_doc():
     args : tuple, optional
         Extra arguments passed to the objective function.
     bracket: A sequence of 2 floats, optional
-        An interval bracketing a root.  `f(x, *args)` must have different
+        An interval bracketing a root.  ``f(x, *args)`` must have different
         signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.

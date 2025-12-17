@@ -46,9 +46,9 @@ def read_targets(log, show_all):
     time"""
     header = log.readline()
     m = re.search(r'^# ninja log v(\d+)\n$', header)
-    assert m, "unrecognized ninja log version %r" % header
+    assert m, f"unrecognized ninja log version {header!r}"
     version = int(m.group(1))
-    assert 5 <= version <= 6, "unsupported ninja log version %d" % version
+    assert 5 <= version <= 6, f"unsupported ninja log version {version}"
     if version == 6:
         # Skip header line
         next(log)
@@ -138,7 +138,7 @@ def log_to_dicts(log, pid, options):
         tid = threads.alloc(target)
 
         yield {
-            'name': '%0s' % ', '.join(target.targets), 'cat': 'targets',
+            'name': '{:0s}'.format(', '.join(target.targets)), 'cat': 'targets',
             'ph': 'X', 'ts': (target.start * 1000),
             'dur': ((target.end - target.start) * 1000),
             'pid': pid, 'tid': tid, 'args': {},

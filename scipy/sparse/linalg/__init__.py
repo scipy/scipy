@@ -22,6 +22,7 @@ Matrix Operations
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
    expm_multiply -- compute the product of a matrix exponential and a matrix
+   funm_multiply_krylov -- use a Krylov method to compute f(A)b for a general f
    matrix_power -- compute the matrix power by raising a matrix to an exponent
 
 Matrix norms
@@ -43,6 +44,8 @@ Direct methods for linear equation systems:
 
    spsolve -- Solve the sparse linear system Ax=b
    spsolve_triangular -- Solve sparse linear system Ax=b for a triangular A.
+   is_sptriangular -- Check if sparse A is triangular.
+   spbandwidth -- Find the bandwidth of a sparse matrix.
    factorized -- Pre-factorize matrix to a function solving a linear system
    MatrixRankWarning -- Warning on exactly singular matrices
    use_solver -- Select direct solver to use
@@ -134,6 +137,7 @@ from ._matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
+from ._funm_multiply_krylov import *
 from ._special_sparse_arrays import *
 
 # Deprecated namespaces, to be removed in v2.0.0

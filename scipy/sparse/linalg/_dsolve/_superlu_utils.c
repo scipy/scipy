@@ -15,18 +15,8 @@
    been allocated.  (It's ok to FREE unallocated memory)---will be ignored.
 */
 
-#ifndef WITH_THREAD
-static SuperLUGlobalObject superlu_py_global = {0};
-#endif
-
 static SuperLUGlobalObject *get_tls_global(void)
 {
-#ifndef WITH_THREAD
-    if (superlu_py_global.memory_dict == NULL) {
-        superlu_py_global.memory_dict = PyDict_New();
-    }
-    return &superlu_py_global;
-#else
     PyObject *thread_dict;
     SuperLUGlobalObject *obj;
     const char *key = "scipy.sparse.linalg._dsolve._superlu.__global_object";
@@ -52,8 +42,12 @@ static SuperLUGlobalObject *get_tls_global(void)
 
     PyDict_SetItemString(thread_dict, key, (PyObject *)obj);
 
+    /*
+        Py_DECREF is added because get_tls_global returns
+        borrowed reference. This avoids memory leak of obj.
+    */
+    Py_DECREF(obj);
     return obj;
-#endif
 }
 
 jmp_buf *superlu_python_jmpbuf(void)

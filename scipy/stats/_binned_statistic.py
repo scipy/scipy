@@ -4,6 +4,8 @@ import numpy as np
 from operator import index
 from collections import namedtuple
 
+from scipy._lib._array_api import xp_capabilities
+
 __all__ = ['binned_statistic',
            'binned_statistic_2d',
            'binned_statistic_dd']
@@ -13,6 +15,7 @@ BinnedStatisticResult = namedtuple('BinnedStatisticResult',
                                    ('statistic', 'bin_edges', 'binnumber'))
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic(x, values, statistic='mean',
                      bins=10, range=None):
     """
@@ -192,6 +195,7 @@ BinnedStatistic2dResult = namedtuple('BinnedStatistic2dResult',
                                       'binnumber'))
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic_2d(x, y, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False):
     """
@@ -373,6 +377,7 @@ def _bincount(x, weights):
     return z
 
 
+@xp_capabilities(np_only=True)
 def binned_statistic_dd(sample, values, statistic='mean',
                         bins=10, range=None, expand_binnumbers=False,
                         binned_statistic_result=None):
@@ -733,8 +738,8 @@ def _bin_edges(sample, bins=None, range=None):
         for i in builtins.range(Ndim):
             if range[i][1] < range[i][0]:
                 raise ValueError(
-                    "In {}range, start must be <= stop".format(
-                        f"dimension {i + 1} of " if Ndim > 1 else ""))
+                    f"In {f'dimension {i + 1} of ' if Ndim > 1 else ''}range,"
+                    " start must be <= stop")
             smin[i], smax[i] = range[i]
 
     # Make sure the bins have a finite width.

@@ -223,6 +223,7 @@ Continuous Distributions in `scipy.stats`
    continuous_chi2
    continuous_cosine
    continuous_dgamma
+   continuous_dpareto_lognorm
    continuous_dweibull
    continuous_erlang
    continuous_expon
@@ -261,6 +262,7 @@ Continuous Distributions in `scipy.stats`
    continuous_ksone
    continuous_kstwo
    continuous_kstwobign
+   continuous_landau
    continuous_laplace
    continuous_laplace_asymmetric
    continuous_levy_l

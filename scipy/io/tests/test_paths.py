@@ -45,16 +45,16 @@ class TestPaths:
     def test_hb_read(self):
         # Save data with string path, load with pathlib.Path
         with tempdir() as temp_dir:
-            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.hb'
             scipy.io.hb_write(str(path), data)
 
-            data_new = scipy.io.hb_read(path)
+            data_new = scipy.io.hb_read(path, spmatrix=False)
             assert (data_new != data).nnz == 0
 
     def test_hb_write(self):
         with tempdir() as temp_dir:
-            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.hb'
             scipy.io.hb_write(path, data)
             assert path.is_file()
@@ -62,16 +62,16 @@ class TestPaths:
     def test_mmio_read(self):
         # Save data with string path, load with pathlib.Path
         with tempdir() as temp_dir:
-            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.mtx'
             scipy.io.mmwrite(str(path), data)
 
-            data_new = scipy.io.mmread(path)
+            data_new = scipy.io.mmread(path, spmatrix=False)
             assert (data_new != data).nnz == 0
 
     def test_mmio_write(self):
         with tempdir() as temp_dir:
-            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            data = scipy.sparse.eye_array(3, format='csr')
             path = Path(temp_dir) / 'data.mtx'
             scipy.io.mmwrite(path, data)
 

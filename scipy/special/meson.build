@@ -7,7 +7,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
-  fs.copyfile('_cunity.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
@@ -18,33 +17,22 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
-sf_error_state_lib = shared_library('sf_error_state',
-  ['sf_error_state.c'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
-  install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special',
-)
-
 ufuncs_sources = [
   '_cosine.c',
-  'special_wrappers.cpp',
+  'xsf_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
 ]
 
 ufuncs_cxx_sources = [
-  '_faddeeva.cxx',
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
-  'Faddeeva.cc',
   'sf_error.cc',
   'wright.cc'
 ]
@@ -55,33 +43,37 @@ cdflib_lib = static_library('cdflib',
   gnu_symbol_visibility: 'hidden',
 )
 
+# The -Wno-psabi arg is used to silence a warning that the ABI of
+# passing structure with complex float member changed in GCC 4.4,
+# which is not relevant for scipy.special.
+ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  ufuncs_cpp_args += ['-Wno-psabi']
+endif
+
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
-  dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
+  cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_gufuncs',
   ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
-  dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
+  cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_specfun',
   [cython_gen_cpp.process('_specfun.pyx')],
-  dependencies: [np_dep],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
@@ -109,17 +101,18 @@ cython_special = custom_target('cython_special',
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0]])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, cython_special[0]])
 
 py3.extension_module('_ufuncs',
   [
@@ -128,20 +121,17 @@ py3.extension_module('_ufuncs',
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  include_directories: ['../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
-    lapack_dep,
+    xsf_dep,
+    lapack_lp64_dep,
     npymath_lib,
     np_dep,
   ],
   link_args: version_link_args,
-  link_with: [
-    sf_error_state_lib,
-    cdflib_lib
-  ],
+  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
@@ -165,7 +155,7 @@ ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
   '-DCYTHON_EXTERN_C=extern "C"',
-  '-DSP_SPECFUN_ERROR', # For error handling in special functions.
+  '-DSP_SPECFUN_ERROR'
 ]
 
 py3.extension_module('_ufuncs_cxx',
@@ -173,49 +163,40 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
-  include_directories: ['../_lib/boost_math/include', '../_lib',
-                        '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-    link_with: [sf_error_state_lib],
-  dependencies: [np_dep, ellint_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
-  c_args: cython_c_args,
+  c_args: [cython_c_args],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  link_with: [sf_error_state_lib],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [lapack_dep, np_dep],
+  dependencies: [xsf_dep, lapack_lp64_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'special_wrappers.cpp',
+    'xsf_wrappers.cpp',
     'sf_error.cc',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  include_directories: ['../_lib', '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [np_dep, npymath_lib],
-  link_with: [
-    sf_error_state_lib,
-    cdflib_lib
-  ],
+  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_lp64_dep],
+  link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_comb',
@@ -228,7 +209,7 @@ py3.extension_module('_comb',
 py3.extension_module('_test_internal',
   [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [np_dep],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
@@ -279,68 +260,17 @@ foreach npz_file: npz_files
 endforeach
 
 
-# Headers for special functions in `special` library (temporary name) are
-# included in both build and install dirs for development purposes. Not public!
-special_sources = [
-  'special/config.h',
-  'special/error.h',
-  'special/evalpoly.h',
-  'special/lambertw.h',
-  'special/binom.h',
-  'special/trig.h',
-  'special/zlog1.h',
-  'special/loggamma.h',
-  'special/digamma.h',
-  'special/wright_bessel.h',
-  'special/hyp2f1.h',
-  'special/tools.h'
-]
-
-special_cephes_sources = [
-  'special/cephes/const.h',
-  'special/cephes/polevl.h',
-  'special/cephes/beta.h',
-  'special/cephes/gamma.h',
-  'special/cephes/trig.h',
-  'special/cephes/zeta.h',
-  'special/cephes/psi.h',
-  'special/cephes/lanczos.h',
-  'special/cephes/rgamma.h',
-  'special/cephes/chbevl.h',
-  'special/cephes/poch.h',
-  'special/cephes/hyp2f1.h',
-  'special/cephes/besselpoly.h',
-  'special/cephes/i0.h',
-  'special/cephes/i1.h',
-  'special/cephes/scipy_iv.h',
-  'special/cephes/j0.h',
-  'special/cephes/j1.h',
-  'special/cephes/jv.h',
-  'special/cephes/cbrt.h',
-  'special/cephes/airy.h',
-  'special/cephes/k0.h',
-  'special/cephes/k1.h',
-  'special/cephes/kn.h',
-  'special/cephes/ndtr.h',
-  'special/cephes/igam.h',
-  'special/cephes/unity.h',
-  'special/cephes/chdtr.h',
-  'special/cephes/igami.h',
-  'special/cephes/hyperg.h',
-  'special/cephes/expn.h'
-]
-
-py3.install_sources(special_sources, subdir: 'scipy/special/special')
-py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
-
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
+  '_input_validation.py',
   '_lambertw.py',
   '_logsumexp.py',
   '_mptestutils.py',
+  '_multiufuncs.py',
   '_orthogonal.py',
   '_orthogonal.pyi',
   '_sf_error.py',

@@ -4,13 +4,15 @@ import operator
 import numpy as np
 
 from math import prod
+from types import GenericAlias
 
-from . import _bspl  # type: ignore
+from . import _dierckx  # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
+from scipy._lib._array_api import array_namespace, xp_capabilities
 
-from ._bsplines import _not_a_knot
+from ._bsplines import _not_a_knot, BSpline
 
 __all__ = ["NdBSpline"]
 
@@ -23,6 +25,13 @@ def _get_dtype(dtype):
         return np.float64
 
 
+@xp_capabilities(
+    cpu_only=True, jax_jit=False,
+    skip_backends=[
+        ("dask.array",
+         "https://github.com/data-apis/array-api-extra/issues/488")
+    ]
+)
 class NdBSpline:
     """Tensor product spline object.
 
@@ -56,7 +65,7 @@ class NdBSpline:
     t : tuple of ndarrays
         Knots vectors.
     c : ndarray
-        Coefficients of the tensor-produce spline.
+        Coefficients of the tensor-product spline.
     k : tuple of integers
         Degrees for each dimension.
     extrapolate : bool, optional
@@ -66,6 +75,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    derivative
     design_matrix
 
     See Also
@@ -74,62 +84,54 @@ class NdBSpline:
     NdPPoly : an N-dimensional piecewise tensor product polynomial
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, t, c, k, *, extrapolate=None):
-        ndim = len(t)
+        self._k, self._indices_k1d, (self._t, self._len_t) = _preprocess_inputs(k, t)
 
-        try:
-            len(k)
-        except TypeError:
-            # make k a tuple
-            k = (k,)*ndim
-
-        if len(k) != ndim:
-            raise ValueError(f"{len(t) = } != {len(k) = }.")
-
-        self.k = tuple(operator.index(ki) for ki in k)
-        self.t = tuple(np.ascontiguousarray(ti, dtype=float) for ti in t)
-        self.c = np.asarray(c)
+        self._asarray = array_namespace(c, *t).asarray
 
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = bool(extrapolate)
 
-        self.c = np.asarray(c)
+        self._c = np.asarray(c)
+
+        ndim = self._t.shape[0]   # == len(self.t)
+        if self._c.ndim < ndim:
+            raise ValueError(f"Coefficients must be at least {ndim}-dimensional.")
 
         for d in range(ndim):
             td = self.t[d]
             kd = self.k[d]
             n = td.shape[0] - kd - 1
-            if kd < 0:
-                raise ValueError(f"Spline degree in dimension {d} cannot be"
-                                 f" negative.")
-            if td.ndim != 1:
-                raise ValueError(f"Knot vector in dimension {d} must be"
-                                 f" one-dimensional.")
-            if n < kd + 1:
-                raise ValueError(f"Need at least {2*kd + 2} knots for degree"
-                                 f" {kd} in dimension {d}.")
-            if (np.diff(td) < 0).any():
-                raise ValueError(f"Knots in dimension {d} must be in a"
-                                 f" non-decreasing order.")
-            if len(np.unique(td[kd:n + 1])) < 2:
-                raise ValueError(f"Need at least two internal knots in"
-                                 f" dimension {d}.")
-            if not np.isfinite(td).all():
-                raise ValueError(f"Knots in dimension {d} should not have"
-                                 f" nans or infs.")
-            if self.c.ndim < ndim:
-                raise ValueError(f"Coefficients must be at least"
-                                 f" {d}-dimensional.")
-            if self.c.shape[d] != n:
+
+            if self._c.shape[d] != n:
                 raise ValueError(f"Knots, coefficients and degree in dimension"
                                  f" {d} are inconsistent:"
-                                 f" got {self.c.shape[d]} coefficients for"
+                                 f" got {self._c.shape[d]} coefficients for"
                                  f" {len(td)} knots, need at least {n} for"
                                  f" k={k}.")
 
-        dt = _get_dtype(self.c.dtype)
-        self.c = np.ascontiguousarray(self.c, dtype=dt)
+        dt = _get_dtype(self._c.dtype)
+        self._c = np.ascontiguousarray(self._c, dtype=dt)
+
+    @property
+    def k(self):
+        return tuple(self._k)
+
+    @property
+    def t(self):
+        # repack the knots into a tuple
+        return tuple(
+            self._asarray(self._t[d, :self._len_t[d]]) for d in range(self._t.shape[0])
+        )
+
+    @property
+    def c(self):
+        return self._asarray(self._c)
 
     def __call__(self, xi, *, nu=None, extrapolate=None):
         """Evaluate the tensor product b-spline at ``xi``.
@@ -140,7 +142,7 @@ class NdBSpline:
             The coordinates to evaluate the interpolator at.
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
-        nu : array_like, optional, shape (ndim,)
+        nu : sequence of length ``ndim``, optional
             Orders of derivatives to evaluate. Each must be non-negative.
             Defaults to the zeroth derivivative.
         extrapolate : bool, optional
@@ -152,16 +154,16 @@ class NdBSpline:
         values : ndarray, shape ``xi.shape[:-1] + self.c.shape[ndim:]``
             Interpolated values at ``xi``
         """
-        ndim = len(self.t)
+        ndim = self._t.shape[0]  # == len(self.t)
 
         if extrapolate is None:
             extrapolate = self.extrapolate
         extrapolate = bool(extrapolate)
 
         if nu is None:
-            nu = np.zeros((ndim,), dtype=np.intc)
+            nu = np.zeros((ndim,), dtype=np.int64)
         else:
-            nu = np.asarray(nu, dtype=np.intc)
+            nu = np.asarray(nu, dtype=np.int64)
             if nu.ndim != 1 or nu.shape[0] != ndim:
                 raise ValueError(
                     f"invalid number of derivative orders {nu = } for "
@@ -178,46 +180,38 @@ class NdBSpline:
         if xi_shape[-1] != ndim:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
 
-        # prepare k & t
-        _k = np.asarray(self.k, dtype=np.dtype("long"))
-
-        # pack the knots into a single array
-        len_t = [len(ti) for ti in self.t]
-        _t = np.empty((ndim, max(len_t)), dtype=float)
-        _t.fill(np.nan)
-        for d in range(ndim):
-            _t[d, :len(self.t[d])] = self.t[d]
-        len_t = np.asarray(len_t, dtype=np.dtype("long"))
-
-        # tabulate the flat indices for iterating over the (k+1)**ndim subarray
-        shape = tuple(kd + 1 for kd in self.k)
-        indices = np.unravel_index(np.arange(prod(shape)), shape)
-        _indices_k1d = np.asarray(indices, dtype=np.intp).T
+        # complex -> double
+        was_complex = self._c.dtype.kind == 'c'
+        cc = self._c
+        if was_complex and self._c.ndim == ndim:
+            # make sure that core dimensions are intact, and complex->float
+            # size doubling only adds a trailing dimension
+            cc = self._c[..., None]
+        cc = cc.view(float)
 
         # prepare the coefficients: flatten the trailing dimensions
-        c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
+        c1 = cc.reshape(cc.shape[:ndim] + (-1,))
         c1r = c1.ravel()
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
         _strides_c1 = np.asarray([s // c1.dtype.itemsize
-                                  for s in c1.strides], dtype=np.intp)
+                                  for s in c1.strides], dtype=np.int64)
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
-        out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
-
-        _bspl.evaluate_ndbspline(xi,
-                                 _t,
-                                 len_t,
-                                 _k,
+        out = _dierckx.evaluate_ndbspline(xi,
+                                 self._t,
+                                 self._len_t,
+                                 self._k,
                                  nu,
                                  extrapolate,
                                  c1r,
                                  num_c_tr,
                                  _strides_c1,
-                                 _indices_k1d,
-                                 out,)
-
-        return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
+                                 self._indices_k1d,
+        )
+        out = out.view(self._c.dtype)
+        out = out.reshape(xi_shape[:-1] + self._c.shape[ndim:])
+        return self._asarray(out)
 
     @classmethod
     def design_matrix(cls, xvals, t, k, extrapolate=True):
@@ -250,15 +244,177 @@ class NdBSpline:
                 f"Data and knots are inconsistent: len(t) = {len(t)} for "
                 f" {ndim = }."
             )
-        try:
-            len(k)
-        except TypeError:
-            # make k a tuple
-            k = (k,)*ndim
 
-        kk = np.asarray(k, dtype=np.int32)
-        data, indices, indptr = _bspl._colloc_nd(xvals, t, kk)
+        # tabulate the flat indices for iterating over the (k+1)**ndim subarray
+        k, _indices_k1d, (_t, len_t) = _preprocess_inputs(k, t)
+
+        # Precompute the shape and strides of the 'coefficients array'.
+        # This would have been the NdBSpline coefficients; in the present context
+        # this is a helper to compute the indices into the colocation matrix.
+        c_shape = tuple(len_t[d] - k[d] - 1 for d in range(ndim))
+
+        # The strides of the coeffs array: the computation is equivalent to
+        # >>> cstrides = [s // 8 for s in np.empty(c_shape).strides]
+        cs = c_shape[1:] + (1,)
+        cstrides = np.cumprod(cs[::-1], dtype=np.int64)[::-1].copy()
+
+        # heavy lifting happens here
+        data, indices, indptr = _dierckx._coloc_nd(xvals,
+                _t, len_t, k, _indices_k1d, cstrides)
+
         return csr_array((data, indices, indptr))
+
+    def _bspline_derivative_along_axis(self, c, t, k, axis, nu=1):
+        # Move the selected axis to front
+        c = np.moveaxis(c, axis, 0)
+        n = c.shape[0]
+        trailing_shape = c.shape[1:]
+        c_flat = c.reshape(n, -1)
+
+        new_c_list = []
+        new_t = None
+
+        for i in range(c_flat.shape[1]):
+            if k >= nu:
+                b = BSpline.construct_fast(t, c_flat[:, i], k)
+                db = b.derivative(nu)
+                # truncate coefficients to match new knot/degree size
+                db.c = db.c[:len(db.t) - db.k - 1]
+            else:
+                db = BSpline.construct_fast(t, np.zeros(len(t) - 1), 0)
+
+            if new_t is None:
+                new_t = db.t
+
+            new_c_list.append(db.c)
+
+        new_c = np.stack(new_c_list, axis=1).reshape(
+            (len(new_c_list[0]),) + trailing_shape)
+        new_c = np.moveaxis(new_c, 0, axis)
+
+        return new_c, new_t
+
+    def derivative(self, nu):
+        """
+        Construct a new NdBSpline representing the partial derivative.
+
+        Parameters
+        ----------
+        nu : array_like of shape (ndim,)
+            Orders of the partial derivatives to compute along each dimension.
+
+        Returns
+        -------
+        NdBSpline
+            A new NdBSpline representing the partial derivative of the original spline.
+
+        """
+        nu_arr = np.asarray(nu, dtype=np.int64)
+        ndim = len(self.t)
+
+        if nu_arr.ndim != 1 or nu_arr.shape[0] != ndim:
+            raise ValueError(
+                f"invalid number of derivative orders {nu = } for "
+                f"ndim = {len(self.t)}.")
+
+        if any(nu_arr < 0):
+            raise ValueError(f"derivative orders must be positive, got {nu = }")
+
+        # extract t and c as numpy arrays
+        t_new = [self._t[d, :self._len_t[d]] for d in range(self._t.shape[0])]
+        k_new = list(self.k)
+        c_new = self._c.copy()
+
+        for axis, n in enumerate(nu_arr):
+            if n == 0:
+                continue
+
+            c_new, t_new[axis] = self._bspline_derivative_along_axis(
+                c_new, t_new[axis], k_new[axis], axis, nu=n
+            )
+            k_new[axis] = max(k_new[axis] - n, 0)
+
+        return NdBSpline(tuple(self._asarray(t) for t in t_new),
+                         self._asarray(c_new),
+                         tuple(k_new),
+                         extrapolate=self.extrapolate
+        )
+
+def _preprocess_inputs(k, t_tpl):
+    """Helpers: validate and preprocess NdBSpline inputs.
+
+       Parameters
+       ----------
+       k : int or tuple
+          Spline orders
+       t_tpl : tuple or array-likes
+          Knots.
+    """
+    # 1. Make sure t_tpl is a tuple
+    if not isinstance(t_tpl, tuple):
+        raise ValueError(f"Expect `t` to be a tuple of array-likes. "
+                         f"Got {t_tpl} instead."
+        )
+
+    # 2. Make ``k`` a tuple of integers
+    ndim = len(t_tpl)
+    try:
+        len(k)
+    except TypeError:
+        # make k a tuple
+        k = (k,)*ndim
+
+    k = np.asarray([operator.index(ki) for ki in k], dtype=np.int64)
+
+    if len(k) != ndim:
+        raise ValueError(f"len(t) = {len(t_tpl)} != {len(k) = }.")
+
+    # 3. Validate inputs
+    ndim = len(t_tpl)
+    for d in range(ndim):
+        td = np.asarray(t_tpl[d])
+        kd = k[d]
+        n = td.shape[0] - kd - 1
+        if kd < 0:
+            raise ValueError(f"Spline degree in dimension {d} cannot be"
+                             f" negative.")
+        if td.ndim != 1:
+            raise ValueError(f"Knot vector in dimension {d} must be"
+                             f" one-dimensional.")
+        if n < kd + 1:
+            raise ValueError(f"Need at least {2*kd + 2} knots for degree"
+                             f" {kd} in dimension {d}.")
+        if (np.diff(td) < 0).any():
+            raise ValueError(f"Knots in dimension {d} must be in a"
+                             f" non-decreasing order.")
+        if len(np.unique(td[kd:n + 1])) < 2:
+            raise ValueError(f"Need at least two internal knots in"
+                             f" dimension {d}.")
+        if not np.isfinite(td).all():
+            raise ValueError(f"Knots in dimension {d} should not have"
+                             f" nans or infs.")
+
+    # 4. tabulate the flat indices for iterating over the (k+1)**ndim subarray
+    # non-zero b-spline elements
+    shape = tuple(kd + 1 for kd in k)
+    indices = np.unravel_index(np.arange(prod(shape)), shape)
+    _indices_k1d = np.asarray(indices, dtype=np.int64).T.copy()
+
+    # 5. pack the knots into a single array:
+    #    ([1, 2, 3, 4], [5, 6], (7, 8, 9)) -->
+    #    array([[1, 2, 3, 4],
+    #           [5, 6, nan, nan],
+    #           [7, 8, 9, nan]])
+    t_tpl = [np.asarray(t) for t in t_tpl]
+    ndim = len(t_tpl)
+    len_t = [len(ti) for ti in t_tpl]
+    _t = np.empty((ndim, max(len_t)), dtype=float)
+    _t.fill(np.nan)
+    for d in range(ndim):
+        _t[d, :len(t_tpl[d])] = t_tpl[d]
+    len_t = np.asarray(len_t, dtype=np.int64)
+
+    return k, _indices_k1d, (_t, len_t)
 
 
 def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
@@ -293,7 +449,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
         The points defining the regular grid in N dimensions. The points in
         each dimension (i.e. every element of the `points` tuple) must be
-        strictly ascending or descending.      
+        strictly ascending or descending.
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
     k : int, optional
@@ -339,6 +495,11 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     # construct the colocation matrix
     matr = NdBSpline.design_matrix(xvals, t, k)
 
+    # Remove zeros from the sparse matrix
+    # If k=1, then solve() doesn't take long enough for this to help
+    if k[0] >= 3:
+        matr.eliminate_zeros()
+
     # Solve for the coefficients given `values`.
     # Trailing dimensions: first ndim dimensions are data, the rest are batch
     # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
@@ -355,4 +516,3 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     coef = solver(matr, vals, **solver_args)
     coef = coef.reshape(xi_shape + v_shape[ndim:])
     return NdBSpline(t, coef, k)
-

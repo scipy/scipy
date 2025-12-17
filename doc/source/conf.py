@@ -4,10 +4,10 @@ from os.path import relpath, dirname
 import re
 import sys
 import warnings
-from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
@@ -25,9 +25,6 @@ from scipy.stats._multivariate import multi_rv_generic
 old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
-
-# Currently required to build scipy.fft docs
-os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -47,12 +44,14 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
+    'sphinx_copybutton',
     'sphinx_design',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
     'myst_nb',
     'jupyterlite_sphinx',
+    'array_api_capabilities_table',
 ]
 
 
@@ -72,7 +71,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-%s, The SciPy community' % date.today().year
+copyright = '2008, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -101,6 +100,9 @@ default_role = "autolink"
 # List of directories, relative to source directories, that shouldn't be searched
 # for source files.
 exclude_dirs = []
+exclude_patterns = [  # glob-style
+    "**.ipynb",
+]
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = False
@@ -130,11 +132,8 @@ nitpick_ignore = [
     ("py:class", "None.  Remove all items from D."),
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "None.  Update D from mapping/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
-]
-
-exclude_patterns = [  # glob-style
-
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -184,12 +183,21 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
-# TODO: remove after gh-19228 resolved:
+
+# see: https://github.com/scipy/scipy/issues/22020
 warnings.filterwarnings(
     'ignore',
-    message=r'.*path is deprecated.*',
-    category=DeprecationWarning,
+    message=r'.*py:obj reference target not found: scipy.misc.*',
+    category=Warning,
 )
+
+warnings.filterwarnings("ignore", message="`scipy.odr` is deprecated",
+                        category=DeprecationWarning)
+
+# See https://github.com/sphinx-doc/sphinx/issues/12589
+suppress_warnings = [
+    'autosummary.import_cycle',
+]
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -201,15 +209,25 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_sidebars = {
-    "index": "search-button-field",
+    "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-
+html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
 html_theme_options = {
-    "github_url": "https://github.com/scipy/scipy",
-    "twitter_url": "https://twitter.com/SciPy_team",
     "header_links_before_dropdown": 6,
-    "icon_links": [],
+    "icon_links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/scipy/scipy",
+        "icon": "fa-brands fa-github",
+      },
+      {
+        "name": "Scientific Python Forum",
+        "url": "https://discuss.scientific-python.org/c/contributor/scipy/",
+        "icon": "fa-custom fa-SciPy_Forum", # defined in file `_static/custom-icons.js`
+        "type": "fontawesome",
+      },
+    ],
     "logo": {
         "text": "SciPy",
     },
@@ -236,25 +254,12 @@ if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
     html_theme_options["show_version_warning_banner"] = False
 
-if 'versionwarning' in tags:  # noqa: F821
-    # Specific to docs.scipy.org deployment.
-    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
-    src = ('var script = document.createElement("script");\n'
-           'script.type = "text/javascript";\n'
-           'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);')
-    html_context = {
-        'VERSIONCHECK_JS': src
-    }
-    html_js_files = ['versioncheck.js']
-
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
 html_css_files = [
     "scipy.css",
-    "try_examples.css",
 ]
 
 # html_additional_pages = {
@@ -270,18 +275,16 @@ htmlhelp_basename = 'scipy'
 
 mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
+# sphinx-copybutton configurations
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.{3,}: | {5,8}: "
+copybutton_prompt_is_regexp = True
+
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/devdocs', None),
-    'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org/stable', None),
-    'asv': ('https://asv.readthedocs.io/en/stable/', None),
-    'statsmodels': ('https://www.statsmodels.org/stable', None),
-}
-
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "numpy", "neps", "matplotlib", "asv", "statsmodels", "mpmath"}
+)
 
 # -----------------------------------------------------------------------------
 # Numpy extensions
@@ -348,16 +351,8 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
-        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
-        '`kurtosistest` p-value may be',  # intentionally "bad" excample in docstring
-        'scipy.signal.daub is deprecated',
-        'scipy.signal.qmf is deprecated',
-        'scipy.signal.cascade is deprecated',
-        'scipy.signal.morlet is deprecated',
-        'scipy.signal.morlet2 is deprecated',
-        'scipy.signal.ricker is deprecated',
-        'scipy.signal.cwt is deprecated',
+        '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
+        'odr'
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
@@ -391,12 +386,35 @@ plot_rcparams = {
 }
 
 # -----------------------------------------------------------------------------
-# Notebook tutorials with MyST-NB
+# Notebook tutorials with MyST-NB and JupyterLite
 # -----------------------------------------------------------------------------
 
-nb_execution_mode = "auto"
+# 1. MyST-NB configuration
+nb_execution_mode = "cache"
 # Ignore notebooks generated by jupyterlite-sphinx for interactive examples.
 nb_execution_excludepatterns = ["_contents/*.ipynb"]
+# Prevent creation of transition syntax when adding footnotes
+# See https://github.com/executablebooks/MyST-Parser/issues/352
+myst_footnote_transition = False
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "substitution",
+    "linkify",
+]
+nb_render_markdown_format = "myst"
+render_markdown_format = "myst"
+# Fix rendering of MathJax objects in Jupyter notebooks
+myst_update_mathjax = False
+
+# 2. jupyterlite-sphinx configuration
+
+# Strip out cells tagged with "jupyterlite_sphinx_strip" from the
+# interactive renditions of the notebooks
+strip_tagged_cells = True
+
+# Enable overrides for JupyterLite settings at runtime
+jupyterlite_overrides = "overrides.json"
 
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx
@@ -456,7 +474,7 @@ def linkcode_resolve(domain, info):
         obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
-    if isinstance(obj, (rv_generic, multi_rv_generic)):
+    if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
@@ -476,7 +494,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
     else:
         linespec = ""
 
@@ -521,8 +539,9 @@ class LegacyDirective(Directive):
             # Argument is empty; use default text
             obj = "submodule"
         text = (f"This {obj} is considered legacy and will no longer receive "
-                "updates. This could also mean it will be removed in future "
-                "SciPy versions.")
+                "updates. While we currently have no plans to remove it, "
+                "we recommend that new code uses more modern alternatives instead."
+        )
 
         try:
             self.content[0] = text+" "+self.content[0]

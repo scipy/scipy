@@ -80,11 +80,11 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
         raise NotImplementedError('Please use HDF reader for matlab v7.3 '
                                   'files, e.g. h5py')
     else:
-        raise TypeError('Did not recognize version %s' % mjv)
+        raise TypeError(f'Did not recognize version {mjv}')
 
 
 @docfiller
-def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
+def loadmat(file_name, mdict=None, appendmat=True, *, spmatrix=True, **kwargs):
     """
     Load MATLAB file.
 
@@ -98,6 +98,10 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     appendmat : bool, optional
        True to append the .mat extension to the end of the given
        filename, if not already present. Default is True.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse matrix. Otherwise return sparse array.
+        Format is `COO` for MatFile 4 and `CSC` for MatFile 5.
+        Only relevant for sparse variables.
     byte_order : str or None, optional
        None by default, implying byte order guessed from mat
        file. Otherwise can be one of ('native', '=', 'little', '<',
@@ -137,12 +141,17 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
         of the result and not its contents (which is identical for both output
         structures). If True, this automatically sets `struct_as_record` to
         False and `squeeze_me` to True, which is required to simplify cells.
+    uint16_codec : str, optional
+        The codec to use for decoding characters, which are stored as uint16
+        values. The default uses the system encoding, but this can be manually
+        set to other values such as 'ascii', 'latin1', and 'utf-8'. This
+        parameter is relevant only for files stored as v6 and above, and not
+        for files stored as v4.
 
     Returns
     -------
     mat_dict : dict
-       dictionary with variable names as keys, and loaded matrices as
-       values.
+       dictionary with variable names as keys, and loaded matrices as values.
 
     Notes
     -----
@@ -164,7 +173,7 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     Load the .mat file contents.
 
-    >>> mat_contents = sio.loadmat(mat_fname)
+    >>> mat_contents = sio.loadmat(mat_fname, spmatrix=False)
 
     The result is a dictionary, one key/value pair for each variable:
 
@@ -225,6 +234,12 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     with _open_file_context(file_name, appendmat) as f:
         MR, _ = mat_reader_factory(f, **kwargs)
         matfile_dict = MR.get_variables(variable_names)
+    if spmatrix:
+        from scipy.sparse import issparse, coo_matrix, csc_matrix
+        for name, var in list(matfile_dict.items()):
+            if issparse(var):
+                fmt_matrix = coo_matrix if var.format == "coo" else csc_matrix
+                matfile_dict[name] = fmt_matrix(var)
 
     if mdict is not None:
         mdict.update(matfile_dict)
@@ -254,7 +269,10 @@ def savemat(file_name, mdict,
         True``).
         Can also pass open file_like object.
     mdict : dict
-        Dictionary from which to save matfile variables.
+        Dictionary from which to save matfile variables. Note that if this dict
+        has a key starting with ``_`` or a sub-dict has a key starting with ``_``
+        or a digit, these key's items will not be saved in the mat file and
+        `MatWriteWarning` will be issued.
     appendmat : bool, optional
         True (the default) to append the .mat extension to the end of the
         given filename, if not already present.

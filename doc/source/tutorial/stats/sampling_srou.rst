@@ -85,7 +85,7 @@ different shape parameters. In such a situation, the setup step of
 `sampling.NumericalInverseHermite` or `sampling.NumericalInversePolynomial` will
 lead to poor performance. As an example, assume we are interested to generate
 100 samples for the Gamma distribution with 1000 different shape parameters
-given by `np.arange(1.5, 5, 1000)`.
+given by ``np.arange(1.5, 5, 1000)``.
 
     >>> import math
     >>> class GammaDist:
@@ -102,9 +102,9 @@ given by `np.arange(1.5, 5, 1000)`.
     ...     rng = SimpleRatioUniforms(dist, mode=p[i]-1,
     ...                               pdf_area=math.gamma(p[i]),
     ...                               random_state=urng)
-    ...     with np.testing.suppress_warnings() as sup:
-    ...         sup.filter(RuntimeWarning, "invalid value encountered in double_scalars")
-    ...         sup.filter(RuntimeWarning, "overflow encountered in exp")
+    ...     with warnings.catch_warnings():
+    ...         warnings.filterwarnings("ignore", RuntimeWarning, "invalid value encountered in double_scalars")
+    ...         warnings.filterwarnings("ignore", RuntimeWarning, "overflow encountered in exp")
     ...         res[i] = rng.rvs(100)
 
 See [1]_, [2]_, and [3]_ for more details.

@@ -1,8 +1,13 @@
+import warnings
+
 import pytest
 import numpy as np
 from numpy.testing import assert_equal
 import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
+
+
+pytestmark = pytest.mark.thread_unsafe
 
 
 @pytest.fixture
@@ -102,8 +107,21 @@ def test_setdefault(d, Asp):
     assert d.items() == Asp.items()
 
 def test_update(d, Asp):
-    with pytest.raises(NotImplementedError):
-        Asp.update(Asp)
+    for input in [Asp, Asp._dict, Asp._dict.items()]:
+        Bsp = dok_array(Asp.shape)
+        Bsp.update(input)
+        assert_equal(Bsp.toarray(), Asp.toarray())
+
+    with pytest.raises(ValueError, match="Inexact indices .* not allowed"):
+        Asp.update(np.zeros((2,2)))
+    with pytest.raises(IndexError, match="length needs to match self.shape"):
+        Asp.update({(3, 2, 1, 0): 1.2})
+    with pytest.raises(IndexError, match="integer keys required"):
+        Asp.update({(0.2, 1): 1.2})
+    with pytest.raises(IndexError, match="negative index"):
+        Asp.update({(0, -1): 1.2})
+    with pytest.raises(IndexError, match="index .* is too large"):
+        Asp.update({(0, 3): 1.2})
 
 def test_values(d, Asp):
     # Note: dict.values are strange: d={1: 1}; d.values() == d.values() is False
@@ -136,7 +154,7 @@ def test_dunder_reversed(d, Asp):
         with pytest.raises(TypeError):
             list(reversed(Asp))
     else:
-        list(reversed(Asp)) == list(reversed(d))
+        assert list(reversed(Asp)) == list(reversed(d))
 
 def test_dunder_ior(d, Asp):
     if isinstance(Asp, dok_array):
@@ -172,8 +190,8 @@ def test_dunder_ror(d, Asp):
 
 # Note: comparison dunders, e.g. ==, >=, etc follow np.array not dict
 def test_dunder_eq(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp == Asp).toarray().all()
         assert (A == Asp).all()
 
@@ -190,21 +208,17 @@ def test_dunder_gt(A, Asp):
     assert not (A > Asp).any()
 
 def test_dunder_le(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp <= Asp).toarray().all()
         assert (A <= Asp).all()
 
 def test_dunder_ge(A, Asp):
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(sp.sparse.SparseEfficiencyWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", sp.sparse.SparseEfficiencyWarning)
         assert (Asp >= Asp).toarray().all()
         assert (A >= Asp).all()
 
 # Note: iter dunder follows np.array not dict
 def test_dunder_iter(A, Asp):
-    if isinstance(Asp, dok_array):
-        with pytest.raises(NotImplementedError):
-            [a.toarray() for a in Asp]
-    else:
-        assert all((a == asp).all() for a, asp in zip(A, Asp))
+    assert all((a == asp).all() for a, asp in zip(A, Asp))

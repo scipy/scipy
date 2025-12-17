@@ -46,6 +46,7 @@ PUBLIC_SUBMODULES = [
     'cluster.vq',
     'constants',
     'datasets',
+    'differentiate',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -59,7 +60,6 @@ PUBLIC_SUBMODULES = [
     'linalg.blas',
     'linalg.lapack',
     'linalg.interpolative',
-    'misc',
     'ndimage',
     'odr',
     'optimize',
@@ -106,7 +106,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
-    r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -250,8 +249,8 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
 
     output = ""
 
-    output += "Non-deprecated objects in __all__: %i\n" % num_all
-    output += "Objects in refguide: %i\n\n" % num_ref
+    output += f"Non-deprecated objects in __all__: {num_all}\n"
+    output += f"Objects in refguide: {num_ref}\n\n"
 
     only_all, only_ref, missing = compare(all_dict, others, names, module_name)
     dep_in_ref = only_ref.intersection(deprecated)
@@ -308,7 +307,8 @@ def validate_rst_syntax(text, name, dots=True):
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
-        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
+        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv',
+        'versionremoved', 'math:numref'
     ])
 
     # Run through docutils
@@ -366,7 +366,7 @@ def validate_rst_syntax(text, name, dots=True):
     if not success:
         output += "    " + "-"*72 + "\n"
         for lineno, line in enumerate(text.splitlines()):
-            output += "    %-4d    %s\n" % (lineno+1, line)
+            output += f"    {lineno+1:<4d}    {line}\n"
         output += "    " + "-"*72 + "\n\n"
 
     if dots:
@@ -535,7 +535,7 @@ def main(argv):
     success = True
     results = []
 
-    print("Running checks for %d modules:" % (len(modules),))
+    print(f"Running checks for {len(modules)} modules:")
 
     for module in modules:
         if dots:

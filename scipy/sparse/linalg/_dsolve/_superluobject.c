@@ -109,6 +109,8 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
+        "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -156,8 +158,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_r, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_r;
     }
     else if (strcmp(name, "perm_c") == 0) {
@@ -171,8 +176,11 @@ static PyObject *SuperLU_getter(PyObject *selfp, void *data)
         }
 
         /* For ref counting of the memory */
-        PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self);
         Py_INCREF(self);
+        if (PyArray_SetBaseObject((PyArrayObject*)perm_c, (PyObject*)self) == -1) {
+            Py_DECREF(self);
+            return NULL;
+        }
         return perm_c;
     }
     else if (strcmp(name, "U") == 0 || strcmp(name, "L") == 0) {
@@ -328,68 +336,51 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * colind,
                            PyArrayObject * rowptr, int typenum)
 {
-    volatile int ok = 0;
-    volatile jmp_buf *jmpbuf_ptr;
-
-    ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowptr), NPY_INT) &&
-          PyArray_NDIM(nzvals) == 1 &&
-          PyArray_NDIM(colind) == 1 &&
-          PyArray_NDIM(rowptr) == 1 &&
-          PyArray_IS_C_CONTIGUOUS(nzvals) &&
-          PyArray_IS_C_CONTIGUOUS(colind) &&
-          PyArray_IS_C_CONTIGUOUS(rowptr) &&
-          nnz <= PyArray_DIM(nzvals, 0) &&
-          nnz <= PyArray_DIM(colind, 0) &&
-          m+1 <= PyArray_DIM(rowptr, 0));
-    if (!ok) {
-        PyErr_SetString(PyExc_ValueError,
-                        "sparse matrix arrays must be 1-D C-contiguous and of proper "
-                        "sizes and types");
-        return -1;
-    }
-
-    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
-    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
-        return -1;
-    }
-    else {
-        if (!CHECK_SLU_TYPE(PyArray_TYPE(nzvals))) {
-            PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
-            return -1;
-        }
-        Create_CompRow_Matrix(PyArray_TYPE(nzvals),
-                              A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
-                              (int *) PyArray_DATA((PyArrayObject*)colind),
-                              (int *) PyArray_DATA((PyArrayObject*)rowptr),
-                              SLU_NR,
-                              NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
-                              SLU_GE);
-    }
-
-    return 0;
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 1, nzvals, colind, rowptr,
+                                      typenum, SLU_NR, SLU_GE, NULL, NULL);
 }
 
 int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * rowind,
                            PyArrayObject * colptr, int typenum)
 {
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 0, nzvals, rowind, colptr,
+                                      typenum, SLU_NC, SLU_GE, NULL, NULL);
+}
+
+/*
+ * Create a matrix in CSR, CSC or supernodal CSC format
+ *
+ * Notes on a few of the parameters:
+ *
+ * - `csr`: selects matrix format: 1=CSR, 0=CSC, -1=supernodal CSC
+ * - `identity_col_to_sup`: (for supernodal CSC only) must be int array {0,1,2,...,n-2,n-1,n-1}
+ * - `identity_sup_to_col`: (for supernodal CSC only) must be int array {0,1,...,n}
+ */
+int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
+                               PyArrayObject * nzvals,
+                               PyArrayObject * indices,
+                               PyArrayObject * pointers,
+                               int typenum,
+                               Stype_t stype, Mtype_t mtype,
+                               int* identity_col_to_sup,
+                               int* identity_sup_to_col)
+{
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
     ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colptr), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(indices), NPY_INT) &&
+          PyArray_EquivTypenums(PyArray_TYPE(pointers), NPY_INT) &&
           PyArray_NDIM(nzvals) == 1 &&
-          PyArray_NDIM(rowind) == 1 &&
-          PyArray_NDIM(colptr) == 1 &&
+          PyArray_NDIM(indices) == 1 &&
+          PyArray_NDIM(pointers) == 1 &&
           PyArray_IS_C_CONTIGUOUS(nzvals) &&
-          PyArray_IS_C_CONTIGUOUS(rowind) &&
-          PyArray_IS_C_CONTIGUOUS(colptr) &&
+          PyArray_IS_C_CONTIGUOUS(indices) &&
+          PyArray_IS_C_CONTIGUOUS(pointers) &&
           nnz <= PyArray_DIM(nzvals, 0) &&
-          nnz <= PyArray_DIM(rowind, 0) &&
-          n+1 <= PyArray_DIM(colptr, 0));
+          nnz <= PyArray_DIM(indices, 0) &&
+          (csr ? (m+1) : (n+1)) <= PyArray_DIM(pointers, 0));
     if (!ok) {
         PyErr_SetString(PyExc_ValueError,
                         "sparse matrix arrays must be 1-D C-contiguous and of proper "
@@ -406,12 +397,35 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
             PyErr_SetString(PyExc_TypeError, "Invalid type for array.");
             return -1;
         }
-        Create_CompCol_Matrix(PyArray_TYPE(nzvals),
-                              A, m, n, nnz, PyArray_DATA(nzvals),
-                              (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
-                              SLU_NC,
-                              NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
-                              SLU_GE);
+        if (csr == 1) {
+            Create_CompRow_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == 0) {
+            Create_CompCol_Matrix(PyArray_TYPE(nzvals),
+                                  A, m, n, nnz, PyArray_DATA(nzvals),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
+                                  stype,
+                                  NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                  mtype);
+        } else if (csr == -1) {
+            /* We do not know if/which columns have the same sparsity structure, therefore
+             * nzval_colptr and rowind_colptr are both initialized from the pointers argument. */
+            Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
+                                    A, m, n, nnz, PyArray_DATA(nzvals),
+                                    (int *) PyArray_DATA(pointers),
+                                    (int *) PyArray_DATA(indices),
+                                    (int *) PyArray_DATA(pointers),
+                                    identity_col_to_sup, identity_sup_to_col,
+                                    stype,
+                                    NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
+                                    mtype);
+        }
     }
 
     return 0;
@@ -810,13 +824,13 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     char *s = "";                               \
     PyObject *tmpobj = NULL;                    \
     if (input == Py_None) return 1;             \
-    if (PyBytes_Check(input)) {                \
-        s = PyBytes_AS_STRING(input);          \
+    if (PyBytes_Check(input)) {                 \
+        s = PyBytes_AsString(input);            \
     }                                           \
     else if (PyUnicode_Check(input)) {          \
         tmpobj = PyUnicode_AsASCIIString(input);\
         if (tmpobj == NULL) return 0;           \
-        s = PyBytes_AS_STRING(tmpobj);         \
+        s = PyBytes_AsString(tmpobj);           \
     }                                           \
     else if (PyLong_Check(input)) {              \
         i = PyLong_AsLong(input);                \
@@ -909,20 +923,11 @@ static int trans_cvt(PyObject * input, trans_t * value)
 {
     ENUM_CHECK_INIT;
     ENUM_CHECK(NOTRANS);
+    ENUM_CHECK_NAME(NOTRANS, "N");
     ENUM_CHECK(TRANS);
+    ENUM_CHECK_NAME(TRANS, "T");
     ENUM_CHECK(CONJ);
-    if (my_strxcmp(s, "N") == 0) {
-        *value = NOTRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "T") == 0) {
-        *value = TRANS;
-        return 1;
-    }
-    if (my_strxcmp(s, "H") == 0) {
-        *value = CONJ;
-        return 1;
-    }
+    ENUM_CHECK_NAME(CONJ, "H");
     ENUM_CHECK_FINISH("invalid value for 'Trans' parameter");
 }
 
@@ -961,34 +966,13 @@ static int milu_cvt(PyObject * input, milu_t * value)
 static int droprule_one_cvt(PyObject * input, int *value)
 {
     ENUM_CHECK_INIT;
-    if (my_strxcmp(s, "BASIC") == 0) {
-        *value = DROP_BASIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "PROWS") == 0) {
-        *value = DROP_PROWS;
-        return 1;
-    }
-    if (my_strxcmp(s, "COLUMN") == 0) {
-        *value = DROP_COLUMN;
-        return 1;
-    }
-    if (my_strxcmp(s, "AREA") == 0) {
-        *value = DROP_AREA;
-        return 1;
-    }
-    if (my_strxcmp(s, "SECONDARY") == 0) {
-        *value = DROP_SECONDARY;
-        return 1;
-    }
-    if (my_strxcmp(s, "DYNAMIC") == 0) {
-        *value = DROP_DYNAMIC;
-        return 1;
-    }
-    if (my_strxcmp(s, "INTERP") == 0) {
-        *value = DROP_INTERP;
-        return 1;
-    }
+    ENUM_CHECK_NAME(DROP_BASIC, "BASIC");
+    ENUM_CHECK_NAME(DROP_PROWS, "PROWS");
+    ENUM_CHECK_NAME(DROP_COLUMN, "COLUMN");
+    ENUM_CHECK_NAME(DROP_AREA, "AREA");
+    ENUM_CHECK_NAME(DROP_SECONDARY, "SECONDARY");
+    ENUM_CHECK_NAME(DROP_DYNAMIC, "DYNAMIC");
+    ENUM_CHECK_NAME(DROP_INTERP, "INTERP");
     ENUM_CHECK_FINISH("invalid value for 'ILU_DropRule' parameter");
 }
 

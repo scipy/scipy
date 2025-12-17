@@ -6,6 +6,7 @@ import warnings
 from collections.abc import Iterable
 from functools import wraps, cached_property
 import ctypes
+import operator
 
 import numpy as np
 from numpy.polynomial import Polynomial
@@ -19,7 +20,9 @@ from scipy import integrate
 import scipy.special as sc
 
 import scipy.special._ufuncs as scu
-from scipy._lib._util import _lazyselect, _lazywhere
+from scipy._lib._util import _lazyselect
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._array_api import xp_promote
 
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
@@ -29,12 +32,11 @@ from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
-                         _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
+                         _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
-
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -52,7 +54,7 @@ def _remove_optimizer_parameters(kwds):
     kwds.pop('optimizer', None)
     kwds.pop('method', None)
     if kwds:
-        raise TypeError("Unknown arguments: %s." % kwds)
+        raise TypeError(f"Unknown arguments: {kwds}.")
 
 
 def _call_super_mom(fun):
@@ -493,8 +495,10 @@ class norm_gen(rv_continuous):
 
         See eq. 16 of https://arxiv.org/abs/1209.4340v2
         """
+        if n == 0:
+            return 1.
         if n % 2 == 0:
-            return sc.factorial2(n - 1)
+            return sc.factorial2(int(n) - 1)
         else:
             return 0.
 
@@ -720,7 +724,24 @@ class beta_gen(rv_continuous):
 
     `beta` takes :math:`a` and :math:`b` as shape parameters.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
+
+    Maximum likelihood estimates of parameters are only available when the location and
+    scale are fixed. When either of these parameters is free, ``beta.fit`` resorts to
+    numerical optimization, but this problem is unbounded: the location and scale may be
+    chosen to make the minimum and maximum elements of the data coincide with the
+    endpoints of the support, and the shape parameters may be chosen to make the PDF at
+    these points infinite. For best results, pass ``floc`` and ``fscale`` keyword
+    arguments to fix the location and scale, or use `scipy.stats.fit` with
+    ``method='mse'``.
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -924,23 +945,26 @@ class beta_gen(rv_continuous):
             log_term = sum_ab*np.log1p(a/b) + np.log(b) - 2*np.log(sum_ab)
             return t1 + t2 + log_term
 
-        def threshold_large(v):
-            if v == 1.0:
-                return 1000
-
-            j = np.log10(v)
-            digits = int(j)
-            d = int(v / 10 ** digits) + 2
-            return d*10**(7 + j)
-
-        if a >= 4.96e6 and b >= 4.96e6:
-            return asymptotic_ab_large(a, b)
-        elif a <= 4.9e6 and b - a >= 1e6 and b >= threshold_large(a):
-            return asymptotic_b_large(a, b)
-        elif b <= 4.9e6 and a - b >= 1e6 and a >= threshold_large(b):
+        def asymptotic_a_large(a, b):
             return asymptotic_b_large(b, a)
-        else:
-            return regular(a, b)
+
+        def threshold_large(v):
+            j = np.floor(np.log10(v))
+            d = np.floor(v / 10 ** j) + 2
+            return xpx.apply_where(v != 1.0, (d, j), lambda d_, j_: d_ * 10**(7 + j_),
+                                   fill_value=1000)
+
+        threshold_a = threshold_large(a)
+        threshold_b = threshold_large(b)
+        return _lazyselect([(a >= 4.96e6) & (b >= 4.96e6),
+                            (a <= 4.9e6) & (b - a >= 1e6) & (b >= threshold_a),
+                            (b <= 4.9e6) & (a - b >= 1e6) & (a >= threshold_b),
+                            (a < 4.9e6) & (b < 4.9e6)
+                           ],
+                           [asymptotic_ab_large, asymptotic_b_large,
+                            asymptotic_a_large, regular],
+                           [a, b]
+        )
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
@@ -1021,37 +1045,40 @@ class betaprime_gen(rv_continuous):
         # use the following relationship of the incomplete beta function:
         # betainc(x, a, b) = 1 - betainc(1-x, b, a)
         # see gh-17631
-        return _lazywhere(
-            x > 1, [x, a, b],
-            lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
-            f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
+        return xpx.apply_where(
+            x > 1, (x, a, b),
+            lambda x_, a_, b_: beta._sf(1 / (1 + x_), b_, a_),
+            lambda x_, a_, b_: beta._cdf(x_ / (1 + x_), a_, b_))
 
     def _sf(self, x, a, b):
-        return _lazywhere(
-            x > 1, [x, a, b],
-            lambda x_, a_, b_: beta._cdf(1/(1+x_), b_, a_),
-            f2=lambda x_, a_, b_: beta._sf(x_/(1+x_), a_, b_)
-        )
+        return xpx.apply_where(
+            x > 1, (x, a, b),
+            lambda x_, a_, b_: beta._cdf(1 / (1 + x_), b_, a_),
+            lambda x_, a_, b_: beta._sf(x_ / (1 + x_), a_, b_))
 
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
-        # by default, compute compute the ppf by solving the following:
+        # By default, compute the ppf by solving the following:
         # p = beta._cdf(x/(1+x), a, b). This implies x = r/(1-r) with
         # r = beta._ppf(p, a, b). This can cause numerical issues if r is
-        # very close to 1. in that case, invert the alternative expression of
+        # very close to 1. In that case, invert the alternative expression of
         # the cdf: p = beta._sf(1/(1+x), b, a).
         r = stats.beta._ppf(p, a, b)
         with np.errstate(divide='ignore'):
             out = r / (1 - r)
-        i = (r > 0.9999)
-        out[i] = 1/stats.beta._isf(p[i], b[i], a[i]) - 1
+        rnear1 = r > 0.9999
+        if np.isscalar(r):
+            if rnear1:
+                out = 1/stats.beta._isf(p, b, a) - 1
+        else:
+            out[rnear1] = 1/stats.beta._isf(p[rnear1], b[rnear1], a[rnear1]) - 1
         return out
 
     def _munp(self, n, a, b):
-        return _lazywhere(
+        return xpx.apply_where(
             b > n, (a, b),
-            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
-            fillvalue=np.inf)
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, int(n)+1)], axis=0),
+            fill_value=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -1171,26 +1198,22 @@ class burr_gen(rv_continuous):
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
-        output = _lazywhere(
-            x == 0, [x, c, d],
+        output = xpx.apply_where(
+            x == 0, (x, c, d),
             lambda x_, c_, d_: c_ * d_ * (x_**(c_*d_-1)) / (1 + x_**c_),
-            f2=lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
-                                   ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
-        if output.ndim == 0:
-            return output[()]
-        return output
+            lambda x_, c_, d_: (c_ * d_ * (x_ ** (-c_ - 1.0)) /
+                                ((1 + x_ ** (-c_)) ** (d_ + 1.0))))
+        return output[()] if output.ndim == 0 else output
 
     def _logpdf(self, x, c, d):
-        output = _lazywhere(
-            x == 0, [x, c, d],
+        output = xpx.apply_where(
+            x == 0, (x, c, d),
             lambda x_, c_, d_: (np.log(c_) + np.log(d_) + sc.xlogy(c_*d_ - 1, x_)
                                 - (d_+1) * sc.log1p(x_**(c_))),
-            f2=lambda x_, c_, d_: (np.log(c_) + np.log(d_)
-                                   + sc.xlogy(-c_ - 1, x_)
-                                   - sc.xlog1py(d_+1, x_**(-c_))))
-        if output.ndim == 0:
-            return output[()]
-        return output
+            lambda x_, c_, d_: (np.log(c_) + np.log(d_)
+                                + sc.xlogy(-c_ - 1, x_)
+                                - sc.xlog1py(d_+1, x_**(-c_))))
+        return output[()] if output.ndim == 0 else output
 
     def _cdf(self, x, c, d):
         return (1 + x**(-c))**(-d)
@@ -1218,18 +1241,16 @@ class burr_gen(rv_continuous):
         mu = np.where(c > 1.0, e1, np.nan)
         mu2_if_c = e2 - mu**2
         mu2 = np.where(c > 2.0, mu2_if_c, np.nan)
-        g1 = _lazywhere(
-            c > 3.0,
-            (c, e1, e2, e3, mu2_if_c),
-            lambda c, e1, e2, e3, mu2_if_c: ((e3 - 3*e2*e1 + 2*e1**3)
-                                             / np.sqrt((mu2_if_c)**3)),
-            fillvalue=np.nan)
-        g2 = _lazywhere(
-            c > 4.0,
-            (c, e1, e2, e3, e4, mu2_if_c),
-            lambda c, e1, e2, e3, e4, mu2_if_c: (
+        g1 = xpx.apply_where(
+            c > 3.0, (e1, e2, e3, mu2_if_c),
+            lambda e1, e2, e3, mu2_if_c: ((e3 - 3*e2*e1 + 2*e1**3)
+                                           / np.sqrt((mu2_if_c)**3)),
+            fill_value=np.nan)
+        g2 = xpx.apply_where(
+            c > 4.0, (e1, e2, e3, e4, mu2_if_c),
+            lambda e1, e2, e3, e4, mu2_if_c: (
                 ((e4 - 4*e3*e1 + 6*e2*e1**2 - 3*e1**4) / mu2_if_c**2) - 3),
-            fillvalue=np.nan)
+            fill_value=np.nan)
         if np.ndim(c) == 0:
             return mu.item(), mu2.item(), g1.item(), g2.item()
         return mu, mu2, g1, g2
@@ -1239,9 +1260,8 @@ class burr_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
-        return _lazywhere((c > n) & (n == n) & (d == d), (c, d, n),
-                          lambda c, d, n: __munp(n, c, d),
-                          np.nan)
+        return xpx.apply_where((c > n) & (n == n) & (d == d),
+                               (n, c, d), __munp, fill_value=np.nan)
 
 
 burr = burr_gen(a=0.0, name='burr')
@@ -1330,8 +1350,8 @@ class burr12_gen(rv_continuous):
             nc = 1. * n / c
             return d * sc.beta(1.0 + nc, d - nc)
 
-        return _lazywhere(c * d > n, (n, c, d), moment_if_exists,
-                          fillvalue=np.nan)
+        return xpx.apply_where(c * d > n, (n, c, d), moment_if_exists,
+                               fill_value=np.nan)
 
 
 burr12 = burr12_gen(a=0.0, name='burr12')
@@ -1437,7 +1457,14 @@ class cauchy_gen(rv_continuous):
 
     for a real number :math:`x`.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``ppf`` and ``isf`` methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -1447,19 +1474,35 @@ class cauchy_gen(rv_continuous):
 
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
-        return 1.0/np.pi/(1.0+x*x)
+        with np.errstate(over='ignore'):
+            return 1.0/np.pi/(1.0+x*x)
+
+    def _logpdf(self, x):
+        # The formulas
+        #     log(1/(pi*(1 + x**2))) = -log(pi) - log(1 + x**2)
+        #                            = -log(pi) - log(x**2*(1 + 1/x**2))
+        #                            = -log(pi) - (2log(|x|) + log1p(1/x**2))
+        # are used here.
+        absx = np.abs(x)
+        # In the following apply_where, `f1` provides better precision than `f2`
+        # for small and moderate x, while `f2` avoids the overflow that can
+        # occur with absx**2.
+        return xpx.apply_where(
+            absx < 1, absx,
+            lambda absx: -_LOG_PI - np.log1p(absx**2),
+            lambda absx: (-_LOG_PI - (2*np.log(absx) + np.log1p((1/absx)**2))))
 
     def _cdf(self, x):
-        return 0.5 + 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, -x)/np.pi
 
     def _ppf(self, q):
-        return np.tan(np.pi*q-np.pi/2.0)
+        return scu._cauchy_ppf(q, 0, 1)
 
     def _sf(self, x):
-        return 0.5 - 1.0/np.pi*np.arctan(x)
+        return np.arctan2(1, x)/np.pi
 
     def _isf(self, q):
-        return np.tan(np.pi/2.0-np.pi*q)
+        return scu._cauchy_isf(q, 0, 1)
 
     def _stats(self):
         return np.nan, np.nan, np.nan, np.nan
@@ -1556,8 +1599,7 @@ class chi_gen(rv_continuous):
             return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
                     - 4/45*(df**-3) + (df**-4)/15)
 
-        return _lazywhere(df < 3e2, (df, ), regular_formula,
-                          f2=asymptotic_formula)
+        return xpx.apply_where(df < 300, df, regular_formula, asymptotic_formula)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -1647,9 +1689,8 @@ class chi2_gen(rv_continuous):
             return (h*(-2/3 + h*(-1/3 + h*(-4/45 + h/7.5))) +
                     0.5*np.log(half_df) + c)
 
-        return _lazywhere(half_df < 125, (half_df, ),
-                          regular_formula,
-                          f2=asymptotic_formula)
+        return xpx.apply_where(half_df < 125, half_df,
+                               regular_formula, asymptotic_formula)
 
 
 chi2 = chi2_gen(a=0.0, name='chi2')
@@ -1685,9 +1726,9 @@ class cosine_gen(rv_continuous):
 
     def _logpdf(self, x):
         c = np.cos(x)
-        return _lazywhere(c != -1, (c,),
-                          lambda c: np.log1p(c) - np.log(2*np.pi),
-                          fillvalue=-np.inf)
+        return xpx.apply_where(c != -1, c,
+                               lambda c: np.log1p(c) - np.log(2*np.pi),
+                               fill_value=-np.inf)
 
     def _cdf(self, x):
         return scu._cosine_cdf(x)
@@ -1791,6 +1832,144 @@ class dgamma_gen(rv_continuous):
 
 
 dgamma = dgamma_gen(name='dgamma')
+
+
+class dpareto_lognorm_gen(rv_continuous):
+    r"""A double Pareto lognormal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `dpareto_lognorm` is:
+
+    .. math::
+
+        f(x, \mu, \sigma, \alpha, \beta) =
+        \frac{\alpha \beta}{(\alpha + \beta) x}
+        \phi\left( \frac{\log x - \mu}{\sigma} \right)
+        \left( R(y_1) + R(y_2) \right)
+
+    where :math:`R(t) = \frac{1 - \Phi(t)}{\phi(t)}`,
+    :math:`\phi` and :math:`\Phi` are the normal PDF and CDF, respectively,
+    :math:`y_1 = \alpha \sigma - \frac{\log x - \mu}{\sigma}`,
+    and :math:`y_2 = \beta \sigma + \frac{\log x - \mu}{\sigma}`
+    for real numbers :math:`x` and :math:`\mu`, :math:`\sigma > 0`,
+    :math:`\alpha > 0`, and :math:`\beta > 0` [1]_.
+
+    `dpareto_lognorm` takes
+    ``u`` as a shape parameter for :math:`\mu`,
+    ``s`` as a shape parameter for :math:`\sigma`,
+    ``a`` as a shape parameter for :math:`\alpha`, and
+    ``b`` as a shape parameter for :math:`\beta`.
+
+    A random variable :math:`X` distributed according to the PDF above
+    can be represented as :math:`X = U \frac{V_1}{V_2}` where :math:`U`,
+    :math:`V_1`, and :math:`V_2` are independent, :math:`U` is lognormally
+    distributed such that :math:`\log U \sim N(\mu, \sigma^2)`, and
+    :math:`V_1` and :math:`V_2` follow Pareto distributions with parameters
+    :math:`\alpha` and :math:`\beta`, respectively [2]_.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Hajargasht, Gholamreza, and William E. Griffiths. "Pareto-lognormal
+           distributions: Inequality, poverty, and estimation from grouped income
+           data." Economic Modelling 33 (2013): 593-604.
+    .. [2] Reed, William J., and Murray Jorgensen. "The double Pareto-lognormal
+           distribution - a new parametric model for size distributions."
+           Communications in Statistics - Theory and Methods 33.8 (2004): 1733-1753.
+
+    %(example)s
+
+    """
+    _logphi = norm._logpdf
+    _logPhi = norm._logcdf
+    _logPhic = norm._logsf
+    _phi = norm._pdf
+    _Phi = norm._cdf
+    _Phic = norm._sf
+
+    def _R(self, z):
+        return self._Phic(z) / self._phi(z)
+
+    def _logR(self, z):
+        return self._logPhic(z) - self._logphi(z)
+
+    def _shape_info(self):
+        return [_ShapeInfo("u", False, (-np.inf, np.inf), (False, False)),
+                _ShapeInfo("s", False, (0, np.inf), (False, False)),
+                _ShapeInfo("a", False, (0, np.inf), (False, False)),
+                _ShapeInfo("b", False, (0, np.inf), (False, False))]
+
+    def _argcheck(self, u, s, a, b):
+        return (s > 0) & (a > 0) & (b > 0)
+
+    def _rvs(self, u, s, a, b, size=None, random_state=None):
+        # From [1] after Equation (12): "To generate pseudo-random
+        # deviates from the dPlN distribution, one can exponentiate
+        # pseudo-random deviates from NL generated using (6)."
+        Z = random_state.normal(u, s, size=size)
+        E1 = random_state.standard_exponential(size=size)
+        E2 = random_state.standard_exponential(size=size)
+        return np.exp(Z + E1 / a - E2 / b)
+
+    def _logpdf(self, x, u, s, a, b):
+        with np.errstate(invalid='ignore', divide='ignore'):
+            log_y, m = np.log(x), u  # compare against [1] Eq. 1
+            z = (log_y - m) / s
+            x1 = a * s - z
+            x2 = b * s + z
+            out = np.asarray(np.log(a) + np.log(b) - np.log(a + b) - log_y)
+            out += self._logphi(z)
+            out += np.logaddexp(self._logR(x1), self._logR(x2))
+        out[(x == 0) | np.isinf(x)] = -np.inf
+        return out[()]
+
+    def _logcdf(self, x, u, s, a, b):
+        with np.errstate(invalid='ignore', divide='ignore'):
+            log_y, m = np.log(x), u  # compare against [1] Eq. 2
+            z = (log_y - m) / s
+            x1 = a * s - z
+            x2 = b * s + z
+            t1 = self._logPhi(z)
+            t2 = self._logphi(z)
+            t3 = (np.log(b) + self._logR(x1))
+            t4 = (np.log(a) + self._logR(x2))
+            t1, t2, t3, t4, one = np.broadcast_arrays(t1, t2, t3, t4, 1)
+            # t3 can be smaller than t4, so we have to consider log of negative number
+            # This would be much simpler, but `return_sign` is available, so use it?
+            # t5 =  sc.logsumexp([t3, t4 + np.pi*1j])
+            t5, sign =  sc.logsumexp([t3, t4], b=[one, -one], axis=0, return_sign=True)
+            temp = [t1, t2 + t5 - np.log(a + b)]
+            out = np.asarray(sc.logsumexp(temp, b=[one, -one*sign], axis=0))
+        out[x == 0] = -np.inf
+        return out[()]
+
+    def _logsf(self, x, u, s, a, b):
+        return scu._log1mexp(self._logcdf(x, u, s, a, b))
+
+    # Infrastructure doesn't seem to do this, so...
+
+    def _pdf(self, x, u, s, a, b):
+        return np.exp(self._logpdf(x, u, s, a, b))
+
+    def _cdf(self, x, u, s, a, b):
+        return np.exp(self._logcdf(x, u, s, a, b))
+
+    def _sf(self, x, u, s, a, b):
+        return np.exp(self._logsf(x, u, s, a, b))
+
+    def _munp(self, n, u, s, a, b):
+        m, k = u, float(n)  # compare against [1] Eq. 6
+        out = (a * b) / ((a - k) * (b + k)) * np.exp(k * m + k ** 2 * s ** 2 / 2)
+        out = np.asarray(out)
+        out[a <= k] = np.nan
+        return out
+
+
+dpareto_lognorm = dpareto_lognorm_gen(a=0, name='dpareto_lognorm')
 
 
 class dweibull_gen(rv_continuous):
@@ -2413,28 +2592,28 @@ class f_gen(rv_continuous):
         v1, v2 = 1. * dfn, 1. * dfd
         v2_2, v2_4, v2_6, v2_8 = v2 - 2., v2 - 4., v2 - 6., v2 - 8.
 
-        mu = _lazywhere(
+        mu = xpx.apply_where(
             v2 > 2, (v2, v2_2),
             lambda v2, v2_2: v2 / v2_2,
-            np.inf)
+            fill_value=np.inf)
 
-        mu2 = _lazywhere(
+        mu2 = xpx.apply_where(
             v2 > 4, (v1, v2, v2_2, v2_4),
             lambda v1, v2, v2_2, v2_4:
             2 * v2 * v2 * (v1 + v2_2) / (v1 * v2_2**2 * v2_4),
-            np.inf)
+            fill_value=np.inf)
 
-        g1 = _lazywhere(
+        g1 = xpx.apply_where(
             v2 > 6, (v1, v2_2, v2_4, v2_6),
             lambda v1, v2_2, v2_4, v2_6:
             (2 * v1 + v2_2) / v2_6 * np.sqrt(v2_4 / (v1 * (v1 + v2_2))),
-            np.nan)
+            fill_value=np.nan)
         g1 *= np.sqrt(8.)
 
-        g2 = _lazywhere(
+        g2 = xpx.apply_where(
             v2 > 8, (g1, v2_6, v2_8),
             lambda g1, v2_6, v2_8: (8 + g1 * g1 * v2_6) / v2_8,
-            np.nan)
+            fill_value=np.nan)
         g2 *= 3. / 2.
 
         return mu, mu2, g1, g2
@@ -2800,6 +2979,7 @@ class truncweibull_min_gen(rv_continuous):
 
 
 truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
+truncweibull_min._support = ('a', 'b')
 
 
 class weibull_max_gen(rv_continuous):
@@ -2950,14 +3130,15 @@ class genlogistic_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, c):
-        return _lazywhere(c < 8e6, (c, ),
-                          lambda c: -np.log(c) + sc.psi(c + 1) + _EULER + 1,
-                          # asymptotic expansion: psi(c) ~ log(c) - 1/(2 * c)
-                          # a = -log(c) + psi(c + 1)
-                          #   = -log(c) + psi(c) + 1/c
-                          #   ~ -log(c) + log(c) - 1/(2 * c) + 1/c
-                          #   = 1/(2 * c)
-                          f2=lambda c: 1/(2 * c) + _EULER + 1)
+        return xpx.apply_where(
+            c < 8e6, c,
+            lambda c: -np.log(c) + sc.psi(c + 1) + _EULER + 1,
+            # asymptotic expansion: psi(c) ~ log(c) - 1 / (2 * c)
+            # a = -log(c) + psi(c + 1)
+            #   = -log(c) + psi(c) + 1 / c
+            #   ~ -log(c) + log(c) - 1 / (2 * c) + 1 / c
+            #   = 1 / (2 * c)
+            lambda c: 1 / (2 * c) + _EULER + 1)
 
 
 genlogistic = genlogistic_gen(name='genlogistic')
@@ -3007,10 +3188,9 @@ class genpareto_gen(rv_continuous):
 
     def _get_support(self, c):
         c = np.asarray(c)
-        b = _lazywhere(c < 0, (c,),
-                       lambda c: -1. / c,
-                       np.inf)
-        a = np.where(c >= 0, self.a, self.a)
+        a = np.broadcast_arrays(self.a, c)[0].copy()
+        b = xpx.apply_where(c < 0, c, lambda c: -1. / c,
+                            fill_value=np.inf)
         return a, b
 
     def _pdf(self, x, c):
@@ -3018,9 +3198,9 @@ class genpareto_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return _lazywhere((x == x) & (c != 0), (x, c),
-                          lambda x, c: -sc.xlog1py(c + 1., c*x) / c,
-                          -x)
+        return xpx.apply_where((x == x) & (c != 0), (x, c),
+                               lambda x, c: -sc.xlog1py(c + 1., c*x) / c,
+                               fill_value=-x)
 
     def _cdf(self, x, c):
         return -sc.inv_boxcox1p(-x, -c)
@@ -3029,9 +3209,9 @@ class genpareto_gen(rv_continuous):
         return sc.inv_boxcox(-x, -c)
 
     def _logsf(self, x, c):
-        return _lazywhere((x == x) & (c != 0), (x, c),
-                          lambda x, c: -sc.log1p(c*x) / c,
-                          -x)
+        return xpx.apply_where((x == x) & (c != 0), (x, c),
+                               lambda x, c: -sc.log1p(c*x) / c,
+                               fill_value=-x)
 
     def _ppf(self, q, c):
         return -sc.boxcox1p(-q, -c)
@@ -3040,44 +3220,42 @@ class genpareto_gen(rv_continuous):
         return -sc.boxcox(q, -c)
 
     def _stats(self, c, moments='mv'):
-        if 'm' not in moments:
-            m = None
-        else:
-            m = _lazywhere(c < 1, (c,),
-                           lambda xi: 1/(1 - xi),
-                           np.inf)
-        if 'v' not in moments:
-            v = None
-        else:
-            v = _lazywhere(c < 1/2, (c,),
-                           lambda xi: 1 / (1 - xi)**2 / (1 - 2*xi),
-                           np.nan)
-        if 's' not in moments:
-            s = None
-        else:
-            s = _lazywhere(c < 1/3, (c,),
-                           lambda xi: (2 * (1 + xi) * np.sqrt(1 - 2*xi) /
-                                       (1 - 3*xi)),
-                           np.nan)
-        if 'k' not in moments:
-            k = None
-        else:
-            k = _lazywhere(c < 1/4, (c,),
-                           lambda xi: (3 * (1 - 2*xi) * (2*xi**2 + xi + 3) /
-                                       (1 - 3*xi) / (1 - 4*xi) - 3),
-                           np.nan)
+        m, v, s, k = None, None, None, None
+
+        if 'm' in moments:
+            m = xpx.apply_where(c < 1, c,
+                                lambda xi: 1 / (1 - xi),
+                                fill_value=np.inf)
+
+        if 'v' in moments:
+            v = xpx.apply_where(c < 1/2, c,
+                                lambda xi: 1 / (1 - xi)**2 / (1 - 2 * xi),
+                                fill_value=np.nan)
+
+        if 's' in moments:
+            s = xpx.apply_where(
+                c < 1/3, c,
+                lambda xi: 2 * (1 + xi) * np.sqrt(1 - 2*xi) / (1 - 3*xi),
+                fill_value=np.nan)
+
+        if 'k' in moments:
+            k = xpx.apply_where(
+                c < 1/4, c,
+                lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3)
+                           / (1 - 3*xi) / (1 - 4*xi) - 3,
+                fill_value=np.nan)
+
         return m, v, s, k
 
     def _munp(self, n, c):
-        def __munp(n, c):
+        def __munp(c):
             val = 0.0
             k = np.arange(0, n + 1)
             for ki, cnk in zip(k, sc.comb(n, k)):
                 val = val + cnk * (-1) ** ki / (1.0 - c * ki)
             return np.where(c * n < 1, val * (-1.0 / c) ** n, np.inf)
-        return _lazywhere(c != 0, (c,),
-                          lambda c: __munp(n, c),
-                          sc.gamma(n + 1))
+
+        return xpx.apply_where(c != 0, c, __munp, fill_value=sc.gamma(n + 1))
 
     def _entropy(self, c):
         return 1. + c
@@ -3205,8 +3383,10 @@ class genextreme_gen(rv_continuous):
 
     def _loglogcdf(self, x, c):
         # Returns log(-log(cdf(x, c)))
-        return _lazywhere((x == x) & (c != 0), (x, c),
-                          lambda x, c: sc.log1p(-c*x)/c, -x)
+        return xpx.apply_where(
+            (x == x) & (c != 0), (x, c),
+            lambda x, c: sc.log1p(-c*x)/c,
+            fill_value=-x)
 
     def _pdf(self, x, c):
         # genextreme.pdf(x, c) =
@@ -3215,16 +3395,19 @@ class genextreme_gen(rv_continuous):
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        cx = _lazywhere((x == x) & (c != 0), (x, c), lambda x, c: c*x, 0.0)
+        # Suppress warnings 0 * inf
+        cx = xpx.apply_where((x == x) & (c != 0), (c, x),
+                             operator.mul, fill_value=0.0)
         logex2 = sc.log1p(-cx)
         logpex2 = self._loglogcdf(x, c)
         pex2 = np.exp(logpex2)
         # Handle special cases
         np.putmask(logpex2, (c == 0) & (x == -np.inf), 0.0)
-        logpdf = _lazywhere(~((cx == 1) | (cx == -np.inf)),
-                            (pex2, logpex2, logex2),
-                            lambda pex2, lpex2, lex2: -pex2 + lpex2 - lex2,
-                            fillvalue=-np.inf)
+        logpdf = xpx.apply_where(
+            ~((cx == 1) | (cx == -np.inf)),
+            (pex2, logpex2, logex2),
+            lambda pex2, lpex2, lex2: -pex2 + lpex2 - lex2,
+            fill_value=-np.inf)
         np.putmask(logpdf, (c == 1) & (x == 1), 0.0)
         return logpdf
 
@@ -3239,13 +3422,17 @@ class genextreme_gen(rv_continuous):
 
     def _ppf(self, q, c):
         x = -np.log(-np.log(q))
-        return _lazywhere((x == x) & (c != 0), (x, c),
-                          lambda x, c: -sc.expm1(-c * x) / c, x)
+        return xpx.apply_where(
+            (x == x) & (c != 0), (x, c),
+            lambda x, c: -sc.expm1(-c * x) / c,
+            fill_value=x)
 
     def _isf(self, q, c):
         x = -np.log(-sc.log1p(-q))
-        return _lazywhere((x == x) & (c != 0), (x, c),
-                          lambda x, c: -sc.expm1(-c * x) / c, x)
+        return xpx.apply_where(
+            (x == x) & (c != 0), (x, c),
+            lambda x, c: -sc.expm1(-c * x) / c,
+            fill_value=x)
 
     def _stats(self, c):
         def g(n):
@@ -3255,29 +3442,42 @@ class genextreme_gen(rv_continuous):
         g3 = g(3)
         g4 = g(4)
         g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = np.where(abs(c) < 1e-7, np.pi**2.0/6.0,
-                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0)
+        def gam2k_f(c):
+            return sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0
+        gam2k = xpx.apply_where(abs(c) >= 1e-7, c, gam2k_f, fill_value=np.pi**2.0/6.0)
         eps = 1e-14
-        gamk = np.where(abs(c) < eps, -_EULER, sc.expm1(sc.gammaln(c + 1))/c)
+        def gamk_f(c):
+            return sc.expm1(sc.gammaln(c + 1))/c
+        gamk = xpx.apply_where(abs(c) >= eps, c, gamk_f, fill_value=-_EULER)
 
+        # mean
         m = np.where(c < -1.0, np.nan, -gamk)
+
+        # variance
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = _lazywhere(c >= -1./3,
-                         (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2mg12:
-                             np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
-                         fillvalue=np.nan)
-        sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
+        def sk1_eval(c, *args):
+            def sk1_eval_f(c, g1, g2, g3, g2mg12):
+                return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
+            return xpx.apply_where(c >= -1./3, (c, *args),
+                                   sk1_eval_f, fill_value=np.nan)
+
+        sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
+        args = (g1, g2, g3, g2mg12)
+        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args),
+                             sk1_eval, fill_value=sk_fill)
 
         # kurtosis
-        ku1 = _lazywhere(c >= -1./4,
-                         (g1, g2, g3, g4, g2mg12),
-                         lambda g1, g2, g3, g4, g2mg12:
-                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
-                         fillvalue=np.nan)
-        ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
+        def ku1_eval(c, *args):
+            def ku1_eval_f(g1, g2, g3, g4, g2mg12):
+                return (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2 - 3
+            return xpx.apply_where(c >= -1./4, args, ku1_eval_f, fill_value=np.nan)
+
+        args = (g1, g2, g3, g4, g2mg12)
+        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args),
+                             ku1_eval, fill_value=12.0/5.0)
+
         return m, v, sk, ku
 
     def _fitstart(self, data):
@@ -3344,7 +3544,7 @@ def _digammainv(y):
     value, info, ier, mesg = optimize.fsolve(func, x0, xtol=1e-11,
                                              full_output=True)
     if ier != 1:
-        raise RuntimeError("_digammainv: fsolve failed, y = %r" % y)
+        raise RuntimeError(f"_digammainv: fsolve failed, y = {y!r}")
 
     return value[0]
 
@@ -3424,6 +3624,9 @@ class gamma_gen(rv_continuous):
     def _stats(self, a):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
+    def _munp(self, n, a):
+        return sc.poch(a, n)
+
     def _entropy(self, a):
 
         def regular_formula(a):
@@ -3437,8 +3640,7 @@ class gamma_gen(rv_continuous):
             return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
                     - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
 
-        return _lazywhere(a < 250, (a, ), regular_formula,
-                          f2=asymptotic_formula)
+        return xpx.apply_where(a < 250, a, regular_formula, asymptotic_formula)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
@@ -3668,10 +3870,10 @@ class gengamma_gen(rv_continuous):
         return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        return _lazywhere((x != 0) | (c > 0), (x, c),
-                          lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
-                                        - x**c - sc.gammaln(a)),
-                          fillvalue=-np.inf)
+        return xpx.apply_where(
+            (x != 0) | (c > 0), (x, c),
+            lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)),
+            fill_value=-np.inf)
 
     def _cdf(self, x, a, c):
         xc = x**c
@@ -3717,8 +3919,7 @@ class gengamma_gen(rv_continuous):
                     - np.log(np.abs(c)) + (a**-1.)/6 - (a**-3.)/90
                     + (np.log(a) - (a**-1.)/2 - (a**-2.)/12 + (a**-4.)/120)/c)
 
-        h = _lazywhere(a >= 2e2, (a, c), f=asymptotic, f2=regular)
-        return h
+        return xpx.apply_where(a >= 200, (a, c), asymptotic, regular)
 
 
 gengamma = gengamma_gen(a=0.0, name='gengamma')
@@ -3903,10 +4104,7 @@ class genhyperbolic_gen(rv_continuous):
     # np.vectorize isn't currently designed to be used as a decorator,
     # so use a lambda instead.  This allows us to decorate the function
     # with `np.vectorize` and still provide the `otypes` parameter.
-    # The first argument to `vectorize` is `func.__get__(object)` for
-    # compatibility with Python 3.9.  In Python 3.10, this can be
-    # simplified to just `func`.
-    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @lambda func: np.vectorize(func, otypes=[np.float64])
     @staticmethod
     def _integrate_pdf(x0, x1, p, a, b):
         """
@@ -4088,6 +4286,8 @@ class gumbel_r_gen(rv_continuous):
 
         f(x) = \exp(-(x + e^{-x}))
 
+    for real :math:`x`.
+
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
     log-Weibull and Gompertz distributions.
@@ -4217,6 +4417,8 @@ class gumbel_l_gen(rv_continuous):
     .. math::
 
         f(x) = \exp(x - e^x)
+
+    for real :math:`x`.
 
     The Gumbel distribution is sometimes referred to as a type I Fisher-Tippett
     distribution.  It is also related to the extreme value distribution,
@@ -4420,11 +4622,13 @@ class halflogistic_gen(rv_continuous):
         return 2 * sc.expit(-x)
 
     def _isf(self, q):
-        return _lazywhere(q < 0.5, (q, ),
-                          lambda q: -sc.logit(0.5 * q),
-                          f2=lambda q: 2*np.arctanh(1 - q))
+        return xpx.apply_where(q < 0.5, q,
+                               lambda q: -sc.logit(0.5 * q),
+                               lambda q: 2*np.arctanh(1 - q))
 
     def _munp(self, n):
+        if n == 0:
+            return 1  # otherwise returns NaN
         if n == 1:
             return 2*np.log(2)
         if n == 2:
@@ -4662,7 +4866,7 @@ class gausshyper_gen(rv_continuous):
     ----------
     .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
            Queues." *Journal of the Royal Statistical Society*. Series D (The
-           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+           Statistician) 43, no. 1 (1994): 139-53. :doi:`10.2307/2348939`.
 
     %(example)s
 
@@ -4727,7 +4931,7 @@ class invgamma_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _shape_info(self):
-        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, a):
         # invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
@@ -4749,19 +4953,23 @@ class invgamma_gen(rv_continuous):
         return 1.0 / sc.gammaincinv(a, q)
 
     def _stats(self, a, moments='mvsk'):
-        m1 = _lazywhere(a > 1, (a,), lambda x: 1. / (x - 1.), np.inf)
-        m2 = _lazywhere(a > 2, (a,), lambda x: 1. / (x - 1.)**2 / (x - 2.),
-                        np.inf)
+        m1 = xpx.apply_where(a > 1, a,
+                             lambda x: 1. / (x - 1.),
+                             fill_value=np.inf)
+        m2 = xpx.apply_where(a > 2, a,
+                             lambda x: 1. / (x - 1.)**2 / (x - 2.),
+                             fill_value=np.inf)
 
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _lazywhere(
-                a > 3, (a,),
-                lambda x: 4. * np.sqrt(x - 2.) / (x - 3.), np.nan)
+            g1 = xpx.apply_where(a > 3, a,
+                                 lambda x: 4. * np.sqrt(x - 2.) / (x - 3.),
+                                 fill_value=np.nan)
         if 'k' in moments:
-            g2 = _lazywhere(
-                a > 4, (a,),
-                lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.), np.nan)
+            g2 = xpx.apply_where(a > 4, a,
+                                 lambda x: 6. * (5. * x - 11.) / (x - 3.) / (x - 4.),
+                                 fill_value=np.nan)
+
         return m1, m2, g1, g2
 
     def _entropy(self, a):
@@ -4776,7 +4984,7 @@ class invgamma_gen(rv_continuous):
                  + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
-        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
+        h = xpx.apply_where(a >= 200, a, asymptotic, regular)
         return h
 
 
@@ -4815,6 +5023,13 @@ class invgauss_gen(rv_continuous):
     parameterization is equivalent to the one above with ``mu = nu/lam``,
     ``loc = 0``, and ``scale = lam``.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``ppf`` and ``isf`` methods. [1]_
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
     %(example)s
 
     """
@@ -4829,10 +5044,10 @@ class invgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
         #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*(x/mu - 1)**2)
 
     def _logpdf(self, x, mu):
-        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
+        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - (x/mu - 1)**2/(2*x)
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
@@ -4840,14 +5055,14 @@ class invgauss_gen(rv_continuous):
 
     def _logcdf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        a = _norm_logcdf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(np.exp(b - a))
 
     def _logsf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        a = _norm_logsf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(-np.exp(b - a))
 
     def _sf(self, x, mu):
@@ -4859,7 +5074,7 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = scu._invgauss_ppf(x, mu, 1)
+            ppf = np.asarray(scu._invgauss_ppf(x, mu, 1))
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
@@ -4883,7 +5098,7 @@ class invgauss_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or type(self) == wald_gen
+        if (isinstance(data, CensoredData) or isinstance(self, wald_gen)
                 or method.lower() == 'mm'):
             return super().fit(data, *args, **kwds)
 
@@ -4943,14 +5158,14 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
+    where ``x > 0``, `p` is a real number and ``b > 0``\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
     %(after_notes)s
 
     The inverse Gaussian distribution `stats.invgauss(mu)` is a special case of
-    `geninvgauss` with `p = -1/2`, `b = 1 / mu` and `scale = mu`.
+    `geninvgauss` with ``p = -1/2``, ``b = 1 / mu`` and ``scale = mu``.
 
     Generating random variates is challenging for this distribution. The
     implementation is based on [2]_.
@@ -4995,11 +5210,10 @@ class geninvgauss_gen(rv_continuous):
         # relying on logpdf avoids overflow of x**(p-1) for large x and p
         return np.exp(self._logpdf(x, p, b))
 
-    def _cdf(self, x, *args):
-        _a, _b = self._get_support(*args)
+    def _cdf(self, x, p, b):
+        _a, _b = self._get_support(p, b)
 
-        def _cdf_single(x, *args):
-            p, b = args
+        def _cdf_single(x, p, b):
             user_data = np.array([p, b], float).ctypes.data_as(ctypes.c_void_p)
             llc = LowLevelCallable.from_cython(_stats, '_geninvgauss_pdf',
                                                user_data)
@@ -5008,13 +5222,13 @@ class geninvgauss_gen(rv_continuous):
 
         _cdf_single = np.vectorize(_cdf_single, otypes=[np.float64])
 
-        return _cdf_single(x, *args)
+        return _cdf_single(x, p, b)
 
     def _logquasipdf(self, x, p, b):
         # log of the quasi-density (w/o normalizing constant) used in _rvs
-        return _lazywhere(x > 0, (x, p, b),
-                          lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
-                          -np.inf)
+        return xpx.apply_where(x > 0, (x, p, b),
+                               lambda x, p, b: (p - 1)*np.log(x) - b*(x + 1/x)/2,
+                               fill_value=-np.inf)
 
     def _rvs(self, p, b, size=None, random_state=None):
         # if p and b are scalar, use _rvs_scalar, otherwise need to create
@@ -5274,8 +5488,8 @@ class norminvgauss_gen(rv_continuous):
 
     A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
     can be expressed as a normal mean-variance mixture:
-    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
-    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    ``Y = b * V + sqrt(V) * X`` where `X` is ``norm(0,1)`` and `V` is
+    ``invgauss(mu=1/sqrt(a**2 - b**2))``. This representation is used
     to generate random variates.
 
     Another common parametrization of the distribution (see Equation 2.1 in
@@ -5289,7 +5503,7 @@ class norminvgauss_gen(rv_continuous):
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 
     In SciPy, this corresponds to
-    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+    :math:`a=\alpha \delta, b=\beta \delta, \text{loc}=\mu, \text{scale}=\delta`.
 
     References
     ----------
@@ -5528,6 +5742,10 @@ class jf_skew_t_gen(rv_continuous):
         y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
         return sc.betainc(a, b, y)
 
+    def _sf(self, x, a, b):
+        y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
+        return sc.betaincc(a, b, y)
+
     def _ppf(self, q, a, b):
         d1 = beta.ppf(q, a, b)
         d2 = (2 * d1 - 1) * np.sqrt(a + b)
@@ -5558,11 +5776,11 @@ class jf_skew_t_gen(rv_continuous):
             return num / denom * sum_terms.sum()
 
         nth_moment_valid = (a > 0.5 * n) & (b > 0.5 * n) & (n >= 0)
-        return _lazywhere(
+        return xpx.apply_where(
             nth_moment_valid,
             (n, a, b),
             np.vectorize(nth_moment, otypes=[np.float64]),
-            np.nan,
+            fill_value=np.nan,
         )
 
 
@@ -5722,6 +5940,98 @@ class johnsonsu_gen(rv_continuous):
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
+
+
+class landau_gen(rv_continuous):
+    r"""A Landau continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `landau` ([1]_, [2]_) is:
+
+    .. math::
+
+        f(x) = \frac{1}{\pi}\int_0^\infty \exp(-t \log t - xt)\sin(\pi t) dt
+
+    for a real number :math:`x`.
+
+    %(after_notes)s
+
+    Often (e.g. [2]_), the Landau distribution is parameterized in terms of a
+    location parameter :math:`\mu` and scale parameter :math:`c`, the latter of
+    which *also* introduces a location shift. If ``mu`` and ``c`` are used to
+    represent these parameters, this corresponds with SciPy's parameterization
+    with ``loc = mu + 2*c / np.pi * np.log(c)`` and ``scale = c``.
+
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
+
+    References
+    ----------
+    .. [1] Landau, L. (1944). "On the energy loss of fast particles by
+           ionization". J. Phys. (USSR). 8: 201.
+    .. [2] "Landau Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Landau_distribution
+    .. [3] Chambers, J. M., Mallows, C. L., & Stuck, B. (1976).
+           "A method for simulating stable random variables."
+           Journal of the American Statistical Association, 71(354), 340-344.
+    .. [4] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+    .. [5] Yoshimura, T. "Numerical Evaluation and High Precision Approximation
+           Formula for Landau Distribution".
+           :doi:`10.36227/techrxiv.171822215.53612870/v2`
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return []
+
+    def _entropy(self):
+        # Computed with mpmath - see gh-19145
+        return 2.37263644000448182
+
+    def _pdf(self, x):
+        return scu._landau_pdf(x, 0, 1)
+
+    def _cdf(self, x):
+        return scu._landau_cdf(x, 0, 1)
+
+    def _sf(self, x):
+        return scu._landau_sf(x, 0, 1)
+
+    def _ppf(self, p):
+        return scu._landau_ppf(p, 0, 1)
+
+    def _isf(self, p):
+        return scu._landau_isf(p, 0, 1)
+
+    def _stats(self):
+        return np.nan, np.nan, np.nan, np.nan
+
+    def _munp(self, n):
+        return np.nan if n > 0 else 1
+
+    def _fitstart(self, data, args=None):
+        # Initialize ML guesses using quartiles instead of moments.
+        if isinstance(data, CensoredData):
+            data = data._uncensor()
+        p25, p50, p75 = np.percentile(data, [25, 50, 75])
+        return p50, (p75 - p25)/2
+
+    def _rvs(self, size=None, random_state=None):
+        # Method from https://www.jstor.org/stable/2285309 Eq. 2.4
+        pi_2 = np.pi / 2
+        U = random_state.uniform(-np.pi / 2, np.pi / 2, size=size)
+        W = random_state.standard_exponential(size=size)
+        S = 2 / np.pi * ((pi_2 + U) * np.tan(U)
+                         - np.log((pi_2 * W * np.cos(U)) / (pi_2 + U)))
+        return S
+
+
+landau = landau_gen(name='landau')
 
 
 class laplace_gen(rv_continuous):
@@ -6338,31 +6648,35 @@ class loggamma_gen(rv_continuous):
         # That is,
         #     exp(x)**c/Gamma(c+1) = exp(log(exp(x)**c/Gamma(c+1)))
         #                          = exp(c*x - gammaln(c+1))
-        return _lazywhere(x < _LOGXMIN, (x, c),
-                          lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
-                          f2=lambda x, c: sc.gammainc(c, np.exp(x)))
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: np.exp(c*x - sc.gammaln(c+1)),
+            lambda x, c: sc.gammainc(c, np.exp(x)))
 
     def _ppf(self, q, c):
         # The expression used when g < _XMIN inverts the one term expansion
         # given in the comments of _cdf().
         g = sc.gammaincinv(c, q)
-        return _lazywhere(g < _XMIN, (g, q, c),
-                          lambda g, q, c: (np.log(q) + sc.gammaln(c+1))/c,
-                          f2=lambda g, q, c: np.log(g))
+        return xpx.apply_where(
+            g < _XMIN, (g, q, c),
+            lambda g, q, c: (np.log(q) + sc.gammaln(c+1))/c,
+            lambda g, q, c: np.log(g))
 
     def _sf(self, x, c):
         # See the comments for _cdf() for how x < _LOGXMIN is handled.
-        return _lazywhere(x < _LOGXMIN, (x, c),
-                          lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
-                          f2=lambda x, c: sc.gammaincc(c, np.exp(x)))
+        return xpx.apply_where(
+            x < _LOGXMIN, (x, c),
+            lambda x, c: -np.expm1(c*x - sc.gammaln(c+1)),
+            lambda x, c: sc.gammaincc(c, np.exp(x)))
 
     def _isf(self, q, c):
         # The expression used when g < _XMIN inverts the complement of
         # the one term expansion given in the comments of _cdf().
         g = sc.gammainccinv(c, q)
-        return _lazywhere(g < _XMIN, (g, q, c),
-                          lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
-                          f2=lambda g, q, c: np.log(g))
+        return xpx.apply_where(
+            g < _XMIN, (g, q, c),
+            lambda g, q, c: (np.log1p(-q) + sc.gammaln(c+1))/c,
+            lambda g, q, c: np.log(g))
 
     def _stats(self, c):
         # See, for example, "A Statistical Study of Log-Gamma Distribution", by
@@ -6384,8 +6698,7 @@ class loggamma_gen(rv_continuous):
             h = norm._entropy() + term
             return h
 
-        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
-        return h
+        return xpx.apply_where(c >= 45, c, asymptotic, regular)
 
 
 loggamma = loggamma_gen(name='loggamma')
@@ -6491,10 +6804,11 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 
 def _lognorm_logpdf(x, s):
-    return _lazywhere(x != 0, (x, s),
-                      lambda x, s: (-np.log(x)**2 / (2 * s**2)
-                                    - np.log(s * x * np.sqrt(2 * np.pi))),
-                      -np.inf)
+    return xpx.apply_where(
+        x != 0, (x, s),
+        lambda x, s: (-np.log(x)**2 / (2 * s**2)
+                      - np.log(s * x * np.sqrt(2 * np.pi))),
+        fill_value=-np.inf)
 
 
 class lognorm_gen(rv_continuous):
@@ -6711,6 +7025,8 @@ class gibrat_gen(rv_continuous):
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
+    for :math:`x >= 0`.
+
     `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
@@ -6887,7 +7203,7 @@ class mielke_gen(rv_continuous):
             # n-th moment is defined for -k < n < s
             return sc.gamma((k+n)/s)*sc.gamma(1-n/s)/sc.gamma(k/s)
 
-        return _lazywhere(n < s, (n, k, s), nth_moment, np.inf)
+        return xpx.apply_where(n < s, (n, k, s), nth_moment, fill_value=np.inf)
 
 
 mielke = mielke_gen(a=0.0, name='mielke')
@@ -6910,16 +7226,16 @@ class kappa4_gen(rv_continuous):
 
     If :math:`h` or :math:`k` are zero then the pdf can be simplified:
 
-    h = 0 and k != 0::
+    :math:`h = 0` and :math:`k \neq 0`::
 
         kappa4.pdf(x, h, k) = (1.0 - k*x)**(1.0/k - 1.0)*
                               exp(-(1.0 - k*x)**(1.0/k))
 
-    h != 0 and k = 0::
+    :math:`h \neq 0` and :math:`k = 0`::
 
         kappa4.pdf(x, h, k) = exp(-x)*(1.0 - h*exp(-x))**(1.0/h - 1.0)
 
-    h = 0 and k = 0::
+    :math:`h = 0` and :math:`k = 0`::
 
         kappa4.pdf(x, h, k) = exp(-x)*exp(-exp(-x))
 
@@ -7276,10 +7592,10 @@ class moyal_gen(rv_continuous):
            The London, Edinburgh, and Dublin Philosophical Magazine
            and Journal of Science, vol 46, 263-280, (1955).
            :doi:`10.1080/14786440308521076` (gated)
-    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+    .. [2] G. Cordeiro et al., "The beta Moyal: A useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
            vol 10, 171-192, (2012).
-           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+           https://www.arpapress.com/files/volumes/vol10issue2/ijrras_10_2_02.pdf
     .. [3] C. Walck, "Handbook on Statistical Distributions for
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
@@ -7455,11 +7771,11 @@ def _ncx2_log_pdf(x, df, nc):
     res = sc.xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
     corr = sc.ive(df2, xs*ns) / 2.0
     # Return res + np.log(corr) avoiding np.log(0)
-    return _lazywhere(
+    return xpx.apply_where(
         corr > 0,
         (res, corr),
-        f=lambda r, c: r + np.log(c),
-        fillvalue=-np.inf)
+        lambda r, c: r + np.log(c),
+        fill_value=-np.inf)
 
 
 class ncx2_gen(rv_continuous):
@@ -7485,7 +7801,15 @@ class ncx2_gen(rv_continuous):
 
     `ncx2` takes ``df`` and ``nc`` as shape parameters.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -7502,39 +7826,33 @@ class ncx2_gen(rv_continuous):
         return random_state.noncentral_chisquare(df, nc, size)
 
     def _logpdf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf,
-                          f2=lambda x, df, _: chi2._logpdf(x, df))
+        return xpx.apply_where(nc != 0, (x, df, nc), _ncx2_log_pdf,
+                               lambda x, df, _: chi2._logpdf(x, df))
 
     def _pdf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_pdf,
-                              f2=lambda x, df, _: chi2._pdf(x, df))
+            return xpx.apply_where(nc != 0, (x, df, nc), scu._ncx2_pdf,
+                                   lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
-                              f2=lambda x, df, _: chi2._cdf(x, df))
+            return xpx.apply_where(nc != 0, (x, df, nc), sc.chndtr,
+                                   lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
-        cond = np.ones_like(q, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (q, df, nc), f=scu._ncx2_ppf,
-                              f2=lambda x, df, _: chi2._ppf(x, df))
+            return xpx.apply_where(nc != 0, (q, df, nc), sc.chndtrix,
+                                   lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_sf,
-                              f2=lambda x, df, _: chi2._sf(x, df))
+            return xpx.apply_where(nc != 0, (x, df, nc), scu._ncx2_sf,
+                                   lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_isf,
-                              f2=lambda x, df, _: chi2._isf(x, df))
+            return xpx.apply_where(nc != 0, (x, df, nc), scu._ncx2_isf,
+                                   lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
         _ncx2_mean = df + nc
@@ -7589,20 +7907,28 @@ class ncf_gen(rv_continuous):
     :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
     generalized Laguerre polynomial and :math:`B` is the beta function.
 
-    `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters. If ``nc=0``,
+    `ncf` takes ``dfn``, ``dfd`` and ``nc`` as shape parameters. If ``nc=0``,
     the distribution becomes equivalent to the Fisher distribution.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``stats``, ``sf`` and
+    ``isf`` methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
     """
-    def _argcheck(self, df1, df2, nc):
-        return (df1 > 0) & (df2 > 0) & (nc >= 0)
+    def _argcheck(self, dfn, dfd, nc):
+        return (dfn > 0) & (dfd > 0) & (nc >= 0)
 
     def _shape_info(self):
-        idf1 = _ShapeInfo("df1", False, (0, np.inf), (False, False))
-        idf2 = _ShapeInfo("df2", False, (0, np.inf), (False, False))
+        idf1 = _ShapeInfo("dfn", False, (0, np.inf), (False, False))
+        idf2 = _ShapeInfo("dfd", False, (0, np.inf), (False, False))
         inc = _ShapeInfo("nc", False, (0, np.inf), (True, False))
         return [idf1, idf2, inc]
 
@@ -7610,20 +7936,14 @@ class ncf_gen(rv_continuous):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
     def _pdf(self, x, dfn, dfd, nc):
-        # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
-        #             df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
-        #             (df2+df1*x)**(-(df1+df2)/2) *
-        #             gamma(df1/2)*gamma(1+df2/2) *
-        #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
-        #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
         return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return scu._ncf_cdf(x, dfn, dfd, nc)
+        return sc.ncfdtr(dfn, dfd, nc, x)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._ncf_ppf(q, dfn, dfd, nc)
+            return sc.ncfdtri(dfn, dfd, nc, q)
 
     def _sf(self, x, dfn, dfd, nc):
         return scu._ncf_sf(x, dfn, dfd, nc)
@@ -7632,19 +7952,21 @@ class ncf_gen(rv_continuous):
         with np.errstate(over='ignore'):  # see gh-17432
             return scu._ncf_isf(x, dfn, dfd, nc)
 
-    def _munp(self, n, dfn, dfd, nc):
-        val = (dfn * 1.0/dfd)**n
-        term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
-        val *= np.exp(-nc / 2.0+term)
-        val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
-        return val
+    # # Produces bogus values as written - maybe it's close, though?
+    # def _munp(self, n, dfn, dfd, nc):
+    #     val = (dfn * 1.0/dfd)**n
+    #     term = sc.gammaln(n+0.5*dfn) + sc.gammaln(0.5*dfd-n) - sc.gammaln(dfd*0.5)
+    #     val *= np.exp(-nc / 2.0+term)
+    #     val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
+    #     return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
         mu = scu._ncf_mean(dfn, dfd, nc)
         mu2 = scu._ncf_variance(dfn, dfd, nc)
         g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = scu._ncf_kurtosis_excess(
-            dfn, dfd, nc) if 'k' in moments else None
+        g2 = scu._ncf_kurtosis_excess(  # isn't really excess kurtosis!
+            dfn, dfd, nc) - 3 if 'k' in moments else None
+        # Mathematica: Kurtosis[NoncentralFRatioDistribution[27, 27, 0.415784417992261]]
         return mu, mu2, g1, g2
 
 
@@ -7689,13 +8011,10 @@ class t_gen(rv_continuous):
         return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
-        return _lazywhere(
+        return xpx.apply_where(
             df == np.inf, (x, df),
-            f=lambda x, df: norm._pdf(x),
-            f2=lambda x, df: (
-                np.exp(self._logpdf(x, df))
-            )
-        )
+            lambda x, df: norm._pdf(x),
+            lambda x, df: np.exp(self._logpdf(x, df)))
 
     def _logpdf(self, x, df):
 
@@ -7707,7 +8026,7 @@ class t_gen(rv_continuous):
         def norm_logpdf(x, df):
             return norm._logpdf(x)
 
-        return _lazywhere(df == np.inf, (x, df, ), f=norm_logpdf, f2=t_logpdf)
+        return xpx.apply_where(df == np.inf, (x, df), norm_logpdf, t_logpdf)
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -7765,8 +8084,7 @@ class t_gen(rv_continuous):
                  - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
             return h
 
-        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
-        return h
+        return xpx.apply_where(df >= 100, df, asymptotic, regular)
 
 
 t = t_gen(name='t')
@@ -7792,7 +8110,15 @@ class nct_gen(rv_continuous):
     implementation) satisfies :math:`k > 0` and the noncentrality parameter
     :math:`c` (denoted ``nc`` in the implementation) is a real number.
 
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of the ``pdf``, ``cdf``, ``ppf``, ``sf`` and ``isf``
+    methods. [1]_
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     %(example)s
 
@@ -7811,31 +8137,13 @@ class nct_gen(rv_continuous):
         return n * np.sqrt(df) / np.sqrt(c2)
 
     def _pdf(self, x, df, nc):
-        # Boost version has accuracy issues in left tail; see gh-16591
-        n = df*1.0
-        nc = nc*1.0
-        x2 = x*x
-        ncx2 = nc*nc*x2
-        fac1 = n + x2
-        trm1 = (n/2.*np.log(n) + sc.gammaln(n+1)
-                - (n*np.log(2) + nc*nc/2 + (n/2)*np.log(fac1)
-                   + sc.gammaln(n/2)))
-        Px = np.exp(trm1)
-        valF = ncx2 / (2*fac1)
-        trm1 = (np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
-                / np.asarray(fac1*sc.gamma((n+1)/2)))
-        trm2 = (sc.hyp1f1((n+1)/2, 0.5, valF)
-                / np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1)))
-        Px *= trm1+trm2
-        return np.clip(Px, 0, None)
+        return scu._nct_pdf(x, df, nc)
 
     def _cdf(self, x, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
+        return sc.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_ppf(q, df, nc)
+        return sc.nctdtrit(df, nc, q)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
@@ -7924,8 +8232,8 @@ class pareto_gen(rv_continuous):
             np.place(g2, mask, vals)
         return mu, mu2, g1, g2
 
-    def _entropy(self, c):
-        return 1 + 1.0/c - np.log(c)
+    def _entropy(self, b):
+        return 1 + 1.0/b - np.log(b)
 
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
@@ -8302,7 +8610,13 @@ class powerlaw_gen(rv_continuous):
     For example, the support of `powerlaw` can be adjusted from the default
     interval ``[0, 1]`` to the interval ``[c, c+d]`` by setting ``loc=c`` and
     ``scale=d``. For a power-law distribution with infinite support, see
-    `pareto`.
+    `pareto`. For a power-law distribution described by PDF:
+
+    .. math::
+
+        f(x; a, l, h) = \frac{a}{h^a - l^2} x^{a-1}
+
+    with :math:`a \neq 0` and :math:`0 < l < x < h`, see `truncpareto`.
 
     `powerlaw` is a special case of `beta` with ``b=1``.
 
@@ -8947,6 +9261,8 @@ class reciprocal_gen(rv_continuous):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 
     def _munp(self, n, a, b):
+        if n == 0:
+            return 1.0
         t1 = 1 / (np.log(b) - np.log(a)) / n
         t2 = np.real(np.exp(_log_diff(n * np.log(b), n*np.log(a))))
         return t1 * t2
@@ -8970,6 +9286,8 @@ class reciprocal_gen(rv_continuous):
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
+loguniform._support = ('a', 'b')
+reciprocal._support = ('a', 'b')
 
 
 class rice_gen(rv_continuous):
@@ -9063,7 +9381,7 @@ class irwinhall_gen(rv_continuous):
     Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
     distribution ``bates = irwinhall(10, scale=1/10)`` represents the
     distribution of the mean of 10 uniformly distributed random variables.
-    
+
     %(after_notes)s
 
     References
@@ -9078,7 +9396,7 @@ class irwinhall_gen(rv_continuous):
             with special reference to Pearson's Type II,
             Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
             :doi:`0.1093/biomet/19.3-4.225`.
-    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
+    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf,
             "Sidelobe behavior and bandwidth characteristics
             of distributed antenna arrays,"
             2018 United States National Committee of
@@ -9087,7 +9405,7 @@ class irwinhall_gen(rv_continuous):
             https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
     .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
             https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
-    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun.
             Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
 
     %(example)s
@@ -9105,10 +9423,10 @@ class irwinhall_gen(rv_continuous):
 
     def _argcheck(self, n):
         return (n > 0) & _isintegral(n) & np.isrealobj(n)
-    
+
     def _get_support(self, n):
-        return 0, n 
-    
+        return 0, n
+
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
@@ -9116,7 +9434,8 @@ class irwinhall_gen(rv_continuous):
         # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
         # page 640, with m=n, j=n+order
         def vmunp(order, n):
-            return (sc.stirling2(n+order, n, exact=True) 
+            n = np.asarray(n, dtype=np.int64)
+            return (sc.stirling2(n+order, n, exact=True)
                     / sc.comb(n+order, n, exact=True))
 
         # exact rationals, but we convert to float anyway
@@ -9124,14 +9443,14 @@ class irwinhall_gen(rv_continuous):
 
     @staticmethod
     def _cardbspl(n):
-        t = np.arange(n+1) 
+        t = np.arange(n+1)
         return BSpline.basis_element(t)
 
     def _pdf(self, x, n):
         def vpdf(x, n):
             return self._cardbspl(n)(x)
         return np.vectorize(vpdf, otypes=[np.float64])(x, n)
-    
+
     def _cdf(self, x, n):
         def vcdf(x, n):
             return self._cardbspl(n).antiderivative()(x)
@@ -9149,7 +9468,7 @@ class irwinhall_gen(rv_continuous):
             usize = (n,) if size is None else (n, *size)
             return random_state.uniform(size=usize).sum(axis=0)
         return _rvs1(n, size=size, random_state=random_state)
-    
+
     def _stats(self, n):
         # mgf = ((exp(t) - 1)/t)**n
         # m'th derivative follows from the generalized Leibniz rule
@@ -9163,7 +9482,10 @@ class irwinhall_gen(rv_continuous):
 
         return n/2, n/12, 0, -6/(5*n)
 
-irwinhall = irwinhall_gen(name="irwinhall")    
+
+irwinhall = irwinhall_gen(name="irwinhall")
+irwinhall._support = (0.0, 'n')
+
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
@@ -9197,10 +9519,11 @@ class recipinvgauss_gen(rv_continuous):
         return np.exp(self._logpdf(x, mu))
 
     def _logpdf(self, x, mu):
-        return _lazywhere(x > 0, (x, mu),
-                          lambda x, mu: (-(1 - mu*x)**2.0 / (2*x*mu**2.0)
-                                         - 0.5*np.log(2*np.pi*x)),
-                          fillvalue=-np.inf)
+        return xpx.apply_where(
+            x > 0, (x, mu),
+            lambda x, mu: (-(1 - mu*x)**2.0 / (2*x*mu**2.0)
+                           - 0.5*np.log(2*np.pi*x)),
+            fill_value=-np.inf)
 
     def _cdf(self, x, mu):
         trm1 = 1.0/mu - x
@@ -9240,7 +9563,7 @@ class semicircular_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`.
 
-    The distribution is a special case of `rdist` with `c = 3`.
+    The distribution is a special case of `rdist` with ``c = 3``.
 
     %(after_notes)s
 
@@ -9369,15 +9692,19 @@ class skewnorm_gen(rv_continuous):
     When ``a = 0`` the distribution is identical to a normal distribution
     (`norm`). `rvs` implements the method of [1]_.
 
-    %(after_notes)s
+    This distribution uses routines from the Boost Math C++ library for
+    the computation of ``cdf``, ``ppf`` and ``isf`` methods. [2]_
 
-    %(example)s
+    %(after_notes)s
 
     References
     ----------
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
         the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
         B 61, 579-602. :arxiv:`0911.2093`
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    %(example)s
 
     """
     def _argcheck(self, a):
@@ -9387,16 +9714,16 @@ class skewnorm_gen(rv_continuous):
         return [_ShapeInfo("a", False, (-np.inf, np.inf), (False, False))]
 
     def _pdf(self, x, a):
-        return _lazywhere(
-            a == 0, (x, a), lambda x, a: _norm_pdf(x),
-            f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
-        )
+        return xpx.apply_where(
+            a == 0, (x, a),
+            lambda x, a: _norm_pdf(x),
+            lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x))
 
     def _logpdf(self, x, a):
-        return _lazywhere(
-            a == 0, (x, a), lambda x, a: _norm_logpdf(x),
-            f2=lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x),
-        )
+        return xpx.apply_where(
+            a == 0, (x, a),
+            lambda x, a: _norm_logpdf(x),
+            lambda x, a: np.log(2)+_norm_logpdf(x)+_norm_logcdf(a*x))
 
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
@@ -9470,7 +9797,7 @@ class skewnorm_gen(rv_continuous):
         return skewnorm_odd_moments
 
     def _munp(self, order, a):
-        if order & 1:
+        if order % 2:
             if order > 19:
                 raise NotImplementedError("skewnorm noncentral moments not "
                                           "implemented for odd orders greater "
@@ -9521,6 +9848,7 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+
         def d_skew(skew):  # delta in terms of skewness
             s_23 = np.abs(skew)**(2/3)
             return np.sign(skew) * np.sqrt(
@@ -9682,13 +10010,14 @@ class trapezoid_gen(rv_continuous):
         # the following result.
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
+    def _fitstart(self, data, args=None):
+        # Arbitrary, but c=d=1 fails due to being on edge of bounds
+        if args is None:
+            args = (0.33, 0.66)
+        return super()._fitstart(data, args=args)
+
 
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-trapz = trapezoid_gen(a=0.0, b=1.0, name="trapz")
-if trapz.__doc__:
-    trapz.__doc__ = "trapz is an alias for `trapezoid`"
 
 
 class triang_gen(rv_continuous):
@@ -9831,6 +10160,7 @@ class truncexpon_gen(rv_continuous):
 
 
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
+truncexpon._support = (0.0, 'b')
 
 
 # logsumexp trick for log(p + q) with only log(p) and log(q)
@@ -10065,45 +10395,50 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf(np.asarray([a, b]), a, b)
-            probs = [pA, -pB]
+            ab = np.asarray([a, b])
+            pA, pB = self._pdf(ab, a, b)
+            probs = np.asarray([pA, -pB])
+            cond = probs != 0
             moments = [0, 1]
             for k in range(1, n+1):
                 # a or b might be infinite, and the corresponding pdf value
                 # is 0 in that case, but nan is returned for the
                 # multiplication.  However, as b->infinity,  pdf(b)*b**k -> 0.
-                # So it is safe to use _lazywhere to avoid the nan.
-                vals = _lazywhere(probs, [probs, [a, b]],
-                                  lambda x, y: x * y**(k-1), fillvalue=0)
+                # So it is safe to use xpx.apply_where to avoid the nan.
+                vals = xpx.apply_where(cond, (probs, ab),
+                                       lambda x, y: x * y**(k-1),
+                                       fill_value=0)
                 mk = np.sum(vals) + (k-1) * moments[-2]
                 moments.append(mk)
             return moments[-1]
 
-        return _lazywhere((n >= 0) & (a == a) & (b == b), (n, a, b),
-                          np.vectorize(n_th_moment, otypes=[np.float64]),
-                          np.nan)
+        return xpx.apply_where((n >= 0) & (a == a) & (b == b), (n, a, b),
+                               np.vectorize(n_th_moment, otypes=[np.float64]),
+                               fill_value=np.nan)
 
     def _stats(self, a, b, moments='mv'):
         pA, pB = self.pdf(np.array([a, b]), a, b)
 
-        def _truncnorm_stats_scalar(a, b, pA, pB, moments):
+        def _truncnorm_stats_scalar(a, b, pA, pB):
+            ab = np.asarray([a, b])
             m1 = pA - pB
             mu = m1
-            # use _lazywhere to avoid nan (See detailed comment in _munp)
-            probs = [pA, -pB]
-            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y,
-                              fillvalue=0)
+            # use xpx.apply_where to avoid nan (See detailed comment in _munp)
+            probs = np.asarray([pA, -pB])
+            cond = probs != 0
+            vals = xpx.apply_where(cond, (probs, ab), lambda x, y: x*y,
+                                   fill_value=0)
             m2 = 1 + np.sum(vals)
-            vals = _lazywhere(probs, [probs, [a-mu, b-mu]], lambda x, y: x*y,
-                              fillvalue=0)
+            vals = xpx.apply_where(cond, (probs, ab - mu), lambda x, y: x*y,
+                                   fill_value=0)
             # mu2 = m2 - mu**2, but not as numerically stable as:
             # mu2 = (a-mu)*pA - (b-mu)*pB + 1
             mu2 = 1 + np.sum(vals)
-            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**2,
-                              fillvalue=0)
+            vals = xpx.apply_where(cond, (probs, ab), lambda x, y: x*y**2,
+                                   fill_value=0)
             m3 = 2*m1 + np.sum(vals)
-            vals = _lazywhere(probs, [probs, [a, b]], lambda x, y: x*y**3,
-                              fillvalue=0)
+            vals = xpx.apply_where(cond, (probs, ab), lambda x, y: x*y**3,
+                                   fill_value=0)
             m4 = 3*m2 + np.sum(vals)
 
             mu3 = m3 + m1 * (-3*m2 + 2*m1**2)
@@ -10112,12 +10447,12 @@ class truncnorm_gen(rv_continuous):
             g2 = mu4 / mu2**2 - 3
             return mu, mu2, g1, g2
 
-        _truncnorm_stats = np.vectorize(_truncnorm_stats_scalar,
-                                        excluded=('moments',))
-        return _truncnorm_stats(a, b, pA, pB, moments)
+        _truncnorm_stats = np.vectorize(_truncnorm_stats_scalar)
+        return _truncnorm_stats(a, b, pA, pB)
 
 
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
+truncnorm._support = ('a', 'b')
 
 
 class truncpareto_gen(rv_continuous):
@@ -10137,7 +10472,7 @@ class truncpareto_gen(rv_continuous):
 
         f(x, b, c) = \frac{b}{1 - c^{-b}} \frac{1}{x^{b+1}}
 
-    for :math:`b > 0`, :math:`c > 1` and :math:`1 \le x \le c`.
+    for :math:`b \neq 0`, :math:`c > 1` and :math:`1 \le x \le c`.
 
     `truncpareto` takes `b` and `c` as shape parameters for :math:`b` and
     :math:`c`.
@@ -10149,6 +10484,21 @@ class truncpareto_gen(rv_continuous):
     then ``c = (u_r - loc) / scale``. In other words, the support of the
     distribution becomes ``(scale + loc) <= x <= (c*scale + loc)`` when
     `scale` and/or `loc` are provided.
+
+    The ``fit`` method assumes that :math:`b` is positive; it does not produce
+    good results when the data is more consistent with negative :math:`b`.
+
+    `truncpareto` can also be used to model a general power law distribution
+    with PDF:
+
+    .. math::
+
+        f(x; a, l, h) = \frac{a}{h^a - l^a} x^{a-1}
+
+    for :math:`a \neq 0` and :math:`0 < l < x < h`. Suppose :math:`a`,
+    :math:`l`, and :math:`h` are represented in code as ``a``, ``l``, and
+    ``h``, respectively. In this case, use `truncpareto` with parameters
+    ``b = -a``, ``c = h / l``, ``scale = l``, and ``loc = 0``.
 
     %(after_notes)s
 
@@ -10163,38 +10513,56 @@ class truncpareto_gen(rv_continuous):
     """
 
     def _shape_info(self):
-        ib = _ShapeInfo("b", False, (0.0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         ic = _ShapeInfo("c", False, (1.0, np.inf), (False, False))
         return [ib, ic]
 
     def _argcheck(self, b, c):
-        return (b > 0.) & (c > 1.)
+        return (b != 0.) & (c > 1.)
 
     def _get_support(self, b, c):
         return self.a, c
 
     def _pdf(self, x, b, c):
+        # here and below, avoid int to negative int power
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
         return b * x**-(b+1) / (1 - 1/c**b)
 
     def _logpdf(self, x, b, c):
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
+        return xpx.apply_where(b > 0, (x, b, c), self._logpdf_pos_b, super()._logpdf)
+
+    def _logpdf_pos_b(self, x, b, c):
         return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
         return (1 - x**-b) / (1 - 1/c**b)
 
     def _logcdf(self, x, b, c):
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
+        return xpx.apply_where(b > 0, (x, b, c), self._logcdf_pos_b, super()._logcdf)
+
+    def _logcdf_pos_b(self, x, b, c):
         return np.log1p(-x**-b) - np.log1p(-1/c**b)
 
     def _ppf(self, q, b, c):
+        q, b, c = xp_promote(q, b, c, force_floating=True, xp=np)
         return pow(1 - (1 - 1/c**b)*q, -1/b)
 
     def _sf(self, x, b, c):
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
         return (x**-b - 1/c**b) / (1 - 1/c**b)
 
     def _logsf(self, x, b, c):
+        x, b, c = xp_promote(x, b, c, force_floating=True, xp=np)
+        return xpx.apply_where(b > 0, (x, b, c), self._logsf_pos_b, super()._logsf)
+
+    def _logsf_pos_b(self, x, b, c):
         return np.log(x**-b - 1/c**b) - np.log1p(-1/c**b)
 
     def _isf(self, q, b, c):
+        q, b, c = xp_promote(q, b, c, force_floating=True, xp=np)
         return pow(1/c**b + (1 - 1/c**b)*q, -1/b)
 
     def _entropy(self, b, c):
@@ -10202,6 +10570,7 @@ class truncpareto_gen(rv_continuous):
                  + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
 
     def _munp(self, n, b, c):
+        n, b, c = xp_promote(n, b, c, force_floating=True, xp=np)
         if (n == b).all():
             return b*np.log(c) / (1 - 1/c**b)
         else:
@@ -10438,6 +10807,7 @@ class truncpareto_gen(rv_continuous):
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
+truncpareto._support = (1.0, 'c')
 
 
 class tukeylambda_gen(rv_continuous):
@@ -10463,17 +10833,26 @@ class tukeylambda_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _argcheck(self, lam):
         return np.isfinite(lam)
 
     def _shape_info(self):
         return [_ShapeInfo("lam", False, (-np.inf, np.inf), (False, False))]
 
+    def _get_support(self, lam):
+        b = xpx.apply_where(lam > 0, lam,
+                            lambda lam: 1/lam,
+                            fill_value=np.inf)
+        return -b, b
+
     def _pdf(self, x, lam):
         Fx = np.asarray(sc.tklmbda(x, lam))
         Px = Fx**(lam-1.0) + (np.asarray(1-Fx))**(lam-1.0)
-        Px = 1.0/np.asarray(Px)
-        return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
+        with np.errstate(divide='ignore'):
+            Px = 1.0/np.asarray(Px)
+            return np.where((lam <= 0) | (abs(x) < 1.0/np.asarray(lam)), Px, 0.0)
 
     def _cdf(self, x, lam):
         return sc.tklmbda(x, lam)
@@ -10586,7 +10965,7 @@ class uniform_gen(rv_continuous):
         11.0
 
         If we know the data comes from a uniform distribution where the support
-        starts at 0, we can use `floc=0`:
+        starts at 0, we can use ``floc=0``:
 
         >>> loc, scale = uniform.fit(x, floc=0)
         >>> loc
@@ -10595,7 +10974,7 @@ class uniform_gen(rv_continuous):
         13.0
 
         Alternatively, if we know the length of the support is 12, we can use
-        `fscale=12`:
+        ``fscale=12``:
 
         >>> loc, scale = uniform.fit(x, fscale=12)
         >>> loc
@@ -11042,7 +11421,7 @@ class wrapcauchy_gen(rv_continuous):
             return 1 - 1/np.pi * np.arctan(cr*np.tan((2*np.pi - x)/2))
 
         cr = (1 + c)/(1 - c)
-        return _lazywhere(x < np.pi, (x, cr), f=f1, f2=f2)
+        return xpx.apply_where(x < np.pi, (x, cr), f1, f2)
 
     def _ppf(self, q, c):
         val = (1.0-c)/(1.0+c)
@@ -11061,12 +11440,16 @@ class wrapcauchy_gen(rv_continuous):
             data = data._uncensor()
         return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
+    @inherit_docstring_from(rv_continuous)
+    def rvs(self, *args, **kwds):
+        rvs = super().rvs(*args, **kwds)
+        return np.mod(rvs, 2*np.pi)
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
 
 class gennorm_gen(rv_continuous):
-    r"""A generalized normal continuous random variable.
+    r"""A (symmetric) generalized normal continuous random variable.
 
     %(before_notes)s
 
@@ -11077,6 +11460,10 @@ class gennorm_gen(rv_continuous):
 
     Notes
     -----
+    The (symmetric) generalized normal distribution is also known as the
+    Subbotin distribution, exponential power distribution, and generalized
+    error distribution [1]_.
+    
     The probability density function for `gennorm` is [1]_:
 
     .. math::
@@ -11132,6 +11519,15 @@ class gennorm_gen(rv_continuous):
 
     def _isf(self, x, beta):
         return -self._ppf(x, beta)
+
+    def _munp(self, n, beta):
+        if n == 0:
+            return 1.
+        if n % 2 == 0:
+            c1, cn = sc.gammaln([1.0/beta, (n + 1.0)/beta])
+            return np.exp(cn - c1)
+        else:
+            return 0.
 
     def _stats(self, beta):
         c1, c3, c5 = sc.gammaln([1.0/beta, 3.0/beta, 5.0/beta])
@@ -11293,7 +11689,7 @@ class crystalball_gen(rv_continuous):
             return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
                     (m/beta - beta - x)**(-m))
 
-        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+        return N * xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
 
     def _logpdf(self, x, beta, m):
         """
@@ -11308,7 +11704,7 @@ class crystalball_gen(rv_continuous):
         def lhs(x, beta, m):
             return m*np.log(m/beta) - beta**2/2 - m*np.log(m/beta - beta - x)
 
-        return np.log(N) + _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+        return np.log(N) + xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
 
     def _cdf(self, x, beta, m):
         """
@@ -11325,7 +11721,23 @@ class crystalball_gen(rv_continuous):
             return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
                     (m/beta - beta - x)**(-m+1) / (m-1))
 
-        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+        return N * xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
+
+    def _sf(self, x, beta, m):
+        """
+        Survival function of the crystalball distribution.
+        """
+
+        def rhs(x, beta, m):
+            # M is the same as 1/N used elsewhere.
+            M = m/beta/(m - 1)*np.exp(-beta**2/2) + _norm_pdf_C*_norm_cdf(beta)
+            return _norm_pdf_C*_norm_sf(x)/M
+
+        def lhs(x, beta, m):
+            # Default behavior is OK in the left tail of the SF.
+            return 1 - self._cdf(x, beta, m)
+
+        return xpx.apply_where(x > -beta, (x, beta, m), rhs, lhs)
 
     def _ppf(self, p, beta, m):
         N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
@@ -11345,7 +11757,7 @@ class crystalball_gen(rv_continuous):
             N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
             return _norm_ppf(_norm_cdf(-beta) + (1/_norm_pdf_C)*(p/N - C))
 
-        return _lazywhere(p < pbeta, (p, beta, m), f=ppf_less, f2=ppf_greater)
+        return xpx.apply_where(p < pbeta, (p, beta, m), ppf_less, ppf_greater)
 
     def _munp(self, n, beta, m):
         """
@@ -11364,14 +11776,14 @@ class crystalball_gen(rv_continuous):
             rhs = (2**((n-1)/2.0) * sc.gamma((n+1)/2) *
                    (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2)))
             lhs = np.zeros(rhs.shape)
-            for k in range(n + 1):
+            for k in range(int(n) + 1):
                 lhs += (sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) *
                         (m/beta)**(-m + k + 1))
             return A * lhs + rhs
 
-        return N * _lazywhere(n + 1 < m, (n, beta, m),
-                              np.vectorize(n_th_moment, otypes=[np.float64]),
-                              np.inf)
+        return N * xpx.apply_where(n + 1 < m, (n, beta, m),
+                                   np.vectorize(n_th_moment, otypes=[np.float64]),
+                                   fill_value=np.inf)
 
 
 crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
@@ -11426,7 +11838,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
-           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
+           vol. 1, 2023. :doi:`10.1080/27684520.2023.2279060`
 
     .. versionadded:: 0.19.0
 
@@ -11449,7 +11861,7 @@ class argus_gen(rv_continuous):
         return 1.0 - self._sf(x, chi)
 
     def _sf(self, x, chi):
-        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+        return _argus_phi(chi * np.sqrt((1 - x)*(1 + x))) / _argus_phi(chi)
 
     def _rvs(self, chi, size=None, random_state=None):
         chi = np.asarray(chi)
@@ -11763,11 +12175,9 @@ class rv_histogram(rv_continuous):
 
     def _entropy(self):
         """Compute entropy of distribution"""
-        res = _lazywhere(self._hpdf[1:-1] > 0.0,
-                         (self._hpdf[1:-1],),
-                         np.log,
-                         0.0)
-        return -np.sum(self._hpdf[1:-1] * res * self._hbin_widths)
+        hpdf = self._hpdf[1:-1]
+        res = xpx.apply_where(hpdf > 0.0, hpdf, np.log, fill_value=0.0)
+        return -np.sum(hpdf * res * self._hbin_widths)
 
     def _updated_ctor_param(self):
         """
@@ -11817,7 +12227,7 @@ class studentized_range_gen(rv_continuous):
            https://en.wikipedia.org/wiki/Studentized_range_distribution
     .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
            Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
-           378-389., doi:10.1590/1413-70542017414047716.
+           378-389., :doi:`10.1590/1413-70542017414047716`.
     .. [3] Harter, H. Leon. "Tables of Range and Studentized Range." The Annals
            of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122-1147.
            JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.
@@ -12066,6 +12476,8 @@ class rel_breitwigner_gen(rv_continuous):
         return np.clip(result, None, 1)
 
     def _munp(self, n, rho):
+        if n == 0:
+            return 1.
         if n == 1:
             # C = k / (2 * rho)
             C = np.sqrt(

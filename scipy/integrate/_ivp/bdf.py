@@ -194,6 +194,7 @@ class BDF(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
+
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, first_step=None, **extraneous):
@@ -204,7 +205,8 @@ class BDF(OdeSolver):
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         if first_step is None:
-            self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
+            self.h_abs = select_initial_step(self.fun, self.t, self.y,
+                                             t_bound, max_step, f,
                                              self.direction, 1,
                                              self.rtol, self.atol)
         else:
@@ -289,9 +291,8 @@ class BDF(OdeSolver):
                     return np.asarray(jac(t, y), dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
         else:
             if issparse(jac):
                 J = csc_matrix(jac, dtype=y0.dtype)
@@ -299,9 +300,8 @@ class BDF(OdeSolver):
                 J = np.asarray(jac, dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
-                raise ValueError("`jac` is expected to have shape {}, but "
-                                 "actually has {}."
-                                 .format((self.n, self.n), J.shape))
+                raise ValueError(f"`jac` is expected to have shape {(self.n, self.n)},"
+                                 f" but actually has {J.shape}.")
             jac_wrapped = None
 
         return jac_wrapped, J

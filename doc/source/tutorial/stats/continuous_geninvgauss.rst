@@ -15,6 +15,6 @@ The probability density function is given by:
 
 where :math:`x > 0` is a real number and the parameters :math:`p, b` satisfy :math:`b > 0`. :math:`K_v` is the modified Bessel function of second kind of order :math:`v` (`scipy.special.kv`).
 
-If `X` is `geninvgauss(p, b)`, then the distribution of `1/X` is `geninvgauss(-p, b)`. The inverse Gaussian distribution (`scipy.stats.invgauss`) is a special case with p=-1/2. 
+If `X` is ``geninvgauss(p, b)``, then the distribution of `1/X` is ``geninvgauss(-p, b)``. The inverse Gaussian distribution (`scipy.stats.invgauss`) is a special case with p=-1/2.
 
 Implementation: `scipy.stats.geninvgauss`

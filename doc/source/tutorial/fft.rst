@@ -27,7 +27,7 @@ Fast Fourier transforms
 1-D discrete Fourier transforms
 ___________________________________________
 
-The FFT `y[k]` of length :math:`N` of the length-:math:`N` sequence `x[n]` is
+The FFT ``y[k]`` of length :math:`N` of the length-:math:`N` sequence ``x[n]`` is
 defined as
 
 .. math::
@@ -68,11 +68,11 @@ In the example
 4.5
 
 which corresponds to :math:`y[0]`. For N even, the elements
-:math:`y[1]...y[N/2-1]` contain the positive-frequency terms, and the elements
-:math:`y[N/2]...y[N-1]` contain the negative-frequency terms, in order of
+:math:`y[1], ..., y[N/2-1]` contain the positive-frequency terms, and the elements
+:math:`y[N/2], ..., y[N-1]` contain the negative-frequency terms, in order of
 decreasingly negative frequency. For N odd, the elements
-:math:`y[1]...y[(N-1)/2]` contain the positive-frequency terms, and the
-elements :math:`y[(N+1)/2]...y[N-1]` contain the negative-frequency terms, in
+:math:`y[1], ..., y[(N-1)/2]` contain the positive-frequency terms, and the
+elements :math:`y[(N+1)/2], ..., y[N-1]` contain the negative-frequency terms, in
 order of decreasingly negative frequency.
 
 In case the sequence x is real-valued, the values of :math:`y[n]` for positive
@@ -107,9 +107,9 @@ the spectral domain this multiplication becomes convolution of the signal
 spectrum with the window function spectrum, being of form :math:`\sin(x)/x`.
 This convolution is the cause of an effect called spectral leakage (see
 [WPW]_). Windowing the signal with a dedicated window function helps mitigate
-spectral leakage. The example below uses a Blackman window from scipy.signal
-and shows the effect of windowing (the zero component of the FFT has been
-truncated for illustrative purposes).
+spectral leakage. The example below uses a Blackman window from
+:mod:`scipy.signal` and shows the effect of windowing
+(the zero component of the FFT has been truncated for illustrative purposes).
 
 .. plot::
     :alt: "This code generates an X-Y log-linear plot with amplitude on the Y axis vs frequency on the X axis. The first trace is the FFT with two peaks at 50 and 80 Hz and a noise floor around an amplitude of 1e-2. The second trace is the windowed FFT and has the same two peaks but the noise floor is much lower around an amplitude of 1e-7 due to the window function."
@@ -183,7 +183,7 @@ complex FFT coefficients :math:`y[n]` for only half of the frequency range. The
 remaining negative frequency components are implied by the Hermitian symmetry of
 the FFT for a real input (``y[n] = conj(y[-n])``). In case of N being even:
 :math:`[Re(y[0]) + 0j, y[1], ..., Re(y[N/2]) + 0j]`; in case of N being odd
-:math:`[Re(y[0]) + 0j, y[1], ..., y[N/2]`. The terms shown explicitly as
+:math:`[Re(y[0]) + 0j, y[1], ..., y[N/2]]`. The terms shown explicitly as
 :math:`Re(y[k]) + 0j` are restricted to be purely real since, by the hermitian
 property, they are their own complex conjugate.
 
@@ -369,7 +369,7 @@ ____________
 
 
 The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up to a
-factor of `2N`. The orthonormalized DCT-III is exactly the inverse of the
+factor of ``2N``. The orthonormalized DCT-III is exactly the inverse of the
 orthonormalized DCT- II. The function :func:`idct` performs the mappings between
 the DCT and IDCT types, as well as the correct normalization.
 
@@ -485,7 +485,7 @@ definition of the unnormalized DST-I (``norm=None``):
     \right), \qquad 0 \le k < N.
 
 Note also that the DST-I is only supported for input size > 1. The
-(unnormalized) DST-I is its own inverse, up to a factor of `2(N+1)`.
+(unnormalized) DST-I is its own inverse, up to a factor of ``2(N+1)``.
 
 Type II DST
 ___________

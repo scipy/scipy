@@ -1,3 +1,4 @@
+import pickle
 import tempfile
 import shutil
 import os
@@ -5,14 +6,14 @@ import os
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_warns,
+                           assert_equal,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
-                       multilinear, exponential, unilinear, quadratic,
-                       polynomial)
+                       OdrError, multilinear, exponential, unilinear,
+                       quadratic, polynomial)
 
 
 class TestODR:
@@ -32,12 +33,12 @@ class TestODR:
         linear = Model(self.empty_data_func)
 
         empty_dat = Data([], [])
-        assert_warns(OdrWarning, ODR,
-                     empty_dat, linear, beta0=beta0)
+        with pytest.warns(OdrWarning):
+            ODR(empty_dat, linear, beta0=beta0)
 
         empty_dat = RealData([], [])
-        assert_warns(OdrWarning, ODR,
-                     empty_dat, linear, beta0=beta0)
+        with pytest.warns(OdrWarning):
+            ODR(empty_dat, linear, beta0=beta0)
 
     # Explicit Example
 
@@ -563,3 +564,58 @@ class TestODR:
             odr_obj.set_job(fit_type=0, del_init=1)
             # Just make sure that it runs without raising an exception.
             odr_obj.run()
+
+    def test_pickling_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = Data(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_real_data(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        data = RealData(x, y)
+
+        obj_pickle = pickle.dumps(data)
+        del data
+        pickle.loads(obj_pickle)
+
+    def test_pickling_model(self):
+        obj_pickle = pickle.dumps(unilinear)
+        pickle.loads(obj_pickle)
+
+    def test_pickling_odr(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        odr_obj = ODR(Data(x, y), unilinear)
+
+        obj_pickle = pickle.dumps(odr_obj)
+        del odr_obj
+        pickle.loads(obj_pickle)
+
+    def test_pickling_output(self):
+        x = np.linspace(0.0, 5.0)
+        y = 1.0 * x + 2.0
+        output = ODR(Data(x, y), unilinear).run
+
+        obj_pickle = pickle.dumps(output)
+        del output
+        pickle.loads(obj_pickle)
+
+    def test_explicit_model_with_implicit_job(self):
+        """
+        Verify fix for gh-23763 that ODR doesn't segfault
+        """
+        x = np.linspace(0, 10, 10)
+        y = 2.0 + 3.0 * x
+
+        data = Data(x, y)
+        model = unilinear  # this is an explicit model
+
+        # job=1 is implicit, should raise on explicit model
+        with assert_raises(OdrError):
+            odr = ODR(data, model, job=1)
+            odr.run()

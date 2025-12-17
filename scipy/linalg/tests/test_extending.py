@@ -1,5 +1,6 @@
 import os
 import platform
+import sysconfig
 
 import numpy as np
 import pytest
@@ -9,10 +10,14 @@ from scipy.linalg.blas import cdotu  # type: ignore[attr-defined]
 from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
 
 
-@pytest.mark.fail_slow(60)
+@pytest.mark.parallel_threads_limit(4)  # 0.35 GiB per thread RAM usage
+@pytest.mark.fail_slow(120)
 # essential per https://github.com/scipy/scipy/pull/20487#discussion_r1567057247
 @pytest.mark.skipif(IS_EDITABLE,
                     reason='Editable install cannot find .pxd headers.')
+@pytest.mark.skipif((platform.system() == 'Windows' and
+                     sysconfig.get_config_var('Py_GIL_DISABLED')),
+                    reason='gh-22039')
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
                     reason="Can't start subprocess")
 @pytest.mark.skipif(cython is None, reason="requires cython")

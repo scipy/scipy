@@ -66,10 +66,13 @@ def get_poly_vinit(kind, dtype):
         poly_vinit = _vinit_dict.get(dtype)
 
     if poly_vinit is None:
-        _poly_dict[dtype] = np.empty((MAXDIM,), dtype=dtype)
-        _vinit_dict[dtype] = np.empty((MAXDIM, MAXDEG), dtype=dtype)
+        poly = np.empty((MAXDIM,), dtype=dtype)
+        vinit = np.empty((MAXDIM, MAXDEG), dtype=dtype)
 
-        _initialize_direction_numbers(_poly_dict[dtype], _vinit_dict[dtype], dtype)
+        _initialize_direction_numbers(poly, vinit, dtype)
+
+        _poly_dict[dtype] = poly
+        _vinit_dict[dtype] = vinit
 
         if kind == 'poly':
             poly_vinit = _poly_dict.get(dtype)
@@ -165,7 +168,7 @@ cdef int bit_length(uint_32_64 n) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) noexcept nogil:
+cdef int low_0_bit(cnp.uint64_t x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -191,10 +194,11 @@ cdef int low_0_bit(uint_32_64 x) noexcept nogil:
         Position of the right-most 0 bit.
 
     """
-    cdef int i = 0
-    while x & (1 << i) != 0:
+    cdef int i = 1
+    while x & 1UL:
+        x >>= 1
         i += 1
-    return i + 1
+    return i
 
 
 @cython.boundscheck(False)
@@ -297,7 +301,7 @@ def _draw(
     num_gen,
     const int dim,
     const cnp.float64_t scale,
-    uint_32_64[:, ::1] sv,
+    const uint_32_64[:, ::1] sv,
     uint_32_64[::1] quasi,
     cnp.float64_t[:, ::1] sample
 ):
@@ -314,7 +318,7 @@ cdef void draw(
     const uint_32_64 num_gen,
     const int dim,
     const cnp.float64_t scale,
-    uint_32_64[:, ::1] sv,
+    const uint_32_64[:, ::1] sv,
     uint_32_64[::1] quasi,
     cnp.float64_t[:, ::1] sample
 ) noexcept nogil:
@@ -336,7 +340,7 @@ cdef void draw(
 cpdef void _fast_forward(const uint_32_64 n,
                          const uint_32_64 num_gen,
                          const int dim,
-                         uint_32_64[:, ::1] sv,
+                         const uint_32_64[:, ::1] sv,
                          uint_32_64[::1] quasi) noexcept nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
@@ -350,7 +354,7 @@ cpdef void _fast_forward(const uint_32_64 n,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef uint_32_64 cdot_pow2(uint_32_64[::1] a) noexcept nogil:
+cdef uint_32_64 cdot_pow2(const uint_32_64[::1] a) noexcept nogil:
     cdef int i
     cdef int size = a.shape[0]
     cdef uint_32_64 z = 0
@@ -394,7 +398,7 @@ cpdef void _cscramble(const int dim,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
+cpdef void _fill_p_cumulative(const cnp.float_t[::1] p,
                               cnp.float_t[::1] p_cumulative) noexcept nogil:
     cdef int i
     cdef int len_p = p.shape[0]
@@ -408,8 +412,8 @@ cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _categorize(cnp.float_t[::1] draws,
-                       cnp.float_t[::1] p_cumulative,
+cpdef void _categorize(const cnp.float_t[::1] draws,
+                       const cnp.float_t[::1] p_cumulative,
                        cnp.intp_t[::1] result) noexcept nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
@@ -420,7 +424,7 @@ cpdef void _categorize(cnp.float_t[::1] draws,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int _find_index(cnp.float_t[::1] p_cumulative,
+cdef int _find_index(const cnp.float_t[::1] p_cumulative,
                      const int size,
                      const float value) noexcept nogil:
     cdef int l = 0
@@ -439,3 +443,9 @@ def _test_find_index(p_cumulative, size, value):
     # type: (np.ndarray, int, float) -> int
     """Wrapper for testing in python"""
     return _find_index(p_cumulative, size, value)
+
+
+def _test_low_0_bit(cnp.uint64_t x):
+    # type: (int,) -> int
+    """Wrapper for testing in python"""
+    return low_0_bit(x)

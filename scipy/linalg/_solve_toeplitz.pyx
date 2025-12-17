@@ -11,7 +11,7 @@ cdef fused dz:
     complex128_t
 
 
-def levinson(dz[::1] a, dz[::1] b):
+def levinson(const dz[::1] a, const dz[::1] b):
     """Solve a linear Toeplitz system using Levinson recursion.
 
     Parameters
