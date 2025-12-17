@@ -1,173 +1,20 @@
-#include "_matfuncs_expm.h"
-
-// For some reason these defs are not picked up from the header.
-#if defined(_MSC_VER)
-    // MSVC nonsense
-    #include <complex.h>
-    #define EXPM_Z _Dcomplex
-    #define EXPM_C _Fcomplex
-    #define CPLX_Z(real, imag) (_Cbuild(real, imag))
-    #define CPLX_C(real, imag) (_FCbuild(real, imag))
-#else
-    // C99-compliant compilers
-    #include <complex.h>
-    #define EXPM_Z double complex
-    #define EXPM_C float complex
-    #define CPLX_Z(real, imag) (real + imag*I)
-    #define CPLX_C(real, imag) (real + imag*I)
-#endif
-
+#include "_common_array_utils.h"
 
 static float snorm1(float*, float*, const Py_ssize_t);
 static double dnorm1(double*, double*, const Py_ssize_t);
-static float cnorm1(EXPM_C*, float*, const Py_ssize_t);
-static double znorm1(EXPM_Z*, double*, const Py_ssize_t);
+static float cnorm1(SCIPY_C*, float*, const Py_ssize_t);
+static double znorm1(SCIPY_Z*, double*, const Py_ssize_t);
 static float snorm1est(float*, int);
 static double dnorm1est(double*, int);
-static float cnorm1est(EXPM_C*, int);
-static double znorm1est(EXPM_Z*, int);
-
-
-// SciPy's "Better than nothing", recursive matrix transpose for square arrays
-
-static inline void swap_cf_s(float* restrict a, float* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
-{
-    Py_ssize_t i, j, ith_row, r2, c2;
-    float *bb = b;
-    float *aa = a;
-    if (r < 16) {
-        for (j = 0; j < c; j++)
-        {
-            ith_row = 0;
-            for (i = 0; i < r; i++) {
-            // Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i];
-                ith_row += n;
-            }
-            aa += n;
-            bb += 1;
-        }
-    } else {
-        // If tall
-        if (r > c)
-        {
-            r2 = r/2;
-            swap_cf_s(a, b, r2, c, n);
-            swap_cf_s(a + r2, b+(r2)*n, r-r2, c, n);
-        } else {  // Nope
-            c2 = c/2;
-            swap_cf_s(a, b, r, c2, n);
-            swap_cf_s(a+(c2)*n, b+c2, r, c-c2, n);
-        }
-    }
-}
-
-
-static inline void swap_cf_d(double* restrict a, double* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
-{
-    Py_ssize_t i, j, ith_row, r2, c2;
-    double *bb = b;
-    double *aa = a;
-    if (r < 16) {
-        for (j = 0; j < c; j++)
-        {
-            ith_row = 0;
-            for (i = 0; i < r; i++) {
-            // Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i];
-                ith_row += n;
-            }
-            aa += n;
-            bb += 1;
-        }
-    } else {
-        // If tall
-        if (r > c)
-        {
-            r2 = r/2;
-            swap_cf_d(a, b, r2, c, n);
-            swap_cf_d(a + r2, b+(r2)*n, r-r2, c, n);
-        } else {  // Nope
-            c2 = c/2;
-            swap_cf_d(a, b, r, c2, n);
-            swap_cf_d(a+(c2)*n, b+c2, r, c-c2, n);
-        }
-    }
-}
-
-
-static inline void swap_cf_c(EXPM_C* restrict a, EXPM_C* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
-{
-    Py_ssize_t i, j, ith_row, r2, c2;
-    EXPM_C *bb = b;
-    EXPM_C *aa = a;
-    if (r < 16) {
-        for (j = 0; j < c; j++)
-        {
-            ith_row = 0;
-            for (i = 0; i < r; i++) {
-            // Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i];
-                ith_row += n;
-            }
-            aa += n;
-            bb += 1;
-        }
-    } else {
-        // If tall
-        if (r > c)
-        {
-            r2 = r/2;
-            swap_cf_c(a, b, r2, c, n);
-            swap_cf_c(a + r2, b+(r2)*n, r-r2, c, n);
-        } else {  // Nope
-            c2 = c/2;
-            swap_cf_c(a, b, r, c2, n);
-            swap_cf_c(a+(c2)*n, b+c2, r, c-c2, n);
-        }
-    }
-}
-
-
-static inline void swap_cf_z(EXPM_Z* restrict a, EXPM_Z* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
-{
-    Py_ssize_t i, j, ith_row, r2, c2;
-    EXPM_Z *bb = b;
-    EXPM_Z *aa = a;
-    if (r < 16) {
-        for (j = 0; j < c; j++)
-        {
-            ith_row = 0;
-            for (i = 0; i < r; i++) {
-            // Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i];
-                ith_row += n;
-            }
-            aa += n;
-            bb += 1;
-        }
-    } else {
-        // If tall
-        if (r > c)
-        {
-            r2 = r/2;
-            swap_cf_z(a, b, r2, c, n);
-            swap_cf_z(a + r2, b+(r2)*n, r-r2, c, n);
-        } else {  // Nope
-            c2 = c/2;
-            swap_cf_z(a, b, r, c2, n);
-            swap_cf_z(a+(c2)*n, b+c2, r, c-c2, n);
-        }
-    }
-}
+static float cnorm1est(SCIPY_C*, int);
+static double znorm1est(SCIPY_Z*, int);
 
 
 /*******************************************************************************
  *******************************************************************************
  *******************************************************************************/
 
-
-float
+ static float
 snorm1(float* A, float* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
@@ -181,7 +28,7 @@ snorm1(float* A, float* work, const Py_ssize_t n)
     return temp;
 }
 
-double
+static double
 dnorm1(double* A, double* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
@@ -195,8 +42,8 @@ dnorm1(double* A, double* work, const Py_ssize_t n)
     return temp;
 }
 
-float
-cnorm1(EXPM_C* A, float* work, const Py_ssize_t n)
+static float
+cnorm1(SCIPY_C* A, float* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     float temp = 0.0;
@@ -209,8 +56,8 @@ cnorm1(EXPM_C* A, float* work, const Py_ssize_t n)
     return temp;
 }
 
-double
-znorm1(EXPM_Z* A, double* work, const Py_ssize_t n)
+static double
+znorm1(SCIPY_Z* A, double* work, const Py_ssize_t n)
 {
     Py_ssize_t i, j;
     double temp = 0.0;
@@ -223,7 +70,7 @@ znorm1(EXPM_Z* A, double* work, const Py_ssize_t n)
     return temp;
 }
 
-float
+static float
 snorm1est(float* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
@@ -255,7 +102,7 @@ snorm1est(float* A, int n)
 }
 
 
-double
+static double
 dnorm1est(double* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
@@ -287,15 +134,15 @@ dnorm1est(double* A, int n)
 }
 
 
-float
-cnorm1est(EXPM_C* A, int n)
+static float
+cnorm1est(SCIPY_C* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     int isave[3];
     float est;
-    EXPM_C dbl1 = CPLX_C(1.0, 0.0), dbl0 = CPLX_C(0.0, 0.0);
+    SCIPY_C dbl1 = CPLX_C(1.0, 0.0), dbl0 = CPLX_C(0.0, 0.0);
     char* opA;
-    EXPM_C* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_C));
+    SCIPY_C* work_arr = PyMem_RawMalloc(3*n*sizeof(SCIPY_C));
     if (!work_arr) { return -100; }
     // clacon( n, v, x, est, kase )
     clacn2_(&n, work_arr, &work_arr[n], &est, &kase, isave);
@@ -316,15 +163,15 @@ cnorm1est(EXPM_C* A, int n)
 }
 
 
-double
-znorm1est(EXPM_Z* A, int n)
+static double
+znorm1est(SCIPY_Z* A, int n)
 {
     int from = 2*n, to = n, kase = 0, tempint, int1 = 1;
     int isave[3];
     double est;
-    EXPM_Z dbl1 = CPLX_Z(1.0, 0.0), dbl0 = CPLX_Z(0.0, 0.0);
+    SCIPY_Z dbl1 = CPLX_Z(1.0, 0.0), dbl0 = CPLX_Z(0.0, 0.0);
     char* opA;
-    EXPM_Z* work_arr = PyMem_RawMalloc(3*n*sizeof(EXPM_Z));
+    SCIPY_Z* work_arr = PyMem_RawMalloc(3*n*sizeof(SCIPY_Z));
     if (!work_arr) { return -100; }
     // zlacon( n, v, x, est, kase )
     zlacn2_(&n, work_arr, &work_arr[n], &est, &kase, isave);
@@ -349,7 +196,7 @@ znorm1est(EXPM_Z* A, int n)
  *******************************************************************************/
 
 
-void
+static void
 pick_pade_structure_s(float* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
@@ -570,7 +417,7 @@ FREE_EXIT:
 }
 
 
-void
+static void
 pick_pade_structure_d(double* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
@@ -791,15 +638,15 @@ FREE_EXIT:
 }
 
 
-void
-pick_pade_structure_c(EXPM_C* Am, const Py_ssize_t size_n, int* m, int* s)
+static void
+pick_pade_structure_c(SCIPY_C* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
     int lm = 0, int1 = 1, n = (int)size_n;
     float normA;
     float dbl1 = 1.0, dbl0 = 0.0;
-    EXPM_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0);
+    SCIPY_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0);
     float d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     float theta[5];
     float coeff[5];
@@ -1021,15 +868,15 @@ FREE_EXIT:
 }
 
 
-void
-pick_pade_structure_z(EXPM_Z* Am, const Py_ssize_t size_n, int* m, int* s)
+static void
+pick_pade_structure_z(SCIPY_Z* Am, const Py_ssize_t size_n, int* m, int* s)
 {
     Py_ssize_t i, j;
     Py_ssize_t dims[2];
     int lm = 0, int1 = 1, n = (int)size_n;
     double normA;
     double dbl1 = 1.0, dbl0 = 0.0;
-    EXPM_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0);
+    SCIPY_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0);
     double d4, d6, d8, d10, eta0, eta1, eta2, eta3, eta4, two_pow_s, temp, test;
     double theta[5];
     double coeff[5];
@@ -1257,7 +1104,7 @@ FREE_EXIT:
  *******************************************************************************
  *******************************************************************************/
 
-void
+static void
 pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
@@ -1477,7 +1324,8 @@ pade_UV_calc_s(float* Am, const Py_ssize_t size_n, const int m, int* info)
     return;
 }
 
-void
+
+static void
 pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
@@ -1701,8 +1549,8 @@ pade_UV_calc_d(double* Am, const Py_ssize_t size_n, const int m, int* info)
 }
 
 
-void
-pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
+static void
+pade_UV_calc_c(SCIPY_C* Am, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -1713,11 +1561,11 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
     int n2 = n*n, i, j;
     float b[13];
     float two = 2.0;
-    EXPM_C temp1, temp2, temp3, cb1;
-    EXPM_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0), cdblm1 = CPLX_C(-1.0, 0.0);
+    SCIPY_C temp1, temp2, temp3, cb1;
+    SCIPY_C cdbl1 = CPLX_C(1.0, 0.0), cdbl0 = CPLX_C(0.0, 0.0), cdblm1 = CPLX_C(-1.0, 0.0);
 
 #if defined(_MSC_VER)
-    EXPM_C inter1, inter2, inter3, inter4;
+    SCIPY_C inter1, inter2, inter3, inter4;
 #endif
 
     int* ipiv = PyMem_RawMalloc(n*sizeof(int));
@@ -1947,7 +1795,7 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        EXPM_C* work = PyMem_RawMalloc(n2*sizeof(EXPM_C));
+        SCIPY_C* work = PyMem_RawMalloc(n2*sizeof(SCIPY_C));
         if (!work) { *info = -12; return; }
 
         for (i = 0; i < n; i++)
@@ -2043,8 +1891,8 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
 }
 
 
-void
-pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
+static void
+pade_UV_calc_z(SCIPY_Z* Am, const Py_ssize_t size_n, const int m, int* info)
 {
     // U, V computation.
     // We utilize the unused powers of Am as scratch memory depending on m value.
@@ -2055,11 +1903,11 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
     int n2 = n*n, i, j;
     double b[13];
     double two = 2.0;
-    EXPM_Z temp1, temp2, temp3, cb1;
-    EXPM_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0), cdblm1 = CPLX_Z(-1.0, 0.0);
+    SCIPY_Z temp1, temp2, temp3, cb1;
+    SCIPY_Z cdbl1 = CPLX_Z(1.0, 0.0), cdbl0 = CPLX_Z(0.0, 0.0), cdblm1 = CPLX_Z(-1.0, 0.0);
 
 #if defined(_MSC_VER)
-    EXPM_Z inter1, inter2, inter3, inter4;
+    SCIPY_Z inter1, inter2, inter3, inter4;
 #endif
 
     int* ipiv = PyMem_RawMalloc(n*sizeof(int));
@@ -2283,7 +2131,7 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
         // K = Am[0], L = Am[3], M = work, N = Am[2]
         // P = Am[3], Q = Am[4], R = Am[1]
 
-        EXPM_Z* work = PyMem_RawMalloc(n2*sizeof(EXPM_Z));
+        SCIPY_Z* work = PyMem_RawMalloc(n2*sizeof(SCIPY_Z));
         if (!work) { *info = -12; return; }
 
         for (i = 0; i < n; i++)
@@ -2377,7 +2225,662 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
     return;
 }
 
-#undef EXPM_Z
-#undef EXPM_C
-#undef CPLX_Z
-#undef CPLX_C
+
+void
+matrix_exponential_s(PyArrayObject* a, float* restrict result, int* info)
+{
+    int m = 0, s = 0, is_lower = 0;
+    npy_intp lband = 0, uband = 0;
+    // --------------------------------------------------------------------
+    // Input Array Attributes
+    // --------------------------------------------------------------------
+    float* restrict a_data = (float*)PyArray_DATA(a);
+    int ndim = PyArray_NDIM(a);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(a);      // Array shape
+    int n = (int)shape[ndim - 1];                // Slice size
+    npy_intp* restrict strides = PyArray_STRIDES(a);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    float* restrict Am = malloc(sizeof(float)*(n*n*5 + 2*n));
+    if (Am == NULL) { *info = -100; return; }
+    float* restrict Am1 = &Am[n*n];
+    // These two arrays are only used for the triangular case for scaling/squaring
+    float* restrict diag_aw = &Am[5*n*n];
+    float* restrict sd = &Am[5*n*n + n];
+
+    /*====================================================================
+    |                    MAIN nxn SLICE LOOP                             |
+    ====================================================================*/
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        // See sqrtm for explanation of the loop and offset calculations
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        float* restrict slice_ptr = (float*)(a_data + (offset/sizeof(float)));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(float)) + (j*strides[ndim - 1]/sizeof(float)));
+            }
+        }
+        bandwidth_s(Am1, n, n, &lband, &uband);
+        if ((lband == 0) && (uband == 0)) {
+            for (npy_intp i = 0; i < n; i++) {
+                result[idx*n*n + i*n + i] = expf(Am1[i*n + i]);
+            }
+            continue;
+        }
+        swap_cf_s(Am1, Am, n, n, n);
+
+
+        is_lower = (uband == 0);
+        if ((lband == 0) || (uband == 0)) {
+            if (is_lower) {
+                // Column-major: iterate columns, grab diagonal and the subdiagonal elements
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    diag_aw[i] = Am[i * n + i];         // A[i, i]
+                    sd[i] = Am[i * n + (i + 1)];        // A[i+1, i]
+                }
+                diag_aw[n - 1] = Am[(n - 1) * n + (n - 1)];  // last diagonal
+            } else {
+                // Column-major: iterate columns, grab superdiagonal and diagonal elements
+                diag_aw[0] = Am[0];  // first diagonal A[0,0]
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    sd[i] = Am[(i + 1) * n + i];        // A[i, i+1]
+                    diag_aw[i + 1] = Am[(i + 1) * n + (i + 1)];  // A[i+1, i+1]
+                }
+            }
+        }
+
+        pick_pade_structure_s(Am, n, &m, &s);
+        if (m < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+        pade_UV_calc_s(Am, n, m, info);
+        if (*info < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+
+        float* temp1 = Am;
+        float* temp2 = Am1;
+        if (s > 0) {
+            // Squaring needed.
+            if ((lband == 0) || (uband == 0)) {
+                // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
+                for (int iter = s - 1; iter >= 0; iter--) {
+                    sgemm_("N", "N", &n, &n, &n, &(float){1.0f}, temp1, &n, temp1, &n, &(float){0.0f}, temp2, &n);
+                    float* swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+
+                    float scale = exp2f(-(float)iter);  // 2^(-iter)
+
+                    if (is_lower) {
+
+                        for (npy_intp i = 0; i < n - 1; i++) {
+                            float d_i = diag_aw[i] * scale;
+                            float d_ip1 = diag_aw[i + 1] * scale;
+                            float diff = d_ip1 - d_i;
+                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : (expf(d_ip1) - expf(d_i)) / diff;
+                            temp1[i * n + i] = expf(d_i);                       // diagonal
+                            temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
+                        }
+                        temp1[(n-1) * n + (n-1)] = expf(diag_aw[n-1] * scale);  // last diagonal
+
+                    } else {
+
+                        temp1[0] = expf(diag_aw[0] * scale);                    // first diagonal
+                        for (npy_intp i = 0; i < n - 1; i++) {
+                            float d_i = diag_aw[i] * scale;
+                            float d_ip1 = diag_aw[i + 1] * scale;
+                            float diff = d_ip1 - d_i;
+                            float exp_sinch = (diff == 0.0f) ? expf(d_i) : (expf(d_ip1) - expf(d_i)) / diff;
+                            temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = expf(d_ip1);         // diagonal
+                        }
+
+                    }
+                }
+            } else {
+                // General dense case, compute A**(2**s) by repeated squaring.
+                for (int i = 0; i < s; i++) {
+                    sgemm_("N", "N", &n, &n, &n, &(float){1.0f}, temp1, &n, temp1, &n, &(float){0.0f}, temp2, &n);
+                    // Swap pointers
+                    float *swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+                }
+            }
+        }
+
+        // Copy back the result to output array
+        swap_cf_s(temp1, &result[idx*n*n], n, n, n);
+    }
+
+    free(Am);
+}
+
+
+void
+matrix_exponential_d(PyArrayObject* a, double* restrict result, int* info)
+{
+    int m = 0, s = 0, is_lower = 0;
+    npy_intp lband = 0, uband = 0;
+    // --------------------------------------------------------------------
+    // Input Array Attributes
+    // --------------------------------------------------------------------
+    double* restrict a_data = (double*)PyArray_DATA(a);
+    int ndim = PyArray_NDIM(a);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(a);      // Array shape
+    int n = (int)shape[ndim - 1];                // Slice size
+    npy_intp* restrict strides = PyArray_STRIDES(a);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    double* restrict Am = malloc(sizeof(double)*(n*n*5 + 2*n));
+    if (Am == NULL) { *info = -100; return; }
+    double* restrict Am1 = &Am[n*n];
+    // These two arrays are only used for the triangular case for scaling/squaring
+    double* restrict diag_aw = &Am[5*n*n];
+    double* restrict sd = &Am[5*n*n + n];
+
+    /*====================================================================
+    |                    MAIN nxn SLICE LOOP                             |
+    ====================================================================*/
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        // See sqrtm for explanation of the loop and offset calculations
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        double* restrict slice_ptr = (double*)(a_data + (offset/sizeof(double)));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(double)) + (j*strides[ndim - 1]/sizeof(double)));
+            }
+        }
+        bandwidth_d(Am1, n, n, &lband, &uband);
+        if ((lband == 0) && (uband == 0)) {
+            for (npy_intp i = 0; i < n; i++) {
+                result[idx*n*n + i*n + i] = exp(Am1[i*n + i]);
+            }
+            continue;
+        }
+        swap_cf_d(Am1, Am, n, n, n);
+
+
+        is_lower = (uband == 0);
+        if ((lband == 0) || (uband == 0)) {
+            if (is_lower) {
+                // Column-major: iterate columns, grab diagonal and the subdiagonal elements
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    diag_aw[i] = Am[i * n + i];         // A[i, i]
+                    sd[i] = Am[i * n + (i + 1)];        // A[i+1, i]
+                }
+                diag_aw[n - 1] = Am[(n - 1) * n + (n - 1)];  // last diagonal
+            } else {
+                // Column-major: iterate columns, grab superdiagonal and diagonal elements
+                diag_aw[0] = Am[0];  // first diagonal A[0,0]
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    sd[i] = Am[(i + 1) * n + i];        // A[i, i+1]
+                    diag_aw[i + 1] = Am[(i + 1) * n + (i + 1)];  // A[i+1, i+1]
+                }
+            }
+        }
+
+        pick_pade_structure_d(Am, n, &m, &s);
+        if (m < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+        pade_UV_calc_d(Am, n, m, info);
+        if (*info < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+
+        double* temp1 = Am;
+        double* temp2 = Am1;
+        if (s > 0) {
+            // Squaring needed.
+            if ((lband == 0) || (uband == 0)) {
+                // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
+                for (int iter = s - 1; iter >= 0; iter--) {
+                    dgemm_("N", "N", &n, &n, &n, &(double){1.0}, temp1, &n, temp1, &n, &(double){0.0}, temp2, &n);
+                    double* swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+
+                    double scale = exp2(-(double)iter);  // 2^(-iter)
+
+                    if (is_lower) {
+
+                        for (npy_intp i = 0; i < n - 1; i++) {
+                            double d_i = diag_aw[i] * scale;
+                            double d_ip1 = diag_aw[i + 1] * scale;
+                            double diff = d_ip1 - d_i;
+                            double exp_sinch = (diff == 0.0) ? exp(d_i) : (exp(d_ip1) - exp(d_i)) / diff;
+                            temp1[i * n + i] = exp(d_i);                        // diagonal
+                            temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
+                        }
+                        temp1[(n-1) * n + (n-1)] = exp(diag_aw[n-1] * scale);   // last diagonal
+
+                    } else {
+
+                        temp1[0] = exp(diag_aw[0] * scale);                     // first diagonal
+                        for (npy_intp i = 0; i < n - 1; i++) {
+                            double d_i = diag_aw[i] * scale;
+                            double d_ip1 = diag_aw[i + 1] * scale;
+                            double diff = d_ip1 - d_i;
+                            double exp_sinch = (diff == 0.0) ? exp(d_i) : (exp(d_ip1) - exp(d_i)) / diff;
+                            temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = exp(d_ip1);          // diagonal
+                        }
+
+                    }
+                }
+            } else {
+                // General dense case, compute A**(2**s) by repeated squaring.
+                for (int i = 0; i < s; i++) {
+                    dgemm_("N", "N", &n, &n, &n, &(double){1.0}, temp1, &n, temp1, &n, &(double){0.0}, temp2, &n);
+                    // Swap pointers
+                    double *swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+                }
+            }
+        }
+
+        // Copy back the result to output array
+        swap_cf_d(temp1, &result[idx*n*n], n, n, n);
+    }
+
+    free(Am);
+}
+
+
+void
+matrix_exponential_c(PyArrayObject* a, SCIPY_C* restrict result, int* info)
+{
+    int m = 0, s = 0, is_lower = 0;
+    npy_intp lband = 0, uband = 0;
+    // --------------------------------------------------------------------
+    // Input Array Attributes
+    // --------------------------------------------------------------------
+    SCIPY_C* restrict a_data = (SCIPY_C*)PyArray_DATA(a);
+    int ndim = PyArray_NDIM(a);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(a);      // Array shape
+    int n = (int)shape[ndim - 1];                // Slice size
+    npy_intp* restrict strides = PyArray_STRIDES(a);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    SCIPY_C* restrict Am = malloc(sizeof(SCIPY_C)*(n*n*5 + 2*n));
+    if (Am == NULL) { *info = -100; return; }
+    SCIPY_C* restrict Am1 = &Am[n*n];
+    // These two arrays are only used for the triangular case for scaling/squaring
+    SCIPY_C* restrict diag_aw = &Am[5*n*n];
+    SCIPY_C* restrict sd = &Am[5*n*n + n];
+
+    /*====================================================================
+    |                    MAIN nxn SLICE LOOP                             |
+    ====================================================================*/
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        // See sqrtm for explanation of the loop and offset calculations
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        SCIPY_C* restrict slice_ptr = (SCIPY_C*)(a_data + (offset/sizeof(SCIPY_C)));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_C)) + (j*strides[ndim - 1]/sizeof(SCIPY_C)));
+            }
+        }
+        bandwidth_c(Am1, n, n, &lband, &uband);
+        if ((lband == 0) && (uband == 0)) {
+            for (npy_intp i = 0; i < n; i++) {
+                result[idx*n*n + i*n + i] = cexpf(Am1[i*n + i]);
+            }
+            continue;
+        }
+        swap_cf_c(Am1, Am, n, n, n);
+
+
+        is_lower = (uband == 0);
+        if ((lband == 0) || (uband == 0)) {
+            if (is_lower) {
+                // Column-major: iterate columns, grab diagonal and the subdiagonal elements
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    diag_aw[i] = Am[i * n + i];         // A[i, i]
+                    sd[i] = Am[i * n + (i + 1)];        // A[i+1, i]
+                }
+                diag_aw[n - 1] = Am[(n - 1) * n + (n - 1)];  // last diagonal
+            } else {
+                // Column-major: iterate columns, grab superdiagonal and diagonal elements
+                diag_aw[0] = Am[0];  // first diagonal A[0,0]
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    sd[i] = Am[(i + 1) * n + i];        // A[i, i+1]
+                    diag_aw[i + 1] = Am[(i + 1) * n + (i + 1)];  // A[i+1, i+1]
+                }
+            }
+        }
+
+        pick_pade_structure_c(Am, n, &m, &s);
+        if (m < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+        pade_UV_calc_c(Am, n, m, info);
+        if (*info < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+
+        SCIPY_C* temp1 = Am;
+        SCIPY_C* temp2 = Am1;
+        if (s > 0) {
+            // Squaring needed.
+            if ((lband == 0) || (uband == 0)) {
+                // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
+                for (int iter = s - 1; iter >= 0; iter--) {
+                    cgemm_("N", "N", &n, &n, &n, &(SCIPY_C){CPLX_C(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(SCIPY_C){CPLX_C(0.0f, 0.0f)}, temp2, &n);
+                    SCIPY_C* swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+
+                    float scale = exp2f(-(float)iter);  // 2^(-iter)
+
+                    if (is_lower) {
+
+                        for (npy_intp i = 0; i < n - 1; i++) {
+#if defined(_MSC_VER)
+                            SCIPY_C d_i = _FCmulcr(diag_aw[i], scale);
+                            SCIPY_C d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
+                            SCIPY_C diff = CPLX_C(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
+                            SCIPY_C exp_d_i = cexpf(d_i);
+                            SCIPY_C exp_d_ip1 = cexpf(d_ip1);
+                            SCIPY_C exp_diff = CPLX_C(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
+                            float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
+                            SCIPY_C diff_inv = CPLX_C(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
+                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            temp1[i * n + i] = exp_d_i;                                            // diagonal
+                            temp1[i * n + (i + 1)] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale);  // subdiagonal
+#else
+                            SCIPY_C d_i = diag_aw[i] * scale;
+                            SCIPY_C d_ip1 = diag_aw[i + 1] * scale;
+                            SCIPY_C diff = d_ip1 - d_i;
+                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            temp1[i * n + i] = cexpf(d_i);                      // diagonal
+                            temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
+#endif
+                        }
+#if defined(_MSC_VER)
+                        temp1[(n-1) * n + (n-1)] = cexpf(_FCmulcr(diag_aw[n-1], scale)); // last diagonal
+#else
+                        temp1[(n-1) * n + (n-1)] = cexpf(diag_aw[n-1] * scale); // last diagonal
+#endif
+
+                    } else {
+
+#if defined(_MSC_VER)
+                        temp1[0] = cexpf(_FCmulcr(diag_aw[0], scale));          // first diagonal
+#else
+                        temp1[0] = cexpf(diag_aw[0] * scale);                   // first diagonal
+#endif
+                        for (npy_intp i = 0; i < n - 1; i++) {
+#if defined(_MSC_VER)
+                            SCIPY_C d_i = _FCmulcr(diag_aw[i], scale);
+                            SCIPY_C d_ip1 = _FCmulcr(diag_aw[i + 1], scale);
+                            SCIPY_C diff = CPLX_C(crealf(d_ip1) - crealf(d_i), cimagf(d_ip1) - cimagf(d_i));
+                            SCIPY_C exp_d_i = cexpf(d_i);
+                            SCIPY_C exp_d_ip1 = cexpf(d_ip1);
+                            SCIPY_C exp_diff = CPLX_C(crealf(exp_d_ip1) - crealf(exp_d_i), cimagf(exp_d_ip1) - cimagf(exp_d_i));
+                            float diff_abs2 = crealf(diff)*crealf(diff) + cimagf(diff)*cimagf(diff);
+                            SCIPY_C diff_inv = CPLX_C(crealf(diff)/diff_abs2, -cimagf(diff)/diff_abs2);
+                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? exp_d_i : _FCmulcc(exp_diff, diff_inv);
+                            temp1[(i + 1) * n + i] = _FCmulcr(_FCmulcc(exp_sinch, sd[i]), scale); // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                             // diagonal
+#else
+                            SCIPY_C d_i = diag_aw[i] * scale;
+                            SCIPY_C d_ip1 = diag_aw[i + 1] * scale;
+                            SCIPY_C diff = d_ip1 - d_i;
+                            SCIPY_C exp_sinch = (cabsf(diff) == 0.0f) ? cexpf(d_i) : (cexpf(d_ip1) - cexpf(d_i)) / diff;
+                            temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = cexpf(d_ip1);        // diagonal
+#endif
+                        }
+
+                    }
+                }
+            } else {
+                // General dense case, compute A**(2**s) by repeated squaring.
+                for (int i = 0; i < s; i++) {
+                    cgemm_("N", "N", &n, &n, &n, &(SCIPY_C){CPLX_C(1.0f, 0.0f)}, temp1, &n, temp1, &n, &(SCIPY_C){CPLX_C(0.0f, 0.0f)}, temp2, &n);
+                    // Swap pointers
+                    SCIPY_C *swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+                }
+            }
+        }
+
+        // Copy back the result to output array
+        swap_cf_c(temp1, &result[idx*n*n], n, n, n);
+    }
+
+    free(Am);
+}
+
+
+void
+matrix_exponential_z(PyArrayObject* a, SCIPY_Z* restrict result, int* info)
+{
+    int m = 0, s = 0, is_lower = 0;
+    npy_intp lband = 0, uband = 0;
+    // --------------------------------------------------------------------
+    // Input Array Attributes
+    // --------------------------------------------------------------------
+    SCIPY_Z* restrict a_data = (SCIPY_Z*)PyArray_DATA(a);
+    int ndim = PyArray_NDIM(a);              // Number of dimensions
+    npy_intp* shape = PyArray_SHAPE(a);      // Array shape
+    int n = (int)shape[ndim - 1];                // Slice size
+    npy_intp* restrict strides = PyArray_STRIDES(a);
+    // Get the number of slices to traverse if more than one; np.prod(shape[:-2])
+    npy_intp outer_size = 1;
+    if (ndim > 2)
+    {
+        for (int i = 0; i < ndim - 2; i++) { outer_size *= shape[i];}
+    }
+
+    SCIPY_Z* restrict Am = malloc(sizeof(SCIPY_Z)*(n*n*5 + 2*n));
+    if (Am == NULL) { *info = -100; return; }
+    SCIPY_Z* restrict Am1 = &Am[n*n];
+    // These two arrays are only used for the triangular case for scaling/squaring
+    SCIPY_Z* restrict diag_aw = &Am[5*n*n];
+    SCIPY_Z* restrict sd = &Am[5*n*n + n];
+
+    /*====================================================================
+    |                    MAIN nxn SLICE LOOP                             |
+    ====================================================================*/
+    for (npy_intp idx = 0; idx < outer_size; idx++) {
+        // See sqrtm for explanation of the loop and offset calculations
+        npy_intp offset = 0;
+        npy_intp temp_idx = idx;
+        for (int i = ndim - 3; i >= 0; i--) {
+            offset += (temp_idx % shape[i]) * strides[i];
+            temp_idx /= shape[i];
+        }
+        SCIPY_Z* restrict slice_ptr = (SCIPY_Z*)(a_data + (offset/sizeof(SCIPY_Z)));
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                Am1[i * n + j] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(SCIPY_Z)) + (j*strides[ndim - 1]/sizeof(SCIPY_Z)));
+            }
+        }
+        bandwidth_z(Am1, n, n, &lband, &uband);
+        if ((lband == 0) && (uband == 0)) {
+            for (npy_intp i = 0; i < n; i++) {
+                result[idx*n*n + i*n + i] = cexp(Am1[i*n + i]);
+            }
+            continue;
+        }
+        swap_cf_z(Am1, Am, n, n, n);
+
+
+        is_lower = (uband == 0);
+        if ((lband == 0) || (uband == 0)) {
+            if (is_lower) {
+                // Column-major: iterate columns, grab diagonal and the subdiagonal elements
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    diag_aw[i] = Am[i * n + i];         // A[i, i]
+                    sd[i] = Am[i * n + (i + 1)];        // A[i+1, i]
+                }
+                diag_aw[n - 1] = Am[(n - 1) * n + (n - 1)];  // last diagonal
+            } else {
+                // Column-major: iterate columns, grab superdiagonal and diagonal elements
+                diag_aw[0] = Am[0];  // first diagonal A[0,0]
+                for (npy_intp i = 0; i < n - 1; i++) {
+                    sd[i] = Am[(i + 1) * n + i];        // A[i, i+1]
+                    diag_aw[i + 1] = Am[(i + 1) * n + (i + 1)];  // A[i+1, i+1]
+                }
+            }
+        }
+
+        pick_pade_structure_z(Am, n, &m, &s);
+        if (m < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+        pade_UV_calc_z(Am, n, m, info);
+        if (*info < 0) {
+            free(Am);
+            *info = -100 + *info;
+            return;
+        }
+
+        SCIPY_Z* temp1 = Am;
+        SCIPY_Z* temp2 = Am1;
+        if (s > 0) {
+            // Squaring needed.
+            if ((lband == 0) || (uband == 0)) {
+                // Triangular case - use Fragment 2.1 of Al-Mohy and Higham (2009)
+                for (int iter = s - 1; iter >= 0; iter--) {
+                    zgemm_("N", "N", &n, &n, &n, &(SCIPY_Z){CPLX_Z(1.0, 0.0)}, temp1, &n, temp1, &n, &(SCIPY_Z){CPLX_Z(0.0, 0.0)}, temp2, &n);
+                    SCIPY_Z* swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+
+                    double scale = exp2(-(double)iter);  // 2^(-iter)
+
+                    if (is_lower) {
+
+                        for (npy_intp i = 0; i < n - 1; i++) {
+#if defined(_MSC_VER)
+                            SCIPY_Z d_i = _Cmulcr(diag_aw[i], scale);
+                            SCIPY_Z d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
+                            SCIPY_Z diff = CPLX_Z(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
+                            SCIPY_Z exp_d_i = cexp(d_i);
+                            SCIPY_Z exp_d_ip1 = cexp(d_ip1);
+                            SCIPY_Z exp_diff = CPLX_Z(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
+                            double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
+                            SCIPY_Z diff_inv = CPLX_Z(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
+                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            temp1[i * n + i] = exp_d_i;                                          // diagonal
+                            temp1[i * n + (i + 1)] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // subdiagonal
+#else
+                            SCIPY_Z d_i = diag_aw[i] * scale;
+                            SCIPY_Z d_ip1 = diag_aw[i + 1] * scale;
+                            SCIPY_Z diff = d_ip1 - d_i;
+                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            temp1[i * n + i] = cexp(d_i);                       // diagonal
+                            temp1[i * n + (i + 1)] = exp_sinch * sd[i] * scale; // subdiagonal
+#endif
+                        }
+#if defined(_MSC_VER)
+                        temp1[(n-1) * n + (n-1)] = cexp(_Cmulcr(diag_aw[n-1], scale)); // last diagonal
+#else
+                        temp1[(n-1) * n + (n-1)] = cexp(diag_aw[n-1] * scale); // last diagonal
+#endif
+
+                    } else {
+
+#if defined(_MSC_VER)
+                        temp1[0] = cexp(_Cmulcr(diag_aw[0], scale));           // first diagonal
+#else
+                        temp1[0] = cexp(diag_aw[0] * scale);                    // first diagonal
+#endif
+                        for (npy_intp i = 0; i < n - 1; i++) {
+#if defined(_MSC_VER)
+                            SCIPY_Z d_i = _Cmulcr(diag_aw[i], scale);
+                            SCIPY_Z d_ip1 = _Cmulcr(diag_aw[i + 1], scale);
+                            SCIPY_Z diff = CPLX_Z(creal(d_ip1) - creal(d_i), cimag(d_ip1) - cimag(d_i));
+                            SCIPY_Z exp_d_i = cexp(d_i);
+                            SCIPY_Z exp_d_ip1 = cexp(d_ip1);
+                            SCIPY_Z exp_diff = CPLX_Z(creal(exp_d_ip1) - creal(exp_d_i), cimag(exp_d_ip1) - cimag(exp_d_i));
+                            double diff_abs2 = creal(diff)*creal(diff) + cimag(diff)*cimag(diff);
+                            SCIPY_Z diff_inv = CPLX_Z(creal(diff)/diff_abs2, -cimag(diff)/diff_abs2);
+                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? exp_d_i : _Cmulcc(exp_diff, diff_inv);
+                            temp1[(i + 1) * n + i] = _Cmulcr(_Cmulcc(exp_sinch, sd[i]), scale); // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = exp_d_ip1;                           // diagonal
+#else
+                            SCIPY_Z d_i = diag_aw[i] * scale;
+                            SCIPY_Z d_ip1 = diag_aw[i + 1] * scale;
+                            SCIPY_Z diff = d_ip1 - d_i;
+                            SCIPY_Z exp_sinch = (cabs(diff) == 0.0) ? cexp(d_i) : (cexp(d_ip1) - cexp(d_i)) / diff;
+                            temp1[(i + 1) * n + i] = exp_sinch * sd[i] * scale; // superdiagonal
+                            temp1[(i + 1) * n + (i + 1)] = cexp(d_ip1);         // diagonal
+#endif
+                        }
+
+                    }
+                }
+            } else {
+                // General dense case, compute A**(2**s) by repeated squaring.
+                for (int i = 0; i < s; i++) {
+                    zgemm_("N", "N", &n, &n, &n, &(SCIPY_Z){CPLX_Z(1.0, 0.0)}, temp1, &n, temp1, &n, &(SCIPY_Z){CPLX_Z(0.0, 0.0)}, temp2, &n);
+                    // Swap pointers
+                    SCIPY_Z *swap = temp1;
+                    temp1 = temp2;
+                    temp2 = swap;
+                }
+            }
+        }
+
+        // Copy back the result to output array
+        swap_cf_z(temp1, &result[idx*n*n], n, n, n);
+    }
+
+    free(Am);
+}
