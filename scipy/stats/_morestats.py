@@ -1824,6 +1824,10 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
     xp = array_namespace(data)
     dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
     data = xp.asarray(data, dtype=dtype)
+
+    n = data.shape[axis]
+    if n == 0:
+        return _get_nan(data, xp=xp)
     eps = xp.finfo(dtype).eps
     pos = data >= 0  # binary mask
 
@@ -1869,7 +1873,6 @@ def _yeojohnson_llf(data, *, lmb, axis=0):
 
         logvar = _log_var(logyj, xp, axis)
 
-    n = data.shape[axis]
     loglike = (-n / 2 * logvar
                + (lmb - 1) * xp.sum(xp.sign(data) * xp.log1p(xp.abs(data)), axis=axis))
 
