@@ -210,7 +210,7 @@ jobs:
           no_output_timeout: 5m
           command: |
             pip install -r requirements/test.txt
-            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.13/site-packages
             export SCIPY_ARRAY_API=1
             spin check-xp-untested
 
