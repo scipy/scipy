@@ -2111,7 +2111,7 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div, rel_entr, scipy.stats.entropy
+    js_div, kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -4346,14 +4346,14 @@ add_newdoc("js_div",
     r"""
     js_div(x, y, out=None)
 
-    Compute the Jensen Shannon divergence of `x` and `y`.
+    Compute the Jensen-Shannon divergence of `x` and `y`.
 
-    Given non-negative real numbers `x` and `y`, their Jensen Shannon
+    Given non-negative real numbers `x` and `y`, their Jensen-Shannon
     divergence is defined as
 
     .. math::
 
-       \mathrm{JSD}(x, y):=\frac{1}{2}[f(x)+f(y)]-f\left(\frac{x+y}{2}\right)
+       \mathrm{js\_div}(x, y):=\frac{1}{2}[f(x)+f(y)]-f\left(\frac{x+y}{2}\right)
 
     where :math:`f(x) = 0` if :math:`x=0` and :math:`f(x)=x \ln x` if
     :math:`x > 0`.
@@ -4366,7 +4366,7 @@ add_newdoc("js_div",
     Returns
     -------
     scalar or ndarray
-        Values of the Jensen Shannon divergence of `x` and `y` if `x` and `y`
+        Values of the Jensen-Shannon divergence of `x` and `y` if `x` and `y`
         are both finite and non-negative.
 
         If `x` and/or `y` is `nan`, return `nan`.
@@ -4420,7 +4420,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr, rel_entr, scipy.stats.entropy
+    entr, js_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -6621,7 +6621,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr, kl_div, scipy.stats.entropy
+    entr, js_div, kl_div, scipy.stats.entropy
 
     Notes
     -----
