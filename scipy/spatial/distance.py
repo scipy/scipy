@@ -750,7 +750,7 @@ def hamming(u, v, w=None):
 
     Notes
     -----
-    .. versionchanged:: 1.15.0
+    .. versionchanged:: 1.18.0
        Previously, if `u` and `v` are empty or the total weight is zero,
        the function would return ``nan``.  This was changed to return
        ``0.0`` instead.
@@ -1388,7 +1388,7 @@ def dice(u, v, w=None):
     Dice similarity index, convert one to the other with similarity =
     1 - dissimilarity.
 
-    .. versionchanged:: 1.15.0
+    .. versionchanged:: 1.18.0
        Previously, if all (positively weighted) elements in `u` and `v` are
        zero, the function would return ``nan``.  This was changed to return
        ``0.0`` instead.
@@ -1457,7 +1457,7 @@ def rogerstanimoto(u, v, w=None):
 
     Notes
     -----
-    .. versionchanged:: 1.15.0
+    .. versionchanged:: 1.18.0
        Previously, if `u` and `v` are empty or the total weight is zero, the
        function would raise ``ZeroDivisionError``.  This was changed to return
        ``0.0`` instead.
@@ -1516,7 +1516,7 @@ def russellrao(u, v, w=None):
 
     Notes
     -----
-    .. versionchanged:: 1.15.0
+    .. versionchanged:: 1.18.0
        Previously, if `u` and `v` are empty (or the total weight is zero),
        the function would raise ``ZeroDivisionError`` (or return ``nan``).
        This was changed to return ``0.0`` instead.
@@ -1581,7 +1581,7 @@ def sokalsneath(u, v, w=None):
 
     Notes
     -----
-    .. versionchanged:: 1.15.0
+    .. versionchanged:: 1.18.0
        Previously, if all (positively weighted) elements in `u` and `v` are
        zero, the function would raise ``ValueError``.  This was changed to
        return ``0.0`` instead.
