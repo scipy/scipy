@@ -4353,10 +4353,9 @@ add_newdoc("js_div",
 
     .. math::
 
-       \mathrm{js\_div}(x, y):=\frac{1}{2}[f(x)+f(y)]-f\left(\frac{x+y}{2}\right)
+       \mathrm{js\_div}(x, y):=\frac{f(x)+f(y)}{2}-f\left(\frac{x+y}{2}\right)
 
-    where :math:`f(x) = 0` if :math:`x=0` and :math:`f(x)=x \ln x` if
-    :math:`x > 0`.
+    where :math:`f(x):=x \ln x` if :math:`x > 0` and :math:`0` if :math:`x=0`.
 
     Parameters
     ----------
