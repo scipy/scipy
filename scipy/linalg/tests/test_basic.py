@@ -976,9 +976,6 @@ class TestSolve:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
 
-    @pytest.mark.skipif(
-        np.__version__ < '2', reason="solve chokes on b.ndim == 1 in numpy < 2"
-    )
     @pytest.mark.parametrize(
         "assume_a",
         [

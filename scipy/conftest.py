@@ -629,28 +629,6 @@ if HAVE_SCPDT:
         'scipy.io.matlab.MatlabFunction.dtype'
     ])
 
-    # these are affected by NumPy 2.0 scalar repr: rely on string comparison
-    if np.__version__ < "2":
-        dt_config.skiplist.update(set([
-            'scipy.io.hb_read',
-            'scipy.io.hb_write',
-            'scipy.sparse.csgraph.connected_components',
-            'scipy.sparse.csgraph.depth_first_order',
-            'scipy.sparse.csgraph.shortest_path',
-            'scipy.sparse.csgraph.floyd_warshall',
-            'scipy.sparse.csgraph.dijkstra',
-            'scipy.sparse.csgraph.bellman_ford',
-            'scipy.sparse.csgraph.johnson',
-            'scipy.sparse.csgraph.yen',
-            'scipy.sparse.csgraph.breadth_first_order',
-            'scipy.sparse.csgraph.reverse_cuthill_mckee',
-            'scipy.sparse.csgraph.structural_rank',
-            'scipy.sparse.csgraph.construct_dist_matrix',
-            'scipy.sparse.csgraph.reconstruct_path',
-            'scipy.ndimage.value_indices',
-            'scipy.stats.mstats.describe',
-    ]))
-
     # help pytest collection a bit: these names are either private
     # (distributions), or just do not need doctesting.
     dt_config.pytest_extra_ignore = [
