@@ -63,19 +63,23 @@ def _curfit(x, y, k, w=None, xb=None, xe=None, s=None, nest=None, iopt=0,
     For compatibility with old code, can be unpacked as:
         _data = (x, y, w, xb, xe, k, s, n, t, c, fp, None, None, ier)
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    x = np.asarray(x, dtype=float, order='F').ravel('F')
+    y = np.asarray(y, dtype=float, order='F').ravel('F')
     m = len(x)
 
     if w is None:
         w = np.ones(m, dtype=float)
     else:
-        w = np.asarray(w, dtype=float)
+        w = np.asarray(w, dtype=float, order='F').ravel('F')
 
     if xb is None:
-        xb = x[0]
+        xb = float(x[0])
+    else:
+        xb = float(xb)
     if xe is None:
-        xe = x[-1]
+        xe = float(x[-1])
+    else:
+        xe = float(xe)
     if s is None:
         s = float(m)
 
