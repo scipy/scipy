@@ -8,7 +8,7 @@ from numpy import (r_, eye, atleast_2d, poly, dot,
                    asarray, zeros, array, outer)
 from scipy import linalg
 
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_size
+from scipy._lib._array_api import array_namespace, xp_size
 import scipy._lib.array_api_extra as xpx
 from ._filter_design import tf2zpk, zpk2tf, normalize
 
@@ -114,7 +114,6 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-@xp_capabilities()
 def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
     r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
