@@ -18,8 +18,7 @@ from ._basic import solve, inv
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
-from ._matfuncs_schur_sqrtm import recursive_schur_sqrtm
-from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
+from ._internal_matfuncs import recursive_schur_sqrtm, matrix_exponential
 from ._linalg_pythran import _funm_loops  # type: ignore[import-not-found]
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
@@ -320,6 +319,10 @@ def expm(A):
     if a.shape[-2:] == (1, 1):
         return np.exp(a)
 
+    # # Diagonal matrix fast-path: expm(D) = diag(exp(d_i))
+    # if bandwidth(a) == (0, 0):
+    #     return diag(np.exp(diag(a)))
+
     if not np.issubdtype(a.dtype, np.inexact):
         a = a.astype(np.float64)
     elif a.dtype == np.float16:
@@ -330,86 +333,20 @@ def expm(A):
     # here until we have a more stable implementation.
 
     n = a.shape[-1]
-    eA = np.empty(a.shape, dtype=a.dtype)
-    # working memory to hold intermediate arrays
-    Am = np.empty((5, n, n), dtype=a.dtype)
-
-    # Main loop to go through the slices of an ndarray and passing to expm
-    for ind in product(*[range(x) for x in a.shape[:-2]]):
-        aw = a[ind]
-
-        lu = bandwidth(aw)
-        if not any(lu):  # a is diagonal?
-            eA[ind] = np.diag(np.exp(np.diag(aw)))
-            continue
-
-        # Generic/triangular case; copy the slice into scratch and send.
-        # Am will be mutated by pick_pade_structure
-        # If s != 0, scaled Am will be returned from pick_pade_structure.
-        Am[0, :, :] = aw
-        m, s = pick_pade_structure(Am)
-        if (m < 0):
-            raise MemoryError("scipy.linalg.expm could not allocate sufficient"
-                              " memory while trying to compute the Pade "
-                              f"structure (error code {m}).")
-        info = pade_UV_calc(Am, m)
-        if info != 0:
-            if info <= -11:
-                # We raise it from failed mallocs; negative LAPACK codes > -7
-                raise MemoryError("scipy.linalg.expm could not allocate "
-                              "sufficient memory while trying to compute the "
-                              f"exponential (error code {info}).")
-            else:
-                # LAPACK wrong argument error or exact singularity.
-                # Neither should happen.
-                raise RuntimeError("scipy.linalg.expm got an internal LAPACK "
-                                   "error during the exponential computation "
-                                   f"(error code {info})")
-        eAw = Am[0]
-
-        if s != 0:  # squaring needed
-
-            if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
-                # This branch implements Code Fragment 2.1 of [1]_
-
-                diag_aw = np.diag(aw)
-                # einsum returns a writable view
-                np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
-                # super/sub diagonal
-                sd = np.diag(aw, k=-1 if lu[1] == 0 else 1)
-
-                for i in range(s-1, -1, -1):
-                    eAw = eAw @ eAw
-
-                    # diagonal
-                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2.**(-i))
-                    exp_sd = _exp_sinch(diag_aw * (2.**(-i))) * (sd * 2**(-i))
-                    if lu[1] == 0:  # lower
-                        np.einsum('ii->i', eAw[1:, :-1])[:] = exp_sd
-                    else:  # upper
-                        np.einsum('ii->i', eAw[:-1, 1:])[:] = exp_sd
-
-            else:  # generic
-                for _ in range(s):
-                    eAw = eAw @ eAw
-
-        # Zero out the entries from np.empty in case of triangular input
-        if (lu[0] == 0) or (lu[1] == 0):
-            eA[ind] = np.triu(eAw) if lu[0] == 0 else np.tril(eAw)
+    eA, info = matrix_exponential(a)
+    if info != 0:
+        if info <= -11:
+            # We raise it from failed mallocs; negative LAPACK codes > -7
+            raise MemoryError("scipy.linalg.expm could not allocate "
+                            "sufficient memory while trying to compute the "
+                            f"exponential (error code {info}).")
         else:
-            eA[ind] = eAw
-
+            # LAPACK wrong argument error or exact singularity.
+            # Neither should happen.
+            raise RuntimeError("scipy.linalg.expm: Internal LAPACK "
+                                "error during the exponential computation "
+                                f"(error code {info})")
     return eA
-
-
-def _exp_sinch(x):
-    # Higham's formula (10.42), might overflow, see GH-11839
-    lexp_diff = np.diff(np.exp(x))
-    l_diff = np.diff(x)
-    mask_z = l_diff == 0.
-    lexp_diff[~mask_z] /= l_diff[~mask_z]
-    lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
-    return lexp_diff
 
 
 def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
