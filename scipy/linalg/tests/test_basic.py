@@ -1,3 +1,4 @@
+import math
 import itertools
 import warnings
 
@@ -1910,6 +1911,10 @@ class TestLstsq:
                                     atol=25 * _eps_cast(a1.dtype),
                                     err_msg=f"driver: {lapack_driver}")
 
+                    # as documented, residuals is empty for an underdetermined problem
+                    residuals = out[1]
+                    assert residuals.size == 0
+
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
     @pytest.mark.parametrize("n", (20, 200))
     @pytest.mark.parametrize("lapack_driver", lapack_drivers)
@@ -2120,8 +2125,6 @@ class TestLstsq:
                                      [ 0.05  ,  0.05  ],
                                      [ 0.0875, -0.1   ]]]), atol=1e-15
         )
-
-        # TODO: add a batched dim of `a` 
 
     @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
     def test_m_larger_than_n(self, driver):
