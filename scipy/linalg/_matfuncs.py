@@ -2,7 +2,6 @@
 # Author: Travis Oliphant, March 2002
 #
 import warnings
-from itertools import product
 
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
@@ -12,7 +11,7 @@ from scipy._lib._util import _apply_over_batch
 from scipy._lib.deprecation import _NoValue
 
 # Local imports
-from scipy.linalg import LinAlgError, bandwidth, LinAlgWarning
+from scipy.linalg import LinAlgError, LinAlgWarning
 from ._misc import norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
@@ -319,10 +318,6 @@ def expm(A):
     if a.shape[-2:] == (1, 1):
         return np.exp(a)
 
-    # # Diagonal matrix fast-path: expm(D) = diag(exp(d_i))
-    # if bandwidth(a) == (0, 0):
-    #     return diag(np.exp(diag(a)))
-
     if not np.issubdtype(a.dtype, np.inexact):
         a = a.astype(np.float64)
     elif a.dtype == np.float16:
@@ -332,7 +327,6 @@ def expm(A):
     # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
     # here until we have a more stable implementation.
 
-    n = a.shape[-1]
     eA, info = matrix_exponential(a)
     if info != 0:
         if info <= -11:
