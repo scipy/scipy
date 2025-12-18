@@ -8978,7 +8978,7 @@ class TestExpectile:
     def test_maximum(self, xp):
         rng = np.random.default_rng(42)
         x = xp.asarray(rng.random(size=20))
-        assert_allclose(stats.expectile(x, alpha=1), xp.max(x))
+        xp_assert_close(stats.expectile(x, alpha=1), xp.max(x))
 
     def test_weights(self, xp):
         # expectile should minimize `fun` defined below; see
@@ -9004,7 +9004,7 @@ class TestExpectile:
 
         res = stats.expectile(xp.asarray(a), alpha, weights=xp.asarray(weights))
         ref = expectile2(a, alpha, weights)
-        assert_allclose(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref))
 
     @pytest.mark.parametrize(
         "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
