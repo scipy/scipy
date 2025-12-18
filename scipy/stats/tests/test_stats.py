@@ -4570,8 +4570,6 @@ class TestFriedmanChiSquare:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     @pytest.mark.parametrize("data, ref", [(x1, ref1), (x2, ref2), (x3, ref3)])
     def test_against_references(self, dtype, data, ref, xp):
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = dtype if dtype is None else getattr(xp, dtype)
         data = [xp.asarray(array, dtype=dtype) for array in data]
         res = stats.friedmanchisquare(*data)
@@ -4650,8 +4648,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_agree_with_r(self, dtype, xp):
         # comparing with some values from R
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = xp.linspace(-1, 1, 9, dtype=dtype)
         self._testOne(x, 'two-sided', 0.15865525393145705, 0.95164069201518386,
@@ -4673,8 +4669,6 @@ class TestKSOneSample:
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_known_examples(self, xp, dtype):
         # the following tests rely on deterministically replicated rvs
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype == 'float32':
-            pytest.skip("Pre-NEP 50 doesn't respect dtypes")
         dtype = xp_default_dtype(xp) if dtype is None else getattr(xp, dtype)
         x = stats.norm.rvs(loc=0.2, size=100, random_state=987654321)
         x = xp.asarray(x, dtype=dtype)
@@ -7639,8 +7633,6 @@ class TestFOneWay:
     def test_basic(self, dtype, xp):
         # Despite being a floating point calculation, this data should
         # result in F being exactly 2.0.
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         F, p = stats.f_oneway(xp.asarray([0, 2], dtype=dtype),
                               xp.asarray([2, 4], dtype=dtype))
@@ -7650,8 +7642,6 @@ class TestFOneWay:
     @pytest.mark.parametrize("dtype", [None, "float32", "float64"])
     def test_unequal_var(self, dtype, xp):
         # toy samples with unequal variances and different observations
-        if is_numpy(xp) and xp.__version__ < "2.0" and dtype=='float32':
-            pytest.skip("NumPy doesn't preserve dtype pre-NEP 50.")
         dtype = None if dtype is None else getattr(xp, dtype)
         samples = [xp.asarray([-50.42, 40.31, -18.09, 35.58, -6.8, 0.22], dtype=dtype),
                    xp.asarray([23.44, 4.5, 15.1, 9.66], dtype=dtype),
