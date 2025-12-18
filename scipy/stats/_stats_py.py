@@ -10102,7 +10102,10 @@ def _rankdata(x, method, return_ties=False, xp=None):
     return ranks
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(
+    skip_backends=[('dask.array', 'uses `optimize.elementwise.find_root`'),
+                   ('array_api_strict', 'uses `optimize.elementwise.find_root`'),
+                   ('jax.numpy', 'uses `optimize.elementwise.find_root`')])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
     kwd_samples=['weights'], paired=True
@@ -10207,38 +10210,42 @@ def expectile(a, alpha=0.5, *, weights=None, axis=None):
     >>> expectile(a, alpha=0.8, weights=weights)
     3.3333333333333335
     """
+    xp = array_namespace(a, weights)
+    a, weights = xp_promote(a, weights, force_floating=True, xp=xp)
+
     if alpha < 0 or alpha > 1:
         raise ValueError(
             "The expectile level alpha must be in the range [0, 1]."
         )
 
     if a.shape[-1] == 0:  #  Only for *testing* _axis_nan_policy decorator
-        return _get_nan(a)
+        return _get_nan(a, xp=xp)
 
     # for simplicity, ensure that shape is (batch size, sample size) and at least 2d
     shape = a.shape  # remember original shape, though, to ensure correct output shape
     # `reshape` can't infer shape element -1 when array is size 0, so take `prod`
-    a = np.reshape(a, (math.prod(shape[:-1]), shape[-1]))
-    weights = weights if weights is None else np.reshape(weights, (-1, shape[-1]))
+    a = xp.reshape(a, (math.prod(shape[:-1]), shape[-1]))
+    weights = weights if weights is None else xp.reshape(weights, (-1, shape[-1]))
 
     # This is the empirical equivalent of Eq. (13) with identification
     # function from Table 9 (omitting a factor of 2) in [2] (their y is our
     # data a, their x is our t)
     def first_order(t, i):
-        ai = a[i].T
-        wi = weights if weights is None else weights[i].T
-        return _xp_mean(np.abs((ai <= t) - alpha) * (t - ai), weights=wi, axis=0)
+        ai = a[i, ...].T
+        wi = weights if weights is None else weights[i, ...].T
+        return _xp_mean(xp.abs(xp.astype(ai <= t, ai.dtype) - alpha) * (t - ai),
+                        weights=wi, axis=0)
 
     # axis is -1 per the decorator. Use mean to produce NaNs of the correct shape/type.
-    x0 = np.min(a, axis=-1)
-    x1 = np.max(a, axis=-1)
+    x0 = xp.min(a, axis=-1)
+    x1 = xp.max(a, axis=-1)
 
     # Note that the expectile is the unique solution, so no worries about
     # finding a wrong root.
-    i = np.arange(a.shape[0])
+    i = xp.arange(a.shape[0])
     res = find_root(first_order, (x0, x1), args=(i,))
-
-    return np.reshape(res.x, shape[:-1])[()]
+    res = xp.reshape(res.x, shape[:-1])
+    return res[()] if res.ndim == 0 else res
 
 
 def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
