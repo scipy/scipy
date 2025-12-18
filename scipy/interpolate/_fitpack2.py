@@ -262,12 +262,13 @@ def _spherfit_smth(theta, phi, r, w, s, eps):
     npest = 8 + int(np.sqrt(m / 2))
 
     # Workspace
-    # 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp**2)
-    # npp = npest - 7, ntt = ntest - 7
+    # lwrk1: 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+    # lwrk2: 48+21*v+7*u*v+4*(u-1)*v**2
+    # where u = ntest - 7, v = npest - 7
     u = ntest - 7
     v = npest - 7
     lwrk1 = 185 + 52*v + 10*u + 14*u*v + 8*(u-1)*v*v + 8*m
-    lwrk2 = 4 * ntest + 6 * npest
+    lwrk2 = 48 + 21*v + 7*u*v + 4*(u-1)*v*v
     kwrk = m + (ntest - 7) * (npest - 7)
     wrk1 = np.zeros(lwrk1, dtype=np.float64)
     wrk2 = np.zeros(lwrk2, dtype=np.float64)
@@ -302,12 +303,13 @@ def _spherfit_lsq(theta, phi, r, nt, tt, np_, tp, w, eps):
     npest = np_
 
     # Workspace
-    # 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp**2)
-    # npp = npest - 7, ntt = ntest - 7
+    # lwrk1: 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+    # lwrk2: 48+21*v+7*u*v+4*(u-1)*v**2
+    # where u = ntest - 7, v = npest - 7
     u = ntest - 7
     v = npest - 7
     lwrk1 = 185 + 52*v + 10*u + 14*u*v + 8*(u-1)*v*v + 8*m
-    lwrk2 = 4 * ntest + 6 * npest
+    lwrk2 = 48 + 21*v + 7*u*v + 4*(u-1)*v*v
     kwrk = m + (ntest - 7) * (npest - 7)
     wrk1 = np.zeros(lwrk1, dtype=np.float64)
     wrk2 = np.zeros(lwrk2, dtype=np.float64)
