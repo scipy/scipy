@@ -4355,7 +4355,7 @@ add_newdoc("js_div",
 
        \mathrm{js\_div}(x, y):=\frac{f(x)+f(y)}{2}-f\left(\frac{x+y}{2}\right)
 
-    where :math:`f(x):=x \ln x` if :math:`x > 0` and :math:`0` if :math:`x=0`.
+    where :math:`f(x)=x \ln x` if :math:`x > 0` and :math:`0` if :math:`x=0`.
 
     Parameters
     ----------
@@ -4372,7 +4372,7 @@ add_newdoc("js_div",
 
         If `x` and/or `y` is negative and neither is `nan`, return `+inf`.
         This "extended-value extension" makes the function convenient for
-        use in convex optimization [1].
+        use in convex optimization [1]_.
 
     See Also
     --------
