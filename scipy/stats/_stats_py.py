@@ -10583,22 +10583,22 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
 
     TINY = 1.0e-20
 
-    axis = -1
-    n = x.shape[axis]
-    xmean = np.mean(x, axis=axis, keepdims=True)
-    ymean = np.mean(y, axis=axis, keepdims=True)
+    # _axis_nan_policy decorator ensures that `axis=-1`
+    n = x.shape[-1]
+    xmean = np.mean(x, axis=-1, keepdims=True)
+    ymean = np.mean(y, axis=-1, keepdims=True)
 
     # Average sums of square differences from the mean
     #   ssxm = mean( (x-mean(x))^2 )
     #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
-    x_ = _demean(x, xmean, axis=axis, xp=np)
-    y_ = _demean(y, ymean, axis=axis, xp=np, precision_warning=False)
+    x_ = _demean(x, xmean, axis=-1, xp=np)
+    y_ = _demean(y, ymean, axis=-1, xp=np, precision_warning=False)
     xmean = np.squeeze(xmean, axis=-1)
     ymean = np.squeeze(ymean, axis=-1)
 
-    ssxm = np.vecdot(x_, x_, axis=axis) / n
-    ssym = np.vecdot(y_, y_, axis=axis) / n
-    ssxym = np.vecdot(x_, y_, axis=axis) / n
+    ssxm = np.vecdot(x_, x_, axis=-1) / n
+    ssym = np.vecdot(y_, y_, axis=-1) / n
+    ssxym = np.vecdot(x_, y_, axis=-1) / n
 
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
