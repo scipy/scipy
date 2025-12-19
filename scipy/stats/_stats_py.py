@@ -5375,6 +5375,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     warn_msg = ("An input array is constant; the correlation coefficient "
                 "is not defined.")
+    
+    constant_axis = False
     if axisout == 0:
         constant_columns = np.all(a == a[0,:], axis = 0)
         constant_axis = np.any(constant_columns)
@@ -5382,9 +5384,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
-            res = SignificanceResult(np.nan, np.nan)
-            res.correlation = np.nan
-            return res
     else:  # case when axisout == 1 b/c a is 2 dim only
         constant_rows = np.all(a.T == a.T[0, :], axis=0)
         constant_axis = np.any(constant_rows)
@@ -5392,9 +5391,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             # If an input is constant, the correlation coefficient
             # is not defined.
             warnings.warn(stats.ConstantInputWarning(warn_msg), stacklevel=2)
-            res = SignificanceResult(np.nan, np.nan)
-            res.correlation = np.nan
-            return res
 
     a_contains_nan = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
@@ -5413,7 +5409,13 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                 variable_has_nan = np.isnan(a).any(axis=axisout)
 
     a_ranked = np.apply_along_axis(rankdata, axisout, a)
-    rs = np.corrcoef(a_ranked, rowvar=axisout)
+    
+    if constant_axis:
+        with np.errstate(invalid='ignore'):
+            rs = np.corrcoef(a_ranked, rowvar=axisout)
+    else:
+        rs = np.corrcoef(a_ranked, rowvar=axisout)
+
     dof = n_obs - 2  # degrees of freedom
 
     # rs can have elements equal to 1, so avoid zero division warnings
