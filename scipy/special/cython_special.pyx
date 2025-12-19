@@ -867,6 +867,7 @@ Available functions
 - :py:func:`~scipy.special.pdtrik`::
 
         double pdtrik(double, double)
+        float pdtrik(float, float)
 
 - :py:func:`~scipy.special.poch`::
 
@@ -1115,6 +1116,8 @@ cdef extern from r"xsf_wrappers.h":
     double special_ber(double) nogil
     double special_berp(double) nogil
     double xsf_gdtrib(double, double, double) nogil
+    double special_gdtria(double, double, double) nogil
+    double special_gdtrix(double, double, double) nogil
     npy_double special_kei(npy_double) nogil
     npy_double special_keip(npy_double) nogil
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
@@ -1635,14 +1638,6 @@ cdef _proto_fdtridfd_t *_proto_fdtridfd_t_var = &_func_fdtridfd
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_fresnl_wrap "cephes_fresnl_wrap"(npy_double, npy_double *, npy_double *)nogil
 
-from ._cdflib_wrappers cimport gdtria as _func_gdtria
-ctypedef double _proto_gdtria_t(double, double, double) noexcept nogil
-cdef _proto_gdtria_t *_proto_gdtria_t_var = &_func_gdtria
-
-from ._cdflib_wrappers cimport gdtrix as _func_gdtrix
-ctypedef double _proto_gdtrix_t(double, double, double) noexcept nogil
-cdef _proto_gdtrix_t *_proto_gdtrix_t_var = &_func_gdtrix
-
 from ._convex_analysis cimport huber as _func_huber
 ctypedef double _proto_huber_t(double, double) noexcept nogil
 cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
@@ -1745,10 +1740,6 @@ cdef _proto_nrdtrisd_t *_proto_nrdtrisd_t_var = &_func_nrdtrisd
 from ._legacy cimport pdtri_unsafe as _func_pdtri_unsafe
 ctypedef double _proto_pdtri_unsafe_t(double, double) noexcept nogil
 cdef _proto_pdtri_unsafe_t *_proto_pdtri_unsafe_t_var = &_func_pdtri_unsafe
-
-from ._cdflib_wrappers cimport pdtrik as _func_pdtrik
-ctypedef double _proto_pdtrik_t(double, double) noexcept nogil
-cdef _proto_pdtrik_t *_proto_pdtrik_t_var = &_func_pdtrik
 
 from ._convex_analysis cimport pseudo_huber as _func_pseudo_huber
 ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
@@ -2567,17 +2558,17 @@ cpdef double gdtrc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrc"""
     return xsf_gdtrc(x0, x1, x2)
 
-cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.gdtria"""
-    return _func_gdtria(x0, x1, x2)
-
 cpdef double gdtrib(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrib"""
     return xsf_gdtrib(x0, x1, x2)
 
+cpdef double gdtria(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.gdtria"""
+    return special_gdtria(x0, x1, x2)
+
 cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.gdtrix"""
-    return _func_gdtrix(x0, x1, x2)
+    return special_gdtrix(x0, x1, x2)
 
 cpdef double complex hankel1(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel1"""
@@ -3325,9 +3316,14 @@ cpdef double pdtri(dlp_number_t x0, double x1) noexcept nogil:
     else:
         return NAN
 
-cpdef double pdtrik(double x0, double x1) noexcept nogil:
+cpdef df_number_t pdtrik(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.pdtrik"""
-    return _func_pdtrik(x0, x1)
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_pdtrik_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef double poch(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.poch"""

@@ -115,12 +115,11 @@ def gauss_spline(x, n):
        F.A. (2007) Fast and Accurate Gaussian Derivatives Based on B-Splines. In:
        Sgallari F., Murli A., Paragios N. (eds) Scale Space and Variational
        Methods in Computer Vision. SSVM 2007. Lecture Notes in Computer
-       Science, vol 4485. Springer, Berlin, Heidelberg
-    .. [2] http://folk.uio.no/inf3330/scripting/doc/python/SciPy/tutorial/old/node24.html
+       Science, vol 4485. Springer, Berlin, Heidelberg.
 
     Examples
     --------
-    We can calculate B-Spline basis functions approximated by a gaussian
+    We can calculate B-Spline basis functions approximated by a Gaussian
     distribution:
 
     >>> import numpy as np

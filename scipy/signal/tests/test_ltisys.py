@@ -1,10 +1,11 @@
 import warnings
-
+from types import GenericAlias
 
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case
 )
 
 from scipy.signal import (ss2tf, tf2ss, lti,
@@ -913,6 +914,7 @@ class TestZerosPolesGain:
         assert s.to_zpk() is not s
 
 
+@make_xp_test_case(abcd_normalize)
 class Test_abcd_normalize:
     A = [[1.0, 2.0], [3.0, 4.0]]
     B = [[-1.0], [5.0]]
@@ -1235,3 +1237,9 @@ class Test_freqresp:
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
+
+@pytest.mark.parametrize(
+    "cls", [StateSpace, TransferFunction, ZerosPolesGain, lti, dlti]
+)
+def test_subscriptable_generic_types(cls):
+    assert isinstance(cls[np.float64], GenericAlias)

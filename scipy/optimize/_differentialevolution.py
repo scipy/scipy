@@ -483,7 +483,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     The following custom strategy function mimics 'best1bin':
 
     >>> def custom_strategy_fn(candidate, population, rng=None):
-    ...     parameter_count = population.shape(-1)
+    ...     parameter_count = population.shape[-1]
     ...     mutation, recombination = 0.7, 0.9
     ...     trial = np.copy(population[candidate])
     ...     fill_point = rng.choice(parameter_count)
@@ -796,6 +796,7 @@ class DifferentialEvolutionSolver:
                     'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
+    __combined = _binomial | _exponential
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
@@ -812,11 +813,7 @@ class DifferentialEvolutionSolver:
         if callable(strategy):
             # a callable strategy is going to be stored in self.strategy anyway
             pass
-        elif strategy in self._binomial:
-            self.mutation_func = getattr(self, self._binomial[strategy])
-        elif strategy in self._exponential:
-            self.mutation_func = getattr(self, self._exponential[strategy])
-        else:
+        elif strategy not in self.__combined:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
@@ -1027,6 +1024,10 @@ class DifferentialEvolutionSolver:
         # rather than repeatedly creating it in _select_samples.
         self._random_population_index = np.arange(self.num_population_members)
         self.disp = disp
+
+    @property
+    def mutation_func(self):
+        return getattr(self, self.__combined[self.strategy])
 
     def init_population_lhs(self):
         """

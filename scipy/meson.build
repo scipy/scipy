@@ -31,12 +31,9 @@ thread_dep = dependency('threads', required: false)
 
 
 # Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
-# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
-# our minimum supported version). Using this now to be able to detect the
-# version easily for >=2.0.
-_numpy_dep = dependency('numpy', required: false)
+_numpy_dep = dependency('numpy')
 f2py_freethreading_arg = []
-if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+if _numpy_dep.version().version_compare('>=2.1.0')
   f2py_freethreading_arg = ['--free-threading']
   message('f2py free-threading enabled')
 else
@@ -580,6 +577,7 @@ _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
 _cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
+_cpp_Wno_maybe_uninitialized = cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
 _cpp_Wno_switch = cpp.get_supported_arguments('-Wno-switch')
@@ -773,8 +771,10 @@ foreach name, dep : dependency_map
     conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
     conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
     conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+    conf_data.set(name + '_HAS_ILP64', use_ilp64)
   endif
 endforeach
+
 
 configure_file(
   input: '__config__.py.in',

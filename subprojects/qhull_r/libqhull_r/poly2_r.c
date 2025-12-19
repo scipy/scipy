@@ -2280,7 +2280,8 @@ void qh_initialhull(qhT *qh, setT *vertices) {
     zzinc_(Zdistcheck);
     qh_distplane(qh, qh->interior_point, facet, &dist);  /* duplicates qh_setfacetplane */
     if (dist > qh->DISTround) {  /* clearly flipped, due to axis-parallel facet or coplanar firstfacet */
-      trace1((qh, qh->ferr, 1031, "qh_initialhull: initial orientation incorrect, qh.interior_point is %2.2g from f%d.  Either axis-parallel facet or coplanar firstfacet f%d.  Force outside orientation of all facets\n"));
+      trace1((qh, qh->ferr, 1031, "qh_initialhull: initial orientation incorrect, qh.interior_point is %2.2g from f%d.  Either axis-parallel facet or coplanar firstfacet f%d.  Force outside orientation of all facets\n",
+        dist, facet->id, firstfacet->id));
       FORALLfacets { /* reuse facet, then 'break' */
         facet->flipped= False;
         facet->toporient ^= (unsigned char)True;

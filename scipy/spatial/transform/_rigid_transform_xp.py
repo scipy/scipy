@@ -3,6 +3,7 @@ from types import EllipsisType
 from scipy._lib._array_api import (
     array_namespace,
     Array,
+    ArrayLike,
     is_lazy_array,
     xp_vector_norm,
     xp_result_type,
@@ -13,11 +14,13 @@ import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
     as_matrix as quat_as_matrix,
     from_matrix as quat_from_matrix,
+    _from_matrix_orthogonal as quat_from_matrix_orthogonal,
     from_rotvec as quat_from_rotvec,
     as_rotvec as quat_as_rotvec,
     compose_quat,
     from_quat,
     inv as quat_inv,
+    mean as quat_mean,
 )
 from scipy._lib.array_api_compat import device as xp_device
 from scipy._lib._util import broadcastable
@@ -134,7 +137,7 @@ def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
 
 def as_exp_coords(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    rot_vec = quat_as_rotvec(quat_from_matrix(matrix[..., :3, :3]))
+    rot_vec = quat_as_rotvec(quat_from_matrix_orthogonal(matrix[..., :3, :3]))
     translation_transform = _compute_se3_log_translation_transform(rot_vec)
     translations = (translation_transform @ matrix[..., :3, 3][..., None])[..., 0]
     exp_coords = xp.concat([rot_vec, translations], axis=-1)
@@ -143,7 +146,7 @@ def as_exp_coords(matrix: Array) -> Array:
 
 def as_dual_quat(matrix: Array, *, scalar_first: bool = False) -> Array:
     xp = array_namespace(matrix)
-    real_parts = quat_from_matrix(matrix[..., :3, :3])
+    real_parts = quat_from_matrix_orthogonal(matrix[..., :3, :3])
 
     pure_translation_quats = xp.empty(
         (*matrix.shape[:-2], 4), dtype=matrix.dtype, device=xp_device(matrix)
@@ -243,6 +246,68 @@ def pow(matrix: Array, n: float | Array) -> Array:
     elif n == 1:
         return matrix
     return from_exp_coords(as_exp_coords(matrix) * n)
+
+
+def mean(
+    matrix: Array,
+    weights: ArrayLike | None = None,
+    axis: None | int | tuple[int, ...] = None
+) -> Array:
+    xp = array_namespace(matrix)
+    if matrix.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+    # Axis logic: For None, we reduce over all axes. For int, we only reduce over that
+    # axis. For tuple, we reduce over all specified axes.
+    all_axes = tuple(range(matrix.ndim - 2))
+    if axis is None:
+        axis = all_axes
+    elif isinstance(axis, int):
+        axis = (axis,)
+    if not isinstance(axis, tuple):
+        raise ValueError("`axis` must be None, int, or tuple of ints.")
+    # Ensure all axes are within bounds
+    if (axis != () and
+       (min(axis) < -(matrix.ndim - 2) or max(axis) > (matrix.ndim - 3))
+    ):
+        raise ValueError(
+            f"axis {axis} is out of bounds for transform with shape "
+            f"{matrix.shape[:-2]}."
+        )
+    # Ensure all axes are positive and unique
+    axis = tuple(sorted(set(x % (matrix.ndim - 2) for x in axis)))
+
+    lazy = is_lazy_array(matrix)
+    quats = quat_from_matrix_orthogonal(matrix[..., :3, :3])
+    if weights is None:
+        quats_mean = quat_mean(quats, axis=axis)
+    else:
+        neg_weights = weights < 0
+        any_neg_weights = xp.any(neg_weights)
+        if not lazy and any_neg_weights:
+            raise ValueError("`weights` must be non-negative.")
+        if weights.shape != matrix.shape[:-2]:
+            raise ValueError(
+                f"Expected `weights` to match transform shape, got shape "
+                f"{weights.shape} for {matrix.shape[:-2]} transformations."
+            )
+        quats_mean = quat_mean(quats, weights=weights, axis=axis)
+    r_mean = quat_as_matrix(quats_mean)
+
+    t = matrix[..., :3, 3]
+    if weights is None:
+        t_mean = xp.mean(t, axis=axis)
+    else:
+        norm = xp.sum(weights[..., None], axis=axis)
+        wsum = xp.sum(t * weights[..., None], axis=axis)
+        t_mean = wsum / norm
+
+    tf = _create_transformation_matrix(t_mean, r_mean)
+    if weights is not None and lazy:
+        # We cannot raise on negative weights because jit code needs to be
+        # non-branching. We return NaN instead
+        mask = xp.where(any_neg_weights, xp.nan, 1.0)
+        tf = mask * tf
+    return tf
 
 
 def setitem(

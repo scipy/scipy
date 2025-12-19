@@ -4866,7 +4866,7 @@ class gausshyper_gen(rv_continuous):
     ----------
     .. [1] Armero, C., and M. J. Bayarri. "Prior Assessments for Prediction in
            Queues." *Journal of the Royal Statistical Society*. Series D (The
-           Statistician) 43, no. 1 (1994): 139-53. doi:10.2307/2348939
+           Statistician) 43, no. 1 (1994): 139-53. :doi:`10.2307/2348939`.
 
     %(example)s
 
@@ -5503,7 +5503,7 @@ class norminvgauss_gen(rv_continuous):
         e^{\delta \sqrt{\alpha^2 - \beta^2} + \beta (x - \mu)}
 
     In SciPy, this corresponds to
-    `a = alpha * delta, b = beta * delta, loc = mu, scale=delta`.
+    :math:`a=\alpha \delta, b=\beta \delta, \text{loc}=\mu, \text{scale}=\delta`.
 
     References
     ----------
@@ -7592,10 +7592,10 @@ class moyal_gen(rv_continuous):
            The London, Edinburgh, and Dublin Philosophical Magazine
            and Journal of Science, vol 46, 263-280, (1955).
            :doi:`10.1080/14786440308521076` (gated)
-    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+    .. [2] G. Cordeiro et al., "The beta Moyal: A useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
            vol 10, 171-192, (2012).
-           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+           https://www.arpapress.com/files/volumes/vol10issue2/ijrras_10_2_02.pdf
     .. [3] C. Walck, "Handbook on Statistical Distributions for
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
@@ -11449,7 +11449,7 @@ wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
 
 class gennorm_gen(rv_continuous):
-    r"""A generalized normal continuous random variable.
+    r"""A (symmetric) generalized normal continuous random variable.
 
     %(before_notes)s
 
@@ -11460,6 +11460,10 @@ class gennorm_gen(rv_continuous):
 
     Notes
     -----
+    The (symmetric) generalized normal distribution is also known as the
+    Subbotin distribution, exponential power distribution, and generalized
+    error distribution [1]_.
+    
     The probability density function for `gennorm` is [1]_:
 
     .. math::
@@ -11834,7 +11838,7 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
     .. [2] Christoph Baumgarten "Random variate generation by fast numerical
            inversion in the varying parameter case." Research in Statistics,
-           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
+           vol. 1, 2023. :doi:`10.1080/27684520.2023.2279060`
 
     .. versionadded:: 0.19.0
 
@@ -12223,7 +12227,7 @@ class studentized_range_gen(rv_continuous):
            https://en.wikipedia.org/wiki/Studentized_range_distribution
     .. [2] Batista, Ben Dêivide, et al. "Externally Studentized Normal Midrange
            Distribution." Ciência e Agrotecnologia, vol. 41, no. 4, 2017, pp.
-           378-389., doi:10.1590/1413-70542017414047716.
+           378-389., :doi:`10.1590/1413-70542017414047716`.
     .. [3] Harter, H. Leon. "Tables of Range and Studentized Range." The Annals
            of Mathematical Statistics, vol. 31, no. 4, 1960, pp. 1122-1147.
            JSTOR, www.jstor.org/stable/2237810. Accessed 18 Feb. 2021.

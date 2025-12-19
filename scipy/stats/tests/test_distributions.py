@@ -1346,9 +1346,6 @@ class TestPlanck:
 
 
 class TestGennorm:
-    def setup_method(self):
-        self.rng = np.random.default_rng(2204049394)
-
     def test_laplace(self):
         # test against Laplace (special case for beta=1)
         points = [1, 2, 3]
@@ -1366,23 +1363,25 @@ class TestGennorm:
     def test_rvs(self):
         # 0 < beta < 1
         dist = stats.gennorm(0.5)
-        rvs = dist.rvs(size=1000, random_state=self.rng)
+        rng = np.random.default_rng(2204049394)
+        rvs = dist.rvs(size=1000, random_state=rng)
         assert stats.kstest(rvs, dist.cdf).pvalue > 0.1
         # beta = 1
         dist = stats.gennorm(1)
-        rvs = dist.rvs(size=1000, random_state=self.rng)
-        rvs_laplace = stats.laplace.rvs(size=1000, random_state=self.rng)
+        rvs = dist.rvs(size=1000, random_state=rng)
+        rvs_laplace = stats.laplace.rvs(size=1000, random_state=rng)
         assert stats.ks_2samp(rvs, rvs_laplace).pvalue > 0.1
         # beta = 2
         dist = stats.gennorm(2)
-        dist.random_state = self.rng
-        rvs = dist.rvs(size=1000, random_state=self.rng)
-        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000, random_state=self.rng)
+        dist.random_state = rng
+        rvs = dist.rvs(size=1000, random_state=rng)
+        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000, random_state=rng)
         assert stats.ks_2samp(rvs, rvs_norm).pvalue > 0.1
 
     def test_rvs_broadcasting(self):
         dist = stats.gennorm([[0.5, 1.], [2., 5.]])
-        rvs = dist.rvs(size=[1000, 2, 2], random_state=self.rng)
+        rng = np.random.default_rng(2204049394)
+        rvs = dist.rvs(size=[1000, 2, 2], random_state=rng)
         assert stats.kstest(rvs[:, 0, 0], stats.gennorm(0.5).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 0, 1], stats.gennorm(1.0).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
@@ -3891,9 +3890,6 @@ class TestF:
 
 
 class TestStudentT:
-    def setup_method(self):
-        self.rng = np.random.default_rng(5442451539)
-
     def test_rvgeneric_std(self):
         # Regression test for #1191
         assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
@@ -3911,7 +3907,8 @@ class TestStudentT:
         assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
         assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
         assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
-        assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+        assert_allclose(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)),
+                        rtol=1e-14)
 
     def test_t_entropy(self):
         df = [1, 2, 25, 100]
@@ -3945,8 +3942,9 @@ class TestStudentT:
                                             [[0], [1]]])
     def test_t_inf_df(self, methname, df_infmask):
         df_infmask = np.asarray(df_infmask, dtype=bool)
-        df = self.rng.uniform(0, 10, size=df_infmask.shape)
-        x = self.rng.standard_normal(df_infmask.shape)
+        rng = np.random.default_rng(5442451539)
+        df = rng.uniform(0, 10, size=df_infmask.shape)
+        x = rng.standard_normal(df_infmask.shape)
         df[df_infmask] = np.inf
         t_dist = stats.t(df=df, loc=3, scale=1)
         t_dist_ref = stats.t(df=df[~df_infmask], loc=3, scale=1)
@@ -3964,7 +3962,8 @@ class TestStudentT:
                                             [[0], [1]]])
     def test_t_inf_df_stats_entropy(self, df_infmask):
         df_infmask = np.asarray(df_infmask, dtype=bool)
-        df = self.rng.uniform(0, 10, size=df_infmask.shape)
+        rng = np.random.default_rng(5442451539)
+        df = rng.uniform(0, 10, size=df_infmask.shape)
         df[df_infmask] = np.inf
         res = stats.t.stats(df=df, loc=3, scale=1, moments='mvsk')
         res_ex_inf = stats.norm.stats(loc=3, scale=1, moments='mvsk')

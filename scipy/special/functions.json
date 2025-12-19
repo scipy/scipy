@@ -370,8 +370,8 @@
         }
     },
     "gdtria": {
-        "_cdflib_wrappers.pxd": {
-            "gdtria": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtria": "ddd->d"
         }
     },
     "gdtrib": {
@@ -380,8 +380,8 @@
         }
     },
     "gdtrix": {
-        "_cdflib_wrappers.pxd": {
-            "gdtrix": "ddd->d"
+        "xsf_wrappers.h": {
+            "special_gdtrix": "ddd->d"
         }
     },
     "huber": {
@@ -608,8 +608,10 @@
         }
     },
     "pdtrik": {
-        "_cdflib_wrappers.pxd": {
-            "pdtrik": "dd->d"        }
+        "boost_special_functions.h++": {
+            "pdtrik_float": "ff->f",
+            "pdtrik_double": "dd->d"
+        }
     },
     "poch": {
         "xsf_wrappers.h": {

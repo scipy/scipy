@@ -63,7 +63,37 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
-def solve(a, b, lower=None, overwrite_a=False,
+def _format_emit_errors_warnings(err_lst):
+    """Format/emit errors/warnings from a lowlevel batched routine.
+
+    See inv, solve.
+    """
+    singular, lapack_err, ill_cond = [], [], []
+    for i, dct in enumerate(err_lst):
+        if dct["is_singular"]:
+            singular.append(i)
+        if dct["lapack_info"] < 0:
+            lapack_err.append(f"slice {i} emits lapack info={dct['lapack_info']}")
+        if dct["is_ill_conditioned"]:
+            ill_cond.append(f"slice {i} has rcond = {dct['rcond']}")
+
+    if singular:
+        raise LinAlgError(
+            f"A singular matrix detected: slice(s) {singular} are singular."
+        )
+
+    if lapack_err:
+        raise ValueError(f"Internal LAPACK errors: {','.join(lapack_err)}.")
+
+    if ill_cond:
+       warnings.warn(
+            f"An ill-conditioned matrix detected: {','.join(ill_cond)}.",
+            LinAlgWarning,
+            stacklevel=3
+        )
+
+
+def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
@@ -178,12 +208,8 @@ def solve(a, b, lower=None, overwrite_a=False,
            [ 3. , -2.5],
            [ 5. , -4.5]])
     """
-    if assume_a in [
-        'sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded'
-    ]:
+    if assume_a in ['banded']:
         # TODO: handle these structures in this function
-        if lower is None:
-            lower = False
         return solve0(
             a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
             check_finite=check_finite, assume_a=assume_a, transposed=transposed
@@ -193,24 +219,16 @@ def solve(a, b, lower=None, overwrite_a=False,
     structure = {
         None: -1,
         'general': 0, 'gen': 0,
-        # 'diagonal': 11,
+        'diagonal': 11,
+        'tridiagonal': 31,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101, 'positive definite': 101,
-        'pos upper': 111,     # the "other" triangle is not referenced
-        'pos lower': 112,
+        'sym' : 201, 'symmetric': 201,
+        'her' : 211, 'hermitian': 211,
     }.get(assume_a, 'unknown')
     if structure == 'unknown':
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
-
-    if (
-        (assume_a == 'pos upper' and lower is True) or
-        (assume_a == 'pos lower' and lower is False)
-    ):
-        raise ValueError(f"Conflicting {assume_a = } and {lower = }.")
-
-    if lower is None:
-        lower = False
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
@@ -263,15 +281,10 @@ def solve(a, b, lower=None, overwrite_a=False,
         return out[..., 0] if b_is_1D else out
 
     # heavy lifting
-    result = _batched_linalg._solve(a1, b1, structure, lower, transposed)
-    x, is_ill_cond, is_singular, info = result
+    x, err_lst = _batched_linalg._solve(a1, b1, structure, lower, transposed)
 
-    if info < 0:
-        raise ValueError("Internal LAPACK error.")
-    if is_singular:
-        raise LinAlgError("A singular matrix detected")
-    if is_ill_cond:
-        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
 
     if b_is_1D:
         x = x[..., 0]
@@ -1324,7 +1337,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
+def inv(a, overwrite_a=False, check_finite=True, *, assume_a=None, lower=False):
     r"""
     Compute the inverse of a matrix.
 
@@ -1334,13 +1347,18 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
 
     =============================  ================================
      general                        'general' (or 'gen')
+     diagonal                       'diagonal'
      upper triangular               'upper triangular'
      lower triangular               'lower triangular'
-     symmetric positive definite    'pos', 'pos upper', 'pos lower'
+     symmetric positive definite    'pos'
+     symmetric                      'sym'
+     Hermitian                      'her'
     =============================  ================================
 
-    For the 'pos upper' and 'pos lower' options, only the specified
-    triangle of the input matrix is used, and the other triangle is not referenced.
+    For the 'pos' option, only the triangle of the input matrix specified in
+    the `lower` argument is used, and the other triangle is not referenced.
+    Likewise, an explicit `assume_a='diagonal'` means that off-diagonal elements
+    are not referenced.
 
     Array argument(s) of this function may have additional
     "batch" dimensions prepended to the core shape. In this case, the array is treated
@@ -1360,6 +1378,11 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         Valid entries are described above.
         If omitted or ``None``, checks are performed to identify structure so the
         appropriate solver can be called.
+    lower : bool, optional
+        Ignored unless `assume_a` is one of 'sym', 'her', or 'pos'. If True, the
+        calculation uses only the data in the lower triangle of `a`; entries above the
+        diagonal are ignored. If False (default), the calculation uses only the data in
+        the upper triangle of `a`; entries below the diagonal are ignored.
 
     Returns
     -------
@@ -1415,28 +1438,23 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         overwrite_a = True
         a1 = a1.copy()
 
-    # keep the numbers in sync with C
+    # keep the numbers in sync with C at `linalg/src/_common_array_utils.hh`
     structure = {
         None: -1,
-        'general': 0,
-        # 'diagonal': 11,
+        'general': 0, 'gen': 0,
+        'diagonal': 11,
         'upper triangular': 21,
         'lower triangular': 22,
         'pos' : 101,
-        'pos upper': 111,     # the "other" triangle is not referenced
-        'pos lower': 112,
+        'sym' : 201,
+        'her' : 211,
     }[assume_a]
 
     # a1 is well behaved, invert it.
-    result = _batched_linalg._inv(a1, structure, overwrite_a)
-    inv_a, is_ill_cond, is_singular, info = result
+    inv_a, err_lst = _batched_linalg._inv(a1, structure, overwrite_a, lower)
 
-    if info < 0:
-        raise ValueError("Internal LAPACK error.")
-    if is_singular:
-        raise LinAlgError("A singular matrix detected")
-    if is_ill_cond:
-        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+    if err_lst:
+        _format_emit_errors_warnings(err_lst)
 
     return inv_a
 
@@ -1839,7 +1857,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True):
     ----------
     .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
            equations. Mathematical Proceedings of the Cambridge Philosophical
-           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+           Society, 52(1), 17-19. :doi:`10.1017/S0305004100030929`.
 
     Examples
     --------
