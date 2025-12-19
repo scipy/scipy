@@ -2147,11 +2147,6 @@ class TestLstsq:
     @pytest.mark.parametrize('driver', ['gelss', 'gelsy', 'gelsd'])
     def test_residuals(self, driver):
         # assert the (quirky) behavior of the `residuals` return
-        # this is the backwards-compat part
-
-        if driver == 'gelsy':
-            pytest.xfail('driver="gelsy" does not return residuals')
-
         a = np.array([[1, 2], [4, 5], [3, 4]], dtype=float)
         b = np.array([1, 2, 3], dtype=float)
 
