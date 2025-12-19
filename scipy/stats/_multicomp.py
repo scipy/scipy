@@ -180,7 +180,7 @@ class DunnettResult:
         return self._ci
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 @_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
     *samples: "npt.ArrayLike",  # noqa: D417

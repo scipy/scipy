@@ -1969,7 +1969,7 @@ def jarque_bera(x, *, axis=None):
 #####################################
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
     """Calculate the score at a given percentile of the input sequence.
@@ -2094,7 +2094,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     """Compute the percentile rank of a score relative to a list of scores.
 
@@ -3458,7 +3458,7 @@ def sigmaclip(a, low=4., high=4.):
     return SigmaclipResult(c, critlower, critupper)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def trimboth(a, proportiontocut, axis=0):
     """Slice off a proportion of items from both ends of an array.
 
@@ -3545,7 +3545,7 @@ def trimboth(a, proportiontocut, axis=0):
     return atmp[tuple(sl)]
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def trim1(a, proportiontocut, tail='right', axis=0):
     """Slice off a proportion from ONE end of the passed array distribution.
 
@@ -5170,7 +5170,7 @@ def _untabulate(table):
     return np.concatenate(x), np.concatenate(y)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def spearmanr(a, b=None, axis=0, nan_policy='propagate',
               alternative='two-sided'):
     r"""Calculate a Spearman correlation coefficient with associated p-value.
@@ -5750,7 +5750,7 @@ def _weightedtau_n_samples(kwargs):
     return 2 if (isinstance(rank, bool) or rank is None) else 3
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 @_axis_nan_policy_factory(_pack_CorrelationResult, default_axis=None,
                           n_samples=_weightedtau_n_samples,
                           result_to_tuple=_unpack_CorrelationResult, paired=True,
@@ -8063,7 +8063,7 @@ def _kstest_n_samples(kwargs):
     return 1 if (isinstance(cdf, str) or callable(cdf)) else 2
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 @_axis_nan_policy_factory(_tuple_to_KstestResult, n_samples=_kstest_n_samples,
                           n_outputs=4, result_to_tuple=_KstestResult_to_tuple)
 @_rename_parameter("mode", "method")
@@ -8260,7 +8260,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
                     _no_deco=True)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def tiecorrect(rankvals):
     """Tie correction factor for Mann-Whitney U and Kruskal-Wallis H tests.
 
@@ -8309,7 +8309,7 @@ def tiecorrect(rankvals):
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 @_axis_nan_policy_factory(RanksumsResult, n_samples=2)
 def ranksums(x, y, alternative='two-sided'):
     """Compute the Wilcoxon rank-sum statistic for two samples.
@@ -9389,7 +9389,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 #####################################
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the Wasserstein-1 distance between two N-D discrete distributions.

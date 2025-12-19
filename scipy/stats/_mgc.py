@@ -96,7 +96,7 @@ MGCResult = _make_tuple_bunch('MGCResult',
                               ['statistic', 'pvalue', 'mgc_dict'], [])
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(out_of_scope=True)
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                          workers=1, is_twosamp=False, random_state=None):
     r"""Computes the Multiscale Graph Correlation (MGC) test statistic.
