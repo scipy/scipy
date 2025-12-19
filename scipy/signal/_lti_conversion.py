@@ -114,43 +114,54 @@ def tf2ss(num, den):
     return A, B, C, D
 
 
-def abcd_normalize(A=None, B=None, C=None, D=None):
-    """Check state-space matrices compatibility and ensure they are 2d arrays.
+def abcd_normalize(A=None, B=None, C=None, D=None, *, dtype=None):
+    r"""Check state-space matrices compatibility and ensure they are 2d arrays.
 
-    Converts input matrices into two-dimensional arrays as needed. Then the dimensions
-    n, q, p are determined by investigating the non-zero entries of the array shapes.
-    If a parameter is ``None``, or has shape (0, 0), it is set to a
-    zero-array of compatible shape. Finally, it is verified that all parameter shapes
-    are compatible to each other. If that fails, a ``ValueError`` is raised. Note that
-    the dimensions n, q, p are allowed to be zero.
+    First, the input matrices are converted into two-dimensional arrays with
+    appropriate dtype as needed. Then the dimensions n, q, p are determined by
+    investigating the array shapes. If an input is ``None``, or has size zero, it is
+    set to an array of zeros of compatible shape. Finally, it is verified that all
+    parameter shapes are compatible with each other. If that fails, a ``ValueError`` is
+    raised. Note that the dimensions n, q, p are allowed to be zero.
 
     Parameters
     ----------
-    A: array_like, optional
+    A : array_like, optional
         Two-dimensional array of shape (n, n).
-    B: array_like, optional
+    B : array_like, optional
         Two-dimensional array of shape (n, p).
-    C: array_like, optional
+    C : array_like, optional
         Two-dimensional array of shape (q, n).
-    D: array_like, optional
+    D : array_like, optional
         Two-dimensional array of shape (q, p).
+    dtype : dtype | None, optional
+        Cast all matrices to the specified dtype. If set to ``None`` (default), their
+        dtypes will be "complex128" if any of the matrices are complex-valued.
+        Otherwise, they will be of the type "float64".
+
+        .. versionadded:: 1.18.0
+
+            With this new parameter, all return values have identical dtypes.
+            In previous versions the dtype of the input was preserved.
 
     Returns
     -------
     A, B, C, D : array
-        State-space matrices as two-dimensional arrays.
-
-    Notes
-    -----
-    The :ref:`tutorial_signal_state_space_representation` section of the
-    :ref:`user_guide` presents the corresponding definitions of continuous-time and
-    disrcete time state space systems.
+        State-space matrices as two-dimensional arrays with identical dtype.
 
     Raises
     ------
     ValueError
         If the dimensions n, q, or p could not be determined or if the shapes are
         incompatible with each other.
+
+    Notes
+    -----
+    If a matrix is not modified, the original matrix (not a copy) is returned.
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
 
     See Also
     --------
@@ -181,6 +192,21 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
     ((2, 2), (2, 1), (1, 2), (1, 1))
     >>> CC
     array([[0., 0.]])
+
+    The following snippet shows the effect of the `dtype` parameter:
+
+    >>> import numpy as np
+    >>> from scipy.signal import abcd_normalize
+    >>> A, D = [[1, 2], [3, 4]], 2.5
+    ...
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D)  # default type casting
+    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
+     AA: float64, BB: float64
+     CC: float64, DD: float64
+    >>> AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=np.float32)  # Explicit dtype
+    >>> print(f" AA: {AA.dtype}, BB: {BB.dtype}\n CC: {CC.dtype}, DD: {DD.dtype}")
+     AA: float32, BB: float32
+     CC: float32, DD: float32
     """
     if A is None and B is None and C is None:
         raise ValueError("Dimension n is undefined for parameters A = B = C = None!")
@@ -190,17 +216,34 @@ def abcd_normalize(A=None, B=None, C=None, D=None):
         raise ValueError("Dimension q is undefined for parameters C = D = None!")
 
     xp = array_namespace(A, B, C, D)
-    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2) if M_ is not None else
-                  xp.zeros((0, 0)) for M_ in (A, B, C, D))
 
-    n = A.shape[0] or B.shape[0] or C.shape[1] or 0  # try finding non-zero dimensions
-    p = B.shape[1] or D.shape[1] or 0
-    q = C.shape[0] or D.shape[0] or 0
+    # convert inputs into 2d arrays (zero-size 2d array if None):
+    A, B, C, D = (xpx.atleast_nd(xp.asarray(M_), ndim=2, xp=xp)
+                  if M_ is not None else xp.zeros((0, 0)) for M_ in (A, B, C, D))
 
-    A = xp.zeros((n, n)) if xp_size(A) == 0 else A  # Create zero-matrices if needed
+    if dtype is None:
+        to_comp = any(xp.isdtype(M_.dtype, 'complex floating') for M_ in (A, B, C, D))
+        dtype = xp.complex128 if to_comp else xp.float64
+    else:
+        try:
+            is_numeric = xp.isdtype(dtype, 'numeric')
+        except Exception as dtype_error:
+            err_msg = f"Parameter {dtype=} must be None or a numeric dtype!"
+            raise ValueError(err_msg) from dtype_error
+        if not is_numeric:
+            raise ValueError(f"Parameter {dtype=} is not a numeric dtype!")
+
+    n = A.shape[0] or B.shape[0] or C.shape[1] # try finding non-zero dimensions
+    p = B.shape[1] or D.shape[1]
+    q = C.shape[0] or D.shape[0]
+
+    # Create zero matrices as needed:
+    A = xp.zeros((n, n)) if xp_size(A) == 0 else A
     B = xp.zeros((n, p)) if xp_size(B) == 0 else B
     C = xp.zeros((q, n)) if xp_size(C) == 0 else C
     D = xp.zeros((q, p)) if xp_size(D) == 0 else D
+
+    A, B, C, D = (xp.astype(M_, dtype, copy=False) for M_ in (A, B, C, D))
 
     if A.shape != (n, n):
         raise ValueError(f"Parameter A has shape {A.shape} but should be ({n}, {n})!")
@@ -243,6 +286,17 @@ def ss2tf(A, B, C, D, input=0):
         Denominator of the resulting transfer function(s). `den` is a sequence
         representation of the denominator polynomial.
 
+    Notes
+    -----
+    Before calculating `num` and `den`, the function `abcd_normalize` is called to
+    convert the parameters `A`, `B`, `C`, `D` into two-dimesional arrays. Their dtypes
+    will be "complex128" if any of the matrices are complex-valued. Otherwise, they
+    will be of type "float64".
+
+    The :ref:`tutorial_signal_state_space_representation` section of the
+    :ref:`user_guide` presents the corresponding definitions of continuous-time and
+    disrcete time state space systems.
+
     Examples
     --------
     Convert the state-space representation:
@@ -271,7 +325,7 @@ def ss2tf(A, B, C, D, input=0):
     """
     # transfer function is C (sI - A)**(-1) B + D
 
-    # Check consistency and make them all rank-2 arrays
+    # Check consistency and make them all floating point 2d arrays:
     A, B, C, D = abcd_normalize(A, B, C, D)
 
     nout, nin = D.shape
