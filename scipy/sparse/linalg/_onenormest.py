@@ -8,7 +8,7 @@ from scipy.sparse.linalg import aslinearoperator
 __all__ = ['onenormest']
 
 
-def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
+def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False, *, rng=None):
     """
     Compute a lower bound of the 1-norm of a sparse array.
 
@@ -28,6 +28,12 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
         Request a norm-maximizing linear operator input vector if True.
     compute_w : bool, optional
         Request a norm-maximizing linear operator output vector if True.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -80,6 +86,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     >>> np.linalg.norm(A.toarray(), ord=1)
     9.0
     """
+    rng = np.random.default_rng(rng)
 
     # Check the input.
     A = aslinearoperator(A)
@@ -104,7 +111,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
         w = A_explicit[:, argmax_j]
         est = col_abs_sums[argmax_j]
     else:
-        est, v, w, nmults, nresamples = _onenormest_core(A, A.H, t, itmax)
+        est, v, w, nmults, nresamples = _onenormest_core(A, A.H, t, itmax, rng)
 
     # Report the norm estimate along with some certificates of the estimate.
     if compute_v or compute_w:
@@ -200,7 +207,6 @@ def column_needs_resampling(i, X, Y=None):
     # column i of X needs resampling if either
     # it is parallel to a previous column of X or
     # it is parallel to a column of Y
-    n, t = X.shape
     v = X[:, i]
     if any(vectors_are_parallel(v, X[:, j]) for j in range(i)):
         return True
@@ -210,118 +216,15 @@ def column_needs_resampling(i, X, Y=None):
     return False
 
 
-def resample_column(i, X):
-    X[:, i] = np.random.randint(0, 2, size=X.shape[0])*2 - 1
+def resample_column(i, X, rng):
+    X[:, i] = rng.integers(0, 2, size=X.shape[0])*2 - 1
 
 
 def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-def _algorithm_2_2(A, AT, t):
-    """
-    This is Algorithm 2.2.
-
-    Parameters
-    ----------
-    A : ndarray or other linear operator
-        A linear operator that can produce matrix products.
-    AT : ndarray or other linear operator
-        The transpose of A.
-    t : int, optional
-        A positive parameter controlling the tradeoff between
-        accuracy versus time and memory usage.
-
-    Returns
-    -------
-    g : sequence
-        A non-negative decreasing vector
-        such that g[j] is a lower bound for the 1-norm
-        of the column of A of jth largest 1-norm.
-        The first entry of this vector is therefore a lower bound
-        on the 1-norm of the linear operator A.
-        This sequence has length t.
-    ind : sequence
-        The ith entry of ind is the index of the column A whose 1-norm
-        is given by g[i].
-        This sequence of indices has length t, and its entries are
-        chosen from range(n), possibly with repetition,
-        where n is the order of the operator A.
-
-    Notes
-    -----
-    This algorithm is mainly for testing.
-    It uses the 'ind' array in a way that is similar to
-    its usage in algorithm 2.4. This algorithm 2.2 may be easier to test,
-    so it gives a chance of uncovering bugs related to indexing
-    which could have propagated less noticeably to algorithm 2.4.
-
-    """
-    A_linear_operator = aslinearoperator(A)
-    AT_linear_operator = aslinearoperator(AT)
-    n = A_linear_operator.shape[0]
-
-    # Initialize the X block with columns of unit 1-norm.
-    X = np.ones((n, t))
-    if t > 1:
-        X[:, 1:] = np.random.randint(0, 2, size=(n, t-1))*2 - 1
-    X /= float(n)
-
-    # Iteratively improve the lower bounds.
-    # Track extra things, to assert invariants for debugging.
-    g_prev = None
-    h_prev = None
-    k = 1
-    ind = range(t)
-    while True:
-        Y = np.asarray(A_linear_operator.matmat(X))
-        g = _sum_abs_axis0(Y)
-        best_j = np.argmax(g)
-        g.sort()
-        g = g[::-1]
-        S = sign_round_up(Y)
-        Z = np.asarray(AT_linear_operator.matmat(S))
-        h = _max_abs_axis1(Z)
-
-        # If this algorithm runs for fewer than two iterations,
-        # then its return values do not have the properties indicated
-        # in the description of the algorithm.
-        # In particular, the entries of g are not 1-norms of any
-        # column of A until the second iteration.
-        # Therefore we will require the algorithm to run for at least
-        # two iterations, even though this requirement is not stated
-        # in the description of the algorithm.
-        if k >= 2:
-            if less_than_or_close(max(h), np.dot(Z[:, best_j], X[:, best_j])):
-                break
-        ind = np.argsort(h)[::-1][:t]
-        h = h[ind]
-        for j in range(t):
-            X[:, j] = elementary_vector(n, ind[j])
-
-        # Check invariant (2.2).
-        if k >= 2:
-            if not less_than_or_close(g_prev[0], h_prev[0]):
-                raise Exception('invariant (2.2) is violated')
-            if not less_than_or_close(h_prev[0], g[0]):
-                raise Exception('invariant (2.2) is violated')
-
-        # Check invariant (2.3).
-        if k >= 3:
-            for j in range(t):
-                if not less_than_or_close(g[j], g_prev[j]):
-                    raise Exception('invariant (2.3) is violated')
-
-        # Update for the next iteration.
-        g_prev = g
-        h_prev = h
-        k += 1
-
-    # Return the lower bounds and the corresponding column indices.
-    return g, ind
-
-
-def _onenormest_core(A, AT, t, itmax):
+def _onenormest_core(A, AT, t, itmax, rng):
     """
     Compute a lower bound of the 1-norm of a sparse array.
 
@@ -388,10 +291,10 @@ def _onenormest_core(A, AT, t, itmax):
         for i in range(1, t):
             # These are technically initial samples, not resamples,
             # so the resampling count is not incremented.
-            resample_column(i, X)
+            resample_column(i, X, rng)
         for i in range(t):
             while column_needs_resampling(i, X):
-                resample_column(i, X)
+                resample_column(i, X, rng)
                 nresamples += 1
     # "Choose starting matrix X with columns of unit 1-norm."
     X /= float(n)
@@ -429,7 +332,7 @@ def _onenormest_core(A, AT, t, itmax):
             # or to a column of S_old by replacing columns of S by rand{-1,1}."
             for i in range(t):
                 while column_needs_resampling(i, S, S_old):
-                    resample_column(i, S)
+                    resample_column(i, S, rng)
                     nresamples += 1
         del S_old
         # (3)
