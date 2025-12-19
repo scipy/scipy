@@ -10414,7 +10414,7 @@ def _unpack_LinregressResult(res, _):
     return tuple(res) + (res.intercept_stderr,)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')])
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
@@ -10531,62 +10531,65 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     intercept (95%): 0.616950 +/- 0.544475
 
     """
-    np = array_namespace(x, y)  # needed for vecdot pre NumPy 2.0
+    xp = array_namespace(x, y)  # needed for vecdot pre NumPy 2.0
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
 
     TINY = 1.0e-20
 
     # _axis_nan_policy decorator ensures that `axis=-1`
     n = x.shape[-1]
-    xmean = np.mean(x, axis=-1, keepdims=True)
-    ymean = np.mean(y, axis=-1, keepdims=True)
+    xmean = xp.mean(x, axis=-1, keepdims=True)
+    ymean = xp.mean(y, axis=-1, keepdims=True)
 
     # Average sums of square differences from the mean
     #   ssxm = mean( (x-mean(x))^2 )
     #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
-    x_ = _demean(x, xmean, axis=-1, xp=np)
-    y_ = _demean(y, ymean, axis=-1, xp=np, precision_warning=False)
-    xmean = np.squeeze(xmean, axis=-1)
-    ymean = np.squeeze(ymean, axis=-1)
+    x_ = _demean(x, xmean, axis=-1, xp=xp)
+    y_ = _demean(y, ymean, axis=-1, xp=xp, precision_warning=False)
+    xmean = xp.squeeze(xmean, axis=-1)
+    ymean = xp.squeeze(ymean, axis=-1)
 
-    ssxm = np.vecdot(x_, x_, axis=-1) / n
-    ssym = np.vecdot(y_, y_, axis=-1) / n
-    ssxym = np.vecdot(x_, y_, axis=-1) / n
+    ssxm = xp.vecdot(x_, x_, axis=-1) / n
+    ssym = xp.vecdot(y_, y_, axis=-1) / n
+    ssxym = xp.vecdot(x_, y_, axis=-1) / n
 
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
     degenerate = (ssxm == 0.0) | (ssym == 0.0)
+    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
     r = xpx.apply_where(
         ~degenerate,
         (ssxym, ssxm, ssym),
-        lambda ssxym, ssxm, ssym: np.clip(ssxym / np.sqrt(ssxm * ssym), -1.0, 1.0),
-        lambda ssxym, ssxm, ssym: np.where(ssxym==0, np.nan, 0.0)
+        lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
+        lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
     )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
     if n == 2:
         # handle case when only two points are passed in
-        prob = np.where(y[..., 0] == y[..., 1], 1.0, 0.0)
-        slope_stderr = np.zeros_like(r)
-        intercept_stderr = np.zeros_like(r)
+        one = xp.asarray(1.0, dtype=r.dtype)
+        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
+        slope_stderr = xp.zeros_like(r)
+        intercept_stderr = xp.zeros_like(r)
     else:
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
-        t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+        t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-        dist = _SimpleStudentT(df)
-        prob = _get_pvalue(t, dist, alternative, xp=np)
+        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+        prob = _get_pvalue(t, dist, alternative, xp=xp)
         prob = prob[()] if prob.ndim == 0 else prob
 
-        slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        slope_stderr = xp.sqrt((1 - r**2) * ssym / ssxm / df)
 
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )
         #        = ssx - sx*sx
         #        = mean( x^2 ) - mean(x)^2
-        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
+        intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
     return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
                             pvalue=prob[()], stderr=slope_stderr[()],
