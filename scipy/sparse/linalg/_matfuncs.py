@@ -18,7 +18,7 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse._sputils import is_pydata_spmatrix, isintlike
 
 import scipy.sparse
-import scipy.sparse.linalg
+import scipy.linalg
 from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse._construct import eye_array
 
@@ -251,89 +251,6 @@ class ProductOperator(LinearOperator):
         return ProductOperator(*T_args)
 
 
-def _onenormest_matrix_power(A, p,
-        t=2, itmax=5, compute_v=False, compute_w=False, structure=None):
-    """
-    Efficiently estimate the 1-norm of A^p.
-
-    Parameters
-    ----------
-    A : ndarray
-        Matrix whose 1-norm of a power is to be computed.
-    p : int
-        Non-negative integer power.
-    t : int, optional
-        A positive parameter controlling the tradeoff between
-        accuracy versus time and memory usage.
-        Larger values take longer and use more memory
-        but give more accurate output.
-    itmax : int, optional
-        Use at most this many iterations.
-    compute_v : bool, optional
-        Request a norm-maximizing linear operator input vector if True.
-    compute_w : bool, optional
-        Request a norm-maximizing linear operator output vector if True.
-
-    Returns
-    -------
-    est : float
-        An underestimate of the 1-norm of the sparse arrays.
-    v : ndarray, optional
-        The vector such that ||Av||_1 == est*||v||_1.
-        It can be thought of as an input to the linear operator
-        that gives an output with particularly large norm.
-    w : ndarray, optional
-        The vector Av which has relatively large 1-norm.
-        It can be thought of as an output of the linear operator
-        that is relatively large in norm compared to the input.
-
-    """
-    return scipy.sparse.linalg.onenormest(
-            MatrixPowerOperator(A, p, structure=structure))
-
-
-def _onenormest_product(operator_seq,
-        t=2, itmax=5, compute_v=False, compute_w=False, structure=None):
-    """
-    Efficiently estimate the 1-norm of the matrix product of the args.
-
-    Parameters
-    ----------
-    operator_seq : linear operator sequence
-        Matrices whose 1-norm of product is to be computed.
-    t : int, optional
-        A positive parameter controlling the tradeoff between
-        accuracy versus time and memory usage.
-        Larger values take longer and use more memory
-        but give more accurate output.
-    itmax : int, optional
-        Use at most this many iterations.
-    compute_v : bool, optional
-        Request a norm-maximizing linear operator input vector if True.
-    compute_w : bool, optional
-        Request a norm-maximizing linear operator output vector if True.
-    structure : str, optional
-        A string describing the structure of all operators.
-        Only `upper_triangular` is currently supported.
-
-    Returns
-    -------
-    est : float
-        An underestimate of the 1-norm of the sparse arrays.
-    v : ndarray, optional
-        The vector such that ||Av||_1 == est*||v||_1.
-        It can be thought of as an input to the linear operator
-        that gives an output with particularly large norm.
-    w : ndarray, optional
-        The vector Av which has relatively large 1-norm.
-        It can be thought of as an output of the linear operator
-        that is relatively large in norm compared to the input.
-
-    """
-    return scipy.sparse.linalg.onenormest(
-            ProductOperator(*operator_seq, structure=structure))
-
-
 class _ExpmPadeHelper:
     """
     Help lazily evaluate a matrix exponential.
@@ -445,8 +362,9 @@ class _ExpmPadeHelper:
             return self._d4_exact
         else:
             if self._d4_approx is None:
-                self._d4_approx = _onenormest_matrix_power(self.A2, 2,
-                        structure=self.structure)**(1/4.)
+                self._d4_approx = scipy.sparse.linalg.onenormest(
+                    MatrixPowerOperator(self.A2, 2, structure=self.structure)
+                )**(1/4.)
             return self._d4_approx
 
     @property
@@ -457,8 +375,9 @@ class _ExpmPadeHelper:
             return self._d6_exact
         else:
             if self._d6_approx is None:
-                self._d6_approx = _onenormest_matrix_power(self.A2, 3,
-                        structure=self.structure)**(1/6.)
+                self._d6_approx = scipy.sparse.linalg.onenormest(
+                    MatrixPowerOperator(self.A2, 3, structure=self.structure)
+                )**(1/6.)
             return self._d6_approx
 
     @property
@@ -469,8 +388,9 @@ class _ExpmPadeHelper:
             return self._d8_exact
         else:
             if self._d8_approx is None:
-                self._d8_approx = _onenormest_matrix_power(self.A4, 2,
-                        structure=self.structure)**(1/8.)
+                self._d8_approx = scipy.sparse.linalg.onenormest(
+                    MatrixPowerOperator(self.A4, 2, structure=self.structure)
+                )**(1/8.)
             return self._d8_approx
 
     @property
@@ -481,8 +401,9 @@ class _ExpmPadeHelper:
             return self._d10_exact
         else:
             if self._d10_approx is None:
-                self._d10_approx = _onenormest_product((self.A4, self.A6),
-                        structure=self.structure)**(1/10.)
+                self._d10_approx = scipy.sparse.linalg.onenormest(
+                    ProductOperator(self.A4, self.A6, structure=self.structure)
+                )**(1/10.)
             return self._d10_approx
 
     def pade3(self):
@@ -863,12 +784,13 @@ def _ell(A, m):
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
 
+
 def matrix_power(A, power):
     """
     Raise a square matrix to the integer power, `power`.
 
     For non-negative integers, ``A**power`` is computed using repeated
-    matrix multiplications. Negative integers are not supported. 
+    matrix multiplications. Negative integers are not supported.
 
     Parameters
     ----------
@@ -882,13 +804,13 @@ def matrix_power(A, power):
     A**power : (M, M) sparse array or matrix
         The output matrix will be the same shape as A, and will preserve
         the class of A, but the format of the output may be changed.
-    
+
     Notes
     -----
     This uses a recursive implementation of the matrix power. For computing
     the matrix power using a reasonably large `power`, this may be less efficient
     than computing the product directly, using A @ A @ ... @ A.
-    This is contingent upon the number of nonzero entries in the matrix. 
+    This is contingent upon the number of nonzero entries in the matrix.
 
     .. versionadded:: 1.12.0
 
