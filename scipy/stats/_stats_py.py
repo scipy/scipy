@@ -10414,11 +10414,12 @@ def _unpack_LinregressResult(res, _):
     return tuple(res) + (res.intercept_stderr,)
 
 
-@xp_capabilities(np_only=True)
+@xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')],
+                 cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
-def linregress(x, y, alternative='two-sided'):
+def linregress(x, y, alternative='two-sided', *, axis=0):
     """
     Calculate a linear least-squares regression for two sets of measurements.
 
@@ -10435,6 +10436,11 @@ def linregress(x, y, alternative='two-sided'):
         * 'greater':  the slope of the regression line is greater than zero
 
         .. versionadded:: 1.7.0
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -10526,71 +10532,69 @@ def linregress(x, y, alternative='two-sided'):
     intercept (95%): 0.616950 +/- 0.544475
 
     """
+    xp = array_namespace(x, y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+
     TINY = 1.0e-20
-    x = np.asarray(x)
-    y = np.asarray(y)
 
-    if x.size == 0 or y.size == 0:
-        raise ValueError("Inputs must not be empty.")
-
-    if np.amax(x) == np.amin(x) and len(x) > 1:
-        raise ValueError("Cannot calculate a linear regression "
-                         "if all x values are identical")
-
-    n = len(x)
-    xmean = np.mean(x, None)
-    ymean = np.mean(y, None)
+    # _axis_nan_policy decorator ensures that `axis=-1`
+    n = x.shape[-1]
+    xmean = xp.mean(x, axis=-1, keepdims=True)
+    ymean = xp.mean(y, axis=-1, keepdims=True)
 
     # Average sums of square differences from the mean
     #   ssxm = mean( (x-mean(x))^2 )
     #   ssxym = mean( (x-mean(x)) * (y-mean(y)) )
-    ssxm, ssxym, _, ssym = np.cov(x, y, bias=1).flat
+    x_ = _demean(x, xmean, axis=-1, xp=xp)
+    y_ = _demean(y, ymean, axis=-1, xp=xp, precision_warning=False)
+    xmean = xp.squeeze(xmean, axis=-1)
+    ymean = xp.squeeze(ymean, axis=-1)
+
+    ssxm = xp.vecdot(x_, x_, axis=-1) / n
+    ssym = xp.vecdot(y_, y_, axis=-1) / n
+    ssxym = xp.vecdot(x_, y_, axis=-1) / n
 
     # R-value
     #   r = ssxym / sqrt( ssxm * ssym )
-    if ssxm == 0.0 or ssym == 0.0:
-        # If the denominator was going to be 0
-        r = np.asarray(np.nan if ssxym == 0 else 0.0)[()]
-    else:
-        r = ssxym / np.sqrt(ssxm * ssym)
-        # Test for numerical error propagation (make sure -1 < r < 1)
-        if r > 1.0:
-            r = 1.0
-        elif r < -1.0:
-            r = -1.0
+    degenerate = (ssxm == 0.0) | (ssym == 0.0)
+    NaN = xp.asarray(xp.nan, dtype=ssxym.dtype)
+    r = xpx.apply_where(
+        ~degenerate,
+        (ssxym, ssxm, ssym),
+        lambda ssxym, ssxm, ssym: xp.clip(ssxym / xp.sqrt(ssxm * ssym), -1.0, 1.0),
+        lambda ssxym, ssxm, ssym: xp.where(ssxym==0, NaN, 0.0)
+    )
 
     slope = ssxym / ssxm
     intercept = ymean - slope*xmean
     if n == 2:
         # handle case when only two points are passed in
-        if y[0] == y[1]:
-            prob = 1.0
-        else:
-            prob = 0.0
-        slope_stderr = 0.0
-        intercept_stderr = 0.0
+        one = xp.asarray(1.0, dtype=r.dtype)
+        prob = xp.where(y[..., 0] == y[..., 1], one, 0.0)
+        slope_stderr = xp.zeros_like(r)
+        intercept_stderr = xp.zeros_like(r)
     else:
         df = n - 2  # Number of degrees of freedom
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
-        t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+        t = r * xp.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-        dist = _SimpleStudentT(df)
-        prob = _get_pvalue(t, dist, alternative, xp=np)
+        dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+        prob = _get_pvalue(t, dist, alternative, xp=xp)
         prob = prob[()] if prob.ndim == 0 else prob
 
-        slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        slope_stderr = xp.sqrt((1 - r**2) * ssym / ssxm / df)
 
         # Also calculate the standard error of the intercept
         # The following relationship is used:
         #   ssxm = mean( (x-mean(x))^2 )
         #        = ssx - sx*sx
         #        = mean( x^2 ) - mean(x)^2
-        intercept_stderr = slope_stderr * np.sqrt(ssxm + xmean**2)
+        intercept_stderr = slope_stderr * xp.sqrt(ssxm + xmean**2)
 
-    return LinregressResult(slope=slope, intercept=intercept, rvalue=r,
-                            pvalue=prob, stderr=slope_stderr,
-                            intercept_stderr=intercept_stderr)
+    return LinregressResult(slope=slope[()], intercept=intercept[()], rvalue=r[()],
+                            pvalue=prob[()], stderr=slope_stderr[()],
+                            intercept_stderr=intercept_stderr[()])
 
 
 def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
