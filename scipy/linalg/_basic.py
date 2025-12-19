@@ -1628,9 +1628,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     x : (N,) or (..., N, K) ndarray
         Least-squares solution.
     residues : (K,) ndarray or float
-        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` and
-        ``rank(A) == n`` (returns a scalar if ``b`` is 1-D). Otherwise a
-        (0,)-shaped array is returned.
+        Square of the 2-norm for each column in ``b - a x``, if ``M > N`` (returns a
+        scalar if ``b`` is 1-D). Otherwise a (0,)-shaped array is returned.
     rank : int
         Effective rank of `a`.
     s : (min(M, N),) ndarray or None
@@ -1651,8 +1650,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Notes
     -----
-    When ``'gelsy'`` is used as a driver, `residues` is set to a (0,)-shaped
-    array and `s` is always ``None``.
+    When ``'gelsy'`` is used as a driver, `s` is always ``None``.
 
     Examples
     --------
