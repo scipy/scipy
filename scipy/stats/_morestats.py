@@ -516,7 +516,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
@@ -680,7 +680,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         return osm, osr
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     """Calculate the shape parameter that maximizes the PPCC.
 
@@ -769,7 +769,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
                           args=(osm_uniform, osr, dist.ppf))
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     """Calculate and optionally plot probability plot correlation coefficient.
 
@@ -1502,7 +1502,7 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     return lmbdas, ppcc
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1926,7 +1926,7 @@ def yeojohnson_normmax(x, brack=None):
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
-@xp_capabilities(out_of_scope=True)
+@xp_capabilities(np_only=True)
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
 
