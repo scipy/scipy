@@ -63,19 +63,23 @@ def _curfit(x, y, k, w=None, xb=None, xe=None, s=None, nest=None, iopt=0,
     For compatibility with old code, can be unpacked as:
         _data = (x, y, w, xb, xe, k, s, n, t, c, fp, None, None, ier)
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    x = np.asarray(x, dtype=float, order='F').ravel('F')
+    y = np.asarray(y, dtype=float, order='F').ravel('F')
     m = len(x)
 
     if w is None:
         w = np.ones(m, dtype=float)
     else:
-        w = np.asarray(w, dtype=float)
+        w = np.asarray(w, dtype=float, order='F').ravel('F')
 
     if xb is None:
-        xb = x[0]
+        xb = float(x[0])
+    else:
+        xb = float(xb)
     if xe is None:
-        xe = x[-1]
+        xe = float(x[-1])
+    else:
+        xe = float(xe)
     if s is None:
         s = float(m)
 
@@ -262,12 +266,13 @@ def _spherfit_smth(theta, phi, r, w, s, eps):
     npest = 8 + int(np.sqrt(m / 2))
 
     # Workspace
-    # 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp**2)
-    # npp = npest - 7, ntt = ntest - 7
+    # lwrk1: 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+    # lwrk2: 48+21*v+7*u*v+4*(u-1)*v**2
+    # where u = ntest - 7, v = npest - 7
     u = ntest - 7
     v = npest - 7
     lwrk1 = 185 + 52*v + 10*u + 14*u*v + 8*(u-1)*v*v + 8*m
-    lwrk2 = 4 * ntest + 6 * npest
+    lwrk2 = 48 + 21*v + 7*u*v + 4*(u-1)*v*v
     kwrk = m + (ntest - 7) * (npest - 7)
     wrk1 = np.zeros(lwrk1, dtype=np.float64)
     wrk2 = np.zeros(lwrk2, dtype=np.float64)
@@ -302,12 +307,13 @@ def _spherfit_lsq(theta, phi, r, nt, tt, np_, tp, w, eps):
     npest = np_
 
     # Workspace
-    # 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp**2)
-    # npp = npest - 7, ntt = ntest - 7
+    # lwrk1: 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+    # lwrk2: 48+21*v+7*u*v+4*(u-1)*v**2
+    # where u = ntest - 7, v = npest - 7
     u = ntest - 7
     v = npest - 7
     lwrk1 = 185 + 52*v + 10*u + 14*u*v + 8*(u-1)*v*v + 8*m
-    lwrk2 = 4 * ntest + 6 * npest
+    lwrk2 = 48 + 21*v + 7*u*v + 4*(u-1)*v*v
     kwrk = m + (ntest - 7) * (npest - 7)
     wrk1 = np.zeros(lwrk1, dtype=np.float64)
     wrk2 = np.zeros(lwrk2, dtype=np.float64)

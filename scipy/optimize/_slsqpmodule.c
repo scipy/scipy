@@ -1,46 +1,3 @@
-/*
- * This file and the accompanying __slsqp.c file are the C translations of the
- * Fortran77 code of the SLSQP algorithm for the SciPy project and hence inherits
- * SciPy license. The original Fortran code is available at
- * http://www.netlib.org/toms/733 written by Dieter Kraft, see:
- *
- *  ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
- *  TRANSACTIONS ON MATHEMATICAL SOFTWARE,
- *  VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
- *  https://doi.org/10.1145/192115.192124
- *
- *
- * The original Fortran code is released for use under BSD license, with the
- * following statement from the original license holder ACM publications:
-  *
- *  https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
- *  ------
- *  From: Deborah Cotton <cotton@hq.acm.org>
- *  Date: Fri, 14 Sep 2007 12:35:55 -0500
- *  Subject: RE: Algorithm License requested
- *  To: Alan Isaac
- *
- *  Prof. Issac,
- *
- *  In that case, then because the author consents to [the ACM] releasing
- *  the code currently archived at http://www.netlib.org/toms/733 under the
- *  BSD license, the ACM hereby releases this code under the BSD license.
- *
- *  Regards,
- *
- *  Deborah Cotton, Copyright & Permissions
- *  ACM Publications
- *  2 Penn Plaza, Suite 701**
- *  New York, NY 10121-0701
- *  permissions@acm.org
- *  212.869.7440 ext. 652
- *  Fax. 212.869.0481
- *  ------
-*/
-
-#ifndef __SLSQPLIB_H
-#define __SLSQPLIB_H
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
@@ -49,39 +6,7 @@
 static PyObject* slsqp_error;
 
 #include <math.h>
-#include "__nnls.h"
-
-// BLAS/LAPACK function prototypes used in SLSQP
-void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
-double ddot_(int* n, double* dx, int* incx, double* dy, int* incy);
-void dgelsy_(int* m, int* n, int* nrhs, double* a, int* lda, double* b, int* ldb, int* jpvt, double* rcond, int* rank, double* work, int* lwork, int* info);
-void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
-void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
-void dgeqrf_(int* m, int* n, double* a, int* lda, double* tau, double* work, double* lwork, int* info);
-void dgerq2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
-void dlarf_(char* side, int* m, int* n, double* v, int* incv, double* tau, double* c, int* ldc, double* work);
-void dlarfgp_(int* n, double* alpha, double* x, int* incx, double* tau);
-void dlartgp_(double* f, double* g, double* cs, double* sn, double* r);
-double dnrm2_(int* n, double* x, int* incx);
-void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
-void dormr2_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
-void dscal_(int* n, double* da, double* dx, int* incx);
-void dtpmv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
-void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
-void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
-void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, double* x, int* incx);
-
-
-// The SLSQP_vars struct holds the state of the algorithm and passed to Python
-// and back such that it is thread-safe.
-struct SLSQP_vars {
-    double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol;
-    int exact, inconsistent, reset, iter, itermax, line, m, meq, mode, n;
-};
-
-
-void __slsqp_body(struct SLSQP_vars* S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
-
+#include "src/slsqp.h"
 
 // A simple destructor for buffer attached to a NumPy array via a capsule.
 static void
@@ -214,15 +139,11 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to create capsule.");
     }
 
-    // For ref counting of the memory
-    if (PyArray_SetBaseObject(ap_ret, capsule) == -1) {
-        Py_DECREF(ap_ret);
-        free(mem_ret);
-        PYERR(slsqp_error, "scipy.optimize._slsqplib: Failed to set array's base.");
-    }
+    PyArray_SetBaseObject((PyArrayObject *)ap_ret, capsule);
 
     // Return the result
     return Py_BuildValue("Ndi", PyArray_Return(ap_ret), rnorm, info);
+
 }
 
 
@@ -383,58 +304,118 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
 };
 
 
-static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
-                           "    x, info = nnls(A)\n\n");
+static char doc_nnls[] = (
+    "nnls(A, b, maxiter)\n\n"
+    "Nonnegative least squares solver.\n\n"
+    "Solves the constrained optimization problem ``min ||A x - b||_2`` "
+    "subject to ``x >= 0``.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "A : ndarray, shape (m, n)\n"
+    "    Coefficient matrix, float64.\n"
+    "b : ndarray, shape (m,) or (m, 1)\n"
+    "    Right-hand side vector, float64.\n"
+    "maxiter : int\n"
+    "    Maximum number of iterations.\n\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape (n,)\n"
+    "    Solution vector.\n"
+    "rnorm : float\n"
+    "    Residual norm ||A x - b||_2.\n"
+    "info : int\n"
+    "    Exit status. 0 indicates successful convergence.\n\n"
+);
 
 
 static char doc_slsqp[] = (
-    "Sequential Least Squares Programming (SLSQP) optimizer.\n\n"
-    "    x, info = slsqp(S: dict, funx: np.float64, "
-    "gradx: NDArray, C: NDarray, d: NDArray, "
-    "sol: NDArray, xl: NDArray, xu: NDArray, buffer: NDArray, indices: NDArray)"
-    "\n\n");
+    "slsqp(S, funx, gradx, C, d, sol, mult, xl, xu, buffer, indices)\n\n"
+    "Sequential Least Squares Programming solver.\n\n"
+    "Low-level interface to the SLSQP optimization algorithm. "
+    "Performs a single iteration step.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "S : dict\n"
+    "    State dictionary containing algorithm parameters and internal state. "
+    "Keys include: m (constraints), meq (equality constraints), n (variables), "
+    "acc (accuracy), maxiter, mode, and internal state variables. "
+    "Modified in-place.\n"
+    "funx : float\n"
+    "    Current objective function value.\n"
+    "gradx : ndarray, shape (n,)\n"
+    "    Gradient of objective function at current point, float64.\n"
+    "C : ndarray, shape (m, n)\n"
+    "    Constraint Jacobian matrix, float64.\n"
+    "d : ndarray, shape (m,)\n"
+    "    Constraint values, float64.\n"
+    "sol : ndarray, shape (n,)\n"
+    "    Current solution vector, float64. Modified in-place.\n"
+    "mult : ndarray, shape (m + 2*n + 2,)\n"
+    "    Lagrange multipliers, float64.\n"
+    "xl : ndarray, shape (n,)\n"
+    "    Lower bounds on variables, float64. Use NaN for unbounded.\n"
+    "xu : ndarray, shape (n,)\n"
+    "    Upper bounds on variables, float64. Use NaN for unbounded.\n"
+    "buffer : ndarray\n"
+    "    Workspace array for internal computations, float64.\n"
+    "indices : ndarray\n"
+    "    Index array for internal computations, int32.\n\n"
+    "Returns\n"
+    "-------\n"
+    "None\n"
+    "    Modifies S and sol in-place.\n\n"
+);
 
 
 // Sentinel terminated method list.
-static struct PyMethodDef slsqplib_module_methods[] = {
-  {"nnls", nnls, METH_VARARGS, doc_nnls},
-  {"slsqp", slsqp, METH_VARARGS, doc_slsqp},
-  {NULL, NULL, 0, NULL}
+static struct PyMethodDef slsqp_module_methods[] = {
+    {"nnls", nnls, METH_VARARGS, doc_nnls},
+    {"slsqp", slsqp, METH_VARARGS, doc_slsqp},
+    {NULL, NULL, 0, NULL}
 };
 
 
-struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_slsqplib",
-    NULL,
-    -1,
-    slsqplib_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+static int module_exec(PyObject *module) {
+
+    if (_import_array() < 0) { return -1; }
+
+    slsqp_error = PyErr_NewException ("_slsqplib.error", NULL, NULL);
+    if (slsqp_error == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", slsqp_error) < 0) {
+        Py_DECREF(slsqp_error);
+        return -1;
+    }
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot slsqp_slots[] = {
+    {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_slsqplib",
+    .m_size = 0,
+    .m_methods = slsqp_module_methods,
+    .m_slots = slsqp_slots
+};
+
 
 
 PyMODINIT_FUNC
 PyInit__slsqplib(void)
 {
-    import_array();
-
-    PyObject* module = PyModule_Create(&moduledef);
-    if (module == NULL) { return NULL; }
-    PyObject* mdict = PyModule_GetDict(module);
-    if (mdict == NULL) { return NULL; }
-    slsqp_error = PyErr_NewException("_slsqplib.error", NULL, NULL);
-    if (slsqp_error == NULL) { return NULL; }
-    if (PyDict_SetItemString(mdict, "error", slsqp_error)) { return NULL; }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-
-#endif // __SLSQPLIB_H

@@ -1,16 +1,9 @@
-/* This file is used to make _multipackmodule.c */
-/* $Revision$ */
-/* module_methods:
-  {"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
-  {"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
-  {"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},
-  {"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
-  {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
- */
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ccallback.h"
+#include "src/minpack.h"
+
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); goto fail;}
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
@@ -102,67 +95,58 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 	-- if no error, place result of Python code into multiarray object.
   */
 
-  PyObject *sequence = NULL;
+  PyArrayObject *sequence = NULL;
   PyObject *arglist = NULL;
   PyObject *arg1 = NULL;
   PyObject *result = NULL;
-  PyObject *result_array = NULL;
+  PyArrayObject *result_array = NULL;
   npy_intp fvec_sz = 0;
 
   /* Build sequence argument from inputs */
-  sequence = PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
-  if (sequence == NULL) {
-      PyErr_Print();
-      PyErr_SetString(error_obj, "Internal failure to make an array of doubles out of first\n                 argument to function call.");
-      return NULL;
+  sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
+  if (sequence == NULL) PYERR2(error_obj,"Internal failure to make an array of doubles out of first\n                 argument to function call.");
+
+  /* Build argument list */
+  if ((arg1 = PyTuple_New(1)) == NULL) {
+    Py_DECREF(sequence);
+    return NULL;
+  }
+  PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence);
+                /* arg1 now owns sequence reference */
+  if ((arglist = PySequence_Concat( arg1, args)) == NULL)
+    PYERR2(error_obj,"Internal error constructing argument list.");
+
+  Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
+  arg1 = NULL;
+
+  /* Call function object --- variable passed to routine.  Extra
+          arguments are in another passed variable.
+   */
+  if ((result = PyObject_CallObject(func, arglist))==NULL) {
+      goto fail;
   }
 
-  /* The array doesn't own the memory, so ensure it doesn't get cleaned up.*/
-  PyArray_CLEARFLAGS((PyArrayObject *)sequence, NPY_ARRAY_OWNDATA);
+  if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL)
+    PYERR2(error_obj,"Result from function call is not a proper array of floats.");
 
-  /* Build argument list, returning a tuple of size 1+n_args: (x, *args) */
-  arg1 = PyTuple_Pack(1, sequence);
-  Py_DECREF(sequence);
-  if (arg1 == NULL) {
-      return NULL;
-  }
-  arglist = PySequence_Concat(arg1, args);
-  Py_DECREF(arg1);
-  if (arglist == NULL) {
-      return NULL;
-  }
-
-  /* Call function object with variables and extra arguments. */
-  result = PyObject_CallObject(func, arglist);
-  Py_DECREF(arglist);
-  if (result == NULL) {
-      return NULL;
-  }
-
-  result_array = PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim);
-  Py_DECREF(result);
-  if (result_array == NULL) {
-      PyErr_Print();
-      PyErr_SetString(error_obj, "Result from function call is not a proper array of floats.");
-      return NULL;
-  }
-
-  fvec_sz = PyArray_SIZE((PyArrayObject *)result_array);
-  if (out_size != -1 && fvec_sz != out_size) {
+  fvec_sz = PyArray_SIZE(result_array);
+  if(out_size != -1 && fvec_sz != out_size){
       PyErr_SetString(PyExc_ValueError, "The array returned by a function changed size between calls");
       Py_DECREF(result_array);
-      return NULL;
+      goto fail;
   }
 
-  return result_array;
+  Py_DECREF(result);
+  Py_DECREF(arglist);
+  return (PyObject *)result_array;
+
+ fail:
+  Py_XDECREF(arglist);
+  Py_XDECREF(result);
+  Py_XDECREF(arg1);
+  return NULL;
 }
 
-void CHKDER(const int,const int,double*,const double*,const double*,const int,double*,const double*,const int,double*);
-void HYBRD(int(*)(int*,double*,double*,int*),const int,double*,double*,const double,const int,const int,const int,const double,double*,const int,const double,const int,int*,int*,double*,const int,double*,const int,double*,double*,double*,double*,double*);
-void HYBRJ(int(*)(int*,double*,double*,double*,int*,int*),const int,double*,double*,double*,const int,const double,const int,double*,const int,const double,const int,int*,int*,int*,double*,const int,double*,double*,double*,double*,double*);
-void LMDIF(int(*)(int*,int*,double*,double*,int*),const int,const int,double*,double*,const double,const double,const double,const int,const double,double*,const int,const double,const int,int*,int*,double*,const int,int*,double*,double*,double*,double*,double*);
-void LMDER(int(*)(int*,int*,double*,double*,double*,int*,int*),const int,const int,double*,double*,double*,const int,const double,const double,const double,const int,double*,const int,const double,const int,int*,int*,int*,int*,double*,double*,double*,double*,double*);
-void LMSTR(int(*)(int*,int*,double*,double*,double*,int*),const int,const int,double*,double*,double*,const int,const double,const double,const double,const int,double*,const int,const double,const int,int*,int*,int*,int*,double*,double*,double*,double*,double*);
 
 /* We only use ccallback with Python functions right now */
 static ccallback_signature_t call_signatures[] = {
@@ -346,7 +330,48 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
 }
 
 
-static char doc_hybrd[] = "[x,infodict,info] = _hybrd(fun, x0, args, full_output, xtol, maxfev, ml, mu, epsfcn, factor, diag)";
+static char doc_hybrd[] = (
+    "_hybrd(fun, x0, args, full_output, xtol, maxfev, ml, mu, epsfcn, factor, diag)\n\n"
+    "Hybrid method for finding roots of a system of equations.\n\n"
+    "Solves ``fun(x) = 0`` using a modification of the Powell hybrid method.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "fun : callable\n"
+    "    Function to minimize. Takes x as first argument.\n"
+    "x0 : ndarray, shape (n,)\n"
+    "    Initial guess, float64.\n"
+    "args : tuple\n"
+    "    Extra arguments passed to fun.\n"
+    "full_output : int\n"
+    "    Non-zero to return optional outputs.\n"
+    "xtol : float\n"
+    "    Relative tolerance for solution. Default: 1.49012e-8.\n"
+    "maxfev : int\n"
+    "    Maximum number of function evaluations. Default: 200*(n+1).\n"
+    "ml : int\n"
+    "    Number of subdiagonals in banded Jacobian. Default: n-1.\n"
+    "mu : int\n"
+    "    Number of superdiagonals in banded Jacobian. Default: n-1.\n"
+    "epsfcn : float\n"
+    "    Step size for finite differences. Default: 0.0 (machine precision).\n"
+    "factor : float\n"
+    "    Initial step bound. Default: 100.0.\n"
+    "diag : ndarray, shape (n,) or None\n"
+    "    Scaling factors for variables, float64.\n\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape (n,)\n"
+    "    Solution vector.\n"
+    "infodict : dict\n"
+    "    Dictionary with keys: fvec (ndarray), nfev (int), fjac (ndarray), "
+    "r (ndarray), qtf (ndarray). Only returned if full_output != 0.\n"
+    "info : int\n"
+    "    Exit status. 1-4 indicate success.\n\n"
+    "Notes\n"
+    "-----\n"
+    "If full_output is 0: returns (x, info)\n"
+    "If full_output != 0: returns (x, infodict, info)\n\n"
+);
 
 static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *x0, *extra_args = NULL, *o_diag = NULL;
@@ -450,7 +475,48 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
 }
 
 
-static char doc_hybrj[] = "[x,infodict,info] = _hybrj(fun, Dfun, x0, args, full_output, col_deriv, xtol, maxfev, factor, diag)";
+static char doc_hybrj[] = (
+    "_hybrj(fun, Dfun, x0, args, full_output, col_deriv, xtol, maxfev, factor, diag)\n\n"
+    "Hybrid method with user-supplied Jacobian for finding roots.\n\n"
+    "Solves ``fun(x) = 0`` using a modification of the Powell hybrid method "
+    "with analytical Jacobian.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "fun : callable\n"
+    "    Function to minimize. Takes x as first argument.\n"
+    "Dfun : callable\n"
+    "    Jacobian of fun. Returns matrix of partial derivatives.\n"
+    "x0 : ndarray, shape (n,)\n"
+    "    Initial guess, float64.\n"
+    "args : tuple\n"
+    "    Extra arguments passed to fun and Dfun.\n"
+    "full_output : int\n"
+    "    Non-zero to return optional outputs.\n"
+    "col_deriv : int\n"
+    "    Non-zero if Dfun returns column derivatives. Default: 1.\n"
+    "xtol : float\n"
+    "    Relative tolerance for solution. Default: 1.49012e-8.\n"
+    "maxfev : int\n"
+    "    Maximum number of function evaluations. Default: 100*(n+1).\n"
+    "factor : float\n"
+    "    Initial step bound. Default: 100.0.\n"
+    "diag : ndarray, shape (n,) or None\n"
+    "    Scaling factors for variables, float64.\n\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape (n,)\n"
+    "    Solution vector.\n"
+    "infodict : dict\n"
+    "    Dictionary with keys: fvec (ndarray), nfev (int), njev (int), "
+    "fjac (ndarray), r (ndarray), qtf (ndarray). "
+    "Only returned if full_output != 0.\n"
+    "info : int\n"
+    "    Exit status. 1-4 indicate success.\n\n"
+    "Notes\n"
+    "-----\n"
+    "If full_output is 0: returns (x, info)\n"
+    "If full_output != 0: returns (x, infodict, info)\n\n"
+);
 
 static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *Dfun, *x0, *extra_args = NULL, *o_diag = NULL;
@@ -554,7 +620,48 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
 
 /************************ Levenberg-Marquardt *******************/
 
-static char doc_lmdif[] = "[x,infodict,info] = _lmdif(fun, x0, args, full_output, ftol, xtol, gtol, maxfev, epsfcn, factor, diag)";
+static char doc_lmdif[] = (
+    "_lmdif(fun, x0, args, full_output, ftol, xtol, gtol, maxfev, epsfcn, factor, diag)\n\n"
+    "Levenberg-Marquardt algorithm for least squares minimization.\n\n"
+    "Minimizes ``sum(fun(x)**2)`` using finite-difference Jacobian.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "fun : callable\n"
+    "    Residual function. Takes x as first argument, returns array of residuals.\n"
+    "x0 : ndarray, shape (n,)\n"
+    "    Initial guess, float64.\n"
+    "args : tuple\n"
+    "    Extra arguments passed to fun.\n"
+    "full_output : int\n"
+    "    Non-zero to return optional outputs.\n"
+    "ftol : float\n"
+    "    Relative tolerance for residual sum of squares. Default: 1.49012e-8.\n"
+    "xtol : float\n"
+    "    Relative tolerance for solution. Default: 1.49012e-8.\n"
+    "gtol : float\n"
+    "    Orthogonality tolerance. Default: 0.0.\n"
+    "maxfev : int\n"
+    "    Maximum number of function evaluations. Default: 200*(n+1).\n"
+    "epsfcn : float\n"
+    "    Step size for finite differences. Default: 0.0 (machine precision).\n"
+    "factor : float\n"
+    "    Initial step bound. Default: 100.0.\n"
+    "diag : ndarray, shape (n,) or None\n"
+    "    Scaling factors for variables, float64.\n\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape (n,)\n"
+    "    Solution vector.\n"
+    "infodict : dict\n"
+    "    Dictionary with keys: fvec (ndarray), nfev (int), fjac (ndarray), "
+    "ipvt (ndarray), qtf (ndarray). Only returned if full_output != 0.\n"
+    "info : int\n"
+    "    Exit status. 1-4 indicate success.\n\n"
+    "Notes\n"
+    "-----\n"
+    "If full_output is 0: returns (x, info)\n"
+    "If full_output != 0: returns (x, infodict, info)\n\n"
+);
 
 static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *x0, *extra_args = NULL, *o_diag = NULL;
@@ -653,7 +760,51 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
 }
 
 
-static char doc_lmder[] = "[x,infodict,info] = _lmder(fun, Dfun, x0, args, full_output, col_deriv, ftol, xtol, gtol, maxfev, factor, diag)";
+static char doc_lmder[] = (
+    "_lmder(fun, Dfun, x0, args, full_output, col_deriv, ftol, xtol, gtol, maxfev, factor, diag)\n\n"
+    "Levenberg-Marquardt algorithm with user-supplied Jacobian.\n\n"
+    "Minimizes ``sum(fun(x)**2)`` using analytical Jacobian.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "fun : callable\n"
+    "    Residual function. Takes x as first argument, returns array of residuals.\n"
+    "Dfun : callable\n"
+    "    Jacobian of fun. Returns matrix of partial derivatives.\n"
+    "x0 : ndarray, shape (n,)\n"
+    "    Initial guess, float64.\n"
+    "args : tuple\n"
+    "    Extra arguments passed to fun and Dfun.\n"
+    "full_output : int\n"
+    "    Non-zero to return optional outputs.\n"
+    "col_deriv : int\n"
+    "    Non-zero if Dfun returns column derivatives. Default: 1.\n"
+    "ftol : float\n"
+    "    Relative tolerance for residual sum of squares. Default: 1.49012e-8.\n"
+    "xtol : float\n"
+    "    Relative tolerance for solution. Default: 1.49012e-8.\n"
+    "gtol : float\n"
+    "    Orthogonality tolerance. Default: 0.0.\n"
+    "maxfev : int\n"
+    "    Maximum number of function evaluations. Default: 100*(n+1).\n"
+    "factor : float\n"
+    "    Initial step bound. Default: 100.0.\n"
+    "diag : ndarray, shape (n,) or None\n"
+    "    Scaling factors for variables, float64.\n\n"
+    "Returns\n"
+    "-------\n"
+    "x : ndarray, shape (n,)\n"
+    "    Solution vector.\n"
+    "infodict : dict\n"
+    "    Dictionary with keys: fvec (ndarray), nfev (int), njev (int), "
+    "fjac (ndarray), ipvt (ndarray), qtf (ndarray). "
+    "Only returned if full_output != 0.\n"
+    "info : int\n"
+    "    Exit status. 1-4 indicate success.\n\n"
+    "Notes\n"
+    "-----\n"
+    "If full_output is 0: returns (x, info)\n"
+    "If full_output != 0: returns (x, infodict, info)\n\n"
+);
 
 static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   PyObject *fcn, *x0, *Dfun, *extra_args = NULL, *o_diag = NULL;
@@ -754,7 +905,45 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
 
 /** Check gradient function **/
 
-static char doc_chkder[] = "_chkder(m,n,x,fvec,fjac,ldfjac,xp,fvecp,mode,err)";
+static char doc_chkder[] = (
+    "_chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, mode, err)\n\n"
+    "Check the gradients of a function against finite differences.\n\n"
+    "Utility function for verifying correctness of user-supplied Jacobians.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "m : int\n"
+    "    Number of functions (residuals).\n"
+    "n : int\n"
+    "    Number of variables.\n"
+    "x : ndarray, shape (n,)\n"
+    "    Point at which to check derivatives, float64.\n"
+    "fvec : ndarray, shape (m,)\n"
+    "    Function values at x, float64. Used only when mode=2.\n"
+    "fjac : ndarray, shape (m, n)\n"
+    "    User-supplied Jacobian at x, float64. Used only when mode=2.\n"
+    "ldfjac : int\n"
+    "    Leading dimension of fjac.\n"
+    "xp : ndarray, shape (n,)\n"
+    "    Perturbed point for finite differences, float64. "
+    "Modified when mode=1, used when mode=2.\n"
+    "fvecp : ndarray, shape (m,)\n"
+    "    Function values at xp, float64. Used only when mode=2.\n"
+    "mode : int\n"
+    "    1: initialize xp for gradient checking.\n"
+    "    2: compute error between analytical and finite-difference gradients.\n"
+    "err : ndarray, shape (m,)\n"
+    "    Error estimates for each function, float64. Modified when mode=2.\n\n"
+    "Returns\n"
+    "-------\n"
+    "None\n"
+    "    Modifies xp (when mode=1) or err (when mode=2) in-place.\n\n"
+    "Notes\n"
+    "-----\n"
+    "This function is called twice:\n"
+    "1. mode=1: Computes perturbed point xp from x.\n"
+    "2. mode=2: Compares analytical Jacobian fjac with finite differences "
+    "and stores relative errors in err.\n\n"
+);
 
 static PyObject *minpack_chkder(PyObject *self, PyObject *args)
 {
@@ -820,55 +1009,54 @@ static PyObject *minpack_chkder(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef minpack_module_methods[] = {
-{"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
-{"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
-{"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},
-{"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
-{"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
-{NULL,		NULL, 0, NULL}
+    {"_hybrd", minpack_hybrd, METH_VARARGS, doc_hybrd},
+    {"_hybrj", minpack_hybrj, METH_VARARGS, doc_hybrj},
+    {"_lmdif", minpack_lmdif, METH_VARARGS, doc_lmdif},
+    {"_lmder", minpack_lmder, METH_VARARGS, doc_lmder},
+    {"_chkder", minpack_chkder, METH_VARARGS, doc_chkder},
+    {NULL,		NULL, 0, NULL}
 };
 
+
+static int module_exec(PyObject *module) {
+
+    if (_import_array() < 0) { return -1; }
+
+    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
+    if (minpack_error == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", minpack_error) < 0) {
+        Py_DECREF(minpack_error);
+        return -1;
+    }
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot minpack_slots[] = {
+    {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_minpack",
-    NULL,
-    -1,
-    minpack_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_minpack",
+    .m_size = 0,
+    .m_methods = minpack_module_methods,
+    .m_slots = minpack_slots
 };
 
 PyMODINIT_FUNC
 PyInit__minpack(void)
 {
-    PyObject *module, *mdict;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-    minpack_error = PyErr_NewException ("_minpack.error", NULL, NULL);
-    if (minpack_error == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(mdict, "error", minpack_error)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-

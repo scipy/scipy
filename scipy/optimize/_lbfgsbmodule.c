@@ -1,37 +1,60 @@
-#ifndef __LBFGSB_H
-#define __LBFGSB_H
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include <math.h>
+#include "src/lbfgsb.h"
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
-// BLAS
-void daxpy_(int* n, double* alpha, double* x, int* incx, double* y, int* incy);
-void dscal_(int* n, double* alpha, double* x, int* incx);
-void dcopy_(int* n, double* x, int* incx, double* y, int* incy);
-double dnrm2_(int* n, double* x, int* incx);
-double ddot_(int* n, double* x, int* incx, double* y, int* incy);
-
-// LAPACK
-void dpotrf_(char* uplo, int* n, double* a, int* lda, int* info);
-void dtrtrs_(char* uplo, char* trans, char* diag, int* n, int* nrhs, double* a, int* lda, double* b, int* ldb, int* info);
-
 static PyObject* lbfgsb_error;
 
-static void setulb(int n, int m, double* x, double* l, double* u, int* nbd, double* f,
-       double* g, double factr, double pgtol, double* wa, int* iwa, int* task,
-       int* lsave, int* isave, double* dsave, int maxls, int* ln_task
+static char doc_setulb[] = (
+    "setulb(m, x, l, u, nbd, f, g, factr, pgtol, wa, iwa, task, lsave, isave, dsave, maxls, ln_task)\n\n"
+    "Limited-memory Broyden-Fletcher-Goldfarb-Shanno with bounds.\n\n"
+    "Low-level interface to the L-BFGS-B optimization algorithm. "
+    "Performs a single iteration step.\n\n"
+    "Parameters\n"
+    "----------\n"
+    "m : int\n"
+    "    Number of limited-memory variable metric corrections.\n"
+    "x : ndarray, shape (n,)\n"
+    "    Current solution vector, float64. Modified in-place.\n"
+    "l : ndarray, shape (n,)\n"
+    "    Lower bounds on variables, float64.\n"
+    "u : ndarray, shape (n,)\n"
+    "    Upper bounds on variables, float64.\n"
+    "nbd : ndarray, shape (n,)\n"
+    "    Bound type for each variable, int32. 0: unbounded, 1: only lower, "
+    "2: both, 3: only upper.\n"
+    "f : float\n"
+    "    Current objective function value.\n"
+    "g : ndarray, shape (n,)\n"
+    "    Gradient of objective function at current point, float64.\n"
+    "factr : float\n"
+    "    Factor for convergence test on objective function.\n"
+    "pgtol : float\n"
+    "    Projected gradient tolerance for convergence.\n"
+    "wa : ndarray\n"
+    "    Workspace array for internal computations, float64.\n"
+    "iwa : ndarray\n"
+    "    Integer workspace array for internal computations, int32.\n"
+    "task : ndarray\n"
+    "    Task control array encoding algorithm state, int32. Modified in-place.\n"
+    "lsave : ndarray\n"
+    "    Logical state array, int32. Modified in-place.\n"
+    "isave : ndarray\n"
+    "    Integer state array, int32. Modified in-place.\n"
+    "dsave : ndarray\n"
+    "    Real state array, float64. Modified in-place.\n"
+    "maxls : int\n"
+    "    Maximum number of line search steps per iteration.\n"
+    "ln_task : ndarray\n"
+    "    Task string length array, int32.\n\n"
+    "Returns\n"
+    "-------\n"
+    "None\n"
+    "    Modifies x, task, lsave, isave, and dsave in-place.\n\n"
 );
-
-static char doc_setulb[] = "setulb(m,x,l,u,nbd,f,g,factr,pgtol,wa,iwa,task,lsave,isave,dsave,maxls,ln_task)";
 
 static PyObject*
 lbfgsb_setulb(PyObject *self, PyObject *args)
@@ -136,57 +159,53 @@ lbfgsb_setulb(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+
 static struct PyMethodDef lbfgsb_module_methods[] = {
   {"setulb", lbfgsb_setulb, METH_VARARGS, doc_setulb},
   {NULL,     NULL,          0,            NULL}
 };
 
-static struct PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_lbfgsb",
-    NULL,
-    -1,
-    lbfgsb_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+
+static int module_exec(PyObject *module) {
+
+    if (_import_array() < 0) { return -1; }
+
+    lbfgsb_error = PyErr_NewException("_lbfgsb.error", NULL, NULL);
+    if (lbfgsb_error == NULL) { return -1; }
+
+    if (PyModule_AddObject(module, "error", lbfgsb_error) < 0) {
+        Py_DECREF(lbfgsb_error);
+        return -1;
+    }
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+    return 0;
+}
+
+
+static struct PyModuleDef_Slot _lbfgsb_slots[] = {
+    {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
 };
+
+
+static struct PyModuleDef moduledef = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_lbfgsb",
+    .m_size = 0,
+    .m_methods = lbfgsb_module_methods,
+    .m_slots = _lbfgsb_slots
+};
+
 
 PyMODINIT_FUNC
 PyInit__lbfgsb(void)
 {
-    PyObject *module, *mdict;
-
-    import_array();
-
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
-    mdict = PyModule_GetDict(module);
-    if (mdict == NULL) {
-        return NULL;
-    }
-    lbfgsb_error = PyErr_NewException ("_lbfgsb.error", NULL, NULL);
-    if (lbfgsb_error == NULL) {
-        return NULL;
-    }
-    if (PyDict_SetItemString(mdict, "error", lbfgsb_error)) {
-        return NULL;
-    }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
-
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif /* __cplusplus */
-
-#endif /* ifndef */
