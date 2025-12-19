@@ -8957,23 +8957,30 @@ def test_rename_mode_method(fun, args):
         fun(*args, method='exact', mode='exact')
 
 
+@make_xp_test_case(stats.expectile)
 class TestExpectile:
-    def test_same_as_mean(self):
+    @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
+    def test_same_as_mean(self, dtype, xp):
+        dtype = dtype if dtype is None else getattr(xp, dtype)
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=0.5), np.mean(x))
 
-    def test_minimum(self):
+        x = xp.asarray(rng.random(size=20).tolist(), dtype=dtype)
+        xp_assert_close(stats.expectile(x, 0.5), xp.mean(x))
+
+        w = xp.asarray(rng.random(size=20).tolist(), dtype=dtype)
+        xp_assert_close(stats.expectile(x, 0.5, weights=w), _xp_mean(x, weights=w))
+
+    def test_minimum(self, xp):
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=0), np.amin(x))
+        x = xp.asarray(rng.random(size=20))
+        xp_assert_close(stats.expectile(x, alpha=0), xp.min(x))
 
-    def test_maximum(self):
+    def test_maximum(self, xp):
         rng = np.random.default_rng(42)
-        x = rng.random(size=20)
-        assert_allclose(stats.expectile(x, alpha=1), np.amax(x))
+        x = xp.asarray(rng.random(size=20))
+        xp_assert_close(stats.expectile(x, alpha=1), xp.max(x))
 
-    def test_weights(self):
+    def test_weights(self, xp):
         # expectile should minimize `fun` defined below; see
         # F. Sobotka and T. Kneib, "Geoadditive expectile regression",
         # Computational Statistics and Data Analysis 56 (2012) 755-767
@@ -8995,15 +9002,15 @@ class TestExpectile:
         alpha = rng.random()
         weights = rng.random(n)
 
-        res = stats.expectile(a, alpha, weights=weights)
+        res = stats.expectile(xp.asarray(a), alpha, weights=xp.asarray(weights))
         ref = expectile2(a, alpha, weights)
-        assert_allclose(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
     @pytest.mark.parametrize(
         "alpha", [0.2, 0.5 - 1e-12, 0.5, 0.5 + 1e-12, 0.8]
     )
     @pytest.mark.parametrize("n", [20, 2000])
-    def test_expectile_properties(self, alpha, n):
+    def test_expectile_properties(self, alpha, n, xp):
         """
         See Section 6 of
         I. Steinwart, C. Pasin, R.C. Williamson & S. Zhang (2014).
@@ -9018,32 +9025,32 @@ class TestExpectile:
         http://doi.org/10.2139/ssrn.2225751
         """
         rng = np.random.default_rng(42)
-        x = rng.normal(size=n)
+        x = xp.asarray(rng.normal(size=n))
 
         # 0. definite / constancy
         # Let T(X) denote the expectile of rv X ~ F.
         # T(c) = c for constant c
-        for c in [-5, 0, 0.5]:
-            assert_allclose(
-                stats.expectile(np.full(shape=n, fill_value=c), alpha=alpha),
-                c
+        for c in [-5., 0., 0.5]:
+            xp_assert_close(
+                stats.expectile(xp.full(shape=n, fill_value=c), alpha=alpha),
+                xp.asarray(c)
             )
 
         # 1. translation equivariance
         # T(X + c) = T(X) + c
-        c = rng.exponential()
-        assert_allclose(
+        c = xp.asarray(rng.exponential())
+        xp_assert_close(
             stats.expectile(x + c, alpha=alpha),
             stats.expectile(x, alpha=alpha) + c,
         )
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(x - c, alpha=alpha),
             stats.expectile(x, alpha=alpha) - c,
         )
 
         # 2. positively homogeneity
         # T(cX) = c * T(X) for c > 0
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(c * x, alpha=alpha),
             c * stats.expectile(x, alpha=alpha),
         )
@@ -9054,10 +9061,10 @@ class TestExpectile:
         # For alpha = 0.5, i.e. the mean, strict equality holds.
         # For alpha < 0.5, one can use property 6. to show
         # T(X + Y) >= T(X) + T(Y)
-        y = rng.logistic(size=n, loc=10)  # different distribution than x
+        y = xp.asarray(rng.logistic(size=n, loc=10))  # different distribution than x
         if alpha == 0.5:
             def assert_op(a, b):
-                assert_allclose(a, b)
+                xp_assert_close(a, b)
 
         elif alpha > 0.5:
             def assert_op(a, b):
@@ -9068,7 +9075,7 @@ class TestExpectile:
                 assert a > b
 
         assert_op(
-            stats.expectile(np.r_[x + y], alpha=alpha),
+            stats.expectile(x + y, alpha=alpha),
             stats.expectile(x, alpha=alpha)
             + stats.expectile(y, alpha=alpha)
         )
@@ -9077,7 +9084,7 @@ class TestExpectile:
         # This holds for first order stochastic dominance X:
         # X >= Y whenever P(X <= x) < P(Y <= x)
         # T(X) <= T(Y) whenever X <= Y
-        y = rng.normal(size=n, loc=5)
+        y = xp.asarray(rng.normal(size=n, loc=5))
         assert (
             stats.expectile(x, alpha=alpha) <= stats.expectile(y, alpha=alpha)
         )
@@ -9085,7 +9092,7 @@ class TestExpectile:
         # 5. convexity for alpha > 0.5, concavity for alpha < 0.5
         # convexity is
         # T((1 - c) X + c Y) <= (1 - c) T(X) + c T(Y) for 0 <= c <= 1
-        y = rng.logistic(size=n, loc=10)
+        y = xp.asarray(rng.logistic(size=n, loc=10))
         for c in [0.1, 0.5, 0.8]:
             assert_op(
                 stats.expectile((1-c)*x + c*y, alpha=alpha),
@@ -9095,21 +9102,21 @@ class TestExpectile:
 
         # 6. negative argument
         # T_{alpha}(-X) = -T_{1-alpha}(X)
-        assert_allclose(
+        xp_assert_close(
             stats.expectile(-x, alpha=alpha),
             -stats.expectile(x, alpha=1-alpha),
         )
 
     @pytest.mark.parametrize("n", [20, 2000])
-    def test_monotonicity_in_alpha(self, n):
+    def test_monotonicity_in_alpha(self, n, xp):
         rng = np.random.default_rng(42)
-        x = rng.pareto(a=2, size=n)
+        x = xp.asarray(rng.pareto(a=2, size=n))
         e_list = []
         alpha_seq = np.logspace(-15, np.log10(0.5), 100)
         # sorted list of unique alpha values in interval (0, 1)
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
-            e_list.append(stats.expectile(x, alpha=alpha))
-        assert np.all(np.diff(e_list) > 0)
+            e_list.append(stats.expectile(x, alpha=float(alpha)))
+        assert xp.all(xp.diff(xp.asarray(e_list)) > 0)
 
 
 @make_xp_test_case(stats.lmoment)

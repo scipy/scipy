@@ -40,6 +40,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
+from scipy.optimize.elementwise import find_root
 from scipy._lib._util import _get_nan, _rename_parameter, _contains_nan
 
 import scipy.special as special
@@ -63,7 +64,6 @@ from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
-from scipy.optimize import root_scalar
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
@@ -10102,8 +10102,15 @@ def _rankdata(x, method, return_ties=False, xp=None):
     return ranks
 
 
-@xp_capabilities(np_only=True)
-def expectile(a, alpha=0.5, *, weights=None):
+@xp_capabilities(
+    skip_backends=[('dask.array', 'uses `optimize.elementwise.find_root`'),
+                   ('array_api_strict', 'uses `optimize.elementwise.find_root`'),
+                   ('jax.numpy', 'uses `optimize.elementwise.find_root`')])
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
+    kwd_samples=['weights'], paired=True
+)
+def expectile(a, alpha=0.5, *, weights=None, axis=None):
     r"""Compute the expectile at the specified level.
 
     Expectiles are a generalization of the expectation in the same way as
@@ -10122,6 +10129,11 @@ def expectile(a, alpha=0.5, *, weights=None):
         Default is None, which gives each value a weight of 1.0.
         An integer valued weight element acts like repeating the corresponding
         observation in `a` that many times. See Notes for more details.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
@@ -10198,36 +10210,42 @@ def expectile(a, alpha=0.5, *, weights=None):
     >>> expectile(a, alpha=0.8, weights=weights)
     3.3333333333333335
     """
+    xp = array_namespace(a, weights)
+    a, weights = xp_promote(a, weights, force_floating=True, xp=xp)
+
     if alpha < 0 or alpha > 1:
         raise ValueError(
             "The expectile level alpha must be in the range [0, 1]."
         )
-    a = np.asarray(a)
 
-    if weights is not None:
-        weights = np.broadcast_to(weights, a.shape)
+    if a.shape[-1] == 0:  #  Only for *testing* _axis_nan_policy decorator
+        return _get_nan(a, xp=xp)
+
+    # for simplicity, ensure that shape is (batch size, sample size) and at least 2d
+    shape = a.shape  # remember original shape, though, to ensure correct output shape
+    # `reshape` can't infer shape element -1 when array is size 0, so take `prod`
+    a = xp.reshape(a, (math.prod(shape[:-1]), shape[-1]))
+    weights = weights if weights is None else xp.reshape(weights, (-1, shape[-1]))
 
     # This is the empirical equivalent of Eq. (13) with identification
     # function from Table 9 (omitting a factor of 2) in [2] (their y is our
     # data a, their x is our t)
-    def first_order(t):
-        return np.average(np.abs((a <= t) - alpha) * (t - a), weights=weights)
+    def first_order(t, i):
+        ai = a[i, ...].T
+        wi = weights if weights is None else weights[i, ...].T
+        return _xp_mean(xp.abs(xp.astype(ai <= t, ai.dtype) - alpha) * (t - ai),
+                        weights=wi, axis=0)
 
-    if alpha >= 0.5:
-        x0 = np.average(a, weights=weights)
-        x1 = np.amax(a)
-    else:
-        x1 = np.average(a, weights=weights)
-        x0 = np.amin(a)
-
-    if x0 == x1:
-        # a has a single unique element
-        return x0
+    # axis is -1 per the decorator. Use mean to produce NaNs of the correct shape/type.
+    x0 = xp.min(a, axis=-1)
+    x1 = xp.max(a, axis=-1)
 
     # Note that the expectile is the unique solution, so no worries about
     # finding a wrong root.
-    res = root_scalar(first_order, x0=x0, x1=x1)
-    return res.root
+    i = xp.arange(a.shape[0])
+    res = find_root(first_order, (x0, x1), args=(i,))
+    res = xp.reshape(res.x, shape[:-1])
+    return res[()] if res.ndim == 0 else res
 
 
 def _lmoment_iv(sample, order, axis, sorted, standardize, xp):
