@@ -13,8 +13,7 @@ from scipy.sparse.linalg import aslinearoperator
 import scipy.linalg
 from scipy.sparse.linalg import expm as sp_expm
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
-        _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
-        _expm_multiply_interval)
+        expm_multiply, _expm_multiply_simple,_expm_multiply_interval)
 from scipy._lib._util import np_long
 
 
@@ -32,10 +31,6 @@ def estimated_warns():
     All result have to be correct nevertheless!
     """
     return pytest.warns(UserWarning, match="Trace of LinearOperator not available")
-
-
-def less_than_or_close(a, b):
-    return np.allclose(a, b) or (a < b)
 
 
 class TestExpmActionSimple:
@@ -61,22 +56,6 @@ class TestExpmActionSimple:
             p_too_big = p_max + 1
             assert_(p_too_big*(p_too_big - 1) > m_max + 1)
 
-    def test_onenormest_matrix_power(self):
-        rng = np.random.RandomState(1234)
-        n = 40
-        nsamples = 10
-        for i in range(nsamples):
-            A = scipy.linalg.inv(rng.randn(n, n))
-            for p in range(4):
-                if not p:
-                    M = np.identity(n)
-                else:
-                    M = np.dot(M, A)
-                estimated = _onenormest_matrix_power(A, p)
-                exact = np.linalg.norm(M, 1)
-                assert_(less_than_or_close(estimated, exact))
-                assert_(less_than_or_close(exact, 3*estimated))
-
     def test_expm_multiply(self):
         rng = np.random.default_rng(1234)
         n = 40
@@ -85,14 +64,14 @@ class TestExpmActionSimple:
         for i in range(nsamples):
             A = scipy.linalg.inv(rng.standard_normal((n, n)))
             B = rng.standard_normal((n, k))
-            observed = expm_multiply(A, B)
+            observed = expm_multiply(A, B, rng=rng)
             expected = np.dot(sp_expm(A), B)
             assert_allclose(observed, expected)
             with estimated_warns():
-                observed = expm_multiply(aslinearoperator(A), B)
+                observed = expm_multiply(aslinearoperator(A), B, rng=rng)
             assert_allclose(observed, expected)
             traceA = np.trace(A)
-            observed = expm_multiply(aslinearoperator(A), B, traceA=traceA)
+            observed = expm_multiply(aslinearoperator(A), B, traceA=traceA, rng=rng)
             assert_allclose(observed, expected)
 
     def test_matrix_vector_multiply(self):
@@ -102,11 +81,11 @@ class TestExpmActionSimple:
         for i in range(nsamples):
             A = scipy.linalg.inv(rng.standard_normal((n, n)))
             v = rng.standard_normal(n)
-            observed = expm_multiply(A, v)
+            observed = expm_multiply(A, v, rng=rng)
             expected = np.dot(sp_expm(A), v)
             assert_allclose(observed, expected)
             with estimated_warns():
-                observed = expm_multiply(aslinearoperator(A), v)
+                observed = expm_multiply(aslinearoperator(A), v, rng=rng)
             assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply(self):
@@ -118,11 +97,12 @@ class TestExpmActionSimple:
             with np.errstate(invalid='ignore'):
                 A = scipy.linalg.inv(rng.standard_normal((n, n)))
                 B = rng.standard_normal((n, k))
-                observed = _expm_multiply_simple(A, B, t=t)
+                observed = _expm_multiply_simple(A, B, t=t, rng=rng)
                 expected = np.dot(sp_expm(t*A), B)
                 assert_allclose(observed, expected)
                 with estimated_warns():
-                    observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+                    observed = _expm_multiply_simple(aslinearoperator(A), B, t=t,
+                                                     rng=rng)
                 assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
@@ -132,11 +112,11 @@ class TestExpmActionSimple:
         k = 2
         A = rng.standard_normal((n, n))
         B = rng.standard_normal((n, k))
-        observed = _expm_multiply_simple(A, B, t=t)
+        observed = _expm_multiply_simple(A, B, t=t, rng=rng)
         expected = sp_expm(t*A).dot(B)
         assert_allclose(observed, expected)
         with estimated_warns():
-            observed = _expm_multiply_simple(aslinearoperator(A), B, t=t)
+            observed = _expm_multiply_simple(aslinearoperator(A), B, t=t, rng=rng)
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
@@ -147,7 +127,7 @@ class TestExpmActionSimple:
         for i in range(nsamples):
             A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
-            observed = expm_multiply(A, B)
+            observed = expm_multiply(A, B, rng=rng)
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
@@ -163,21 +143,22 @@ class TestExpmActionSimple:
                 expected = sp_expm(A).dot(B)
             assert_allclose(observed, expected)
             with estimated_warns():
-                observed = expm_multiply(aslinearoperator(A), B)
+                observed = expm_multiply(aslinearoperator(A), B, rng=rng)
             assert_allclose(observed, expected)
 
     def test_complex(self):
+        rng = np.random.default_rng(87274972398)
         A = np.array([
             [1j, 1j],
             [0, 1j]], dtype=complex)
         B = np.array([1j, 1j])
-        observed = expm_multiply(A, B)
+        observed = expm_multiply(A, B, rng=rng)
         expected = np.array([
             1j * np.exp(1j) + 1j * (1j*np.cos(1) - np.sin(1)),
             1j * np.exp(1j)], dtype=complex)
         assert_allclose(observed, expected)
         with estimated_warns():
-            observed = expm_multiply(aslinearoperator(A), B)
+            observed = expm_multiply(aslinearoperator(A), B, rng=rng)
         assert_allclose(observed, expected)
 
 
@@ -197,7 +178,7 @@ class TestExpmActionInterval:
             v = rng.standard_normal((n,))
             for target in (B, v):
                 X = expm_multiply(A, target, start=start, stop=stop,
-                                  num=num, endpoint=endpoint)
+                                  num=num, endpoint=endpoint, rng=rng)
                 samples = np.linspace(start=start, stop=stop,
                                       num=num, endpoint=endpoint)
                 with warnings.catch_warnings():
@@ -223,18 +204,19 @@ class TestExpmActionInterval:
             A = scipy.linalg.inv(rng.standard_normal((n, n)))
             v = rng.standard_normal(n)
             samples = np.linspace(num=num, **interval)
-            X = expm_multiply(A, v, num=num, **interval)
+            X = expm_multiply(A, v, num=num, rng=rng, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(v))
             # test for linear operator with unknown trace -> estimate trace
             with estimated_warns():
-                Xguess = expm_multiply(aslinearoperator(A), v, num=num, **interval)
+                Xguess = expm_multiply(aslinearoperator(A), v, num=num, rng=rng,
+                                       **interval)
             # test for linear operator with given trace
             Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
-                                   traceA=np.trace(A))
+                                   traceA=np.trace(A), rng=rng)
             # test robustness for linear operator with wrong trace
             Xwrong = expm_multiply(aslinearoperator(A), v, num=num, **interval,
-                                   traceA=np.trace(A)*5)
+                                   traceA=np.trace(A)*5, rng=rng)
             for sol_guess, sol_given, sol_wrong, t in zip(Xguess, Xgiven,
                                                           Xwrong, samples):
                 correct = sp_expm(t*A).dot(v)
@@ -250,39 +232,41 @@ class TestExpmActionInterval:
             A = scipy.linalg.inv(rng.standard_normal((n, n)))
             B = rng.standard_normal((n, k))
             samples = np.linspace(num=num, **interval)
-            X = expm_multiply(A, B, num=num, **interval)
+            X = expm_multiply(A, B, num=num, rng=rng, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(B))
             with estimated_warns():
-                X = expm_multiply(aslinearoperator(A), B, num=num, **interval)
+                X = expm_multiply(aslinearoperator(A), B, num=num, rng=rng, **interval)
             for solution, t in zip(X, samples):
                 assert_allclose(solution, sp_expm(t*A).dot(B))
 
     def test_sparse_expm_multiply_interval_dtypes(self):
+        rng = np.random.default_rng(7489274932784)
         # Test A & B int
         A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         BI = np.identity(5, dtype=int)
         BI_sparse = scipy.sparse.csr_array(BI)
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(expm_multiply(A, B, 0, 1, rng=rng)[-1], Aexpm.dot(B))
         assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A complex, B int
         A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags_array(np.exp(-1j*np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
-        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
+        assert_allclose(expm_multiply(A, B, 0, 1, rng=rng)[-1], Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1, rng=rng)[-1]),
+                        Aexpm.dot(B))
 
         # Test A int, B complex
         A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
         Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(expm_multiply(A, B, 0, 1, rng=rng)[-1], Aexpm.dot(B))
         BI = np.identity(5, dtype=complex)*1j
         assert_allclose(
-            np.diag(expm_multiply(A, scipy.sparse.csr_array(BI), 0, 1)[-1]),
+            np.diag(expm_multiply(A, scipy.sparse.csr_array(BI), 0, 1, rng=rng)[-1]),
             Aexpm.dot(B)
         )
 
@@ -310,14 +294,14 @@ class TestExpmActionInterval:
             B = rng.randn(n, k)
             status = _expm_multiply_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint,
-                    status_only=True)
+                    status_only=True, rng=rng)
             if status == target_status:
-                X, status = _expm_multiply_interval(A, B,
-                        start=start, stop=stop, num=num, endpoint=endpoint,
-                        status_only=False)
+                X, status = _expm_multiply_interval(A, B, start=start, stop=stop,
+                                                    num=num, endpoint=endpoint,
+                                                    status_only=False, rng=rng)
                 assert_equal(X.shape, (num, n, k))
-                samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
+                samples = np.linspace(start=start, stop=stop, num=num,
+                                      endpoint=endpoint)
                 for solution, t in zip(X, samples):
                     assert_allclose(solution, sp_expm(t*A).dot(B))
                 nsuccesses += 1
@@ -351,19 +335,19 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     # single application
     sol_mat = expm_multiply(A, B)
     with estimated_warns():
-        sol_op = expm_multiply(aslinearoperator(A), B)
+        sol_op = expm_multiply(aslinearoperator(A), B, rng=rng)
     direct_sol = np.dot(sp_expm(A), B)
     assert_allclose_(sol_mat, direct_sol)
     assert_allclose_(sol_op, direct_sol)
-    sol_op = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A))
+    sol_op = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A), rng=rng)
     assert_allclose_(sol_op, direct_sol)
 
     # for time points
     interval = {'start': 0.1, 'stop': 3.2, 'num': 13, 'endpoint': True}
     samples = np.linspace(**interval)
-    X_mat = expm_multiply(A, B, **interval)
+    X_mat = expm_multiply(A, B, rng=rng, **interval)
     with estimated_warns():
-        X_op = expm_multiply(aslinearoperator(A), B, **interval)
+        X_op = expm_multiply(aslinearoperator(A), B, **interval, rng=rng)
     for sol_mat, sol_op, t in zip(X_mat, X_op, samples):
         direct_sol = sp_expm(t*A).dot(B)
         assert_allclose_(sol_mat, direct_sol)

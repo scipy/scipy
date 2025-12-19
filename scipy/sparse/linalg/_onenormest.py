@@ -18,7 +18,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False, *, rng=None):
         A linear operator that can be transposed and that can
         produce matrix products.
     t : int, optional
-        A positive parameter controlling the tradeoff between
+        A positive parameter controlling the trade-off between
         accuracy versus time and memory usage.
         Larger values take longer and use more memory
         but give more accurate output.
@@ -40,11 +40,11 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False, *, rng=None):
     est : float
         An underestimate of the 1-norm of the sparse array.
     v : ndarray, optional
-        The vector such that ||Av||_1 == est*||v||_1.
+        The vector such that ``||Av||_1 == est*||v||_1``.
         It can be thought of as an input to the linear operator
         that gives an output with particularly large norm.
     w : ndarray, optional
-        The vector Av which has relatively large 1-norm.
+        The vector ``Av`` which has relatively large 1-norm.
         It can be thought of as an output of the linear operator
         that is relatively large in norm compared to the input.
 

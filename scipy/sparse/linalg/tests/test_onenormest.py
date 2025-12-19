@@ -7,6 +7,11 @@ import pytest
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core
+from scipy.sparse.linalg import aslinearoperator, onenormest
+
+
+def less_than_or_close(a, b):
+    return np.allclose(a, b) or (a < b)
 
 
 class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
@@ -218,14 +223,29 @@ class TestOnenormest:
                 f'fast: {fast_estimate:g}\nexact:{exact_value:g}')
 
     def test_returns(self):
-        np.random.seed(1234)
-        A = scipy.sparse.rand(50, 50, 0.1)
+        rng = np.random.default_rng(1234)
+        A = scipy.sparse.random_array((50, 50), density=0.1, rng=rng)
 
         s0 = scipy.linalg.norm(A.toarray(), 1)
-        s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)
-        s2, w = scipy.sparse.linalg.onenormest(A, compute_w=True)
-        s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
+        s1, v = onenormest(A, compute_v=True, rng=rng)
+        s2, w = onenormest(A, compute_w=True, rng=rng)
+        s3, v2, w2 = onenormest(A, compute_w=True, compute_v=True, rng=rng)
 
         assert_allclose(s1, s0, rtol=1e-9)
         assert_allclose(np.linalg.norm(A.dot(v), 1), s0*np.linalg.norm(v, 1), rtol=1e-9)
         assert_allclose(A.dot(v), w, rtol=1e-9)
+
+    def test_onenormest_matrix_power(self):
+        rng = np.random.default_rng(1234)
+        n = 40
+        for _ in range(10):
+            A = scipy.linalg.inv(rng.random((n, n)))
+            for p in range(4):
+                if not p:
+                    M = np.identity(n)
+                else:
+                    M = np.dot(M, A)
+                estimated = onenormest(aslinearoperator(A)**p, rng=rng)
+                exact = np.linalg.norm(M, 1)
+                assert less_than_or_close(estimated, exact)
+                assert less_than_or_close(exact, 3*estimated)
