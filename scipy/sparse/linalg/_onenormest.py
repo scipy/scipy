@@ -220,10 +220,6 @@ def resample_column(i, X, rng):
     X[:, i] = rng.integers(0, 2, size=X.shape[0])*2 - 1
 
 
-def less_than_or_close(a, b):
-    return np.allclose(a, b) or (a < b)
-
-
 def _onenormest_core(A, AT, t, itmax, rng):
     """
     Compute a lower bound of the 1-norm of a sparse array.

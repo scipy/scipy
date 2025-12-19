@@ -41,7 +41,7 @@ def _trace(A):
         return A.trace()
 
 
-def traceest(A, m3, rng):
+def _traceest(A, *, m3, rng):
     """Estimate `np.trace(A)` using `3*m3` matrix-vector products.
 
     The result is not deterministic.
@@ -267,7 +267,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False, rng=None):
                  " Provide `traceA` to ensure performance.", stacklevel=3)
         # m3=1 is bit arbitrary choice, a more accurate trace (larger m3) might
         # speed up exponential calculation, but trace estimation is more costly
-        traceA = traceest(A, m3=1, rng=rng) if is_linear_operator else _trace(A)
+        traceA = _traceest(A, m3=1, rng=rng) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
     A = A - mu * ident
     A_1_norm = onenormest(A, rng=rng) if is_linear_operator else _exact_1_norm(A)
@@ -628,7 +628,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         # m3=5 is bit arbitrary choice, a more accurate trace (larger m3) might
         # speed up exponential calculation, but trace estimation is also costly
         # an educated guess would need to consider the number of time points
-        traceA = traceest(A, m3=5, rng=rng) if is_linear_operator else _trace(A)
+        traceA = _traceest(A, m3=5, rng=rng) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
 
     # Get the linspace samples, attempting to preserve the linspace defaults.

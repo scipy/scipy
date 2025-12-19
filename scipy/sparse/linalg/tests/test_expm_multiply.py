@@ -249,7 +249,8 @@ class TestExpmActionInterval:
         BI = np.identity(5, dtype=int)
         BI_sparse = scipy.sparse.csr_array(BI)
         assert_allclose(expm_multiply(A, B, 0, 1, rng=rng)[-1], Aexpm.dot(B))
-        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1, rng=rng)[-1]),
+                        Aexpm.dot(B))
 
         # Test A complex, B int
         A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
@@ -333,7 +334,7 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
         B = (rng.random(b_shape) + 1j*rng.random(b_shape)).astype(dtype_b)
 
     # single application
-    sol_mat = expm_multiply(A, B)
+    sol_mat = expm_multiply(A, B, rng=rng)
     with estimated_warns():
         sol_op = expm_multiply(aslinearoperator(A), B, rng=rng)
     direct_sol = np.dot(sp_expm(A), B)
@@ -352,3 +353,18 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
         direct_sol = sp_expm(t*A).dot(B)
         assert_allclose_(sol_mat, direct_sol)
         assert_allclose_(sol_op, direct_sol)
+
+
+@pytest.mark.parametrize("kwargs", [dict(start=None, stop=None, num=None,
+                                         endpoint=None),
+                                    dict(start=0, stop=2, num=10, endpoint=True)])
+def test_expm_multiply_rng(kwargs):
+    rng = np.random.default_rng(78239592872985)
+    n = 10
+    A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)*1000
+    B = rng.standard_normal((n, 3))
+    rng = np.random.default_rng(78239592872985)
+    res1 = expm_multiply(A, B, rng=rng, **kwargs)
+    rng = np.random.default_rng(78239592872985)
+    res2 = expm_multiply(A, B, rng=rng, **kwargs)
+    assert_equal(res1, res2)
