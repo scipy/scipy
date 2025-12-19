@@ -96,7 +96,6 @@ untested = {
     "place_pols",
     "sawtooth",
     "sepfir2d",
-    "square",
     "ss2tf",
     "ss2zpk",
     "step",
