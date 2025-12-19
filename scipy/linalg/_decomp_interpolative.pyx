@@ -207,10 +207,10 @@ def idd_estrank(cnp.ndarray[cnp.float64_t, mode="c", ndim=2] a: NDArray, eps: fl
 
         rta = rta[rng.permutation(m), :]
 
-    # idd_subselect pick randomly n2-many rows
-    subselect = rng.choice(m, n2, replace=False)
-    rta = rta[subselect, :]
-
+    # idd_subselect pick randomly n2-many rows if there are more than one row
+    if m > 1:
+        subselect = rng.choice(m, n2, replace=False)
+        rta = rta[subselect, :]
     # Perform rfft on each column. Note that the first and the last
     # element of the result is real valued (n2 is power of 2).
     #
