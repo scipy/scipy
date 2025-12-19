@@ -47,7 +47,7 @@ Moments
 Special Cases
 -------------
 * Laplace distribution (:math:`\beta = 1`)
-* Normal distribution with (:math:`\beta = 2`)
+* Normal distribution with with scale :math:`\frac{1}{\sqrt{2}}` (:math:`\beta = 2`)
 * Uniform distribution over the interval :math:`[-1, 1]` (:math:`\beta \rightarrow \infty`)
 
 Sources
