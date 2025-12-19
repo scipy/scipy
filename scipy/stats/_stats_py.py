@@ -10414,7 +10414,8 @@ def _unpack_LinregressResult(res, _):
     return tuple(res) + (res.intercept_stderr,)
 
 
-@xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')])
+@xp_capabilities(skip_backends=[('dask.array', '`dtype` inference failed....')],
+                 cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @_axis_nan_policy_factory(_pack_LinregressResult, n_samples=2,
                           result_to_tuple=_unpack_LinregressResult, paired=True,
                           too_small=1, n_outputs=6)
@@ -10531,7 +10532,7 @@ def linregress(x, y, alternative='two-sided', *, axis=0):
     intercept (95%): 0.616950 +/- 0.544475
 
     """
-    xp = array_namespace(x, y)  # needed for vecdot pre NumPy 2.0
+    xp = array_namespace(x, y)
     x, y = xp_promote(x, y, force_floating=True, xp=xp)
 
     TINY = 1.0e-20
