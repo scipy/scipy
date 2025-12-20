@@ -281,7 +281,7 @@ class TestExpmActionInterval:
         self._help_test_specific_expm_interval_status(2)
 
     def _help_test_specific_expm_interval_status(self, target_status):
-        rng = np.random.RandomState(1234)
+        rng = np.random.default_rng(1234)
         start = 0.1
         stop = 3.2
         num = 13
