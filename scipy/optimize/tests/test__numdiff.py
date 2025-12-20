@@ -555,7 +555,7 @@ class TestApproxDerivativesDense:
         x = np.array([2.0, 3.0, 4.0], dtype=x0_dtype)
 
         def f(x):
-            return np.f0_dtype(rosen(x))
+            return f0_dtype(rosen(x))
 
         promoted_type = xp_result_type(
         x,
