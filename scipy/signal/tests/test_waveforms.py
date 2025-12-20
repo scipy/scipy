@@ -421,7 +421,7 @@ class TestSquareWaveform:
                         rtol=1e-8)
         xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=xp.float64)[()])
 
-    @pytest.mark.parametrize("duty,expected", [(1, 1), (0, -1)])
+    @pytest.mark.parametrize("duty,expected", [(1., 1), (0., -1)])
     def test_duty_edge_cases(self, duty, expected, xp):
         t = xp.linspace(0, 2*xp.pi, 100)
         y = square(t, duty=duty)
