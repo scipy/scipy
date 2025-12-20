@@ -2,7 +2,8 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy
+    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy,
+    make_xp_test_case
 )
 
 import scipy.signal._waveforms as waveforms
@@ -392,6 +393,7 @@ class TestSawtoothWaveform:
         assert waveform.dtype == np.float64
 
 
+@make_xp_test_case(waveforms.square)
 class TestSquareWaveform:
     def test_unique(self, xp):
         t = xp.linspace(0, 2*np.pi, 1000)
