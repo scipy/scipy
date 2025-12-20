@@ -135,6 +135,7 @@ def square(t, duty=0.5):
     """
     xp = array_namespace(t, duty)
     t, w = xp_promote(t, duty, xp=xp)
+    t, w = xp.broadcast_arrays(t, w)
 
     y = xp.zeros(t.shape, dtype=xp.float64)
 
@@ -147,8 +148,6 @@ def square(t, duty=0.5):
     mask2 = ~mask1 & (tmod < w*2*xp.pi)
     y = xpx.at(y, mask2).set(1)
 
-    # on the interval duty*2*pi to 2*pi function is
-    #  (pi*(w+1)-tmod) / (pi*(1-w))
     mask3 = ~mask1 & ~mask2
     y = xpx.at(y, mask3).set(-1)
     return y

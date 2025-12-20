@@ -410,7 +410,7 @@ class TestSquareWaveform:
 
     @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
     def test_duty_cycle_fraction(self, duty, xp):
-        t = xp.linspace(0, 2*xp.pi, 10_000, endpoint=False)
+        t = xp.linspace(0, 2*xp.pi, 10_000, endpoint=False, dtype=xp.float64)
         y = waveforms.square(t, duty=duty)
 
         fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=xp.float64))
@@ -425,7 +425,7 @@ class TestSquareWaveform:
         xp_assert_equal(y, xp.full_like(t, expected, dtype=xp.float64))
 
     def test_periodic(self, xp):
-        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False)
+        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
         y1 = waveforms.square(t, duty=0.4)
         y2 = waveforms.square(t + 2*xp.pi, duty=0.4)
 
