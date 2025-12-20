@@ -261,7 +261,7 @@ class _ExpmPadeHelper:
 
     """
 
-    def __init__(self, A, structure=None, use_exact_onenorm=False):
+    def __init__(self, A, structure=None, use_exact_onenorm=False, rng=None):
         """
         Initialize the object.
 
@@ -294,6 +294,7 @@ class _ExpmPadeHelper:
         self.ident = _ident_like(A)
         self.structure = structure
         self.use_exact_onenorm = use_exact_onenorm
+        self._rng = rng
 
     @property
     def A2(self):
@@ -363,7 +364,8 @@ class _ExpmPadeHelper:
         else:
             if self._d4_approx is None:
                 self._d4_approx = scipy.sparse.linalg.onenormest(
-                    MatrixPowerOperator(self.A2, 2, structure=self.structure)
+                    MatrixPowerOperator(self.A2, 2, structure=self.structure),
+                    rng=self._rng
                 )**(1/4.)
             return self._d4_approx
 
@@ -376,7 +378,8 @@ class _ExpmPadeHelper:
         else:
             if self._d6_approx is None:
                 self._d6_approx = scipy.sparse.linalg.onenormest(
-                    MatrixPowerOperator(self.A2, 3, structure=self.structure)
+                    MatrixPowerOperator(self.A2, 3, structure=self.structure),
+                    rng=self._rng
                 )**(1/6.)
             return self._d6_approx
 
@@ -389,7 +392,8 @@ class _ExpmPadeHelper:
         else:
             if self._d8_approx is None:
                 self._d8_approx = scipy.sparse.linalg.onenormest(
-                    MatrixPowerOperator(self.A4, 2, structure=self.structure)
+                    MatrixPowerOperator(self.A4, 2, structure=self.structure),
+                    rng=self._rng
                 )**(1/8.)
             return self._d8_approx
 
@@ -402,7 +406,8 @@ class _ExpmPadeHelper:
         else:
             if self._d10_approx is None:
                 self._d10_approx = scipy.sparse.linalg.onenormest(
-                    ProductOperator(self.A4, self.A6, structure=self.structure)
+                    ProductOperator(self.A4, self.A6, structure=self.structure),
+                    rng=self._rng
                 )**(1/10.)
             return self._d10_approx
 
@@ -464,7 +469,7 @@ class _ExpmPadeHelper:
         return U, V
 
 
-def expm(A):
+def expm(A, *, rng=None):
     """
     Compute the matrix exponential using Pade approximation.
 
@@ -472,6 +477,12 @@ def expm(A):
     ----------
     A : (M,M) array_like or sparse array
         2D Array or Matrix (sparse or dense) to be exponentiated
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -509,10 +520,11 @@ def expm(A):
            [  0.        ,   7.3890561 ,   0.        ],
            [  0.        ,   0.        ,  20.08553692]])
     """
-    return _expm(A, use_exact_onenorm='auto')
+    rng = np.random.default_rng(rng)
+    return _expm(A, use_exact_onenorm='auto', rng=rng)
 
 
-def _expm(A, use_exact_onenorm):
+def _expm(A, use_exact_onenorm, rng):
     # Core of expm, separated to allow testing exact and approximate
     # algorithms.
 
@@ -555,7 +567,8 @@ def _expm(A, use_exact_onenorm):
 
     # Track functions of A to help compute the matrix exponential.
     h = _ExpmPadeHelper(
-            A, structure=structure, use_exact_onenorm=use_exact_onenorm)
+            A, structure=structure, use_exact_onenorm=use_exact_onenorm, rng=rng
+        )
 
     # Try Pade order 3.
     eta_1 = max(h.d4_loose, h.d6_loose)

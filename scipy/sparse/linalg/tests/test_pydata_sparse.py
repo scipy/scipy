@@ -228,9 +228,10 @@ def test_inv(matrices):
 
 
 def test_expm(matrices):
+    rng = np.random.default_rng(2842387598417907)
     A_dense, A_sparse, b = matrices
-    x0 = splin.expm(sp.csc_array(A_dense))
-    x = splin.expm(A_sparse)
+    x0 = splin.expm(sp.csc_array(A_dense), rng=rng)
+    x = splin.expm(A_sparse, rng=rng)
     assert_allclose(x.todense(), x0.todense())
 
 

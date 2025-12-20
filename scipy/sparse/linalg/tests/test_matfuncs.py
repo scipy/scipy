@@ -84,31 +84,36 @@ def test_matrix_power():
 
 class TestExpM:
     def test_zero_ndarray(self):
+        rng = np.random.default_rng(2792478598247)
         a = array([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(expm(a, rng=rng), [[1, 0], [0, 1]])
 
     def test_zero_sparse(self):
+        rng = np.random.default_rng(2792478598247)
         a = csc_array([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a).toarray(),[[1,0],[0,1]])
+        assert_array_almost_equal(expm(a, rng=rng).toarray(), [[1, 0], [0, 1]])
 
     def test_zero_matrix(self):
+        rng = np.random.default_rng(2792478598247)
         a = matrix([[0.,0],[0,0]])
-        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        assert_array_almost_equal(expm(a, rng=rng), [[1, 0], [0, 1]])
 
     def test_misc_types(self):
-        A = expm(np.array([[1]]))
-        assert_allclose(expm(((1,),)), A)
-        assert_allclose(expm([[1]]), A)
-        assert_allclose(expm(matrix([[1]])), A)
-        assert_allclose(expm(np.array([[1]])), A)
-        assert_allclose(expm(csc_array([[1]])).toarray(), A)
-        B = expm(np.array([[1j]]))
-        assert_allclose(expm(((1j,),)), B)
-        assert_allclose(expm([[1j]]), B)
-        assert_allclose(expm(matrix([[1j]])), B)
-        assert_allclose(expm(csc_array([[1j]])).toarray(), B)
+        rng = np.random.default_rng(2792478598247)
+        A = expm(np.array([[1]]), rng=rng)
+        assert_allclose(expm(((1,),), rng=rng), A)
+        assert_allclose(expm([[1]], rng=rng), A)
+        assert_allclose(expm(matrix([[1]]), rng=rng), A)
+        assert_allclose(expm(np.array([[1]]), rng=rng), A)
+        assert_allclose(expm(csc_array([[1]]), rng=rng).toarray(), A)
+        B = expm(np.array([[1j]]), rng=rng)
+        assert_allclose(expm(((1j,),), rng=rng), B)
+        assert_allclose(expm([[1j]], rng=rng), B)
+        assert_allclose(expm(matrix([[1j]]), rng=rng), B)
+        assert_allclose(expm(csc_array([[1j]]), rng=rng).toarray(), B)
 
     def test_bidiagonal_sparse(self):
+        rng = np.random.default_rng(2792478598247)
         A = csc_array([
             [1, 3, 0],
             [0, 1, 5],
@@ -119,26 +124,29 @@ class TestExpM:
             [e1, 3*e1, 15*(e2 - 2*e1)],
             [0, e1, 5*(e2 - e1)],
             [0, 0, e2]], dtype=float)
-        observed = expm(A).toarray()
+        observed = expm(A, rng=rng).toarray()
         assert_array_almost_equal(observed, expected)
 
     def test_padecases_dtype_float(self):
+        rng = np.random.default_rng(2792478598247)
         for dtype in [np.float32, np.float64]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
-                observed = expm(A)
+                observed = expm(A, rng=rng)
                 expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_complex(self):
+        rng = np.random.default_rng(2792478598247)
         for dtype in [np.complex64, np.complex128]:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
-                observed = expm(A)
+                observed = expm(A, rng=rng)
                 expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
+        rng = np.random.default_rng(2792478598247)
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.float64
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
@@ -147,12 +155,13 @@ class TestExpM:
             with warnings.catch_warnings():
                 msg = "Changing the sparsity structure"
                 warnings.filterwarnings("ignore", msg, SparseEfficiencyWarning)
-                exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
-                inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
+                exact_onenorm = _expm(a, use_exact_onenorm=True, rng=rng).toarray()
+                inexact_onenorm = _expm(a, use_exact_onenorm=False, rng=rng).toarray()
             assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
             assert_array_almost_equal_nulp(inexact_onenorm, e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
+        rng = np.random.default_rng(2792478598247)
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.complex128
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
@@ -161,9 +170,10 @@ class TestExpM:
             with warnings.catch_warnings():
                 msg = "Changing the sparsity structure"
                 warnings.filterwarnings("ignore", msg, SparseEfficiencyWarning)
-                assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
+                assert_array_almost_equal_nulp(expm(a, rng=rng).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
+        rng = np.random.default_rng(2792478598247)
         random.seed(1234)
         for dtype in [np.float64, np.complex128]:
             for n in range(1, 10):
@@ -172,28 +182,31 @@ class TestExpM:
                     A = (eye(n) + random.rand(n, n) * scale).astype(dtype)
                     if np.iscomplexobj(A):
                         A = A + 1j * random.rand(n, n) * scale
-                    assert_array_almost_equal(expm(logm(A)), A)
+                    assert_array_almost_equal(expm(logm(A), rng=rng), A)
 
     def test_integer_matrix(self):
+        rng = np.random.default_rng(2792478598247)
         Q = np.array([
             [-3, 1, 1, 1],
             [1, -3, 1, 1],
             [1, 1, -3, 1],
             [1, 1, 1, -3]])
-        assert_allclose(expm(Q), expm(1.0 * Q))
+        assert_allclose(expm(Q, rng=rng), expm(1.0 * Q, rng=rng))
 
     def test_integer_matrix_2(self):
+        rng = np.random.default_rng(2792478598247)
         # Check for integer overflows
         Q = np.array([[-500, 500, 0, 0],
                       [0, -550, 360, 190],
                       [0, 630, -630, 0],
                       [0, 0, 0, 0]], dtype=np.int16)
-        assert_allclose(expm(Q), expm(1.0 * Q))
+        assert_allclose(expm(Q, rng=rng), expm(1.0 * Q, rng=rng))
 
         Q = csc_array(Q)
-        assert_allclose(expm(Q).toarray(), expm(1.0 * Q).toarray())
+        assert_allclose(expm(Q, rng=rng).toarray(), expm(1.0 * Q, rng=rng).toarray())
 
     def test_triangularity_perturbation(self):
+        rng = np.random.default_rng(2792478598247)
         # Experiment (1) of
         # Awad H. Al-Mohy and Nicholas J. Higham (2012)
         # Improved Inverse Scaling and Squaring Algorithms
@@ -214,7 +227,7 @@ class TestExpM:
             [0.00000000000000000e+00, 0.00000000000000000e+00,
              0.00000000000000000e+00, -1.17947533272554850e+00]],
             dtype=float)
-        assert_allclose(expm(A_logm), A, rtol=1e-4)
+        assert_allclose(expm(A_logm, rng=rng), A, rtol=1e-4)
 
         # Perturb the upper triangular matrix by tiny amounts,
         # so that it becomes technically not upper triangular.
@@ -226,12 +239,13 @@ class TestExpM:
             warnings.filterwarnings("ignore", "Ill-conditioned.*", RuntimeWarning)
             warnings.filterwarnings("ignore", "An ill-conditioned.*", RuntimeWarning)
 
-            A_expm_logm_perturbed = expm(A_logm_perturbed)
+            A_expm_logm_perturbed = expm(A_logm_perturbed, rng=rng)
         rtol = 1e-4
         atol = 100 * tiny
         assert_(not np.allclose(A_expm_logm_perturbed, A, rtol=rtol, atol=atol))
 
     def test_burkardt_1(self):
+        rng = np.random.default_rng(2792478598247)
         # This matrix is diagonal.
         # The calculation of the matrix exponential is simple.
         #
@@ -268,10 +282,11 @@ class TestExpM:
             [exp1, 0],
             [0, exp2],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_2(self):
+        rng = np.random.default_rng(2792478598247)
         # This matrix is symmetric.
         # The calculation of the matrix exponential is straightforward.
         A = np.array([
@@ -282,10 +297,11 @@ class TestExpM:
             [39.322809708033859, 46.166301438885753],
             [46.166301438885768, 54.711576854329110],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_3(self):
+        rng = np.random.default_rng(2792478598247)
         # This example is due to Laub.
         # This matrix is ill-suited for the Taylor series approach.
         # As powers of A are computed, the entries blow up too quickly.
@@ -303,10 +319,11 @@ class TestExpM:
                 39*np.expm1(-38) / (38*exp1),
                 -1/(38*exp1) + 39/(38*exp39)],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_4(self):
+        rng = np.random.default_rng(2792478598247)
         # This example is due to Moler and Van Loan.
         # The example will cause problems for the series summation approach,
         # as well as for diagonal Pade approximations.
@@ -318,10 +335,11 @@ class TestExpM:
         V = np.array([[1, -1/2], [-2, 3/2]], dtype=float)
         w = np.array([-17, -1], dtype=float)
         desired = np.dot(U * np.exp(w), V)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_5(self):
+        rng = np.random.default_rng(2792478598247)
         # This example is due to Moler and Van Loan.
         # This matrix is strictly upper triangular
         # All powers of A are zero beyond some (low) limit.
@@ -338,10 +356,11 @@ class TestExpM:
             [0, 0, 1, 6],
             [0, 0, 0, 1],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_6(self):
+        rng = np.random.default_rng(2792478598247)
         # This example is due to Moler and Van Loan.
         # This matrix does not have a complete set of eigenvectors.
         # That means the eigenvector approach will fail.
@@ -354,10 +373,11 @@ class TestExpM:
             [exp1, exp1],
             [0, exp1],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_7(self):
+        rng = np.random.default_rng(2792478598247)
         # This example is due to Moler and Van Loan.
         # This matrix is very close to example 5.
         # Mathematically, it has a complete set of eigenvectors.
@@ -372,10 +392,11 @@ class TestExpM:
             [exp1, exp1],
             [0, exp1],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_8(self):
+        rng = np.random.default_rng(2792478598247)
         # This matrix was an example in Wikipedia.
         exp4 = np.exp(4)
         exp16 = np.exp(16)
@@ -389,10 +410,11 @@ class TestExpM:
             [-9*exp16 + exp4, -9*exp16 + 5*exp4, -2*exp16 + 2*exp4],
             [16*exp16, 16*exp16, 4*exp16],
             ], dtype=float) * 0.25
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_9(self):
+        rng = np.random.default_rng(2792478598247)
         # This matrix is due to the NAG Library.
         # It is an example for function F01ECF.
         A = np.array([
@@ -407,10 +429,11 @@ class TestExpM:
             [823.7630, 679.4257, 603.5524, 610.8500],
             [998.4355, 823.7630, 731.2510, 740.7038],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_10(self):
+        rng = np.random.default_rng(2792478598247)
         # This is Ward's example #1.
         # It is defective and nonderogatory.
         A = np.array([
@@ -424,10 +447,11 @@ class TestExpM:
             [127.7810855231823, 183.7651386463682, 91.88256932318415],
             [127.7810855231824, 163.6796017231806, 111.9681062463718],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_11(self):
+        rng = np.random.default_rng(2792478598247)
         # This is Ward's example #2.
         # It is a symmetric matrix.
         A = np.array([
@@ -450,10 +474,11 @@ class TestExpM:
                 1.012918429302482E+17,
                 1.692944112408493E+17],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_12(self):
+        rng = np.random.default_rng(2792478598247)
         # This is Ward's example #3.
         # Ward's algorithm has difficulty estimating the accuracy
         # of its results.
@@ -468,7 +493,7 @@ class TestExpM:
             [-5.632570799891469, 1.471517758499875, 0.4060058435250609],
             [-4.934938326088363, 1.103638317328798, 0.5413411267617766],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_burkardt_13(self):
@@ -503,6 +528,7 @@ class TestExpM:
             assert_allclose(actual, desired)
 
     def test_burkardt_14(self):
+        rng = np.random.default_rng(2792478598247)
         # This is Moler's example.
         # This badly scaled matrix caused problems for MATLAB's expm().
         A = np.array([
@@ -515,10 +541,11 @@ class TestExpM:
             [-5743067.77947947, -0.0152830038686819, -4526542.71278401],
             [0.447722977849494, 1.54270484519591e-09, 0.463480648837651],
             ], dtype=float)
-        actual = expm(A)
+        actual = expm(A, rng=rng)
         assert_allclose(actual, desired)
 
     def test_pascal(self):
+        rng = np.random.default_rng(2792478598247)
         # Test pascal triangle.
         # Nilpotent exponential, used to trigger a failure (gh-8029)
 
@@ -529,7 +556,7 @@ class TestExpM:
                     break
 
                 A = np.diag(np.arange(1, n + 1), -1) * scale
-                B = expm(A)
+                B = expm(A, rng=rng)
 
                 got = B
                 expected = binom(np.arange(n + 1)[:,None],
@@ -538,19 +565,21 @@ class TestExpM:
                 assert_allclose(got, expected, atol=atol)
 
     def test_matrix_input(self):
+        rng = np.random.default_rng(2792478598247)
         # Large np.matrix inputs should work, gh-5546
         A = np.zeros((200, 200))
         A[-1,0] = 1
-        B0 = expm(A)
+        B0 = expm(A, rng=rng)
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "the matrix subclass.*", DeprecationWarning)
             warnings.filterwarnings(
                 "ignore", "the matrix subclass.*", PendingDeprecationWarning)
-            B = expm(np.matrix(A))
+            B = expm(np.matrix(A), rng=rng)
         assert_allclose(B, B0)
 
     def test_exp_sinch_overflow(self):
+        rng = np.random.default_rng(2792478598247)
         # Check overflow in intermediate steps is fixed (gh-11839)
         L = np.array([[1.0, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0],
                       [0.0, 1.0, 0.0, -0.5, -0.5, 0.0, 0.0],
@@ -560,8 +589,8 @@ class TestExpM:
                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
 
-        E0 = expm(-L)
-        E1 = expm(-2**11 * L)
+        E0 = expm(-L, rng=rng)
+        E1 = expm(-2**11 * L, rng=rng)
         E2 = E0
         for j in range(11):
             E2 = E2 @ E2
