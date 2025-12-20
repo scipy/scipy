@@ -238,7 +238,8 @@ def test_norm(A):
 
 @parametrize_square_sparrays
 def test_onenormest(B):
-    C = spla.onenormest(B)
+    rng = np.random.default_rng(2842387598417907)
+    C = spla.onenormest(B, rng=rng)
     npt.assert_allclose(C, np.linalg.norm(B.todense(), 1))
 
 

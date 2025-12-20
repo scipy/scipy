@@ -76,12 +76,13 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False, *, rng=None):
     >>> import numpy as np
     >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import onenormest
+    >>> rng = np.random.default_rng()
     >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
     >>> A.toarray()
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
            [ 0., -1.,  0.]])
-    >>> onenormest(A)
+    >>> onenormest(A, rng=rng)
     9.0
     >>> np.linalg.norm(A.toarray(), ord=1)
     9.0
