@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    assert_almost_equal, xp_assert_equal, xp_assert_close, _xp_copy_to_numpy
 )
 
 import scipy.signal._waveforms as waveforms
@@ -397,7 +397,7 @@ class TestSquareWaveform:
         t = xp.linspace(0, 2*np.pi, 1000)
         y = waveforms.square(t)
         assert y.shape == t.shape
-        unique = xp.unique(y)
+        unique = np.unique(_xp_copy_to_numpy(y))
         assert set(unique).issubset({-1.0, 1.0})
 
     def test_dtype(self, xp):
@@ -414,7 +414,8 @@ class TestSquareWaveform:
         y = waveforms.square(t, duty=duty)
 
         fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=xp.float64))
-        xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()], rtol=1e-8)
+        xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()],
+                        rtol=1e-8)
         xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=xp.float64)[()])
 
     @pytest.mark.parametrize("duty,expected", [(1, 1), (0, -1)])
