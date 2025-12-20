@@ -1,5 +1,6 @@
 import math
 from itertools import product
+from functools import partial
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
@@ -8,6 +9,7 @@ from pytest import raises as assert_raises
 
 from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
 from scipy.sparse import csr_array, csc_array, lil_array
+from scipy._lib._array_api import xp_result_type
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
@@ -514,6 +516,7 @@ class TestApproxDerivativesDense:
         jac_fp = approx_derivative(err_fp32, p0.astype(np.float32),
                                    method='2-point')
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+        assert jac_fp.dtype == np.float32
 
         # check upper bound of error on the derivative for 2-point
         def f(x):
@@ -540,6 +543,44 @@ class TestApproxDerivativesDense:
             err = approx_derivative(f, x0, method='2-point',
                                     abs_step=h) - g(x0)
             assert abs(err) < atol
+
+
+    @pytest.mark.parametrize("x0_dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("f0_dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("method", ['2-point', '3-point'])
+    def test_check_dtype(self, x0_dtype, f0_dtype, method):
+        # the output of approx_derivative should be the promoted
+        # type of x0, f0.
+
+        # both are of the same dtype
+        x = np.array([2.0, 3.0, 4.0], dtype=x0_dtype)
+
+        def f(dtype, x):
+            return np.astype(rosen(x), f0_dtype)
+
+        promoted_type = xp_result_type(
+        x,
+            f(f0_dtype, x),
+            force_floating=True,
+            xp=np
+        )
+        g = approx_derivative(partial(f, f0_dtype), x, method=method)
+        assert g.dtype == promoted_type
+
+        # setting abs_step or rel_step shouldn't change output dtype
+        g = approx_derivative(
+            partial(f, f0_dtype),
+            x,
+            rel_step=np.float16(0.1),
+            method=method)
+        assert g.dtype == promoted_type
+
+        g = approx_derivative(
+            partial(f, f0_dtype),
+            x,
+            abs_step=np.float16(0.1),
+            method=method)
+        assert g.dtype == promoted_type
 
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])
@@ -883,3 +924,30 @@ def test__compute_absolute_step():
     sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
     abs_step = _compute_absolute_step(rel_step, -x0, f0, '2-point')
     assert_allclose(abs_step, sign_x0 * correct_step)
+
+    # the dtype of absolute step should be the same as x0
+    #def _compute_absolute_step(rel_step, x0, f0, method):
+    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
+    abs_step = _compute_absolute_step(None, x0, f0, '3-point')
+    assert abs_step.dtype == np.float32
+    abs_step = _compute_absolute_step(None, x0, f0, '2-point')
+    assert abs_step.dtype == np.float32
+
+    x0 = np.array([0.1, 0, 1, 50], dtype=np.float16)
+    abs_step = _compute_absolute_step(None, x0, f0, '3-point')
+    assert abs_step.dtype == np.float16
+    abs_step = _compute_absolute_step(None, x0, f0, '2-point')
+    assert abs_step.dtype == np.float16
+
+    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float64)
+    f0 = np.array(1.0, dtype=np.float16)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float64
+
+    x0 = np.array([1e-5, 0, 1, 1e5], dtype=np.float32)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float32
+
+    x0 = np.array([1e-3, 0, 1, 10], dtype=np.float16)
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert abs_step.dtype == np.float16
