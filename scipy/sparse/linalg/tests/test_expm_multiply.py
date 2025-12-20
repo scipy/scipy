@@ -292,7 +292,7 @@ class TestExpmActionInterval:
         nsuccesses = 0
         for num in [14, 13, 2] * nrepeats:
             A = rng.randn(n, n)
-            B = rng.randn(n, k)
+            B = rng.random((n, k))
             status = _expm_multiply_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint,
                     status_only=True, rng=rng)
