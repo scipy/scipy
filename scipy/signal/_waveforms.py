@@ -144,7 +144,7 @@ def square(t, duty=0.5):
 
     # on the interval 0 to duty*2*pi function is 1
     tmod = t % (2 * xp.pi)
-    mask2 = ~mask1 & (tmod < w * 2 * pi)
+    mask2 = ~mask1 & (tmod < w*2*xp.pi)
     y = xpx.at(y, mask2).set(1)
 
     # on the interval duty*2*pi to 2*pi function is
