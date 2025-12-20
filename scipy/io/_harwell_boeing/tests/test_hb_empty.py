@@ -12,5 +12,3 @@ def test_hb_write_empty_matrix_roundtrip():
     assert out.shape == (2, 2)
     assert out.nnz == 0
 
-
-test_hb_write_empty_matrix_roundtrip()
