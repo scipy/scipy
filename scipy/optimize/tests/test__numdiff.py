@@ -1,6 +1,5 @@
 import math
 from itertools import product
-from functools import partial
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
@@ -555,31 +554,23 @@ class TestApproxDerivativesDense:
         # both are of the same dtype
         x = np.array([2.0, 3.0, 4.0], dtype=x0_dtype)
 
-        def f(dtype, x):
+        def f(x):
             return np.astype(rosen(x), f0_dtype)
 
         promoted_type = xp_result_type(
         x,
-            f(f0_dtype, x),
+            f(x),
             force_floating=True,
             xp=np
         )
-        g = approx_derivative(partial(f, f0_dtype), x, method=method)
+        g = approx_derivative(f, x, method=method)
         assert g.dtype == promoted_type
 
         # setting abs_step or rel_step shouldn't change output dtype
-        g = approx_derivative(
-            partial(f, f0_dtype),
-            x,
-            rel_step=np.float16(0.1),
-            method=method)
+        g = approx_derivative(f, x, rel_step=np.float16(0.1), method=method)
         assert g.dtype == promoted_type
 
-        g = approx_derivative(
-            partial(f, f0_dtype),
-            x,
-            abs_step=np.float16(0.1),
-            method=method)
+        g = approx_derivative(f, x, abs_step=np.float16(0.1), method=method)
         assert g.dtype == promoted_type
 
     def test_check_derivative(self):
