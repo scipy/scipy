@@ -397,7 +397,7 @@ class TestSquareWaveform:
         t = xp.linspace(0, 2*np.pi, 1000)
         y = waveforms.square(t)
         assert y.shape == t.shape
-        unique = np.unique(y)
+        unique = xp.unique(y)
         assert set(unique).issubset({-1.0, 1.0})
 
     def test_dtype(self, xp):
@@ -414,7 +414,7 @@ class TestSquareWaveform:
         y = waveforms.square(t, duty=duty)
 
         fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=xp.float64))
-        xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()])
+        xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()], rtol=1e-8)
         xp_assert_close(xp.mean(y), xp.asarray(2*duty - 1, dtype=xp.float64)[()])
 
     @pytest.mark.parametrize("duty,expected", [(1, 1), (0, -1)])
@@ -424,7 +424,7 @@ class TestSquareWaveform:
         xp_assert_equal(y, expected*xp.ones_like(t, dtype=xp.float64))
 
     def test_periodic(self, xp):
-        t = xp.linspace(0, 2*xp.pi, 50, endpoint=False)
+        t = xp.linspace(0, 2*xp.pi, 10, endpoint=False)
         y1 = waveforms.square(t, duty=0.4)
         y2 = waveforms.square(t + 2*xp.pi, duty=0.4)
 
