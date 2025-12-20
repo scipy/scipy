@@ -412,7 +412,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
 
     Notes
     -----
-    If `rel_step` is not provided, it assigned as ``EPS**(1/s)``, where EPS is
+    If `rel_step` is not provided, it is assigned as ``EPS**(1/s)``, where EPS is
     determined from the smallest floating point dtype of `x0` or ``fun(x0)``,
     ``np.finfo(x0.dtype).eps``, s=2 for '2-point' method and
     s=3 for '3-point' method. This relative step approximately minimizes a sum
@@ -421,10 +421,12 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     If any of the absolute or relative steps produces an indistinguishable
     difference from the original `x0`, ``(x0 + dx) - x0 == 0``, then a
     automatic step size is substituted for that particular entry.
-    The calculated step size, `h`, is coerced to have the same dtype as `x0`.
-    Whilst the floating point precision of `J` is the promoted type of ``fun(x0)``
-    and `x0`, the overall accuracy will be determined by the smallest floating
-    point dtype of `x0` and ``fun(x0)``, as that dtype is used to calculate step size.
+    The calculated absolute step size, `h`, is coerced to have the same dtype as `x0`.
+
+    The floating point precision of `J` is the promoted type of ``fun(x0)``
+    and `x0`. If `rel_step` and `abs_step` are None, then the overall accuracy of
+    `J` depends on the smallest floating point dtype of `x0` and ``fun(x0)``,
+    as that dtype is used to calculate the default step size.
 
     A finite difference scheme for '3-point' method is selected automatically.
     The well-known central difference scheme is used for points sufficiently
