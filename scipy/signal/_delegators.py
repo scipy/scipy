@@ -515,7 +515,7 @@ def spline_filter_signature(Iin, lmbda=5.0):
 
 
 def square_signature(t, duty=0.5):
-    return array_namespace(t)
+    return array_namespace(t, duty)
 
 
 def ss2tf_signature(A, B, C, D, input=0):

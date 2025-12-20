@@ -7,6 +7,7 @@ from scipy._lib._array_api import (
 )
 
 import scipy.signal._waveforms as waveforms
+from scipy.signal import square
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -393,27 +394,27 @@ class TestSawtoothWaveform:
         assert waveform.dtype == np.float64
 
 
-@make_xp_test_case(waveforms.square)
+@make_xp_test_case(square)
 class TestSquareWaveform:
     def test_unique(self, xp):
         t = xp.linspace(0, 2*np.pi, 1000)
-        y = waveforms.square(t)
+        y = square(t)
         assert y.shape == t.shape
         unique = np.unique(_xp_copy_to_numpy(y))
         assert set(unique).issubset({-1.0, 1.0})
 
     def test_dtype(self, xp):
-        waveform = waveforms.square(xp.asarray(1, dtype=xp.float32),
+        waveform = square(xp.asarray(1, dtype=xp.float32),
                                     duty=xp.asarray(0.5, dtype=xp.float32))
         assert waveform.dtype == xp.float64
 
-        waveform = waveforms.square(xp.asarray(1, dtype=xp.float64))
+        waveform = square(xp.asarray(1, dtype=xp.float64))
         assert waveform.dtype == xp.float64
 
     @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
     def test_duty_cycle_fraction(self, duty, xp):
         t = xp.linspace(0, 2*xp.pi, 10_000, endpoint=False, dtype=xp.float64)
-        y = waveforms.square(t, duty=duty)
+        y = square(t, duty=duty)
 
         fraction_high = xp.mean(xp.asarray(y == 1.0, dtype=xp.float64))
         xp_assert_close(fraction_high, xp.asarray(duty, dtype=xp.float64)[()],
@@ -423,19 +424,19 @@ class TestSquareWaveform:
     @pytest.mark.parametrize("duty,expected", [(1, 1), (0, -1)])
     def test_duty_edge_cases(self, duty, expected, xp):
         t = xp.linspace(0, 2*xp.pi, 100)
-        y = waveforms.square(t, duty=duty)
+        y = square(t, duty=duty)
         xp_assert_equal(y, xp.full_like(t, expected, dtype=xp.float64))
 
     def test_periodic(self, xp):
         t = xp.linspace(0, 2*xp.pi, 10, endpoint=False, dtype=xp.float64)
-        y1 = waveforms.square(t, duty=0.4)
-        y2 = waveforms.square(t + 2*xp.pi, duty=0.4)
+        y1 = square(t, duty=0.4)
+        y2 = square(t + 2*xp.pi, duty=0.4)
 
         xp_assert_equal(y1, y2)
 
     @pytest.mark.parametrize("duty", [-0.1, 1.1, 2.0])
     def test_invalid_duty(self, duty, xp):
         t = xp.linspace(0, 2*np.pi, 10)
-        y = waveforms.square(t, duty=duty)
+        y = square(t, duty=duty)
 
         assert xp.all(xp.isnan(y))
