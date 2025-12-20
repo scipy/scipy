@@ -421,7 +421,7 @@ class TestSquareWaveform:
     def test_duty_edge_cases(self, duty, expected, xp):
         t = xp.linspace(0, 2*xp.pi, 100)
         y = waveforms.square(t, duty=duty)
-        xp_assert_equal(y, expected*xp.ones_like(t, dtype=xp.float64))
+        xp_assert_equal(y, xp.full_like(t, expected, dtype=xp.float64))
 
     def test_periodic(self, xp):
         t = xp.linspace(0, 2*xp.pi, 10, endpoint=False)
