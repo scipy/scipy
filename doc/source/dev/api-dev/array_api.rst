@@ -307,6 +307,23 @@ with the JAX JIT in the following way::
       return d
 
 
+Array creation functions without array inputs
+`````````````````````````````````````````````
+
+For array creation functions without array inputs,
+adding array API standard support can be accomplished by adding keyword
+only arguments ``xp`` and ``device`` to specify the desired backend and
+device respectively. See for instance `~scipy.signal.buttap` for creating
+the analog prototype of an Nth-order Butterworth filter. It may also be
+desirable to add a ``dtype`` kwarg to control the output ``dtype`` for
+such functions. Note that none of these keyword arguments are necessary when
+there are array arguments from which the backend, device, and desired output dtype
+can be inferred. For the sake of API simplicity and consistency and in the
+spirit of "There should be one-- and preferably only one --obvious way to do it.",
+it is recommended to avoid the use of these kwargs in functions which take
+at least one array argument.
+
+
 Documenting array API standard support
 --------------------------------------
 
