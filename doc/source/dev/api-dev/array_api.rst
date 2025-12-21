@@ -228,19 +228,12 @@ conversion will raise an exception. The reason for that is that silent data
 transfer between devices is considered bad practice, as it is likely to be a
 large and hard-to-detect performance bottleneck.
 
-In some cases, compiled code can be supported through delegation to native
-implementations. Such delegation has currently been set up in `~scipy.fft`,
-`~scipy.ndimage`, `~scipy.signal` (see :ref:`array_api_support_signal_caveats`),
+In some cases, compiled code can be supported on alternative backends
+through delegation to native implementations. Such delegation has currently been set
+up in `~scipy.fft`, `~scipy.ndimage`, `~scipy.signal`
+(see :ref:`array_api_support_signal_caveats`),
 and `~scipy.special`, though there is not yet a
 standard approach, and support in each module has mostly evolved separately.
-When adding array API standard support for an existing function, it is useful to
-check which backends have native implementations. Support for a function can be
-established through either delegation to a native implementation, or by adding
-array API support in the standard way with delegation to native implementations
-of any compiled dependencies. For the sake of brevity, in the remainder of this
-document we speak only of delegation to a native implementation of a function
-itself, with the understanding that the reader should mentally fill in the
-general picture.
 
 There is also some effort being put into expanding access to native
 implementations, such as the `xsf project <https://github.com/scipy/xsf/issues/1>`_
