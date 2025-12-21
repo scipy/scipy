@@ -323,6 +323,29 @@ In general, support for eager-mode is not a high-value target, and it is not con
 a good use of developer time to put significant effort into enabling eager-only
 support.
 
+.. _dev-arrayapi_default_dtype:
+
+Default Dtypes
+``````````````
+
+PyTorch has a concept of default dtype. By default, arrays of floating point
+numbers will have dtype ``torch.float32`` when no explicit dtype is specified,
+but arithmetic with 64-bit double precision is still allowed. The default dtype
+in Pytorch can be changed with ``torch.set_default_dtype``. In contrast, by default,
+JAX allows only 32 bit floats, and support for 64-bit double precision must be enabled
+using a configuration flag. Currently, SciPy requires 64-bit precision to be available,
+and no effort is made to support JAX in its default 32-bit only configuration.
+SciPy does aim to support PyTorch with default dtype ``float32`` and the desired
+behavior is that the choice of default dtype does not impact the results of
+computations with array inputs. To this effect, any use of array creation functions
+from the ``xp`` namespace such as ``xp.zeros`` or ``xp.arange`` should take care
+to explicitly set a dtype. At the moment, it is still under debate what should be
+done for array creation functions within SciPy. Should they respect default dtype
+by default? Should they have a ``dtype`` kwarg? For the time-being, the most
+important thing perhaps is to clearly document how such functions behave with
+respect to the default dtype in the :ref:`extra_note <dev-arrayapi_extra_note>`
+described below.
+
 
 Array creation functions without array inputs
 `````````````````````````````````````````````
@@ -583,6 +606,8 @@ and passing in any backends which are not even supported on CPU to ``skip_backen
 Such situations are hopefully rare enough that special handling isn't needed.
 ``xp_capabilities`` has evolved naturally over time to meet developer needs; good
 suggestions for ways to improve developer ergonomics are welcome.
+
+.. _dev-arrayapi_extra_note:
 
 ``extra_note``
 ``````````````
