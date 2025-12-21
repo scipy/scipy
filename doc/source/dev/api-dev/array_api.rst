@@ -209,7 +209,7 @@ You would convert this like so::
   def toto(a, b):
       xp = array_namespace(a, b)
       a = xp.asarray(a)
-      b = xp_copy(b, xp=xp)  # our custom helper is needed for copy
+      b = xp.asarray(b, copy=True)
 
       c = xp.sum(a) - xp.prod(b)
 
