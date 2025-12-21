@@ -870,7 +870,7 @@ with array-api-strict, Dask, PyTorch, and JAX on CPU, and tests with
 CuPy, PyTorch, and JAX on GPU.
 
 A third environment variable (``SCIPY_DEFAULT_DTYPE``, again only used in the
-test suite) can be used to control the :ref:`default dtype <dev-arrayapi-default-dtype>`
+test suite) can be used to control the :ref:`default dtype <dev-arrayapi_default_dtype>`
 used by ``torch`` in tests. Valid values are ``"float64"`` and ``"float32"``.
 If ``SCIPY_DEFAULT_DTYPE`` is unset, then ``torch``'s default dtype will be ``float64``.
 
