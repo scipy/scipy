@@ -403,6 +403,7 @@ class TestSquareWaveform:
         unique = np.unique(_xp_copy_to_numpy(y))
         assert set(unique).issubset({-1.0, 1.0})
 
+    @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
     def test_dtype(self, xp):
         waveform = square(xp.asarray(1, dtype=xp.float32),
                                     duty=xp.asarray(0.5, dtype=xp.float32))
