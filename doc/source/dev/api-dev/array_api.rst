@@ -869,13 +869,10 @@ Note that in SciPy's GitHub Actions workflows, there are regular tests
 with array-api-strict, Dask, PyTorch, and JAX on CPU, and tests with
 CuPy, PyTorch, and JAX on GPU.
 
-``torch`` has a concept of default dtype. By default, arrays of floating point
-numbers will have dtype ``torch.float32`` when no explicit dtype is specified.
-The default ``dtype`` can be changed in ``torch`` with ``torch.set_default_dtype``.
 A third environment variable (``SCIPY_DEFAULT_DTYPE``, again only used in the
-test suite) can be used to control the default dtype used by ``torch`` in tests.
-Valid values are ``"float64"`` and ``"float32"``. If ``SCIPY_DEFAULT_DTYPE`` is unset,
-then ``torch``'s default dtype will be ``float64``.
+test suite) can be used to control the :ref:`default dtype <dev-arrayapi-default-dtype>`
+used by ``torch`` in tests. Valid values are ``"float64"`` and ``"float32"``.
+If ``SCIPY_DEFAULT_DTYPE`` is unset, then ``torch``'s default dtype will be ``float64``.
 
 The intention behind testing with different default dtypes is primarily to catch
 subtle bugs that can arise with the ``torch`` backend due to internal array creation
