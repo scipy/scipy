@@ -251,7 +251,7 @@ both CPU and GPU.
 A note on JAX support
 `````````````````````
 
-JAX was designed with deliberate restrictions to make code easier to reason and exploits
+JAX was designed with deliberate restrictions to make code easier to reason about and exploits
 this to better support features like JIT-compilation and autodifferentiation. The most
 relevant restrictions for SciPy developers are:
 
@@ -289,7 +289,7 @@ directly, and can instead use
 This can be used so long as ``g`` is a pure function and its output shape(s) are determined purely by
 input shape(s) and not values.
 
-Using ``lazy_apply``, the  example function ``toto`` might be made compatible
+Using ``lazy_apply``, the example function ``toto`` might be made compatible
 with the JAX JIT in the following way::
 
 
@@ -510,7 +510,7 @@ accelerated implementation of nonlinear weighted orthogonal distance regression
 would benefit from not having to support an API so tightly coupled to ODRPACK
 but is also a challenging problem in its own right.
 
-(Since the  previous paragraph was written `scipy.odr` has been slated for
+(Since the previous paragraph was written `scipy.odr` has been slated for
 deprecation. Things that are deprecated are inherently out-of-scope).
 
 Considerations of what to consider in-scope are evolving, and something which is now
@@ -808,11 +808,11 @@ This automatically sets ``SCIPY_ARRAY_API`` appropriately and will cause
 tests with the ``xp`` fixture to run only for the selected backends to be
 collected. Valid backends are ``numpy``, ``array_api_strict``, ``cupy``,
 ``dask.array``, ``jax.numpy``, and ``torch``. One may also use the
-``-m array_api_backends`` option restriction collection to only tests using
+``-m array_api_backends`` option to restrict collection to only tests using
 the ``xp`` fixture. For instance the following command causes pytest to only
 collect tests using the ``xp`` fixture with the CuPy backend::
 
-  spin test -b cupy -m array-api-backends
+  spin test -b cupy -m array_api_backends
 
 To test a library
 that has multiple devices with a non-default device, a second environment
@@ -821,7 +821,7 @@ values depend on the array library under test, e.g. for PyTorch, valid values ar
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
 backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
-Note that there between SciPy's GitHub Actions workflows, there are tests
+Note that in SciPy's GitHub Actions workflows, there are regular tests
 with array-api-strict, Dask, PyTorch, and JAX on CPU, and tests with
 CuPy, PyTorch, and JAX on GPU.
 
