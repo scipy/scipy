@@ -240,7 +240,6 @@ implementations, such as the `xsf project <https://github.com/scipy/xsf/issues/1
 to establish a library of mathematical special function implementations which support
 both CPU and GPU.
 
-
 A note on JAX support
 `````````````````````
 
@@ -252,10 +251,6 @@ relevant restrictions for SciPy developers are:
   can use the `at <https://docs.jax.dev/en/latest/_autosummary/jax.numpy.ndarray.at.html>`_
   property to transform an array in an equivalent way. Inside a JIT compiled function,
   an expression like ``x = x.at[idx].set(y)`` will be applied in-place under the hood.
-  Developers adding JAX support to functions in SciPy which make in-place updates can use
-  `array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
-  which works for all array API compatible backends, delagating to JAX's ``at`` for JAX arrays
-  and performing regular in-place operations for other kinds of arrays.
 
 * Functions using the JAX JIT must be functionally pure. They cannot have side
   effects, cannot mutate data, and their outputs must be determined completely by their
@@ -268,36 +263,63 @@ relevant restrictions for SciPy developers are:
   and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ are
   provide some basic control flow that works with the JIT.
 
-* Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input
-  arrays.
+* Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input arrays.
 
-Note that if a function ``f`` depends on a compiled function ``g``
-which is not supported on JAX through delegation to a native JAX implementation,
-then it may still be possible for ``f`` to support the JAX JIT through JAX's
-`pure_callback <https://docs.jax.dev/en/latest/_autosummary/jax.pure_callback.html>`_
-mechanism. SciPy developers need not concern themselves with such JAX details
-directly, and can instead use
-`array_api_extra.lazy_apply <https://data-apis.org/array-api-extra/generated/array_api_extra.lazy_apply.html>`_
+**Recommendations for developers:**
 
-This can be used so long as ``g`` is a pure function and its output shape(s) are determined purely by
-input shape(s) and not values.
+* To work around the mutability restriction, developers adding JAX support
+  to SciPy functions which make in-place updates should use
+  `array_api_extra.at <https://data-apis.org/array-api-extra/generated/array_api_extra.at.html>`_
+  which works for all array API compatible backends, delegating to JAX's ``at`` for
+  JAX arraysand performing regular in-place operations with ``__setitem__`` for other kinds
+  of arrays.
 
-Using ``lazy_apply``, the example function ``toto`` might be made compatible
-with the JAX JIT in the following way::
+* The restriction that functions be functionally pure to support the JAX JIT necessitates
+  that input-validation that raises with bad input must be skipped when ``xp`` is JAX.
 
+* Compiled functions ``f`` which cannot be supported on JAX through delegation to a native
+  implementation can potentially still be supported through the use of
+  `array_api_extra.lazy_apply <https://data-apis.org/array-api-extra/generated/array_api_extra.lazy_apply.html>`_, which uses JAX's `pure_callback <https://docs.jax.dev/en/latest/_autosummary/jax.pure_callback.html>`_
+  mechanism to enable calling Python functions within JIT-ed JAX functions.
 
-  def toto(a, b):
-      xp = array_namespace(a, b)
-      a = xp.asarray(a)
-      b = xp_copy(b, xp=xp)  # our custom helper is needed for copy
+  Using ``lazy_apply``, the example function ``toto`` might be made compatible
+  with the JAX JIT in the following way::
 
-      c = xp.sum(a) - xp.prod(b)
+    def toto(a, b):
+        xp = array_namespace(a, b)
+        a = xp.asarray(a)
+        b = xp.asarray(b, copy=True)
 
-      # this is some C or Cython call
-      # as_numpy=True tells lazy_apply to convert to and from NumPy.
-      d = xpx.lazy_apply(cdist, c, as_numpy=True)
+        c = xp.sum(a) - xp.prod(b)
 
-      return d
+        # this is some C or Cython call
+        # as_numpy=True tells lazy_apply to convert to and from NumPy.
+        d = xpx.lazy_apply(cdist, c, as_numpy=True)
+
+        return d
+
+  ``lazy_apply`` can be used so long as ``f`` is a pure function for which the output
+  shape can be determined knowing only the input shapes.
+
+* `xp.where <https://data-apis.org/array-api/2024.12/API_specification/generated/array_api.where.html#where>`_
+  and `array_api_extra.apply_where <https://data-apis.org/array-api-extra/generated/array_api_extra.apply_where.html>`_ provide a level of basic control flow that works with the JIT
+  and in some cases these can be used to replace the value dependent use of ``if``. In
+  some cases its also possible to wrap code using ``if`` within a pure function and use
+  ``lazy_apply``.
+
+**JAX Eager:**
+
+It is also possible to run JAX in eager-mode without the JIT (in fact this is the
+default behavior when ``@jax.jit`` is not applied). Eager-mode comes with serious
+performance limitations and is typically only done to debug functions which one
+ultimately intends to run with the JIT. Developers may be tempted to try to distinguish
+whether or not JAX is being used with the JIT in order to bypass some restrictions
+and allow better support for eager-mode. There is however no way to make this distinction
+using JAX's public API, and any means of determining if JAX is running with the
+JIT necessarily involves implementation details that SciPy should not rely upon.
+In general, support for eager-mode is not a high-value target, and it is not considered
+a good use of developer time to put significant effort into enabling eager-only
+support.
 
 
 Array creation functions without array inputs
