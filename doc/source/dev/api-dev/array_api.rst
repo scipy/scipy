@@ -356,7 +356,9 @@ only arguments ``xp`` and ``device`` to specify the desired backend and
 device respectively. See for instance `~scipy.signal.buttap` for creating
 the analog prototype of an Nth-order Butterworth filter. It may also be
 desirable to add a ``dtype`` kwarg to control the output ``dtype`` for
-such functions. Note that none of these keyword arguments are necessary when
+such functions.
+
+Note that none of these keyword arguments are necessary when
 there are array arguments from which the backend, device, and desired output dtype
 can be inferred. For the sake of API simplicity and consistency and in the
 spirit of "There should be one-- and preferably only one --obvious way to do it.",
