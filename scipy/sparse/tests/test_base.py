@@ -437,11 +437,8 @@ class _TestCommon:
             check(dtype)
 
     def test_eq_ne_different_shapes(self):
-        if self.datsp.format not in ['bsr', 'csc', 'csr']:
-            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
-        # Is this what we want? numpy raises when shape differs. we return False.
-        assert (self.datsp == self.datsp.T) is False
-        #assert (self.datsp != self.datsp.T) is True
+        with pytest.raises(ValueError, match="inconsistent shape"):
+            self.datsp == self.datsp.T
 
     def test_lt(self):
         def check(dtype):
@@ -1553,9 +1550,6 @@ class _TestCommon:
             check(dtype)
 
     def test_lt_broadcasting(self):
-        if self.datsp.format in ("dok", "dia", "bsr"):
-            return
-
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -1599,8 +1593,6 @@ class _TestCommon:
             check(dtype)
 
     def test_ne_broadcasting(self):
-        if self.datsp.format in ("dok", "dia", "bsr"):
-            return
 
         def check(dtype):
             dat = self.dat_dtypes[dtype]
@@ -1614,7 +1606,7 @@ class _TestCommon:
             bcol = self.spcreator(acol)
             brow = self.spcreator(arow)
 
-            c = b != bcol
+            c = b.broadcast_ne(bcol)
             c_rep = c if isinstance(c, bool) else c.toarray()
             assert_array_equal(c_rep, b.toarray() != bcol.toarray())
 
@@ -1633,13 +1625,13 @@ class _TestCommon:
             assert_array_equal(c, arow != b.toarray())
 
             # test broadcasting sparse
-            c = b != brow
+            c = b.broadcast_ne(brow)
             assert_array_equal(c.toarray(), b.toarray() != brow.toarray())
-            c = b != bcol
+            c = b.broadcast_ne(bcol)
             assert_array_equal(c.toarray(), b.toarray() != bcol.toarray())
-            c = brow != b
+            c = brow.broadcast_ne(b)
             assert_array_equal(c.toarray(), brow.toarray() != b.toarray())
-            c = bcol != b
+            c = bcol.broadcast_ne(b)
             assert_array_equal(c.toarray(), bcol.toarray() != b.toarray())
 
         for dtype in self.math_dtypes:

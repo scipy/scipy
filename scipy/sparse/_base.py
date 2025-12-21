@@ -612,6 +612,46 @@ class _spbase(SparseABC):
         else:
             return self.tocsr()._broadcast_to(shape, copy)
 
+    def broadcast_ne(self, other):
+        can_be_broadcast = all(
+            m == n or m == 1 or n == 1
+            for m, n in zip(self.shape, other.shape)
+        )
+        if can_be_broadcast:
+            if self.ndim < 3:
+                cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                cs_other = other
+            else:
+                cs_self = self.reshape(1, -1).tocsr()
+                cs_other = other.reshape(1, -1).tocsr()
+            result = cs_self._binopt(cs_other, '_ne_')
+            return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+
+        raise ValueError("inconsistent shapes")
+
+    def broadcast_eq(self, other):
+        can_be_broadcast = all(
+            m == n or m == 1 or n == 1
+            for m, n in zip(self.shape, other.shape)
+        )
+        if can_be_broadcast:
+            if self.ndim < 3:
+                cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
+                cs_other = other
+            else:
+                cs_self = self.reshape(1, -1).tocsr()
+                cs_other = other.reshape(1, -1).tocsr()
+            # result will not be sparse. Use negated op and then negate.
+            warn(f"Comparing two sparse matrices using == "
+                 f"is inefficient. Try using != instead.",
+                 SparseEfficiencyWarning, stacklevel=3)
+            inv = cs_self._binopt(cs_other, '_ne_')
+            all_true = cs_self.__class__(np.ones(cs_self.shape, dtype=np.bool_))
+            result = all_true - inv
+            return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+
+        raise ValueError("inconsistent shapes")
+
     def _comparison(self, other, op):
         # We convert to CSR format and use methods _binopt or _scalar_binopt
         # If ndim>2 we reshape to 2D, compare and then reshape back to nD
@@ -669,27 +709,31 @@ class _spbase(SparseABC):
         elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
-                # eq and ne return True or False instead of an array when the shapes
-                # don't match. Numpy doesn't do this. Is this what we want?
-                if self.format not in ("csr", "csc", "bsr", "coo", "lil"):
-                    if op in (operator.eq, operator.ne):
-                        return False
-                    raise ValueError("inconsistent shape")
+                can_be_broadcast = all(
+                    m == n or m == 1 or n == 1
+                    for m, n in zip(self.shape, other.shape)
+                )
+                if op in (operator.eq, operator.ne):
+                    if not can_be_broadcast:
+                        raise ValueError(
+                            "inconsistent shape no longer returns False.\n"
+                            "Test self.shape == other.shape to get bool result."
+                        )
 
-                if op is operator.eq:
-                    return False
-                elif op is operator.ne:
-                    if self.ndim != other.ndim:
-                        return False
-                    elif not (1 in self.shape or 1 in other.shape):
-                        return False
-                    else:
-                        for N, M in zip(self.shape, other.shape):
-                            if N == M or N == 1 or M == 1:
-                                continue
-                            raise ValueError("inconsistent shape")
-                elif op not in (operator.lt,):
-                    raise ValueError("inconsistent shape")
+                    #  Todo: in v1.20, let eq and ne broadcast by removing ValueError
+                    raise ValueError(
+                        "inconsistent shape no longer returns False.\n"
+                        "Use self.shape == other.shape to get bool result.\n"
+                        "These shapes can be broadcast and will be in SciPy 1.20.\n"
+                        "Until then, use A.broadcast_eq(B) or A.broadcast_ne(B)."
+                    )
+
+                if op in (operator.eq, operator.ne):
+                    if not can_be_broadcast:
+                        raise ValueError("inconsistent shape")
+
+                # if self.format not in ("csr", "csc", "bsr", "coo", "lil"):
+                #     raise ValueError("inconsistent shape")
 
             if self.ndim < 3:
                 cs_self = self if self.format in ('csc', 'csr') else self.tocsr()
