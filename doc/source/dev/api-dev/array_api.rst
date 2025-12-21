@@ -363,6 +363,18 @@ computation with ``dask.persist``).
        --------
        :meth:`numpy.polynomial.polynomial.Polynomial.fit` : Create least squares fit polynomial
 
+Note that in some modules a systematic process for delegation to native
+implementations is set up, where functions are replaced with wrappers
+that perform delegation. In this case, `xp_capabilities` is not always
+applied as a decorator with `@` syntax, but may instead be applied
+programatically on the wrappers. When working on array API standard
+support within a module, its important to be aware of how such delegation
+is set up, if any, and how `xp_capabilities` is being applied. A common
+practice currently is to have a file, `_support_alternative_backends.py`
+within a module that sets up such delegation. See for instance
+`scipy.signal._support_alternative_backends.py <https://github.com/scipy/scipy/blob/main/scipy/signal/_support_alternative_backends.py>`_.
+
+
 Basic behavior
 ``````````````
 
