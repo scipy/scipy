@@ -7,7 +7,7 @@ Convenience interface to N-D interpolation
 import numpy as np
 from ._interpnd import (LinearNDInterpolator, NDInterpolatorBase,
      CloughTocher2DInterpolator, _ndim_coords_from_arrays)
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
            'CloughTocher2DInterpolator']
@@ -38,7 +38,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         .. versionadded:: 0.14.0
     tree_options : dict, optional
-        Options passed to the underlying ``cKDTree``.
+        Options passed to the underlying ``KDTree``.
 
         .. versionadded:: 0.17.0
 
@@ -57,7 +57,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Notes
     -----
-    Uses ``scipy.spatial.cKDTree``
+    Uses ``scipy.spatial.KDTree``
 
     .. note:: For data on a regular grid use `interpn` instead.
 
@@ -92,7 +92,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
                                     need_values=False)
         if tree_options is None:
             tree_options = dict()
-        self.tree = cKDTree(self.points, **tree_options)
+        self.tree = KDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
     def __call__(self, *args, **query_options):
@@ -107,14 +107,14 @@ class NearestNDInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
         **query_options
             This allows ``eps``, ``p``, ``distance_upper_bound``, and ``workers``
-            being passed to the cKDTree's query function to be explicitly set.
-            See `scipy.spatial.cKDTree.query` for an overview of the different options.
+            being passed to the KDTree's query function to be explicitly set.
+            See `scipy.spatial.KDTree.query` for an overview of the different options.
 
             .. versionadded:: 1.12.0
 
         """
         # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs
-        # some operations which are not required by NearestNDInterpolator.__call__, 
+        # some operations which are not required by NearestNDInterpolator.__call__,
         # hence here we operate on xi directly, without calling a parent class function.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
@@ -133,7 +133,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
         flattened_shape = xi_flat.shape
 
         # if distance_upper_bound is set to not be infinite,
-        # then we need to consider the case where cKDtree
+        # then we need to consider the case where KDtree
         # does not find any points within distance_upper_bound to return.
         # It marks those points as having infinte distance, which is what will be used
         # below to mask the array and return only the points that were deemed
