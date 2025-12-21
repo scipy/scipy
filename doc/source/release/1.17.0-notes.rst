@@ -74,6 +74,8 @@ New features
 - `scipy.interpolate.FloaterHormannInterpolator` added support for
   multidimensional, batched inputs and gained a new ``axis`` parameter to
   select the interpolation axis.
+- ``RBFInterpolator`` has gained an array API standard compatible backend, with an
+  improved support for GPU arrays. 
 
 
 ``scipy.linalg`` improvements
