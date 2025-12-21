@@ -265,6 +265,8 @@ relevant restrictions for SciPy developers are:
 
 * Within the JIT, the shapes of output arrays cannot depend dynamically on the *values* in input arrays.
 
+See `Common Gotchas in JAX <https://docs.jax.dev/en/latest/notebooks/Common_Gotchas_in_JAX.html>`_ for more information.
+
 **Recommendations for developers:**
 
 * To work around the mutability restriction, developers adding JAX support
