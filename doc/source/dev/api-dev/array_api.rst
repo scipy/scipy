@@ -855,6 +855,9 @@ situations where or it is necessary or desired to do otherwise: see the section
 on :ref:`backend isolation <dev-arrayapi_backend_isolation>` below for more
 information.
 
+Tests which are inherently NumPy only should avoid the ``xp`` fixture
+altogether rather than using it with an ``np_only=True`` skip marker.
+
 Note that, in one case, ``xp_capabilities`` offers more granularity than
 ``skip_xp_backends`` and ``xfail_xp_backends``. ``xp_capabilities`` allows
 developers to separately declare support for the JAX JIT and support for lazy
@@ -893,37 +896,24 @@ The following examples demonstrate how to use direct markers together with
 
   @make_xp_test_case(toto)
   class TestToto:
-      @pytest.mark.skip_xp_backends(np_only=True, reason='object arrays')
-
-      def test_toto1(self, xp):
-          a = xp.asarray([1, 2, 3], dtype=object)
-          b = xp.asarray([0, 2, 5], dtype=object)
-          xp_assert_close(toto(a, b), a)
+      def test_toto_list_input(self):
+      # This test is inherently NumPy only so avoids the xp fixture altogether.
+          a = [1., 2., 3.]
+          b = [0., 2., 5.]
+          xp_assert_close(toto(a, b), np.array(a))
   ...
-      @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
-      @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
+      @pytest.mark.skip_xp_backends(
+          'cupy',
+	  reason='cupy does not support inputs with ndim>2'
+      )
       def test_toto2(self, xp):
           ...
   ...
-      # Do not run when SCIPY_ARRAY_API is used
+      # Do not run when SCIPY_ARRAY_API=1 is used since calling toto on masked
+      # arrays will raise in this case.
       @skip_xp_invalid_arg
       def test_toto_masked_array(self):
           ...
-
-Like ``xp_capabilities``, ``skip_xp_backends`` has a ``cpu_only`` option and allows
-passing a list of backends into ``exceptions``. This is useful when testing
-private functionality where delegation is implemented for some, but not all,
-non-CPU backends, and the CPU code path requires conversion to NumPy for compiled code::
-
-  # array-api-strict and CuPy will always be skipped, for the given reasons.
-  # All libraries using a non-CPU device will also be skipped, apart from
-  # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['jax.numpy'])
-  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
-  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
-  @pytest.mark.uses_xp_capabilities(False, reason="private")
-  def test_private_toto_helper(self, xp):
-      ...
 
 
 Running tests
