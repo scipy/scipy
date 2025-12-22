@@ -404,13 +404,14 @@ class TestSquareWaveform:
         assert set(unique).issubset({-1.0, 1.0})
 
     @pytest.mark.xfail_xp_backends("cupy", reason="cupy/cupy/issues/9541")
-    def test_dtype(self, xp):
-        waveform = square(xp.asarray(1, dtype=xp.float32),
-                                    duty=xp.asarray(0.5, dtype=xp.float32))
-        assert waveform.dtype == xp.float64
-
-        waveform = square(xp.asarray(1, dtype=xp.float64))
-        assert waveform.dtype == xp.float64
+    @pytest.mark.parametrize("t_dtype", ["float32", "float64"])
+    @pytest.mark.parametrize("duty_dtype", ["float32", "float64"])
+    def test_dtype(self, t_dtype, duty_dtype, xp):
+        t_dtype = getattr(xp, t_dtype)
+        duty_dtype = getattr(xp, duty_dtype)
+        waveform = square(xp.asarray(1, dtype=t_dtype),
+                          duty=xp.asarray(0.5, dtype=duty_dtype))
+        assert waveform.dtype == xp.result_type(t_dtype, duty_dtype)
 
     @pytest.mark.parametrize("duty", [0.1, 0.25, 0.5, 0.75])
     def test_duty_cycle_fraction(self, duty, xp):

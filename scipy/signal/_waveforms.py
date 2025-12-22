@@ -134,10 +134,10 @@ def square(t, duty=0.5):
 
     """
     xp = array_namespace(t, duty)
-    t, w = xp_promote(t, duty, xp=xp)
+    t, w = xp_promote(t, duty, xp=xp, force_floating=True)
     t, w = xp.broadcast_arrays(t, w)
 
-    y = xp.zeros(t.shape, dtype=xp.float64)
+    y = xp.zeros(t.shape, dtype=t.dtype)
 
     # width must be between 0 and 1 inclusive
     mask1 = (w > 1) | (w < 0)
