@@ -240,6 +240,8 @@ implementations, such as the `xsf project <https://github.com/scipy/xsf/issues/1
 to establish a library of mathematical special function implementations which support
 both CPU and GPU.
 
+.. _dev-arrayapi_jax_support:
+
 A note on JAX support
 `````````````````````
 
@@ -480,12 +482,8 @@ JAX JIT
 ```````
 
 One may declare a function as not supporting the JAX JIT with the option
-``jax_jit=False``. Though JAX can run without the JIT, this comes with
-serious performance limitations, and one typically does this only to debug
-functions which are ultimately intended to be run with the JIT. JAX support with the
-caveat that ``jax_jit=False`` is thus not a high value goal for SciPy, but
-this situation often arises naturally when enabling array API standard
-support without giving specific consideration to JAX.
+``jax_jit=False``. See the earlier note on :ref:`JAX support <_dev-arrayapi_jax_support>`
+for more information.
 
 
 Dask Compute
@@ -523,8 +521,11 @@ kwarg)::
   )
 
 Valid strings to pass in the exceptions list are ``"array_api_strict"``,
-``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``. If
-``np_only=True`` and ``"torch"`` or ``"jax.numpy"`` is added to
+``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``. Note that
+it should almost never be the case that ``"a
+
+
+If ``np_only=True`` and ``"torch"`` or ``"jax.numpy"`` is added to
 the lists of exceptions, it will be declared as supported on both CPU and
 GPU.
 
@@ -534,7 +535,12 @@ GPU.
    :class: dropdown
 
    It's possible for a function to be natively available in JAX,
-   support ``jax.jit``, but not be supported on GPU. Because ``exceptions`` does double
+   support ``jax.jit``, but not be supported on GPU. Thus, it may be
+   possible for JAX delegation to be set up in a function which has
+   not yet received the array API standard compatibility treatment,
+   and for the JIT to be supported but not the GPU.
+
+   Because ``exceptions`` does double
    duty declaring exceptions to ``cpu_only=True`` and ``np_only=True``, it is not
    possible to express this situation using ``xp_capabilities`` in the way
    described above. This is not too serious of an issue because the intention is
@@ -576,7 +582,11 @@ interest and feasability are demonstrated.
 ````````````````````````````````````````
 One may pass lists of tuples of backend string, reason pairs to ``xp_capabilities``
 with the ``skip_backends`` and ``xfail_backends`` kwargs. The valid backend strings
-are ``"array_api_strict"``, ``"cupy"``, ``"dask.array"``, ``"jax.numpy"`` and ``"torch"``.
+are ``"array_api_strict"``, ``"cupy"``, ``"dask.array"``, ``"jax.numpy"`` and ``"torch"``
+(note that one should almost never want to skip tests for
+`array_api_strict <https://data-apis.org/array-api-strict/>`_ as failures with this
+backend most likely indicate a failure to correctly follow the array API standard).
+
 Any backend passed in such a way with either kwarg is declared as unsupported with both
 CPU and GPU. The difference between ``skip_backends`` and ``xfail_backends`` is that for
 tests using the ``xp`` fixture, ``skip_backends`` adds ``pytest.skip`` markers for
@@ -597,7 +607,10 @@ in-place item-assignment::
       ...
 
 
-In the caveat above about functions with JAX JIT support but no GPU support
+Another case is when there is a bug in the corresponding array library, in which
+case the ``reason`` string should contain a link to the upstream issue.
+
+In the caveat above about functions with JAX JIT support but no JAX GPU support
 we discussed the edge-case of a function which has not been given array
 API standard support in the usual way, is available on JAX through delegation to
 a native implementation which supports ``jax.jit``, but does not work on the GPU.
