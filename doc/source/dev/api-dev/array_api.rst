@@ -721,6 +721,20 @@ situation is not too uncommon.::
   def test_foo(func, xp):
       ...
 
+Without access to ``make_xp_pytest_param``, one might instead have to do
+something like::
+
+  @make_xp_test_case(*test_funcs)
+  @pytest.mark.parametrize(
+      "func", tested_funcs
+  )
+  def test_foo(func, xp):
+      ...
+
+But then ``test_foo`` would take on the collective skips and xfails
+for all of the functions in ``test_funcs`` taken together, leading to
+tests being run with unnecessary skips and xfails.
+
 Unlike ``make_xp_test_case``, only a single function can be passed to any given
 call to ``make_xp_pytest_param``. Additional arguments specify additional
 parameters for ``pytest.mark.parametrize``, such as in the contrived example
@@ -741,26 +755,42 @@ pytest marks which can be used with the ``pytestmark = ...`` variable
 to set marks for all tests in a file.
 
 The ``xp`` fixture should almost always be used along with ``make_xp_test_case``
-or one of the similar functions listed above. The ``xp`` fixture has
-strict checks to enforce this, but these checks can be bypassed by
-explicitly marking a test with ``@pytest.mark.uses_xp_capabilities(False)``.
-An optional ``reason`` string can be passed to this mark. Tests of private
-functionality for which there are no relevant ``xp_capabilities`` entries,
-one should use ``pytest.mark.uses_xp_capabilities(False, reason="private")``.
-Since ``xp_capabilities`` is used for declaring alternative backend support
-for both testing and documentation purposes, the intention of these strict
-checks is to ensure that documentation of alternative backend capabilities
-remains up-to-date.
+or one of the similar functions listed above and the ``xp`` fixture has
+strict checks to enforce this. If one had accidentally written::
+
+  @pytest.mark.parametrize(
+      "func", tested_funcs
+  )
+  def test_foo(func, xp):
+      ...
+
+without using ``make_xp_pytest_param`` then running this test would result
+in an error with the the message::
+
+  ERROR scipy/my_module/tests/test_foo.py::test_foo[numpy] - UserWarning: test uses `xp`
+  fixture without drawing from `xp_capabilities`  but is not explicitly marked with ``pytest.mark...
+
+Since ``xp_capabilities`` is used to declare alternative backend support for the
+purpose of both testing and documentation, this strict check in the ``xp``
+fixture ensures that documentation of tested array API capabilities does not
+become out-of-date. There may be cases where one intentionally does cannot or
+does not want to use ``make_xp_test_case`` or an equivalent, such as for private
+functions which do not have associated ``xp_capabilities`` entries. To bypass
+the strict checks, one can explicitly mark a test with
+``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string can
+be passed to this mark. Tests of private functionality for which there are no
+relevant ``xp_capabilities`` entries, one should use
+``pytest.mark.uses_xp_capabilities(False, reason="private")``.
 
 
 Directly adding pytest markers
 ``````````````````````````````
 
-In addition to using ``make_xp_test_case``, ``make_xp_pytest_param``, order
-``make_xp_pytest_marks``, the following ``pytest`` markers are available and
-be added directly (what ``make_xp_test_case`` and friends actually do is give a
-declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends`` markers).
-
+Though most of the time it's sufficient to use ``make_xp_test_case`` and
+``make_xp_pytest_param``, the following ``pytest`` markers are available and can
+be added directly to tests. (``make_xp_test_case`` and its equivalents provide a
+declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends``
+markers).
 
 * ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
@@ -786,10 +816,11 @@ declarative means of adding ``skip_xp_backends`` and ``xfail_xp_backends`` marke
   all tests that use it. This is useful e.g. to select all and only such tests::
 
     spin test -b all -m array_api_backends
-* ``uses_xp_capabilities(status, funcs=None, reason=None)``: discussed above, this
-  marker is for explicitly declaring tests as not drawing on ``xp_capabilities``
-  through ``make_xp_test_case`` or one of its equivalents. ``funcs`` is used to declare
-  a list of public functions which a test is testing.
+* ``uses_xp_capabilities(status, funcs=None, reason=None)``: discussed above.
+  ``make_xp_test_case`` and its equivalents apply the marker
+  ``uses_xp_capabilities(True)`` and direct use of ``uses_xp_capabilities(False)``
+  can be used to declare a test intentionally does not use ``make_xp_test_case``
+  or one of its equivalents.
 
 Test specific skips and xfails
 ``````````````````````````````
