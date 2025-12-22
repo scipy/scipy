@@ -342,7 +342,7 @@ def softmax(x, axis=None):
     """
     xp = array_namespace(x)
     x = xp.asarray(x)
-    x = xp.where(xp.isinf(x), 1e308 * xp.sign(x), x)
+    x = xp.where(xp.isinf(x), xp.finfo(x.dtype).max * xp.sign(x), x)
     x_max = xp.max(x, axis=axis, keepdims=True)
     with np.errstate(over="ignore", under="ignore"):
         exp_x_shifted = xp.exp(x - x_max)
