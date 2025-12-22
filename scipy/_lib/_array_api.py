@@ -15,7 +15,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal
 from collections.abc import Iterable
 
 import numpy as np
@@ -62,8 +62,8 @@ __all__ = [
 ]
 
 
-Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
-ArrayLike: TypeAlias = Array | npt.ArrayLike
+type Array = Any  # To be changed to a Protocol later (see array-api#589)
+type ArrayLike = Array | npt.ArrayLike
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -425,7 +425,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
-                   axis: int | tuple[int] | None = None,
+                   axis: int | tuple[int, int] | None = None,
                    keepdims: bool = False,
                    ord: int | float = 2,
                    xp: ModuleType | None = None) -> Array:
@@ -886,7 +886,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 
     The above is equivalent to::
         @pytest.mark.skip_xp_backends(...)
-        @pytest.mark.skip_xp_backends(...)        
+        @pytest.mark.skip_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         @pytest.mark.xfail_xp_backends(...)
         def test_f1(xp):
@@ -978,7 +978,7 @@ def make_xp_pytest_marks(*funcs, capabilities_table=None):
 
         def test(xp):
             ...
-    
+
     See Also
     --------
     xp_capabilities

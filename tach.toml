@@ -1,3 +1,5 @@
+respect_gitignore = "if_git_repo"
+
 exclude = [
   "scipy/_lib/array_api_compat",
   "scipy/_lib/array_api_extra",
@@ -155,6 +157,7 @@ depends_on = [
     "scipy.linalg.blas",
     "scipy.ndimage",
     "scipy.optimize",
+    "scipy.optimize.elementwise",
     "scipy.sparse",
     "scipy.sparse.csgraph",
     "scipy.spatial",

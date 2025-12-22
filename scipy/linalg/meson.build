@@ -253,26 +253,18 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-py3.extension_module('_matfuncs_expm',
+py3.extension_module('_internal_matfuncs',
   [
-    '_matfuncs_expm.h',
-    '_matfuncs_expm.c',
+    '_matfuncsmodule.c',
+    'src/_matfuncs_expm.c',
+    'src/_matfuncs_sqrtm.c'
   ],
+  include_directories: 'src/',
   dependencies: [np_dep, lapack_lp64_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
 
-py3.extension_module('_matfuncs_schur_sqrtm',
-  [
-    '_common_array_utils.h',
-    '_matfuncs_sqrtm.h',
-    '_matfuncs_sqrtm.c',
-  ],
-  dependencies: [np_dep, lapack_lp64_dep],
-  install: true,
-  subdir: 'scipy/linalg'
-)
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),

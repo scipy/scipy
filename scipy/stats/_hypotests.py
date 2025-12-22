@@ -1114,7 +1114,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     References
     ----------
     .. [1] Barnard, G. A. "Significance Tests for 2x2 Tables". *Biometrika*.
-           34.1/2 (1947): 123-138. :doi:`dpgkg3`
+           34.1/2 (1947): 123-138. :doi:`10.2307/2332517`.
 
     .. [2] Mehta, Cyrus R., and Pralay Senchaudhuri. "Conditional versus
            unconditional exact tests for comparing two binomials."
@@ -1828,7 +1828,7 @@ class TukeyHSDResult:
     .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
            Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           :doi:`10.3102/10769986001002113`.
     """
 
     def __init__(self, statistic, pvalue, _ntreatments, _df, _stand_err):
@@ -1883,7 +1883,7 @@ class TukeyHSDResult:
         .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
                with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
                Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-               doi: https://doi.org/10.3102/10769986001002113.
+               :doi:`10.3102/10769986001002113`.
 
         Examples
         --------
@@ -2022,22 +2022,22 @@ def tukey_hsd(*args, equal_var=True):
            Difference (HSD) Test."
            https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
     .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
-           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+           Tutorials, 2007.
+           https://www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm
     .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
            Means with Unequal Numbers of Replications." Biometrics, vol. 12,
-           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
-           Accessed 25 May 2021.
+           no. 3, 1956, pp. 307-310. https://www.jstor.org/stable/3001469
     .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
            The ANOVA table and tests of hypotheses about means"
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
            2 June 2021.
     .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
-           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
-           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114.
+           https://www.jstor.org/stable/3001913
     .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
            with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976.
+           :doi:`10.3102/10769986001002113`.
 
 
     Examples

@@ -1893,7 +1893,7 @@ def normalize(b, a):
     `b` is 0.  In the following example, the result is as expected:
 
     >>> import warnings
-    >>> with warnings.catch_warnings(record=True) as w:
+    >>> with warnings.catch_warnings(record=True, action='always') as w:
     ...     num, den = normalize([0, 3, 6], [2, -5, 4])
 
     >>> num
@@ -5105,12 +5105,14 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
-    >>> from scipy.signal._filter_design import _bessel_poly
-    >>> i = 0
-    >>> for n in range(51):
-    ...     for x in _bessel_poly(n, reverse=True):
-    ...         print(i, x)
-    ...         i += 1
+    .. code_block:: python
+
+        from scipy.signal._filter_design import _bessel_poly
+        i = 0
+        for n in range(51):
+            for x in _bessel_poly(n, reverse=True):
+                print(i, x)
+                i += 1
 
     """
     if abs(int(n)) != n:
@@ -5332,7 +5334,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           :DOI:`10.1145/363067.363115`
+           :doi:`10.1145/363067.363115`.
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998,
            https://www.ranecommercial.com/legacy/note147.html

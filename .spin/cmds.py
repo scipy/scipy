@@ -791,7 +791,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             "Invoking `build` prior to running benchmarks:",
             bold=True, fg="bright_green"
         )
-        ctx.invoke(build)
+        ctx.invoke(build, build_dir=build_dir)
 
         meson._set_pythonpath(build_dir)
 

@@ -11,7 +11,7 @@ import os
 import sys
 import textwrap
 from types import ModuleType
-from typing import Literal, TypeAlias, TypeVar
+from typing import Literal, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
@@ -25,39 +25,23 @@ from numpy.exceptions import AxisError
 np_long: type
 np_ulong: type
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
-    try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                r".*In the future `np\.long` will be defined as.*",
-                FutureWarning,
-            )
-            np_long = np.long  # type: ignore[attr-defined]
-            np_ulong = np.ulong  # type: ignore[attr-defined]
-    except AttributeError:
-            np_long = np.int_
-            np_ulong = np.uint
-else:
-    np_long = np.int_
-    np_ulong = np.uint
+try:
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            r".*In the future `np\.long` will be defined as.*",
+            FutureWarning,
+        )
+        np_long = np.long  # type: ignore[attr-defined]
+        np_ulong = np.ulong  # type: ignore[attr-defined]
+except AttributeError:
+        np_long = np.int_
+        np_ulong = np.uint
 
 IntNumber = int | np.integer
 DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: bool | None
-
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
-    copy_if_needed = None
-elif np.lib.NumpyVersion(np.__version__) < "1.28.0":
-    copy_if_needed = False
-else:
-    # 2.0.0 dev versions, handle cases where copy may or may not exist
-    try:
-        np.array([1]).__array__(copy=None)  # type: ignore[call-overload]
-        copy_if_needed = None
-    except TypeError:
-        copy_if_needed = False
+copy_if_needed: bool | None = None
 
 
 # Wrapped function for inspect.signature for compatibility with Python 3.14+
@@ -79,8 +63,8 @@ else:
     wrapped_inspect_signature = inspect.signature
 
 
-_RNG: TypeAlias = np.random.Generator | np.random.RandomState
-SeedType: TypeAlias = IntNumber | _RNG | None
+_RNG: type = np.random.Generator | np.random.RandomState
+SeedType: type = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
@@ -1111,6 +1095,7 @@ The documentation is written assuming array arguments are of specified
 "core" shapes. However, array argument(s) of this function may have additional
 "batch" dimensions prepended to the core shape. In this case, the array is treated
 as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+Note that calls with zero-size batches are unsupported and will raise a ``ValueError``.
 """
 
 
@@ -1182,6 +1167,13 @@ def _apply_over_batch(*argdefs):
             # Determine broadcasted batch shape
             batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
 
+            # We can't support zero-size batches right now because without data with
+            # which to call the function, the decorator doesn't even know the *number*
+            # of outputs, let alone their core shapes or dtypes.
+            if math.prod(batch_shape) == 0:
+                message = f'`{f.__name__}` does not support zero-size batches.'
+                raise ValueError(message)
+
             # Broadcast arrays to appropriate shape
             for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
                 if array is None:
@@ -1217,18 +1209,6 @@ def _apply_over_batch(*argdefs):
 
         return wrapper
     return decorator
-
-
-def np_vecdot(x1, x2, /, *, axis=-1):
-    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
-    # available. As functions are translated to Array API, `np_vecdot` can be
-    # replaced with `xp.vecdot`.
-    if np.__version__ > "2.0":
-        return np.vecdot(x1, x2, axis=axis)
-    else:
-        # of course there are other fancy ways of doing this (e.g. `einsum`)
-        # but let's keep it simple since it's temporary
-        return np.sum(x1 * x2, axis=axis)
 
 
 def _dedent_for_py313(s):

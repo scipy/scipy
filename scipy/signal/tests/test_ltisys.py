@@ -1,7 +1,8 @@
 import warnings
-
+from types import GenericAlias
 
 import numpy as np
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close, make_xp_test_case
@@ -717,6 +718,13 @@ class TestStateSpace:
         StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
                    np.array([[1, 0]]), np.array([[0]]))
 
+        # Verify that parameter are casted correctly:
+        AA = np.array([1], dtype=np.int64)
+        ss0 = StateSpace(AA, 1, 1, 1)
+        assert ss0.A.dtype == ss0.B.dtype == ss0.C.dtype == ss0.D.dtype == np.float64
+        ss1 = StateSpace(AA, 1, 1, 1+1j)
+        assert ss1.A.dtype == ss1.B.dtype == ss1.C.dtype == ss1.D.dtype == np.complex128
+
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4)
@@ -923,38 +931,37 @@ class Test_abcd_normalize:
     def test_no_matrix_fails(self):
         assert_raises(ValueError, abcd_normalize)
 
-    def test_A_nosquare_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, xp.asarray([1, -1]),
-                      xp.asarray(self.B), xp.asarray(self.C), xp.asarray(self.D))
+    def test_A_nosquare_fails(self):
+        assert_raises(ValueError, abcd_normalize,
+                      [1, -1], self.B, self.C, self.D)
 
-    def test_AB_mismatch_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, xp.asarray(self.A),
-                      xp.asarray([-1, 5]), xp.asarray(self.C), xp.asarray(self.D))
+    def test_AB_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, [-1, 5], self.C, self.D)
 
-    def test_AC_mismatch_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, xp.asarray(self.A),
-                      xp.asarray(self.B), xp.asarray([[4.0], [5.0]]),
-                      xp.asarray(self.D))
+    def test_AC_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, self.B, [[4.0], [5.0]], self.D)
 
-    def test_CD_mismatch_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, xp.asarray(self.A),
-                      xp.asarray(self.B), xp.asarray(self.C), xp.asarray([2.5, 0]))
+    def test_CD_mismatch_fails(self):
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, self.B, self.C, [2.5, 0])
 
     def test_BD_mismatch_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, xp.asarray(self.A),
-                      xp.asarray([-1, 5]), xp.asarray(self.C), xp.asarray(self.D))
+        assert_raises(ValueError, abcd_normalize,
+                      self.A, [-1, 5], self.C, self.D)
 
     def test_normalized_matrices_unchanged(self, xp):
         A_, B_, C_, D_ = map(xp.asarray, (self.A, self.B, self.C, self.D))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, D=D_, dtype=A_.dtype)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
         xp_assert_equal(D, D_)
 
-    def test_shapes(self, xp):
-        A, B, C, D = abcd_normalize(xp.asarray(self.A), xp.asarray(self.B),
-                                    xp.asarray([1, 0]), xp.asarray(0))
+    def test_shapes(self):
+        A, B, C, D = abcd_normalize(self.A, self.B, [1, 0], 0)
         assert A.shape[0] == A.shape[1]
         assert A.shape[0] == B.shape[0]
         assert A.shape[0] == C.shape[1]
@@ -965,7 +972,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         D_ = xp.zeros((0, 0))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, D=D_, dtype=A_.dtype)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(D, D_)
@@ -976,7 +984,8 @@ class Test_abcd_normalize:
         A_ = xp.asarray(self.A)
         B_ = xp.zeros((2, 0))
         C_ = xp.zeros((0, 2))
-        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_)
+        # On torch/float32: A_, B_, C_, D_ are of dtype float32 => set dtype:
+        A, B, C, D = abcd_normalize(A=A_, B=B_, C=C_, dtype=A_.dtype)
         xp_assert_equal(A, A_)
         xp_assert_equal(B, B_)
         xp_assert_equal(C, C_)
@@ -1054,12 +1063,32 @@ class Test_abcd_normalize:
         assert_raises(ValueError, abcd_normalize, D=xp.asarray(self.D))
 
     def test_missing_BD_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, A=xp.asarray(self.A),
-                      C=xp.asarray(self.C))
+        A, C = xp.asarray(self.A),xp.asarray(self.C)
+        assert_raises(ValueError, abcd_normalize, A=A, C=C)
 
     def test_missing_CD_fails(self, xp):
-        assert_raises(ValueError, abcd_normalize, A=xp.asarray(self.A),
-                      B=xp.asarray(self.B))
+        A, B = xp.asarray(self.A), xp.asarray(self.B)
+        assert_raises(ValueError, abcd_normalize, A=A, B=B)
+
+    def test_param_dtype_exceptions(self):
+        with pytest.raises(ValueError, match="^Parameter dtype='INVALID' must be"):
+            abcd_normalize(self.A, self.B, self.C, self.D, dtype='INVALID')
+        with pytest.raises(ValueError, match="^Parameter dtype=<class 'str'>"):
+            abcd_normalize(self.A, self.B, self.C, self.D, dtype=str)
+        with pytest.raises(ValueError, match="^Parameter dtype="):
+            abcd_normalize(self.A, self.B, self.C, self.D, dtype=np.datetime64)
+
+    def test_param_dtype(self, xp):
+        A, D = xp.asarray(self.A), xp.asarray(self.D)
+        AA, BB, CC, DD = abcd_normalize(A=A, D=D)
+        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.float64
+
+        AA, BB, CC, DD = abcd_normalize(A=A, D=D, dtype=xp.int64)
+        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.int64
+
+        DD_ = 1 + 2j  # converts to complex128
+        AA, BB, CC, DD = abcd_normalize(A=A, D=DD_)
+        assert AA.dtype == BB.dtype == CC.dtype == DD.dtype == xp.complex128
 
 
 class Test_bode:
@@ -1236,3 +1265,9 @@ class Test_freqresp:
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
+
+@pytest.mark.parametrize(
+    "cls", [StateSpace, TransferFunction, ZerosPolesGain, lti, dlti]
+)
+def test_subscriptable_generic_types(cls):
+    assert isinstance(cls[np.float64], GenericAlias)

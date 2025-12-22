@@ -22,7 +22,8 @@ JAX_SIGNAL_FUNCS = [
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
 CUPY_BLACKLIST = [
-    'lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap', 'envelope', 'remez', 'bessel'
+    'abcd_normalize', 'bessel', 'besselap', 'envelope', 'get_window', 'lfilter_zi',
+    'sosfilt_zi', 'remez',
 ]
 
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
@@ -74,7 +75,6 @@ untested = {
     "argrelmax",
     "argrelmin",
     "band_stop_obj",
-    "check_COLA",
     "check_NOLA",
     "chirp",
     "coherence",
@@ -86,10 +86,8 @@ untested = {
     "dstep",
     "find_peaks",
     "find_peaks_cwt",
-    "findfreqs",
     "freqresp",
     "gausspulse",
-    "istft",
     "lombscargle",
     "lsim",
     "max_len_seq",
@@ -99,12 +97,10 @@ untested = {
     "place_pols",
     "sawtooth",
     "sepfir2d",
-    "spectrogram",
     "square",
     "ss2tf",
     "ss2zpk",
     "step",
-    "stft",
     "sweep_poly",
     "symiirorder1",
     "symiirorder2",
@@ -167,7 +163,7 @@ capabilities_overrides = {
                                 extra_note=bilinear_extra_note),
     "bilinear_zpk": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                     jax_jit=False, allow_dask_compute=True),
-    "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
+    "butter": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True),
     "buttord": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
                                jax_jit=False, allow_dask_compute=True,
@@ -213,12 +209,14 @@ capabilities_overrides = {
     "dimpulse": xp_capabilities(np_only=True, exceptions=["cupy"]),
     "dlti": xp_capabilities(np_only=True,
                             reason="works in CuPy but delegation isn't set up yet"),
-    "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False, 
+    "ellip": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                              allow_dask_compute=True,
                              reason="scipy.special.ellipk"),
     "ellipord": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                 jax_jit=False, allow_dask_compute=True,
                                 reason="scipy.special.ellipk"),
+    "findfreqs": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
+                                 jax_jit=False, allow_dask_compute=True),
     "firls": xp_capabilities(cpu_only=True, allow_dask_compute=True, jax_jit=False,
                              reason="lstsq"),
     "firwin": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
@@ -343,7 +341,7 @@ capabilities_overrides = {
         ],
     ),
     "sosfreqz": xp_capabilities(cpu_only=True, exceptions=["cupy", "torch"],
-                                 jax_jit=False, allow_dask_compute=True),
+                                jax_jit=False, allow_dask_compute=True),
     "spline_filter": xp_capabilities(cpu_only=True, exceptions=["cupy"],
                                      jax_jit=False, allow_dask_compute=True),
     "tf2sos": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
@@ -361,13 +359,17 @@ capabilities_overrides = {
                               allow_dask_compute=True, jax_jit=False,
                               reason="uses scipy.signal.correlate"),
     "zpk2sos": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
-                              allow_dask_compute=True),
+                               allow_dask_compute=True),
     "zpk2tf": xp_capabilities(cpu_only=True, exceptions=["cupy"], jax_jit=False,
                               allow_dask_compute=True,
                               extra_note=zpk2tf_extra_note),
+    "spectrogram": xp_capabilities(out_of_scope=True),  # legacy
+    "stft": xp_capabilities(out_of_scope=True),  # legacy
+    "istft": xp_capabilities(out_of_scope=True),  # legacy
+    "check_COLA": xp_capabilities(out_of_scope=True),  # legacy
 }
 
-        
+
 # ### decorate ###
 for obj_name in _signal_api.__all__:
     bare_obj = getattr(_signal_api, obj_name)

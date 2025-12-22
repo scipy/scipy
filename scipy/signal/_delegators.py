@@ -58,9 +58,8 @@ def _skip_if_poly1d(arg):
 
 ###################
 
-def abcd_normalize_signature(A=None, B=None, C=None, D=None):
+def abcd_normalize_signature(A=None, B=None, C=None, D=None, *, dtype=None):
     return array_namespace(A, B, C, D)
-
 
 def argrelextrema_signature(data, *args, **kwds):
     return array_namespace(data)
@@ -318,8 +317,10 @@ def find_peaks_signature(
     x, height=None, threshold=None, distance=None, prominence=None, width=None,
     wlen=None, rel_height=0.5, plateau_size=None
 ):
-    return array_namespace(x, height, threshold, prominence, width, plateau_size)
-
+    # TODO: fix me - `prominence` is not necessarily an array.
+    # return array_namespace(x, height, threshold, prominence, width, plateau_size)
+    # See https://github.com/scipy/scipy/pull/22644#issuecomment-3568443768. For now:
+    return np_compat
 
 def find_peaks_cwt_signature(
     vector, widths, wavelet=None, max_distances=None, *args, **kwds

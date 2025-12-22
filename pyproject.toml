@@ -33,7 +33,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.17.0.dev0"
+version = "1.18.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -44,9 +44,9 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.11"  # keep in sync with `min_python_version` in meson.build
+requires-python = ">=3.12"  # keep in sync with `min_python_version` in meson.build
 dependencies = [
-    "numpy>=1.26.4",
+    "numpy>=2.0.0",
 ] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
@@ -57,7 +57,6 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
