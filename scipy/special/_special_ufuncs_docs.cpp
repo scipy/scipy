@@ -373,7 +373,9 @@ const char *zetac_doc = R"(
 
     This function is defined as
 
-    .. math:: \zeta(x) = \sum_{k=2}^{\infty} 1 / k^x
+    .. math::
+
+        \zeta(x) - 1 = \sum_{k=2}^{\infty} \frac{1}{k^x}
 
     where ``x > 1``.  For ``x < 1`` the analytic continuation is
     computed. For more information on the Riemann zeta function, see
