@@ -1155,7 +1155,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
                              M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not issparse(A) and not is_pydata_spmatrix(A)) or
-                (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(A))):
+                (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(M))):
             return IterOpInv(aslinearoperator(A),
                              aslinearoperator(M),
                              sigma, tol=tol).matvec
