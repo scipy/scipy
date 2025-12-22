@@ -383,7 +383,6 @@ class TestSoftmax:
         xp_assert_close(softmax(x3d, axis=(1, 2)),
                         xp.reshape(expected, (2, 2, 2)), rtol=1e-13)
 
-    @pytest.mark.xfail_xp_backends("array_api_strict", reason="int->float promotion")
     def test_softmax_int_array(self, xp):
         xp_assert_close(softmax(xp.asarray([1000, 0, 0, 0])),
                         xp.asarray([1., 0., 0., 0.]), rtol=1e-13)
@@ -394,6 +393,24 @@ class TestSoftmax:
     def test_softmax_array_like(self):
         xp_assert_close(softmax([1000, 0, 0, 0]),
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
+
+    @pytest.mark.parametrize(
+        "xp_input, expected",
+        [
+            ([1.0, 1.0, np.inf], [0.0, 0.0, 1.0]),
+            ([1.0, np.inf, np.inf], [0.0, 0.5, 0.5]),
+            ([np.inf, np.inf, np.inf], [1 / 3, 1 / 3, 1 / 3]),
+            ([-np.inf, np.inf], [0.0, 1.0]),
+            ([np.inf], [1.0]),
+            ([-np.inf], [1.0]),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_softmax_inf_inputs(self, xp_input, expected, dtype, xp):
+        dtype = getattr(xp, dtype)
+        # Handle infinite inputs without producing NaNs - see gh-23225
+        xp_assert_close(softmax(xp.asarray(xp_input, dtype=dtype)),
+                        xp.asarray(expected, dtype=dtype), rtol=1e-13)
 
 
 @make_xp_test_case(log_softmax)
@@ -478,18 +495,3 @@ class TestLogSoftmax:
         x = xp.reshape(x, (2, 2, 2))
         expect = xp.reshape(expect, (2, 2, 2))
         xp_assert_close(log_softmax(x, axis=(1, 2)), expect, rtol=1e-13)
-
-    @pytest.mark.parametrize(
-        "xp_input, expected",
-        [
-            ([1.0, 1.0, np.inf], [0.0, 0.0, 1.0]),
-            ([1.0, np.inf, np.inf], [0.0, 0.5, 0.5]),
-            ([np.inf, np.inf, np.inf], [1 / 3, 1 / 3, 1 / 3]),
-            ([-np.inf, np.inf], [0.0, 1.0]),
-            ([np.inf], [1.0]),
-            ([-np.inf], [1.0]),
-        ],
-    )
-    def test_softmax_inf_inputs(self, xp_input, expected, xp):
-        # Handle infinite inputs without producing NaNs - see gh-23225
-        xp_assert_close(softmax(xp.asarray(xp_input)), xp.asarray(expected), rtol=1e-13)

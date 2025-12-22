@@ -341,7 +341,7 @@ def softmax(x, axis=None):
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
+    x = xp_promote(x, force_floating=True, xp=xp)
     x = xp.where(xp.isinf(x), xp.finfo(x.dtype).max * xp.sign(x), x)
     x_max = xp.max(x, axis=axis, keepdims=True)
     with np.errstate(over="ignore", under="ignore"):
