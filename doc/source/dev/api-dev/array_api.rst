@@ -841,27 +841,32 @@ the specific test but which do not reflect the general capabilities of
 3. the test exposes a bug in ``f`` on a given backend which crashes test
    execution.
 
-Direct uses of ``xfail_xp_backends`` should be reserved for tests which expose a
-bug in ``f`` on a given backend which causes incorrect results or an exception
-to be raised, but still allows all other tests to run normally. ``xfail_xp_backends``
-should not be used for test failures for an alternative backend which are not
-related to ``f`` but are instead due to bugs exposed in other parts of the test
-body. To avoid such situations, we recommend as a general practice to attempt to
-isolate use of the alternative backend only to the function ``f`` being tested
-with a caveat that there are situations where or it is necessary or desired to
-do otherwise: see the section on :ref:`backend isolation <dev-arrayapi_backend_isolation>`
-below for more information.
+For tests exposing bugs on alternative backends that do not crash test
+execution, such as bugs that lead to numerical errors, it is preferable to use
+``xfail_xp_backends`` so we can be notified with an ``XPASS`` when the
+upstream bug is fixed.
+
+``xfail_xp_backends`` should not be used for test failures for an alternative
+backend which are actually unrelated to ``f`` but are instead due to bugs
+outside ``f`` exposed by other parts of the test body. To avoid such situations,
+we recommend as a general practice to attempt to isolate use of the alternative
+backend only to the function ``f`` being tested with a caveat that there are
+situations where or it is necessary or desired to do otherwise: see the section
+on :ref:`backend isolation <dev-arrayapi_backend_isolation>` below for more
+information.
 
 Note that, in one case, ``xp_capabilities`` offers more granularity than
-``skip_xp_backends`` and ``xfail_xp_backends``. ``xp_capabilities`` allows developers
-to separately declare support for the JAX JIT and support for lazy computation
-with Dask with the respective ``jax_jit`` and ``allow_dask_compute`` kwargs.
-``skip_xp_backends`` (``xfail_xp_backends``) offers only an ``eager_only`` kwarg which
-can only add skips (/xfails) for both the JAX JIT and lazy Dask together. The
-current state is that one cannot add test specific skips (/xfails) for the JAX JIT
-without also adding them for lazy Dask and vice versa. This is a known limitation
-and a consequence of the process through which ``xp_capabilities``, ``skip_xp_backends``,
-and ``xfail_xp_backends`` have evolved naturally to meet developer needs.
+``skip_xp_backends`` and ``xfail_xp_backends``. ``xp_capabilities`` allows
+developers to separately declare support for the JAX JIT and support for lazy
+computation with Dask with the respective ``jax_jit`` and ``allow_dask_compute``
+kwargs.  ``skip_xp_backends`` (``xfail_xp_backends``) offers only an
+``eager_only`` kwarg which can only add skips (xfails) for both the JAX JIT and
+lazy Dask together. The current state is that one cannot add test specific skips
+(xfails) for the JAX JIT without also adding them for lazy Dask and vice
+versa. This is a known limitation that arose through the historical process
+through which ``xp_capabilities``, ``skip_xp_backends``, and
+``xfail_xp_backends`` were developed, and it may be addressed in the future if
+there is sufficient developer need.
 
 
 Array-agnostic assertions
