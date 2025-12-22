@@ -919,7 +919,8 @@ The following examples demonstrate how to use direct markers together with
 Running tests
 `````````````
 
-After applying these markers, either through ``make_xp_test_case`` and friends, or directly,
+After applying these markers, either through ``make_xp_test_case`` or one of its
+equvilents, or directly,
 ``spin test`` can be used with the option ``-b`` or ``--array-api-backend``::
 
   spin test -b numpy -b torch -s cluster
