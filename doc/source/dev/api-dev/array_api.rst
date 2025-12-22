@@ -465,7 +465,9 @@ array-agnostic functions which are expected to work on all array API compliant
 backends, including ones not tested in SciPy and ones that do not yet exist.
 If a function is supported on GPU on all tested backends through delegation to
 respective native implementations, one should use ``cpu_only=True`` while listing
-each backend in the list of ``exceptions``.
+each backend in the list of ``exceptions`` like so::
+
+  @xp_capabilities(cpu_only=True, exceptions=["cupy"])
 
 When setting ``cpu_only=True``, one may list a reason by passing a string with
 the ``reason`` kwarg. This can be helpful for documenting why something is not
@@ -513,7 +515,12 @@ native implementation has been set up for one or more array API backends, should
 still use ``np_only=True`` in their ``xp_capabilities`` entries. Just as for
 ``cpu_only=True``, exceptions can be passed with the ``exceptions`` kwarg (and
 also just as for ``cpu_only=True`` one can pass a reason with the ``reason``
-kwarg).
+kwarg)::
+
+  @xp_capabilities(
+      np_only=True, exceptions=["cupy"],
+      reason="not converted yet but has CuPy delegation."
+  )
 
 Valid strings to pass in the exceptions list are ``"array_api_strict"``,
 ``"cupy"``, ``"dask.array"``, ``"jax.numpy"``, and ``"torch"``. If
