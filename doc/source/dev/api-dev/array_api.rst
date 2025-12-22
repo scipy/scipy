@@ -660,20 +660,28 @@ Adding tests
 ------------
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to
-it.  It is similar to parameters created with ``pytest.mark.parametrize``, and
-will take values over all currently tested array
-namespaces. ``scipy._lib._array_api`` provides the ``make_xp_test_case``
+it. ``xp`` currently supports testing with the backends
+`array_api_strict <https://data-apis.org/array-api-strict/>`_,
+`cupy <https://cupy.dev/>`_,
+`dask.array <https://www.dask.org/>`_,
+`jax.numpy <https://docs.jax.dev/en/latest/>`_,
+`numpy <https://numpy.org/>`_,
+and `torch <https://pytorch.org/>`_. It is a
+`pytest fixture <https://docs.pytest.org/en/6.2.x/fixture.html>`_
+which is parameterized over all currently installed backends among the
+backends listed above.
+
+``scipy._lib._array_api`` provides the ``make_xp_test_case``
 decorator, and the ``make_xp_pytest_param`` and ``make_xp_pytest_marks``
 functions to declare which functions are being tested by a test.  These draw on
 the ``xp_capabilities`` entries for a function (or in some cases those for a
 list of functions) to insert the relevant backend specific skip and xfail
 markers.
 
-``make_xp_test_case`` is applied as a decorator to a test function, test method,
-or entire test class, to declare what parts of the public API are being
-tested. Applying it to a test class is equivalent to applying it to each method
-separately. The decorator can be applied at both the class and method level as
-below::
+In most cases, developers should use ``make_xp_test_case``, which is applied as a
+decorator to a test function, test method, or entire test class. Applying it to a
+test class is equivalent to applying it to each method separately. The decorator can
+be applied at both the class and method level as below::
 
   @make_xp_test_case(my_function)
   class TestMyFunction:
@@ -684,13 +692,27 @@ below::
       def test_integration_with_other_function(self, xp)
           ...
 
-The result is that ``TestMyFunction.test1`` will have only the skips and xfails
-associated to ``my_function``, while ``TestMyFunction.test_integration_with_other_function``
-will have the combined skips and xfails of ``my_function`` and ``other_function``, with
-skips naturally taking precedence over xfails.
+Applying ``@make_xp_test_case(my_function)`` to ``TestMyFunction`` causes
+all skips and xfails from the ``xp_capabilities`` entry for ``my_function``
+to be applied to all methods in the class. Additional applications of
+``@make_xp_test_case`` to individual methods will add additional skips and
+xfails and not override the class level decorator. Below is an equivalent
+way to write the above example. This style can become unwieldy when there
+are many methods in a class testing the same function.::
 
-``make_xp_pytest_param`` is provided for situations in which a common test body is
-parametrized over a list of functions using ``pytest.mark.parametrize``::
+  class TestMyFunction:
+      @make_xp_test_case(my_function)
+      def test1(self, xp):
+          ...
+
+      @make_xp_test_case(my_function, other_function)
+      def test_integration_with_other_function(self, xp)
+          ...
+
+``make_xp_pytest_param`` covers the situation where a common test body is
+parametrized over a list of functions using ``pytest.mark.parametrize``.
+It is not used as frequently as ``make_xp_test_case`` but this kind of
+situation is not too uncommon.::
 
   @pytest.mark.parametrize(
       "func",
@@ -699,9 +721,10 @@ parametrized over a list of functions using ``pytest.mark.parametrize``::
   def test_foo(func, xp):
       ...
 
-Unlike ``make_xp_test_case``, only a single function can be passed to any given call to
-``make_xp_pytest_param``. Additional arguments specify additional parameters for
-``pytest.mark.parametrize``, such as in the contrived example below::
+Unlike ``make_xp_test_case``, only a single function can be passed to any given
+call to ``make_xp_pytest_param``. Additional arguments specify additional
+parameters for ``pytest.mark.parametrize``, such as in the contrived example
+below::
 
   @pytest.mark.parametrize(
       "func,norm",
@@ -713,19 +736,22 @@ Unlike ``make_xp_test_case``, only a single function can be passed to any given 
    def test_normed_foo(func, norm, xp):
        ...
 
-Given a function or list of functions, ``make_xp_pytest_marks`` directly returns
-a list of associated pytest marks which can be used with the module-level
-``pytestmark = ...`` variable.
+``make_xp_pytest_marks`` is rarely used. It directly returns a list of
+pytest marks which can be used with the ``pytestmark = ...`` variable
+to set marks for all tests in a file.
 
-The ``xp`` fixture enforces that all tests using it must draw from ``xp_capabilities``
-by using one or more of ``make_xp_pytest_param``, ``make_xp_test_case``, or
-``make_xp_pytest_marks``. This strict check can be circumvented by explicitly marking
-a test with ``@pytest.mark.uses_xp_capabilities(False)``. An optional ``reason`` string
-can be passed to this mark. For tests of private functionality for which there are no
-relevant ``xp_capabilities`` entries, one should use
-``pytest.mark.uses_xp_capabilities(False, reason="private")``. Grepping for instances of
-``pytest.mark.uses_xp_capabilities`` with reasons other than ``"private"`` or
-``"not applicable"`` could be a good way of finding work that needs to be done.
+The ``xp`` fixture should almost always be used along with ``make_xp_test_case``
+or one of the similar functions listed above. The ``xp`` fixture has
+strict checks to enforce this, but these checks can be bypassed by
+explicitly marking a test with ``@pytest.mark.uses_xp_capabilities(False)``.
+An optional ``reason`` string can be passed to this mark. Tests of private
+functionality for which there are no relevant ``xp_capabilities`` entries,
+one should use ``pytest.mark.uses_xp_capabilities(False, reason="private")``.
+Since ``xp_capabilities`` is used for declaring alternative backend support
+for both testing and documentation purposes, the intention of these strict
+checks is to ensure that documentation of alternative backend capabilities
+remains up-to-date.
+
 
 Directly adding pytest markers
 ``````````````````````````````
