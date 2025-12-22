@@ -269,7 +269,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(), approx_grad=0, bounds=None, m=
 
 
 def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None, maxcor=10,
-                     ftol=2.2204460492503131e-09, gtol=1e-5, eps=1e-8, maxfun=15000,
+                     ftol=2.2204460492503131e-09, gtol=1e-5, eps=None, maxfun=15000,
                      maxiter=15000, callback=None, maxls=20, finite_diff_rel_step=None,
                      workers=None, **unknown_options):
     """

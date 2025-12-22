@@ -1765,7 +1765,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 
 
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
-                 gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
+                 gtol=1e-5, norm=np.inf, eps=None, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
                  c1=1e-4, c2=0.4, workers=None,
                  **unknown_options):
@@ -1830,6 +1830,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
+    res_dtype = _result_dtype(x0.dtype, old_fval.dtype)
+    ls_args = _linesearch_defaults_for_dtype(res_dtype)
+
     k = 0
     xk = x0
     # Sets the initial step guess to dx ~ 1
@@ -1878,8 +1881,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
-                                          amax=1e100, extra_condition=descent_condition)
+                                          old_old_fval, c1=c1, c2=c2,
+                                          extra_condition=descent_condition,
+                                          **ls_args)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
