@@ -12,6 +12,7 @@
 
 #include "_superluobject.h"
 #include <ctype.h>
+#include <stdbool.h>
 
 
 /***********************************************************************
@@ -105,10 +106,126 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
     return NULL;
 }
 
+
+static bool is_empty_matrix(const SuperMatrix * A)
+{
+    return (A->nrow == 0 && A->ncol == 0);
+}
+
+
+static PyObject *SuperLU_norm1est_inv(SuperLUObject * self, PyObject * args,
+                               PyObject * kwds)
+{
+    static char *kwlist[] = { NULL };  /* no keyword arguments */
+
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
+
+    if (!CHECK_SLU_TYPE(self->type)) {
+        PyErr_SetString(PyExc_ValueError, "unsupported data type");
+        return NULL;
+    }
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|", kwlist))
+        return NULL;
+
+    char norm_c = '1';  /* use the 1-norm */
+
+    const bool return_float = (self->type == NPY_FLOAT32 || self->type == NPY_COMPLEX64);
+
+    /* Check for empty matrix */
+    if (is_empty_matrix(&self->L) && is_empty_matrix(&self->U)) {
+        /* Empty matrix, return 0.0 */
+        if (return_float) {
+            float normf = 0.0f;
+            return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT32), NULL);
+        } else {
+            double normd = 0.0;
+            return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_FLOAT64), NULL);
+        }
+    }
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        goto fail;
+    }
+
+    /* Output from gscon */
+    volatile SuperLUStat_t stat = { 0 };
+    StatInit((SuperLUStat_t *)&stat);
+
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+
+    SLU_BEGIN_THREADS;
+
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        SLU_END_THREADS;
+        goto fail;
+    }
+
+    /* Outputs from gscon */
+    volatile float rnormf;
+    volatile double rnormd;
+    volatile int info;
+
+    switch (self->type) {
+        case NPY_FLOAT32:
+            sgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0f,
+                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_FLOAT64:
+            dgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0,
+                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_COMPLEX64:
+            cgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0f,
+                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        case NPY_COMPLEX128:
+            zgscon(
+                (char *)&norm_c, &self->L, &self->U, 1.0,
+                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
+            break;
+        default: 
+            PyErr_SetString(PyExc_ValueError, "unsupported data type");
+            return NULL;
+    }
+
+    SLU_END_THREADS;
+
+    if (info < 0) {
+        PyErr_SetString(PyExc_SystemError,
+                        "gscon was called with invalid arguments");
+        goto fail;
+    }
+
+    StatFree((SuperLUStat_t *)&stat);
+
+    /* The norm is always a real float or double, depending on the type
+     * of the matrix. Return a numpy scalar with the appropriate type.
+     */
+    if (return_float) {
+        float normf = 1.0 / rnormf;
+        return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT32), NULL);
+    } else {
+        double normd = 1.0 / rnormd;
+        return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_FLOAT64), NULL);
+    }
+
+  fail:
+    XStatFree((SuperLUStat_t *)&stat);
+    return NULL;
+}
+
+
 /** table of object methods
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"_norm1est_inv", (PyCFunction) SuperLU_norm1est_inv, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
