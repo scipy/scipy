@@ -353,7 +353,9 @@ such functions.
 
 Note that none of these keyword arguments are necessary when
 there are array arguments from which the backend, device, and desired output dtype
-can be inferred. For the sake of API simplicity and consistency and in the
+can be inferred (ideally, output dtype should follow input dtypes through the expected
+`type promotion rules <https://data-apis.org/array-api/latest/API_specification/type_promotion.html>`_).
+For the sake of API simplicity and consistency and in the
 spirit of "There should be one-- and preferably only one --obvious way to do it.",
 it is recommended to avoid the use of these kwargs in functions which take
 at least one array argument.
